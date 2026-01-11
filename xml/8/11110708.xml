@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110708" title="Re: Printing large numbers with commas to show thousands groups. (updated)" created="2019-12-28 17:10:34" updated="2019-12-28 17:10:34" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Accessing C's [man://printf;3|&lt;c&gt;printf&lt;/c&gt;] is also possible with the latest [mod://FFI::Platypus] without calling an external binary:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use POSIX qw/LC_NUMERIC/;
+use FFI::Platypus 1.07;
+
+my $ffi = FFI::Platypus-&gt;new( api =&gt; 1 );
+$ffi-&gt;lib(undef); # search current process for symbols (libc etc.)
+
+my $loc = $ffi-&gt;function( setlocale =&gt; ['int','string'] =&gt; 'string' )
+	-&gt;call(LC_NUMERIC, ""); # set according to environment vars
+print "Locale: $loc\n";
+
+$ffi-&gt;attach( [ printf =&gt; 'cprintf_i' ] =&gt; ['string']
+	=&gt; ['int'] =&gt; 'int' ); # variadic function
+
+cprintf_i("%'d\n", 42e6);
+
+# ##### UPDATE - Wrapped in a sub #####
+
+$ffi-&gt;attach( [ snprintf =&gt; 'c_snprintf_i' ]
+	=&gt; ['opaque','size_t','string'] =&gt; ['int'] =&gt; 'int' );
+sub commify {
+	my $i = shift;
+	die "Bad integer $i" unless $i=~/\A-?[0-9]+\z/;
+	my $in = "$i$i";
+	my $ptr = $ffi-&gt;cast('string' =&gt; 'opaque', $in);
+	c_snprintf_i($ptr, length($in), "%'d", 0+$i);
+	my $out = $ffi-&gt;cast('opaque' =&gt; 'string', $ptr);
+	return $out;
+}
+print commify(42e6), "\n";
+&lt;/c&gt;
+&lt;p&gt;This will print "42,000,000" for an &lt;c&gt;en_US&lt;/c&gt; locale and "42.000.000" for a &lt;c&gt;de_DE&lt;/c&gt; locale (this is the same behavior as &lt;c&gt;/usr/bin/printf&lt;/c&gt;).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11110642</root_node>
+<parent_node field_name="parent_node">11110642</parent_node>
+<thread id="11110642">
+<node id="11110659"><node id="11110671"><node id="11110676"><node id="11110778"/>
+</node>
+</node>
+</node>
+<node id="11110708"/>
+<node id="11110803"/>
+<node id="11163421"/>
+</thread></node>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11145399" title="Re^5: Filehandle in subroutine in use VRML.pm (updated)" created="2022-07-09 15:48:42" updated="2022-07-09 15:48:42" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I believe that you must specify the package which contains &lt;c&gt;open $fh, ...&lt;/c&gt;, not the package which contains the call to &lt;c&gt;printout&lt;/c&gt;.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That's not entirely accurate either, though. If the [doc://open] call happens in a package different from the others, then the string containing the name of the filehandle will get resolved relative to &lt;i&gt;that&lt;/i&gt; package, and none of the other packages will see the open filehandle.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+no strict;
+
+package main;
+$fh = "HANDLE";
+package Other;
+open $::fh, '&gt;/tmp/foo.txt' or die $!;
+package main;
+print $::fh "Doesn't work\n";
+package VRML;
+print $::fh "Doesn't work\n";
+package Other;
+print $::fh "Works\n";
+&lt;/c&gt;
+&lt;p&gt;The key thing is that it doesn't matter which package you specify, the string needs to reference the &lt;i&gt;same&lt;/i&gt; filehandle everywhere - if in the above you set &lt;c&gt;$fh = 'Quz::HANDLE'&lt;/c&gt; or any other specific package then the code works. That's why one of my original suggestions in the spoiler [id://11145313|here] was to use the string &lt;c&gt;'main::LF'&lt;/c&gt; instead of the bareword &lt;c&gt;LF&lt;/c&gt;, because then every place that uses the symbolic reference will be referencing the same filehandle.&lt;/p&gt;
+&lt;p&gt;As I said in my [id://11145386|node above], that suggestion only applies if the OP only wants to change &lt;c&gt;sub printout&lt;/c&gt; for some reason; compared to the other ideas I still consider it to be the "worst" way to work around the issue. The weakness is that &lt;c&gt;printout&lt;/c&gt; doesn't know which package the filename was opened in, and both of my suggestions above (&lt;c&gt;main&lt;/c&gt; and [doc://caller]) are just guesses - it's true I didn't describe this weakness in the node in that much detail, but that's  because I'm hoping the OP doesn't choose this particular workaround...&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor edits &amp;amp; clarifications.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; Upon rereading, I think I perhaps we both had the same idea, and I was just disagreeing with your wording of it, rather than the idea itself - in the spirit of "if we're going to be nitpicky, then let's be &lt;i&gt;really&lt;/i&gt; nitpicky" :-)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11145311</root_node>
+<parent_node field_name="parent_node">11145398</parent_node>
+<thread id="11145311">
+<node id="11145313"><node id="11145316"><node id="11145324"/>
+</node>
+</node>
+<node id="11145322"><node id="11145325"><node id="11145345"/>
+<node id="11145428"><node id="11145440"/>
+</node>
+</node>
+</node>
+<node id="11145348"><node id="11145564"><node id="11145573"/>
+<node id="11145605"/>
+</node>
+</node>
+<node id="11145353"><node id="11145380"><node id="11145386"><node id="11145398"><node id="11145399"/>
+</node>
+</node>
+<node id="11145439"/>
+</node>
+</node>
+</thread></node>

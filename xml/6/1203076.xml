@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203076" title="Re: Playing sounds" created="2017-11-09 13:48:49" updated="2017-11-09 13:48:49" _doctext_mode="lenient"><type id="11">note</type>
+<author id="823433">Chuma</author>
+<doctext field_name="doctext">&lt;p&gt;Thanks! That makes sense, I'd have to install mpg123 to get that to work. But to have any hope of running my program on other machines, never mind other systems, I'd rather avoid that. If it's running an external process anyway, I might as well do it with afplay, right?&lt;/p&gt;
+
+&lt;p&gt;I'll show you what I have so far. It's a pretty primitive idea – the music script reads a line from a file, telling it which audio file to play, then waits for that to finish, and does it again.&lt;/p&gt;
+
+&lt;code&gt;for(1..5){ # should be an infinite loop
+    $pid=fork();
+    if($pid==0){
+        my $m=getmusic();
+        if($m){exec 'afplay "'.$m.'"' or die}
+        else{exec 'sleep 1'}
+    }
+    
+    while (wait() != -1){
+        my $m=getmusic();
+        unless($m){
+            # somehow stop the music currently playing
+        }else{
+            sleep 1;
+        }
+    }
+}
+
+sub getmusic{
+    open MFILE, "$path/music.txt" or die;
+    my $m=&lt;MFILE&gt;;
+    chomp $m;
+    close MFILE;
+    return $m;
+}&lt;/code&gt;
+
+&lt;p&gt;What I would need is: First, a way to call this from my main Perl program, and have it exit when that one does. Second, a way to get this script to kill the child process when it detects it's time to stop, in this example because the file is empty, as you see in the code.&lt;/p&gt;
+
+&lt;p&gt;Some of the links you posted also look interesting, although I don't understand much of them. I'll continue looking there too.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203062</root_node>
+<parent_node field_name="parent_node">1203062</parent_node>
+<thread id="1203062">
+<node id="1203063"/>
+<node id="1203069"/>
+<node id="1203073"><node id="1203121"/>
+</node>
+<node id="1203076"><node id="1203085"/>
+</node>
+<node id="1203078"/>
+<node id="1203089"/>
+</thread></node>

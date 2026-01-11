@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110855" title="Re^4: getting Log::Log4perl to install on windows strawberry perl" created="2020-01-01 22:24:28" updated="2020-01-01 22:24:28" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;i&gt;we can infer from the context in this thread that it's referring to t/026FileApp.t in the Log::Log4perl distro.&lt;/i&gt;
+&lt;i&gt;&lt;/i&gt;
+&lt;p&gt;Thx, [haukex], I had to read all of that very carefully and serially in order to follow along. &amp;#91;I hadn't patched anything before.&amp;#93; A little more context with the new &lt;c&gt;t/026FileApp.t&lt;/c&gt; here:&lt;/p&gt;
+
+
+&lt;c&gt;
+#########################################################
+# Print a header into a newly opened file
+#########################################################
+$data = qq(
+log4perl.category         = DEBUG, Logfile
+log4perl.appender.Logfile          = Log::Log4perl::Appender::File
+log4perl.appender.Logfile.filename = ${testfile}_5
+log4perl.appender.Logfile.header_text = This is a nice header.
+log4perl.appender.Logfile.layout   = Log::Log4perl::Layout::SimpleLayout
+);
+
+Log::Log4perl-&gt;init(\$data);
+open FILE, "&lt;${testfile}_5" or die "Cannot open ${testfile}_5";
+$content = join '', &lt;FILE&gt;;
+close FILE;
+
+is($content, "This is a nice header.\n", "header_text");
+
+
+# same with syswrite
+unlink "${testfile}_5";
+$data = qq(
+log4perl.category         = DEBUG, Logfile
+log4perl.appender.Logfile          = Log::Log4perl::Appender::File
+log4perl.appender.Logfile.filename = ${testfile}_5
+ log4perl.appender.Logfile.header_text = This is a nice header.
+ log4perl.appender.Logfile.syswrite = 1
+ log4perl.appender.Logfile.layout = Log::Log4perl::Layout::SimpleLayout
+ log4perl.appender.Logfile.mode = clobber
+ );
+
+Log::Log4perl-&gt;init(\$data);&lt;/c&gt;
+
+&lt;p&gt;I made mistakes on the way to get this, in particular changing the critical line&lt;/p&gt;
+
+
+&lt;c&gt; log4perl.appender.Logfile.mode = clobber&lt;/c&gt;
+&lt;p&gt;in Log4perl.pm . I've always wondered how to make changes in the .pm's that are installed on my machine. It seemed like the wrong way to have to change permissions on the file, but I did it, because, hey, we're using force here, right? I added the line and summarily got an error when opening a cpan client window.&lt;/p&gt;
+
+&lt;p&gt;After patching the right file and executing:&lt;/p&gt;
+&lt;c&gt;C:\Users\tblaz\Documents\evelyn\my_repos\Log-Log4perl-1.49&gt;cpanm .
+--&gt; Working on .
+Configuring Log-Log4perl-1.49 ... OK
+Building and testing Log-Log4perl-1.49 ... OK
+Successfully installed Log-Log4perl-1.49
+1 distribution installed
+
+C:\Users\tblaz\Documents\evelyn\my_repos\Log-Log4perl-1.49&gt;
+&lt;/c&gt;
+
+&lt;p&gt;, Log4perl.pm was restored to what it was before I started messing with it. I still get a complaint about the Terminal Size, but there is no mention of Log4perl being uninstalled:&lt;/p&gt;
+
+&lt;c&gt;Unable to get Terminal Size. The Win32 GetConsoleScreenBufferInfo call didn't work. The COLUMNS and LINES environment variables didn't work. at C:\Strawberry\perl\vendor\lib/Term/ReadLine/readline.pm line 410.
+
+cpan shell -- CPAN exploration and modules installation (v2.26)
+Enter 'h' for help.
+
+cpan&gt;&lt;/c&gt;
+&lt;p&gt;Thanks all for comments,&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11110504</root_node>
+<parent_node field_name="parent_node">11110614</parent_node>
+<thread id="11110504">
+<node id="11110507"><node id="11116682"/>
+</node>
+<node id="11110518"><node id="11110519"><node id="11110523"/>
+<node id="11110610"/>
+</node>
+</node>
+<node id="11110553"><node id="11110613"><node id="11110614"><node id="11110855"><node id="11110866"><node id="11110934"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1215378" title="Re^3: difference in regex" created="2018-05-29 10:20:59" updated="2018-05-29 10:20:59" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+The algo I would like to implement :&lt;br&gt;
+As I see it the steps are:&lt;br&gt;
+1. if the string has commas:&lt;br&gt;
+1.a. get the last comma and check if the last substring is a number - if so put it in hash like this: &lt;c&gt;$hash{$path} = $value;&lt;/c&gt;&lt;br&gt;
+1.b. if the substring after the last comma isn't a number - &lt;c&gt;$hash{$path} = 1;&lt;/c&gt;&lt;br&gt;
+2. if string has no commas: &lt;c&gt;$hash{$string} = 1;&lt;/c&gt;&lt;br&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Although a good start, point 1.b. is unclear: in this case, do you want the whole string stored in &lt;c&gt;$path&lt;/c&gt;, or just the part up until the last comma? For now I'm assuming the latter. Anyway, while there may always be "nicer" ways to write things in Perl (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; and you haven't specified what you meant with &lt;i&gt;"it doesn't look very good"&lt;/i&gt;), sometimes a good starting point is a direct translation:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Scalar::Util qw/looks_like_number/;
+use Data::Dumper; # Debug
+
+my %hash;
+while (my $string = &lt;DATA&gt;) {
+    chomp($string);
+    # check if string has at least one comma, and at the same
+    # time extract the value after the last comma
+    if ( my ($path,$value) = $string=~/^(.*),([^,]*)$/ ) {
+        if ( looks_like_number($value) ) {
+            $hash{$path} = $value;
+        }
+        else {
+            $hash{$path} = 1;
+        }
+    }
+    else {
+        $hash{$string} = 1;
+    }
+}
+
+print Dumper(\%hash); # Debug
+
+__DATA__
+foo
+bar,x
+quz,5
+a,b,c,42
+&lt;/c&gt;
+&lt;p&gt;Of course there's lots of potential for shortening that, e.g. by combining it with my example code from [id://1215373|here]. &lt;i&gt;Update:&lt;/i&gt; A really simple shortening:&lt;/p&gt;
+&lt;c&gt;
+while (&lt;DATA&gt;) {
+    chomp;
+    if ( /^(.*),([^,]*)$/ )
+         { $hash{$1} = looks_like_number($2) ? $2 : 1 }
+    else { $hash{$_} = 1 }
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1215361</root_node>
+<parent_node field_name="parent_node">1215372</parent_node>
+<thread id="1215361">
+<node id="1215364"/>
+<node id="1215367"><node id="1215372"><node id="1215376"/>
+<node id="1215378"/>
+</node>
+</node>
+<node id="1215370"/>
+<node id="1215371"/>
+<node id="1215373"><node id="1215377"><node id="1215380"/>
+</node>
+</node>
+<node id="1215379"><node id="1215404"><node id="1215412"/>
+</node>
+<node id="1215457"/>
+</node>
+<node id="1215441"/>
+<node id="1215459"/>
+</thread></node>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1221400" title="Re: SimpleZip If file doesn't exist" created="2018-08-30 17:35:26" updated="2018-08-30 17:35:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You could add an extra [doc://-X|&lt;c&gt;-e&lt;/c&gt;] check right before you add the file, although the race condition will still exist. The better way to handle this would be to not be working in a directory at the same time you're zipping it, or using some other mechanism to lock, or perhaps exclude these temporary files from being considered for zipping in the first place... anyway, here's an (untested) idea for a "quick fix" that might help with the symptoms you describe:&lt;/p&gt;
+&lt;c&gt;
+find( sub {
+	return unless -e $File::Find::name;
+	eval {
+		$zip-&gt;add($_, Name =&gt; $File::Find::name)
+			or warn "Cannot add '$_' to zip file: $SimpleZipError\n";
+	1 } or warn $@||'unknown error';
+}, $data);
+&lt;/c&gt;
+&lt;p&gt;Note I'm using the "safer" form of checking [doc://eval] for errors, see [id://1153468]&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1221393</root_node>
+<parent_node field_name="parent_node">1221393</parent_node>
+<thread id="1221393">
+<node id="1221400"/>
+<node id="1221437"/>
+<node id="1221470"/>
+</thread></node>

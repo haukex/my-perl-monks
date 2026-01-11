@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200759" title="Re: Regex Optional capture doesn't" created="2017-10-05 14:11:16" updated="2017-10-05 14:11:16" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I wouldn't call myself a full "regex expert" (I consider some other monks the real experts &lt;c&gt;:-)&lt;/c&gt;&amp;nbsp;), so there might be a better way to do this, but I do know the trick to use a dot and negative lookahead to say "match anything, &lt;i&gt;except&lt;/i&gt; this thing I don't want to match", similar to &lt;c&gt;"[^"]+"&lt;/c&gt;. This works:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More;
+
+my $re = qr{ \b type = "([^"]+)"
+	(?: (?!&lt;\w+TagIwant\b) . )* &lt;(\w+TagIwant\b)? }msx;
+
+is_deeply [
+	q{ &lt;blah1 phase="2" type="MyType" more_keys="Values" &lt;Unwanted/&gt;  &lt;SomeTagIwant&gt;&lt;k1="v1"&gt;&lt;/SomeTagIwant&gt; }
+		=~$re], ['MyType','SomeTagIwant'];
+is_deeply [
+	q{ &lt;blah1 phase="2" type="MyType" more_keys="Values" &lt;Unwanted/&gt;  &lt;SomeTagIwant/&gt; }
+		=~$re], ['MyType','SomeTagIwant'];
+is_deeply [
+	q{ &lt;blah1 phase="2" type="MyType" more_keys="Values" &lt;Unwanted/&gt;  &lt;SomeTagIwant k3="v3" /&gt; }
+		=~$re], ['MyType','SomeTagIwant'];
+is_deeply [
+	q{ &lt;blah1 phase="2" type="MyType" more_keys="Values" &lt;Unwanted/&gt;}
+		=~$re], ['MyType',undef];
+
+done_testing;
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Possibly interesting related reading: [id://1185762]. &lt;small&gt;&lt;i&gt;Also a few minor edits for clarity.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1200743</root_node>
+<parent_node field_name="parent_node">1200743</parent_node>
+<thread id="1200743">
+<node id="1200744"><node id="1200745"><node id="1200747"><node id="1200748"><node id="1200751"><node id="1200752"><node id="1200756"><node id="1200758"><node id="1200760"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1200753"><node id="1200755"><node id="1200779"/>
+</node>
+</node>
+<node id="1200759"/>
+</thread></node>

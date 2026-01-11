@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1184390" title="Re^2: Scanning a file and extracting certains values within one or multiple lines" created="2017-03-13 07:09:29" updated="2017-03-13 07:09:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I'm not entirely sure I understand the rules by which you want newlines to be added to the output or not. In the following, if you don't want newlines in the output, change the two occurrences of &lt;c&gt;"\n"&lt;/c&gt; to &lt;c&gt;" "&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+my %data;
+my $cur_tag;
+while (&lt;DATA&gt;) {
+	chomp;
+	if ( my ($tag,$line) = /^(X\S+)\s+(.+)$/ ) {
+		$data{$tag} .= "\n" if exists $data{$tag};
+		$data{$tag} .= $line;
+		$cur_tag = $tag;
+	}
+	elsif ($cur_tag &amp;&amp; !/^BEGIN_TAG/) {
+		$data{$cur_tag} .= "\n".$_;
+	}
+}
+
+for my $tag (sort keys %data) {
+	print "$tag: $data{$tag}\n";
+}
+
+__DATA__
+BEGIN_TAG
+X1 test1 test1 test1
+X2 no1 no1 no1 no1
+X3 yes1 yes1 yes1
+BEGIN_TAG
+X1 test2 test2 test2
+test3 test3 test3
+X2 no2 no2 no2 no2 no2
+no3 no3 no no3 no3
+no4 no4 no4 no4 no4 no4 no4
+X3 hi2 hi2 hi2 hi2 hi2 hi2
+hi3 hi3 hi3 hi3
+hi4 hi4
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+X1: test1 test1 test1
+test2 test2 test2
+test3 test3 test3
+X2: no1 no1 no1 no1
+no2 no2 no2 no2 no2
+no3 no3 no no3 no3
+no4 no4 no4 no4 no4 no4 no4
+X3: yes1 yes1 yes1
+hi2 hi2 hi2 hi2 hi2 hi2
+hi3 hi3 hi3 hi3
+hi4 hi4
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Inverted &lt;c&gt;"\n"&lt;/c&gt; vs &lt;c&gt;" "&lt;/c&gt;.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1184378</root_node>
+<parent_node field_name="parent_node">1184387</parent_node>
+<thread id="1184378">
+<node id="1184380"/>
+<node id="1184383"><node id="1184385"/>
+</node>
+<node id="1184384"/>
+<node id="1184387"><node id="1184388"><node id="1184389"/>
+</node>
+<node id="1184390"><node id="1184391"/>
+</node>
+<node id="1184398"/>
+</node>
+</thread></node>

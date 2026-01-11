@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11137683" title="read/write delete duplicates/sort PROBLEM! - Use of uninitialized value in sprintf" created="2021-10-18 10:56:59" updated="2021-10-18 10:56:59" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11137681">VladP</author>
+<doctext field_name="doctext">&lt;p&gt;Hi,&lt;/p&gt;
+
+&lt;p&gt;The code below used to work but now I'm getting the error "Use of uninitialized value in sprintf at test.pl line 72, &lt;FILE&gt; ...". I don't understand what the issue is or how to fix it.  It's suppose to take the input file "input.txt" and sort the value of TAGID then write the results to "output.txt". This was written by someone else at the time.&lt;/p&gt;
+
+&lt;p&gt;It should open the input.txt file, remove any duplicates, sort with numerials first and then alpha (see sample output file), and write results to output.txt&lt;/p&gt;
+
+&lt;p&gt;It's giving the error on this line:&lt;/p&gt;
+
+&lt;code&gt;
+$tags{sprintf("%04d%6s",$1 || 999,$2)} = $tag;
+&lt;/code&gt;
+
+
+&lt;p&gt;Syntax:&lt;/p&gt;
+
+&lt;code&gt;
+&gt;perl test.pl input.txt output.txt
+&lt;/code&gt;
+
+&lt;p&gt;input.txt:&lt;/p&gt;
+
+&lt;pre&gt;
+&lt;tagid=1&gt;Test.&lt;/tag&gt;
+&lt;tagid=16ab&gt;Test.&lt;/tag&gt;
+&lt;tagid=aa&gt;Test.&lt;/tag&gt;
+&lt;tagid=16zz&gt;Test.&lt;/tag&gt;
+&lt;tagid=39a&gt;Test.&lt;/tag&gt;
+&lt;tagid=cc&gt;Test.&lt;/tag&gt;
+&lt;tagid=de&gt;Test.&lt;/tag&gt;
+&lt;tagid=16bc&gt;Test.&lt;/tag&gt;
+&lt;tagid=zz&gt;Test..&lt;/tag&gt;
+&lt;tagid=2&gt;Test.&lt;/tag&gt;
+&lt;tagid=3&gt;Test.&lt;/tag&gt;
+&lt;tagid=4&gt;Test.&lt;/tag&gt;
+&lt;tagid=5&gt;Test.&lt;/tag&gt;
+&lt;tagid=5a&gt;Test.&lt;/tag&gt;
+&lt;tagid=5za&gt;Test.&lt;/tag&gt;
+&lt;tagid=6&gt;Test.&lt;/tag&gt;
+&lt;tagid=40&gt;Test.&lt;/tag&gt;
+&lt;tagid=41&gt;Test.&lt;/tag&gt;
+&lt;tagid=40&gt;Test.&lt;/tag&gt;
+&lt;tagid=45&gt;Test.&lt;/tag&gt;
+&lt;tagid=10ba&gt;Test.&lt;/tag&gt;
+&lt;tagid=15xx&gt;Test.&lt;/tag&gt;
+&lt;tagid=cc&gt;Test..&lt;/tag&gt;
+&lt;tagid=ff&gt;Test..&lt;/tag&gt;
+&lt;tagid=50&gt;Test.&lt;/tag&gt;
+&lt;tagid=54&gt;Test.&lt;/tag&gt;
+&lt;tagid=7&gt;Test.&lt;/tag&gt;
+&lt;tagid=8&gt;Test.&lt;/tag&gt;
+&lt;tagid=16yy&gt;Test.&lt;/tag&gt;
+&lt;tagid=16ya&gt;Test.&lt;/tag&gt;
+&lt;/pre&gt;
+
+
+&lt;p&gt;output.txt&lt;/p&gt;
+&lt;pre&gt;
+&lt;tagid=1&gt;Test.&lt;/tag&gt;
+&lt;tagid=2&gt;Test.&lt;/tag&gt;
+&lt;tagid=3&gt;Test.&lt;/tag&gt;
+&lt;tagid=4&gt;Test.&lt;/tag&gt;
+&lt;tagid=5&gt;Test.&lt;/tag&gt;
+&lt;tagid=5a&gt;Test.&lt;/tag&gt;
+&lt;tagid=5za&gt;Test.&lt;/tag&gt;
+&lt;tagid=6&gt;Test.&lt;/tag&gt;
+&lt;tagid=7&gt;Test.&lt;/tag&gt;
+&lt;tagid=8&gt;Test.&lt;/tag&gt;
+&lt;tagid=10ba&gt;Test.&lt;/tag&gt;
+&lt;tagid=15xx&gt;Test.&lt;/tag&gt;
+&lt;tagid=16ab&gt;Test.&lt;/tag&gt;
+&lt;tagid=16bc&gt;Test.&lt;/tag&gt;
+&lt;tagid=16ya&gt;Test.&lt;/tag&gt;
+&lt;tagid=16yy&gt;Test.&lt;/tag&gt;
+&lt;tagid=16zz&gt;Test.&lt;/tag&gt;
+&lt;tagid=39a&gt;Test.&lt;/tag&gt;
+&lt;tagid=40&gt;Test.&lt;/tag&gt;
+&lt;tagid=41&gt;Test.&lt;/tag&gt;
+&lt;tagid=45&gt;Test.&lt;/tag&gt;
+&lt;tagid=50&gt;Test.&lt;/tag&gt;
+&lt;tagid=54&gt;Test.&lt;/tag&gt;
+&lt;tagid=aa&gt;Test.&lt;/tag&gt;
+&lt;tagid=cc&gt;Test.&lt;/tag&gt;
+&lt;tagid=de&gt;Test.&lt;/tag&gt;
+&lt;tagid=ff&gt;Test..&lt;/tag&gt;
+&lt;tagid=zz&gt;Test..&lt;/tag&gt;
+&lt;/pre&gt;
+
+&lt;p&gt;Code:&lt;/p&gt;
+
+&lt;code&gt;
+require 5.000;
+
+use warnings;
+use strict;
+use POSIX;
+
+my %tags = ();
+
+my $input = $ARGV[0];
+my $output = $ARGV[1];
+
+open (FILE, "&lt; $input") or die "cannot open $input: $!\n";
+   while (my $tag = &lt;FILE&gt;) {
+     $tag =~ m/&lt;x id=(\d*)([[:alpha:]]*)&gt;/;
+     $tags{sprintf("%04d%6s",$1 || 999,$2)} = $tag;
+   }
+   open (NEWFILE, "&gt; $output");
+   foreach my $id ( sort keys %tags )
+   {
+      print NEWFILE $tags{$id};
+   }
+
+close NEWFILE;
+close FILE;
+&lt;/code&gt;
+
+
+</doctext>
+<thread id="11137683">
+<node id="11137684"><node id="11137688"><node id="11137689"><node id="11137694"><node id="11137695"><node id="11137696"/>
+</node>
+<node id="11137698"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11137685"><node id="11137703"><node id="11137705"/>
+</node>
+</node>
+<node id="11137729"/>
+</thread></node>

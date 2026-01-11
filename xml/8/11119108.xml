@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11119108" title="Re: Perl::Critic says don't modify $_ in list functions and other things" created="2020-07-09 18:38:17" updated="2020-07-09 18:38:17" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1149436">jcb</author>
+<doctext field_name="doctext">&lt;p&gt;Other monks have mentioned this, but not in these words:  &lt;c&gt;map&lt;/c&gt;, &lt;c&gt;grep&lt;/c&gt;, and &lt;c&gt;for&lt;/c&gt;/&lt;c&gt;foreach&lt;/c&gt; arrange for &lt;c&gt;$_&lt;/c&gt; to be an &lt;i&gt;&lt;b&gt;alias&lt;/b&gt;&lt;/i&gt; to each element of the list in turn.  In a &lt;c&gt;map&lt;/c&gt; block, &lt;c&gt;$_&lt;/c&gt; is &lt;i&gt;&lt;b&gt;not&lt;/b&gt;&lt;/i&gt; its own variable and modifying &lt;c&gt;$_&lt;/c&gt; will reach back into the original list.  In some cases, &lt;c&gt;$_&lt;/c&gt; can even be aliased to some value slot that is read-only, and attempting to modify &lt;c&gt;$_&lt;/c&gt; will fail; for this reason, &lt;c&gt;sub&lt;/c&gt;s using &lt;c&gt;$_&lt;/c&gt; should localize &lt;c&gt;*_&lt;/c&gt;, which replaces the entire glob and "shadows" any aliases that have been established in outer contexts.&lt;/p&gt;
+
+&lt;p&gt;There are several reasons to avoid &lt;c&gt;eval STRING&lt;/c&gt; that do not affect &lt;c&gt;eval BLOCK&lt;/c&gt;.  An obvious problem is that &lt;c&gt;eval STRING&lt;/c&gt; parses Perl code from a string.  If that string is untrusted remote user input and not very, &lt;i&gt;very&lt;/i&gt;, &lt;b&gt;&lt;i&gt;very&lt;/i&gt;&lt;/b&gt; strictly checked, you have a remote code execution vulnerability.  There is also a performance issue, in that &lt;c&gt;eval STRING&lt;/c&gt; must invoke perl's parser each time it is reached at runtime, while the &lt;c&gt;BLOCK&lt;/c&gt; in &lt;c&gt;eval BLOCK&lt;/c&gt; is compiled along with the rest of the program.  This also leads to one of the reasons &lt;c&gt;eval STRING&lt;/c&gt; can be needed:  because the &lt;c&gt;STRING&lt;/c&gt; is not compiled until runtime, &lt;c&gt;eval STRING&lt;/c&gt; can also trap compilation errors in &lt;c&gt;STRING&lt;/c&gt;, while a compilation error in the &lt;c&gt;BLOCK&lt;/c&gt; in &lt;c&gt;eval BLOCK&lt;/c&gt; is fatal before execution starts.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11119056</root_node>
+<parent_node field_name="parent_node">11119056</parent_node>
+<thread id="11119056">
+<node id="11119058"/>
+<node id="11119060"><node id="11119076"><node id="11119089"/>
+<node id="11119216"/>
+</node>
+</node>
+<node id="11119062"/>
+<node id="11119065"><node id="11119073"><node id="11123833"><node id="11123836"><node id="11123839"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11119066"><node id="11119074"><node id="11119075"/>
+</node>
+<node id="11119088"><node id="11119219"/>
+</node>
+<node id="11119094"/>
+</node>
+<node id="11119106"><node id="11119109"><node id="11119110"><node id="11119127"/>
+</node>
+</node>
+</node>
+<node id="11119108"><node id="11119157"><node id="11119168"><node id="11119174"><node id="11119195"><node id="11119199"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11119147"><node id="11119149"/>
+</node>
+<node id="11119176"><node id="11119177"/>
+</node>
+</thread></node>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201066" title="Re: modular file scoping (updated)" created="2017-10-10 01:43:06" updated="2017-10-10 01:43:06" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;There are myriad net explanations of the seldom used "local", "our", &amp; "package" scopings but very little on this "file" scoping&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, [doc://local], [doc://our], and package scoped variables (the latter two being pretty much the same anyway, see [doc://our]) are actually very common, I'd say roughly as common as lexically scoped ([doc://my]) variables, including at the lexical scope of the file. Admittedly, when writing a normal script one probably types &lt;c&gt;my&lt;/c&gt; a lot more often than &lt;c&gt;our&lt;/c&gt;, &lt;c&gt;local&lt;/c&gt;, or &lt;c&gt;state&lt;/c&gt;, but package and dynamic scoping may be being used a lot under the hood, like in the modules one loads. Anyway, if I am understanding your question correctly, you're asking about the &lt;c&gt;my %webpaths&lt;/c&gt; variable, and why your three functions in &lt;c&gt;package DataBank&lt;/c&gt; can keep using it despite the execution of the file &lt;c&gt;DataBank.pm&lt;/c&gt; having already finished?&lt;/p&gt;
+&lt;p&gt;That's because the three &lt;c&gt;sub&lt;/c&gt;s refer to it, and so long as there is something that refers to the variable, Perl keeps it around. These "references" are &lt;i&gt;uses&lt;/i&gt; of the variable in its lexical scope, as in your case, or lexical variables used by closures, but also references created explicitly, as in &lt;c&gt;my $hashref = \%webpaths&lt;/c&gt;. So the answer is yes, this is the intended behavior you can rely on. Maybe this helps:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+{
+	package Tracer;
+	sub new { my $c=shift; bless {@_}, $c }
+	sub DESTROY { print "DESTROY ".shift-&gt;{name}."\n" }
+}
+
+END { print "END\n" }
+
+my $one = Tracer-&gt;new(name=&gt;'one');
+my $two = Tracer-&gt;new(name=&gt;'two');
+
+sub foo {
+	my $three = Tracer-&gt;new(name=&gt;'three');
+	my $four = Tracer-&gt;new(name=&gt;'four');
+	$one-&gt;{foo}++;
+	print "end of sub foo\n";
+	return $three;
+}
+
+my $th = foo();
+print "clearing \$th\n";
+$th = undef;
+
+print "end of main\n";
+
+__END__
+
+end of sub foo
+DESTROY four
+clearing $th
+DESTROY three
+end of main
+DESTROY two
+END
+DESTROY one
+&lt;/c&gt;
+&lt;p&gt;Here, objects of my little class &lt;c&gt;Tracer&lt;/c&gt; simply print a message when they are destroyed, which in Perl happens when the last reference to a variable goes away and it is garbage collected. You can see that:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;$four&lt;/c&gt; is declared in the scope of &lt;c&gt;sub foo&lt;/c&gt; and only used there, so when the call to &lt;c&gt;sub foo&lt;/c&gt; finishes executing, the variable is destroyed,&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;$three&lt;/c&gt; is declared in the scope of &lt;c&gt;sub foo&lt;/c&gt;, but the reference to the object is returned from the &lt;c&gt;sub&lt;/c&gt;, so the outside code now holds a reference to it in &lt;c&gt;$th&lt;/c&gt;, so it is not destroyed until we get rid of that reference,&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;$two&lt;/c&gt; is declared at the scope of the file, and there are no other references to it, so when the scope of the file ends, it is destroyed,&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;$one&lt;/c&gt; is declared at the scope of the file, and since &lt;c&gt;sub foo&lt;/c&gt; uses it, it is kept around until global destruction.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Further reading: [doc://perlsub], in particular "Private Variables via my()", [doc://perlref], and perhaps also [doc://perlmod]. Perhaps the bit of info you were missing was &lt;small&gt;&lt;c&gt;&lt;update2&gt;&lt;/c&gt;&lt;/small&gt; &lt;strike&gt;the keyword "lexical scope"&lt;/strike&gt; that "file scope" is not really special, but just another lexical scope. &lt;small&gt;&lt;c&gt;&lt;/update2&gt;&lt;/c&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Since I glossed over it above, it may be important to note that [doc://my] has both a compile-time and run-time effect. At compile time, it declares that there is a lexical variable of that name so the compiler knows what that variable is when it sees it in the following code, but the initialization doesn't actually happen until runtime. This means that, for example, in &lt;c&gt;sub bar { my %h; ... }&lt;/c&gt;, every call to &lt;c&gt;bar()&lt;/c&gt; will create a new hash &lt;c&gt;%h&lt;/c&gt; (unlike package variables, as I described in [id://1200840|this] recent thread). &lt;small&gt;&lt;i&gt;Also made a few small updates to above wording for clarification.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1201062</root_node>
+<parent_node field_name="parent_node">1201062</parent_node>
+<thread id="1201062">
+<node id="1201066"><node id="1201112"/>
+<node id="1201286"><node id="1201299"><node id="1201358"><node id="1201367"><node id="1201378"><node id="1201416"/>
+</node>
+<node id="1201415"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

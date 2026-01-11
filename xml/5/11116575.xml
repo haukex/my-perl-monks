@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116575" title="Re: Why a regex *really* isn't good enough for HTML, even for &quot;simple&quot; tasks" created="2020-05-08 05:30:26" updated="2020-05-08 05:30:26" _doctext_mode="lenient"><type id="11">note</type>
+<author id="5348">Corion</author>
+<doctext field_name="doctext">&lt;p&gt;[mod://WWW::Mechanize::Chrome] curiously fails the XHTML test, which I've tentatively [https://bugs.chromium.org/p/chromium/issues/detail?id=1080560|reported as a Chromium / DevTools bug]. The HTML rendering and DOM inspector properly parse the HTML, but the DevTools return "Six" as a node, which isn't really true.&lt;/p&gt;
+&lt;p&gt;The code also uncovered a bugs/unexpected behaviour in how the link text gets constructed, so I'll upload a fixed version of WWW::Mechanize::Chrome soon.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+my $file = shift or die;
+print "##### WWW::Mechanize::Chrome on $file #####\n";
+my $html = do { open my $fh, '&lt;', $file or die "$file: $!"; local $/; &lt;$fh&gt; };
+
+use Log::Log4perl ':easy';
+use WWW::Mechanize::Chrome;
+Log::Log4perl-&gt;easy_init($WARN);
+my $mech = WWW::Mechanize::Chrome-&gt;new( headless =&gt; 1);
+$mech-&gt;update_html($html);
+
+my @links = $mech-&gt;links();
+for my $link (grep { $_-&gt;url } @links) {
+	print $link-&gt;url, "\t", $link-&gt;text, "\n";
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update&lt;/b&gt;: Actually, as the page itself contains "confusing" (to Chrome) information, this is somewhat explainable. The HTML is XML, but it later declares a &lt;c&gt;Content-Type&lt;/c&gt; of &lt;c&gt;text/html&lt;/c&gt;. Changing that to &lt;c&gt;Content-Type&lt;/c&gt; &lt;c&gt;text/xhtml&lt;/c&gt; makes (WWW::Mechanize::)Chrome report the correct links.&lt;/p&gt;
+&lt;p&gt;I still wonder if this parser confusion between DevTools and Javascript could be exploited somehow.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11116478</root_node>
+<parent_node field_name="parent_node">11116478</parent_node>
+<thread id="11116478">
+<node id="11116482"><node id="11116572"/>
+</node>
+<node id="11116558"><node id="11116571"/>
+</node>
+<node id="11116573"><node id="11116574"/>
+<node id="11116774"/>
+</node>
+<node id="11116575"><node id="11116590"/>
+</node>
+<node id="11116601"><node id="11116602"><node id="11116603"><node id="11116607"/>
+</node>
+<node id="11116604"/>
+<node id="11116605"><node id="11116606"><node id="11116609"/>
+</node>
+<node id="11116608"/>
+</node>
+</node>
+</node>
+<node id="11116673"><node id="11116674"/>
+</node>
+<node id="11117652"><node id="11117655"/>
+</node>
+<node id="11117665"/>
+<node id="11122195"/>
+</thread></node>

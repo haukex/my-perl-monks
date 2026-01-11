@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111199" title="Re^5: date and time difference" created="2020-01-08 14:20:01" updated="2020-01-08 14:20:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;And followings are code changed by your recommendation.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Not really, you're still using &lt;c&gt;timelocal&lt;/c&gt; instead of &lt;c&gt;timegm_modern&lt;/c&gt; (and the month numbers are still off by one).&lt;/p&gt;
+&lt;p&gt;As I said, for best results, use [mod://DateTime]. For the other solutions, if your local system isn't set to the right time zone, you could try forcing it via &lt;c&gt;local $ENV{TZ}='Asia/Seoul';&lt;/c&gt;, but that's not guaranteed to work and may not be portable.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $date = "Nov 23 22:31:12 2019 GMT";
+print "Input date: $date\n";
+
+{
+	use Time::Local qw/timegm_modern/;
+	my %MONTH_NAMES = ( Jan=&gt;0, Feb=&gt;1, Mar=&gt;2, Apr=&gt;3, May=&gt;4,
+		Jun=&gt;5, Jul=&gt;6, Aug=&gt;7, Sep=&gt;8, Oct=&gt;9, Nov=&gt;10, Dec=&gt;11 );
+	my ($mon,$mday,$hour,$minute,$sec,$year) = split /\s+|:/, $date;
+	my $tm = timegm_modern($sec,$minute,$hour,$mday,
+		$MONTH_NAMES{$mon},$year);
+	print "timegm+gmtime: ", gmtime($tm)." GMT\n";
+	print "timegm+localtime: ", localtime($tm)." Local\n";
+}
+# - OR -
+{
+	use Time::Piece;
+	my $tm = Time::Piece-&gt;strptime($date, '%b %d %H:%M:%S %Y %Z');
+	print "Time::Piece: ", $tm-&gt;strftime, "\n";
+	print "Time::Piece+localtime: ", localtime($tm-&gt;epoch)." Local\n";
+}
+# - OR -
+{
+	use DateTime;
+	use DateTime::Format::Strptime;
+	my $strp = DateTime::Format::Strptime-&gt;new(
+		pattern =&gt; '%b %d %H:%M:%S %Y %Z', on_error =&gt; 'croak');
+	my $dt = $strp-&gt;parse_datetime($date);
+	print "DateTime: ",$dt-&gt;strftime("%Y-%m-%dT%H:%M:%S%z (%Z)"),"\n";
+	$dt-&gt;set_time_zone('Asia/Seoul');
+	print "DateTime: ",$dt-&gt;strftime("%Y-%m-%dT%H:%M:%S%z (%Z)"),"\n";
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11111180</root_node>
+<parent_node field_name="parent_node">11111195</parent_node>
+<thread id="11111180">
+<node id="11111181"><node id="11111186"><node id="11111187"><node id="11111195"><node id="11111199"><node id="11111210"><node id="11111232"/>
+<node id="11111266"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11111192"/>
+</node>
+</node>
+<node id="11111185"/>
+<node id="11111219"><node id="11111368"/>
+</node>
+</thread></node>

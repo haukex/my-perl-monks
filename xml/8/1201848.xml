@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201848" title="porting C code to Perl" created="2017-10-22 15:27:24" updated="2017-10-22 15:27:24" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="174111">Discipulus</author>
+<doctext field_name="doctext">Hello nuns and monks,&lt;P&gt;
+
+if you know me or not, I'm completely unaware of other programming languages; I just know a little Perl but I found myself in the rare situation where I need to translate a little code from C to Perl.&lt;P&gt;
+
+Infact I rapidly (*) understood that is a task to be done by hand, and I've been told many times that these two languages share a lot in their syntax.&lt;P&gt;
+
+My attempt is below and does not produces the output I expected (**).&lt;P&gt;
+
+I looked a bit to some description of the C syntax to try to understand &lt;i&gt;if&lt;/i&gt; there were some difference between the C operator and the correspective Perl's one. For example for &lt;C&gt;++&lt;/C&gt; autoincrement or arithmentics ones. I found nothing relevant: many operators seems to act the same. Doubts remain about the C array syntax ( &lt;C&gt;int A[len]&lt;/C&gt; ?? that I read as the elelment &lt;C&gt;len&lt;/C&gt; of the array &lt;C&gt;A&lt;/C&gt; is an &lt;C&gt;int&lt;/C&gt; but..).&lt;P&gt;
+
+Here below my attempt: can someone be so kind to point me where I lost in the translation?
+After a plain translation, when I possibly end with some working Perl code I'll arrange it into a more perlish version.&lt;P&gt;
+
+
+&lt;c&gt;
+use strict; use warnings;
+# #include &lt;math.h&gt;
+# #include &lt;stdio.h&gt;
+
+# #define N 100
+my $n=100;
+
+# int len = floor(10 * N/3) + 1;
+my $len = 1 + int (10 * $n / 3);
+
+# int A[len];
+my @a;
+$#a=$len-1; #? -1 ????
+
+# for(int i = 0; i &lt; len; ++i) {A[i] = 2;}
+for (my $i = 0; $i &lt; $len; $i++){ $a[$i]= 2; }
+# int nines    = 0;
+my $nines = 0;
+
+# int predigit = 0;
+my $predigit = 0;
+
+# for(int j = 1; j &lt; N + 1; ++j) {
+for (my $j = 1; $j &lt; $n + 1; ++$j){
+    # int q = 0;
+    my $q = 0;
+    # for(int i = len; i &gt; 0; --i) {
+    for(my $i = $len; $i &gt; 0; $i--){
+        # int x  = 10 * A[i-1] + q*i;
+        my $x = 10 * $a[$i-1] + $q * $i;
+        # A[i-1] = x % (2*i - 1);
+        $a[$i-1] = $x % (2 * $i - 1);
+        # q = x / (2*i - 1);     }
+        $q = $x / (2 * $i - 1);
+    }
+    # A[0] = q%10;
+    $a[0]=$q%10;
+    # q  = q/10;
+    $q=$q/10;
+    # if (9 == q) {   ++nines;}
+    if (9 == $q){ ++$nines;   }
+    # else if (10 == q) {
+    elsif(10 == $q){
+          # printf("%d", predigit + 1);
+          printf("%d", $predigit + 1);
+          # for (int k = 0; k &lt; nines; ++k) {  printf("%d", 0); }
+          for (my $k = 0; $k &lt; $nines; $k++){ printf("%d", 0);}
+          #  predigit, nines = 0;
+          $predigit = $nines = 0;
+    # }
+    }
+    # else {
+    else{
+         # printf("%d", predigit);
+         printf("%d", $predigit);
+         #  predigit = q;
+         $predigit = $q;
+         # if (0 != nines) {
+         if(0 != $nines){
+              # for (int k = 0; k &lt; nines; ++k) {
+              for (my $k = 0; $k &lt; $nines; $k++) {
+                  # printf("%d", 9);
+                  printf("%d", 9);
+              # }
+              }
+              # nines = 0;
+              $nines = 0;
+        }
+    }
+}
+# printf("%d", predigit);
+printf("%d", $predigit);
+
+&lt;/c&gt;&lt;P&gt;
+
+(*) Not so rapid: I found a thread here at PM with a link to a C to perl translator, but I missed the &lt;C&gt;&lt;ironic&gt;&lt;/C&gt; tags and my hands called rapidly &lt;C&gt;gcc -P -E file.c &gt; file.pl&lt;/C&gt; using the compiler I have shipped within strawberry perl. Was not useful and the next line &lt;C&gt;gcc -Larry -Wall file.c &gt; file.pl&lt;/C&gt; revealed me it was an [https://perl.plover.com/IAQ/IAQlist.html#i%27ve_got_a_c_program_i_want_to_translate_to_perl...|humoristic faq] or well a iaq..&lt;P&gt;
+
+(**)
+Well i wanted to verify that the C code printed what I expected and I tried blindly using &lt;C&gt;gcc&lt;/C&gt; to compile it (??) and using [METAMOD://Inline::C] but I had no success to not even install it on my strawberry perl.&lt;P&gt;
+
+If you need my C source you can, obviously &lt;c&gt;perl -lne 'print if s/\s?#\s//' my_post.pl&lt;/c&gt;&lt;P&gt;
+
+Thanks&lt;P&gt;
+
+L*&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-174111"&gt;
+There are no rules, there are no thumbs..&lt;BR&gt;
+Reinvent the wheel, then learn The Wheel; may be one day you reinvent one of THE WHEELS.
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.1416} --&gt;</doctext>
+<thread id="1201848">
+<node id="1201854"><node id="1201908"><node id="1201919"><node id="1201928"/>
+</node>
+<node id="1201925"><node id="1201948"><node id="1201979"/>
+</node>
+</node>
+<node id="1201942"/>
+<node id="1201952"/>
+</node>
+</node>
+<node id="1201876"><node id="1201906"><node id="1202311"><node id="1202793"/>
+<node id="1202895"><node id="1202913"/>
+</node>
+<node id="1207735"/>
+</node>
+</node>
+</node>
+<node id="1201909"><node id="1201939"><node id="1201960"><node id="1201963"><node id="1201964"><node id="1201965"/>
+<node id="1201977"/>
+<node id="1202036"/>
+</node>
+<node id="1202039"/>
+</node>
+<node id="1201978"><node id="1201999"><node id="1202004"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201910"><node id="1201927"><node id="1201929"/>
+<node id="1201931"/>
+</node>
+</node>
+<node id="1201987"><node id="1201998"><node id="1202008"/>
+</node>
+<node id="1202002"><node id="1202042"><node id="1202055"/>
+<node id="1202921"/>
+</node>
+<node id="1202295"/>
+</node>
+</node>
+</thread></node>

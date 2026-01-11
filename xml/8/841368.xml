@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="841368" title="Range overlap (with a lot of ranges)" created="2010-05-24 07:22:27" updated="2010-05-24 07:22:27" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="656648">BioLion</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Monks,&lt;/p&gt;
+&lt;p&gt;This is a bioinformatics problem, but I think it is generally applicable, so I hope someone has some input:&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;The problem:&lt;/b&gt; Given a test range X, and N previously defined ranges, define which range (if any) X overlaps with. &lt;/p&gt;
+&lt;p&gt;Range overlap has been done to death already ( [id://770272], [http://stackoverflow.com/questions/303591/a-range-intersection-algorithm-better-than-on|Stack overflow], [cpan://Number::Range], etc... ) but I hoped someone would have some input on doing it on a large scale:&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;The Issue:&lt;/b&gt; 
+My main problem is that I have a lot of pre-defined ranges (~10^6) and a lot of tests to carry out (&gt;10^7), so speed is desirable...&lt;br/&gt;
+Because I have so many ranges to test against, storing them in memory requires keeping things [cpan://Lite]...
+&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Potential Solutions:&lt;/b&gt;
+The ranges can all be sorted, and are fairly evenly distributed, so I could do some sort of 'guess then home in' algorithm.&lt;br/&gt;
+I could 'stringify' the ranges i.e.
+&lt;c&gt;# range A : 1-3
+# range B : 5-6
+my $range_string = '-AAA-BB---';
+&lt;/c&gt;
+Then simply lookup which Range fits my test. Alternately a lookup table / DB approach could be used to the same ends.&lt;br/&gt;
+Alternate solutions welcomed...
+&lt;/p&gt;
+
+&lt;p&gt;So my question is whether anyone has come up against a similar problem, or tested any of these solutions? I think I will go with the 'lookup' method, but I wanted to check if anyone had any input. Obviously I would like to do things properly and benchmark proper comparisons, but i am a bit pushed for time.&lt;/p&gt;
+&lt;p&gt;Thanks in advance,&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;Update for those interested:&lt;/b&gt;&lt;/p&gt;
+&lt;readmore&gt;&lt;p&gt;Turns out the 'giant array' idea is *very* memory hungry (please don't point out that this was obvious, we all live in hope...). So I am left with storing ordered ranges and doing a [http://en.wikipedia.org/wiki/Binary_search_algorithm|binary search] (Thanks [Marshall]). I wanted to check on the various claims for memory usage made below, so here is what I came up with:
+&lt;c&gt;
+use warnings;
+use strict;
+
+use Devel::Size qw/total_size/;
+use Benchmark;
+
+++$|;
+print "&gt;&gt;Strings:\n";
+my $t0 = Benchmark-&gt;new;
+for (10e3, 10e4, 10e5,){
+	
+	my %r; 
+	my($i,$l,$g) = (0) x 3;
+	for( 1 .. $_ ) {
+    	$r{ int( $i / 10e3 ) } .= 
+     	   qq[ $i -@{[ $i + ( $l = 1500 + int( -500 + rand 1000 ) ) ]} ];
+    	$i+=$l + 25 + int( rand 25 );
+	}
+	print "$_ : " . (total_size(\%r) ) . "\n";
+}
+my $t1 = Benchmark-&gt;new;
+my $td = timediff($t1, $t0);
+print "String took:",timestr($td),"\n";
+
+print "&gt;&gt;AoA:\n";
+$t0 = Benchmark-&gt;new;
+for (10e3, 10e4, 10e5,){
+	
+	my %r; 
+	my($i,$l,$g) = (0) x 3;
+	for( 1 .. $_ ) {
+    	push @{ $r{ int( $i / 10e3 ) } },
+     	   [ $i, @{[ $i + ( $l = 1500 + int( -500 + rand 1000 ) ) ]} ];
+    	$i+=$l + 25 + int( rand 25 );
+	}
+	print "$_ : " . (total_size(\%r) ) . "\n";
+}
+$t1 = Benchmark-&gt;new;
+$td = timediff($t1, $t0);
+print "Array took:",timestr($td),"\n";
+
+print system('perl -v');
+&lt;/c&gt;
+Outputting :
+&lt;c&gt;
+&gt;&gt;Strings:
+10000 : 274788
+100000 : 2949952
+1000000 : 32010214
+String took: 5 wallclock secs ( 5.55 usr +  0.06 sys =  5.61 CPU)
+&gt;&gt;AoA:
+10000 : 1597360
+100000 : 15972002
+1000000 : 160299622
+Array took:23 wallclock secs (21.97 usr +  0.30 sys = 22.27 CPU)
+
+This is perl, v5.8.8 built for MSWin32-x86-multi-thread
+(with 18 registered patches, see perl -V for more detail)
+
+Binary build 822 [280952] provided by ActiveState http://www.ActiveState.com
+Built Jul 31 2007 19:34:48
+Haha. I am fully aware how old this is, but you try convincing my work that..&lt;/c&gt;
+Clearly the string method is a lot faster to pre-compute and more memory efficient, and will hopefully make up for the taime taken to subsequently parse the string. It also provides a simple 'jumping' mechanism for the binary search. SO big thanks to [BrowserUk]. THe method is also nicely 'tunable' in that you can make the hash bigger (use more memory, but reduce the lookup window) or vice versa depending on your needs.&lt;/p&gt;&lt;p&gt;I will post more once i also test the lookup method, and also [salva]'s suggestions. Thanks all round - I may actually get this done today.
+&lt;/p&gt;&lt;/readmore&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-656648"&gt;
+&lt;i&gt;Just a something something...&lt;/i&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="841368">
+<node id="841369"><node id="841372"/>
+</node>
+<node id="841379"/>
+<node id="841380"/>
+<node id="841383"><node id="841384"><node id="841385"/>
+</node>
+<node id="841386"><node id="841388"/>
+<node id="841398"><node id="841418"><node id="841426"/>
+</node>
+</node>
+</node>
+<node id="841401"><node id="841404"/>
+</node>
+</node>
+<node id="841393"><node id="841413"/>
+</node>
+<node id="841468"/>
+<node id="841545"/>
+</thread></node>

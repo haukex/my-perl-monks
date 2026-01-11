@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1216924" title="Re^4: GLOB function" created="2018-06-19 05:09:18" updated="2018-06-19 05:09:18" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1216852">rahu_6697</author>
+<doctext field_name="doctext">&lt;p&gt;I am attaching you the full code that I am executing. Here for every input files I am parsing lines starting with /     RULECHECK/ .In each line there are 8 set of entries separated by spaces but i have to insert only 2 and 8th entry in output.txt &lt;/p&gt;
+
+
+&lt;code&gt;
+#!/usr/local/bin/perl -w
+open (OUT, "&gt;output.txt");
+
+use warnings;
+use strict;
+#use Data::Dump; # Debug
+use File::Basename qw/fileparse/;
+use File::stat;
+
+my %filelist;
+for my $file (glob '/user/*/ws/*/BLK_*/*.txt') {
+    my $bn = fileparse($file);
+    my $mtime = stat($file)-&gt;mtime;
+    #dd $file, $bn, $mtime; # Debug
+    $filelist{$bn} = [$file,$mtime]
+        unless $filelist{$bn} &amp;&amp; $filelist{$bn}[1]&gt;$mtime;
+}
+#dd \%filelist; # Debug
+my @filelist = sort map {$_-&gt;[0]} values %filelist;
+#dd \@filelist; # Debug
+
+for my $file (@filelist) {
+       my $fname = substr($file, rindex($file,"/")+1, length($file)-rindex($file,"/")-1); #for printing file name in my output
+       printf OUT $fname;
+    
+       open (IN, "&lt;",$file);
+       while ($line = &lt;IN&gt;){
+             chomp($line);
+       if ($line =~/    RULECHECK/){
+            @temp = split (/\s+/,$line);
+            $start = $temp[2];
+            $count = $temp[8];
+            if($count &gt; 1000){
+                 printf OUT "%-60s %-10s\n",$start,$count;
+	    }
+       }
+       }
+}
+system ("gedit output.txt");
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">1216854</root_node>
+<parent_node field_name="parent_node">1216918</parent_node>
+<thread id="1216854">
+<node id="1216858"/>
+<node id="1216875"><node id="1216912"><node id="1216918"><node id="1216924"><node id="1216958"/>
+</node>
+<node id="1216948"><node id="1216957"/>
+</node>
+</node>
+<node id="1216925"><node id="1216926"><node id="1216966"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1216952"/>
+</thread></node>

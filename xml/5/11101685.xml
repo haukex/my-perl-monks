@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101685" title="Re^2: What is the most efficient way to split a long string (see body for details/constraints)?" created="2019-06-21 14:55:30" updated="2019-06-21 14:55:30" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11101567">mikegold10</author>
+<doctext field_name="doctext">&lt;p&gt;I wonder why the file handle approach (fh) is slower here, when it was faster in this test:&lt;/p&gt;
+
+[id://1194601]
+
+&lt;p&gt;Benchmark from post linked above:&lt;/p&gt;
+
+&lt;H4&gt;Test Code&lt;/H4&gt;
+&lt;code&gt;
+    filehandle =&gt; sub {
+        my @lines;
+        open my $str_fh, "&lt;", \$str or die "cannot open fh $!";
+        while (&lt;$str_fh&gt;) {
+            chomp;
+            s/o/i/g;
+            push @lines, $_;            
+        }
+    },
+&lt;/code&gt;
+
+&lt;H4&gt;Results (Perl 5.26, {Windows,Linux,MacOS,???}?)&lt;/H4&gt;
+
+&lt;code&gt;
+perlbrew exec bench_script.pl
+
+# Other versions of Perl, omitted for brevity - see original link
+#   for the "gories..."
+...
+
+perl-5.26.0
+==========
+             Rate      index      regex      split filehandle
+index      3.00/s         --       -25%       -49%       -53%
+regex      3.98/s        33%         --       -33%       -37%
+split      5.91/s        97%        49%         --        -6%
+filehandle 6.31/s       111%        59%         7%         --
+&lt;/code&gt;
+
+&lt;H4&gt;Test using Perl 5.30 / 10 secs per test&lt;/H4&gt;
+&lt;p&gt;Here is what I get using Perl 5.30 with 10 seconds per iteration in order to facilitate more accuracy (Linux Kubuntu-VM 5.1.10-050110-generic #201906151034 SMP Sat Jun 15 10:36:59 UTC 2019 x86_64 GNU/Linux):&lt;/p&gt;
+
+&lt;p&gt;Note #1: Keep in mind that this was run on a Linux VM on a Windows 10 host&lt;/p&gt;
+&lt;p&gt;Note #2: As you can see from the rates, it is a really Really REALLY fast host, where "really fast" implies "World Record Holder" of sorts fast&lt;/p&gt;
+
+&lt;code&gt;
+perl-5.30.0
+===========
+             Rate      regex      index      split filehandle
+regex      9.98/s         --       -11%       -32%       -33%
+index      11.2/s        12%         --       -23%       -25%
+split      14.6/s        46%        30%         --        -2%
+filehandle 14.9/s        49%        33%         2%         --
+&lt;/code&gt;
+&lt;p&gt;Note #3: Decided to run it on the Windows 10 host itself, but unfortunately I only have Perl 5.28.1 installed, so it's not an apple to apple comparison with above:&lt;/p&gt;
+&lt;code&gt;
+perl-5.28.1 (Windows 10 Pro)
+============================
+             Rate      regex      index filehandle      split
+regex      8.09/s         --       -14%       -17%       -33%
+index      9.46/s        17%         --        -3%       -22%
+filehandle 9.73/s        20%         3%         --       -20%
+split      12.2/s        50%        29%        25%         --
+&lt;/code&gt;
+&lt;p&gt;Note #4: Surprisingly, the Linux version in a VM ran faster than the native Windows version. I attribute this to either a difference between the Perl versions or a bad build on the Windows side&lt;/p&gt;
+&lt;p&gt;Note #5: Found the culprit on why it's slower on the Windows side (gcc was used instead of Visual C++):&lt;/p&gt;
+
+&lt;code&gt;
+perl -V
+=======
+
+==&gt; cc='gcc'
+    ccflags =' -s -O2 -DWIN32 -DWIN64 -DCONSERVATIVE -D__USE_MINGW_ANSI_STDIO -DPERL_TEXTMODE_SCRIPTS -DPERL_IMPLICIT_CONTEXT -DPERL_IMPLICIT_SYS -DUSE_PERLIO -fwrapv -fno-strict-aliasing -mms-bitfields'                                                                    
+    optimize='-s -O2'
+    cppflags='-DWIN32'
+    ccversion=''
+    gccversion='7.1.0'
+...
+  Built under MSWin32
+  Compiled at Dec  2 2018 14:30:03
+  @INC:
+    C:/Strawberry/perl/site/lib
+    C:/Strawberry/perl/vendor/lib
+    C:/Strawberry/perl/lib
+&lt;/code&gt;
+</doctext>
+<root_node field_name="root_node">11101571</root_node>
+<parent_node field_name="parent_node">11101588</parent_node>
+<thread id="11101571">
+<node id="11101577"/>
+<node id="11101578"><node id="11101582"/>
+</node>
+<node id="11101579"><node id="11101581"/>
+</node>
+<node id="11101580"/>
+<node id="11101586"><node id="11101680"/>
+</node>
+<node id="11101588"><node id="11101679"><node id="11101683"><node id="11101684"/>
+</node>
+</node>
+<node id="11101685"><node id="11101698"/>
+</node>
+</node>
+<node id="11101596"/>
+<node id="11101604"/>
+<node id="11101605"><node id="11101682"/>
+</node>
+</thread></node>

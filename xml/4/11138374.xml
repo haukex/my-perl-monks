@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11138374" title="(SOLVED) parsing problems with prototype blocks (precedence)" created="2021-11-03 08:48:06" updated="2021-11-03 08:48:06" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">Hi&lt;P&gt;
+
+I was expecting that a prototype &lt;C&gt;sub foo(&amp;)&lt;/C&gt; will parse &lt;C&gt;foo {$x}&lt;/C&gt; with precedence &lt;C&gt;foo(sub {$x})&lt;/C&gt; but ...&lt;P&gt;
+
+ 
+&lt;c&gt;
+use strict;
+use warnings;
+
+sub foo (&amp;){ }
+sub bar {}
+
+
+my ($Q,$t) = (10,2);
+
+bar ($Q) + bar ($t);
+
+foo {$Q} + foo {$t}; # line 12
+
+&lt;/c&gt;&lt;P&gt;
+
+&lt;c&gt;
+C:/Strawberry/perl/bin\perl.exe -w d:/tmp/pm/sym.pl 
+Too many arguments for main::foo at d:/tmp/pm/sym.pl line 12, near "};"
+Execution of d:/tmp/pm/sym.pl aborted due to compilation errors.
+&lt;/c&gt;&lt;P&gt;
+
+
+what is happening here? &lt;P&gt;
+
+Is that a bug or a feature?&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;!--nowiki--&gt;&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;/sub&gt; 
+&lt;!--nowiki--&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;P&gt;
+
+&lt;small&gt;update: s/d/foo/&lt;/small&gt;&lt;P&gt;
+
+&lt;H5&gt; update&lt;/H5&gt;&lt;P&gt;
+
+that's unfortunate, prototypes don't seem to influence precedence at all ... :/&lt;P&gt;
+
+&lt;c&gt;
+use strict;
+use warnings;
+
+sub bla($) {shift}
+my ($Q,$t,$res) = (10,2);
+
+sub tst {
+    print $res= bla $Q / bla $t;
+}
+
+use B::Deparse;
+
+print B::Deparse-&gt;new('-p')-&gt;coderef2text(\&amp;tst);
+&lt;/c&gt;&lt;P&gt;
+
+&lt;c&gt;
+C:/Strawberry/perl/bin\perl.exe -w d:/tmp/pm/sym.pl 
+{
+    use warnings;
+    use strict;
+    print(($res = bla(($Q / bla($t)))));
+}
+&lt;/c&gt;&lt;!-- Wiki2Monks {"version":1.161} --&gt;</doctext>
+<thread id="11138374">
+<node id="11138377"><node id="11138393"/>
+</node>
+<node id="11138389"><node id="11138391"><node id="11138434"/>
+</node>
+</node>
+</thread></node>

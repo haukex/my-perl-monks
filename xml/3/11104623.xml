@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11104623" title="Re: The error says the value is uninitialized, but it works anyway" created="2019-08-17 19:22:13" updated="2019-08-17 19:22:13" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1149436">jcb</author>
+<doctext field_name="doctext">&lt;p&gt;Other monks have explained where the &lt;c&gt;undef&lt;/c&gt; values are coming from, but have not explained why your program still works despite the warnings.  Since you were honest about this being a homework assignment, I will take some time to explain.&lt;/p&gt;
+
+&lt;p&gt;Your program works anyway because neither of the elements in &lt;c&gt;@drop&lt;/c&gt; are &lt;c&gt;undef&lt;/c&gt;, and while &lt;c&gt;undef eq undef&lt;/c&gt; (with two warnings) in Perl, &lt;c&gt;undef ne $string&lt;/c&gt; if &lt;c&gt;$string&lt;/c&gt; is a &lt;del&gt;defined&lt;/del&gt; &lt;ins&gt;true&lt;/ins&gt; value.&lt;/p&gt;
+
+&lt;p&gt;Here is the contents of the &lt;c&gt;@colors&lt;/c&gt; array on each iteration of the loop, both before and after an element is possibly removed.  The element that &lt;c&gt;$num&lt;/c&gt; refers to is &lt;u&gt;underlined&lt;/u&gt;.&lt;/p&gt;
+&lt;pre&gt;
+0: before: &lt;u&gt;red&lt;/u&gt; green blue yellow pink purple brown
+0:  after: &lt;u&gt;red&lt;/u&gt; green blue yellow pink purple brown
+--
+1: before: red &lt;u&gt;green&lt;/u&gt; blue yellow pink purple brown
+1:  after: red &lt;u&gt;green&lt;/u&gt; blue yellow pink purple brown
+--
+2: before: red green &lt;u&gt;blue&lt;/u&gt; yellow pink purple brown
+2:  after: red green &lt;u&gt;blue&lt;/u&gt; yellow pink purple brown
+--
+3: before: red green blue &lt;u&gt;yellow&lt;/u&gt; pink purple brown
+3:  after: red green blue &lt;u&gt;yellow&lt;/u&gt; pink purple brown
+--
+4: before: red green blue yellow &lt;u&gt;pink&lt;/u&gt; purple brown
+4:  after: red green blue yellow &lt;u&gt;purple&lt;/u&gt; brown
+--
+5: before: red green blue yellow purple &lt;u&gt;brown&lt;/u&gt;
+5:  after: red green blue yellow purple
+--
+6: before: red green blue yellow purple
+6:  after: red green blue yellow purple
+--
+&lt;/pre&gt;
+
+&lt;p&gt;I modified the code slightly to print that.  While I cannot show you exactly what I used without giving away an answer that you should find, this code shows what the "before" and "after" parts mean:&lt;/p&gt;
+
+&lt;code&gt;
+my @colors = qw(red green blue yellow pink purple brown);
+my $count = @colors;
+my @drop = qw(pink brown);
+my $num = 0;
+foreach $num (1..$count){
+	$num--;
+	print $num, ": before: @colors\n";
+	if ($colors[$num] eq $drop[0] or $colors[$num] eq $drop[1]){
+		splice (@colors, $num, 1);
+	}
+	print $num, ":  after: @colors\n--\n";
+}
+print "@colors \n";
+&lt;/code&gt;
+
+&lt;p&gt;This technique of inserting additional output to show a program's intermediate states is commonly known as "printf debugging", after the common output function in the C programming language.  Perl also has [doc://printf], but [doc://print] is far more commonly used.&lt;/p&gt;
+
+&lt;p&gt;The bug in your code that [haukex] mentioned should be easy to see now, and I will give a few hints towards the "two lines of code" that [haukex] mentioned:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;How do you construct a hash from a list in Perl?&lt;/li&gt;
+&lt;li&gt;How can you use [doc://map] to construct such a list?&lt;/li&gt;
+&lt;li&gt;How do you test for the existence of a hash key?&lt;/li&gt;
+&lt;li&gt;What does [doc://grep] do in Perl?&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;And another issue:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li value="5"&gt;How can you avoid the wasted seventh iteration of the loop?  &lt;small&gt;(Hint:  What are the loop control operators in Perl?)&lt;/small&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Good luck on your adventures in learning Perl.&lt;/p&gt;
+
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Edited 2019-08-18 by [jcb]:  Fix logical error pointed out by [haukex]:  &lt;c&gt;undef&lt;/c&gt; is &lt;b&gt;not&lt;/b&gt; special under &lt;c&gt;eq&lt;/c&gt; and stringifies to an empty string.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11104608</root_node>
+<parent_node field_name="parent_node">11104608</parent_node>
+<thread id="11104608">
+<node id="11104609"><node id="11104610"><node id="11104611"/>
+</node>
+</node>
+<node id="11104616"><node id="11104619"/>
+</node>
+<node id="11104623"><node id="11104624"><node id="11104694"/>
+</node>
+<node id="11104625"><node id="11104626"/>
+<node id="11104641"><node id="11104645"><node id="11104651"><node id="11104660"><node id="11104663"/>
+</node>
+</node>
+<node id="11104658"><node id="11104664"/>
+</node>
+</node>
+</node>
+<node id="11104643"><node id="11104646"><node id="11104648"><node id="11104650"/>
+</node>
+</node>
+</node>
+<node id="11104644"/>
+<node id="11104659"><node id="11104661"/>
+</node>
+<node id="11104668"/>
+<node id="11104708"><node id="11104717"><node id="11104757"/>
+</node>
+</node>
+<node id="11104852"><node id="11104858"><node id="11104868"><node id="11104869"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11104642"><node id="11104665"/>
+</node>
+</node>
+<node id="11104629"><node id="11104633"><node id="11104653"/>
+</node>
+</node>
+<node id="11104652"><node id="11104670"><node id="11104679"/>
+<node id="11104695"/>
+</node>
+</node>
+<node id="11104683"><node id="11104685"/>
+<node id="11104693"/>
+</node>
+<node id="11104696"/>
+<node id="11104698"/>
+<node id="11104794"><node id="11104813"/>
+</node>
+</thread></node>

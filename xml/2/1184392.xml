@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1184392" title="How to write the following code with comamnd line arguments using perl?" created="2017-03-13 07:24:39" updated="2017-03-13 07:24:39" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1182708">finddata</author>
+<doctext field_name="doctext">&lt;code&gt;
+Bareword found where operator expected at generate2.pl line 30, near "s/\.config$//r"
+Global symbol "$base_name" requires explicit package name at generate2.pl line 30.
+syntax error at generate2.pl line 30, near "s/\.config$//r "
+Global symbol "$base_name" requires explicit package name at generate2.pl line 31.
+Global symbol "$new_name" requires explicit package name at generate2.pl line 32.
+Global symbol "$base_name" requires explicit package name at generate2.pl line 32.
+Global symbol "$new_name" requires explicit package name at generate2.pl line 33.
+Global symbol "$new_name" requires explicit package name at generate2.pl line 34.
+syntax error at generate2.pl line 36, near "}"
+Execution of generate2.pl aborted due to compilation errors.
+&lt;/code&gt;
+
+&lt;code&gt;
+#! /usr/bin/env perl
+
+#use feature qw(say);
+use strict;
+use warnings;
+
+use Cwd qw(getcwd);
+use File::Copy ();
+
+my $name_map = read_map( 'sample.txt' );
+my ($regex) = map {qr /\b(?:$_)\b/ } join '|', map {quotemeta} keys %$name_map;
+my $top_dir = 'dir';
+
+rename_dirs( $top_dir, $name_map, $regex );
+
+sub rename_dirs {
+    my ( $top_dir, $name_map, $regex ) = @_;
+
+    opendir (my $dh, $top_dir) or die "Can't open $top_dir: $!";
+    my $save_dir = getcwd();
+    chdir $top_dir;
+    while (my $name = readdir $dh) {
+        next if ($name eq '.') or ($name eq '..'); 
+        if ( ( -d $name ) &amp;&amp; ( exists $name_map-&gt;{$name} ) ) {
+            my $new_name = $name_map-&gt;{$name};
+            rename_file_or_dir( $name, $new_name );
+            $name = $new_name;
+        }
+        elsif ( -f $name ) {
+            if ( my $base_name = $name =~ s/\.config$//r ) {
+                if ( $name_map-&gt;{$base_name} ) {
+                    my $new_name = $name_map-&gt;{$base_name} . '.config';
+                    rename_file_or_dir( $name, $new_name );
+                    change_file( $new_name, $name_map, $regex );
+                }
+            }
+        }
+        rename_dirs( $name, $name_map, $regex ) if -d $name;
+    }
+    chdir $save_dir;
+}
+
+sub change_file {
+    my ( $fn, $map, $regex ) = @_;
+
+    open ( my $fh, '&lt;', $fn ) or die "Could not open file '$fn': $!";
+    my $str = do { local $/; &lt;$fh&gt; };
+    close $fh;
+    my $num_replacements = $str =~ s/($regex)/$map-&gt;{$1}/ge;
+    if ( $num_replacements ) {
+        write_new_file( $fn, \$str );
+    }
+}
+
+sub write_new_file {
+    my ( $fn, $str ) = @_;
+
+    open ( my $fh, '&gt;', $fn ) or die "Could not open file '$fn': $!";
+    print $fh $$str;
+    close $fh;
+}
+
+sub rename_file_or_dir {
+    my ( $name, $new_name ) = @_;
+    File::Copy::move( $name, $new_name )
+        or die "Could not rename '$name' as '$new_name': $!";
+}
+
+sub read_map {
+    my ( $fn ) = @_;
+
+    my %name_map;
+
+    open( my $fh, '&lt;', $fn ) or die "Could not open file '$fn': $!";
+    while( my $line = &lt;$fh&gt; ) {
+        chomp $line;
+        my @fields = split /:/, $line;
+        if ( @fields == 3 ) {
+            $name_map{$fields[2]} = $fields[1];
+        }
+    }
+    close $fh;
+    return \%name_map;
+}
+&lt;/code&gt;</doctext>
+<thread id="1184392">
+<node id="1184393"><node id="1184400"><node id="1184421"><node id="1184465"/>
+</node>
+</node>
+</node>
+<node id="1184394"/>
+</thread></node>

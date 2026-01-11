@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11131500" title="Re: CGI HTML Form Data" created="2021-04-20 01:30:06" updated="2021-04-20 01:30:06" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Do you mean something like this?&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+use Mojolicious::Lite -signatures;
+use File::Replace qw/replace3/;
+use Mojo::JSON qw/encode_json decode_json/;
+use Mojo::File;
+
+my $DATA_FILE = Mojo::File-&gt;new('/path/to/data.json');
+
+helper defaults =&gt; sub ($c, $param) {
+	return undef unless -e $DATA_FILE;
+	my $defaults = decode_json( $DATA_FILE-&gt;slurp );
+	return $defaults-&gt;{$param};
+};
+
+get '/' =&gt; sub ($c) { $c-&gt;render(template =&gt; 'index') } =&gt; 'index';
+
+post '/' =&gt; sub ($c) {
+	my (undef,$outfh,$repl) = replace3($DATA_FILE);
+	print $outfh encode_json {
+		name =&gt; $c-&gt;param('name'),
+	};
+	$repl-&gt;finish;
+	$c-&gt;render(template =&gt; 'index', message =&gt; "Form submitted!");
+} =&gt; 'submit';
+
+app-&gt;start;
+
+__DATA__
+
+@@ index.html.ep
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;Hello, World!&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+% if ( stash 'message' ) {
+	&lt;p&gt;&lt;%= stash 'message' %&gt;&lt;/p&gt;
+% }
+%= form_for submit =&gt; ( method=&gt;'post' ) =&gt; begin
+	&lt;div&gt;
+		%= label_for name =&gt; 'Your Name'
+		%= text_field name =&gt; defaults 'name'
+	&lt;/div&gt;
+	&lt;div&gt;
+		%= submit_button 'Submit'
+	&lt;/div&gt;
+%= end
+&lt;p&gt;
+	%= link_to Reset =&gt; 'index'
+&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/c&gt;
+&lt;p&gt;I'm using my module [mod://File::Replace] to prevent* problems when there are multiple readers, though if there are multiple writers you'll need to use some kind of file locking or similar method to ensure concurrent writes don't step on each other. Or, use a database!&lt;/p&gt;
+&lt;p&gt;In the past, the same could be achieved with [mod://CGI] with its [mod://CGI::HTML::Functions]. However, since those aren't a best practice anymore, I would &lt;i&gt;not&lt;/i&gt; recommend it!&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+use CGI qw/:standard/;
+use File::Replace qw/replace3/;
+use JSON::PP qw/encode_json decode_json/;
+
+# NOT RECOMMENDED, use an alternative like Mojo instead!
+
+my $DATA_FILE = '/path/to/data.json';
+
+my $defaults = decode_json( do { open my $fh, '&lt;', $DATA_FILE
+	or die "$DATA_FILE: $!"; local $/; &lt;$fh&gt; } );
+
+print header;
+
+print start_html('Hello, World!');
+
+if ( param('Submit') ) {
+	my (undef,$outfh,$repl) = replace3($DATA_FILE);
+	print $outfh encode_json {
+		name =&gt; scalar param('name'),
+	};
+	$repl-&gt;finish;
+	print p( "Form submitted!" );
+}
+
+print start_form;
+print div( label({-for=&gt;'name'}, "Your Name"),
+	textfield('name', $defaults-&gt;{name}) );
+print div( submit('Submit') );
+print end_form;
+
+print p( a({-href=&gt;url(-absolute=&gt;1)}, 'Reset') );
+
+print end_html;
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;&lt;i&gt;Update&lt;/i&gt; just in case I made it sound too much like these are the only options: of course there are others, see e.g. [id://1182902|here], [id://1177812|here], and [hippo]'s post [id://11131504|here]. Also:
+&lt;p&gt;* If atomic renames are supported by the OS and FS. If not, some other technique will be necessary. &lt;i&gt;/Update&lt;/i&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Unfortunately people here think every question is stupid, and no longer wish to help other people like they used to do. They only want to downvote questions from people trying to learn and ask for help when something is confusing, instead of trying to help them.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It's a FAQ: [id://168266]&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11131481</root_node>
+<parent_node field_name="parent_node">11131481</parent_node>
+<thread id="11131481">
+<node id="11131487"><node id="11131491"/>
+</node>
+<node id="11131490"/>
+<node id="11131500"/>
+<node id="11131496"/>
+<node id="11131495"/>
+<node id="11131504"/>
+</thread></node>

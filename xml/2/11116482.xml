@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116482" title="Re: Why a regex *really* isn't good enough for HTML, even for &quot;simple&quot; tasks" created="2020-05-05 10:04:24" updated="2020-05-05 10:04:24" _doctext_mode="lenient"><type id="11">note</type>
+<author id="885521">hippo</author>
+<doctext field_name="doctext">&lt;p&gt;Just for fun, here's a low-level solution using vanilla [metamod://HTML::Parser].&lt;/p&gt;
+
+&lt;spoiler&gt;
+&lt;code&gt;
+use strict;
+use warnings;
+use HTML::Parser;
+
+my @html = (&lt;&lt;EOT
+&lt;a
+href
+=
+"http://www.example.com/1"
+&gt;
+One
+&lt;/a
+&gt;
+&lt;a id="Two" title="href="&gt;&lt;/a&gt;
+&lt;!--
+&lt;a href="http://www.example.com/3"&gt;Three&lt;/a&gt;
+--&gt;
+&lt;a title=' href="http://www.example.com/4"&gt;Four'
+href="http://www.example.com/5"&gt;Five&lt;/a&gt;
+&lt;script&gt;
+console.log(' &lt;a href="http://www.example.com/6"&gt;Six&lt;/a&gt; '); /*
+&lt;!--
+*/ &lt;/script&gt;
+&lt;a href="http://www.example.com/7"&gt;Se&lt;span
+&gt;v&amp;#101;&lt;/span&gt;n&lt;/a&gt;
+&lt;script&gt;/* --&gt; */&lt;/script&gt;
+EOT
+, &lt;&lt;EOT
+&lt;a
+href
+=
+"http://www.example.com/1"
+&gt;
+One
+&lt;/a
+&gt;
+&lt;a id="Two" title="href="&gt;&lt;/a&gt;
+&lt;!--
+&lt;a href="http://www.example.com/3"&gt;Three&lt;/a&gt;
+--&gt;
+&lt;a title=' href="http://www.example.com/4"&gt;Four'
+href="http://www.example.com/5"&gt;Five&lt;/a&gt;
+&lt;script type="text/javascript"&gt;/*&lt;![CDATA[
+&lt;/script&gt;
+*/ console.log(' &lt;a href="http://www.example.com/6"&gt;Six&lt;/a&gt; '); /*
+&lt;!--
+]]&gt;*/&lt;/script&gt;
+&lt;a href="http://www.example.com/7"&gt;&lt;![CDATA[Se]]&gt;&lt;span
+&gt;v&amp;#101;&lt;/span&gt;n&lt;/a&gt;
+&lt;script type="text/javascript"&gt;/*&lt;![CDATA[
+--&gt;
+]]&gt;*/&lt;/script&gt;
+&lt;![CDATA[
+&lt;a href="http://www.example.com/8"&gt;Eight&lt;/a&gt;
+]]&gt;
+EOT
+);
+
+my $state = 0;
+my $p = HTML::Parser-&gt;new (
+    api_version =&gt; 3,
+    start_h =&gt; [ sub {
+            shift eq 'a' or return;
+            my $href = shift-&gt;{href} or return;
+            $state = 1;
+            print "$href\t";
+            shift-&gt;handler (text =&gt; sub {
+                print trim(shift);
+            }, 'dtext, self');
+        }, 'tagname, attr, self'],
+    end_h =&gt; [ sub {
+            return unless shift eq 'a' &amp;&amp; $state;
+            $state = 0;
+            print "\n";
+            shift-&gt;handler (text =&gt; '');
+        }, 'tagname, self'],
+);
+
+print "HTML:\n";
+$p-&gt;parse ($html[0]);
+print "XHTML:\n";
+$p-&gt;xml_mode (1);
+$p-&gt;marked_sections (1);
+$p-&gt;parse ($html[1]);
+
+sub trim {
+    (my $str = shift) =~ s/^\s+|\s+$//g;
+    return $str;
+}
+&lt;/code&gt;
+&lt;/spoiler&gt;</doctext>
+<root_node field_name="root_node">11116478</root_node>
+<parent_node field_name="parent_node">11116478</parent_node>
+<thread id="11116478">
+<node id="11116482"><node id="11116572"/>
+</node>
+<node id="11116558"><node id="11116571"/>
+</node>
+<node id="11116573"><node id="11116574"/>
+<node id="11116774"/>
+</node>
+<node id="11116575"><node id="11116590"/>
+</node>
+<node id="11116601"><node id="11116602"><node id="11116603"><node id="11116607"/>
+</node>
+<node id="11116604"/>
+<node id="11116605"><node id="11116606"><node id="11116609"/>
+</node>
+<node id="11116608"/>
+</node>
+</node>
+</node>
+<node id="11116673"><node id="11116674"/>
+</node>
+<node id="11117652"><node id="11117655"/>
+</node>
+<node id="11117665"/>
+<node id="11122195"/>
+</thread></node>

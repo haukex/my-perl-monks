@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11137191" title="Peculiar hash behavior" created="2021-10-01 23:23:19" updated="2021-10-01 23:23:19" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="320851">dd-b</author>
+<doctext field_name="doctext">&lt;p&gt;Hashes are defined to take string keys (though...stringification can make that work for random objects sometimes depending on what you expect of the value later; for just finding the object, and if the default stringification is unique among all such objects, it works). &lt;/p&gt;
+
+&lt;p&gt;I tried a weird thing, using lists as a hash key, and got remarkable results; Data::Dumper is claiming my hash has 3 members with the same key!&lt;/p&gt;
+
+&lt;p&gt;It was just playing around, and I don't see any important use for it (if I did, I'd need to understand it enough to really believe in it!; now I'm just a little curious).&lt;/p&gt;
+
+&lt;p&gt;This code:
+
+&lt;code&gt;
+use Data::Dumper;
+my %h1;
+
+$h1{(1, 1)} = 17;
+$h1{(2, 2)} = 19;
+$h1{('', 22)} = 23;
+$h1{(22, '')} = 22;
+my @h = (3, 4, 5);
+$h1{(@h)} = 44;
+print Dumper(\%h1);
+&lt;/code&gt;
+&lt;/p&gt;
+
+&lt;p&gt;Produces this output:
+
+&lt;code&gt;
+$VAR1 = {
+          '22' =&gt; 22,
+          '22' =&gt; 23,
+          '11' =&gt; 17,
+          '3' =&gt; 44,
+          '22' =&gt; 19
+        };
+&lt;/code&gt;
+&lt;/p&gt;
+
+&lt;p&gt;(I observed this with perl 5, version 32, subversion 1 (v5.32.1) built for amd64-freebsd-thread-multi; I believe it's the default FreeBSD binary currently. So not an obscure environment.)&lt;/p&gt;
+
+
+</doctext>
+<thread id="11137191">
+<node id="11137192"/>
+<node id="11137195"><node id="11137199"><node id="11137202"><node id="11137222"><node id="11137223"><node id="11137225"/>
+</node>
+<node id="11137224"/>
+<node id="11137226"/>
+</node>
+</node>
+<node id="11137203"/>
+<node id="11137215"/>
+</node>
+</node>
+<node id="11137196"><node id="11137221"/>
+</node>
+</thread></node>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11107753" title="Re: [OT] SQL &quot;on duplicate key&quot; custom action" created="2019-10-21 05:43:47" updated="2019-10-21 05:43:47" _doctext_mode="lenient"><type id="11">note</type>
+<author id="399498">erix</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;blockquote&gt;&lt;i&gt;
+if the primary key exists, it should silently ignore the record if all the other columns match, but throw an error if they don't. 
+&lt;/i&gt;&lt;/blockquote&gt;&lt;/p&gt;
+
+&lt;p&gt;I'd think a unique index including any extra columns would make this version of your INSERT work:
+
+&lt;c&gt;
+drop   table if exists testtable;
+create table           testtable (pk int primary key, foo text, bar text);
+create unique index foobar_idx on testtable (pk, foo, bar);
+INSERT INTO testtable (pk, foo, bar) VALUES (1, 'Hello', 'World') ON CONFLICT (pk,foo,bar) DO NOTHING;
+INSERT INTO testtable (pk, foo, bar) VALUES (1, 'Hello', 'World') ON CONFLICT (pk,foo,bar) DO NOTHING;
+INSERT INTO testtable (pk, foo, bar) VALUES (1, 'Hello', 'Quz'  ) ON CONFLICT (pk,foo,bar) DO NOTHING;
+&lt;/c&gt;
+
+&lt;p&gt;which yields:
+
+&lt;c&gt;
+drop   table if exists testtable;
+DROP TABLE
+create table           testtable (pk int primary key, foo text, bar text);
+CREATE TABLE
+create unique index foobar_idx on testtable (pk, foo, bar);
+CREATE INDEX
+INSERT INTO testtable (pk, foo, bar) VALUES (1, 'Hello', 'World') ON CONFLICT (pk,foo,bar) DO NOTHING;
+INSERT 0 1
+INSERT INTO testtable (pk, foo, bar) VALUES (1, 'Hello', 'World') ON CONFLICT (pk,foo,bar) DO NOTHING;
+INSERT 0 0
+INSERT INTO testtable (pk, foo, bar) VALUES (1, 'Hello', 'Quz'  ) ON CONFLICT (pk,foo,bar) DO NOTHING;
+ERROR:  duplicate key value violates unique constraint "testtable_pkey"
+DETAIL:  Key (pk)=(1) already exists.
+&lt;/c&gt;
+
+&lt;p&gt;Postgres 12.1 (but this works from 9.5.x onward)
+
+&lt;p&gt;[ https://www.postgresql.org/docs/current/sql-insert.html#SQL-ON-CONFLICT | Manual PostgreSQL 12.1: INSERT # SQL-ON-CONFLICT  ]
+
+&lt;p&gt;&lt;b&gt;update: &lt;/b&gt;The first INSERT should be the same, of course, fixed.  Also, removed vestiges of the original bash-version.
+
+&lt;p&gt;&lt;b&gt;update 2: &lt;/b&gt; Re 'MySQL vs. Postgres':  I think open-sourced and completely-free PostgreSQL is a better/safer choice than proprietary Oracle MySQL.  For one thing, over time Pg will get better -- even better than Oracle -- but how could Oracle ever allow cheapo MySQL to overtake its venerable and expensive Oracle database product?
+
+</doctext>
+<root_node field_name="root_node">11107746</root_node>
+<parent_node field_name="parent_node">11107746</parent_node>
+<thread id="11107746">
+<node id="11107748"><node id="11107765"><node id="11107768"><node id="11107774"/>
+</node>
+</node>
+<node id="11107769"><node id="11107770"/>
+</node>
+<node id="11111976"><node id="11113365"/>
+<node id="11137400"/>
+</node>
+</node>
+<node id="11107752"><node id="11107776"/>
+</node>
+<node id="11107753"><node id="11107775"><node id="11107838"/>
+</node>
+<node id="11111977"/>
+</node>
+<node id="11107767"><node id="11107778"><node id="11107831"/>
+<node id="11137456"/>
+<node id="11137477"/>
+</node>
+</node>
+<node id="11137458"><node id="11137472"/>
+</node>
+</thread></node>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1189892" title="Re: How do you use Net::OpenSSH to query mysql database via ssh tunnel" created="2017-05-09 08:20:55" updated="2017-05-09 08:20:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;At the moment I don't see a way to hand an existing socket object like the one returned from &lt;c&gt;$ssh-&gt;open_tunnel&lt;/c&gt; to [mod://DBD::mysql].&lt;/p&gt;
+&lt;p&gt;It seems like what you want is the equivalent of &lt;c&gt;ssh -L&lt;/c&gt;, but looking into the documentation of [mod://Net::OpenSSH], I'm not sure that's supported, as it has this to say about tunnels:&lt;/p&gt;
+&lt;blockquote&gt;
+Under the hood, in order to create a tunnel, a new &lt;c&gt;ssh&lt;/c&gt; process is spawned with the option &lt;c&gt;-W${address}:${port}&lt;/c&gt; (available from OpenSSH 5.4 and upwards) making it redirect its stdio streams to the remote given address. Unlike when &lt;c&gt;ssh -L&lt;/c&gt; options is used to create tunnels, no TCP port is opened on the local machine at any time so this is a perfectly secure operation.
+&lt;/blockquote&gt;
+&lt;p&gt;You might be able to DIY using the &lt;c&gt;ssh_opts&lt;/c&gt; option. I'm not an expert on [mod://Net::OpenSSH] so I can't say if there's a better way, but this worked for me (tested with a different server, not MySQL, but that shouldn't make a difference):&lt;/p&gt;
+&lt;c&gt;
+use Net::OpenSSH;
+
+#$Net::OpenSSH::debug |= 16;
+my $ssh = Net::OpenSSH-&gt;new($host);
+die $ssh-&gt;error if $ssh-&gt;error;
+my $pid = $ssh-&gt;spawn({ssh_opts=&gt;'-L 127.0.0.1:12345:127.0.0.1:3306'}, 'cat');
+die $ssh-&gt;error if $ssh-&gt;error;
+
+# connect to remote MySQL via TCP at local 127.0.0.1:12345
+sleep 10; # do your work here
+
+print "Ending...\n";
+kill 'INT', $pid;
+waitpid ($pid, 0);
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1189875</root_node>
+<parent_node field_name="parent_node">1189875</parent_node>
+<thread id="1189875">
+<node id="1189876"><node id="1189878"><node id="1189881"><node id="1189888"><node id="1189898"><node id="1189900"/>
+</node>
+</node>
+</node>
+<node id="1189889"/>
+</node>
+</node>
+<node id="1189892"><node id="1189904"/>
+<node id="1189910"/>
+<node id="1189911"><node id="1189916"/>
+<node id="1189937"/>
+</node>
+<node id="1189914"><node id="1189938"><node id="1189978"/>
+</node>
+</node>
+</node>
+<node id="1189921"/>
+<node id="1189929"/>
+<node id="11106237"><node id="11106238"><node id="11106248"><node id="11106279"/>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11126157" title="Re^4: Calling module function from within a blessed module" created="2021-01-02 14:37:09" updated="2021-01-02 14:37:09" _doctext_mode="lenient"><type id="11">note</type>
+<author id="861371">kcott</author>
+<doctext field_name="doctext">&lt;blockquote&gt;
+&lt;em&gt;"... anyone who names their package "0" is going to asking for trouble!"&lt;/em&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;
+Naming a package &lt;c&gt;0&lt;/c&gt; is a fatal, compilation error:
+&lt;/p&gt;
+&lt;code&gt;
+$ perl -e 'package X;'
+
+$ perl -e 'package 0;'
+syntax error at -e line 1, near "package 0;"
+Execution of -e aborted due to compilation errors.
+&lt;/code&gt;
+
+&lt;p&gt;
+The problem is likely to occur where, in some code completely separate from yours,
+someone writes '&lt;c&gt;$x-&gt;your_method()&lt;/c&gt;' when, perhaps, '&lt;c&gt;$y-&gt;your_method()&lt;/c&gt;' was intended.
+&lt;/p&gt;
+
+&lt;p&gt;
+I had some difficulty coming up with an example.
+Here's some valid, albeit highly contrived, code to demonstrate the concept.
+&lt;/p&gt;
+
+&lt;small&gt;
+&lt;p&gt;
+I've used a common alias of mine to show code validity:
+&lt;/p&gt;
+&lt;code&gt;
+$ alias perle
+alias perle='perl -Mstrict -Mwarnings -Mautodie=:all -MCarp::Always -E'
+&lt;/code&gt;
+&lt;/small&gt;
+
+&lt;code&gt;
+$ perle '
+    package X {
+        use Scalar::Util "blessed";
+        sub new { bless {}, __PACKAGE__; }
+        sub meth1 { say "meth1: [", ref $_[0], "]" }
+        sub meth2 { say "meth2: [", blessed $_[0] // "undef", "]" }
+        sub meth3 { say "meth3: [", defined blessed $_[0], "]" }
+    };
+
+    package main;
+
+    my $x = 0;
+    my $y = X::-&gt;new();
+
+    $x-&gt;X::meth1();
+    $x-&gt;X::meth2();
+    $x-&gt;X::meth3();
+
+    $y-&gt;X::meth1();
+    $y-&gt;X::meth2();
+    $y-&gt;X::meth3();
+'
+meth1: []
+meth2: [undef]
+meth3: []
+meth1: [X]
+meth2: [X]
+meth3: [1]
+&lt;/code&gt;
+
+&lt;p&gt;
+The '&lt;c&gt;package X;&lt;/c&gt;' is intended to represent your code;
+the '&lt;c&gt;package main;&lt;/c&gt;' (although quite superfluous here) is intended to represent
+&lt;em&gt;"some code completely separate from yours"&lt;/em&gt;.
+&lt;/p&gt;
+
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-861371"&gt;
+&lt;p&gt;&amp;mdash; Ken&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11126140</root_node>
+<parent_node field_name="parent_node">11126148</parent_node>
+<thread id="11126140">
+<node id="11126142"><node id="11126145"/>
+</node>
+<node id="11126143"><node id="11126144"/>
+</node>
+<node id="11126146"><node id="11126147"><node id="11126148"><node id="11126157"><node id="11126158"><node id="11126169"><node id="11126188"><node id="11126237"/>
+</node>
+</node>
+</node>
+<node id="11126159"/>
+<node id="11126249"/>
+</node>
+</node>
+<node id="11126149"/>
+</node>
+</node>
+<node id="11126150"><node id="11126151"/>
+</node>
+<node id="11126192"><node id="11126193"><node id="11126196"/>
+</node>
+</node>
+</thread></node>

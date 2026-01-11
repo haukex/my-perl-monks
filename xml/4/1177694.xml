@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1177694" title="error handling by pm initialization" created="2016-12-13 05:11:16" updated="2016-12-13 05:11:16" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="599234">homeveg</author>
+<doctext field_name="doctext">&lt;p&gt;
+Thanks for helping me! this was exactly the solution I was looking for.
+&lt;/p&gt;
+
+&lt;p&gt;Hi,
+
+is the any way to catch an error while initializing pm like "use SOME::PM" or call "use ..." only when corresponding library is installed?&lt;/p&gt;
+
+&lt;p&gt;I am trying to implement support of GZIP to the script. The idea is to switch compression/decompression ON or OFF with the flag. The usual way will be to initialize corresponding library in the beginning and just use it when needed:&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+use IO::Compress::Gzip qw(gzip $GzipError);
+use Getopt::Long;
+
+#usage: $0 --gzip
+my $useGZ;
+my $options = &amp;Getopt::Long::GetOptions(
+	'gzip|z' =&gt; \$useGZ
+);
+
+my $OUT_FHs;
+my $out_file = "test.txt";
+
+if($useGZ) {
+ $OUT_FHs = new IO::Compress::Gzip ("$out_file.gz") or die $GzipError;
+} else {
+ open $OUT_FHs, '&gt;', $out_file or die "Can't open $out_file for writing; $!\n";
+}
+
+print $OUT_FHs "printing to test file\n";
+close($OUT_FHs);
+
+exit;
+
+&lt;/code&gt;
+
+&lt;p&gt;
+The problem came from usual site - on my test system everything works, but on the user's system it doesn't and exits with an error: 
+&lt;/p&gt;
+&lt;code&gt;
+Can't locate IO/Compress/Gzip.pm in @INC (@INC contains: /usr/local/lib64/perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5 .)
+&lt;/code&gt;
+&lt;p&gt;Obviously, the module is not installed or not in PATH on the user's system. The Perl doesn't allow to go further with the execution of the script even if I am not using the compression/decompression functionality. &lt;/p&gt;
+
+&lt;p&gt;Unfortunately the user can't change or install anything on the system so I need to find a way around to enable GZIP support when needed but to ignore error message from module initialization if it's not installed on the system.
+&lt;/p&gt;
+
+</doctext>
+<thread id="1177694">
+<node id="1177695"><node id="1177703"/>
+</node>
+<node id="1177696"><node id="1177706"/>
+</node>
+<node id="1177697"><node id="1177704"/>
+</node>
+<node id="1177698"><node id="1177699"><node id="1177700"/>
+</node>
+</node>
+<node id="1177701"><node id="1177702"><node id="1177705"><node id="1177707"><node id="1177749"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1177832"/>
+</thread></node>

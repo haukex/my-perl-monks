@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1211522" title="Re: File::Temp::tempfile : name versus handle" created="2018-03-22 09:22:39" updated="2018-03-22 09:22:39" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I don't have my Camel handy at the moment, but I believe the major issue with [doc://File::Temp] occurs when you request only a filename, and not a handle, e.g. by setting &lt;c&gt;OPEN=&gt;0&lt;/c&gt;, because then you easily open yourself up to race conditions. IIRC, using the &lt;c&gt;my ($filehandle, $filename) = tempfile();&lt;/c&gt; form, even if all you do is immediately &lt;c&gt;close $filehandle;&lt;/c&gt; and then use just the name, should be &lt;i&gt;relatively&lt;/i&gt; safe &lt;i&gt;if&lt;/i&gt; all the programs working in the temporary directory are well-behaved and the filesystem itself is well-behaved. (But make sure to read the entirety of the [doc://File::Temp] docs.)&lt;/p&gt;
+&lt;p&gt;I'm a little confused about your code snippet, why do you &lt;c&gt;open TIDY&lt;/c&gt; and then immediately &lt;c&gt;close&lt;/c&gt; it again (without checking for errors, BTW)? [man://tidy] supports writing to and from files directly, which is what you appear to be doing, so it might be better to just use [doc://system] instead of a piped open. Also, if you could explain what you are doing with the data before and after the &lt;c&gt;tidy&lt;/c&gt; invocation, that would be helpful - e.g. what is &lt;c&gt;$tempfile&lt;/c&gt;, do you need the data to reside in a regular file before and/or after the operation or do you just need it as strings in your program, etc. Depending on those requirements, it might be easier to just use [mod://IPC::Run3] (which does most of its work with temp files behind the scenes anyway). (I wrote at length about calling external commands [id://1180578|here].)&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1211515</root_node>
+<parent_node field_name="parent_node">1211515</parent_node>
+<thread id="1211515">
+<node id="1211522"><node id="1211535"><node id="1211538"><node id="1211542"><node id="1211544"/>
+</node>
+</node>
+<node id="1211568"/>
+</node>
+</node>
+<node id="1211547"/>
+<node id="1211548"><node id="1211564"/>
+</node>
+<node id="1211604"/>
+</thread></node>

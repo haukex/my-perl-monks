@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11144552" title="Re^2: How to Use Pack to Convert UTF-16 Surrogate Pairs to UTF-8? (updated)" created="2022-06-09 08:45:00" updated="2022-06-09 08:45:00" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I [id://11144542|still] think it's likely the OP is taking the wrong approach by trying to hand-roll a JSON decoder, so I did want to point out a few issues with your code - hopefully thereby also pointing out some of the pitfalls of hand-rolled approaches.&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;High surrogates range from U+D800 to U+DBFF, which your regex doesn't cover (e.g. &lt;c&gt;unpack("H*", encode("UTF-16BE", "\N{VARIATION SELECTOR-256}")) eq "db40ddef"&lt;/c&gt;).&lt;/li&gt;
+	&lt;li&gt;Your regexes should probably also handle uppercase hex digits.&lt;/li&gt;
+	&lt;li&gt;You might want to pass &lt;c&gt;Encode::FB_CROAK&lt;/c&gt; to &lt;c&gt;decode&lt;/c&gt;.&lt;/li&gt;
+	&lt;li&gt;You don't need to loop over the strings with a regex and then a second regex, that's fairly inefficient; it can all be done in one regex.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;spoiler&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; *sigh* Just because it &lt;i&gt;can&lt;/i&gt; be done in one regex, &lt;i&gt;still&lt;/i&gt; doesn't mean it should! But just for fun, enough rope to shoot oneself in the foot...&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use open qw/:std :encoding(UTF-8)/;
+use Test::More tests=&gt;1;
+use Data::Dump qw/pp/;
+use Encode qw/decode/;
+
+my $str = "Ren\\u00e9 \\ud83D\\uDe06\\uDb40\\udDeF Fran\\u00E7oise"
+	." \\\\u2660\\U1234";
+
+$str =~
+s{  (?| (?&amp;U)(d[89ab][0-9a-f]{2}) (?&amp;U)(d[c-f][0-9a-f]{2})
+      | (?&amp;U)([0-9a-f]{4}) )
+    (?(DEFINE) (?&lt;U&gt; (?-i) (?&lt;!\\)(?:\\\\)*\\u ) )
+}{ decode("UTF-16BE", pack("n*", hex $1, defined $2 ? hex $2 : ()),
+	Encode::FB_CROAK) }iexg;
+
+is $str, "Ren\xE9 \x{1F606}\x{E01EF} Fran\xE7oise \\\\u2660\\U1234",
+	$str or diag pp $str;
+&lt;/c&gt;
+&lt;/spoiler&gt;</doctext>
+<root_node field_name="root_node">11144531</root_node>
+<parent_node field_name="parent_node">11144538</parent_node>
+<thread id="11144531">
+<node id="11144533"/>
+<node id="11144538"><node id="11144552"/>
+<node id="11144639"/>
+<node id="11144721"/>
+</node>
+<node id="11144542"/>
+</thread></node>

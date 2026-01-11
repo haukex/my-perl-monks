@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11140962" title="Re: Getopt - Validate arguments before processing (updated)" created="2022-01-30 06:23:27" updated="2022-01-30 06:23:27" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;As you can see based upon the execution of the code, Getopt is processing the arguments as they are received. ... What I would like to accomplish is if any invalid argument is passed, immediatly display the help and exit the script without processing any arguments&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In this example, what are &lt;c&gt;sub first&lt;/c&gt; and &lt;c&gt;second&lt;/c&gt; actually doing? Because if they have any side effects other than simply saving the fact that the option value was passed to the program, then I think you're not using the module as intended.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Here's another variation, and my suspicion is that this may come closest to your original intent:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Getopt::Long;
+
+my @actions;
+GetOptions(
+  first  =&gt; sub { push @actions, \&amp;first },
+  second =&gt; sub { push @actions, \&amp;second },
+) or die "Invalid options passed to $0\n";
+
+sub first {
+  print "Processing sub first\n";
+}
+
+sub second {
+  print "Processing sub second\n";
+}
+
+$_-&gt;() for @actions;
+
+__END__
+
+$ perl 11140961c.pl --first --second --first --second --second --first
+Processing sub first
+Processing sub second
+Processing sub first
+Processing sub second
+Processing sub second
+Processing sub first
+$ perl 11140961c.pl --first --second --year --first --second --second --first
+Unknown option: year
+Invalid options passed to 11140961c.pl
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;/Update&lt;/b&gt;&lt;/p&gt;
+&lt;readmore title="other possible implementations (before update above)"&gt;
+&lt;p&gt;One way to use the module with code references is the following, where in this example &lt;c&gt;sub first&lt;/c&gt; and &lt;c&gt;second&lt;/c&gt; are of course pretty simplistic and you'd be better off just using the normal boolean options provided by the module:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Getopt::Long;
+
+my $do_first = 0;
+sub first { $do_first = 1 }
+
+my $do_second = 0;
+sub second { $do_second = 1 }
+
+GetOptions(first=&gt;\&amp;first, second=&gt;\&amp;second)
+	or die "Invalid options passed to $0\n";
+
+if ($do_first) { print "First!\n" }
+
+if ($do_second) { print "Second!\n" }
+
+__END__
+
+$ perl 11140961.pl --first --second --first --second --second --first
+First!
+Second!
+$ perl 11140961.pl --first --second --year --first --second --second --first
+Unknown option: year
+Invalid options passed to 11140961.pl
+&lt;/c&gt;
+&lt;p&gt;And if your intent is for these options to be processed in some kind of sequential way, here's one way to do that:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Getopt::Long;
+
+my @actions;
+sub first { push @actions, 'first' }
+sub second { push @actions, 'second' }
+
+GetOptions(first=&gt;\&amp;first, second=&gt;\&amp;second)
+	or die "Invalid options passed to $0\n";
+
+for my $act (@actions) {
+	if ($act eq 'first')
+		{ print "First!\n" }
+	elsif ($act eq 'second')
+		{ print "Second!\n" }
+	else { die $act } # shouldn't happen
+}
+
+__END__
+
+$ perl 11140961b.pl --first --second --first --second --second --first
+First!
+Second!
+First!
+Second!
+Second!
+First!
+$ perl 11140961b.pl --first --second --year --first --second --second --first
+Unknown option: year
+Invalid options passed to 11140961b.pl
+&lt;/c&gt;
+&lt;p&gt;&lt;strike&gt;It would even be possible to populate &lt;c&gt;@actions&lt;/c&gt; with code references and then simply call those instead of using string &lt;c&gt;eq&lt;/c&gt;.&lt;/strike&gt; &lt;i&gt;see update above&lt;/i&gt;&lt;/p&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">11140961</root_node>
+<parent_node field_name="parent_node">11140961</parent_node>
+<thread id="11140961">
+<node id="11140962"/>
+<node id="11140966"/>
+<node id="11140967"/>
+<node id="11140986"><node id="11140987"><node id="11140988"><node id="11140994"/>
+</node>
+</node>
+<node id="11141000"/>
+</node>
+<node id="11141013"/>
+</thread></node>

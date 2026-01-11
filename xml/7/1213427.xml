@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1213427" title="Re: Perl hash keys not considered unique (updated)" created="2018-04-23 09:19:34" updated="2018-04-23 09:19:34" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Welcome to the Monastery, [elfstones65]. In the future, please provide a [id://1177642] so that we can download and run the code and more easily see the issue that you are having.&lt;/p&gt;
+&lt;p&gt;Anyway, I assume that when reading your input, you first encounter a line that matches your first regex &lt;c&gt;/File .../&lt;/c&gt;, and sets &lt;c&gt;$files{"$processingFile"} = 1;&lt;/c&gt;, so e.g. &lt;c&gt;$files{"ENV.FILESOURCE.SOURCE.J2018058.N000001"} = 1;&lt;/c&gt;. Then, when your code encounters a line matching &lt;c&gt;/Finished/&lt;/c&gt; for the same file, you attempt to use &lt;c&gt;$files{"ENV.FILESOURCE.SOURCE.J2018058.N000001"}&lt;/c&gt; as a hash reference by saying things like &lt;c&gt;$files{"$currentFile"}{'read'}&lt;/c&gt;. However, &lt;c&gt;$files{"ENV.FILESOURCE.SOURCE.J2018058.N000001"}&lt;/c&gt; contains the value &lt;c&gt;1&lt;/c&gt; instead of a hash reference.&lt;/p&gt;
+&lt;p&gt;Now Perl does something interesting: because you're not using [doc://strict] &lt;c&gt;'refs'&lt;/c&gt;, it will actually access a hash named &lt;c&gt;%1&lt;/c&gt; - and it will do this for &lt;i&gt;all&lt;/i&gt; files that have the same value in the &lt;c&gt;%files&lt;/c&gt; hash! So every file's &lt;c&gt;/Finished/&lt;/c&gt; data is ending up in the same hash, overwriting each other. You can see this yourself if you say &lt;c&gt;use Data::Dumper; print Dumper(\%1);&lt;/c&gt; - you will see the data from the most recent &lt;c&gt;Finished&lt;/c&gt; line collected in that hash. See [doc://perlref#Symbolic-references].&lt;/p&gt;
+&lt;p&gt;The best solution here is to &lt;b&gt;[id://111088]&lt;/b&gt;! This will force you to avoid symbolic references, which is a good practice because it avoids the confusing behavior you're seeing. See also [https://perl.plover.com/varvarname.html|Why it's stupid to `use a variable as a variable name'].&lt;/p&gt;
+&lt;spoiler&gt;
+&lt;p&gt;... and the ugly quick fix is to change &lt;c&gt;$files{"$processingFile"} = 1;&lt;/c&gt; to &lt;c&gt;$files{"$processingFile"} = {};&lt;/c&gt;. But please don't do this.&lt;/p&gt;
+&lt;/spoiler&gt;
+&lt;p&gt;&lt;small&gt;&lt;b&gt;Update:&lt;/b&gt; Several edits to improve the explanation.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1213425</root_node>
+<parent_node field_name="parent_node">1213425</parent_node>
+<thread id="1213425">
+<node id="1213426"/>
+<node id="1213427"><node id="1213436"/>
+</node>
+<node id="1213476"/>
+</thread></node>

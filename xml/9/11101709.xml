@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101709" title="Re^3: How to handle an external process from CGI? (updated)" created="2019-06-22 04:40:26" updated="2019-06-22 04:40:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I think there's no &amp;lt;MYPIPE&amp;gt; if open fails&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes and no: the first &lt;c&gt;&lt;MYPIPE&gt;&lt;/c&gt; does return &lt;c&gt;undef&lt;/c&gt;, so the &lt;c&gt;while&lt;/c&gt; loop never runs, but you should also be getting a warning "&lt;c&gt;readline() on closed filehandle&lt;/c&gt;", indicating that something is wrong. A failed [doc://open] doesn't &lt;i&gt;have&lt;/i&gt; to be fatal, there are plenty of ways to handle the control flow:&lt;/p&gt;
+&lt;c&gt;
+if ( open my $fh, ... ) {
+    while (&lt;$fh&gt;) { ... }
+    close $fh;
+}
+else { warn "open: $!" }
+
+# - or -
+
+sub foo {
+    open my $fh, ... or do { warn "open: $!"; return };
+    while (&lt;$fh&gt;) { ... }
+    close $fh;
+}
+
+# - or -
+
+FILE: for my $file (@files) {
+    open my $fh, ...
+        or do { warn "skipping $file: $!"; next FILE };
+    while (&lt;$fh&gt;) { ... }
+    close $fh;
+}
+
+# - or -
+
+use Try::Tiny;
+try {
+    open my $fh, ... or die $!;
+    while (&lt;$fh&gt;) { ... }
+    close $fh;
+}
+catch {
+    warn "error: $_";
+};
+# same thing, but without the module:
+eval {
+    open my $fh, ... or die $!;
+    ...
+;1 } or do {
+    warn "error: $@";
+};
+&lt;/c&gt;
+&lt;p&gt;The fourth and fifth examples are different in that they catch any fatal error inside the block, which may or may not be desired.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Added the third example, from [id://11101758|this thread].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11101695</root_node>
+<parent_node field_name="parent_node">11101699</parent_node>
+<thread id="11101695">
+<node id="11101696"><node id="11101699"><node id="11101709"/>
+</node>
+</node>
+<node id="11102063"/>
+</thread></node>

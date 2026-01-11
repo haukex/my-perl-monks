@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230470" title="Re^11: Export and use different package in module" created="2019-02-23 09:33:21" updated="2019-02-23 09:33:21" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;A side note I didn't think about, can a scalar be substituted in a scalar name?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, the mechanism basically works for any package variables (scalars, arrays, hashes, filehandles, etc.) and &lt;c&gt;sub&lt;/c&gt;s. It doesn't work for lexical variables, i.e. those declared with &lt;c&gt;my&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+package Big::Long::Library::Name {
+    our $scalar  = "Foo";
+    our @array   = qw/ Bar Quz /;
+    our %hash    = ( Baz =&gt; 42 );
+    sub function { print "Hello\n" }
+}
+package MyPackage {
+    BEGIN {
+        *MyPackage::blah =     \&amp;Big::Long::Library::Name::function;
+        package Foo;
+        *MyPackage::myscalar = \$Big::Long::Library::Name::scalar;
+        *MyPackage::array =    \@Big::Long::Library::Name::array;
+        *MyPackage::hash =     \%Big::Long::Library::Name::hash;
+    }
+    print "$myscalar @array $hash{Baz}\n";
+    blah;
+}
+&lt;/c&gt;
+&lt;p&gt;I had to put the operations in a &lt;c&gt;BEGIN&lt;/c&gt; block so that Perl knows about the variable names at compile time, and the &lt;c&gt;package Foo;&lt;/c&gt; is there because of [id://522234|this detail]. As a slightly nicer alternative, you can use [mod://Symbol::Alias]:&lt;/p&gt;
+&lt;c&gt;
+package Big::Long::Library::Name {
+    our $scalar  = "Foo";
+    our @array   = qw/ Bar Quz /;
+    our %hash    = ( Baz =&gt; 42 );
+    sub function { print "Hello\n" }
+}
+package MyPackage {
+    use Symbol::Alias
+        'Big::Long::Library::Name::function' =&gt; 'blah',
+        '$Big::Long::Library::Name::scalar'  =&gt; 'myscalar',
+        '@Big::Long::Library::Name::array'   =&gt; 'array',
+        '%Big::Long::Library::Name::hash'    =&gt; 'hash';
+    print "$myscalar @array $hash{Baz}\n";
+    blah;
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1230405</root_node>
+<parent_node field_name="parent_node">1230467</parent_node>
+<thread id="1230405">
+<node id="1230408"><node id="1230422"><node id="1230424"><node id="1230425"><node id="1230427"><node id="1230431"><node id="1230437"><node id="1230450"><node id="1230456"><node id="1230467"><node id="1230470"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

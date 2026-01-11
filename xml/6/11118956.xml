@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118956" title="Re^4: Is there a problem with using barewords as filehandles ?" created="2020-07-06 04:08:51" updated="2020-07-06 04:08:51" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;lexicals declared at file-scope are global variables&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, you have a point, but:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;acting like they are somehow different&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, they are in fact different: as I've [id://11118770|said] plenty of times now, bareword filehandles are not protected against typos and they clash with package and &lt;c&gt;sub&lt;/c&gt; names, among other things. There is &lt;i&gt;no&lt;/i&gt; remedy for this other than "being careful" (good luck in the long term) or using lexicals. On the other hand:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;the additional risk that file-scope lexicals can be shared across packages if multiple packages are defined in the same file&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;While not wrong, this is only true under certain circumstances: if there are multiple &lt;c&gt;package&lt;/c&gt;s in the same file, and those &lt;c&gt;package&lt;/c&gt;s are in the same lexical scope, &lt;i&gt;and&lt;/i&gt; the user has similarly named lexicals and makes a typo that happens to reference a previously declared lexical.&lt;/p&gt;
+&lt;c&gt;
+package main;
+open my $fh1, '&gt;', 'x.txt' or die $!;
+print $fh1 "foo";
+close $fh1;
+package foo;
+open my $fh2, '&gt;', 'y.txt' or die $!;
+print $fh1 "bar";  # oops!
+close $fh2;
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;there really is almost no difference between &amp;#91;bareword filehandles&amp;#93; and lexical file handles — declaring a lexical at file-scope has almost exactly the same effect, and exactly the same effect if the convention of maintaining a 1:1 mapping between files and packages is followed&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Once again, no, and I find this insistence quite misleading. If you're going to recommend bareword filehandles, at least acknowledge the issues they have.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11118753</root_node>
+<parent_node field_name="parent_node">11118947</parent_node>
+<thread id="11118753">
+<node id="11118754"><node id="11118757"><node id="11118759"/>
+<node id="11119517"><node id="11119519"><node id="11119529"/>
+</node>
+</node>
+</node>
+<node id="11118760"><node id="11118762"/>
+</node>
+<node id="11118804"/>
+</node>
+<node id="11118755"/>
+<node id="11118756"><node id="11118764"/>
+</node>
+<node id="11118758"><node id="11118785"/>
+</node>
+<node id="11118770"><node id="11118777"/>
+</node>
+<node id="11118779"><node id="11118942"><node id="11118947"><node id="11118956"><node id="11118987"><node id="11118995"><node id="11119016"><node id="11119017"><node id="11119018"><node id="11119029"><node id="11119030"><node id="11119033"><node id="11119072"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11119049"><node id="11119050"><node id="11119052"/>
+</node>
+</node>
+</node>
+<node id="11119019"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11118988"/>
+</node>
+</node>
+</node>
+<node id="11118801"/>
+<node id="11119477"><node id="11119480"><node id="11119506"><node id="11119513"/>
+</node>
+</node>
+<node id="11119507"/>
+</node>
+</thread></node>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11140910" title="Re: time passed calculation" created="2022-01-27 15:04:59" updated="2022-01-27 15:04:59" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I would recommend you don't mix [doc://POSIX]'s &lt;c&gt;strftime&lt;/c&gt;, [mod://Date::Parse], and [mod://DateTime]. Since you're already using [mod://DateTime], you can use its friends [mod://DateTime::Format::Strptime] for parsing and [mod://DateTime::Format::Human::Duration] for output.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime;
+use DateTime::Format::Strptime;
+use DateTime::Format::Human::Duration;
+
+my $strp = DateTime::Format::Strptime-&gt;new(
+    pattern =&gt; '%m/%d/%Y %H:%M:%S', on_error=&gt;'croak',
+	time_zone=&gt;'UTC' );
+my $durfmt = DateTime::Format::Human::Duration-&gt;new();
+
+my $now = $strp-&gt;parse_datetime('01/27/2022 07:40:03');
+my @tests = (
+		'01/26/2021 07:40:00',
+		'03/20/2021 07:40:00',
+		'12/20/2021 07:40:00',
+		'01/23/2022 07:40:00',
+		'01/26/2022 07:40:00',
+		'01/27/2022 06:40:00',
+		'01/27/2022 07:15:00',
+		'01/27/2022 07:39:00',
+		'01/27/2022 07:40:03',
+		'01/27/2022 07:40:06',
+	);
+
+for my $t (@tests) {
+	my $seen = $strp-&gt;parse_datetime($t);
+	print $now-&gt;strftime('%m/%d/%Y %H:%M:%S'), " -&gt; ",
+	     $seen-&gt;strftime('%m/%d/%Y %H:%M:%S'), " = ",
+		$durfmt-&gt;format_duration_between($now, $seen,
+			significant_units =&gt; 1,
+			future =&gt; 'in %s',
+			past =&gt; '%s ago',
+			no_time =&gt; 'online now',
+		), "\n";
+}
+
+__END__
+
+01/27/2022 07:40:03 -&gt; 01/26/2021 07:40:00 = 1 year ago
+01/27/2022 07:40:03 -&gt; 03/20/2021 07:40:00 = 10 months ago
+01/27/2022 07:40:03 -&gt; 12/20/2021 07:40:00 = 1 month ago
+01/27/2022 07:40:03 -&gt; 01/23/2022 07:40:00 = 4 days ago
+01/27/2022 07:40:03 -&gt; 01/26/2022 07:40:00 = 1 day ago
+01/27/2022 07:40:03 -&gt; 01/27/2022 06:40:00 = 1 hour ago
+01/27/2022 07:40:03 -&gt; 01/27/2022 07:15:00 = 25 minutes ago
+01/27/2022 07:40:03 -&gt; 01/27/2022 07:39:00 = 1 minute ago
+01/27/2022 07:40:03 -&gt; 01/27/2022 07:40:03 = online now
+01/27/2022 07:40:03 -&gt; 01/27/2022 07:40:06 = in 3 seconds
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11140904</root_node>
+<parent_node field_name="parent_node">11140904</parent_node>
+<thread id="11140904">
+<node id="11140905"><node id="11140907"><node id="11140908"><node id="11140909"/>
+</node>
+<node id="11140936"/>
+</node>
+</node>
+<node id="11140910"><node id="11140937"/>
+</node>
+</thread></node>

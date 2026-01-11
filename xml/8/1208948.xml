@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1208948" title="Re^2: Code Works But Not Sure How" created="2018-02-11 07:22:45" updated="2018-02-11 07:22:45" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1208933">RichHamilton</author>
+<doctext field_name="doctext">1Nickt
+
+You're right I did go back at the data dumper and I see what you're talking about. What it should show is:
+&lt;code&gt;
+$VAR1 = bless( {
+                 'menu_items' =&gt; [
+                                   '\'1\'',
+                                   '\'Option 1\'',
+                                   '\'2\'',
+                                   '\'Option 2\'',
+                                   '\'3\'',
+                                   '\'Option 3\'',
+                                   '\'4\'',
+                                   '\'Option 4\''
+                                 ],
+                 'number_of_items' =&gt; 8
+               }, 'MyClass' );
+&lt;/code&gt; 
+
+I like the idea of using map. I did figure out how I can access the values using:
+
+&lt;code&gt;
+package MyClass;
+
+use strict;
+use warnings;
+
+sub new
+{
+	my $class = shift;
+	my $self = {
+        number_of_items =&gt; shift,
+		menu_items =&gt; shift,
+	};
+	make_menu_items();
+	bless $self,$class;
+	return $self;
+}
+sub make_menu_items {
+    my $items = shift;
+    for (my $i=0; $i &lt; $items-&gt;{number_of_items}; $i++)
+    {
+     $items-&gt;{menu_items}[$i] = "'$items-&gt;{menu_items}[$i]'";    
+    }
+}
+
+1;
+
+&lt;/code&gt;
+
+However, I wind up doing this to get single quotes in, but then I have to pass the array size. 
+
+&lt;code&gt;
+my @array = ("1","Option 1","2","Option 2","3","Option 3","4","Option 4");
+my $array_size = @array;
+my $obj = MyClass-&gt;new($array_size,\@array);
+&lt;/code&gt;
+
+This works more or less. Although I get &lt;code&gt;Use of uninitialized value in numeric lt (&lt;) at MyClass.pm line 20.&lt;/code&gt;
+
+But It seems like I should be able to get the number of elements in the array in loop through them. What's making it hard for me is making the changes to menu_items instead of @array. Mapping it would be ideal. I could do after declaring the array, but it would sure be nice to do it as part of the calls. Using map would defiantly be cleaner. I'll keep chugging away on it and see what I can come up with. 
+
+You're close on the purpose of the code. I'm working on some code to work with dialog on Linux boxes. I had written some code a while back, but didn't implement a menubox. Now I have a need for it so I'm trying to finish it. I could probably just use UI::Dialog. But I figure since I'm learning I might as well finish this. Even though probably coded as well as UI::Diaglog.  </doctext>
+<root_node field_name="root_node">1208937</root_node>
+<parent_node field_name="parent_node">1208938</parent_node>
+<thread id="1208937">
+<node id="1208938"><node id="1208945"><node id="1208953"/>
+</node>
+<node id="1208948"><node id="1208950"><node id="1208955"><node id="1208961"/>
+</node>
+</node>
+<node id="1208951"><node id="1208956"/>
+</node>
+</node>
+<node id="1208952"/>
+</node>
+<node id="1208941"/>
+<node id="1208946"><node id="1208957"/>
+</node>
+</thread></node>

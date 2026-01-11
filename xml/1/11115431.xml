@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11115431" title="Re: Difficulty with UTF-8 and file contents" created="2020-04-13 04:52:56" updated="2020-04-13 04:52:56" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I'm going to take a guess that, because unfortunately PerlMonks' &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags do HTML-escaping of Unicode characters, what you pasted in the HTML is actually &lt;tt&gt;â€˜Defâ€™&lt;/tt&gt;, which shows that you appear to already have encoding issues somewhere - the original string is probably &lt;tt&gt;‘Def’&lt;/tt&gt;.&lt;/p&gt;
+&lt;p&gt;[k-mx] already pointed out that the &lt;c&gt;DATA&lt;/c&gt; filehandle doesn't need to be &lt;c&gt;open&lt;/c&gt;ed, and the &lt;c&gt;use utf8;&lt;/c&gt; already causes the source code, including the &lt;c&gt;__DATA__&lt;/c&gt; section, to be read as UTF-8 ([doc://perldata#Special-Literals]). The following works fine for me, that is, the source file and the output are both UTF-8 (and I've made sure to accommodate for PerlMonks' Unicode oddities):&lt;/p&gt;
+&lt;pre&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use utf8;
+use open qw/:std :utf8/;
+use HTML::TreeBuilder::XPath;
+
+my $xhtml = HTML::TreeBuilder::XPath-&amp;gt;new;
+$xhtml-&amp;gt;implicit_tags(1);
+$xhtml-&amp;gt;no_space_compacting(1);
+$xhtml-&amp;gt;parse_file(*DATA) or die $!;
+print $xhtml-&amp;gt;as_XML_indented;
+
+__DATA__
+
+&amp;lt;html xmlns=&amp;quot;http://www.w3.org/1999/xhtml&amp;quot;&amp;gt;
+  &amp;lt;head&amp;gt;
+    &amp;lt;title&amp;gt;Foo&amp;lt;/title&amp;gt;
+  &amp;lt;/head&amp;gt;
+  &amp;lt;body&amp;gt;
+    &amp;lt;p&amp;gt;&amp;lt;a href=&amp;quot;https://example.com/3/&amp;quot;&amp;gt;Abc
+      &amp;lsquo;Def&amp;rsquo; (GHI)&amp;lt;/a&amp;gt;&amp;lt;/p&amp;gt;
+  &amp;lt;/body&amp;gt;
+&amp;lt;/html&amp;gt;
+&lt;/pre&gt;
+&lt;p&gt;Note that I added the &lt;c&gt;use open qw/:std :utf8/;&lt;/c&gt; because the script is also [doc://print]ing Unicode strings. So basically, I think that you need to inspect your source file's encoding (my script [https://bitbucket.org/haukex/htools/src/master/enctool|enctool] might be helpful).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11115416</root_node>
+<parent_node field_name="parent_node">11115416</parent_node>
+<thread id="11115416">
+<node id="11115420"><node id="11115423"><node id="11115444"><node id="11115477"/>
+</node>
+</node>
+<node id="11115427"/>
+</node>
+<node id="11115431"/>
+<node id="11115454"><node id="11115495"/>
+</node>
+<node id="11115570"/>
+</thread></node>

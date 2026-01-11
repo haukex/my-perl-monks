@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11145975" title="Re^2: Immediately writing the results of search-and-replace" created="2022-08-05 15:00:53" updated="2022-08-05 15:00:53" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11145973">elemkeh</author>
+<doctext field_name="doctext">Hi haukex; I've created an account so that I can edit things going forward, but since I cannot edit the original post, please forgive posting the full code in a reply:
+
+&lt;code&gt;
+use strict;
+use warnings;
+use diagnostics;
+
+use Text::CSV_XS;
+use File::Find;
+use File::Slurp qw(edit_file);
+use List::Util qw(uniq);
+
+my $spreadsheet = Text::CSV_XS-&gt;new ({ binary =&gt; 1, auto_diag =&gt; 1 });
+
+# Consume the first argument (the spreadsheet input) and push its
+# contents to an array of arrays.
+open my $fh, "&lt;", $ARGV[0];
+my @table;
+while (my $row = $spreadsheet-&gt;getline($fh)) {
+    push @table, $row;
+}
+close $fh;
+
+# Sort the array-of-arrays by the length of the 
+# first element of each subarray (our 'keys') such 
+# that the longest key comes first, and the
+# shortest comes last. Then sort alphabetically.
+@table = sort { length $b-&gt;[0] &lt;=&gt; length $a-&gt;[0] || $a-&gt;[0] cmp $b-&gt;[0] } @table; 
+
+# CSVs are received from another department with 
+# three columns, where the second denotes part of 
+# speech. This isn't needed for this operation, so 
+# discard it.
+for my $row (@table) {
+    splice(@$row,1,1);
+    $row-&gt;[0] = quotemeta($row-&gt;[0]);
+}
+
+my @rows_to_cull = ();
+
+# Pairwise comparison of rows to detect duplicate keys. 
+# Sort having been performed earlier, only pairwise comparisons
+# of adjacent rows will result in matches.
+for my $row_a (0..$#table) {
+    my $key = $table[$row_a]-&gt;[0];
+    my @values = $table[$row_a]-&gt;[1];
+
+    for my $row_b ($row_a+1..$#table) {
+        if ( $table[$row_a]-&gt;[0] eq $table[$row_b]-&gt;[0] ) {
+            push @values, $table[$row_b]-&gt;[1];
+            $table[$row_a]-&gt;[1] = \@values;
+            push @rows_to_cull, $row_b;
+        }
+        else {
+            last;
+        }
+    }
+}
+
+# Convert the array to a hash to ensure uniqueness, 
+# then back to an array for traversal, sorting the 
+# array in descending numeric order so removal of 
+# earlier rows doesn't interfere with indexing for 
+# later rows.
+my %cull_hash = map { $_ =&gt; 1 } @rows_to_cull;
+my @cull_array = keys %cull_hash;
+@cull_array = sort { $b &lt;=&gt; $a } @cull_array;
+
+for (@cull_array) {
+splice(@table,$_,1);
+}
+
+# Loop which ensures the uniqueness of elements in the 
+# replacement candidate arrays.
+for my $row (0..$#table) {
+    my $replacement = $table[$row]-&gt;[1];
+    if (ref($replacement) eq 'ARRAY' &amp;&amp; length $replacement &gt; 1) {
+        my @unique = uniq(@$replacement);
+        $table[$row]-&gt;[1] = \@unique;
+    }
+}
+
+# The following takes the second argument from the 
+# command line as the directory to operate on. It 
+# also identifies a filter subroutine to exclude 
+# non-documentation files from the checks, and a 
+# subroutine that will actually do the search-and-replace.
+find({ 
+    preprocess =&gt; \&amp;filter, 
+    wanted =&gt; \&amp;search_and_replace 
+    }, 
+    $ARGV[1]
+);
+
+sub filter {
+    return grep { -d or (-f and ( /\.txt$/ or /\.rst$/ or /\.yaml$/))} @_;
+}
+
+# Main loop
+
+sub search_and_replace {
+      open my $target_file, "&lt;", $_;
+      $| = 1;
+      my $filename = $_;
+      while (my $target_string = &lt;$target_file&gt;) {
+        for my $row (@table) {
+          my $search = $row-&gt;[0];
+          my $replacement = $row-&gt;[1];
+               
+          if ((lc $target_string) =~ (lc $search)) {
+            print "Found $search in $filename in the following context:\n";
+            print "$target_string\n";
+            if (ref($replacement) eq 'ARRAY' &amp;&amp; length $replacement &gt; 1) {
+              print "Choose a replacement candidate by typing the appropriate number, or else type '0' to skip.\n";
+              my $count = 1;
+              for my $value (@$replacement) {
+                print "$count\) $value\n";
+                  $count++;
+              }
+              my $choice = &lt;STDIN&gt;;
+              if ($choice &gt;= 1 &amp;&amp; $choice &lt;= (length $replacement)) {
+                my $replace_choice = $replacement-&gt;[$choice];
+                edit_file { s/$search/$replace_choice/gi} $filename;
+              }
+              else {
+                print "Skipping this occurrence without replacing.\n";
+              }
+            }
+            else {
+              print "Confirm replacement with $replacement by typing y, or skip by typing any other key.\n";
+              my $choice = &lt;STDIN&gt;;
+              if ($choice eq 'y' || 'Y') {
+                edit_file { s/$search/$replacement/gi } $filename;
+              }
+              else {
+                print "Skipping this occurrence without replacing.\n";
+              }
+            }
+          }
+        }
+      }
+      close $target_file;
+}
+&lt;/code&gt;
+
+As for the input, here are some example rows from the CSV file itself, pre-sorted:
+
+&lt;code&gt;
+whitelist entries,Noun,access list entries
+IP whitelist,Noun,IP access list
+IP whitelist entries,Noun,IP access list entries
+whitelist,Adjective,allow
+whitelist,Noun,access list
+whitelist,Noun,access-list
+whitelist,Verb,allow
+your whitelist,Noun,your access list
+&lt;/code&gt;
+
+As far as output goes, the sort should (and currently does) result in an entry like 'IP whitelist' being checked for before 'whitelist' itself, and 'IP whitelist entries' before 'IP whitelist; so I would expect that after I confirm wanting to replace 'IP whitelist entries' with 'IP access list entries', I would NOT be subsequently prompted to replace 'IP whitelist' within that instance of 'IP whitelist entries', because 'whitelist' would have already been replaced there. Similarly, I wouldn't want to be prompted to replace 'whitelist' alone in that spot for the same reason.
+
+Please let me know what more might be needed. I have started looking at the tutorial you linked and it seems promising.
+&lt;br /&gt;
+&lt;br /&gt;
+EDIT: Corrected formatting errors due to copy-pasting code block with long lines.</doctext>
+<root_node field_name="root_node">11145971</root_node>
+<parent_node field_name="parent_node">11145972</parent_node>
+<thread id="11145971">
+<node id="11145972"><node id="11145975"><node id="11145976"/>
+<node id="11145977"><node id="11145978"><node id="11146003"><node id="11146017"/>
+</node>
+<node id="11149762"><node id="11149767"/>
+</node>
+</node>
+<node id="11146065"/>
+</node>
+<node id="11145979"><node id="11146066"/>
+</node>
+<node id="11146022"><node id="11146026"><node id="11146027"><node id="11146030"><node id="11146032"><node id="11146037"><node id="11146040"><node id="11146041"><node id="11146064"/>
+<node id="11146110"><node id="11146114"/>
+<node id="11146115"><node id="11146117"><node id="11146118"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11145980"><node id="11146067"/>
+</node>
+</thread></node>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11123278" title="Re: a simple web front end" created="2020-10-28 17:07:05" updated="2020-10-28 17:07:05" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;So i fill textarea, press submit and... i get raw json response in my browser.
+Question is:
+How do i separate "api" from "frontend" and made them pass data between each other in order to
+- have nice form &lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note you can seprate your API from the frontend purely on the Perl level. [mod://Mojolicious] includes content negotiation, as I show in the following example (run it e.g. via &lt;c&gt;morbo script.pl&lt;/c&gt;). Note how POST and GET just work, including &lt;c&gt;http://127.0.0.1:3000/myform?foo=helloworld&amp;format=json&lt;/c&gt; and &lt;c&gt;http://127.0.0.1:3000/myform.txt?foo=blahblah&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use Mojolicious::Lite -signatures;
+
+any '/' =&gt; sub ($c) { $c-&gt;redirect_to('/myform.html') };
+
+sub my_api_do_thing ($arg) { # could/should be in a module!
+	return $arg =~ s/[aeiou]//gr;
+}
+
+any '/myform' =&gt; sub ($c) {
+	if ( defined $c-&gt;param('foo') ) { # if the form was submitted
+		$c-&gt;stash( returnval =&gt; my_api_do_thing( $c-&gt;param('foo') ) );
+	}
+	$c-&gt;respond_to(
+		json =&gt; { json =&gt; { retval =&gt; $c-&gt;stash('returnval') } },
+		txt  =&gt; { text =&gt; $c-&gt;stash('returnval') },
+		html =&gt; { template =&gt; 'myform' },
+	);
+};
+
+app-&gt;start;
+__DATA__
+
+@@ myform.html.ep
+% layout 'main', title =&gt; 'Hello, World!';
+&lt;div&gt;
+% if ( stash 'returnval' ) {
+	&lt;div&gt;
+	Return value: &lt;%= stash 'returnval' %&gt;
+	&lt;/div&gt;
+% }
+%= form_for myform =&gt; ( method=&gt;'post' ) =&gt; begin
+&lt;div&gt;
+	%= label_for foo =&gt; 'Foo'
+	%= text_field foo=&gt;'Foobar?'
+&lt;/div&gt;
+&lt;div&gt;
+	%= radio_button format =&gt; 'html', id=&gt;'format_html', checked =&gt; undef
+	%= label_for format_html =&gt; 'HTML'
+	%= radio_button format =&gt; 'json', id=&gt;'format_json'
+	%= label_for format_json =&gt; 'JSON'
+&lt;/div&gt;
+&lt;div&gt;
+	%= submit_button
+&lt;/div&gt;
+%= end
+&lt;/div&gt;
+
+@@ layouts/main.html.ep
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+%= content
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11123234</root_node>
+<parent_node field_name="parent_node">11123234</parent_node>
+<thread id="11123234">
+<node id="11123235"><node id="11123256"><node id="11123258"><node id="11123303"/>
+</node>
+</node>
+</node>
+<node id="11123238"><node id="11123255"><node id="11123257"/>
+</node>
+</node>
+<node id="11123278"/>
+<node id="11123304"/>
+</thread></node>

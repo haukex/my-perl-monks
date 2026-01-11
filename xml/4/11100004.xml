@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100004" title="Re: processing file content as string vs array" created="2019-05-14 21:26:03" updated="2019-05-14 21:26:03" _doctext_mode="lenient"><type id="11">note</type>
+<author id="732669">Marshall</author>
+<doctext field_name="doctext">I see that you are happy with the flip-flop operator as demo'ed by [haukex]. The flip-flop operator in Perl keeps the state of whether or not you are within the beginning or closing statements of some data record.  I like that operator, but it may not be the best in all situations.&lt;p&gt;
+
+In a language without the flip-flop operator, another method is to call a subroutine when the beginning of record is seen. Use that subroutine to process the record. This handles the "state information" of whether or not you are inside the record without having to have a flag value.  Of course adjustments are necessary depending upon whether the first or last values of the record need to be included or not.&lt;p&gt;
+
+Here is some possible code:
+&lt;readmore&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+while (&lt;DATA&gt;) 
+{
+    process_record ($_) if /\@user_info_start/;
+}
+
+sub process_record #include first and last line
+{
+   my $start_of_record = shift;
+   my @userinfo;
+   
+   push @userinfo, $start_of_record;
+   
+   my $line;
+   
+   do { 
+      $line =&lt;DATA&gt;;
+      push @userinfo, $line;
+   } until $line =~ /\@user_info_end/;
+   
+   print @userinfo; 
+   print "\n";  
+}   
+   
+
+=Prints
+
+xxxx*@user_info_start
+xxxx*@Title         : Mr
+xxxx*@Username   : xxxxx
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0001
+xxxx*@Create_Date       : 20190407
+xxxx*@Product       : xxxx
+xxxx*@user_info_end
+
+xxxx*@user_info_start
+xxxx*@Title         : Mr
+xxxx*@Username   : yy
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0005
+xxxx*@Create_Date       : 43
+xxxx*@Product       : xxxx
+xxxx*@user_info_end
+
+=cut
+
+__DATA__
+xxxxxxxxxxx
+xxxx*@user_info_start
+xxxx*@Title         : Mr
+xxxx*@Username   : xxxxx
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0001
+xxxx*@Create_Date       : 20190407
+xxxx*@Product       : xxxx
+xxxx*@user_info_end
+d987sd66bd
+xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxx
+xxxx*@user_info_start
+xxxx*@Title         : Mr
+xxxx*@Username   : yy
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0005
+xxxx*@Create_Date       : 43
+xxxx*@Product       : xxxx
+xxxx*@user_info_end
+somebus here or blank lines? whatever
+xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+&lt;/c&gt;
+&lt;/readmore&gt;
+Or perhaps.
+&lt;readmore&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+while (&lt;DATA&gt;) 
+{
+    process_record() if /\@user_info_start/;
+}
+
+sub process_record
+{
+  my $line;
+  print $line while (defined ($line =&lt;DATA&gt;) and $line !~ /\@user_info_end/);
+  print "\n";
+}   
+   
+
+=Prints
+xxxx*@Title         : Mr
+xxxx*@Username   : xxxxx
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0001
+xxxx*@Create_Date       : 20190407
+xxxx*@Product       : xxxx
+
+xxxx*@Title         : Mr
+xxxx*@Username   : yy
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0005
+xxxx*@Create_Date       : 43
+xxxx*@Product       : xxxx
+
+=cut
+
+__DATA__
+xxxxxxxxxxx
+xxxx*@user_info_start
+xxxx*@Title         : Mr
+xxxx*@Username   : xxxxx
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0001
+xxxx*@Create_Date       : 20190407
+xxxx*@Product       : xxxx
+xxxx*@user_info_end
+d987sd66bd
+xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxx
+xxxx*@user_info_start
+xxxx*@Title         : Mr
+xxxx*@Username   : yy
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0005
+xxxx*@Create_Date       : 43
+xxxx*@Product       : xxxx
+xxxx*@user_info_end
+somebus here or blank lines? whatever
+xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+&lt;/c&gt;
+&lt;/readmore&gt;
+Update:&lt;p&gt;
+of course the first example could avoid a push...In general, Don't "push" when you can "print"!
+&lt;readmore&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+while (&lt;DATA&gt;) 
+{
+    process_record ($_) if /\@user_info_start/;
+}
+
+sub process_record #include first and last line
+{
+   my $start_of_record = shift;
+     
+   print $start_of_record;
+   
+   my $line;
+   
+   do { 
+      $line =&lt;DATA&gt;;
+      print $line;
+   } until $line =~ /\@user_info_end/;
+
+   print "\n";  
+}   
+   
+
+=Prints
+
+xxxx*@user_info_start
+xxxx*@Title         : Mr
+xxxx*@Username   : xxxxx
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0001
+xxxx*@Create_Date       : 20190407
+xxxx*@Product       : xxxx
+xxxx*@user_info_end
+
+xxxx*@user_info_start
+xxxx*@Title         : Mr
+xxxx*@Username   : yy
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0005
+xxxx*@Create_Date       : 43
+xxxx*@Product       : xxxx
+xxxx*@user_info_end
+
+=cut
+
+__DATA__
+xxxxxxxxxxx
+xxxx*@user_info_start
+xxxx*@Title         : Mr
+xxxx*@Username   : xxxxx
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0001
+xxxx*@Create_Date       : 20190407
+xxxx*@Product       : xxxx
+xxxx*@user_info_end
+d987sd66bd
+xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxx
+xxxx*@user_info_start
+xxxx*@Title         : Mr
+xxxx*@Username   : yy
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0005
+xxxx*@Create_Date       : 43
+xxxx*@Product       : xxxx
+xxxx*@user_info_end
+somebus here or blank lines? whatever
+xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+&lt;/c&gt;
+&lt;/readmore&gt;
+I guess yet another way...
+&lt;readmore&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+while (&lt;DATA&gt;) 
+{
+    process_record ($_) if /\@user_info_start/;
+}
+
+sub process_record # include first and last line
+{
+   my $start_of_record = shift;
+     
+   print $start_of_record;
+   
+   my $line;
+   
+   # a bit of strangeness caused by using &lt;DATA&gt; handle
+   
+   while (defined ($line=&lt;DATA&gt;) and $line !~ /\@user_info_end/)
+   {
+      print $line;
+   }
+   print $line;  #the last line of record
+
+   print "\n";  
+}   
+   
+
+=Prints
+
+xxxx*@user_info_start
+xxxx*@Title         : Mr
+xxxx*@Username   : xxxxx
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0001
+xxxx*@Create_Date       : 20190407
+xxxx*@Product       : xxxx
+xxxx*@user_info_end
+
+xxxx*@user_info_start
+xxxx*@Title         : Mr
+xxxx*@Username   : yy
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0005
+xxxx*@Create_Date       : 43
+xxxx*@Product       : xxxx
+xxxx*@user_info_end
+
+=cut
+
+__DATA__
+xxxxxxxxxxx
+xxxx*@user_info_start
+xxxx*@Title         : Mr
+xxxx*@Username   : xxxxx
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0001
+xxxx*@Create_Date       : 20190407
+xxxx*@Product       : xxxx
+xxxx*@user_info_end
+d987sd66bd
+xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxx
+xxxx*@user_info_start
+xxxx*@Title         : Mr
+xxxx*@Username   : yy
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0005
+xxxx*@Create_Date       : 43
+xxxx*@Product       : xxxx
+xxxx*@user_info_end
+somebus here or blank lines? whatever
+xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1233681</root_node>
+<parent_node field_name="parent_node">1233681</parent_node>
+<thread id="1233681">
+<node id="1233684"><node id="1233687"><node id="1233688"/>
+<node id="1233689"/>
+<node id="1233732"/>
+</node>
+</node>
+<node id="1233692"><node id="1233694"><node id="1233695"><node id="1233698"/>
+</node>
+<node id="1233755"/>
+</node>
+</node>
+<node id="11100004"><node id="11100041"><node id="11100133"><node id="11100227"><node id="11100307"><node id="11100327"><node id="11100328"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

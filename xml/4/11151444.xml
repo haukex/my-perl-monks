@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11151444" title="Specifying a DNS resolver" created="2023-04-03 09:21:14" updated="2023-04-03 09:21:14" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="531404">g_speran</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Perl Monks,
+   The code I have below, works fine for all intended purposes of what specifically needs to be accomplish.  However, there is one item that i also would like to incorporate but not sure how or if it is possible.  Is, there a way below, to incorporate the ability to specify one or more DNS resolvers to resolve the lookups against?
+&lt;/p&gt;
+&lt;code&gt;
+use Net::hostent;
+use Socket;
+use Data::Dumper::Simple;
+$IP='192.168.50.70';
+$resolver='192.168.10.99';
+
+Host_IP ();
+print "\n\n\n\n";
+Host_Name ('garytest');
+
+sub Host_IP () {
+	$address=inet_aton($IP);
+	
+	if($hent = gethostbyaddr($address)) {
+		$name      = $hent-&gt;name; 
+		$aliases = $hent-&gt;aliases;
+		$RESULT="NSLOOKUP by IP: $IP =&gt; $name";
+		print $RESULT;
+		if (scalar(@{$aliases} &gt; 1)) {
+			$RESULT="   Multiple hostnames are being returned.  Correct DNS\n";
+			$RESULT = $RESULT . "   \taddress $IP has the following names:\n";
+			$RESULT = $RESULT . "\t$_\n" for ($name, @{$aliases});
+			print $RESULT;
+		}
+	}else {
+		$RESULT= "NSLOOKUP by IP: $IP =&gt; #### UNRESOLVABLE ####";
+		print $RESULT;
+	}
+}
+
+sub Host_Name () {
+	$name=shift;
+	if ($hent = gethostbyname($name)) {
+		$name2      = $hent-&gt;name;                # in case different
+		$addr_ref  = $hent-&gt;addr_list;
+		@addresses = map { inet_ntoa($_) } @$addr_ref;
+
+		push(@all_addresses,@addresses);
+		$RESULT= "NSLOOKUP by Name: $name =&gt; $name2 =&gt; " . join(', ', sort(@addresses)) ;
+		print $RESULT;
+		if (scalar(@addresses) &gt; 1) {
+			$RESULT="\n   Multiple IP Address being returned.  Correct DNS";
+			print $RESULT;
+		}
+	}
+	else{
+		$RESULT= "NSLOOKUP by Name: $name =&gt; #### UNRESOLVABLE ####";
+		print $RESULT;
+	}
+}
+
+&lt;/code&gt;</doctext>
+<thread id="11151444">
+<node id="11151445"/>
+<node id="11151446"><node id="11151447"/>
+</node>
+<node id="11151506"><node id="11151508"><node id="11151509"/>
+</node>
+</node>
+</thread></node>

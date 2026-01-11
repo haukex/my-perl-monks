@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1197703" title="Re^2: readdir() on a sysopen() handle?" created="2017-08-20 10:25:01" updated="2017-08-20 10:25:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;As you wrote this I was actually fiddling with exactly that :-) The relevant Perl source appears to be [https://perl5.git.perl.org/perl.git/blob/f1f71a0091d3:/pp_sys.c#l4029|pp_open_dir in pp_sys.c], which uses the &lt;c&gt;IoDIRP&lt;/c&gt; macro, which apparently accesses the &lt;c&gt;DIR * xiou_dirp&lt;/c&gt; slot of &lt;c&gt;struct xpvio&lt;/c&gt;, but I can't seem to find any more documentation on it.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Disclaimer:&lt;/i&gt; I am not an XS expert, I can't guarantee that the following is entirely correct! I got some of this from the [mod://Inline::C::Cookbook], a bit of research in [doc://perlapi], and a bit of fiddling...&lt;/p&gt;
+&lt;p&gt;&lt;c&gt;myreaddir&lt;/c&gt; does all of the work of opening and reading the directory in C, returning a Perl list, while &lt;c&gt;_xs_myfdopendir&lt;/c&gt; with the Perl wrapper &lt;c&gt;myfdopendir&lt;/c&gt; attempts to be a custom [doc://opendir].&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use Inline C =&gt; &lt;&lt;'END_OF_C';
+void myreaddir(SV* sv_dirn) {
+	Inline_Stack_Vars;
+	Inline_Stack_Reset;
+	int fd = open( SvPVx(sv_dirn, PL_na),
+		O_RDONLY|O_DIRECTORY|O_NOFOLLOW);
+	if (fd&lt;0) Inline_Stack_Return(0);
+	DIR* dir = fdopendir(fd);
+	if (dir==NULL) Inline_Stack_Return(0);
+	struct dirent *dp;
+	while ( (dp=readdir(dir)) != NULL )
+		Inline_Stack_Push(sv_2mortal(
+			newSVpvf("%s", dp-&gt;d_name) ));
+	if( closedir(dir)!=0 ) Inline_Stack_Return(0);
+	Inline_Stack_Done;
+}
+int _xs_myfdopendir(SV* sv_dirn, SV* sv_hnd) {
+	int fd = open( SvPVx(sv_dirn, PL_na),
+		O_RDONLY|O_DIRECTORY|O_NOFOLLOW);
+	if (fd&lt;0) return 0;
+	DIR* dir = fdopendir(fd);
+	if (dir==NULL) return 0;
+	IoDIRP(sv_2io(sv_hnd)) = dir;
+	return 1;
+}
+END_OF_C
+use Symbol qw/geniosym/;
+use File::Spec;
+sub myfdopendir {
+	return unless _xs_myfdopendir(
+		$_[0]//File::Spec-&gt;curdir,
+		my $dh=geniosym );
+	return $dh;
+}
+
+use Data::Dump;
+my @x = myreaddir('/tmp') or die $!;
+dd @x;
+my $dh = myfdopendir('/tmp') or die $!;
+dd readdir $dh;
+closedir $dh or die $!;
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; A couple of Perl modules that use XS to read directories, in particular the first one's &lt;c&gt;readdir_hashref&lt;/c&gt; looks like it could be modified fairly simply: [dist://ReadDir], [dist://IO-Dirent], [dist://PerlIO-Util]&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1197688</root_node>
+<parent_node field_name="parent_node">1197699</parent_node>
+<thread id="1197688">
+<node id="1197692"><node id="1197694"><node id="1197704"><node id="1197744"/>
+</node>
+<node id="1197709"><node id="1197711"/>
+</node>
+</node>
+</node>
+<node id="1197695"><node id="1197697"/>
+</node>
+<node id="1197699"><node id="1197703"><node id="1197718"><node id="1197723"><node id="1197756"><node id="1197774"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1197717"><node id="1197745"/>
+</node>
+</thread></node>

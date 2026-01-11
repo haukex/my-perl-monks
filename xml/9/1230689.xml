@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230689" title="Re^2: truncate string to byte count" created="2019-02-28 16:04:55" updated="2019-02-28 16:04:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+sub truncate_utf8 {
+   my ($utf8, $len) = @_;
+   $len += 0;  # Make sure $len is a number.
+   return $utf8 =~ s/^.{0,$len)\K(?![\x80-\xBF]).*//sr;
+}
+&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;&lt;c&gt;Unmatched ) in regex&lt;/c&gt;, and if I fix that:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More tests=&gt;15;
+use open qw/:std :utf8/;
+
+my $in = "\N{U+CF} \N{U+2764} \N{U+1F42A}";
+is truncate_utf8($in, 11), "\N{U+CF} \N{U+2764} \N{U+1F42A}";
+is truncate_utf8($in, $_), "\N{U+CF} \N{U+2764} " for 10,9,8,7;
+is truncate_utf8($in,  6), "\N{U+CF} \N{U+2764}";
+is truncate_utf8($in, $_), "\N{U+CF} " for 5,4,3;
+is truncate_utf8($in,  2), "\N{U+CF}";
+is truncate_utf8($in, $_), "" for 1,0;
+
+$in = "\xE4b";
+utf8::downgrade($in); # make sure this really is a non-UTF8 string
+is truncate_utf8($in, 2), "\xE4b";
+is truncate_utf8($in, 1), "\xE4";
+is truncate_utf8($in, 0), "";
+
+sub truncate_utf8 {
+   my ($utf8, $len) = @_;
+   $len += 0;  # Make sure $len is a number.
+   return $utf8 =~ s/^.{0,$len}\K(?![\x80-\xBF]).*//sr;
+}
+
+__END__
+
+1..15
+ok 1
+not ok 2
+#   Failed test at x.pl line 9.
+Wide character in print at /opt/perl5.28/lib/site_perl/5.28.1/Test2/Formatter/TAP.pm line 112.
+#          got: 'Ï &amp;#10084; &amp;#128042;'
+#     expected: 'Ï &amp;#10084; '
+not ok 3
+#   Failed test at x.pl line 9.
+Wide character in print at /opt/perl5.28/lib/site_perl/5.28.1/Test2/Formatter/TAP.pm line 112.
+#          got: 'Ï &amp;#10084; &amp;#128042;'
+#     expected: 'Ï &amp;#10084; '
+not ok 4
+#   Failed test at x.pl line 9.
+Wide character in print at /opt/perl5.28/lib/site_perl/5.28.1/Test2/Formatter/TAP.pm line 112.
+#          got: 'Ï &amp;#10084; &amp;#128042;'
+#     expected: 'Ï &amp;#10084; '
+not ok 5
+#   Failed test at x.pl line 9.
+Wide character in print at /opt/perl5.28/lib/site_perl/5.28.1/Test2/Formatter/TAP.pm line 112.
+#          got: 'Ï &amp;#10084; &amp;#128042;'
+#     expected: 'Ï &amp;#10084; '
+not ok 6
+#   Failed test at x.pl line 10.
+Wide character in print at /opt/perl5.28/lib/site_perl/5.28.1/Test2/Formatter/TAP.pm line 112.
+#          got: 'Ï &amp;#10084; &amp;#128042;'
+#     expected: 'Ï &amp;#10084;'
+not ok 7
+#   Failed test at x.pl line 11.
+Wide character in print at /opt/perl5.28/lib/site_perl/5.28.1/Test2/Formatter/TAP.pm line 112.
+#          got: 'Ï &amp;#10084; &amp;#128042;'
+#     expected: 'Ï '
+not ok 8
+#   Failed test at x.pl line 11.
+Wide character in print at /opt/perl5.28/lib/site_perl/5.28.1/Test2/Formatter/TAP.pm line 112.
+#          got: 'Ï &amp;#10084; '
+#     expected: 'Ï '
+not ok 9
+#   Failed test at x.pl line 11.
+Wide character in print at /opt/perl5.28/lib/site_perl/5.28.1/Test2/Formatter/TAP.pm line 112.
+#          got: 'Ï &amp;#10084;'
+#     expected: 'Ï '
+not ok 10
+#   Failed test at x.pl line 12.
+#          got: '&amp;#65533; '
+#     expected: '&amp;#65533;'
+not ok 11
+#   Failed test at x.pl line 13.
+#          got: '&amp;#65533;'
+#     expected: ''
+ok 12
+ok 13
+ok 14
+ok 15
+# Looks like you failed 10 tests of 15.
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+sub truncate_utf8 {
+   my ($utf8, $len) = @_;
+   return $utf8 if length($utf8) &lt;= $len;
+   my $next = substr($utf8, $len, length($utf8)-$len, '');
+   $next = chop($utf8) while (ord($next) &amp; 0xC0) == 0x80;
+   return $utf8;
+}
+&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More tests=&gt;15;
+use open qw/:std :utf8/;
+
+my $in = "\N{U+CF} \N{U+2764} \N{U+1F42A}";
+is truncate_utf8($in, 11), "\N{U+CF} \N{U+2764} \N{U+1F42A}";
+is truncate_utf8($in, $_), "\N{U+CF} \N{U+2764} " for 10,9,8,7;
+is truncate_utf8($in,  6), "\N{U+CF} \N{U+2764}";
+is truncate_utf8($in, $_), "\N{U+CF} " for 5,4,3;
+is truncate_utf8($in,  2), "\N{U+CF}";
+is truncate_utf8($in, $_), "" for 1,0;
+
+$in = "\xE4b";
+utf8::downgrade($in); # make sure this really is a non-UTF8 string
+is truncate_utf8($in, 2), "\xE4b";
+is truncate_utf8($in, 1), "\xE4";
+is truncate_utf8($in, 0), "";
+
+sub truncate_utf8 {
+   my ($utf8, $len) = @_;
+   return $utf8 if length($utf8) &lt;= $len;
+   my $next = substr($utf8, $len, length($utf8)-$len, '');
+   $next = chop($utf8) while (ord($next) &amp; 0xC0) == 0x80;
+   return $utf8;
+}
+
+__END__
+
+1..15
+ok 1
+not ok 2
+#   Failed test at x.pl line 9.
+Wide character in print at /opt/perl5.28/lib/site_perl/5.28.1/Test2/Formatter/TAP.pm line 112.
+#          got: 'Ï &amp;#10084; &amp;#128042;'
+#     expected: 'Ï &amp;#10084; '
+not ok 3
+#   Failed test at x.pl line 9.
+Wide character in print at /opt/perl5.28/lib/site_perl/5.28.1/Test2/Formatter/TAP.pm line 112.
+#          got: 'Ï &amp;#10084; &amp;#128042;'
+#     expected: 'Ï &amp;#10084; '
+not ok 4
+#   Failed test at x.pl line 9.
+Wide character in print at /opt/perl5.28/lib/site_perl/5.28.1/Test2/Formatter/TAP.pm line 112.
+#          got: 'Ï &amp;#10084; &amp;#128042;'
+#     expected: 'Ï &amp;#10084; '
+not ok 5
+#   Failed test at x.pl line 9.
+Wide character in print at /opt/perl5.28/lib/site_perl/5.28.1/Test2/Formatter/TAP.pm line 112.
+#          got: 'Ï &amp;#10084; &amp;#128042;'
+#     expected: 'Ï &amp;#10084; '
+not ok 6
+#   Failed test at x.pl line 10.
+Wide character in print at /opt/perl5.28/lib/site_perl/5.28.1/Test2/Formatter/TAP.pm line 112.
+#          got: 'Ï &amp;#10084; &amp;#128042;'
+#     expected: 'Ï &amp;#10084;'
+not ok 7
+#   Failed test at x.pl line 11.
+Wide character in print at /opt/perl5.28/lib/site_perl/5.28.1/Test2/Formatter/TAP.pm line 112.
+#          got: 'Ï &amp;#10084; &amp;#128042;'
+#     expected: 'Ï '
+not ok 8
+#   Failed test at x.pl line 11.
+Wide character in print at /opt/perl5.28/lib/site_perl/5.28.1/Test2/Formatter/TAP.pm line 112.
+#          got: 'Ï &amp;#10084; '
+#     expected: 'Ï '
+not ok 9
+#   Failed test at x.pl line 11.
+Wide character in print at /opt/perl5.28/lib/site_perl/5.28.1/Test2/Formatter/TAP.pm line 112.
+#          got: 'Ï &amp;#10084;'
+#     expected: 'Ï '
+not ok 10
+#   Failed test at x.pl line 12.
+#          got: '&amp;#65533; '
+#     expected: '&amp;#65533;'
+not ok 11
+#   Failed test at x.pl line 13.
+#          got: '&amp;#65533;'
+#     expected: ''
+ok 12
+ok 13
+ok 14
+ok 15
+# Looks like you failed 10 tests of 15.
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1230633</root_node>
+<parent_node field_name="parent_node">1230687</parent_node>
+<thread id="1230633">
+<node id="1230639"/>
+<node id="1230640"><node id="1230641"/>
+<node id="1230660"><node id="1230708"/>
+</node>
+</node>
+<node id="1230642"><node id="1230643"/>
+</node>
+<node id="1230645"/>
+<node id="1230646"><node id="1230647"/>
+<node id="1230667"/>
+<node id="1230685"/>
+</node>
+<node id="1230659"><node id="1230686"><node id="1230688"><node id="1230690"/>
+</node>
+</node>
+</node>
+<node id="1230687"><node id="1230689"><node id="1230691"><node id="1230692"><node id="1230693"/>
+<node id="1230694"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1230711"/>
+</thread></node>

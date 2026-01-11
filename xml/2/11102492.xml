@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11102492" title="Re^5: Question about base64 encoded attributes with Net::LDAP::LDIF (updated!)" created="2019-07-07 05:11:55" updated="2019-07-07 05:11:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Thanks for the sample! I had a look at the [mod://Net::LDAP::LDIF] source, and it looks like the &lt;c&gt;encode =&gt; 'base64'&lt;/c&gt; option [https://github.com/perl-ldap/perl-ldap/blob/1176dd75fa9fac60f/lib/Net/LDAP/LDIF.pm#L496|only affects] the &lt;c&gt;dn:&lt;/c&gt;, and attributes are [https://github.com/perl-ldap/perl-ldap/blob/1176dd75fa9fac60f/lib/Net/LDAP/LDIF.pm#L424|only decided] based on what characters they contain, nothing else. So unfortunately, unless you patch* this module, it won't be able to do what you want...&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Of course, you could send all of the LDIF files through a "canonicalization" once, so that the diffs later on only show the actual changes. Or, if this is about version control, there are git filters... (not the most elegant solutions, just some ideas)&lt;/p&gt;
+&lt;p&gt;* &lt;b&gt;Update 2:&lt;/b&gt; Here's one way. The disadvantage is of course that if the module author makes changes to &lt;c&gt;Net::LDAP::LDIF::_write_attr&lt;/c&gt;, you'd have to carry those over manually.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+use Net::LDAP::LDIF;
+
+{
+	package Net::LDAP::LDIF::B64;
+	use parent 'Net::LDAP::LDIF';
+	sub _write_attr {
+		my($self, $attr, $val) = @_;
+		my $lower = $self-&gt;{lowercase};
+		my $fh = $self-&gt;{fh};
+		my $b64 = $self-&gt;{b64attr};
+		my $res = 1;  # result value
+		foreach my $v (@$val) {
+			my $ln = $lower ? lc $attr : $attr;
+			$v = Encode::encode_utf8($v)
+			if (Net::LDAP::LDIF::CHECK_UTF8 and Encode::is_utf8($v));
+			if ( $v =~ /(^[ :&lt;]|[\x00-\x1f\x7f-\xff]| $)/
+				|| $b64 &amp;&amp; $attr=~$b64 ) {
+				require MIME::Base64;
+				$ln .= ':: ' . MIME::Base64::encode($v, '');
+			}
+			else {
+				$ln .= ': ' . $v;
+			}
+			$res &amp;&amp;= print $fh
+				Net::LDAP::LDIF::_wrap($ln, $self-&gt;{wrap}), "\n";
+		}
+		$res;
+	}
+}
+
+our $old_ldif = Net::LDAP::LDIF-&gt;new( "dump.ldif", "r",
+	onerror =&gt; 'undef' );
+our $new_ldif = Net::LDAP::LDIF::B64-&gt;new( "dump_new.ldif", "w",
+	onerror =&gt; 'undef', wrap =&gt; 76, b64attr =&gt; qr/\AuserPassword\z/ );
+while (not $old_ldif-&gt;eof()) {
+	my $entry = $old_ldif-&gt;read_entry();
+	if ($old_ldif-&gt;error()) {
+		warn "Error msg: ", $old_ldif-&gt;error(), "\n";
+		warn "Error lines:\n", $old_ldif-&gt;error_lines(), "\n";
+	} else {
+		# delete attributes no longer needed
+		foreach my $attr ($entry-&gt;attributes()) {
+			if ($attr =~ /^rutgersEduStatus/) {
+				$entry-&gt;delete($attr);
+			}
+		}
+		$new_ldif-&gt;write_entry($entry);
+	}
+}
+$old_ldif-&gt;done();
+$new_ldif-&gt;done();
+
+__END__
+
+--- dump.ldif	2019-07-07 11:03:31.773616611 +0200
++++ dump_new.ldif	2019-07-07 11:43:27.799984355 +0200
+@@ -20,6 +20,5 @@
+ homePostalAddress: 433 W County Dr$Somerville, NJ 088763470
+ postalAddress: R U C S
+ rutgersEduDateOfBirth: 1960-01-01
+-rutgersEduStatus: active
+ uidNumber: 120001
+ userPassword:: e1NBU0x9dGVzdGluZ0BSVVRHRVJTLkVEVQ==
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11102005</root_node>
+<parent_node field_name="parent_node">11102314</parent_node>
+<thread id="11102005">
+<node id="11102011"><node id="11102034"/>
+</node>
+<node id="11102157"><node id="11102267"><node id="11102269"><node id="11102314"><node id="11102492"><node id="11103250"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

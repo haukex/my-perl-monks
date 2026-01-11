@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203375" title="Re: Unexpected interaction between decode_entities() and lc()" created="2017-11-14 08:55:11" updated="2017-11-14 08:55:11" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;It took a little editing but I was able to reproduce this (Linux / Perl 5.26). Note that AFAIK PerlMonks defaults to the Latin1 character set encoding, so as opposed to the file you get from the &lt;u&gt;&lt;c&gt;[download]&lt;/c&gt;&lt;/u&gt; link, I am assuming that your source code file is correctly encoded in valid UTF-8 and contains the correctly encoded characters "É" and "é". In my post below I am using the &lt;c&gt;&lt;pre&gt;&lt;/c&gt; instead of &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags (and a few other replacements) in order to get PerlMonks to display the post correctly. For posting on PerlMonks, personally I would not &lt;c&gt;use utf8;&lt;/c&gt; and use &lt;c&gt;\x{00C9}&lt;/c&gt; escapes instead, although then again, if I do that with your code, none of the input strings are flagged as UTF-8. (&lt;i&gt;Update:&lt;/i&gt; With &lt;c&gt;\N{U+00C9}&lt;/c&gt;, they do get flagged as UTF8.)&lt;/p&gt;
+&lt;p&gt;It appears that [mod://HTML::Entities]'s &lt;c&gt;decode_entities&lt;/c&gt; does not enable the UTF8 flag on the string, so that the non-UTF8 string &lt;c&gt;"&amp;Eacute;dition limit&amp;eacute;e."&lt;/c&gt; does not get upgraded.&lt;/p&gt;
+&lt;pre&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use utf8;
+use open qw/:std :utf8/;
+use HTML::Entities;
+use Devel::Peek;
+
+my @strs = ("Édition limitÉe.",
+	"Édition limit&amp;amp;Eacute;e.",
+	"&amp;amp;Eacute;dition limit&amp;amp;Eacute;e.");
+for my $str (@strs) {
+	$str = decode_entities($str);
+	Dump($str);
+	$str = lc($str);
+	Dump($str);
+	print "{$str}\n";
+}
+
+__END__
+
+# Output edited for brevity
+SV = ... FLAGS = (POK,pPOK,UTF8)
+  PV = 0xf667c0 "\303\211dition limit\303\211e."\0 &amp;#91;UTF8 "\x{c9}dition limit\x{c9}e."&amp;#93;
+SV = ... FLAGS = (POK,pPOK,UTF8)
+  PV = 0xf667c0 "\303\251dition limit\303\251e."\0 &amp;#91;UTF8 "\x{e9}dition limit\x{e9}e."&amp;#93;
+{édition limitée.}
+SV = ... FLAGS = (POK,pPOK,UTF8)
+  PV = 0xffde20 "\303\211dition limit\303\211e."\0 &amp;#91;UTF8 "\x{c9}dition limit\x{c9}e."&amp;#93;
+SV = ... FLAGS = (POK,pPOK,UTF8)
+  PV = 0xffde20 "\303\251dition limit\303\251e."\0 &amp;#91;UTF8 "\x{e9}dition limit\x{e9}e."&amp;#93;
+{édition limitée.}
+SV = ... FLAGS = (POK,pPOK)
+  PV = 0xfe3440 "\311dition limit\311e."\0
+SV = ... FLAGS = (POK,pPOK)
+  PV = 0xfe3440 "\311dition limit\311e."\0
+{Édition limitÉe.}
+&lt;/pre&gt;
+&lt;p&gt;The "correct" way to solve this depends a bit on where these strings you are getting are coming from. Are they all embedded in your source code? Are you reading them from a file? If so, are you opening the files with the correct layers, that is for exaple, &lt;c&gt;open my $fh, '&lt;:encoding(UTF-8)', ...&lt;/c&gt;?&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; In the code, changed all &lt;tt&gt;é&lt;/tt&gt; to &lt;tt&gt;É&lt;/tt&gt; and &lt;c&gt;&amp;eacute;&lt;/c&gt; to &lt;c&gt;&amp;Eacute;&lt;/c&gt; to make the effects more clear. (Also, I can't reproduce the dependence on the &lt;c&gt;-w&lt;/c&gt; switch that [1nickt] reported.)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203368</root_node>
+<parent_node field_name="parent_node">1203368</parent_node>
+<thread id="1203368">
+<node id="1203370"><node id="1203371"><node id="1203379"/>
+</node>
+</node>
+<node id="1203375"><node id="1203387"><node id="1203391"><node id="1203393"><node id="1203403"/>
+</node>
+</node>
+<node id="1203392"><node id="1203614"><node id="1203617"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1203402"><node id="1203423"/>
+<node id="1203452"><node id="1203457"/>
+</node>
+</node>
+</thread></node>

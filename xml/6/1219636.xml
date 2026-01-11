@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1219636" title="Re^3: redacting from config hash" created="2018-08-01 05:16:57" updated="2018-08-01 05:16:57" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;if we're to imitate the syntax in my source it begins: &lt;c&gt;our %config = (&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You can get this kind of output from my code by changing &lt;c&gt;Data::Dumper-&gt;new([$CONFIG],['$CONFIG'])&lt;/c&gt; to &lt;c&gt;Data::Dumper-&gt;new([$CONFIG],['*config'])&lt;/c&gt; (change the variable names as you like); you'd just have to prepend the &lt;c&gt;our&lt;/c&gt; yourself. See also the [doc://Data::Dumper] docs.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;What makes it very difficult is that we seem to be acting on perl syntax itself.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, that's a pretty complex topic, so [soonix]'s suggestion to use a different configuration file format is a good way to avoid that issue.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+Variable "$config" is not imported at template_stuff/utils2.pm line 61.
+Global symbol "$config" requires explicit package name (did you forget to declare "my $config"?) at template_stuff/utils2.pm line 61.
+&lt;/c&gt;
+Why is my syntax on the config hash clashing with that provided by man Config::Tiny and haukex?
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You've done &lt;c&gt;use config2;&lt;/c&gt;, which should give you a hash &lt;c&gt;%config&lt;/c&gt;, which you can confirm if you comment out the line with &lt;c&gt;-&gt;write&lt;/c&gt;: do you see the output of &lt;c&gt;print Dumper \%config;&lt;/c&gt;? Then, you're doing &lt;c&gt;$config-&gt;write&lt;/c&gt;, which means "call the method &lt;c&gt;write&lt;/c&gt; on the object &lt;c&gt;$config&lt;/c&gt;" - not the hash &lt;c&gt;%config&lt;/c&gt;! That's why Perl complains about the missing variable &lt;c&gt;$config&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;It's possible to create a new [mod://Config::Tiny] object and then copy over the config from &lt;c&gt;config2.pm&lt;/c&gt;'s &lt;c&gt;%config&lt;/c&gt; into that object. However, I am wondering what the goal of your code is here. Are you trying to automate the conversion from &lt;c&gt;config2.pm&lt;/c&gt; into an INI format? If the config is long, I can understand that, but if it's as short as you showed, why not do that step once, by hand? You can then use a method similar to what I showed to create a redacted version, or, again, since that's something you'd probably only be doing once (?), you can do that by hand as well.&lt;/p&gt;
+&lt;p&gt;Taking a step back: My understanding so far is that you want to provide your code for download for others to use, is that right? And you're figuring out a way to disentangle the stuff you've written for yourself (config files etc.) from the general stuff that you want to distribute to everyone? That's pretty common, and a situation I've been in plenty of times. I've found the best approach is to look at it from a different angle and put yourself in the user's shoes, as if you knew nothing about the internals of the package: what steps would a user who downloads the package have to take to set it up? How would you describe those steps in your &lt;c&gt;README&lt;/c&gt; for the user to follow? And then, what do you as the developer have to provide to make that as easy as possible?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1219523</root_node>
+<parent_node field_name="parent_node">1219612</parent_node>
+<thread id="1219523">
+<node id="1219530"><node id="1219540"/>
+<node id="1219612"><node id="1219636"><node id="1219747"><node id="1219776"><node id="1219963"/>
+</node>
+<node id="1219777"><node id="1219962"/>
+</node>
+</node>
+</node>
+<node id="1219643"><node id="1219681"/>
+</node>
+</node>
+</node>
+</thread></node>

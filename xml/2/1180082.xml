@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1180082" title="Re: Detecting 'our $foo =&gt; 1' mistake?" created="2017-01-21 06:24:17" updated="2017-01-21 06:24:17" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [perlancar],&lt;/p&gt;
+&lt;p&gt;I whipped up a [mod://Perl::Critic] policy for you because I think it might also be useful to others... drop the following into, for example, &lt;c&gt;/tmp/testlib/Perl/Critic/Policy/Variables/ProhibitFatCommaInDeclaration.pm&lt;/c&gt;&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+package Perl::Critic::Policy::Variables::ProhibitFatCommaInDeclaration;
+use warnings;
+use strict;
+use base 'Perl::Critic::Policy';
+use Perl::Critic::Utils ':severities';
+use List::Util 'first';
+
+our $VERSION = '0.001';
+sub supported_parameters { return }
+sub default_severity { return $SEVERITY_HIGH }
+sub default_themes { return qw/core bugs/ }
+sub applies_to { return 'PPI::Statement::Variable' }
+
+sub violates {
+    my ($self, $elem) = @_;
+    my $found = first { $_-&gt;isa('PPI::Token::Operator') } $elem-&gt;children;
+    if ($found &amp;&amp; $found-&gt;content eq '=&gt;') {
+		return $self-&gt;violation('Fat comma used in declaration',
+			'You probably meant "=" instead of "=&gt;"', $found);
+    }
+    return;
+}
+
+1;
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Then:&lt;/p&gt;
+&lt;c&gt;
+$ cat testpolicy.pl
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+my $foo =&gt; 'bar';
+our $foo =&gt; 1;
+our $foo =&gt; { a=&gt;'blah', b=&gt;'blah' };
+our $foo = { a=&gt;'blah', b=&gt;'blah' };
+my %foo = ( a=&gt;1, b=&gt;2 );
+
+$ PERL5LIB=/tmp/testlib perlcritic -4 testpolicy.pl
+Fat comma used in declaration at line 5, column 9.  You probably meant "=" instead of "=&gt;".  (Severity: 4)
+Fat comma used in declaration at line 6, column 10.  You probably meant "=" instead of "=&gt;".  (Severity: 4)
+Fat comma used in declaration at line 7, column 10.  You probably meant "=" instead of "=&gt;".  (Severity: 4)
+&lt;/c&gt;
+&lt;p&gt;Really just a quick one for now, so I haven't done any further testing except the above, but I hope it's a start :-)&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; You could perhaps monkey-patch this into your [mod://Perl::Critic] installation by copying &lt;c&gt;ProhibitFatCommaInDeclaration.pm&lt;/c&gt; into the same directory as the one shown when you say &lt;c&gt;perldoc -l Perl::Critic::Policy::Variables::ProhibitLocalVars&lt;/c&gt; (untested). Or perhaps you've already got a [mod://local::lib] setup. Of course, this could be turned into a real module distro too, but I haven't gotten that far :-)&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1180074</root_node>
+<parent_node field_name="parent_node">1180074</parent_node>
+<thread id="1180074">
+<node id="1180076"/>
+<node id="1180078"><node id="1180080"><node id="1180081"><node id="1180086"/>
+</node>
+</node>
+<node id="1180168"/>
+</node>
+<node id="1180082"/>
+</thread></node>

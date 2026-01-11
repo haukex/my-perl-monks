@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1195441" title="Fun with Prototypes" created="2017-07-19 07:54:56" updated="2017-07-19 07:54:56" _doctext_mode="strict"><type id="120">perlmeditation</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Can you tell me:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;How does this get parsed? (e.g. try adding parentheses to show precedence)&lt;/li&gt;
+&lt;li&gt;Given that the body of each of the four &lt;c&gt;sub&lt;/c&gt;s is &lt;c&gt;{ print Dumper(\@_) }&lt;/c&gt;, what is the output?&lt;/li&gt;
+&lt;/ol&gt;
+&lt;c&gt;
+$_ = "#x";
+my @a = qw/b c/;
+
+foo /#(\w+)/, @a;
+bar /#(\w+)/, @a;
+quz /#(\w+)/, @a;
+baz /#(\w+)/, @a;
+&lt;/c&gt;
+&lt;p&gt;Hint:&lt;/p&gt;
+&lt;spoiler&gt;
+&lt;p&gt;Okay, it's a trick question, I'm trying to make a point about [doc://perlsub#Prototypes] - I didn't give enough information for you to answer it, and if you were already thinking of an answer, sorry but you're probably wrong. So here's the missing information:&lt;/p&gt;
+&lt;c&gt;
+sub foo       { print Dumper(\@_) }
+sub bar ()    { print Dumper(\@_) }
+sub quz ($)   { print Dumper(\@_) }
+sub baz ($\@) { print Dumper(\@_) }
+&lt;/c&gt;
+&lt;/spoiler&gt;
+&lt;p&gt;Solution:&lt;/p&gt;
+&lt;spoiler&gt;
+&lt;p&gt;1. Parsing according to &lt;c&gt;perl -MO=Deparse,-p&lt;/c&gt; (with some edits for clarity):&lt;/p&gt;
+&lt;c&gt;
+foo( /#(\w+)/, @a );
+(  bar() /  # division; "#(\w+)/, @a;" is a comment
+   quz( /#(\w+)/ )
+), @a;  # void context
+&amp;baz( scalar(/#(\w+)/), \@a );
+&lt;/c&gt;
+&lt;p&gt;2. Output (again slightly edited, and without [doc://warnings]):&lt;/p&gt;
+&lt;c&gt;
+$VAR1 = ['x','b','c'];   # sub foo
+$VAR1 = [];              # sub bar ()
+$VAR1 = [1];             # sub quz ($)
+$VAR1 = [1, ['b','c']];  # sub baz ($\@)
+&lt;/c&gt;
+&lt;p&gt;See [id://861966]. The code was inspired by [merlyn]'s great node [id://44722].&lt;/p&gt;
+&lt;/spoiler&gt;
+</doctext>
+<thread id="1195441">
+<node id="1195472"/>
+<node id="1195527"><node id="1195836"/>
+</node>
+<node id="1195529"><node id="1195605"/>
+<node id="1195774"><node id="1195792"/>
+</node>
+</node>
+<node id="1199675"/>
+</thread></node>

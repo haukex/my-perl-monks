@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11107884" title="Re^2: String differs from printing to STDOUT and printing to file" created="2019-10-23 06:53:03" updated="2019-10-23 06:53:03" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11107877">cboesch</author>
+<doctext field_name="doctext">Yes, piping the output to a file results in the same as printing to the file.&lt;br&gt;
+So it looks like the terminal does that.&lt;br&gt;
+Here is the code for the whole script:&lt;br&gt;
+&lt;code&gt;
+#!/usr/bin/env perl
+
+use strict;
+use Crypt::Rijndael;
+use MIME::Base64;
+
+my $string = 'QeTEv2804';
+
+sub encrypt {
+  my ($plaintext) = @_;
+  my $password = "uNsY3WSs0hTd";
+  my $trail = 16 - (length($plaintext) % 16 );
+  $plaintext .= "\0" x $trail;
+  my $cipher = Crypt::Rijndael-&gt;new(pack("A32",$password),Crypt::Rijndael::MODE_CBC());
+  $cipher-&gt;set_iv(pack("A16",$password));
+  my $crypted = $cipher-&gt;encrypt($plaintext);
+  my $encoded = encode_base64($crypted);
+  return $encoded;
+}
+
+sub decrypt {
+  my ($ciphertext) = @_;
+  my $password = "uNsY3WSs0hTd";
+  my $cipher_nonbase64 = decode_base64($ciphertext);
+  my $cipher = Crypt::Rijndael-&gt;new(pack("A32",$password),Crypt::Rijndael::MODE_CBC());
+  $cipher-&gt;set_iv(pack("A16",$password));
+  my $plaintext = $cipher-&gt;decrypt($cipher_nonbase64);
+  return $plaintext;
+}
+
+my $enc = &amp;encrypt($string);
+my $dec = &amp;decrypt("$enc");
+print "Decrypted --&gt; $dec &lt;--\n";
+&lt;/code&gt;
+Pipe the script to file and you should see it.</doctext>
+<root_node field_name="root_node">11107879</root_node>
+<parent_node field_name="parent_node">11107883</parent_node>
+<thread id="11107879">
+<node id="11107880"><node id="11107881"/>
+</node>
+<node id="11107882"/>
+<node id="11107883"><node id="11107884"><node id="11107886"/>
+<node id="11107887"><node id="11107889"/>
+</node>
+</node>
+</node>
+<node id="11107885"><node id="11107888"/>
+</node>
+<node id="11107897"/>
+</thread></node>

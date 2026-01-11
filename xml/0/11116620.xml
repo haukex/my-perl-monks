@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116620" title="Counting and Filtering Words From File" created="2020-05-09 16:18:15" updated="2020-05-09 16:18:15" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11115827">maxamillionk</author>
+<doctext field_name="doctext">&lt;p&gt;Brief: Basically I am trying to work on data from a file as a big string, but the diamond &lt;&gt; only reads one line at a time and (I think) that's why it's slow.&lt;/p&gt;
+
+Long explanation: I have a bash shell script that concatenates all text of an input file into memory, then it will count all words, and the number of times the words appear, in descending order. It will also filter out common words and delete empty lines. It takes 4 seconds to finish on large files. I have tried to re-create this in Perl:
+
+&lt;code&gt;
+#!/usr/bin/perl
+# word counting program
+use strict;
+use warnings;
+use autodie;
+
+# list of excluded words
+my @excluded = qw( a about although also an and another are as at be been
+    before between but by can do during for from has how however in into is
+    it many may more most etc );
+
+# list of excluded characters
+my @excluded_chars = ( "\\'", "\\:", "\\@", "\\-", "\\~", "\\,", "\\.", "\\(",
+    "\\)", "\\?", "\\*", "\\%", "\\/", "\\[", "\\]", "\\=", '"'
+    );
+
+my %count;  # this will contain many words
+
+while (&lt;&gt;) {
+    foreach (split) {
+        s/ ([A-Z]) /\L$1/gx;  # lowercase each word
+        # remove non-letter characters
+        foreach my $char (@excluded_chars) {
+            $_ =~ s/$char//g;
+        }
+        # remove excluded words
+        foreach my $word (@excluded) {
+            $_ =~ s/\b$word\b//g;
+        }
+        $count{$_}++;  # count each separate word
+    }
+}
+
+foreach my $word (sort { $count{$a} &lt;=&gt; $count{$b} or $a cmp $b } keys %count) {
+    print "$count{$word} $word\n";
+}
+&lt;/code&gt;
+
+However, it takes way too long, about 40 to 50 seconds to finish. I am guessing it's because it reads one line at a time from the file. What is a good way to make Perl go faster? (I'm a noob!) For contrast, below is the bash shell script that runs way faster.
+
+&lt;code&gt;
+#!/bin/bash
+# input a file name like this:
+#
+# count_mem.sh filename.txt
+#
+
+if [ $# -eq 0 ]; then
+    echo "example usage: $(basename $0) file.txt" &gt;&amp;2
+    exit 1
+elif [ $# -ge 2 ]; then
+    echo "too many arguments" &gt;&amp;2
+    exit 2
+fi
+
+sed s/' '/\\n/g "$1" | tr -d '[\.[]{}(),\!\\'\'''\"'\`\~\@\#\$\%\^\&amp;\*\+\=\|\;\:\&lt;\&gt;\?]' | tr [:upper:] [:lower:] | 
+sed "s/\blong\b//gi" | 
+sed "s/\blist\b//gi" | 
+sed "s/\bof\b//gi" | 
+sed "s/\bexcluded\b//gi" | 
+sed "s/\bwords\b//gi" | 
+sed "s/\bhere\b//gi" | 
+sed '/^$/d' | 
+sort | uniq -c | sort -nr | less
+&lt;/code&gt;
+
+I apologize if a similar question was asked before - I tried searching and wasn't able to find a thread resembling my own.</doctext>
+<thread id="11116620">
+<node id="11116627"><node id="11116633"/>
+</node>
+<node id="11116629"/>
+<node id="11116631"><node id="11116647"/>
+</node>
+<node id="11116687"/>
+</thread></node>

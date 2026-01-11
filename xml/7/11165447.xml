@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11165447" title="Re: Control C; into a running system / exec?" created="2025-06-23 07:14:39" updated="2025-06-23 07:14:39" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;See my node [id://1180578]: IMHO on Linux [mod://IPC::Run] is the best way to manage external commands while your Perl script does something else, like sending that process a signal (as others have pointed out, Ctrl-C is SIGINT):&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use IPC::Run qw/start/;
+
+print "Starting trace-cmd...\n";
+my @cmd = ('sudo','trace-cmd','record',
+    '-p','function','-cP',$$);  # just an example
+my $h = start \@cmd, \my $stdin, \my $stdout, \my $stderr;
+
+# wait for trace-cmd to say something before continuing
+$h-&gt;pump until length $stdout || length $stderr;
+#print "&lt;&lt;$stdout||$stderr&gt;&gt;\n";  # just for debugging
+
+# This sleep is just a stand-in for something more complex
+print "Waiting 2 seconds...\n";
+sleep 2;
+
+print "Sending SIGINT...\n";
+$h-&gt;signal('INT');
+
+print "Finishing...\n";
+$h-&gt;finish or die "trace-cmd record returned $?";
+
+print "Done, resetting...\n";
+system('sudo','trace-cmd','reset')==0
+    or die "trace-cmd reset returned $?";
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11165441</root_node>
+<parent_node field_name="parent_node">11165441</parent_node>
+<thread id="11165441">
+<node id="11165442"/>
+<node id="11165445"/>
+<node id="11165446"/>
+<node id="11165447"/>
+</thread></node>

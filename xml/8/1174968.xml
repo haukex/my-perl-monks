@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1174968" title="how to declare a local *subname=sub{}?" created="2016-10-30 18:07:09" updated="2016-10-30 18:07:09" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="438862">perl-diddler</author>
+<doctext field_name="doctext">I had things working and then decided to break this program into 3 parts.  The 1st part had a jump-table, of sorts, where a bunch of anon subs were called depending on what keyword matched.  Some were named because they were reused by other routines.
+&lt;p&gt;
+When I turned the 1st part into its own package, the
+call to the subs via the "local" name, stopped working.
+&lt;p&gt;
+Created 2 call types in a test.  asub can only be called
+if I &lt;b&gt;don't&lt;/b&gt; declare it w/local -- Can't I declare it?
+&lt;p&gt;
+bsub is local to a procedure, for it, the local call
+has no effect (bsub is callable from within "do_internal_sub"
+either way.  Oddly, even though the "local *bsub" would seem to include "stuff" in its lexical scope, instead of the eval telling me that bsub was not set, it says it can't find bsub.
+&lt;p&gt; So why does the "local *bsub" have no effect and why does the inclusion of "local *asub" prevent it from being callable in "stuff", below?
+&lt;code&gt;
+#!/usr/bin/perl
+{ package Do::Stuff;
+  use warnings; use strict;
+  use P;
+
+  sub setup{my $p=shift; my $c=ref $p||$p;
+    bless $p={}, $c unless ref $p;
+    $p;
+  }
+
+  #local *asub;
+  *asub =  sub { P "asub called with %d param%s%s.", 0+@_, -1+@_?"s":"",
+                  @_ ? P(" (%s)", \@_) : ""; 1};
+
+  local *bsub;
+  sub do_internal_sub() { my $p=shift;
+    
+    *bsub = sub{ P "Called with %d param%s%s.", 0+@_, @_-1?"s":"",
+                  @_ ? P(" (%s)", \@_) : ""};
+
+    P "calling bsub: %s", &amp;bsub("one",2,"III");
+  }
+                    
+  
+  sub stuff() { my $p=shift;
+    P "In stuff";
+    eval {&amp;asub("stuff")};
+    if ($@) { P "asub call gave: $@"; }
+    eval {&amp;bsub("more", "stuff")};
+    if ($@) { P "bsub call gave: $@"; }
+
+  }
+1}
+
+package main;
+use warnings; use strict;
+use P;
+
+my $p=Do::Stuff-&gt;setup;
+
+P "calling stuff...";
+$p-&gt;stuff;
+
+P "calling internal_sub: %s", $p-&gt;do_internal_sub;
+
+&lt;/code&gt;
+&lt;p&gt;P.s - Obviously, I can hack together something that will work, but there sure seem to a few inconsistencies which always tend to bug me...  Thanks!
+</doctext>
+<thread id="1174968">
+<node id="1174969"/>
+<node id="1174970"/>
+<node id="1174971"><node id="1174973"><node id="1174975"><node id="1175010"><node id="1175016"/>
+</node>
+</node>
+<node id="1174976"><node id="1175011"/>
+</node>
+<node id="1174977"><node id="1174978"><node id="1174980"/>
+</node>
+</node>
+<node id="1174979"/>
+</node>
+</node>
+<node id="1174981"/>
+<node id="1174986"><node id="1174991"><node id="1174993"/>
+</node>
+</node>
+<node id="1175003"/>
+<node id="1175004"><node id="1175287"/>
+</node>
+</thread></node>

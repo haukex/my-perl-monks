@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101571" title="What is the most efficient way to split a long string (see body for details/constraints)?" created="2019-06-19 10:43:05" updated="2019-06-19 10:43:05" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11101567">mikegold10</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Monks,&lt;/p&gt;
+
+&lt;p&gt;The details of my query follow:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;I have a very large TSV (Tab Sep. Value) file (where large &gt; 30 GB).&lt;/li&gt;
+&lt;li&gt;I want to extract certain lines from this file that don't end with an empty last field. Since this is a TSV file, those lines that don't end with \t\n, which is a trivial test and not the subject of this question. That will remove some 75% of the lines, right off the bat.&lt;/li&gt;
+&lt;li&gt;Then I want to extract a small subset of fields from the remaining lines. The fields are not contiguous, but they are few in number (e.g., let's say seven out of thirty). For example, say fields 2,3,12-18,25-28,31.&lt;/li&gt;
+&lt;li&gt;The lines I am extracting from are very long, most are as long as 1,000 characters, because they contain a large number of tab delimited fields.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;One option is to obviously use the following simple code, which I've tried to nicely format and include comments to show my reasoning:&lt;/p&gt;
+
+&lt;code&gt;
+use warnings;
+use strict;
+# I am using the latest stable version of Perl for this exercise
+use 5.30.0;
+
+while (&lt;&gt;)
+{
+  # Skip lines ending with an empty field
+  next if substr($_,-2) eq "\t\n";
+  
+  # Remove "\n"
+  chomp;
+ 
+  # Split matching lines into fields on "\t", creating @fields
+  my @fields=split(/\t/,$_);
+
+  # Copy only the desired fields from @fields to create a new
+  # line in TSV format
+  # This can be done in one simple step in Perl, using
+  # array slices and the join() function
+  my $new_line=join("\t",@fields[2,3,12..18,25..28,31]);
+
+  # ...
+}
+&lt;/code&gt;
+
+&lt;p&gt;But, using split, although easy, leads to extra parsing (beyond the last field I need) and produces a complete array of fields which I also don't need. I think it would be more efficient to not create the array, but to parse each line looking for tabs and counting the field indexes as I go, creating the output line on the way, and stopping at the last field I need.&lt;/p&gt;
+
+&lt;p&gt;Am I correct in my assessment, or is just doing a simple split, followed by joined slices of the fields of interest, the best way to go here from a performance perspective?&lt;/p&gt;
+</doctext>
+<thread id="11101571">
+<node id="11101577"/>
+<node id="11101578"><node id="11101582"/>
+</node>
+<node id="11101579"><node id="11101581"/>
+</node>
+<node id="11101580"/>
+<node id="11101586"><node id="11101680"/>
+</node>
+<node id="11101588"><node id="11101679"><node id="11101683"><node id="11101684"/>
+</node>
+</node>
+<node id="11101685"><node id="11101698"/>
+</node>
+</node>
+<node id="11101596"/>
+<node id="11101604"/>
+<node id="11101605"><node id="11101682"/>
+</node>
+</thread></node>

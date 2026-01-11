@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117198" title="Re^3: Two octal values for eacute?" created="2020-05-24 10:25:02" updated="2020-05-24 10:25:02" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I was looking for a small set of extended ascii characters to "flatten" (if you will) to an ascii counterpart&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sounds very much like [mod://Text::Unidecode]!&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I do not know the encodings of the text files that I'm reading. They were probably exported as CSV from Excel or created by a Perl script from reading an Open Office .ods file. Tab delimited text files created differently over the course of 20+ years. That would make sense though since it's the older files that have a single byte eacute, then all of the sudden the two-byte eacute is the only variety found.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, that does sound likely. Here's a very simple example of how one might tell the difference between three of the encodings I named. Of course if you have more encodings than this, things can get more complex, and even if these encodings seem to work, you'll probably need to tweak the heuristics in the below example to fit your actual data.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use open qw/:std :utf8/;
+use Text::Unidecode;
+use Encode;
+
+print "# Text::Unidecode demo:\n";
+my $test = "\N{U+201C}test\N{U+201D} \N{U+2013} test\N{U+2026}";
+print " original: ", $test, "\n";
+print "asciified: ", unidecode($test), "\n";
+
+# set up some test data
+my $str = "\N{U+CF} spent 20\N{U+20AC} \N{U+C3}t the c\N{U+AA}f\N{U+E9}\n";
+{
+	open my $fh1, '&gt;:raw:encoding(CP-1252)', 'one.txt' or die $!;
+	print $fh1 $str;
+	close $fh1;
+	open my $fh2, '&gt;:raw:encoding(Latin-9)', 'two.txt' or die $!;
+	print $fh2 $str;
+	close $fh2;
+	open my $fh3, '&gt;:raw:encoding(UTF-8)', 'three.txt' or die $!;
+	print $fh3 $str;
+	close $fh3;
+}
+
+my $expected_chars = qr/[\N{U+20AC}]/u; # heuristic
+my $unexpected_chars = qr/[\N{U+80}]/u; # heuristic
+for my $file (qw/ one.txt two.txt three.txt /) {
+	# slurp the raw file as undecoded bytes
+	open my $fh, '&lt;:raw', $file or die "$file: $!";
+	my $bytes = do { local $/; &lt;$fh&gt; };
+	close $fh;
+	my $string;
+	# try different encodings
+	for my $enc (qw/ UTF-8 Latin-9 CP-1252 /) {
+		$string = eval { decode($enc, $bytes,
+			Encode::FB_CROAK|Encode::LEAVE_SRC) };
+		if ( defined $string &amp;&amp; $string =~ $expected_chars
+			&amp;&amp; $string !~ $unexpected_chars )
+				{ print "### $file looks like $enc\n"; last }
+		else { print "### $file is NOT $enc\n" }
+	}
+	die "Failed to decode $file" unless defined $string;
+	print $string;
+	print unidecode($string);
+}
+&lt;/c&gt;
+&lt;p&gt;Output (on a terminal with UTF-8 encoding):&lt;/p&gt;
+&lt;pre&gt;
+# Text::Unidecode demo:
+ original: “test” – test…
+asciified: "test" - test...
+### one.txt is NOT UTF-8
+### one.txt is NOT Latin-9
+### one.txt looks like CP-1252
+Ï spent 20€ Ãt the cªfé
+I spent 20EUR At the cafe
+### two.txt is NOT UTF-8
+### two.txt looks like Latin-9
+Ï spent 20€ Ãt the cªfé
+I spent 20EUR At the cafe
+### three.txt looks like UTF-8
+Ï spent 20€ Ãt the cªfé
+I spent 20EUR At the cafe
+&lt;/pre&gt;</doctext>
+<root_node field_name="root_node">11117179</root_node>
+<parent_node field_name="parent_node">11117187</parent_node>
+<thread id="11117179">
+<node id="11117185"><node id="11117187"><node id="11117198"/>
+</node>
+</node>
+<node id="11117197"><node id="11117781"/>
+</node>
+</thread></node>

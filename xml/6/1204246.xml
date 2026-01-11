@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1204246" title="Re^7: Loading a part of the file to array using Tie::File" created="2017-11-25 11:18:30" updated="2017-11-25 11:18:30" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Except it's just as easy to load the file into memory and write it back out when it's that small.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;By "ease of implementation" I meant:&lt;/p&gt;
+&lt;c&gt;
+open my $ifh, '&lt;', $file or die $!;
+chomp( my @a = &lt;$ifh&gt; );
+close $ifh;                      # vs.
+                                       use Tie::File;
+                                       tie my @a, 'Tie::File', $file;
+# and
+
+open my $ofh, '&gt;', $file or die $!;
+print $ofh $_,"\n" for @a;
+close $ofh;                      # vs.
+                                       untie @a;
+&lt;/c&gt;
+&lt;p&gt;I think several arguments, some subjective, could be made in either direction which one "easier". Whether it's worth the cost (speed and memory penalty) depends on the application, and of course the user must be aware of the penalty in the first place, so it's definitely good to caution. I just personally wouldn't reject the module outright.&lt;/p&gt;
+&lt;p&gt;Granted, if it's about reducing the length of the code, it's also possible to do something like this, although it still has a speed penalty, just not quite as bad as [doc://Tie::File]:&lt;/p&gt;
+&lt;c&gt;
+use Path::Class qw/file/;
+my @a = file($file)-&gt;slurp(chomp=&gt;1);
+...
+file($file)-&gt;spew_lines(\@a);
+&lt;/c&gt;
+&lt;p&gt;A &lt;c&gt;while(&lt;&gt;)&lt;/c&gt; should still be faster than any of the above. (I ran some quick back-of-the-envelope benchmarks with &lt;c&gt;/usr/share/dict/words&lt;/c&gt;.)&lt;/p&gt;
+&lt;p&gt;[karlgoethebier|Karl] asked about "serious" use cases. Under the conditions I named, I'd say it's just a matter of TIMTOWTDI, but if you were to say that's not a "serious" use case, then you wouldn't be wrong. I think I'll be cautioning against [doc://Tie::File] more in the future.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203885</root_node>
+<parent_node field_name="parent_node">1204210</parent_node>
+<thread id="1203885">
+<node id="1203889"/>
+<node id="1203890"/>
+<node id="1203892"/>
+<node id="1203893"/>
+<node id="1203939"/>
+<node id="1203985"><node id="1203993"><node id="1204087"><node id="1204115"><node id="1204124"><node id="1204125"><node id="1204127"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1204007"/>
+<node id="1204044"><node id="1204128"><node id="1204130"><node id="1204137"><node id="1204223"><node id="1204228"/>
+</node>
+</node>
+</node>
+<node id="1204162"><node id="1204193"><node id="1204201"><node id="1204262"/>
+</node>
+<node id="1204204"><node id="1204210"><node id="1204246"><node id="1204272"><node id="1204273"/>
+</node>
+</node>
+</node>
+<node id="1204224"/>
+<node id="1204263"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1204180"/>
+</thread></node>

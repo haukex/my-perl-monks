@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1226783" title="Re: Time::Piece, localtime -- ambiguous, parentheses" created="2018-12-05 12:04:56" updated="2018-12-05 12:04:56" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;[Eily] beat me to it, but since I've already typed it up... &lt;c&gt;;-)&lt;/c&gt; [doc://B::Deparse] to the rescue - the first two are &lt;c&gt;localtime() - $x&lt;/c&gt;, while the third is &lt;c&gt;localtime(-$x)&lt;/c&gt;. The same is true if you're not using [doc://Time::Piece], which overrides &lt;c&gt;localtime&lt;/c&gt;, but you also get a helpful warning. Interestingly, core [doc://localtime] has a prototype, while &lt;c&gt;Time::Piece::locatime&lt;/c&gt; doesn't.&lt;/p&gt;
+&lt;c&gt;
+$ perl -MTime::Piece -le 'print prototype("CORE::localtime"); print prototype("Time::Piece::localtime")//"undef"'
+;$
+undef
+
+$ perl -MO=Deparse -e 'my $x = localtime; my $y = localtime - $x; print "$y\n";  '
+Warning: Use of "localtime" without parentheses is ambiguous at -e line 1.
+my $x = localtime;
+my $y = localtime -$x;
+print "$y\n";
+-e syntax OK
+
+$ perl -MO=Deparse -e 'use Time::Piece; my $x = localtime; my $y = localtime() - $x; print "$y\n";  '
+use Time::Piece;
+my $x = main::localtime();
+my $y = main::localtime() - $x;
+print "$y\n";
+
+$ perl -MO=Deparse -e 'use Time::Piece; my $x = localtime; my $y = (localtime) - $x; print "$y\n";  '
+use Time::Piece;
+my $x = main::localtime();
+my $y = main::localtime() - $x;
+print "$y\n";
+
+$ perl -MO=Deparse -e 'use Time::Piece; my $x = localtime; my $y = localtime - $x; print "$y\n";  '
+use Time::Piece;
+my $x = main::localtime();
+my $y = main::localtime(-$x);
+print "$y\n";
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1226778</root_node>
+<parent_node field_name="parent_node">1226778</parent_node>
+<thread id="1226778">
+<node id="1226782"/>
+<node id="1226783"><node id="1226814"/>
+</node>
+<node id="1226784"/>
+<node id="1226786"/>
+</thread></node>

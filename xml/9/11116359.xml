@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116359" title="[Free Nodelet Hack] Browser Notifications for New Nodes" created="2020-05-02 10:35:47" updated="2020-05-02 10:35:47" _doctext_mode="strict"><type id="1036">monkdiscuss</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You need to be logged in, then enable the Free Nodelet in your [id://25185], and in your [id://492700], paste the following, and on [https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API#Browser_compatibility|supported browsers] you'll get a checkbox "&amp;#9744; &lt;small&gt;New Node Notifications&lt;/small&gt;" above your nodelets that you can turn on, and you'll get a browser notification for each new node that is posted.&lt;/p&gt;
+&lt;c&gt;
+&lt;script src="https://code.jquery.com/jquery-3.5.0.min.js"
+  integrity="sha256-xNzN2a4ltkB44Mc/Jz3pT4iU1cmeR0FkXs4pru/JxaQ="
+  crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script src="/?displaytype=displaycode;node_id=11116359;part=2"
+  type="text/javascript"&gt;&lt;/script&gt;
+&lt;/c&gt;
+&lt;p&gt;(If you've already got jQuery loaded from another nodelet hack, you don't need to put that &lt;c&gt;&lt;script&gt;&lt;/c&gt; tag twice, of course.)&lt;/p&gt;
+&lt;p&gt;The notifications are disabled by default because if you have multiple tabs open to PerlMonks, you'd get a notification per tab. If you want to have notifications turned on by default, you can add this &lt;i&gt;before&lt;/i&gt; the above &lt;c&gt;&lt;script&gt;&lt;/c&gt; tags: "&lt;c&gt;&lt;script&gt; NOTIFICATIONS_ENABLE=true; &lt;/script&gt;&lt;/c&gt;", and if you additionally want to hide the checkbox, add "&lt;c&gt;NOTIFICATIONS_HIDECB=true;&lt;/c&gt;" inside those &lt;c&gt;&lt;script&gt;&lt;/c&gt; tags.&lt;/p&gt;
+&lt;readmore title="the code"&gt;
+&lt;p&gt;I've created [https://gist.github.com/haukex/33da4e0d4f3c7a1e2be8d1cffe75dc76#file-pm_notify-js|a Gist] to version-control this code. I'll consider this particular node a "living document", as in I'm not going to add an "&lt;small&gt;&lt;b&gt;Updated&lt;/b&gt;&lt;/small&gt;" tag every time I make a change - if you want the version history, see [https://gist.github.com/haukex/33da4e0d4f3c7a1e2be8d1cffe75dc76/revisions|the Gist].&lt;/p&gt;
+&lt;c&gt;
+"use strict";
+$(function () {
+	if ( !("Notification" in window) ) {
+		console.warn("You've enabled the notifications plugin, but this browser doesn't seem to support them.");
+		return;
+	}
+	var DEFAULT_FETCHTIME_MS = 30 * 1000;
+	var cb = $('&lt;input/&gt;', { type: 'checkbox' });
+	if ( !( window["NOTIFICATIONS_ENABLE"] &amp;&amp; window["NOTIFICATIONS_HIDECB"] ) )
+		$('#nodelet_container').before(
+			$('&lt;div/&gt;', { style: "font-size: 12px;" }).append(
+				$('&lt;label/&gt;', { text: "New Node Notifications" }).prepend(cb) ) );
+	var notifications_timer;
+	var start_notifications = function () {
+		var lastfetchtime = Math.round((new Date()).getTime() / 1000);
+		var fetchit = function () {
+			$.ajax({ url: "/", dataType: "xml",
+					data: { node_id: '30175', xmlstyle: 'flat',
+						sinceunixtime: lastfetchtime, ticker: 'yes' } })
+				.done(function (data) {
+					$("NODE", data).each(function () {
+						var node = $(this);
+						var type = node.attr("nodetype");
+						var author = node.attr("authortitle");
+						if ( type == "user" || author == "NodeReaper" ) return;
+						var text = author + " posted a new " + type + ": " + node.text(); // node.attr("createtime")
+						var uri = "/?" + $.param({ node_id: node.attr("node_id") });
+						console.debug(text, uri);
+						var notification = new Notification('New PerlMonks Node', {
+							body: text, icon: "/favicon.ico", badge: "/favicon.ico",
+							requireInteraction: true });
+						notification.onclick = function (event) {
+							window.location = uri;
+						};
+					});
+					notifications_timer = setTimeout(fetchit,
+						parseInt($("INFO", data).attr("min_poll_seconds")) * 1000 + 1000);
+				})
+				.fail(function (jqXHR, textStatus, errorThrown) {
+					console.warn("AJAX error: " + textStatus + " / " + jqXHR.status + " " + errorThrown);
+					notifications_timer = setTimeout(fetchit, DEFAULT_FETCHTIME_MS);
+				});
+			lastfetchtime = Math.round((new Date()).getTime() / 1000);
+		};
+		notifications_timer = setTimeout(fetchit, DEFAULT_FETCHTIME_MS);
+		console.debug("Notifications initialized. Timer",
+			notifications_timer, "will fire in", DEFAULT_FETCHTIME_MS, "ms");
+	}
+	cb.change(function () {
+		if ( this.checked ) {
+			if ( Notification.permission == "default" ) {
+				cb.attr("disabled", true);
+				Notification.requestPermission(function (result) {
+					cb.removeAttr("disabled");
+					if ( result == "granted" ) start_notifications();
+					else cb[0].checked = false;
+				});
+			}
+			else if ( Notification.permission == "granted" )
+				start_notifications();
+			else {
+				alert("You've denied this page the ability to send notifications, please change this via your browser's settings.");
+				this.checked = false;
+			}
+		}
+		else {
+			clearTimeout(notifications_timer);
+			console.debug("Notifications stopped.");
+		}
+	});
+	if ( window["NOTIFICATIONS_ENABLE"] )
+		cb.prop("checked", true).trigger("change");
+});
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<thread id="11116359">
+</thread></node>

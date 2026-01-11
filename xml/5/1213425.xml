@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1213425" title="Perl hash keys not considered unique" created="2018-04-23 08:49:25" updated="2018-04-23 08:49:25" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1213423">elfstones65</author>
+<doctext field_name="doctext">&lt;p&gt;Hi I seem to have a strange issue where adding a keys into a hash is not being considered as unique&lt;br&gt;
+
+So say I have two files being the keys
+&lt;/p&gt;
+&lt;code&gt;
+
+$file1 = 'ENV.FILESOURCE.SOURCE.J2018058.N000001';
+$file2 = 'ENV.FILESOURCE.SOURCE.J2018059.N000001';
+
+
+
+    open LOG, "&lt;$log";
+    while (defined($line=&lt;LOG&gt;)) {
+        chomp $line;
+
+        if ($line =~/File \[\/opt\/app\/data\/pulsefba\/process/) {
+                ($processingFile) = ($line =~ /process\/(.+)]/);
+                $files{"$processingFile"} = 1;
+        }
+
+        if ($line =~ /Finished/) {
+         
+                ($currentFile) = ($line =~ /process\/(.+?)]/);
+                ($read) = ($line =~ /: Read \[(.+)\] events - Processed /);
+                ($processed) = ($line =~ /Processed \[(.+?)\]/);
+                ($wrote) = ($line =~ /Wrote \[(.+?)\]/);
+                ($skippedRead) = ($line =~ /Skipped Read \[(.+?)\]/);
+                ($skippedProcess) = ($line =~ /Skipped Process \[(.+?)\]/);
+                ($skippedWrite) = ($line =~ /Skipped Write \[(.+?)\]/);
+                ($totalCount) = ($line =~ /Total Trailer Count - \[(.+?)\]/);
+
+                $files{"$currentFile"}{'read'} = $read;
+                $files{"$currentFile"}{'processed'} = $processed;
+                $files{"$currentFile"}{'wrote'} = $wrote;
+                $files{"$currentFile"}{'skippedRead'} = $skippedRead;
+                $files{"$currentFile"}{'skippedProcess'} = $skippedProcess;
+                $files{"$currentFile"}{'skippedWrite'} = $skippedWrite;
+                $files{"$currentFile"}{'totalTrailerCount'} = $totalCount;
+
+
+                print "Debug: $currentFile set to Read: $read\n";
+                print "File ENV.FILESOURCE.SOURCE.J2018058.N000001 count: $files{'ENV.FILESOURCE.SOURCE.J2018058.N000001'}{'read'}\n";
+                print "File ENV.FILESOURCE.SOURCE.J2018059.N000001 count: $files{'ENV.FILESOURCE.SOURCE.J2018059.N000001'}{'read'}\n";
+        }
+
+&lt;/code&gt;
+
+&lt;p&gt;
+While looping through a file
+
+Output is like below. How Come is file with the J2018059 getting values in the hash for file J2018058?&lt;br&gt;
+
+Debug: ENV.FILESOURCE.SOURCE.J2018058.N000001 set to Read: 1000 &lt;br&gt;
+File ENV.FILESOURCE.SOURCE.J2018058.N000001 count: 1000 &lt;br&gt;
+File ENV.FILESOURCE.SOURCE.J2018059.N000001 count: 1000 &lt;br&gt;
+Debug: ENV.FILESOURCE.SOURCE.J2018058.N000001set to Read: 2000 &lt;br&gt;
+File ENV.FILESOURCE.SOURCE.J2018058.N000001 count: 2000 &lt;br&gt;
+File ENV.FILESOURCE.SOURCE.J2018059.N000001 count: 2000 &lt;br&gt;
+Debug: ENV.FILESOURCE.SOURCE.J2018058.N000001 set to Read: 3000 &lt;br&gt;
+File ENV.FILESOURCE.SOURCE.J2018058.N000001 count: 3000 &lt;br&gt;
+File ENV.FILESOURCE.SOURCE.J2018059.N000001 count: 3000 &lt;br&gt;
+Debug: ENV.FILESOURCE.SOURCE.J2018058.N000001 set to Read: 4000 &lt;br&gt;
+File ENV.FILESOURCE.SOURCE.J2018058.N000001 count: 4000 &lt;br&gt;
+File ENV.FILESOURCE.SOURCE.J2018059.N000001 count: 4000 &lt;br&gt;
+Debug: ENV.FILESOURCE.SOURCE.J2018058.N000001 set to Read: 5000 &lt;br&gt;
+File ENV.FILESOURCE.SOURCE.J2018058.N000001 count: 5000 &lt;br&gt;
+File ENV.FILESOURCE.SOURCE.J2018059.N000001 count: 5000 &lt;br&gt;
+&lt;/p&gt;</doctext>
+<thread id="1213425">
+<node id="1213426"/>
+<node id="1213427"><node id="1213436"/>
+</node>
+<node id="1213476"/>
+</thread></node>

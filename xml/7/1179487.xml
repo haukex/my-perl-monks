@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1179487" title="Re: Using setuid() and absorbing that user's groups" created="2017-01-13 03:28:55" updated="2017-01-13 03:28:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [Chagrin],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note that what you're setting with [doc://$(] is the real gid, not the effective gid. Its doc says:&lt;/p&gt;
+&lt;blockquote&gt;If you are on a machine that supports membership in multiple groups simultaneously, gives a space separated list of groups you are in. ... However, a value assigned to &lt;c&gt;$(&lt;/c&gt; must be a single number used to set the real gid.&lt;/blockquote&gt;
+&lt;p&gt;The doc for the effective gid, [doc://$)], says:&lt;/p&gt;
+&lt;blockquote&gt; If you are on a machine that supports membership in multiple groups simultaneously, gives a space separated list of groups you are in. ... Similarly, a value assigned to &lt;c&gt;$)&lt;/c&gt; must also be a space-separated list of numbers. The first number sets the effective gid, and the rest (if any) are passed to &lt;c&gt;setgroups()&lt;/c&gt;.&lt;/blockquote&gt;
+&lt;p&gt;A while back I [https://bitbucket.org/haukex/hgpstools/src/d1febe1/serialdaemon_gps.pl#serialdaemon_gps.pl-303|wrote] some code that worked well at the time, which changes the effective gid to with one primary and one (!) secondary effective gid. This is an excerpt:&lt;/p&gt;
+&lt;c&gt;
+if ( $) !~ /^$WANT_GID\b.*\b$WANT_GRP2\b/ ) {
+	$) = "$WANT_GID $WANT_GRP2";
+	die "Error: EGID change failed: $!"
+		if $! || $) ne "$WANT_GID $WANT_GRP2";
+}
+warn "After: RUID=$&lt;, EUID=$&gt;, RGID=$(, EGID=$), umask="
+	.sprintf("%o",umask)."\n";
+&lt;/c&gt;
+&lt;p&gt;As for getting the groups of a user on the machine, after a little bit of research it appears you'll have to walk the group entries yourself, something like this perhaps:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use User::pwent;
+use User::grent;
+use List::Util qw/any/;
+
+my $u = $ENV{USER};
+print " primary: ",
+	getpwnam($u)-&gt;gid, "\n";
+print "seconday: $_\n" for get_sec_grps($u);
+
+sub get_sec_grps {
+	my $user = shift;
+	my @sec_grps;
+	endgrent; # reset (?)
+	while (my $g=getgrent) {
+		push @sec_grps, $g-&gt;gid
+			if any {$_ eq $user} @{$g-&gt;members};
+	}
+	endgrent;
+	return @sec_grps;
+}
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1179481</root_node>
+<parent_node field_name="parent_node">1179481</parent_node>
+<thread id="1179481">
+<node id="1179482"/>
+<node id="1179487"/>
+<node id="1179545"/>
+</thread></node>

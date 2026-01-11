@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112381" title="Re^4: Using Cartons to automate module installs" created="2020-02-04 13:35:10" updated="2020-02-04 13:35:10" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+So, yay, that I'm getting results, but I don't quite understand the line of code I'm using to get them. Can you "talk through" what happens on this line, in particular, how the %s's get populated?
+&lt;c&gt;
+scandeps.pl -R *.pl | perl -ne 'printf qq{requires "%s", "%s";\n}, eval'
+&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sure:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;The output of &lt;c&gt;scandeps.pl&lt;/c&gt; looks something like:
+&lt;c&gt;
+'Module::Name'  =&gt; 'version',
+'Module::Other' =&gt; 'version',
+...
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;The output of &lt;c&gt;scandeps.pl&lt;/c&gt; is fed into &lt;c&gt;perl&lt;/c&gt;, which due to the &lt;c&gt;-n&lt;/c&gt; switch reads its input line-by-line, setting &lt;c&gt;$_&lt;/c&gt; to each line.&lt;/li&gt;
+&lt;li&gt;[doc://eval] evaluates &lt;c&gt;$_&lt;/c&gt; when given no arguments, so it'll evaluate each line, a string such as &lt;c&gt;"'Module::Name' =&gt; 'version'"&lt;/c&gt;, as Perl code.&lt;/li&gt;
+&lt;li&gt;The &lt;c&gt;=&gt;&lt;/c&gt;, aka the "fat comma", is just a [doc://perlop#Comma-Operator] in disguise, so each line of input evaluates to a list of two values, the module name and its version.&lt;/li&gt;
+&lt;li&gt;Assuming no syntax errors, [doc://eval] returns these two values, and they are used as the two arguments to the [doc://printf].&lt;/li&gt;
+&lt;/ol&gt;
+&lt;blockquote&gt;&lt;i&gt;It seems to me that it invites disaster to compose a cpanfile by hand, never mind the tedium.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Personally, I don't think so - note that the output of &lt;c&gt;scandeps.pl&lt;/c&gt; can sometimes be a lot more verbose than it needs to be. I think it's better to get an understanding of what the module dependency tree looks like instead of blindly relying on the tool - I usually try to keep track of which CPAN dependencies I add to my scripts, and I only use &lt;c&gt;scandeps.pl&lt;/c&gt; to get hints whether I may have missed something. Note that in the output you showed, all the the &lt;c&gt;ExtUtils::MM_*&lt;/c&gt; modules can probably be omitted, and also &lt;c&gt;ExtUtils::MakeMaker&lt;/c&gt; and &lt;c&gt;File::Temp&lt;/c&gt; are core modules, meaning that unless your script &lt;i&gt;requires&lt;/i&gt; a certain new version of them, they usually don't need to be listed.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11112133</root_node>
+<parent_node field_name="parent_node">11112377</parent_node>
+<thread id="11112133">
+<node id="11112136"/>
+<node id="11112172"><node id="11112193"><node id="11112377"><node id="11112381"/>
+<node id="11112398"/>
+</node>
+</node>
+</node>
+</thread></node>

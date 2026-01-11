@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1202004" title="Re^6: porting C code to Perl [OT]" created="2017-10-25 06:14:38" updated="2017-10-25 06:14:38" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;So you're saying that this code ... may output something else then 0 on these platforms/compilers?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, exactly. Of course, this was something like over five years ago and the compiler may very well be obsolete by now. I don't have much time right now to dig out references, but based on my memory, this was either on a Microchip PIC or TI MSP430, and the gist of it was this: Say you defined a 256-byte &lt;c&gt;char&lt;/c&gt; array as a global variable, then what this compiler would do to initialize it is create 256 null bytes in instruction memory, and copy those over to RAM byte by byte. Of course on a tiny uC that was a huge waste of instruction memory, and it was much better to drop that initialization routine (or the compiler did this by default, I don't remember exactly), leave the variables uninitialized, and just write a &lt;c&gt;for&lt;/c&gt; loop to initialize them yourself, or use &lt;c&gt;memset&lt;/c&gt;, which amounts to the same thing.&lt;/p&gt;
+&lt;p&gt;Since these are uCs without an OS, one might suspect that when the uC starts it jumps right into &lt;c&gt;main&lt;/c&gt; (since that's basically what it does when you code in assembly), but that's not the case - C needs a bit of initialization (like setting up interrupt vectors), so the compiler had some per-uC assembler files that took over the initialization tasks and that were set up to run on startup; these assembly routines would then do their thing and jump into &lt;c&gt;main&lt;/c&gt;. And IIRC there were different versions of these initialization routines, some that would initialize global memory and some that wouldn't, and you could even hack them yourself if you needed custom initialization. AFAIK more modern compilers have much more efficient code to initialize RAM, but basically the thing I took away from this was to always be suspicious of uninitialized variables in C :-)&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1201848</root_node>
+<parent_node field_name="parent_node">1201999</parent_node>
+<thread id="1201848">
+<node id="1201854"><node id="1201908"><node id="1201919"><node id="1201928"/>
+</node>
+<node id="1201925"><node id="1201948"><node id="1201979"/>
+</node>
+</node>
+<node id="1201942"/>
+<node id="1201952"/>
+</node>
+</node>
+<node id="1201876"><node id="1201906"><node id="1202311"><node id="1202793"/>
+<node id="1202895"><node id="1202913"/>
+</node>
+<node id="1207735"/>
+</node>
+</node>
+</node>
+<node id="1201909"><node id="1201939"><node id="1201960"><node id="1201963"><node id="1201964"><node id="1201965"/>
+<node id="1201977"/>
+<node id="1202036"/>
+</node>
+<node id="1202039"/>
+</node>
+<node id="1201978"><node id="1201999"><node id="1202004"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201910"><node id="1201927"><node id="1201929"/>
+<node id="1201931"/>
+</node>
+</node>
+<node id="1201987"><node id="1201998"><node id="1202008"/>
+</node>
+<node id="1202002"><node id="1202042"><node id="1202055"/>
+<node id="1202921"/>
+</node>
+<node id="1202295"/>
+</node>
+</node>
+</thread></node>

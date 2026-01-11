@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11130546" title="Re^2: Getting all subpaths from a path" created="2021-03-29 10:08:52" updated="2021-03-29 10:08:52" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1210662">ovedpo15</author>
+<doctext field_name="doctext">Hi!&lt;br&gt;
+You are probably right, it becomes an X-Y problem. I will try to do my best to explain the idea of what I'm trying to do and what lead me to opening the current question. As I explained in previous topic (https://www.perlmonks.org/?node_id=11130389), I'm trying to create a bash script "on the fly" output an array of paths that does the following three stages:&lt;br&gt;
+1. Create the same directory hierarchy.&lt;br&gt;
+2. Copy the files.&lt;br&gt;
+3. Create the same links.&lt;br&gt;
+For that I can do:&lt;br&gt;
+1. I can use mkdir -p to create the full hierarchy based on the path.&lt;br&gt;
+2. I can use scp/rsync for copying (as it's inside container).&lt;br&gt;
+3. I can use ln -s to create the links.&lt;br&gt;
+So I wanted to build a structure that will contain all the information (links, directories, files). I came up with the following structure:&lt;br&gt;
+&lt;code&gt;
+{
+  "/": {
+    "type": "dir",
+    "files": [
+      {
+        "usr": {
+          "type": "dir",
+          "files": [
+            {
+              "vsa": {
+                "type": "link-dir",
+                "source": "/root/site/tools/gauv"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "root": {
+          "type": "dir",
+          "files": [
+            {
+              "site": {
+                "type": "dir",
+                "files": [
+                  {
+                    "tools": {
+                      "type": "dir",
+                      "files": [
+                        {
+                          "gauv": {
+                            "type": "dir",
+                            "files": [
+                              {
+                                "pkgs": {
+                                  "type": "dir",
+                                  "files": [
+                                    {
+                                      "python3": {
+                                        "type": "dir",
+                                        "files": [
+                                          {
+                                            "3.6.3a": {
+                                              "type": "dir-link",
+                                              "source": "/usr/vsa/pkgs/python3/3.6.3"
+                                            }
+                                          },
+                                          {
+                                            "3.6.3": {
+                                              "type": "dir",
+                                              "links": [
+                                                {
+                                                  "lib": {
+                                                    "type": "dir",
+                                                    "links": []
+                                                  }
+                                                },
+                                                {
+                                                  "bin": {
+                                                    "type": "dir",
+                                                    "links": []
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+&lt;/code&gt;
+Which contains only the path &lt;code&gt;/usr/vsa/pkgs/python3/3.6.3a/bin/python3.6&lt;/code&gt; with it's links (as I described in the question). So I will parse each path and create this structure. Once I have this structure, I can extract all of the directories, files, and links (dir links and file links) into arrays and use them to build the bash script (write bash commands based on those paths into a file). That's the purpose of that whole idea.&lt;br&gt;
+So my strategy was:&lt;br&gt;
+1. Parse each path (by getting all subpaths and links) and insert into an array on all path.&lt;br&gt;
+2. Check the type of each path in the array (link, file, directory) and insert into the structure.&lt;br&gt;
+3. Extract arrays of dir paths, array of dir links, array of files, array of file links.&lt;br&gt;
+4. Iterate over each array and create the bashe script.
+&lt;br&gt;&lt;br&gt;
+I'm having trouble with steps 1-2. In the current node I ask about step 1. I wanted to parse each path and split it into sub paths. Then check each subpath if it's a link and if so, I will insert the target of the link into the array, change all of the other subpaths (for example if I have (/a,/a/b/,/a/b/d) and /a/b-&gt;/e/f then it should be (/a,/a/b/,/e/f,/e/f/d)). I should also handle two special cases here:&lt;br&gt;
+1. Relative links - not sure how to handle with it currently. I have tried to handle with only local relative links like /a/b/c -&gt; /a/b/d but it's getting complicated.&lt;br&gt;
+2. Recursive links - for example /a/b -&gt; /c/d -&gt; e/f ...). That's why I used &lt;code&gt;while(1)&lt;/code&gt;.&lt;br&gt;
+&lt;br&gt;&lt;br&gt;
+To sum up, those are the big questions:&lt;br&gt;
+1. What would be the best design strategy to implement here? Was my idea good?&lt;br&gt;
+2. If so, Is my suggested structure good enough? How would you change it?&lt;br&gt;
+&lt;br&gt;&lt;br&gt;
+Now, for what you suggested:&lt;br&gt;
+1. The idea is to create a bash script that copies the environment into a container. rsync can help me here but I it can come in handy in step 4 (while copying files, instead of scp). I can't use rsync on the whole directory because it will then copy files that are not in the array of paths. Assume you have in the input array of path (/a/b/1.file, /a/b/2.file) and you also have 3.file inside /a/b. I don't want to copy it, only 1.file and 2.file so rsync on the whole directory won't work here. It can be used to copy files (which is the same as scp).&lt;br&gt;
+2. I have tried now splitdir and you are right, it's better than splitting by "/". Is there a subroutine that can give me all the subpaths of a path?&lt;br&gt;
+3. Yes it's a good subroutine but I can't use it yet because I need to parse each path - find out if it's a link. abs_path will give me the final path but I also want to have the recursive links (like I mentioned before /a/b -&gt; /c/d -&gt; e/f, in that case abs_path will just get /e/f and ignore /c/d).&lt;br&gt;
+
+I hope this post will clarify some opened question. If not, I will be more than glad to answer more. I'm sorry if I didn't explain the question good enough before. Thanks for the help until now!&lt;br&gt;
+&lt;br&gt;&lt;br&gt;
+Also, some more code that I wrote, while trying to make it work (just for reference. also really sorry it's messy and with bad variable names):&lt;br&gt;
+&lt;code&gt;
+foreach my $f (@arr) {
+    if (-l $f) {
+        print($f, " is a link to ",readlink($f) , "\n");
+        my @a = split("/",$f);
+        my $result;
+        my $counter = 0; 
+        my $last_files_block = $st{"/"}{"files"};
+        while (1) {
+            unless ($counter &lt; scalar(@a)) {
+                last;
+            }
+            my $x = $a[$counter];
+            if ($x eq '') {
+                $counter += 1;
+                next;
+            }
+            if ($counter + 1 == scalar(@a)) {
+                if (-f $f) {
+                my $found = 0;
+                foreach my $v (@{$last_files_block}) {
+                    if (defined($v-&gt;{$x})) {
+                        $found = 1;
+                        last;
+                    }
+                }
+                if ($found == 0) {
+                    my %vsaaa = ("type" =&gt; "link-file", "source" =&gt; readlink($f));
+                    my %st1 = ($x =&gt; \%vsaaa );
+                    push(@{$last_files_block}, \%st1);
+                }
+                my $last = $f;
+                while (1) {
+                    my $c = readlink($last);
+                    if (-l $c) {
+                        $last = $c;
+                        if (index($c,"/") != -1) {
+                            push(@arr,$c);
+                        } else {
+                            my $found1 = 0;
+                            foreach my $v (@{$last_files_block}) {
+                                if (defined($v-&gt;{$x})) {
+                                    $found = 1;
+                                    last;
+                                }
+                            }
+                            if ($found1 == 0) {
+                                my %vsaaa = ("type" =&gt; "file");
+                                my %st1 = ($x =&gt; \%vsaaa );
+                                push(@{$last_files_block}, \%st1);
+                            }
+                        }
+                    } else {
+                        if (index($c,"/") != -1) {
+                            push(@arr,$c);
+                        } else {
+                            my $found1 = 0;
+                            foreach my $v (@{$last_files_block}) {
+                            if (defined($v-&gt;{$x})) {
+                                $found = 1;
+                                last;
+                            }
+                            }
+                            if ($found1 == 0) {
+                                my %vsaaa = ("type" =&gt; "file");
+                                my %st1 = ($x =&gt; \%vsaaa );
+                                push(@{$last_files_block}, \%st1);
+                            }
+                        }
+                        last;
+                    }
+                }
+                }
+                if (-d $f) {
+                    my $found = 0;
+                    foreach my $v (@{$last_files_block}) {
+                        if (defined($v-&gt;{$x})) {
+                            $found = 1;
+                            last;
+                        }
+                    }
+                    if ($found == 0) {
+                        my $n = readlink($f);
+                        if (index($n,"/") == -1) {
+                            my $dirname = dirname($f);
+                            $n = "$dirname/$n"; #TODO: what if relative?
+                        }
+                        my %vsaaa = ("type" =&gt; "dir-link", "source" =&gt; $n);
+                        my %st1 = ($x =&gt; \%vsaaa );
+                        push(@{$last_files_block}, \%st1);
+                    }
+                }
+                last;
+            }
+            my $found = 0;
+            foreach my $v (@{$last_files_block}) {
+                if (defined($v-&gt;{$x})) {
+                    $last_files_block = $v-&gt;{$x}{"files"};
+                    $counter += 1;
+                    $found = 1;
+                    last;
+                }
+            }
+            if ($found == 0) {
+                my %vsaaa = ("type" =&gt; "dir", "files" =&gt; [] );
+                my %st1 = ($x =&gt; \%vsaaa );
+                push(@{$last_files_block}, \%st1);
+                $last_files_block = $vsaaa{"files"};
+                $counter += 1;
+            }
+        }
+    } elsif (-f $f) {
+        print($f, " is a file\n");
+        my @a = split("/",$f);
+        my $result;
+        my $counter = 0; 
+        my $last_files_block = $st{"/"}{"files"};
+        while (1) {
+            unless ($counter &lt; scalar(@a)) {
+                last;
+            }
+            my $x = $a[$counter];
+            if ($x eq '') {
+                $counter += 1;
+                next;
+            }
+            if ($counter + 1 == scalar(@a)) {
+                my $found = 0;
+                foreach my $v (@{$last_files_block}) {
+                    if (defined($v-&gt;{$x})) {
+                        $found = 1;
+                        last;
+                    }
+                }
+                if ($found == 0) {
+                    my %vsaaa = ("type" =&gt; "file");
+                    my %st1 = ($x =&gt; \%vsaaa );
+                    push(@{$last_files_block}, \%st1);
+                }
+                last;
+            }
+            my $found = 0;
+            foreach my $v (@{$last_files_block}) {
+                if (defined($v-&gt;{$x})) {
+                    $last_files_block = $v-&gt;{$x}{"files"};
+                    $counter += 1;
+                    $found = 1;
+                    last;
+                }
+            }
+            if ($found == 0) {
+                my %vsaaa = ("type" =&gt; "dir", "files" =&gt; [] );
+                my %st1 = ($x =&gt; \%vsaaa );
+                push(@{$last_files_block}, \%st1);
+                $last_files_block = $vsaaa{"files"};
+                $counter += 1;
+            }
+        }
+    } elsif (-d $f) {
+        print($f, " is a dir\n");
+        my @a = split("/",$f);
+        my $result;
+        my $counter = 0; 
+        my $last_files_block = $st{"/"}{"files"};
+            while (1) {
+            unless ($counter &lt; scalar(@a)) {
+                last;
+            }
+            my $x = $a[$counter];
+            if ($x eq '') {
+                $counter += 1;
+                next;
+            }
+            my $found = 0;
+            my $found_link = 0;
+            foreach my $v (@{$last_files_block}) {
+                if (defined($v-&gt;{$x})) {
+                if ($v-&gt;{$x}{"type"} eq "dir-link" || $v-&gt;{$x}{"type"} eq "link-file") {
+                    $found_link = 1;
+                    last;
+                }
+                $last_files_block = $v-&gt;{$x}{"files"};
+                $counter += 1;
+                $found = 1;
+                last;
+                }
+
+            }
+            if ($found_link == 1) {
+                last;
+            }
+            if ($found == 0) {
+                my %vsaaa = ("type" =&gt; "dir", "files" =&gt; [] );
+                my %st1 = ($x =&gt; \%vsaaa );
+                push(@{$last_files_block}, \%st1);
+                $last_files_block = $vsaaa{"files"};
+                $counter += 1;
+            }
+        }
+    } else {
+            #TODO: When can it happen other than path does not exist or permission denied? 
+            print($f, " is a special\n");
+    }
+}
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">11130527</root_node>
+<parent_node field_name="parent_node">11130533</parent_node>
+<thread id="11130527">
+<node id="11130528"/>
+<node id="11130533"><node id="11130546"><node id="11130632"><node id="11130634"><node id="11130635"/>
+</node>
+<node id="11130636"><node id="11130638"/>
+</node>
+<node id="11130637"><node id="11130639"/>
+</node>
+</node>
+<node id="11130714"><node id="11130725"><node id="11130730"><node id="11130731"><node id="11130760"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11130736"/>
+</thread></node>

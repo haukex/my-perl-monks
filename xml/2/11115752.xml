@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11115752" title="Re^6: 5.24 -&gt; 5.28 -- what has changed in autovivification?" created="2020-04-18 18:08:10" updated="2020-04-18 18:08:10" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I understand that there are only two options&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In core Perl, yes (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; actually, [mod://autovivification] isn't even in the core). But [choroba] [id://11115749|showed] one possibility, and writing a single-purpose routine isn't difficult either (I've admittedly compacted it a bit):&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+sub dive { my $r = shift;
+	$r = ref $r eq 'HASH' &amp;&amp; exists $$r{$_} ? $$r{$_} : return for @_;
+	return $r }
+
+use Test::More;
+
+my $h = { a =&gt; { b =&gt; { c =&gt; { d =&gt; 'e' } } } };
+
+is dive($h, qw/ a         /), $h-&gt;{a};
+is dive($h, qw/ a b       /), $h-&gt;{a}{b};
+is dive($h, qw/ a b c     /), $h-&gt;{a}{b}{c};
+is dive($h, qw/ a b c d   /), 'e';
+is dive($h, qw/ a b c d e /), undef;
+is dive($h, qw/ a x       /), undef;
+is dive($h, qw/ a b x     /), undef;
+is dive($h, qw/ a x y     /), undef;
+is dive($h, qw/ a b x y   /), undef;
+is dive($h, qw/ x         /), undef;
+is dive($h, qw/ x y       /), undef;
+is dive($h, qw/ x y z     /), undef;
+
+is_deeply $h, { a =&gt; { b =&gt; { c =&gt; { d =&gt; 'e' } } } };
+
+done_testing;
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Both of the links in your post appear to be broken. I assume you were trying to link to [doc://perl5280delta#the-perlfunc-manpage|perl5280delta] and [https://github.com/Perl/perl5/issues/15231|RT#127712].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11115682</root_node>
+<parent_node field_name="parent_node">11115744</parent_node>
+<thread id="11115682">
+<node id="11115685"><node id="11115694"><node id="11115704"><node id="11115717"><node id="11115744"><node id="11115749"/>
+<node id="11115752"><node id="11115812"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

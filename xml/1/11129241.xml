@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129241" title="Re^2: How to parse not closed HTML tags that don't have any attributes?" created="2021-03-07 01:32:06" updated="2021-03-07 01:32:06" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Perhaps a rare case where regex can indeed parse (broken) html?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;&lt;b&gt;[id://11116478|No.]&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;Sorry for the direct answer, of course it is IMHO, but in this case my opinon happens to be fairly strong &lt;c&gt;:-)&lt;/c&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;today, &lt;u&gt;most&lt;/u&gt; html is not handcrafted but machine-made via code.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;... which means that browsers and other HTML parsers still have to deal with broken, hand-crafted HTML, even today. For example, [mod://HTML::Parser] is now over 25 years old (it used to be known as &lt;c&gt;HTML::Parse&lt;/c&gt; and was part of [dist://libwww-perl] for a while), so it was written during the days where hand-crafted HTML was the norm, and it'll happily handle the broken HTML as well. Note that it's also the basis used in many other modules, like [mod://HTML::TreeBuilder] and [mod://WWW::Mechanize].&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use HTML::TreeBuilder::XPath;
+
+my $p = HTML::TreeBuilder::XPath-&gt;new;
+$p-&gt;parse(&lt;&lt;'HTML');
+        &lt;div class="phone"&gt;
+          &lt;div class="icon"&gt;&lt;/div&gt;
+          &lt;p class="title"&gt;Telephone&lt;/p&gt;
+          &lt;p&gt;0123-4 56 78 90		  
+		  &lt;p class="title"&gt;Telefax&lt;/p&gt;
+          &lt;p&gt;        &lt;/div&gt;
+HTML
+my %hash = map { $_-&gt;as_trimmed_text }
+	$p-&gt;findnodes('//*[@class="phone"]/p');
+use Data::Dump; dd \%hash;
+
+__END__
+
+{ Telefax =&gt; "", Telephone =&gt; "0123-4 56 78 90" }
+&lt;/c&gt;
+&lt;p&gt;Of course, there may still be exceptions that even parsers can't handle. For example, say something like "&lt;c&gt;&lt;p Text&lt;/p&gt;&lt;/c&gt;" - though of course a browser won't display this correctly, so even someone making a typo like this when writing HTML by hand would hopefully notice, plus, even here I would suggest first fixing the string with a regex and then sending it through an HTML parser.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11129207</root_node>
+<parent_node field_name="parent_node">11129218</parent_node>
+<thread id="11129207">
+<node id="11129209"/>
+<node id="11129210"><node id="11129269"><node id="11129273"><node id="11129285"><node id="11129287"><node id="11129335"><node id="11129345"><node id="11129373"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11129328"><node id="11129340"/>
+</node>
+</node>
+<node id="11129211"/>
+<node id="11129215"/>
+<node id="11129218"><node id="11129241"/>
+</node>
+<node id="11129220"><node id="11129221"/>
+<node id="11129242"/>
+</node>
+<node id="11129230"/>
+</thread></node>

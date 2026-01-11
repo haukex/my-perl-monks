@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112422" title="Re: Inheritance when subclass passed as a parameter" created="2020-02-05 05:54:36" updated="2020-02-05 05:54:36" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I see a couple of issues; I think you're mixing some concepts.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;As [choroba] and [hippo] said, you use &lt;c&gt;useall&lt;/c&gt; to locate the class name of the appropriate "plugin", but then don't instantiate an object of that class, therefore &lt;c&gt;template&lt;/c&gt; never gets populated. You could change &lt;c&gt;$self-&gt;{service} = $plugin&lt;/c&gt; to &lt;c&gt;$self-&gt;{service} = $plugin-&gt;new&lt;/c&gt; to fix that. If you go with this suggestion:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;You'll need to access the template as &lt;c&gt;...-&gt;{service}-&gt;{template}&lt;/c&gt; (or with an appropriate accessor), both in &lt;c&gt;Service::populate&lt;/c&gt; and in your tests.&lt;/li&gt;
+&lt;li&gt;It doesn't really make sense to me to have the &lt;c&gt;Service/*.pm&lt;/c&gt;s be subclasses of &lt;c&gt;Service&lt;/c&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;You're using the first parameter of &lt;c&gt;Service-&gt;new&lt;/c&gt; to locate a subclass. Why not just do e.g. &lt;c&gt;Service::XML-&gt;new&lt;/c&gt; instead? Then, in your subclasses, you'll need to call the superclass constructor, as in &lt;c&gt;my $self = $class-&gt;SUPER::new(@_); $self-&gt;{template} = ...&lt;/c&gt;.&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Another option would be to set up a factory method. Although it &lt;i&gt;could&lt;/i&gt; be called &lt;c&gt;new&lt;/c&gt;, IMO that messes with inheritance a bit. So you could set up a method such as &lt;c&gt;Service-&gt;create&lt;/c&gt; that simply dispatches to the constructor of the appropriate subclass; then each subclass constructor could call the superclass constructor like in my previous point.&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Another small issue in your sample code: You pass the constructor two arguments, but only use the first.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11112418</root_node>
+<parent_node field_name="parent_node">11112418</parent_node>
+<thread id="11112418">
+<node id="11112419"/>
+<node id="11112420"/>
+<node id="11112421"/>
+<node id="11112422"><node id="11112423"><node id="11112425"><node id="11112437"/>
+</node>
+</node>
+</node>
+<node id="11112427"><node id="11112428"><node id="11112481"/>
+</node>
+</node>
+</thread></node>

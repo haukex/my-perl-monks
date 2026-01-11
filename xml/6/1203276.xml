@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203276" title="Conditional use of Win32::TieRegistry" created="2017-11-13 13:44:23" updated="2017-11-13 13:44:23" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="628995">hilitai</author>
+<doctext field_name="doctext">&lt;p&gt;I have a script that is used on Windows and Linux machines. Now, I need to have the script make a registry change on windows. Using Win32::TieRegistry seems reasonable, however I can't figure out a way to have this module work on Windows, and at the same time not get @INC errors on Linux.&lt;/p&gt;
+
+&lt;p&gt;My problem, I think, is that Win32::TieRegistry module appears to create a globally-scoped Registry object when the interpreter hits the 'use ...' statement. This object is used in all further interaction with the registry. If I try to put the 'use Win32::TieRegistry' into an 'eval {}', as I do when trying to load modules that may not exist, I get "Global symbol $Registry requires explicit package name..." errors.&lt;/p&gt;
+
+&lt;p&gt;Below is a simple script that encapsulates my problem. Two lines are commented out; if either one is uncommented, the script will work on either Windows *or* Linux; but if both are either left alone or uncommented, it fails on both platforms:&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+
+use strict;
+my $usemod = 0;
+eval { require Win32::TieRegistry; }; 
+
+if ($@) {
+   warn "No module\n";
+}
+else {
+   $usemod = 1;
+}
+if ($usemod) {
+#  my ($Registry, $IEKey);              # If I expose this line, Windows FAILS ($IEKey remains null); comment out, Windows WORKS
+#  use Win32::TieRegistry(Delimiter=&gt;"/");  # If I expose this line, Linux FAILS (@INC compile error); comment out, Linux WORKS
+   my $IEKey = $Registry-&gt;{'HKEY_CURRENT_USER/Software/Microsoft/Internet Explorer/Main/'};
+   print $IEKey, "\n";
+}
+else {
+   print "None of that stuff here\n";
+}
+&lt;/code&gt;
+&lt;p&gt;Enlightenment sought, thanks in advance.&lt;/p&gt;</doctext>
+<thread id="1203276">
+<node id="1203279"><node id="1203282"/>
+</node>
+<node id="1203280"><node id="1203285"><node id="1203304"/>
+</node>
+</node>
+<node id="1203281"/>
+<node id="1203288"/>
+<node id="1203289"><node id="1203293"/>
+</node>
+</thread></node>

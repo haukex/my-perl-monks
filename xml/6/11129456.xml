@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129456" title="Persistent data structures -- why so complicated?" created="2021-03-11 10:25:51" updated="2021-03-11 10:25:51" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="200239">davebaker</author>
+<doctext field_name="doctext">&lt;p&gt;More of a meditation here than a question, but perhaps it will generate some insight for me and others.&lt;/p&gt;
+&lt;p&gt;Think back on when you were just getting started with programming or computer science, and how you might have naively expected that the results of a program could be used in a later invocation of the same program. Maybe it's just a hits counter, but more often for me the need has been to store a record -- let's say it's a student's name, place of birth, and list of hobbies. So there ya have a Perl structure. All the teacher (who learned Pascal back in the '90s and thinks in terms of "records" of data) wants to do is store the information on a server or other computer so that he or she can call up the students' records at some point in the future -- maybe to browse all the information, or maybe to read or edit a particular student's information, or maybe to delete the information of a student who drops the class. One day the teacher might want to generate a report that lists all the students who were born in Florida and also like to run as a hobby, or otherwise get crazy with some other munging of the information.&lt;/p&gt;
+&lt;p&gt;So far, only two students are enrolled:&lt;/p&gt;
+&lt;code&gt;
+{
+   name          =&gt; 'Bob Kowalski',
+   home_town     =&gt; 'Vero Beach',
+   home_state    =&gt; 'Florida',
+   hobbies       =&gt; [ 'ham radio', 'Perl programming', 'running' ],
+}
+&lt;/code&gt;
+&lt;p&gt;And:&lt;/p&gt;
+&lt;code&gt;
+{
+   name          =&gt; 'Kranessa Evans',
+   home_town     =&gt; 'Dallas',
+   home_state    =&gt; 'Texas',
+   hobbies       =&gt; [ 'Perl programming', 'writing', 'polo' ],
+}
+&lt;/code&gt;
+&lt;p&gt;So, how to store the information about those students? It looks like an array of hashes to me, which sounds complicated to a non-Perl programmer, but hey, the teacher has read the Camel book.&lt;/p&gt;
+&lt;p&gt;In another world, the task could be this simple, albeit using some by-hand code here for the initial set of students' information:&lt;/p&gt;
+&lt;code&gt;
+#!/opt/perl
+
+use strict;
+use warnings;
+
+my @students = ( 
+   {
+     name          =&gt; 'Bob Kowalski',
+     home_town     =&gt; 'Vero Beach',
+     home_state    =&gt; 'Florida',
+     hobbies       =&gt; [ 'ham radio', 'Perl programming', 'running' ],
+  },
+  {
+     name          =&gt; 'Kranessa Evans',
+     home_town     =&gt; 'Dallas',
+     home_state    =&gt; 'Texas',
+     hobbies       =&gt; [ 'Perl programming', 'writing', 'polo' ],
+  },
+);
+
+store_to_file( '/data/students.db', \@students );  # This make-believe easy-peasy function 
+                                                   # would be built into Perl.
+&lt;/code&gt;
+&lt;p&gt;I can live with the complexity of needing to tell my program where to store the data in my fantasy -- i.e., a file name -- and with needing to know that it's probably better to use a "reference thingie" to the list of information when passing the information into store_to_file() rather than passing the data in the list outright (again, the hypothetical teacher who wants to use Perl has read the Camel book).&lt;/p&gt;
+&lt;p&gt;But, because there is no such built-in store_to_file() function for my students' records, I need figure out how to use the MLDBM module (which has been my go-to solution, and I wrote a &lt;a href="https://perldotcom.perl.org/authors/dave-baker/"&gt;Perl.com article&lt;/a&gt; about it back in 2006). Or perhaps I need to add something like these many lines to my program (taken from Recipe 11.13 in the Perl Cookbook, 2d edition):&lt;/p&gt;
+&lt;code&gt;
+use Storable qw( nstore_fd retrieve_fd );
+
+sub store_to_file {
+    my ( $db, $data_ref ) = @_;
+
+    sysopen( DF, $db, O_RDWR | O_CREAT, 0606 )
+        or die "Can't open '$db', stopped: $!";
+    flock( DF, LOCK_EX )
+        or die
+        "Can't get exclusive lock on '$db' for writing, stopped: $!";
+    nstore_fd( $data_ref, *DF )
+        or die "Can't store data: $@";
+    truncate( DF, tell(DF) );
+    close(DF);
+    return 1;
+}
+
+sub retrieve_from_file {      # Certainly going to need this complementary function in the future,
+                              # to read my students' information.
+    my $db = shift;
+
+    unless ( -e $db ) {
+        store_to_file( [] );  # Initialize upon first-ever usage of this function if no student 
+                              # information has been stored before, so it won't crash in that instance
+                              # because the data file doesn't exist yet. Maybe there's an easier,
+                              # softer way to instantiate the data file in this admittedly unusual
+                              # scenario (which I managed to encounter last night).
+    }
+
+    open( DF, "&lt; $db" )
+        or die "Can't open '$db' for reading, stopped: $!";
+    flock( DF, LOCK_SH )
+        or die
+        "Can't get shared lock on '$db' for reading, stopped: $!";
+    my $data_ref = retrieve_fd(*DF);
+    close(DF);
+    return $data_ref;
+}
+&lt;/code&gt;
+&lt;p&gt;Another solution for data storage is to use a database such as sqlite or Postgres, which probably is the most robust solution because, well, databases are optimized for data, avoiding the need for file locking in particular. But my hypothetical teacher would need to learn a good bit of SQL, figure out how to create relational tables especially to accommodate that pesky "field" for multiple hobbies, and would need to get an SQL server up and running (although the file-based sqlite technique could be used). "Gosh, all I want to do is store my students' information using a program I'd like to write."&lt;/p&gt;
+&lt;p&gt;Another solution -- doh -- would be to buy the teacher a copy of Excel or an equivalent. But the teacher is obsessed with the idea of writing a custom program. Or, heck, use Notepad or even get a typewriter and some paper out of the closet. But assume the teacher is set on storing the information on a computer in a way that can be later used in programs-yet-to-be-written.&lt;/p&gt;
+&lt;p&gt;The store_to_file() and retrieve_from_file() functions certainly could be abstracted into a module called Students.pm that would enable them to be exported so that the teacher's program could be written to "use Students qw( store_to_file retrieve_from_file );" and then store_to_file() and retrieve_from_file() could be used in the program as needed -- without needing to remember why it's better for Storable to use the more-portable nstore than store (because the program might be moved to a new server some day that has an operating system with different C functions used by Storable such that the data can't be retrieved on the new server -- been there, done that, although I might be thinking of a different module), or how to configure file locking for the data (because another teacher might be reading my data file at the same time that I'm writing to it).&lt;/p&gt;
+&lt;p&gt;But -- seriously? All of this, just to reliably store a couple of students' records so that I can read them later, assuming I want to write a Perl program to do it?&lt;/p&gt;
+&lt;p&gt;I know that using this much code for a file-based solution for record-type ("complex" and yet not really all that complex) data structures is an effective way to do it, and I enjoy doing it because I enjoy Perl, but last night as I cobbled a program together that just needed to store a data structure that's not a simple key =&gt; "scalar" sort of record, I had the thought -- "Can it really be this hard? Couldn't there be a store_to_file() function built into the language, in order to provide an easy way to store some record-type data for later use?"&lt;/p&gt;
+&lt;p&gt;I wonder if that question might spur some insights that I haven't seen.&lt;/p&gt;</doctext>
+<thread id="11129456">
+<node id="11129458"/>
+<node id="11129459"><node id="11129460"><node id="11129550"/>
+</node>
+</node>
+<node id="11129463"/>
+<node id="11129466"><node id="11129473"><node id="11129490"/>
+</node>
+</node>
+<node id="11129468"><node id="11129486"><node id="11129489"><node id="11129568"><node id="11129573"/>
+</node>
+</node>
+</node>
+<node id="11129570"/>
+</node>
+<node id="11129495"/>
+</thread></node>

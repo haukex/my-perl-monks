@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1207630" title="Re: Sorting and ranking" created="2018-01-21 08:10:59" updated="2018-01-21 08:10:59" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;The code prints &lt;c&gt;1,2,3,4,&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The code you've posted doesn't print that, it prints '&lt;c&gt;syntax error at 1207623.pl line 10, near "@sorted["&lt;/c&gt;'. Please post the actual code you are running. ([id://174051]) Also, always [id://111088].&lt;/p&gt;
+&lt;p&gt;If I assume you meant &lt;c&gt;my @sorted; @sorted[...] = ...;&lt;/c&gt;, then the code runs, but I think you're making things a little too complicated with the various arrays - note that the comparison &lt;c&gt;$sorted[$count] != $sorted[$count-1]&lt;/c&gt; should always be true because you've assigned &lt;c&gt;@sorted[...] = 1..@keys&lt;/c&gt;; that is, all the values of &lt;c&gt;@sorted&lt;/c&gt; are different. Have a look at the [id://745674], especially the advice to use [doc://Data::Dumper] or [mod://Data::Dump] to look at your data structures.&lt;/p&gt;
+&lt;p&gt;Here's one way to approach this. I first sort the keys (see also [doc://perlfaq4#How-do-I-sort-an-array-by-(anything)?]), and then just run through those keys and look at the current and previous value, increasing the rank if they differ. (This assumes no &lt;c&gt;undef&lt;/c&gt; values in the hash, since I use that value to keep track if there was a &lt;c&gt;$prev&lt;/c&gt;ious value or this is the first.)&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+my %data = (
+	'car' =&gt; 180,
+	'motorcycle' =&gt; 150,
+	'skate' =&gt; 150,
+	'bird' =&gt; 120,
+);
+
+my @keys = sort { $data{$b} &lt;=&gt; $data{$a} or $a cmp $b } keys %data;
+
+my ($prev,$rank);
+for my $k (@keys) {
+	$rank++ unless defined($prev) &amp;&amp; $prev==$data{$k};
+	dd $k, $data{$k}, $rank;
+	$prev = $data{$k};
+}
+
+__END__
+
+("car", 180, 1)
+("motorcycle", 150, 2)
+("skate", 150, 2)
+("bird", 120, 3)
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1207623</root_node>
+<parent_node field_name="parent_node">1207623</parent_node>
+<thread id="1207623">
+<node id="1207624"><node id="1207625"><node id="1207628"><node id="1207629"/>
+</node>
+</node>
+</node>
+<node id="1207630"><node id="1207631"/>
+</node>
+<node id="1207633"/>
+<node id="1207634"/>
+<node id="1207635"><node id="1207640"><node id="1207705"/>
+</node>
+<node id="1207672"><node id="1207723"/>
+</node>
+</node>
+<node id="1207807"/>
+</thread></node>

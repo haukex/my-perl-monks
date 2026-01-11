@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1202265" title="Re: Maintaining date modified timestamp when copying files (updated x2)" created="2017-10-29 05:48:33" updated="2017-10-29 05:48:33" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Windows timestamps&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Quoting myself from [id://1162350]:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;A quick search on CPAN reveals that [mod://Win32API::File::Time] may be able to help you. From its synopsis:&lt;/p&gt;
+&lt;c&gt;
+use Win32API::File::Time qw{:win};
+($atime, $mtime, $ctime) = GetFileTime ($filename);
+SetFileTime ($filename, $atime, $mtime, $ctime);
+&lt;/c&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;(Unfortunately still untested.)&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;the timestamps, at the moment, are one of the key ways that I’m keeping track of the large amount of data I’ve got&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Actually, as you're discovering yourself, this is dangerous, I'd &lt;i&gt;strongly&lt;/i&gt; recommend you don't rely on the filesystem to keep track of that information, at the very least store the date/time information in a separate simple text file. &lt;b&gt;Update 2:&lt;/b&gt; The following will take the list of files in the current directory (excluding those beginning with a dot) and output a tab-separated list of filename, ctime, mtime, and atime (if available). You can change the [doc://glob] expression "&lt;c&gt;*&lt;/c&gt;" to match specific files if you like.&lt;/p&gt;
+&lt;c&gt;
+perl -MFile::Glob=bsd_glob -le '$,=qq(\t);print$_,(stat)[10,9,8]for bsd_glob(q(*))'
+&lt;/c&gt;
+&lt;p&gt;(You may need to change the quotes, I'm not on Windows at the moment.)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1202264</root_node>
+<parent_node field_name="parent_node">1202264</parent_node>
+<thread id="1202264">
+<node id="1202265"><node id="1202401"/>
+</node>
+<node id="1202271"><node id="1202272"><node id="1202403"/>
+</node>
+<node id="1202402"/>
+</node>
+</thread></node>

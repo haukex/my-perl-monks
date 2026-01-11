@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1214621" title="Re^2: Importing a variable into a package" created="2018-05-16 05:35:01" updated="2018-05-16 05:35:01" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1091361">frazap</author>
+<doctext field_name="doctext">&lt;p&gt;Thanks for the detail explanation !&lt;/p&gt;
+&lt;p&gt;From my tests with [mod://Text::Template], I saw that I had to name variables without the package component to catch syntax errors. Having read the docs (sorry, can't find exactly where) this became clearer.&lt;/p&gt;
+&lt;p&gt;There is no begin bloc in the loop that gives values to the glob variables [id://1214051] as in your last working example&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;c&gt;eval ' package T; print "B: $x\n"; 1 ' or warn "B: $@";&lt;/c&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;This seems to be what happen in the module (version 1.47), around line 309 (the print line is mine): &lt;/p&gt;
+&lt;code&gt;
+sub fill_in {
+...
+  my $fi_progtext = 
+        "package $fi_eval_package; $fi_prepend;\n$fi_lcomment\n$fi_text;";
+  ...
+  print "eval on \n", $fi_progtext,"\n";
+  $fi_res = eval $fi_progtext;
+&lt;/code&gt;
+&lt;p&gt;Which prints&lt;/p&gt;
+&lt;code&gt;
+eval on
+package T; use strict;;
+#line 1 dokpe.tmpl
+ $annee ;
+eval on
+package T; use strict;;
+#line 4 dokpe.tmpl
+"\t";
+&lt;/code&gt;
+For a template file starting with
+&lt;code&gt;
+Plan de fermeture { $annee } 
+Bibliothèque de la Faculté des Sciences (Dokpe)
+
+Motif{"\t"}
+&lt;/code&gt;
+&lt;p&gt;So to be sure I understand correctly: since I use eval during the script runtime, I do not need the begin block to assign a value to the glob. In my example above, the begin was needed because the print statement was run during the execution time. Is that correct ?&lt;/p&gt;
+
+&lt;p&gt;Thanks again&lt;/p&gt;
+&lt;p&gt;François&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1214558</root_node>
+<parent_node field_name="parent_node">1214559</parent_node>
+<thread id="1214558">
+<node id="1214559"><node id="1214621"><node id="1214717"/>
+</node>
+</node>
+</thread></node>

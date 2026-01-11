@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11122253" title="Hyperlink Question" created="2020-09-26 22:21:25" updated="2020-09-26 22:21:25" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt; Hello Monks,  I am somewhat new to Perl but am trying to learn it because I have seen several examples over the years of what this language is capable of, it is very powerful in the right hands.   I am trying to use Win32::OLE and am working with an example I found on your website so the code may look somewhat familiar.  All I am doing is creating a word document, writing and formatting 3 lines, then writing a hyperlink, then writing the 3 lines again.  For some reason, the calculation of the range object AFTER the hyperlink is formatted is not calculated correctly even though it is exactly the same code that I used BEFORE formatting the hyperlink (that worked correctly).  Can you please enlighten me as to what I am missing?  Thank you in advance!  &lt;/p&gt;
+&lt;code&gt;
+ #!/usr/bin/perl
+use strict;
+use warnings;
+use Win32::OLE;
+
+my $word = Win32::OLE-&gt;new('Word.Application') or die $!;
+$word-&gt;{'Visible'} = 1;
+
+# Create new document
+my $d = $word-&gt;Documents-&gt;Add;
+
+# define selection
+my $s = $word-&gt;Selection;
+
+my @lines = (
+    "This is test line 1",
+    "This is test line 2",
+    "This is test line 3",
+);
+
+# $c is the color
+# $start is the start of Range
+# $end is the end of Range
+# $r is the Range object
+
+my ($c, $start, $end, $r) = (2, 0, 0, );
+
+# Write out the @lines
+
+for my $line (@lines) { 
+    $start = ($d-&gt;Characters-&gt;Count)-1;
+    $end = length($line)+ $start;
+    $s-&gt;TypeText($line);
+    # define the Range
+    $r = $d-&gt;Range($start, $end);
+    # Set font properties
+    $r-&gt;Font-&gt;{Size} = 18;
+    $r-&gt;Font-&gt;{ColorIndex} = $c++;
+    $r-&gt;Font-&gt;{Name} = 'Courier New';
+	$s-&gt;TypeText("\n");
+}
+
+# Now insert a hyperlink
+
+my $line = 'hyperlink';
+
+$start = ($d-&gt;Characters-&gt;Count)-1;
+$end = length($line) + $start;
+$s-&gt;TypeText($line);
+# define the Range
+$r = $d-&gt;Range($start, $end);
+# Set font properties
+$r-&gt;Font-&gt;{Size} = 12;
+$r-&gt;Font-&gt;{Name} = 'Arial';
+$r-&gt;Font-&gt;{Bold} = 1;
+
+$d-&gt;Hyperlinks-&gt;Add({Anchor =&gt; $r,
+					Address =&gt; "http://www.perlmonks.org"});
+						
+$s-&gt;TypeText("\n");
+
+# Now write out the @lines again
+
+for my $line (@lines) { 
+    $start = ($d-&gt;Characters-&gt;Count)-1;
+    $end = length($line)+ $start;
+    $s-&gt;TypeText($line);
+    # define the Range
+    $r = $d-&gt;Range($start, $end);
+    # Set font properties
+    $r-&gt;Font-&gt;{Size} = 18;
+    $r-&gt;Font-&gt;{ColorIndex} = $c++;
+    $r-&gt;Font-&gt;{Name} = 'Courier New';
+	$s-&gt;TypeText("\n");
+}								
+	$word-&gt;WordBasic-&gt;FileSaveAs("c:\\test.doc");
+
+# house keeping, clean up our instances
+$d-&gt;Close();
+$word-&gt;Quit();
+undef $word;  
+&lt;/code&gt;</doctext>
+<reputation field_name="reputation">8</reputation>
+<thread id="11122253">
+<node id="11122268"><node id="11122352"/>
+</node>
+</thread></node>

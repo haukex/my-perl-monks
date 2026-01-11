@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11102485" title="Regex for replacing capture group content using perl" created="2019-07-06 17:51:22" updated="2019-07-06 17:51:22" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11102483">Zagidi</author>
+<doctext field_name="doctext">I try this but isn't working
+The blocks are in the same file called inputs.conf. 
+Trying to change all of the indexes ending in _pr (or _np) to window_pr (or window_np).
+WinEventLog blocks in inputs.conf is limited to Application, Security, System, ForwardedEvents, and Setup.
+
+Monitor blocks in inputs.conf is limited to messages, secure, cron, maillog, spooler, audit, audit.log
+
+The third code changes every indexes in each block. Have other files in inputs.conf i do not want to change the indexes. 
+
+The fourth code print result work like a magic for windows. but getting error when using -i to modify completely. eg. perl -00pe -i
+Have included the code and the monitor blocks in inputs.conf for linux but that could`t change the indexes to linux_pr (or linux_np).
+
+&lt;c&gt;
+perl -00lpe '$"_.*index.*=.*np$/index = window_np" if m,//(Application|Security|System|ForwardedEvents|Setup)\],;' inputs.conf
+
+perl -00lpe '$"_.*index.*=.*pr$/index = window_pr" if m,//(Application|Security|System|ForwardedEvents|Setup)\],;' inputs.conf
+
+perl -pe 's/^index\s*=\s*\K.+(?=_(?:np|pr)\s*$)/window/' inputs.conf
+
+perl -00pe 's#^\[WinEventLog://(?:Application|Security|System|ForwardedEvents|Setup)\]\n.*^index\s*=\s*\K.+(?=_(?:np|pr)\s*$)#window#ms' inputs.conf
+
+perl -00pe 's#^\[monitor:///(?:messages|secure|cron|maillog|spooler|audit/audit\.log)\]\n.*^index\S*=\s*\K.+(?=_(?:np|pr)\s*$)#linux#ms' inputs.conf
+
+perl -0p -i.bak -e 's#(\[monitor:///var/log/(?:messages|secure|cron|maillog|spooler|audit/audit\.log)\](?:(?:\R.*){1})index=).*#$1linux#g' inputs.conf
+
+
+local $/="\n\n";
+
+while (&lt;DATA&gt;){
+   if ( my ($prefix,$suffix)=m/\[WinEventLog:.+index = (\w+)_(pr|np)\s*$/s){
+       # print "$prefix\_$suffix found .. replacing...\n";
+       s/index = $prefix\_$suffix\s*$/index = window_$suffix\n\n/;
+   }
+   print ;
+}
+
+__DATA__
+[WinEventLog://Application]
+checkpointInterval = 5
+current_only = 0
+disabled =0
+start_from = oldest
+index = CNDO_pr
+
+[WinEventLog://Security]
+checkpointInterval = 5
+current_only = 0
+disabled =0
+start_from = oldest
+index = CGWS_pr
+
+[WinEventLog://System]
+checkpointInterval = 5
+current_only = 0
+disabled =0
+start_from = oldest
+index = DMRW_pr
+
+[WinEventLog://ForwardedEvents]
+checkpointInterval = 5
+current_only = 0
+disabled =0
+start_from = oldest
+index = NENP_pr
+
+[WinEventLog://Setup]
+checkpointInterval = 5
+current_only = 0
+disabled =0
+start_from = oldest
+index = EOFK_pr
+
+[WinEventLog://Application]
+checkpointInterval = 5
+current_only = 0
+disabled =0
+start_from = oldest
+index = FDWD_np
+
+[WinEventLog://Security]
+checkpointInterval = 5
+current_only = 0
+disabled =0
+start_from = oldest
+index = ASKD_np
+
+[WinEventLog://System]
+checkpointInterval = 5
+current_only = 0
+disabled =0
+start_from = oldest
+index = JMSF_np
+
+[WinEventLog://ForwardedEvents]
+checkpointInterval = 5
+current_only = 0
+disabled =0
+start_from = oldest
+index = JCCD_np
+
+[WinEventLog://Setup]
+checkpointInterval = 5
+current_only = 0
+disabled =0
+start_from = oldest
+index = HSMS_np
+[monitor:///var/log/messages]
+index=BDBD_np
+sourcetype=syslog
+
+_DATA_
+[monitor:///var/log/cron]
+index=NDNW_np
+sourcetype=syslog
+
+[monitor:///var/log/maillog]
+index=BSKX_np
+sourcetype=syslog
+
+[monitor:///var/log/secure]
+index=NDNDK_np
+sourcetype=syslog
+
+[monitor:///var/log/spooler]
+index=DNWN_np
+sourcetype=syslog
+
+[monitor:///var/log/audit/audit.log]
+index=XBJB_np
+sourcetype=syslog
+
+[monitor:///var/log/messages]
+index=JNJSJ_pr
+sourcetype=syslog
+
+[monitor:///var/log/cron]
+index=NCJG_pr
+sourcetype=syslog
+
+[monitor:///var/log/maillog]
+index=JE3K_pr
+sourcetype=syslog
+
+[monitor:///var/log/secure]
+index=NLNDKN_pr
+sourcetype=syslog
+
+[monitor:///var/log/spooler]
+index=EKJC_pr
+sourcetype=syslog
+
+[monitor:///var/log/audit/audit.log]
+index=QKNK_pr
+sourcetype=syslog
+
+
+&lt;/c&gt;
+
+&lt;p&gt;&lt;small&gt;&lt;i&gt;2019-07-07 [Athanasius] added code tags&lt;/small&gt;&lt;/p&gt;
+</doctext>
+<thread id="11102485">
+<node id="11102486"/>
+<node id="11102488"/>
+<node id="11102489"/>
+<node id="11102504"/>
+</thread></node>

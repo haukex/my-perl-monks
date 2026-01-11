@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129725" title="To remove duplicate lines and add digits as per loop" created="2021-03-15 18:31:36" updated="2021-03-15 18:31:36" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11129232">suvendra123</author>
+<doctext field_name="doctext">Hello Monks,
+&lt;p&gt;
+My text file contains
+&lt;code&gt;
+wire  [130 : 0]         dgrs;
+wire  [130 : 0]         dgrs;
+wire  [130 : 0]         dgrs;
+
+wire  [130 : 0]         grs;
+wire  [130 : 0]         grs;
+wire  [130 : 0]         grs;
+&lt;/code&gt;
+I am removing the duplicate lines 
+&lt;br/&gt;and adding _1, _2,_3 into dgrs and grs such that my text file becomes
+&lt;code&gt;
+wire  [130 : 0]         dgrs_1;
+wire  [130 : 0]         dgrs_2;
+wire  [130 : 0]         dgrs_3;
+
+wire  [130 : 0]         grs_1;
+wire  [130 : 0]         grs_2;
+wire  [130 : 0]         grs_3;
+&lt;/code&gt;
+
+
+
+This is my code
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+my $file = 'xyz.txt';
+my %seen = ();
+{
+   local @ARGV = ($file);
+   local $^I = '.bac';
+   while(&lt;&gt;){
+      $seen{$_}++;
+      next if $seen{$_} &gt; 1;
+      print;
+   }
+}
+
+print "finished processing file.";
+
+
+
+
+my $target_file = 'xyz.txt';
+
+{
+    open my $in_fh, '&lt;', $target_file or die "Cannot open input file: $!\n";
+    flock $in_fh, LOCK_EX | LOCK_NB or die "Cannot obtain a lock on $target_file: $!\n";
+
+    my $temp_out = File::Temp-&gt;new(TEMPLATE =&gt; "$0-$$-XXXXX");
+
+  
+ while ( my $line = &lt;in_fh&gt; ) {
+    if ( $line =~ /^dgrs/ ) {
+        for my $x (1..3) {
+            print "dgrs$x\n";
+        }
+    }
+    else {
+        print $line;
+    }
+}
+
+
+    
+    close $in_fh or die "Failed to close $target_file. Aborting. $!\n";
+
+    $temp_out-&gt;flush;
+    eval {
+        move($temp_out-&gt;filename, $target_file);
+    } or do {
+        warn "Failed to swap $temp_out into $target_file: $!\n";
+        # There may need to be more cleanup here, or possibly a die is more appropriate.
+    };
+} 
+
+&lt;/code&gt;
+
+&lt;p&gt;
+I am not getting the output properly.  I am beginner to perl and facing some difficulty. Your help is appreciated.
+&lt;p&gt;
+Thanks
+
+
+
+
+
+</doctext>
+<thread id="11129725">
+<node id="11129727"><node id="11129732"><node id="11129749"/>
+</node>
+</node>
+<node id="11129747"/>
+<node id="11129763"><node id="11129813"><node id="11129823"><node id="11133615"/>
+</node>
+</node>
+</node>
+<node id="11129791"/>
+</thread></node>

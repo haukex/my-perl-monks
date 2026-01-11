@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11113206" title="Re: Using eval: $@ isn't returning the error I expect" created="2020-02-19 19:05:20" updated="2020-02-19 19:05:20" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I see a couple of issues here:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;[pryrt] [id://11113200|pointed out] that you're using [doc://eval|&lt;c&gt;eval BLOCK&lt;/c&gt;] syntax with a single string inside the block, that's basically like writing &lt;c&gt;"use cPanelUserConfig;"&lt;/c&gt; in your code, i.e. it has no effect, and [doc://warnings] would have told you "&lt;c&gt;Useless use of a constant ("use cPanelUserConfig;") in void context&lt;/c&gt;". Always [id://111088]!&lt;/li&gt;
+&lt;li&gt;[haj] [id://11113198|pointed out] that &lt;c&gt;unless($@){use cPanelUserConfig}&lt;/c&gt; will &lt;i&gt;always&lt;/i&gt; attempt to load the module. There's the [doc://if.pm] pragma, but in this case a simple &lt;c&gt;eval "use cPanelUserConfig;"&lt;/c&gt; (that's an &lt;c&gt;eval STRING&lt;/c&gt;) would be enough to either load the module or not.&lt;/li&gt;
+&lt;li&gt;The pattern of checking [doc://$@] after an [doc://eval] is unfortunately common, but it has issues: [id://1153468].&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;All in all, since it sounds like you only need to load the module or not, and not actually use any of its functions (?), I would have gone with: &lt;c&gt;eval "use cPanelUserConfig; 1" or warn "Didn't load cPanelUserConfig: $@";&lt;/c&gt;.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11113193</root_node>
+<parent_node field_name="parent_node">11113193</parent_node>
+<thread id="11113193">
+<node id="11113196"><node id="11113205"><node id="11113209"><node id="11113212"/>
+</node>
+</node>
+</node>
+<node id="11113198"><node id="11113201"><node id="11113208"><node id="11113230"/>
+</node>
+</node>
+</node>
+<node id="11113200"><node id="11113202"><node id="11113207"><node id="11113215"/>
+</node>
+</node>
+</node>
+<node id="11113206"><node id="11113210"><node id="11113213"><node id="11113214"/>
+</node>
+</node>
+<node id="11113219"><node id="11113228"/>
+</node>
+</node>
+<node id="11113216"><node id="11113232"><node id="11113276"/>
+</node>
+</node>
+</thread></node>

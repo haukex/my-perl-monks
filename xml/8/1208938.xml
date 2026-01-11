@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1208938" title="Re: Code Works But Not Sure How" created="2018-02-10 20:50:35" updated="2018-02-10 20:50:35" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1130276">1nickt</author>
+<doctext field_name="doctext">&lt;p&gt;
+Hi, it looks like you might be trying to make a drop-down menu. If so, consider using a templating system (eg [metamod://Template]) instead. You should be able to pass your data to the rendering engine without worrying about quoting the values.
+&lt;/p&gt;
+&lt;P&gt;Note that [metamod://Data::Dumper] quotes the values it prints by default, so the quotes you are seeing are not the ones you hope to be introducing. That's why your program seems to be working when it's not. See what I mean about letting the presentation layer worry about quoting?
+&lt;/P&gt;
+&lt;P&gt;
+The main issue is that your array is not passed to the subroutine, since you give no arguments in the call. It's not yet blessed so calling one of its subs won't cause the object to be the first argument. You can see this if you Dumper &lt;c&gt;$self&lt;/c&gt; in the subroutine. You would need to pass &lt;c&gt;$self&lt;/c&gt; explicitly, or just pass the arrayref.&lt;/p&gt;
+&lt;P&gt;The reason you get a value of -1 for the last index of the array is that it's an empty list. From [doc://perldata]: &lt;i&gt;
+  &lt;blockquote&gt;
+    The following are equivalent:
+&lt;BR&gt;
+&lt;BR&gt;@whatever = ();
+&lt;BR&gt;$#whatever = -1;. 
+&lt;/blockquote&gt;&lt;/i&gt;
+&lt;P&gt;
+That said, if you want to quote the values in your array, use [doc://map]:
+&lt;c&gt;
+my @array = ("1","Option 1","2","Option 2","3","Option 3","4","Option 4");
+my @quoted = map { "'$_'" } @array;
+&lt;/c&gt;
+&lt;/p&gt;&lt;P&gt;
+Finally, your loop in the sub is over-complicated. I showed a loop above, nicely packaged in a &lt;c&gt;map&lt;/c&gt; call. If you really wanted to do it by hand, it would be more like this:
+&lt;c&gt;
+sub make_menu_items {
+    my $items = shift;
+    my @quoted;
+    for my $item ( @{ $items } ) {
+        push @quoted, "'$item'";
+    }
+    return \@quoted;
+}
+&lt;/c&gt;
+&lt;small&gt;&lt;i&gt;Update: fixed typos with &lt;c&gt;map&lt;/c&gt; and &lt;c&gt;for&lt;/c&gt;, thanks [jwkrahn] and [AnomalousMonk] and [johngg] for the correction.&lt;/i&gt;&lt;/small&gt;
+&lt;/p&gt;&lt;P&gt;
+Hope this helps!&lt;/p&gt;&lt;BR&gt;&lt;div class="pmsig"&gt;&lt;div class="pmsig-1130276"&gt;
+&lt;i&gt;The way forward always starts with a minimal test.&lt;/i&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1208937</root_node>
+<parent_node field_name="parent_node">1208937</parent_node>
+<thread id="1208937">
+<node id="1208938"><node id="1208945"><node id="1208953"/>
+</node>
+<node id="1208948"><node id="1208950"><node id="1208955"><node id="1208961"/>
+</node>
+</node>
+<node id="1208951"><node id="1208956"/>
+</node>
+</node>
+<node id="1208952"/>
+</node>
+<node id="1208941"/>
+<node id="1208946"><node id="1208957"/>
+</node>
+</thread></node>

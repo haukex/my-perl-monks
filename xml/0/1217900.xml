@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217900" title="Re^4: Trouble emailing zip file" created="2018-07-04 15:10:57" updated="2018-07-04 15:10:57" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1216230">TonyNY</author>
+<doctext field_name="doctext">&lt;p&gt;
+Hi haukex,
+&lt;/p&gt;
+&lt;p&gt;
+I'm getting the following after running the code below"
+&lt;/p&gt;
+&lt;p&gt;
+Can't exec "/usr/bin/mailx uuencode $zipfile $zipfile -r -s": No such file or directory at ./test-email.pl line 42.
+&lt;/p&gt;
+&lt;p&gt;
+system /usr/bin/mailx uuencode $zipfile $zipfile -r -s logs user@email.com failed: -1 at ./test-email.pl line 42
+&lt;/p&gt;
+
+
+&lt;code&gt;
+#!/opt/bin/perl
+
+use strict;
+use warnings;
+
+my $home = $ENV{"HOME"};
+print "$home\n";
+
+my $zipfile = "$home/file.zip";
+print "$zipfile\n";
+
+my $emailcmd = '/usr/bin/mailx uuencode $zipfile $zipfile -r -s';
+print "$emailcmd\n";
+
+my $subject = 'logs';
+print "$subject\n";
+
+my $recipient = 'user@email.com ';
+print "$recipient\n";
+
+# takes one argument, the filename to encode
+# returns one value, the filename of the temporary(!) output file
+
+use File::Temp qw/tempfile/;
+sub uuencode {
+    my ($infile) = @_;
+    my ($tfh,$tfn) = tempfile(UNLINK=&gt;1);
+    open my $fh, '&lt;:raw', $infile or die "$infile: $!";
+    printf $tfh "begin %03o %s\n",
+        ((stat($infile))[2] &amp; 0666)||0644, $infile;
+    my $buf;
+    print $tfh pack 'u', $buf while read $fh, $buf, 45;
+    print $tfh "`\n", "end\n";
+    close $fh; close $tfh;
+    return $tfn;
+}
+
+#call uuencode sub with param
+&amp;uuencode($zipfile);
+
+my @args = ("$emailcmd", "$subject", "$recipient");
+system(@args) == 0
+ or die "system @args failed: $?";
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">1217814</root_node>
+<parent_node field_name="parent_node">1217874</parent_node>
+<thread id="1217814">
+<node id="1217816"><node id="1217819"><node id="1217820"><node id="1217823"/>
+</node>
+<node id="1217821"><node id="1217830"/>
+</node>
+<node id="1217822"/>
+</node>
+</node>
+<node id="1217818"><node id="1217824"/>
+<node id="1217829"><node id="1217857"/>
+<node id="1217874"><node id="1217900"><node id="1217903"><node id="1217914"><node id="1217915"/>
+</node>
+</node>
+<node id="1217917"/>
+<node id="1218039"/>
+</node>
+</node>
+<node id="1217983"><node id="1217985"><node id="1217989"><node id="1217992"/>
+</node>
+</node>
+<node id="1217991"><node id="1218003"><node id="1218036"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1217977"/>
+</thread></node>

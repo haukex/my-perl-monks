@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1215423" title="Re: Flattening out arguments to splice (updated)" created="2018-05-30 02:25:21" updated="2018-05-30 02:25:21" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;What you're seeing is because [doc://splice] has a [doc://perlsub#Prototypes|prototype], and you can use [doc://prototype|&lt;c&gt;prototype&lt;/c&gt;] to see it (this is on Perl v5.26):&lt;/p&gt;
+&lt;c&gt;
+$ perl -le 'print prototype("CORE::splice")//"undef"'
+\@;$$@
+&lt;/c&gt;
+&lt;p&gt;(From Perl v5.14 thru v5.22, the prototype was &lt;c&gt;+;$$@&lt;/c&gt;, because of the removed [doc://perlexperiment#Array-and-hash-container-functions-accept-references|autoderef].)&lt;/p&gt;
+&lt;p&gt;[doc://perl5260delta#CORE-subroutines-for-hash-and-array-functions-callable-via-reference|As of 5.26], you can use the &lt;c&gt;&amp;&lt;/c&gt; sub calling to avoid the prototype, as in &lt;c&gt;&amp;CORE::splice(@args);&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;But since that's not available in all versions of Perl, you may in fact need to resort to conditionals, even if it seems "clumsy" :-) For example, because some functions change their behavior based on how many arguments they get, I had to do exactly that in [mod://Tie::Handle::Base] - [https://bitbucket.org/haukex/file-replace/src/11e78677e/lib/Tie/Handle/Base.pm#Base.pm-40|see my &lt;c&gt;binmode&lt;/c&gt; and &lt;c&gt;open&lt;/c&gt; wrappers].&lt;/p&gt;
+&lt;p&gt;However, the arguments to [doc://splice] have clear defaults, so as [tybalt89] and [AnomalousMonk] already showed you don't necessarily need to resort to a long &lt;c&gt;if&lt;/c&gt;-&lt;c&gt;elsif&lt;/c&gt; chain. This passes all the tests in [https://perl5.git.perl.org/perl.git/blob/v5.26.2:/t/op/splice.t|&lt;c&gt;t/op/splice.t&lt;/c&gt;]*:&lt;/p&gt;
+&lt;c&gt;
+sub mysplice (\@;$$@) {
+	my ($arr,$off,$len,@list) = @_;
+	splice @$arr, $off//0, $len // @$arr - ($off//0), @list;
+}
+&lt;/c&gt;
+&lt;p&gt;And unlike &lt;c&gt;CORE::splice&lt;/c&gt;, you can use a &lt;c&gt;&amp;mysplice&lt;/c&gt; call to ignore the prototype (before v5.26), or change the prototype and arguments however you like.&lt;/p&gt;
+&lt;p&gt;* Full test code:&lt;/p&gt;
+&lt;readmore title="full test code"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More;
+
+sub mysplice (\@;$$@) {
+	my ($arr,$off,$len,@list) = @_;
+	splice @$arr, $off//0, $len // @$arr - ($off//0), @list;
+}
+
+my @a = (1..10);
+
+sub j { join(":",@_) }
+
+is( j(mysplice(@a,@a,0,11,12)), '', 'return value of splice when nothing is removed, only added');
+is( j(@a), j(1..12), '... added two elements');
+
+is( j(mysplice(@a,-1)), "12", 'remove last element, return value');
+is( j(@a), j(1..11), '... removed last element');
+
+is( j(mysplice(@a,0,1)), "1", 'remove first element, return value');
+is( j(@a), j(2..11), '... first element removed');
+
+is( j(mysplice(@a,0,0,0,1)), "", 'emulate shift, return value is empty');
+is( j(@a), j(0..11), '... added two elements to beginning of the list');
+
+is( j(mysplice(@a,5,1,5)), "5", 'remove and replace an element to the end of the list, return value is the element');
+is( j(@a), j(0..11), '... list remains the same');
+
+is( j(mysplice(@a, @a, 0, 12, 13)), "", 'push two elements onto the end of the list, return value is empty');
+is( j(@a), j(0..13), '... added two elements to the end of the list');
+
+is( j(mysplice(@a, -@a, @a, 1, 2, 3)), j(0..13), 'splice the whole list out, add 3 elements, return value is @a');
+is( j(@a), j(1..3), '... array only contains new elements');
+
+is( j(mysplice(@a, 1, -1, 7, 7)), "2", 'replace middle element with two elements, negative offset, return value is the element' );
+is( j(@a), j(1,7,7,3), '... array 1,7,7,3');
+
+is( j(mysplice(@a,-3,-2,2)), j(7), 'replace first 7 with a 2, negative offset, negative length, return value is 7');
+is( j(@a), j(1,2,7,3), '... array has 1,2,7,3');
+
+# Bug 20000223.001 (#2196) - no test for splice(@array).  Destructive test!
+is( j(mysplice(@a)), j(1,2,7,3), 'bare splice empties the array, return value is the array');
+is( j(@a),  '', 'array is empty');
+
+# Tests 11 and 12:
+# [ID 20010711.005 (#7265)] in Tie::Array, SPLICE ignores context, breaking SHIFT
+
+my $foo;
+
+@a = ('red', 'green', 'blue');
+$foo = mysplice @a, 1, 2;
+is( $foo, 'blue', 'remove a single element in scalar context');
+
+@a = ('red', 'green', 'blue');
+$foo = shift @a;
+is( $foo, 'red', 'do the same with shift');
+
+# Bug [perl #30568] - insertions of deleted elements
+@a = (1, 2, 3);
+mysplice( @a, 0, 3, $a[1], $a[0] );
+is( j(@a), j(2,1), 'splice and replace with indexes 1, 0');
+
+@a = (1, 2, 3);
+mysplice( @a, 0, 3 ,$a[0], $a[1] );
+is( j(@a), j(1,2), 'splice and replace with indexes 0, 1');
+
+@a = (1, 2, 3);
+mysplice( @a, 0, 3 ,$a[2], $a[1], $a[0] );
+is( j(@a), j(3,2,1), 'splice and replace with indexes 2, 1, 0');
+
+@a = (1, 2, 3);
+mysplice( @a, 0, 3, $a[0], $a[1], $a[2], $a[0], $a[1], $a[2] );
+is( j(@a), j(1,2,3,1,2,3), 'splice and replace with a whole bunch');
+
+@a = (1, 2, 3);
+mysplice( @a, 1, 2, $a[2], $a[1] );
+is( j(@a), j(1,3,2), 'swap last two elements');
+
+@a = (1, 2, 3);
+mysplice( @a, 1, 2, $a[1], $a[1] );
+is( j(@a), j(1,2,2), 'duplicate middle element on the end');
+
+# splice should invoke get magic
+
+ok( ! Foo-&gt;isa('Bar'), 'Foo is not a Bar');
+
+mysplice @Foo::ISA, 0, 0, 'Bar';
+ok( Foo-&gt;isa('Bar'), 'splice @ISA and make Foo a Bar');
+
+# Test arrays with nonexistent elements (crashes when it fails)
+@a = ();
+$#a++;
+is sprintf("%s", mysplice @a, 0, 1), "",
+  'splice handles nonexistent elems when shrinking the array';
+@a = ();
+$#a++;
+is sprintf("%s", mysplice @a, 0, 1, undef), "",
+  'splice handles nonexistent elems when array len stays the same';
+
+@a = (1, 2, 3);
+my @args = (\@a, 1, 2, $a[2], $a[1]);
+&amp;mysplice( @args );
+is( j(@a), j(1,3,2), 'swap last two elements (with &amp;)');
+
+done_testing;
+&lt;/c&gt;
+&lt;p&gt;&lt;del&gt;&lt;i&gt;Update:&lt;/i&gt; Actually, I had to fiddle with the read-only test slightly, I don't have the time right now to investigate why &lt;c&gt;Internals::SvREADONLY&lt;/c&gt; didn't seem to work.&lt;/del&gt; &lt;b&gt;&lt;c&gt;&lt;update2&gt;&lt;/c&gt;&lt;/b&gt; I was testing on v5.26, but the readonly test, which I got from blead, wasn't actually [https://perl5.git.perl.org/perl.git/commitdiff/3275d25a1e4129bdf23c447f60be4348af4dfe19|added] until v5.27.5. So I've just removed that test so that the code matches v5.26. (I adjusted the above link to &lt;c&gt;t/op/splice.t&lt;/c&gt; accordingly.) &lt;b&gt;&lt;c&gt;&lt;/update2&gt;&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1215410</root_node>
+<parent_node field_name="parent_node">1215410</parent_node>
+<thread id="1215410">
+<node id="1215414"><node id="1215416"><node id="1215419"/>
+<node id="1215422"/>
+</node>
+</node>
+<node id="1215423"/>
+<node id="1215477"/>
+</thread></node>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112052" title="Re^3: gmail sending in 2020" created="2020-01-29 17:21:51" updated="2020-01-29 17:21:51" _doctext_mode="lenient"><type id="11">note</type>
+<author id="590334">iaw4</author>
+<doctext field_name="doctext">As of Jan 29, 2020, the following works.
+
+&lt;ol&gt;
+&lt;li&gt;Turn off 2FA .
+
+&lt;li&gt;on '&lt;a href="https://myaccount.google.com/security?pli=1#connectedapps"&gt;https://myaccount.google.com/security?pli=1#connectedapps&lt;/a&gt;', look for and allow  &lt;b&gt;Less secure app access&lt;/b&gt;
+
+&lt;li&gt;on '&lt;a href="https://myaccount.google.com/lesssecureapps"&gt;https://myaccount.google.com/lesssecureapps&lt;/a&gt;', same thing.
+
+&lt;li&gt; use the slightly elaborated perl program:
+&lt;/ol&gt;
+
+&lt;code&gt;
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use autodie;
+use Data::Dumper;
+
+my $gauthtxt= "gauth.txt";  # can define default sending user account and password
+    ## format: 'user\temail\npasswd\tstring\n'
+
+################################################################
+# parse inputs
+
+# defaults
+my %smtp= ( server =&gt; 'smtp.gmail.com', port =&gt; '587', subject =&gt; "testing gmailer.pl", body =&gt; "gmail-tester $0: ".localtime() );
+
+# more defaults in gauth.txt
+if (-e $gauthtxt) {
+  print STDERR "[reading $gauthtxt]\n";
+  open(my $GA, "&lt;", $gauthtxt);
+  while (&lt;$GA&gt;) {
+    chomp; (/^([a-z]+)\s+(.*)$/) or die "line in $gauthtxt is not parseable: $_\n";
+    $smtp{$1}= $2;
+  }
+  close($GA);
+}
+
+# command line arguments
+foreach (@ARGV) {
+  foreach my $keyword (qw(user to passwd subject body)) { (/^$keyword=(.*)/) and $smtp{$keyword}=$1; }
+}
+
+(exists{$smtp{from})) and $smtp{user}=$smtp{from}; ## special equivalence
+
+################################################################
+# check inputs
+
+foreach (qw(user to passwd subject body)) {
+  exists($smtp{$_}) or die "'$_' needs to be in $gauthtxt or spcified on command line with '$_=...'\n";
+}
+
+
+use Email::Valid;
+(Email::Valid-&gt;address($smtp{user})) or die "your own user account $smtp{user} is not a valid email address";
+(Email::Valid-&gt;address($smtp{to})) or die "your recipientd account $smtp{to} is not a valid email address";
+
+
+################################################################
+# send email
+
+use Email::Sender::Simple qw(sendmail);
+use Email::Sender::Transport::SMTPS ();
+use Email::Simple ();
+use Email::Simple::Creator ();
+
+
+my $transport = Email::Sender::Transport::SMTPS-&gt;new({
+  host =&gt; $smtp{server},
+  port =&gt; $smtp{port},
+  ssl =&gt; "starttls",
+  sasl_username =&gt; $smtp{user},
+  sasl_password =&gt; $smtp{passwd},
+});
+
+my $email = Email::Simple-&gt;create(
+  header =&gt; [
+    To      =&gt; $smtp{to},
+    From    =&gt; $smtp{user},
+    Subject =&gt; $smtp{subject}
+  ],
+  body =&gt; $smtp{body}."\n",
+);
+
+sendmail($email, { transport =&gt; $transport });
+
+print "\nemail sent from $smtp{user} to $smtp{to}.\n";
+&lt;/code&gt;
+
+
+
+
+</doctext>
+<root_node field_name="root_node">11111983</root_node>
+<parent_node field_name="parent_node">11112047</parent_node>
+<thread id="11111983">
+<node id="11112000"/>
+<node id="11112038"><node id="11112047"><node id="11112052"/>
+</node>
+</node>
+</thread></node>

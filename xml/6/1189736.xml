@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1189736" title="Re: problem retrieving return code of an execution with back ticks (updated)" created="2017-05-07 10:39:49" updated="2017-05-07 10:39:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You said you don't care about the other information in [doc://$?], but I'd say that's not a good way to look at it, since I assume you &lt;i&gt;do&lt;/i&gt; want to know whether your script completed successfully or not. So you should always check &lt;c&gt;$?&lt;/c&gt; against zero &lt;i&gt;first&lt;/i&gt;, and then you can inspect its value to see what went wrong. See the example code in [doc://system] (slightly reformatted for brevity):&lt;/p&gt;
+&lt;c&gt;
+if ($? == -1) { print "failed to execute: $!\n" }
+elsif ($? &amp; 127)
+	{ printf "child died with signal %d, %s coredump\n",
+		($? &amp; 127),  ($? &amp; 128) ? 'with' : 'without' }
+else { printf "child exited with value %d\n", $? &gt;&gt; 8 }
+&lt;/c&gt;
+&lt;p&gt;Or, easier, use &lt;c&gt;capture&lt;/c&gt; or (better) &lt;c&gt;capturex&lt;/c&gt; from [mod://IPC::System::Simple], which has very good handling of these errors built in. I wrote about the topic of running external commands at length [id://1180578|here].&lt;/p&gt;
+&lt;p&gt;One more small thing is - have you inspected the command's output in &lt;c&gt;@flush&lt;/c&gt;?&lt;/p&gt;
+&lt;p&gt;There is also a small possibility that the shell that Perl is using to execute the backticks is different from your command line shell, so there could be a difference there, which is why I recommended &lt;c&gt;capturex&lt;/c&gt;, which doesn't invoke the shell at all. The only thing in your command that seems to need the shell's capabilities is &lt;c&gt;${UNXEXSCRIPT}&lt;/c&gt;*, which you can do at the Perl level with &lt;c&gt;$ENV{UNXEXSCRIPT}&lt;/c&gt;. What I mean is something like the following (untested). Note that I've made some assumptions about how the script parses command line arguments; if you have trouble with &lt;c&gt;--script-prefix&lt;/c&gt; or &lt;c&gt;--script-params&lt;/c&gt; you might need to fiddle with adding quoting to them:&lt;/p&gt;
+&lt;c&gt;
+use IPC::System::Simple qw/capturex/;
+my @flush = capturex('/soft/perl-5.16.3/bin/perl',
+	'/users/iax00/exploit/script/iax_0taskchklog.pl',
+	'-m','--timeout=10','--success-code=0',
+	'--script=/users/iax00/exploit/script/iax_0tasksimp.pl',
+	'--script-prefix='.$ENV{UNXEXSCRIPT}.'/start /soft/perl-5.16.3/bin/perl',
+	'--script-params=-m -v 2 --config-file /users/iax00/exploit/data/iaxfcverifTomcat_admin_portal.xml');
+&lt;/c&gt;
+&lt;p&gt;Without knowing anything about &lt;c&gt;iax_0taskchklog.pl&lt;/c&gt; or &lt;c&gt;iax_0tasksimp.pl&lt;/c&gt; (the latter is returning the error code, correct?), these are just guesses - it's also possible that one or both of these scripts have code in them that causes them to act differently when run from the shell vs. run from another script (environment variables, interactive prompting, ...), and that is causing the problem.&lt;/p&gt;
+&lt;p&gt;* &lt;i&gt;Update:&lt;/i&gt; Actually, I just noticed you said &lt;c&gt;'${UNXEXSCRIPT}...'&lt;/c&gt;, so I guess you don't want to have it expanded by the shell...? &lt;i&gt;Update 2:&lt;/i&gt; Hm, actually it seems from your log output that the variable does get expanded, but later, so I guess inside &lt;c&gt;iax_0taskchklog.pl&lt;/c&gt;?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1189731</root_node>
+<parent_node field_name="parent_node">1189731</parent_node>
+<thread id="1189731">
+<node id="1189736"><node id="1189792"><node id="1189943"/>
+</node>
+</node>
+</thread></node>

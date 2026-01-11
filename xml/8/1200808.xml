@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200808" title="Re: Timer subtraction (updated)" created="2017-10-06 04:57:02" updated="2017-10-06 04:57:02" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I normally use the [mod://DateTime] family of modules for this kind of thing. It looks like what you have there are not absolute times, but timer durations, in which case you could try working with [mod://DateTime::Duration] objects. (If you are instead working with absolute times, see [id://1193769|here] and [id://1179201|here] for solutions.)&lt;/p&gt;
+&lt;p&gt;I looked into how to parse durations, and found &lt;del&gt;[mod://DateTime::Format::Duration]&lt;/del&gt;, but am having trouble getting it to parse milliseconds - I have a suspicion this may be a bug, and will look into this and update my node when I know more (&lt;b&gt;Update:&lt;/b&gt; [https://rt.cpan.org/Public/Bug/Display.html?id=123203|Bug reported.]). Until then, parsing the duration manually seems to work, as follows. By the way, is it a typo that your milliseconds in &lt;c&gt;$first&lt;/c&gt; only have two digits?&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2018-01-15:&lt;/b&gt; I have to &lt;b&gt;withdraw&lt;/b&gt; my suggestion for [mod://DateTime::Format::Duration] for now, the number of [https://rt.cpan.org/Public/Dist/Display.html?Name=DateTime-Format-Duration|unfixed bugs] - including the one reported by [Cristoforo] in the reply - is leading me to believe that the module is currently suffering from too many issues to be "just used". See my reply [id://1200811|below] for a quick-n-dirty alternative, although unfortunately that doesn't support normalization.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime::Duration;
+use DateTime::Format::Duration;
+
+my $first = "00:00:01:04";
+my $last  = "00:00:08:861";
+
+sub my_parse_duration {
+	my $in = shift;
+	my %t; @t{qw/hours minutes seconds nanoseconds/}
+		= $in=~/\A(\d\d):(\d\d):(\d\d):(\d\d\d?)\z/
+			or die "failed to parse '$in'";
+	$t{nanoseconds}*=1000000; # ms-&gt;ns
+	return DateTime::Duration-&gt;new(%t);
+}
+$first = my_parse_duration($first);
+$last  = my_parse_duration($last );
+
+my $fmt_out = DateTime::Format::Duration-&gt;new(
+	pattern=&gt;'%H:%M:%S:%3N', normalize=&gt;1 );
+
+print $fmt_out-&gt;format_duration($first),"\n";
+print $fmt_out-&gt;format_duration($last ),"\n";
+$last-&gt;subtract_duration($first);
+print $fmt_out-&gt;format_duration($last ),"\n";
+
+__END__
+
+00:00:01:004
+00:00:08:861
+00:00:07:857
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1200802</root_node>
+<parent_node field_name="parent_node">1200802</parent_node>
+<thread id="1200802">
+<node id="1200804"/>
+<node id="1200806"/>
+<node id="1200808"><node id="1200810"><node id="1200811"><node id="1200818"/>
+</node>
+</node>
+<node id="1207239"><node id="1207266"/>
+</node>
+</node>
+<node id="1200822"><node id="1207279"/>
+</node>
+</thread></node>

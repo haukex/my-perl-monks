@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1233539" title="Re^2: XML::LibXML - How to extract an element including the elements within?" created="2019-05-09 16:46:02" updated="2019-05-09 16:46:02" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;$string =~ s/^&lt;[^&gt;]+&gt;//; $string =~ s/&lt;[^&gt;]+&gt;$//;&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, [id://1201438|please don't use regular expressions to parse XML...]&lt;/p&gt;
+&lt;p&gt;An alternative to what [poj] [id://1233536|showed] with [mod://XML::LibXML::DocumentFragment]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+
+my $doc = XML::LibXML-&gt;load_xml(string =&gt;
+	q{&lt;doc&gt;&lt;text&gt;From mobile, &lt;ph1 i="1" type="33" x="1"/&gt;dial&lt;ph2 i="1"/&gt; this number:&lt;/text&gt;&lt;/doc&gt;});
+
+for my $node ($doc-&gt;findnodes('/doc/text')) {
+	my $frag = $doc-&gt;createDocumentFragment;
+	$frag-&gt;appendChild($_-&gt;cloneNode(1)) for $node-&gt;childNodes;
+	print $frag, "\n";
+}
+
+__END__
+
+From mobile, &lt;ph1 i="1" type="33" x="1"/&gt;dial&lt;ph2 i="1"/&gt; this number:
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1233525</root_node>
+<parent_node field_name="parent_node">1233530</parent_node>
+<thread id="1233525">
+<node id="1233530"><node id="1233539"><node id="1233582"/>
+</node>
+<node id="1233581"/>
+</node>
+<node id="1233536"><node id="1233580"><node id="1233583"><node id="1233717"/>
+</node>
+</node>
+</node>
+</thread></node>

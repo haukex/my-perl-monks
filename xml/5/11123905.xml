@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11123905" title="Re: Fastest way to &quot;pick without replacement&quot;" created="2020-11-20 10:37:03" updated="2020-11-20 10:37:03" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1039428">Eily</author>
+<doctext field_name="doctext">&lt;p&gt;If you don't care about order, replacing the deleted element by the last in the array works as well. And I was expecting it to be faster than [doc://splice] (since I was expecting the latter to move every element after the one that is removed) but the performances are actually very similar:
+&lt;c&gt;use warnings;
+use strict;
+use Benchmark qw/cmpthese/;
+
+my $size = 1e3;
+my @numbers = ( 0..$size );
+my $index = 3;
+my @expect = ( 0..2,4..$size );
+use constant TEST =&gt; 0;
+
+cmpthese(-2, {
+  splice =&gt; sub {
+    my @output = @numbers;
+    splice @output, $index, 1;
+    join("\0", sort @output) eq join("\0", sort @expect) or die if TEST;
+  },
+  grep =&gt; sub { # https://www.perlmonks.org/?node_id=11123877
+    my @output = @numbers[ grep $_ != $index, 0 .. $#numbers ];
+    join("\0", sort @output) eq join("\0", sort @expect) or die if TEST;
+  },
+  swap =&gt; sub {
+    my @output = @numbers;
+    $output[$index] = pop @output;
+    join("\0", sort @output) eq join("\0", sort @expect) or die if TEST;
+  },
+});
+&lt;/c&gt;
+&lt;c&gt;C:\Projets\perl&gt;perl pm_select_11123879.pm
+          Rate   grep   swap splice
+grep   14287/s     --   -73%   -73%
+swap   52519/s   268%     --    -0%
+splice 52549/s   268%     0%     --&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;NB: I checked, it works fine when $index is the last element in the array as well.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11123879</root_node>
+<parent_node field_name="parent_node">11123879</parent_node>
+<thread id="11123879">
+<node id="11123881"/>
+<node id="11123884"><node id="11123941"><node id="11123949"/>
+<node id="11123958"/>
+</node>
+<node id="11123952"/>
+</node>
+<node id="11123885"><node id="11123927"><node id="11123986"/>
+</node>
+</node>
+<node id="11123905"/>
+<node id="11123963"><node id="11123965"><node id="11123973"><node id="11124019"><node id="11124034"/>
+</node>
+</node>
+<node id="11124041"/>
+</node>
+</node>
+</thread></node>

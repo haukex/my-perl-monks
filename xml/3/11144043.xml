@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11144043" title="The wonders of Test::More" created="2022-05-21 09:29:02" updated="2022-05-21 09:29:02" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="524150">syphilis</author>
+<doctext field_name="doctext">Hi,
+&lt;br&gt;&lt;br&gt;
+Have a laugh at this piece of brilliance:
+&lt;c&gt;
+C:\&gt;perl -MMath::MPFR -MTest::More -e "cmp_ok(Math::MPFR-&gt;new(2), '!=', Math::MPFR-&gt;new(2), 'test for blow up'); done_testing();"
+not ok 1 - test for blow up
+#   Failed test 'test for blow up'
+#   at -e line 1.
+Operation "eq": no method found,
+        left argument in overloaded package Math::MPFR,
+        right argument in overloaded package Math::MPFR at C:/perl-5.34.0/site/lib/Test/Builder.pm line 1006.
+A context appears to have been destroyed without first calling release().
+Based on $@ it does not look like an exception was thrown (this is not always a reliable test)
+
+This is a problem because the global error variables ($!, $@, and $?) will
+not be restored. In addition some release callbacks will not work properly from
+inside a DESTROY method.
+
+Here are the context creation details, just in case a tool forgot to call release():
+  File: -e
+  Line: 1
+  Tool: Test::More::cmp_ok
+
+Here is a trace to the code that caused the context to be destroyed, this could
+be an exit(), a goto, or simply the end of a scope:
+Context destroyed at C:/perl-5.34.0/site/lib/Test/Builder.pm line 1006.
+        eval {...} called at C:/perl-5.34.0/site/lib/Test/Builder.pm line 1006
+        Test::Builder::cmp_ok(Test::Builder=HASH(0x24eaa60), Math::MPFR=SCALAR(0x86b998), "!=", Math::MPFR=SCALAR(0x33cf88), "test for blow up") called at C:/perl-5.34.0/site/lib/Test/More.pm line 511
+        Test::More::cmp_ok(Math::MPFR=SCALAR(0x86b998), "!=", Math::MPFR=SCALAR(0x33cf88), "test for blow up") called at -e line 1
+
+
+Cleaning up the CONTEXT stack...
+# Tests were run but no plan was declared and done_testing() was not seen.
+# Looks like your test exited with 255 just after 1.
+&lt;/c&gt;
+
+Note that the problem arises at &lt;c&gt;C:/perl-5.34.0/site/lib/Test/Builder.pm line 1006&lt;/c&gt;.
+&lt;br&gt;It's not the test failure that's an issue - pretty obviously, that test should fail.
+&lt;br&gt;It's the ensuing fatal over-the-top blowup that's my main concern.
+&lt;br&gt;Here's the actual section of the Test::Builder code that blows up:
+&lt;c&gt;
+...
+    unless($ok) {
+        $self-&gt;$unoverload( \$got, \$expect );
+
+        if( $type =~ /^(eq|==)$/ ) {
+            $self-&gt;_is_diag( $got, $type, $expect );
+        }
+        elsif( $type =~ /^(ne|!=)$/ ) {
+            no warnings;
+            my $eq = ($got eq $expect || $got == $expect) ## LINE 1006
+...
+&lt;/c&gt;
+The evaluation of &lt;c&gt;$got eq $expect&lt;/c&gt; is bound to be interesting if $got is an object and the 'eq' operator has not been overloaded
+&lt;br&gt;&lt;br&gt;Anyway ... my question is "what is the bug ?"
+&lt;br&gt;Is it that 'eq' overloading has not been provided ? (Providing such overloading successfully works around the problem.)
+&lt;br&gt;Is it that Test::More (or Test::Builder) should not be assuming that 'eq' has been overloaded ?
+&lt;br&gt;Or has Test::Builder tried (and failed) to account for this possibility. I'm looking at &lt;c&gt;$self-&gt;$unoverload( \$got, \$expect )&lt;/c&gt; in the above snippet from Builder.pm, and wondering what that might be intended to do. 
+&lt;br&gt;&lt;br&gt;With math objects, I've never felt the need to be able to compare &lt;c&gt;$obj eq $str&lt;/c&gt;. If I need to do that I just make use of the overloaded stringification and compare &lt;c&gt;"$obj" eq $str&lt;/c&gt;.
+&lt;br&gt;&lt;br&gt;I'm interested to hear thoughts on what is the "correct" way to deal with this issue.
+&lt;br&gt;&lt;br&gt;Cheers,&lt;br&gt;Rob
+
+</doctext>
+<thread id="11144043">
+<node id="11144046"><node id="11144069"><node id="11144078"/>
+</node>
+</node>
+<node id="11144048"><node id="11144072"><node id="11144085"><node id="11144105"><node id="11144139"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

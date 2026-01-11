@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="132401" title="A simple hex dump" created="2001-12-16 20:56:04" updated="2005-07-21 01:30:24" _doctext_mode="lenient"><type id="1042">CUFP</type>
+<author id="17361">converter</author>
+<doctext field_name="doctext">&lt;p&gt;
+I don't know how "Cool" this is, but I find this little hex dump subroutine useful from time to time when I'm dealing with data that I'm not familiar with.
+&lt;/p&gt;
+&lt;p&gt;
+Print a simple hex dump, hex on left side, dot-masked
+ASCII on the right side.
+&lt;/p&gt;
+&lt;code&gt;
+use strict;
+use warnings;
+
+my $string = "non-printable or ill-behaved characters: \x0d \x0a \x00 \b \a";
+# my $string = '';
+
+print hexdump(\$string);
+
+
+sub hexdump {
+    my $str = ref $_[0] ? ${$_[0]} : $_[0];
+
+    return "[ZERO-LENGTH STRING]\n" unless length $str;
+
+    # split input up into 16-byte chunks:
+    my @chunks = $str =~ /([\0-\377]{1,16})/g;
+    # format and print:
+    my @print;
+    for (@chunks) {
+        my $hex = unpack "H*", $_;
+        tr/ -~/./c;                   # mask non-print chars
+        $hex =~ s/(..)(?!$)/$1 /g;      # insert spaces in hex
+        # make sure our hex output has the correct length
+        $hex .= ' ' x ( length($hex) &lt; 48 ? 48 - length($hex) : 0 );
+        push @print, "$hex $_\n";
+    }
+    wantarray ? @print : join '', @print;
+}
+
+
+__END__
+
+prints:
+
+6e 6f 6e 2d 70 72 69 6e 74 61 62 6c 65 20 6f 72  non-printable or
+20 69 6c 6c 2d 62 65 68 61 76 65 64 20 63 68 61   ill-behaved cha
+72 61 63 74 65 72 73 3a 20 0d 20 0a 20 00 20 08  racters: . . . .
+20 07                                             .
+&lt;/code&gt;
+&lt;p&gt;
+[converter|conv]
+&lt;/p&gt;
+&lt;p&gt;
+&lt;b&gt;Update:&lt;/b&gt;&lt;br&gt;
+Changed substitution to tr/// at [japhy|japhy's] suggestion.
+&lt;/p&gt;
+&lt;p&gt;
+For what it's worth, I also have an IBM-style dump that is
+useful for fixed-width records where columnar alignment
+is desired. I'll post that one as soon as I find time.
+&lt;/p&gt;</doctext>
+<thread id="132401">
+<node id="132468"/>
+<node id="132539"/>
+<node id="132710"/>
+</thread></node>

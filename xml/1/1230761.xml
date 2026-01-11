@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230761" title="require in script breaks module" created="2019-03-02 11:33:23" updated="2019-03-02 11:33:23" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1211656">chrstphrchvz</author>
+<doctext field_name="doctext">&lt;p&gt;Howdy Monks,&lt;/p&gt;
+&lt;p&gt;I have a test that I would like to skip if a requisite .ph file is not available, so I considered using:&lt;/p&gt;
+&lt;code&gt;eval { require 'sys/ioctl.ph' };
+# skip if $@ contains
+# "Can't locate 'sys/ioctl.ph' in @INC (did you run h2ph?)"&lt;/code&gt;
+&lt;p&gt;However, doing &lt;tt&gt;require 'sys/ioctl.ph'&lt;/tt&gt; from the test script "breaks" the module.&lt;/p&gt;
+&lt;p&gt;Here is a simplified equivalent:&lt;/p&gt;
+&lt;p&gt;funnybusiness.pm:&lt;/p&gt;
+&lt;code&gt;
+package funnybusiness;
+use warnings;
+use strict;
+
+sub s1 {
+require 'sys/ioctl.ph';
+print FIONREAD() . "\n"; # should print some number
+}
+
+1;&lt;/code&gt;
+&lt;p&gt;test.pl:&lt;/p&gt;
+&lt;code&gt;use warnings;
+use strict;
+
+use funnybusiness;
+
+#require 'sys/ioctl.ph';
+
+funnybusiness::s1;&lt;/code&gt;
+&lt;p&gt;Assuming sys/ioctl.ph is available, running test.pl prints the value of &lt;tt&gt;FIONREAD&lt;/tt&gt; in sys/ioctl.h. But uncommenting the &lt;tt&gt;require&lt;/tt&gt; statement in test.pl causes an &lt;tt&gt;Undefined subroutine &amp;amp;funnybusiness::FIONREAD&lt;/tt&gt; error.&lt;/p&gt;
+&lt;p&gt;&lt;strike&gt;I can prevent the error by having funnybusiness.pm use &lt;tt&gt;main::FIONREAD()&lt;/tt&gt; instead&lt;/strike&gt; (&lt;b&gt;edit:&lt;/b&gt; that breaks normal code that doesn't have the &lt;tt&gt;require&lt;/tt&gt; statement). But I would like to understand why the &lt;tt&gt;require&lt;/tt&gt; statement in the script is "breaking" the module: whether there's some bad assumption that funnybusiness.pm makes about what &lt;tt&gt;FIONREAD()&lt;/tt&gt; can mean, or if the script should somehow know better than to do a &lt;tt&gt;require&lt;/tt&gt; that might be done by the module, or if this behavior might be a bug/limitation/feature, etc.&lt;/p&gt;
+&lt;p&gt;(Actual module for anyone curious:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;tt&gt;require&lt;/tt&gt; statement in module: &lt;a href="https://github.com/chrstphrchvz/perl-tcl-ptk/blob/dbf896f71e/lib/Tcl/pTk/Widget.pm#L2149"&gt;https://github.com/chrstphrchvz/perl-tcl-ptk/blob/dbf896f71e/lib/Tcl/pTk/Widget.pm#L2149&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;tt&gt;FIONREAD()&lt;/tt&gt; usage that breaks: &lt;a href="https://github.com/chrstphrchvz/perl-tcl-ptk/blob/dbf896f71e/lib/Tcl/pTk/Widget.pm#L2186"&gt;https://github.com/chrstphrchvz/perl-tcl-ptk/blob/dbf896f71e/lib/Tcl/pTk/Widget.pm#L2186&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The module makes use of &lt;tt&gt;AUTOLOAD&lt;/tt&gt;, meaning I get something more wacky than a &lt;tt&gt;Undefined subroutine&lt;/tt&gt; error.)&lt;/p&gt;</doctext>
+<thread id="1230761">
+<node id="1230762"/>
+<node id="1230763"><node id="1230821"><node id="1230872"/>
+</node>
+</node>
+</thread></node>

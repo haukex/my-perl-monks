@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11149362" title="bug or curly bracket hell?" created="2023-01-05 12:39:45" updated="2023-01-05 12:39:45" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11148324">MoodyDreams999</author>
+<doctext field_name="doctext">I'm pretty new to perl, I have been struggling with my own code I made. It works but i had to change some things and now I keep getting "can't call method "deseriredCompressionLevel" on an undefined value at /usr/lib/perl/5.18.2/Archive/Zip/Archive.pm line 256, &lt;FH&gt; line 20497, I've been working on this for days, I would appreciate some wisdom or direction.
+&lt;c&gt;
+#path to astguiclient configuration file:
+$PATHconf = '/etc/astguiclient.conf';
+
+open(conf, "$PATHconf") || die "can't open $PATHconf: $!\n";
+@conf = &lt;conf&gt;;
+close(conf);
+$i=0;
+foreach(@conf){
+    $line = $conf[$i];
+    $line =~ s/ |&gt;|\n|\r|\t|\#.*|;.*//gi;
+    if ( ($line =~ /^PATHlogs/) &amp;&amp; ($CLIlogs &lt; 1) )
+    {$PATHlogs = $line;   $PATHlogs =~ s/.*=//gi;}
+    if ( ($line =~ /^PATHsounds/) &amp;&amp; ($CLIsounds &lt; 1) )
+        {$PATHsounds = $line;   $PATHsounds =~ s/.*=//gi;}
+    if ( ($line =~ /^VARserver_ip/) &amp;&amp; ($CLIserver_ip &lt; 1) )
+        {$VARserver_ip = $line;   $VARserver_ip =~ s/.*=//gi;}
+    if ( ($line =~ /^VARDB_server/) &amp;&amp; ($CLIDB_server &lt; 1) )
+        {$VARDB_server = $line;   $VARDB_server =~ s/.*=//gi;}
+    if ( ($line =~ /^VARDB_database/) &amp;&amp; ($CLIDB_database &lt; 1) )
+        {$VARDB_database = $line;   $VARDB_database =~ s/.*=//gi;}
+    if ( ($line =~ /^VARDB_user/) &amp;&amp; ($CLIDB_user &lt; 1) )
+        {$VARDB_user = $line;   $VARDB_user =~ s/.*=//gi;}
+    if ( ($line =~ /^VARDB_pass/) &amp;&amp; ($CLIDB_pass &lt; 1) )
+        {$VARDB_pass = $line;   $VARDB_pass =~ s/.*=//gi;}
+    if ( ($line =~ /^VARDB_custom_user/) &amp;&amp; ($CLIDB_custom_user &lt; 1) )
+        {$VARDB_custom_user = $line;   $VARDB_custom_user =~ s/.*=//gi;}
+    if ( ($line =~ /^VARDB_custom_pass/) &amp;&amp; ($CLIDB_custom_pass &lt; 1) )
+       {$VARDB_custom_pass = $line;   $VARDB_custom_pass =~ s/.*=//gi;}
+    if ( ($line =~ /^VARDB_port/) &amp;&amp; ($CLIDB_port &lt; 1) )
+        {$VARDB_port = $line;   $VARDB_port =~ s/.*=//gi;}
+    $i++;
+}
+
+        if (!$VARDB_port) {$VARDB_port='3306';}
+	
+	#use strict;
+	use warnings;
+	use Excel::Writer::XLSX;
+	use DBI;
+	use Time::Piece;
+	use Math::Round;
+	my $t = "" . $i;
+	$dbhA = DBI-&gt;connect("DBI:mysql:$VARDB_database:$VARDB_server:$VARDB_port", "$VARDB_user", "$VARDB_pass")
+	or die "Couldn't connect to database: " . DBI-&gt;errstr;
+	
+	my $rowCount = 0;
+	
+	my $filename = "Output2022.xlsx";
+	my $workbook = Excel::Writer::XLSX-&gt;new( $filename );
+	open(FH, "&lt;", "Debt.csv" ) or die;
+	
+	my $worksheet = $workbook-&gt;add_worksheet('List');
+	my $worksheet2 = $workbook-&gt;add_worksheet('List2');
+	my $format = $workbook-&gt;add_format();
+	my $format1 = $workbook-&gt;add_format();
+	my $format2 = $workbook-&gt;add_format();  
+	   $format-&gt;set_center_across();
+	   $format1-&gt;set_color( 'red' );
+	   $format2-&gt;set_bold();
+	#proper format must be used for the file or it will give an error
+    $worksheet-&gt;set_column( 8, 8, 20 );
+	$worksheet-&gt;set_column( 10, 10, 15 );
+	$worksheet-&gt;set_column( 4, 4, 18 );
+	$worksheet-&gt;set_column( 5, 5, 15 );
+	$worksheet-&gt;set_column( 12, 12, 65 );
+	$worksheet-&gt;write(0, 0, "source_id" );
+	$worksheet-&gt;write(0, 1, "first_name" );
+	$worksheet-&gt;write(0, 2, "middle" );
+	$worksheet-&gt;write(0, 3, "last_name" );
+	$worksheet-&gt;write(0, 4, "address1" );
+	$worksheet-&gt;write(0, 5, "city");
+	$worksheet-&gt;write(0, 6, "state");
+	$worksheet-&gt;write(0, 7, "postal_code");
+	$worksheet-&gt;write(0, 8, "phone_number");
+	$worksheet-&gt;write(0, 9, "address3");
+	$worksheet-&gt;write(0, 10,"province");
+	$worksheet-&gt;write(0, 11, "email");
+	my $rowCount1 = my $rowCount2 = 0;
+	
+	$worksheet-&gt;set_column( 8, 8, 20 );
+	$worksheet-&gt;set_column( 10, 10, 15 );
+	$worksheet-&gt;set_column( 4, 4, 20 );
+	$worksheet-&gt;set_column( 5, 5, 15 );
+	$worksheet-&gt;set_column( 12, 12, 62 );
+	$worksheet2-&gt;write(0, 0, "source_id" );
+	$worksheet2-&gt;write(0, 1, "first_name" );
+	$worksheet2-&gt;write(0, 2, "middle" );
+	$worksheet2-&gt;write(0, 3, "last_name" );
+	$worksheet2-&gt;write(0, 4, "address1" );
+	$worksheet2-&gt;write(0, 5, "city");
+	$worksheet2-&gt;write(0, 6, "state");
+	$worksheet2-&gt;write(0, 7, "postal_code");
+	$worksheet2-&gt;write(0, 8, "phone_number");
+	$worksheet2-&gt;write(0, 9, "address3");
+	$worksheet2-&gt;write(0, 10,"province");
+	$worksheet2-&gt;write(0, 11, "email");
+	
+	
+	while (&lt;FH&gt;){
+        chomp;
+        my @t= split(',',$_);
+		if (length($t[8]) == 10) {  # &amp;&amp; (length($t[7])==4 || length($t[7])==5))
+			if (!defined($t[7]) || $t[7] eq ''){
+				$stmt="SELECT postal_code, state FROM asterisk.vicidial_postal_codes WHERE state='".$t[6]."' limit 1;";
+				$sth = $dbhA-&gt;prepare($stmt) or die "preparing: ",$dbhA-&gt;errstr;
+				$sth-&gt;execute or die "executing: $stmt ", $dbhA-&gt;errstr;
+				$sthrows=$sth-&gt;rows;
+				$Count=0;
+				$z="";
+				while($sthrows&gt;$Count){
+					@ary = $sth-&gt;fetchrow_array;
+					$worksheet-&gt;write($rowCount1+1, 0, $t[0]);
+					$worksheet-&gt;write($rowCount1+1, 1, $t[1]);
+					$worksheet-&gt;write($rowCount1+1, 2, $t[2]);
+					$worksheet-&gt;write($rowCount1+1, 3, $t[3]);
+					$worksheet-&gt;write($rowCount1+1, 4, $t[4]);
+					$worksheet-&gt;write($rowCount1+1, 5, $t[5]);
+					$worksheet-&gt;write($rowCount1+1, 6, $t[6]);
+					$worksheet-&gt;write($rowCount1+1, 7, $ary[0]);
+					$worksheet-&gt;write($rowCount1+1, 8, $t[8]);
+					$worksheet-&gt;write($rowCount1+1, 9, $t[9]);
+					$worksheet-&gt;write($rowCount1+1, 10, $t[10]);
+					$worksheet-&gt;write($rowCount1+1, 11, $t[11]);
+					$Count++;
+				}
+			} 
+			elsif (!defined($t[6]) || $t[6] eq '' || length($t[6])&gt;2 || length($t[6])&lt;2) {
+				$stmt="SELECT state, postal_code FROM asterisk.vicidial_postal_codes WHERE postal_code='".$t[7]."';";
+				$sth = $dbhA-&gt;prepare($stmt) or die "preparing: ",$dbhA-&gt;errstr;
+				$sth-&gt;execute or die "executing: $stmt ", $dbhA-&gt;errstr;
+				$sthrows=$sth-&gt;rows;
+				$Count=0;
+				while($sthrows&gt;$Count){
+					@ary = $sth-&gt;fetchrow_array;
+					$worksheet-&gt;write($rowCount1+1, 0, $t[0]);
+					$worksheet-&gt;write($rowCount1+1, 1, $t[1]);
+					$worksheet-&gt;write($rowCount1+1, 2, $t[2]);
+					$worksheet-&gt;write($rowCount1+1, 3, $t[3]);
+					$worksheet-&gt;write($rowCount1+1, 4, $t[4]);
+					$worksheet-&gt;write($rowCount1+1, 5, $t[5]);
+					$worksheet-&gt;write($rowCount1+1, 6, $ary[0]);
+					$worksheet-&gt;write($rowCount1+1, 7, $t[7]);
+					$worksheet-&gt;write($rowCount1+1, 8, $t[8]);
+					$worksheet-&gt;write($rowCount1+1, 9, $t[9]);
+					$worksheet-&gt;write($rowCount1+1, 10, $t[10]);
+					$worksheet-&gt;write($rowCount1+1, 11, $t[11]);
+					$Count++;
+				}
+			} else {
+				$worksheet-&gt;write($rowCount1+1, 0, $t[0]);
+				$worksheet-&gt;write($rowCount1+1, 1, $t[1]);
+				$worksheet-&gt;write($rowCount1+1, 2, $t[2]);
+				$worksheet-&gt;write($rowCount1+1, 3, $t[3]);
+				$worksheet-&gt;write($rowCount1+1, 4, $t[4]);
+				$worksheet-&gt;write($rowCount1+1, 5, $t[5]);
+				$worksheet-&gt;write($rowCount1+1, 6, $t[6]);
+				$worksheet-&gt;write($rowCount1+1, 7, $t[7]);
+				$worksheet-&gt;write($rowCount1+1, 8, $t[8]);
+				$worksheet-&gt;write($rowCount1+1, 9, $t[9]);
+				$worksheet-&gt;write($rowCount1+1, 10, $t[10]);
+				$worksheet-&gt;write($rowCount1+1, 11, $t[11]);
+			
+			
+			$rowCount1++; 
+			
+			} elsif (!defined($t[7]) || $t[7] eq '' || length($t[7])&gt;5 || length($t[7])&lt;=3) {
+			    $z="";
+				$stmt="SELECT postal_code, state FROM asterisk.vicidial_postal_codes WHERE state='".$t[6]."' 
+				and postal_code not in ('00501','00544') limit 1;";
+				$sth = $dbhA-&gt;prepare($stmt) or die "preparing: ",$dbhA-&gt;errstr;
+				$sth-&gt;execute or die "executing: $stmt ", $dbhA-&gt;errstr;
+				$sthrows=$sth-&gt;rows;
+				$Count=0;
+				$oZ=$t[7];
+				while($sthrows&gt;$Count){
+					@ary = $sth-&gt;fetchrow_array;
+					$z=$ary[0];
+					$worksheet2-&gt;write($rowCount2+1, 1, $t[1]);
+					$worksheet2-&gt;write($rowCount2+1, 2, $t[2]);
+					$worksheet2-&gt;write($rowCount2+1, 3, $t[3]);
+					$worksheet2-&gt;write($rowCount2+1, 4, $t[4]);
+					$worksheet2-&gt;write($rowCount2+1, 5, $t[5]);
+					$worksheet2-&gt;write($rowCount2+1, 6, $t[6]);
+					$worksheet2-&gt;write($rowCount2+1, 7, $ary[0]);
+					$worksheet2-&gt;write($rowCount2+1, 8, $t[8]);
+					$worksheet2-&gt;write($rowCount2+1, 9, $t[9]);
+					$worksheet2-&gt;write($rowCount2+1, 10, $t[10]);
+					$worksheet2-&gt;write($rowCount2+1, 11, $t[11]);
+					$Count++;
+				}
+			 
+			} elsif (!defined($t[6]) || $t[6] eq '' || length($t[6])&gt;2 || length($t[6])&lt;2){
+				$stmt="SELECT state, postal_code FROM asterisk.vicidial_postal_codes WHERE postal_code='".$t[7]."';";
+				$sth = $dbhA-&gt;prepare($stmt) or die "preparing: ",$dbhA-&gt;errstr;
+				$sth-&gt;execute or die "executing: $stmt ", $dbhA-&gt;errstr;
+				$sthrows=$sth-&gt;rows;
+				$Count=0;
+				while($sthrows&gt;$Count){
+					@ary = $sth-&gt;fetchrow_array;
+					$worksheet2-&gt;write($rowCount2+1, 1, $t[1]);
+					$worksheet2-&gt;write($rowCount2+1, 2, $t[2]);
+					$worksheet2-&gt;write($rowCount2+1, 3, $t[3]);
+					$worksheet2-&gt;write($rowCount2+1, 4, $t[4]);
+					$worksheet2-&gt;write($rowCount2+1, 5, $t[5]);
+					$worksheet2-&gt;write($rowCount2+1, 6, $ary[0]);
+					$worksheet2-&gt;write($rowCount2+1, 7, $t[7]);
+					$worksheet2-&gt;write($rowCount2+1, 8, $t[8]);
+					$worksheet2-&gt;write($rowCount2+1, 9, $t[9]);
+					$worksheet2-&gt;write($rowCount2+1, 10, $t[10]);
+					$worksheet2-&gt;write($rowCount2+1, 11, $t[11]);
+					$Count++;
+				}
+			} else {
+				$worksheet2-&gt;write($rowCount2+1, 0, $t[0]);
+				$worksheet2-&gt;write($rowCount2+1, 1, $t[1]);
+				$worksheet2-&gt;write($rowCount2+1, 2, $t[2]);
+				$worksheet2-&gt;write($rowCount2+1, 3, $t[3]);
+				$worksheet2-&gt;write($rowCount2+1, 4, $t[4]);
+				$worksheet2-&gt;write($rowCount2+1, 5, $t[5]);
+				$worksheet2-&gt;write($rowCount2+1, 6, $t[6]);
+				$worksheet2-&gt;write($rowCount2+1, 7, $t[7]);
+				$worksheet2-&gt;write($rowCount2+1, 8, $t[8]);
+				$worksheet2-&gt;write($rowCount2+1, 9, $t[9]);
+				$worksheet2-&gt;write($rowCount2+1, 10, $t[10]);
+				$worksheet2-&gt;write($rowCount2+1, 11, $t[11]);
+			}
+			#if (length($t[8]) &lt; 10 &amp;&amp; length($t[7]) &lt; 5) 
+				#$worksheet-&gt;write($rowCount2+1, 12, 'phone and zip code are incorrect.', $format1);
+			# elsif (length($t[8]) &gt; 10 &amp;&amp; length($t[7]) &gt; 5) 
+				#$worksheet-&gt;write($rowCount2+1, 12, 'phone and zip code are incorrect.', $format1);
+			# elsif (length($t[8]) &lt; 10 &amp;&amp; length($t[7]) &gt; 5) 
+				#$worksheet-&gt;write($rowCount2+1, 12, 'phone and zip code are incorrect.', $format1);
+			if (length($t[8])&lt; 10 || length($t[8])&gt;10){
+				$worksheet2-&gt;write($rowCount2+1, 12, 'phone is incorrect.', $format1);
+			}
+			if (defined($z) || $z ne ''){
+				$worksheet2-&gt;write($rowCount2+1, 12, $oZ.' Zip code has been updated '.$z.'.', $format1);
+			 
+		    } elsif (length($t[8])&lt; 10 || length($t[8])&gt;10) {
+				$worksheet2-&gt;write($rowCount2+1, 12, ' Zip code updated, but has bad phone. ', $format1);
+			}
+			# elsif (length($t[8]) == 10 &amp;&amp; length($t[7]) &lt; 5)
+				#$worksheet-&gt;write($rowCount2+1, 12, 'zip code is incorrect.', $format1);
+			# elsif (length($t[8]) == 10 &amp;&amp; length($t[7]) &gt; 5)
+				#$worksheet-&gt;write($rowCount2+1, 12, 'zip code is incorrect.', $format1);
+			# elsif (length($t[8])&gt;10 &amp;&amp; length($t[7])==5)
+				#$worksheet-&gt;write($rowCount2+1, 12, 'phone is incorrect.', $format1);
+			# else 
+				#$worksheet-&gt;write($rowCount2+1, 12, 'phone and zip code are incorrect.',$format1);
+			$rowCount2++; 
+			$rowCount++;
+			}
+	}
+	$workbook-&gt;close();
+	print $rowCount1.'-'.$rowCount2.'-'.$rowCount;
+    close(FH);
+&lt;/c&gt;</doctext>
+<thread id="11149362">
+<node id="11149363"><node id="11149367"><node id="11149585"><node id="11149592"/>
+</node>
+</node>
+<node id="11149390"><node id="11149392"/>
+</node>
+</node>
+<node id="11149364"><node id="11149368"><node id="11149369"><node id="11149370"/>
+</node>
+</node>
+</node>
+<node id="11149398"><node id="11149572"><node id="11149573"><node id="11149577"><node id="11149578"><node id="11149579"><node id="11149584"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11149581"><node id="11149586"/>
+<node id="11149850"><node id="11149853"/>
+<node id="11149854"><node id="11149857"><node id="11149866"><node id="11149874"><node id="11149875"/>
+<node id="11149879"><node id="11149886"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

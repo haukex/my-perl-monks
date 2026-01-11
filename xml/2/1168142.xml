@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1168142" title="Nested div tag" created="2016-07-20 09:38:45" updated="2016-07-20 09:38:45" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1162685">perlmad</author>
+<doctext field_name="doctext">&lt;p&gt; Hi Monks &lt;/p&gt;
+&lt;p&gt; I have problem in nested div tgs &lt;/p&gt;
+&lt;p&gt; my code &lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+
+use strict;
+
+use HTML::TokeParser::Simple;
+
+my $parser = HTML::TokeParser::Simple-&gt;new(handle =&gt; \*DATA);
+
+my @dnldLinks;
+my @month_year;
+my @date;
+my @data;
+my $index;
+my $contract;
+while ( my $div = $parser-&gt;get_tag('div') ) {
+        if($div-&gt;is_start_tag('div')){
+        if($div-&gt;[1]{class} =~ 'Cell month-year')
+        {
+                my $time = $parser-&gt;get_trimmed_text;
+                push(@month_year,$time);
+        }
+        if($div-&gt;[1]{class} =~ 'Cell Release Date')
+        {
+                my $time = $parser-&gt;get_trimmed_text;
+                push(@date,$time);
+                $index=$time;
+        }
+        if($div-&gt;[1]{class} =~ 'Mortgage Contract Rate')
+        {
+                my $time = $parser-&gt;get_trimmed_text;
+                push(@date,$time);
+                $contract=$time;
+        }
+        print "date : $index, data : $contract\n";
+        }
+
+}
+
+
+#use Data::Dumper;
+#print Dumper \@dnldLinks;
+
+
+__DATA__
+&lt;div class='historicalChartTable'&gt;
+     &lt;div class="Row Jun-2015"&gt;
+                    &lt;div class="Cell month-year "&gt;
+                        Jun-2015                    &lt;/div&gt;
+                                            &lt;div class="Cell Release Date "&gt;
+                            2015-07-30                        &lt;/div&gt;
+                                                &lt;div class="Cell National Mortgage Contract Rate "&gt;
+                            3.850                        &lt;/div&gt;
+                                        &lt;/div&gt;
+      class="Row May-2015"&gt;
+                 &lt;div class="Cell month-year even"&gt;
+                      May-2015
+                 &lt;/div&gt;
+                 &lt;div class="Cell Release Date even"&gt;
+                            2015-06-25
+                &lt;/div&gt;
+                &lt;div class="Cell National Mortgage Contract Rate even"&gt;
+                            3.750
+                &lt;/div&gt;
+          &lt;/div&gt;
+
+&lt;/div&gt;
+&lt;/code&gt;
+&lt;code&gt;
+Getting Output:
+date : , data :
+date : , data :
+date : , data :
+date : 2015-07-30, data :
+date : 2015-07-30, data : 3.850
+date : 2015-07-30, data : 3.850
+date : 2015-06-25, data : 3.850
+date : 2015-06-25, data : 3.750
+&lt;/code&gt;
+&lt;p&gt; my code is parsing entire div tag one by one , not recursively,Kindly help me to find out the data recursively in the div tag &lt;/p&gt;
+&lt;code&gt;
+Expected output:
+date : 2015-07-30, data : 3.850
+date : 2015-06-25, data : 3.750
+&lt;/code&gt;  </doctext>
+<thread id="1168142">
+<node id="1168145"/>
+<node id="1168174"><node id="1168199"><node id="1168200"><node id="1168201"><node id="1168207"><node id="1168222"><node id="1168445"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1205048" title="Re: sending mail" created="2017-12-06 15:25:37" updated="2017-12-06 15:25:37" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Please have a look at my post [id://1180578|here] about the security issues with calling external commands. I really hope you've sanitized the variables you are interpolating into that shell command.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I really don't want to use packages for such a simple operation.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You will be doing yourself a huge favor by using a module like [mod://Email::Sender] and the other Email::* modules by [http://search.cpan.org/~rjbs/|rjbs]. [id://693828]! [id://1159654|Example code.]&lt;/p&gt;
+&lt;p&gt;But if you really, really want to do it in pure Perl, then at least use a piped open instead of &lt;c&gt;qx&lt;/c&gt; + [man://cat]:&lt;/p&gt;
+&lt;spoiler&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use 5.008;
+my @cmd = ('mailx','-r',$EMAIL_ADMIN,
+	'-s',"Exchange Backup Status $rptdate",$SEND_TO);
+die '@cmd must have more than one element' unless @cmd&gt;1;
+open my $fh, '|-', @cmd or die $!;
+print $fh $mail_body;
+close $fh or die $! ? $! : $?;
+&lt;/c&gt;
+&lt;/spoiler&gt;
+</doctext>
+<root_node field_name="root_node">1205015</root_node>
+<parent_node field_name="parent_node">1205015</parent_node>
+<thread id="1205015">
+<node id="1205030"/>
+<node id="1205048"/>
+</thread></node>

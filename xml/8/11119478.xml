@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11119478" title="Split does not behave like a subroutine" created="2020-07-18 02:00:27" updated="2020-07-18 02:00:27" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="907297">bojinlund</author>
+<doctext field_name="doctext">&lt;p&gt;I have tried to understand the documentation of the Perl function split.
+Doing this I have realized that after more that 30 years usage of Perl
+I have still not understood some basic properties of Perl.
+Here follows some of "my new findings" and questions.
+&lt;/p&gt;
+&lt;h4&gt;Perl subroutine&lt;/h4&gt;
+&lt;p&gt;From Perl documentation:&lt;/p&gt;
+&lt;blockquote&gt;
+The Perl model for function call and return values is simple:
+all functions are passed as parameters one single FLAT LIST of scalars,
+and all functions likewise return to their caller one single FLAT LIST of scalars.
+&lt;/blockquote&gt;
+&lt;blockquote&gt;
+A LIST value is an unnamed list of temporary scalar values that may be passed around within a program
+from any list-generating function to any function or construct that provides a list context.
+&lt;/blockquote&gt;
+
+&lt;h4&gt;LIST, list value constructor and list value&lt;/h4&gt;
+
+&lt;p&gt;A &lt;i&gt;list value&lt;/i&gt; can be created by using a &lt;i&gt;list value constructor&lt;/i&gt;.
+It is a number of arguments separated by Comma Operators.&lt;/p&gt;
+
+&lt;p&gt;Comma Operator:
+&lt;blockquote&gt;
+"In list context, it's just the list argument separator, and inserts both its arguments into the list.
+These arguments are evaluated from left to right."
+&lt;/blockquote&gt;
+&lt;/p&gt;
+&lt;p&gt;Conclusions:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;In the documentation often &lt;i&gt;list&lt;/i&gt; is used for both &lt;i&gt;list value&lt;/i&gt;
+and &lt;i&gt;list value constructor.&lt;/i&gt; This make it difficult to understand the documentation.&lt;/li&gt;
+&lt;li&gt;Sometimes there are contradictions.
+What applies to a list (list value), perhaps does not apply to a list (list value constructor)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4&gt;FLAT LIST&lt;/h4&gt;
+
+&lt;p&gt;A Perl list (= list value) is a sequence of scalar values. A list is not a scalar. Not even the empty list is a scalar.&lt;/p&gt;
+
+&lt;p&gt;This means that all list values are flat!?&lt;/p&gt;
+
+&lt;p&gt;Probably is the flattening a part of the comma operator and done for all lists (= list value)&lt;/p&gt;
+
+&lt;blockquote&gt;
+"The null list is represented by ().
+Interpolating it in a list has no effect.
+Thus ((),(),()) is equivalent to ().
+Similarly, interpolating an array with no elements is the same as if no array had been interpolated at that point."
+&lt;/blockquote&gt;
+
+&lt;p&gt;Conclusions:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;A list value is always flat.&lt;/li&gt;
+&lt;li&gt;The arguments to a list value constructor can be none flat.&lt;/li&gt;
+&lt;li&gt;The list concept and for all flattening should be described more clearly in the Perl documentation.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4&gt;Positional arguments and parameters&lt;/h4&gt;
+
+&lt;p&gt;It took me a long time to understand that my problem was, a subroutine returning an empty list, in the parameter list in the call to a subroutine.&lt;/p&gt;
+&lt;p&gt;Here I use: In a subroutine call the &lt;i&gt;arguments&lt;/i&gt; are passed/bound to the &lt;i&gt;parameters&lt;/i&gt;
+(formal argument) in the subroutine definition.
+The arguments for a call are evaluated, and the resulting values are passed to the corresponding parameters.
+&lt;/p&gt;&lt;p&gt;
+I have always though, that the commas in a call to a subroutine, separate the argument list in sequence of values each corresponding to a parameter.
+&lt;c&gt;call('P1', 'P2', 'P3')&lt;/c&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+There can be Positional parameters in a subroutine definition.
+But not all of the Positional arguments becomes a Positional parameter!?
+&lt;/p&gt;
+
+&lt;p&gt;"Any arguments passed in show up in the array @_." This can be false!?
+A Positional argument can be flattened away.
+&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+use 5.010;
+
+use Data::Dump qw(dump dd ddx);
+sub p2   { 'P2' }
+sub nop1 { }
+sub nop2 { return }
+
+sub test { say dump @_ }
+test( 'P1', 'P2', 'P3' );
+test( 'P1', p2,   'P3' );
+test( 'P1', nop1, 'P3' );
+test( 'P1', nop2, 'P3' );
+__DATA__
+Output:
+("P1", "P2", "P3")
+("P1", "P2", "P3")
+("P1", "P3")
+("P1", "P3")
+&lt;/c&gt;
+
+&lt;p&gt;Conclusions:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The risk to lose a Positional argument should be explicit clarified&lt;/li&gt;
+&lt;li&gt;In conservative programming, there should be no subroutine calls in the argument list!?&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4&gt;Split does not behave like a subroutine&lt;/h4&gt;
+&lt;p&gt;In [doc://perlfun] it is stated:
+"Here are Perl's functions (including things that look like functions,
+like some keywords and named operators) arranged by category"
+&lt;/p&gt;&lt;p&gt;
+What is split? A keyword, named operator or ... .
+&lt;/p&gt;
+&lt;p&gt;
+It is also stated:
+&lt;blockquote&gt;
+Any function in the list below may be used either with or without parentheses around its arguments.
+(The syntax descriptions omit the parentheses.)
+If you use parentheses, the simple but occasionally surprising rule is this:
+It looks like a function, therefore it is a function.
+&lt;/blockquote&gt;
+&lt;/p&gt;
+&lt;p&gt;
+However split does not behave like a Perl subroutine.
+So the statement "therefore it is a function" does not mean that split behaves like a Perl subroutine.
+&lt;/p&gt;
+&lt;p&gt;
+The evaluation of the first argument to split is delayed.
+This is different from normal subroutines.
+Is this indicated by the slashes in /PATTERN/?
+&lt;/p&gt;
+&lt;p&gt;
+This script shows that an array can not be used in the arguments to split.
+It is also different from normal subroutines.
+&lt;c&gt;
+use strict;
+use warnings;
+use 5.010;
+
+my $pat     = ':';
+my $str     = 'O:K';
+my $pat_ref = \$pat;
+my $str_ref = \$str;
+my @par     = ( $pat, $str );
+
+my $rv = split $pat,      $str;         # OK
+$rv = split $pat,      $$str_ref;    # OK
+$rv = split $$pat_ref, $$str_ref;    # OK
+$rv = split( $par[0], $par[1] );     # OK
+
+# W1: Use of uninitialized value $_ in split
+
+$rv = split @par;                      # NOK W1
+$rv = split(@par);                     # NOK W1
+$rv = split( @par[ 0, 1 ] );           # NOK W1
+$rv = split( ( @par[ 0, 1 ] ) );       # NOK W1
+$rv = split( map { $_ } @par );        # NOK W1
+$rv = split( ( map { $_ } @par ) );    # NOK W1
+&lt;/c&gt;
+&lt;/p&gt;
+&lt;p&gt;Conclusions:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Split look like a subroutine but does not behave like one.&lt;/li&gt;
+&lt;li&gt;The differences between split and a normal subroutine should be clarified.&lt;/li&gt;
+&lt;li&gt;The meaning of the slashes in /PATTERN/ should be explained.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4&gt;Is this a bug?&lt;/h4&gt;
+
+&lt;c&gt;
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+use 5.010;
+
+use Data::Dump qw(dump dd ddx);
+
+ddx (1,'a', ());
+ddx scalar (1,'a');
+ddx scalar (1,'a', ());
+my $var = (1,'a', ());
+ddx $var;
+__DATA__
+output:
+Useless use of a constant ("a") in void context at pm_empty_list.pl line 11.
+Useless use of a constant ("a") in void context at pm_empty_list.pl line 12.
+# pm_empty_list.pl:9: (1, "a")
+# pm_empty_list.pl:10: "a"
+# pm_empty_list.pl:11: undef
+# pm_empty_list.pl:13: undef
+&lt;/c&gt;
+
+&lt;p&gt;
+I had expected this
+
+&lt;c&gt;
+# pm_empty_list.pl:11: undef
+# pm_empty_list.pl:13: undef
+&lt;/c&gt;
+to be
+&lt;c&gt;
+# pm_empty_list.pl:11: "a"
+# pm_empty_list.pl:13: "a"
+&lt;/c&gt;
+&lt;/p&gt;</doctext>
+<thread id="11119478">
+<node id="11119479"><node id="11119512"><node id="11119521"/>
+<node id="11119527"><node id="11119621"><node id="11119641"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11119482"><node id="11119495"><node id="11119503"><node id="11119504"/>
+</node>
+</node>
+<node id="11119656"><node id="11119672"/>
+<node id="11119675"/>
+</node>
+</node>
+<node id="11119489"/>
+</thread></node>

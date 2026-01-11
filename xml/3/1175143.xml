@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1175143" title="multiple URL web scraping" created="2016-11-02 10:06:48" updated="2016-11-02 10:06:48" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1174505">Lisa1993</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Monks, &lt;/p&gt;
+&lt;p&gt;I posted here a couple of weeks ago about a problem that I was having writing a simple web-scraping programme that scraped comments from the website Reddit, and allowed me to analyse them using computational linguistics methods. &lt;/p&gt;
+&lt;p&gt;Following the very helpful advice of the forum members here, I revised my code and switched from using LWP::Simple to Mojo:UserAgent. &lt;/p&gt;
+
+&lt;p&gt;The following code does almost exactly what I need it do (i.e. it downloads the comments and stores them in a way that is readable for my corpus software. &lt;/p&gt;
+
+ &lt;code&gt;
+use Mojo::UserAgent;
+
+my $url ='https://www.reddit.com/r/unitedkingdom/comments/58m2hs/i_danie+l_blake_is_released_today/.json';
+
+my $ua = Mojo::UserAgent-&gt;new;
+my $data = $ua-&gt;get( $url )-&gt;res-&gt;json;
+
+
+
+foreach my $comment ( @{$data} ) {
+    foreach my $child ( @{ $comment-&gt;{'data'}-&gt;{'children'} } ) {
+	#output path needs changing
+		open(OUT, "&gt;&gt;C:/Users/user/perl_tests/redresults221.txt");
+        my $yprint = $child-&gt;{'data'}-&gt;{'body'} . "\n" if( $child-&gt;{'data'}-&gt;{'body'} );
+		print OUT "$yprint";
+		close(OUT); 
+
+	}
+}
+&lt;/code&gt;
+
+&lt;p&gt; However, I need to add two more elements to the code: &lt;/p&gt;
+&lt;p&gt; 1) I need it to work so that it downloads multiple URLs either by a) letting me make a list of URLs to download within the code (e.g. through some kind of &lt;code&gt; my @URLS = &lt;/code&gt; command) or b) the code itself can go into a separate .txt file containing the URL's that I am interested in and then run the existing code upon them (if that makes sense!?!) &lt;/p&gt;
+&lt;p&gt;2) I need to put a delay or sleep element in the code so that my IP address does not get flagged by the site. In my original programme I used the command &lt;code&gt; sleep(int(rand(30))); &lt;/code&gt; should this still work with the Mojo:UserAgent library? &lt;/p&gt;
+&lt;p&gt;Thanks in advance for your help, it is really appreciated. What you guys do for us beginners is pretty extraordinary!&lt;/p&gt;
+
+&lt;p&gt;
+EDIT: In my original post I should have made it clear that the code that I posted was very kindly written by [marto], I never meant to imply that I had wriiten it myself, but I can understand that my wording was very careless. &lt;/p&gt;
+
+&lt;p&gt; I now have a working code for my problem, based on three codes that were generously written for me by [marto], [Athanasius] and [stevieb]: &lt;/p&gt;
+
+&lt;code&gt;
+
+
+use Mojo::UserAgent;
+
+my @urls = qw(
+	https://www.example1.com.json
+        https://www.example2.com.json
+	https://www.example3.com.json
+);
+
+for my $URL (@urls){
+	my $ua = Mojo::UserAgent-&gt;new;
+	my $data = $ua-&gt;get( $URL )-&gt;res-&gt;json;
+
+sleep(int(rand(60)));
+
+foreach my $comment ( @{$data} ) {
+    foreach my $child ( @{ $comment-&gt;{'data'}-&gt;{'children'} } ) {
+	#output path needs changing
+		open(OUT, "&gt;&gt;C:/Users/user/perl_tests/redresults805.txt");
+        my $yprint = $child-&gt;{'data'}-&gt;{'body'} . "\n" if( $child-&gt;{'data'}-&gt;{'body'} );
+		print OUT "$yprint";
+		close(OUT); 
+
+	}
+}
+}
+
+&lt;/code&gt;
+
+</doctext>
+<thread id="1175143">
+<node id="1175145"><node id="1175208"><node id="1175212"><node id="1175214"/>
+</node>
+</node>
+</node>
+<node id="1175146"><node id="1175202"/>
+</node>
+<node id="1175147"><node id="1175209"><node id="1175215"><node id="1175216"/>
+</node>
+</node>
+</node>
+<node id="1175148"><node id="1175200"/>
+</node>
+</thread></node>

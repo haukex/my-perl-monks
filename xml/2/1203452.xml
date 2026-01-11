@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203452" title="Re^2: Unexpected interaction between decode_entities() and lc()" created="2017-11-15 04:31:02" updated="2017-11-15 04:31:02" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;c&gt;use feature 'unicode_strings';&lt;/c&gt; is an excellent point!&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Since neither &lt;c&gt;"use feature 'unicode_strings';"&lt;/c&gt;, nor e.g. &lt;c&gt;"use 5.016;"&lt;/c&gt; was declared, then lc does exactly as described above.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If by "described above" you mean &lt;i&gt;"Only the characters A-Z change, to a-z respectively."&lt;/i&gt;, then I think your reading of the [doc://lc] docs might be a little off, my understanding is that [doc://bytes] is not the default behavior. The following test took a little fiddling to get the right values but it passes on all Perl releases starting with 5.8.1, 5.8.9, 5.10.1, up to 5.26 and shows the differences:&lt;/p&gt;
+&lt;pre&gt;
+use warnings;
+use strict;
+use utf8;
+use Test::More;
+
+diag explain "Perl $&amp;#93;";
+plan tests =&amp;gt; $&amp;#93; ge '5.012' ? 15 : 11;
+SKIP: {
+	is "\N{U+00C9}", "É",           '\N{U+...} escape';
+	skip 'Perl ge 5.12 required', 1 unless $&amp;#93; ge '5.012';
+	ok utf8::is_utf8("\N{U+00C9}"), '\N{U+...} sets UTF8';
+}
+{
+	ok !utf8::is_utf8("\x{C9}"),    '\x doesn\'t set UTF8';
+	is lc("\x{C9}"), "\xC9",        'lc on non-UTF8 str';
+	ok utf8::is_utf8("É"),          'str is UTF8';
+	is lc("É"), "é",                'lc on UTF8 str';
+}
+{
+	use bytes;
+	ok !utf8::is_utf8("\x{C9}"),    'bytes: \x doesn\'t set UTF8';
+	is lc("\x{C9}"), "\xC9",        'bytes: lc on non-UTF8 str';
+	ok utf8::is_utf8("É"),          'bytes: str is UTF8';
+	is lc("É"), $&amp;#93; lt '5.008009' ? "\xC9" : "\xC3\x89",
+	                                'bytes: lc on UTF8 str';
+}
+SKIP: { skip 'Perl ge 5.12 required', 1 unless $&amp;#93; ge '5.012';
+ok eval q{ do {
+	use feature 'unicode_strings';
+	ok !utf8::is_utf8("\x{C9}"),    'u_s: \x doesn\'t set UTF8';
+	is lc("\x{C9}"), "é",           'u_s: lc on non-UTF8 str';
+	ok utf8::is_utf8("É"),          'u_s: str is UTF8';
+	is lc("É"), "é",                'u_s: lc on UTF8 str';
+1 } }, 'unicode_strings works' or warn $@ }
+&lt;/pre&gt;
+</doctext>
+<root_node field_name="root_node">1203368</root_node>
+<parent_node field_name="parent_node">1203402</parent_node>
+<thread id="1203368">
+<node id="1203370"><node id="1203371"><node id="1203379"/>
+</node>
+</node>
+<node id="1203375"><node id="1203387"><node id="1203391"><node id="1203393"><node id="1203403"/>
+</node>
+</node>
+<node id="1203392"><node id="1203614"><node id="1203617"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1203402"><node id="1203423"/>
+<node id="1203452"><node id="1203457"/>
+</node>
+</node>
+</thread></node>

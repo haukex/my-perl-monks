@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11132146" title="RSA encrypt but no decrypt. What is the problem?" created="2021-05-06 07:53:26" updated="2021-05-06 07:53:26" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11132141">Forb</author>
+<doctext field_name="doctext">&lt;p&gt;Hello all! I ask you to help me understand what I am doing wrong.&lt;/p&gt;
+&lt;p&gt;I created two scripts:&lt;/p&gt;
+&lt;p&gt;RSA_encrypt_test.pl - encryption of plain text "Hello!!!" in the file "puzzle"&lt;/p&gt;
+&lt;p&gt;RSA_decrypt_test.pl - decryption of the ciphertext in the file "puzzle.encrypt"&lt;/p&gt;
+&lt;p&gt;I provide both scripts below.&lt;/p&gt;
+
+&lt;code&gt;
+#! /usr/bin/perl
+
+# RSA_encrypt_test.pl
+
+use strict;
+
+use Crypt::OpenSSL::Bignum;
+use Crypt::OpenSSL::Random;
+use Crypt::OpenSSL::RSA;
+use Data::Dumper ;
+
+my $param_ref = {
+    n =&gt; 'B99C5E09B0B215A4F65D34F4AF763F254D1094C1356951F40A6EDCBB5779A540C1EA363568002F7331A71085D3207C68B5B51C9F010272186261A181D65A80E9',
+    e =&gt; '10001',
+    d =&gt; 'EC8AD0EDFFEFCD443D2C6023FEB37789137D65B18ADEC333F1200FF2CC15800C7C2FFA92AE70077DA2C4C6F1C3795EA00087E4E97A5BCF5CEAEDD1567841C46E'
+};
+
+my $n = Crypt::OpenSSL::Bignum-&gt;new_from_hex($param_ref-&gt;{n});
+my $e = Crypt::OpenSSL::Bignum-&gt;new_from_hex($param_ref-&gt;{e});
+my $d = Crypt::OpenSSL::Bignum-&gt;new_from_hex($param_ref-&gt;{d});
+
+my $rsa = Crypt::OpenSSL::RSA-&gt;new_key_from_parameters($n, $e, $d);
+
+my $target = "puzzle";
+
+open my $OUTF, '&gt;', "$target.encrypt" or die "Error opening file $target.decrypt: $!\n";
+binmode $OUTF;
+open my $F, '&lt;', "$target" or die "Error opening file $target: $!\n";
+binmode $F;
+
+# ---------------- Checking by padding ------------------
+#$rsa-&gt;use_no_padding();
+#$rsa-&gt;use_pkcs1_padding();
+#$rsa-&gt;use_pkcs1_oaep_padding();
+#$rsa-&gt;use_sslv23_padding();
+
+# ------------------ Checking all keys -------------------
+#print $OUTF "private key is: %s\n", $rsa-&gt;get_private_key_string();   
+#print $OUTF "public key is: %s\n", $rsa-&gt;get_public_key_string();
+#print $OUTF "public key (in PKCS1 format) is: %s\n", $rsa-&gt;get_public_key_string();
+#print $OUTF "public key (in X509 format) is:\n", $rsa-&gt;get_public_key_x509_string();
+
+while (read $F, my $buffer, 8) {
+   print $OUTF $rsa-&gt;encrypt($buffer);
+}
+
+close $OUTF or die "Error closing $target.decrypt: $!\n";
+close $F or die "Error closing $target: $!\n";
+&lt;/code&gt;
+&lt;p&gt;-----------&lt;/p&gt;
+&lt;code&gt;
+#! /usr/bin/perl
+
+# RSA_decrypt_test.pl
+
+use strict;
+
+use Crypt::OpenSSL::Bignum;
+use Crypt::OpenSSL::Random;
+use Crypt::OpenSSL::RSA;
+use Data::Dumper ;
+
+my $param_ref = {
+    n =&gt; 'B99C5E09B0B215A4F65D34F4AF763F254D1094C1356951F40A6EDCBB5779A540C1EA363568002F7331A71085D3207C68B5B51C9F010272186261A181D65A80E9',
+    e =&gt; '10001',
+    d =&gt; 'EC8AD0EDFFEFCD443D2C6023FEB37789137D65B18ADEC333F1200FF2CC15800C7C2FFA92AE70077DA2C4C6F1C3795EA00087E4E97A5BCF5CEAEDD1567841C46E'
+};
+
+my $n = Crypt::OpenSSL::Bignum-&gt;new_from_hex($param_ref-&gt;{n});
+my $e = Crypt::OpenSSL::Bignum-&gt;new_from_hex($param_ref-&gt;{e});
+my $d = Crypt::OpenSSL::Bignum-&gt;new_from_hex($param_ref-&gt;{d});
+
+my $rsa = Crypt::OpenSSL::RSA-&gt;new_key_from_parameters($n, $e, $d);
+
+my $target = "puzzle.encrypt";
+
+open my $OUTF, '&gt;', "$target.decrypt" or die "Error opening file $target.decrypt: $!\n";
+binmode $OUTF;
+open my $F, '&lt;', "$target" or die "Error opening file $target: $!\n";
+binmode $F;
+
+# ---------------- Checking by padding ------------------
+$rsa-&gt;use_no_padding();
+#$rsa-&gt;use_pkcs1_padding();
+#$rsa-&gt;use_pkcs1_oaep_padding();
+#$rsa-&gt;use_sslv23_padding();
+
+# ------------------ Checking all keys -------------------
+#print $OUTF "private key is: %s\n", $rsa-&gt;get_private_key_string();   
+#print $OUTF "public key is: %s\n", $rsa-&gt;get_public_key_string();
+#print $OUTF "public key (in PKCS1 format) is: %s\n", $rsa-&gt;get_public_key_string();
+#print $OUTF "public key (in X509 format) is:\n", $rsa-&gt;get_public_key_x509_string();
+
+while (read $F, my $buffer, 64) {
+   #print $OUTF $rsa-&gt;public_decrypt($buffer);
+    print $OUTF $rsa-&gt;decrypt($buffer);
+}
+
+close $OUTF or die "Error closing $target.decrypt: $!\n";
+close $F or die "Error closing $target: $!\n";
+&lt;/code&gt;
+
+&lt;p&gt;The RSA_encrypt_test.pl script encrypts the contents of the file "puzzle" without problems and creates the file "puzzle.encrypt"
+But the problem is that the RSA_decrypt_test.pl script cannot decrypt back. This works without error, but no result.&lt;/p&gt;
+&lt;p&gt;I have tried various types of padding but no result.&lt;/p&gt;
+&lt;p&gt;I ask everyone who has worked with RSA to help. What's my mistake?&lt;/p&gt;</doctext>
+<thread id="11132146">
+<node id="11132157"><node id="11132175"><node id="11132192"><node id="11132198"><node id="11132201"/>
+</node>
+<node id="11132221"/>
+</node>
+</node>
+<node id="11132177"/>
+</node>
+<node id="11132202"><node id="11132267"/>
+</node>
+<node id="11132203"><node id="11132271"><node id="11132279"><node id="11132281"><node id="11132282"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

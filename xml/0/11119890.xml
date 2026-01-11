@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11119890" title="Re: Getting query string with CGI::Fast" created="2020-07-28 05:05:19" updated="2020-07-28 05:05:19" _doctext_mode="lenient"><type id="11">note</type>
+<author id="885521">hippo</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Am I doing things correctly?
+&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;Not entirely, I suspect. You have 2 different CGI objects: 1 in test.cgi and 1 in Myapp. That seems inherently incorrect. Take the object you already have in test.cgi and pass it to the Myapp subs if that's what you want. Alternatively you could have Myapp subclass CGI::Fast and then just use that in test.cgi and call methods on that object from there. Or if you don't want to subclass CGI::Fast you could have a separate object of Myapp on which to call methods. TIMTOWTDI.&lt;/p&gt;
+
+&lt;p&gt;Here's a simplified example using that last of these approaches:&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl -T
+
+package Myapp;
+
+use strict;
+use warnings;
+
+use Try::Tiny;
+
+sub new {
+    my ($class, $q) = @_;
+    return bless {q =&gt; $q}, $class;
+}
+
+sub appy {
+    my $self = shift;
+    my $action = $self-&gt;{q}-&gt;param('action') || 'bailout';
+
+    try { $self-&gt;$action; }
+    catch { print "Unrecognized action : $action\n"; }
+}
+
+sub do_something {
+    print "do something called\n";
+}
+
+package main;
+
+use strict;
+use warnings;
+
+use CGI::Fast;
+use Try::Tiny;
+
+my $n = 0;
+
+while (my $q = CGI::Fast-&gt;new) {
+    my $query = $q-&gt;param('node');
+    print "Content-type: text/plain\n\n";
+    ++$n;
+    print "You are request number $n. Have a good day!\n";
+    print "query: $query\n";
+    my $app = Myapp-&gt;new ($q);
+    try { $app-&gt;$query }
+    catch { error() };
+    print "done!\n";
+}
+
+sub error {
+    print "An error occurred.\n";
+}
+&lt;/code&gt;
+
+&lt;p&gt;Note that I've combined the module and script into one file for ease of this illustration (it's an [id://1177642|SSCCE], albeit you need an FCGI-capable webserver to test it). If you want to split them out again, just add &lt;c&gt;use Myapp;&lt;/c&gt; back into the script. I've added [metamod://Try::Tiny] to catch the missing methods rather than bother with dispatch tables just to show another way of doing this but there's nothing wrong with dispatch tables if you prefer them. Equally you could just use [https://metacpan.org/pod/UNIVERSAL#$obj-%3Ecan(-METHOD-)|UNIVERSAL::can] to test the method's existence - so many options! I've used [mod://strict] and [mod://warnings] everywhere and so should you.&lt;/p&gt;
+
+&lt;p&gt;To answer the other avenue of discussion, the &lt;c&gt;while&lt;/c&gt; loop is absolutely necessary otherwise you will not have the persistence (ie. $n will never increase). Have a think for yourself about why this is.&lt;/p&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-885521"&gt;
+&lt;hr /&gt;&lt;p&gt;&amp;#129435;
+
+&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11119873</root_node>
+<parent_node field_name="parent_node">11119873</parent_node>
+<thread id="11119873">
+<node id="11119876"><node id="11119884"><node id="11119886"><node id="11119889"><node id="11119895"><node id="11119898"><node id="11119933"/>
+</node>
+<node id="11119899"/>
+</node>
+<node id="11119912"/>
+</node>
+</node>
+</node>
+<node id="11119891"/>
+</node>
+<node id="11119890"><node id="11119893"><node id="11119894"><node id="11119897"><node id="11119902"><node id="11119905"><node id="11119909"><node id="11119910"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

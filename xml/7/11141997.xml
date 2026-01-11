@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11141997" title="Re: Need help with IPC::run3" created="2022-03-11 07:48:53" updated="2022-03-11 07:48:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;dBpoweramp Music Converter&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The examples I've found for &lt;c&gt;coreconverter.exe&lt;/c&gt; show that it apparently expects the quoting on the values of the options, not over the entire options, which may explain why it's having trouble parsing the option string, since the default behavior of [mod://Win32::ShellQuote] as used by [mod://IPC::Run3] is to produce option strings that look like &lt;c&gt;... "-outfile=nul" "-convert_to=wave" ...&lt;/c&gt;. Although this is not the prettiest solution, you might try something like the following (I obviously can't fully test this since I don't have dBpoweramp).&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+BEGIN { $ENV{IPCRUN3DEBUG} = 1 }
+use IPC::Run3 'run3';
+use Win32::ShellQuote qw/quote_system_string/;
+
+my $filepath = shift;
+my $command = join ' ', 
+    quote_system_string("C:\\Program Files\\dBpoweramp\\coreconverter.exe"),
+    "-outfile=".quote_system_string("nul"),
+    "-convert_to=".quote_system_string("wave"),
+    "-errorfile=".quote_system_string("core.err"),
+    "-infile=".quote_system_string($filepath);
+run3 $command;
+&lt;/c&gt;
+&lt;p&gt;The command run will look like this, which I think has a better chance of working: &lt;c&gt;"C:\Program Files\dBpoweramp\coreconverter.exe" -outfile="nul" -convert_to="wave" -errorfile="core.err" -infile="C:\Temp\Foo Bar"&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;By the way, have you looked at [https://ffmpeg.org/|FFmpeg]?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11141989</root_node>
+<parent_node field_name="parent_node">11141989</parent_node>
+<thread id="11141989">
+<node id="11141990"/>
+<node id="11141997"/>
+</thread></node>

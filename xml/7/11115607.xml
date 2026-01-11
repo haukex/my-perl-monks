@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11115607" title="Re: Perl Best Practices - Loop Labels" created="2020-04-16 02:51:24" updated="2020-04-16 02:51:24" _doctext_mode="lenient"><type id="11">note</type>
+<author id="757127">tobyink</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;p&gt;&lt;i&gt;The $work questions generally centred around whether jumping out of nested loops, starting the next iteration of a loop early, and so on, was a good practice.&lt;/i&gt;&lt;/p&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;So say you need to search through a bunch of files to see if Joe Bloggs is mentioned in any of them. You don't care which files he's mentioned in, or how many times. You just want a boolean — is he mentioned at all?&lt;/p&gt;
+
+&lt;c&gt;
+my $mentioned = 0;
+FILE: for my $file ( @files ) {
+  LINE: for my $line ( @lines ) {
+    /Joe Bloggs/ and ++$mentioned and last FILE;
+  }
+}
+return $mentioned;
+&lt;/c&gt;
+
+&lt;p&gt;The question of whether it's good practice to jump out of nested loops becomes "after I've found the answer to my question, should I keep searching through the rest of the files?"&lt;/p&gt;
+
+&lt;p&gt;Or another way of thinking about it: "after I found my lost car keys, should I keep looking for them?"&lt;/p&gt;
+
+&lt;p&gt;I'm sure there are good times to jump out of loops and bad times to jump out of loops, and there are many subtle nuances. But in the general case, if you know a loop has served its purpose, jump out of it.&lt;/p&gt;
+
+&lt;p&gt;(Oh, and another thing. You'll notice I labelled my inner loop too, even though I never used that label. I find labelling loops, especially nested loops can be a form of documentation.)&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt;, please, please don't do this though:&lt;/p&gt;
+
+&lt;c&gt;
+my $mentioned = 0;
+FILE: for my $file ( @files ) {
+  check_file($file, \$mentioned);
+}
+return $mentioned;
+
+...;
+
+sub check_file {
+  my ($file, $mentioned) = @_;
+  LINE: for my $line ( @lines ) {
+    /Joe Bloggs/ and ++$$mentioned and last FILE;
+  }
+}
+&lt;/c&gt;
+
+&lt;p&gt;Yes, Perl does let &lt;c&gt;last&lt;/c&gt; to be in a subroutine called from the loop. Don't do that. It's really hard to grok. Only use &lt;c&gt;next&lt;/c&gt;, &lt;c&gt;last&lt;/c&gt;, and &lt;c&gt;redo&lt;/c&gt; lexically within the loop block they affect.&lt;/p&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-757127"&gt;
+&lt;small&gt;&lt;a href="http://toby.ink/"&gt;toby döt ink&lt;/a&gt;&lt;/small&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11115604</root_node>
+<parent_node field_name="parent_node">11115604</parent_node>
+<thread id="11115604">
+<node id="11115607"><node id="11115611"/>
+<node id="11115635"/>
+</node>
+<node id="11115610"><node id="11115616"><node id="11115706"/>
+</node>
+</node>
+<node id="11115613"><node id="11115622"/>
+</node>
+<node id="11115619"/>
+<node id="11115629"/>
+<node id="11115633"/>
+<node id="11115636"/>
+<node id="11115640"/>
+<node id="11115644"/>
+<node id="11115648"><node id="11115649"/>
+<node id="11115652"/>
+<node id="11115667"/>
+</node>
+<node id="11115654"><node id="11115666"><node id="11115807"><node id="11115817"/>
+</node>
+</node>
+</node>
+<node id="11115658"/>
+<node id="11115662"><node id="11115679"/>
+</node>
+<node id="11115669"/>
+<node id="11115673"/>
+</thread></node>

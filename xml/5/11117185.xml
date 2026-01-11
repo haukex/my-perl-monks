@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117185" title="Re: Two octal values for eacute?" created="2020-05-23 17:16:37" updated="2020-05-23 17:16:37" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Please see [https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/|The Absolute Minimum Every Software Developer Absolutely, Positively Must Know About Unicode and Character Sets (No Excuses!)].&lt;/p&gt;
+&lt;p&gt;The character &lt;c&gt;U+00E9 LATIN SMALL LETTER E WITH ACUTE&lt;/c&gt; (&amp;eacute;) is encoded in [wp://Latin-1], [wp://Latin-9], and [wp://CP-1252] as the single byte &lt;c&gt;\xE9&lt;/c&gt; (&lt;c&gt;\351&lt;/c&gt;), but when encoded with [wp://UTF-8], it's the two-byte sequence &lt;c&gt;\xC3\xA9&lt;/c&gt; (&lt;c&gt;\303\251&lt;/c&gt;).&lt;/p&gt;
+&lt;p&gt;In other words, some of your files are encoded with one of the single-byte encodings, others are encoded with UTF-8, and you'll have to specify the correct encoding when opening them, as in e.g. &lt;c&gt;open my $fh, '&lt;:raw:encoding(UTF-8)', $filename or die "$filename $!";&lt;/c&gt; (see [id://11102684]). That way, when you read the data into Perl, the characters are correctly decoded and you'll always have the correct characters (e.g. &lt;c&gt;"\N{U+00E9}"&lt;/c&gt;) in your Perl strings.&lt;/p&gt;
+&lt;p&gt;If you don't know the encoding of the input files, you could use a module like [doc://Encode::Guess], or I've written a tool that tries to be a little smarter: [https://bitbucket.org/haukex/htools/src/master/enctool|enctool] - it allows you to narrow down the guesses by specifying what characters are expected to appear in the input file using e.g. the &lt;c&gt;--one-of='\xE9'&lt;/c&gt; option. Some files, like HTML and XML, will often include a definition of the character set in their source, and (except for the cases where that declaration is incorrect) the appropriate parser modules (e.g. [mod://XML::LibXML]) &lt;i&gt;should&lt;/i&gt; honor that encoding.&lt;/p&gt;
+&lt;p&gt;As an aside, if you're putting Unicode characters in your Perl source, you should save it as UTF-8 and add &lt;c&gt;use utf8;&lt;/c&gt; at the top of the file. If you're writing Unicode characters to the console, add &lt;c&gt;use open qw/:std :utf8/;&lt;/c&gt;. And of course always [id://111088], and a recent version of Perl is strongly recommended when working with Unicode.&lt;/p&gt;
+&lt;p&gt;If you have further issues with encodings when reading files, please see the tips for posting questions in [id://1233709|this node].&lt;/p&gt;
+&lt;p&gt;By the way, why are you looking for "&amp;eacute;" characters in the first place? Maybe there's a more efficient way to do what you're doing with your regex, if you tell us what the task is.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11117179</root_node>
+<parent_node field_name="parent_node">11117179</parent_node>
+<thread id="11117179">
+<node id="11117185"><node id="11117187"><node id="11117198"/>
+</node>
+</node>
+<node id="11117197"><node id="11117781"/>
+</node>
+</thread></node>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117853" title="Re: How to interpret characters in Devel::Peek CUR" created="2020-06-09 03:58:03" updated="2020-06-09 03:58:03" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Please see [https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/|The Absolute Minimum Every Software Developer Absolutely, Positively Must Know About Unicode and Character Sets (No Excuses!)].&lt;/p&gt;
+&lt;p&gt;The Unicode character &lt;c&gt;U+201C LEFT DOUBLE QUOTATION MARK&lt;/c&gt; (“) is encoded in UTF-8 as the bytes &lt;c&gt;e2 80 9c&lt;/c&gt; (&lt;c&gt;\342\200\234&lt;/c&gt;), and the Unicode character &lt;c&gt;U+201D RIGHT DOUBLE QUOTATION MARK&lt;/c&gt; (”) is encoded in UTF-8 as the bytes &lt;c&gt;e2 80 9d&lt;/c&gt; (&lt;c&gt;\342\200\235&lt;/c&gt;).&lt;/p&gt;
+&lt;p&gt;One way to think about Perl strings is that they store either a sequence of bytes or a sequence of Unicode characters. In your case, the [doc://Devel::Peek] output does &lt;i&gt;not&lt;/i&gt; include the "&lt;c&gt;UTF8&lt;/c&gt;" flag, which means that this string is bytes, and yes, that's why you're getting a [doc://length] of 30. (&lt;i&gt;Update:&lt;/i&gt; It is important to note, however, that testing a string's &lt;c&gt;UTF8&lt;/c&gt; flag for anything other than debugging is code smell - your code should normally rely on the fact that you're getting strings in the correct format.)&lt;/p&gt;
+&lt;p&gt;You can decode bytes to characters or encode characters to bytes using the [doc://Encode] module, or, in the case of UTF-8, use the "built-in" [doc://utf8] module (&lt;i&gt;note&lt;/i&gt; that you don't have to put &lt;c&gt;use utf8;&lt;/c&gt; in your code to load it; &lt;c&gt;use utf8&lt;/c&gt; means "this Perl source file is encoded in UTF-8", which may or may not be what you want). You can use &lt;c&gt;utf8::decode($string);&lt;/c&gt; to decode the string you have, and then you'll see this output:&lt;/p&gt;
+&lt;c&gt;
+SV = PV(0x5584829062e0) at 0x558482ad2ee0
+  REFCNT = 1
+  FLAGS = (POK,pPOK,UTF8)
+  PV = 0x558482b75b30 "Triple \342\200\234S\342\200\235 Industrial Corp"\0 [UTF8 "Triple \x{201c}S\x{201d} Industrial Corp"]
+  CUR = 30
+  LEN = 32
+&lt;/c&gt;
+&lt;p&gt;And [doc://length] will now report 26. The &lt;c&gt;UTF8&lt;/c&gt; flag means that the Perl string is storing Unicode characters (the fact that they're stored internally as UTF-8 should be considered an implementation detail). Almost all Perl operators (depending on the Perl version) and many Perl modules should handle Unicode correctly.&lt;/p&gt;
+&lt;p&gt;Note that it's usually best to decode data as it's coming into Perl (e.g. specifying an [doc://open] mode of &lt;c&gt;'&lt;:encoding(UTF-8)'&lt;/c&gt;) and encode it as it leaves, and having to do this manually in your code sometimes means that the source where you're getting the data may be buggy in regards to Unicode. I don't know enough about [mod://PHP::Serialization] to say if that's the case here, and the [https://www.php.net/manual/en/function.serialize.php|PHP &lt;c&gt;serialize&lt;/c&gt; docs] don't make any mention of Unicode either. Interestingly, the [https://www.php.net/manual/en/language.types.string.php|PHP String docs] say "PHP only supports a 256-character set, and hence does not offer native Unicode support." So my &lt;i&gt;guess&lt;/i&gt; is that the encoding to bytes happens somewhere before the data hits the PHP string, and then &lt;c&gt;serialize&lt;/c&gt; and [mod://PHP::Serialization] simply pass those bytes through; this means you'd have to know which encoding was used to store the Unicode data into the PHP string to correctly decode it, in the case that it's not always UTF-8.&lt;/p&gt;
+&lt;p&gt;As a general note, if you're working with Unicode it's best to be on the latest version of Perl and to put a &lt;c&gt;use 5.030;&lt;/c&gt; at the top of the file to enable all of its features.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11117850</root_node>
+<parent_node field_name="parent_node">11117850</parent_node>
+<thread id="11117850">
+<node id="11117851"><node id="11117854"><node id="11117863"/>
+</node>
+<node id="11117949"/>
+<node id="11118138"/>
+</node>
+<node id="11117853"><node id="11117930"><node id="11117936"/>
+<node id="11117941"><node id="11118139"/>
+</node>
+</node>
+</node>
+<node id="11117875"><node id="11118140"/>
+</node>
+</thread></node>

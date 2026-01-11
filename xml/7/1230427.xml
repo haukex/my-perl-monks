@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230427" title="Re^5: Export and use different package in module" created="2019-02-22 16:11:34" updated="2019-02-22 16:11:34" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;[mod://Device::BCM2835] does export &lt;c&gt;RPI_V2_GPIO_P1_12&lt;/c&gt; and &lt;c&gt;BCM2835_GPIO_FSEL_ALT5&lt;/c&gt;, so you should be able to say&lt;/p&gt;
+&lt;c&gt;
+use Device::BCM2835 qw/RPI_V2_GPIO_P1_12 BCM2835_GPIO_FSEL_ALT5/;
+&lt;/c&gt;
+&lt;p&gt;to get those into your namespace. As for &lt;c&gt;gpio_fsel&lt;/c&gt;, which apparently isn't exported for some reason, you could use this workaround:&lt;/p&gt;
+&lt;c&gt;
+*gpio_fsel = \&amp;Device::BCM2835::gpio_fsel;
+&lt;/c&gt;
+&lt;p&gt;For more than one function:&lt;/p&gt;
+&lt;c&gt;
+for my $s (qw/ gpio_fsel gpio_set /) {
+	no strict 'refs';
+	*$s = \&amp;{"Device::BCM2835::$s"};
+}
+&lt;/c&gt;
+&lt;p&gt;To understand what's going on in the above, I recommend [doc://perlmod].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1230405</root_node>
+<parent_node field_name="parent_node">1230425</parent_node>
+<thread id="1230405">
+<node id="1230408"><node id="1230422"><node id="1230424"><node id="1230425"><node id="1230427"><node id="1230431"><node id="1230437"><node id="1230450"><node id="1230456"><node id="1230467"><node id="1230470"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

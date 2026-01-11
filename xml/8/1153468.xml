@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1153468" title="Bug in eval in pre-5.14" created="2016-01-23 11:45:56" updated="2016-01-23 11:45:56" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="832495">choroba</author>
+<doctext field_name="doctext">For some reason, the following pattern is still used in code - I've seen it at a recent interview and in an accepted answer at Stack Overflow.
+&lt;c&gt;
+eval {
+    # code that could die
+};
+if ($@) { # Poor man's catch!
+&lt;/c&gt;
+&lt;p&gt;
+On pre-5.14 Perls, this is a bug. Sometimes, the code inside the [doc://eval] could [doc://die], but the catch wouldn't be triggered, because the $@ could be clobbered - see [doc://perl5140delta] for details. If you want to use modules from other people, there's no way how to prevent the bug. If the foreign code calls [doc://eval] in an object's destructor, you're doomed.
+&lt;p&gt;
+Fortunately, it's rather easy to improve the pattern:
+&lt;c&gt;
+eval {
+    # code that could die;
+1 } or do {
+&lt;/c&gt;
+&lt;p&gt;
+That way, you can really detect the failure in the "try" block, even if the exception could get lost.
+&lt;p&gt;
+Here's a simple example that demonstrates the problem. Note that [metamod://Try::Tiny] doesn't provide more than the "or do" pattern:
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+
+print $], "\n";
+
+{   package My::Obj;
+
+    sub new {
+        my $class = shift;
+        bless {@_}, $class
+    }
+
+    sub DESTROY {
+        my $self = shift;
+        eval { 1 } if ! $self-&gt;{finished};
+    }
+}
+
+my $o1 = 'My::Obj'-&gt;new(finished =&gt; 1);
+undef $o1;
+
+
+# Exception overlooked.
+eval {
+    my $o2 = 'My::Obj'-&gt;new;
+    die "Exception!";
+};
+if ($@) {
+    warn "Caught with \$\@: $@";
+}
+
+
+# Exception details lost.
+eval {
+    my $o2 = 'My::Obj'-&gt;new;
+    die "Exception!";
+1 } or do {
+    warn "Caught with or: $@";
+};
+
+
+# Same as above.
+use Try::Tiny;
+
+try {
+    my $o3 = 'My::Obj'-&gt;new;
+    die "Exception!";
+} catch {
+    warn "Caught with Try::Tiny: $_";
+};
+&lt;/c&gt;
+
+&lt;p&gt;
+In 5.20, I'm getting:
+&lt;c&gt;
+5.020001
+Caught with $@: Exception! at ./eval.pl line 25.
+Caught with or: Exception! at ./eval.pl line 34.
+Caught with Try::Tiny: Exception! at ./eval.pl line 44.
+&lt;/c&gt;
+&lt;p&gt;
+But, in 5.12, the first exception gets overlooked. The second syntax at least notices something went wrong, but the exception is lost anyway.
+&lt;c&gt;
+5.012005
+Caught with or:  at eval.pl line 36.
+Caught with Try::Tiny:  at eval.pl line 46.
+&lt;/c&gt;
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-832495"&gt;
+&lt;c&gt;($q=q:Sq=~/;[c](.)(.)/;chr(-||-|5+lengthSq)`"S|oS2"`map{chr |+ord
+}map{substrSq`S_+|`|}3E|-|`7**2-3:)=~y+S|`+$1,++print+eval$q,q,a,&lt;/c&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1153468">
+<node id="11130946"/>
+<node id="1153491"/>
+<node id="1153620"><node id="1167790"/>
+</node>
+<node id="1154875"/>
+<node id="1164973"/>
+<node id="1169712"><node id="1169717"><node id="1169726"><node id="1169727"><node id="1169743"><node id="1169744"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1169759"/>
+</thread></node>

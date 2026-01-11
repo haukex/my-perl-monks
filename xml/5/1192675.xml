@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1192675" title="Re: Please help me understand string eval better" created="2017-06-13 04:37:34" updated="2017-06-13 04:37:34" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;In terms of the behavior of how Perl parses and runs the code, [doc://eval]ing a string is essentially the same as putting that string in a file and having &lt;c&gt;perl&lt;/c&gt; run it. So, except for the scoping and character encoding issues explained in [doc://eval], it all comes down to what the string contains. So I think the key to understanding this question, as well as debugging many [doc://eval] issues, is to [doc://print]&lt;sup&gt;1&lt;/sup&gt; the strings that you will be passing to [doc://eval].&lt;/p&gt;
+&lt;c&gt;
+my $foo;
+my $bar = '043';
+
+my $s1 = '$foo = $bar';
+print "s1: ", $s1, "\n";
+print "eval=", eval($s1)//$@, ", \$foo=$foo\n";
+
+my $s2 = "\$foo = $bar"; # same as '$foo = '.$bar
+print "s2: ", $s2, "\n";
+print "eval=", eval($s2)//$@, ", \$foo=$foo\n";
+
+__END__
+
+s1: $foo = $bar
+eval=043, $foo=043
+s2: $foo = 043
+eval=35, $foo=35
+&lt;/c&gt;
+&lt;p&gt;So you see that in the first case (&lt;c&gt;s1&lt;/c&gt;), the piece of Perl code that is being executed is &lt;c&gt;$foo = $bar&lt;/c&gt;, a simple assignment of one variable to another, regardless of what they contain. However, in the second case (&lt;c&gt;s2&lt;/c&gt;), the variable &lt;c&gt;$bar&lt;/c&gt; has been interpolated into the string that [doc://eval] will execute, and the piece of Perl code that is executed is &lt;c&gt;$foo = 043&lt;/c&gt;. As you may know, &lt;c&gt;043&lt;/c&gt; in Perl source code is an octal literal representing the number 35, so that is how it is interpreted here. This is different from the string &lt;c&gt;"043"&lt;/c&gt;, which does not get converted automatically, but more on this below.&lt;/p&gt;
+&lt;p&gt;Whenever there is a use of [doc://eval], possible security implications must be considered. Where are you getting your variables from? If any of this is from user input, note that you may be opening yourself to possible security holes. When in doubt, avoid [doc://eval]. &lt;b&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/b&gt; Just one example from a quick search: [mod://Math::Expression::Evaluator]. &lt;b&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;Elsewhere in this thread you say that your variables may or may not contain octal values. One trick to convert a string variable containing octal, hex or binary notation into a Perl numeric value (which doesn't happen automatically) is the following, so perhaps you won't have to [doc://eval] at all. See [doc://oct].&lt;/p&gt;
+&lt;c&gt;
+use Data::Dump;
+
+my $val = "034";
+$val = oct $val if $val=~/^0/;
+dd $val;   # 28
+
+# or, for a list of values:
+my @vals = qw/ 10 20 0b1101 0xF 023 /;
+/^0/ and $_=oct for @vals;
+dd @vals;  # (10, 20, 13, 15, 19)
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;sup&gt;1&lt;/sup&gt; Footnote: I have explicitly recommended [doc://print] here instead of the usual [doc://Data::Dumper] or [mod://Data::Dump] because I think that in the case of [doc://eval], the extra quoting and escaping these modules do would confuse the issue more. However, when in doubt, i.e. if there might be whitespace or other special character issues hidden by a regular [doc://print], it's best to additionally use one of the aforementioned modules to look at the variable.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1192639</root_node>
+<parent_node field_name="parent_node">1192639</parent_node>
+<thread id="1192639">
+<node id="1192645"><node id="1192646"><node id="1192647"/>
+<node id="1192651"><node id="1192653"><node id="1192657"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1192664"><node id="1192858"/>
+</node>
+<node id="1192675"/>
+<node id="1192682"><node id="1192684"/>
+<node id="1192688"/>
+<node id="1192734"/>
+</node>
+<node id="1192693"><node id="1192698"/>
+</node>
+</thread></node>

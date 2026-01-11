@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1219956" title="Re^3: Return values of tags which have the same name, in an array" created="2018-08-06 13:42:26" updated="2018-08-06 13:42:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;In addition to what [Eily] [id://1219954|wrote], your XML parsing code works fine for me:&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;code&gt;
+use warnings;
+use strict;
+use Data::Dump;
+use XML::LibXML;
+
+my $xml = &lt;&lt;'END_XML';
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;result&gt;
+&lt;query id="192448"&gt;Aderghal*&lt;/query&gt;
+&lt;status code="200"&gt;OK&lt;/status&gt;
+&lt;time unit="msecs"&gt;1.15&lt;/time&gt;
+&lt;completions total="1" computed="1" sent="1"&gt;
+&lt;c sc="5" dc="5" oc="5" id="19115731"&gt;aderghal&lt;/c&gt;
+&lt;/completions&gt;
+&lt;hits total="5" computed="5" sent="5" first="0"&gt;
+&lt;hit score="1" id="80402"&gt;
+&lt;info&gt;&lt;authors&gt;&lt;author&gt;Karim Aderghal&lt;/author&gt;&lt;author&gt;Alexander Khvostikov&lt;/author&gt;&lt;author&gt;Andrei Krylov&lt;/author&gt;&lt;author&gt;Jenny Benois-Pineau&lt;/author&gt;&lt;author&gt;Karim Afdel&lt;/author&gt;&lt;author&gt;Gwenaelle Catheline&lt;/author&gt;&lt;/authors&gt;&lt;title&gt;Classification of Alzheimer Disease on Imaging Modalities with Deep CNNs Using Cross-Modal Transfer Learning.&lt;/title&gt;&lt;venue&gt;CBMS&lt;/venue&gt;&lt;pages&gt;345-350&lt;/pages&gt;&lt;year&gt;2018&lt;/year&gt;&lt;type&gt;Conference and Workshop Papers&lt;/type&gt;&lt;key&gt;conf/cbms/AderghalKKBAC18&lt;/key&gt;&lt;doi&gt;10.1109/CBMS.2018.00067&lt;/doi&gt;&lt;ee&gt;https://doi.org/10.1109/CBMS.2018.00067&lt;/ee&gt;&lt;url&gt;https://dblp.org/rec/conf/cbms/AderghalKKBAC18&lt;/url&gt;&lt;/info&gt;
+&lt;url&gt;URL#80402&lt;/url&gt;
+&lt;/hit&gt;
+&lt;/hits&gt;
+&lt;/result&gt;
+END_XML
+
+my $parser = XML::LibXML-&gt;new();
+my $doc = $parser-&gt;parse_string($xml);
+foreach my $authors ($doc-&gt;findnodes('/result/hits/hit/info')) {
+	print $_-&gt;textContent, "\n" for $authors-&gt;findnodes('./authors/author');
+	my @array = map {$_-&gt;textContent} $authors-&gt;findnodes('./authors/author');
+	dd @array;
+}
+
+__END__
+
+Karim Aderghal
+Alexander Khvostikov
+Andrei Krylov
+Jenny Benois-Pineau
+Karim Afdel
+Gwenaelle Catheline
+(
+  "Karim Aderghal",
+  "Alexander Khvostikov",
+  "Andrei Krylov",
+  "Jenny Benois-Pineau",
+  "Karim Afdel",
+  "Gwenaelle Catheline",
+)
+&lt;/code&gt;
+&lt;/readmore&gt;
+&lt;p&gt;As I said, perhaps you're looking for [doc://push]?&lt;/p&gt;
+&lt;c&gt;
+my @array;
+foreach my $authors ($doc-&gt;findnodes('/result/hits/hit/info')) {
+	push @array, map {$_-&gt;textContent}
+		$authors-&gt;findnodes('./authors/author');
+}
+# use @array here
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1219950</root_node>
+<parent_node field_name="parent_node">1219952</parent_node>
+<thread id="1219950">
+<node id="1219951"><node id="1219952"><node id="1219954"/>
+<node id="1219956"/>
+</node>
+</node>
+</thread></node>

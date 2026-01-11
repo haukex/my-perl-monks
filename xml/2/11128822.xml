@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11128822" title="Re: Dereferencing in blessed object" created="2021-02-26 04:20:48" updated="2021-02-26 04:20:48" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;What is causing the lack of dereferencing or what else could I try to debug this problem?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The issue with &lt;c&gt;my ($self, $disp, %v) = @_;&lt;/c&gt; and &lt;c&gt;my ($value, %vars) = @_;&lt;/c&gt; is the same as [id://11126041]. Building an [id://1177642|SSCCE] to understand it better is a great approach, but since the point of it is also to debug, make sure you pull out all the stops: In this case, [id://111088], use useful variable names, and don't repeat variable names. See also the [id://745674].&lt;/p&gt;
+&lt;p&gt;Here's another way to think about the issue: &lt;c&gt;@_&lt;/c&gt; contains the subroutine arguments, so the first line of &lt;c&gt;reftest&lt;/c&gt; can be thought of as &lt;c&gt;my ($value, %vars) = ('testing', $vars);&lt;/c&gt;. Drop the &lt;c&gt;$value&lt;/c&gt; and you get &lt;c&gt;my %vars = $vars;&lt;/c&gt; - there's no dereferencing happening here. In effect, it's the same as &lt;c&gt;my %vars = ( $vars =&gt; undef );&lt;/c&gt;, which you can see when you dump &lt;c&gt;\%vars&lt;/c&gt; with e.g. [mod://Data::Dump]: you'll see &lt;c&gt;{ "HASH(0x...)" =&gt; undef }&lt;/c&gt;, the hashref was stringified since hash keys are strings.&lt;/p&gt;
+&lt;p&gt;Also, variable naming/scoping is biting you as well: &lt;c&gt;$$v{'testpage'}&lt;/c&gt; aka &lt;c&gt;$v-&gt;{testpage}&lt;/c&gt; is accessing a &lt;i&gt;scalar&lt;/i&gt; &lt;c&gt;$v&lt;/c&gt;, which is not defined in &lt;c&gt;sub process&lt;/c&gt;, and so apparently you've got a &lt;c&gt;$v&lt;/c&gt; somewhere higher up in the code that is either uninitialized and being autovivified here, or it's already a hashref, or, in the worst case, you're not using [doc://strict]. And note that if &lt;c&gt;$$v{'testpage'}&lt;/c&gt; is giving you &lt;c&gt;undef&lt;/c&gt;, &lt;c&gt;"&lt;h1&gt;".$testpage."&lt;/h1&gt;\n"&lt;/c&gt; would have given you [doc://warnings] accordingly.&lt;/p&gt;
+&lt;p&gt;As before, you need to either explicitly dereference the hashref via &lt;c&gt;my %hash = %$hashref;&lt;/c&gt;, although that makes a (shallow) copy of the hash, or you can save on memory and just use the hashref as-is, which is what you're trying to do in &lt;c&gt;$$v{'testpage'}&lt;/c&gt;, but to do that, you should've written &lt;c&gt;my ($self, $disp, $v) = @_;&lt;/c&gt; instead.&lt;/p&gt;
+&lt;p&gt;Just for completeness:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;The only difference is that the subroutine is a method in a blessed object...could this really make a difference?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, method calls don't affect this.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11128808</root_node>
+<parent_node field_name="parent_node">11128808</parent_node>
+<thread id="11128808">
+<node id="11128809"><node id="11128810"><node id="11128813"/>
+<node id="11128816"><node id="11128887"><node id="11128889"><node id="11128892"><node id="11128894"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11128823"><node id="11128829"><node id="11128833"><node id="11128836"/>
+</node>
+<node id="11128840"><node id="11128841"/>
+</node>
+</node>
+<node id="11128843"/>
+</node>
+<node id="11128827"><node id="11128828"><node id="11128835"/>
+</node>
+</node>
+</node>
+<node id="11128817"><node id="11128832"><node id="11128834"><node id="11128838"/>
+<node id="11128886"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11128822"><node id="11128890"><node id="11128891"><node id="11128893"><node id="11128899"><node id="11128900"/>
+</node>
+</node>
+<node id="11128920"/>
+</node>
+<node id="11128897"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203512" title="Re^7: Regex result being defined when it shouldn't be(?)" created="2017-11-15 15:22:44" updated="2017-11-15 15:22:44" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;... you are pretending to not understand it. Presumably. ... if you've ever worked in a production environment with code more than five minutes old. Say 20+ years.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;As I said, I was trying to present arguments for "the Perl way" of looking at things. I intended my replies to be friendly, and if you took offense at the few light jabs I made, I apologize. If, as you seem to be saying, you have 20+ years of C experience, then I know I could learn from that. I'm just offering my 20+ years of Perl experience here. As you can probably imagine I'm not a big fan of insults, and that's not what I'm trying to do here, but I am a fan of correctness, and unless I misunderstood you, I do think you're wrong in a couple of points.&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;You can try to pretend being explicit about what a return value of something must be is bad, but if you say that you can't sit there and argue that having literally no idea is more informed. That is worse than wrong. ... With explicit return values, there is no confusion unless you are deliberately being foolish.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sorry but I think you are mistaken about what I said and meant. Let me be more direct: [doc://defined] is documented to return "a Boolean value", nothing more. Testing a boolean with &lt;tt&gt;if( &lt;i&gt;BOOL&lt;/i&gt; eq "" )&lt;/tt&gt; to check for false values is &lt;u&gt;incorrect&lt;/u&gt;. As per [id://11104607], which I linked to earlier, there are three basic "false" values in Perl: &lt;c&gt;0&lt;/c&gt;, &lt;c&gt;""&lt;/c&gt;, and &lt;c&gt;undef&lt;/c&gt;. The test would fail on the first case because &lt;c&gt;"0" eq ""&lt;/c&gt; is false. &lt;small&gt;(&lt;i&gt;Update:&lt;/i&gt; More on the comparison operators [id://1203415|here].)&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;The way to explicitly check for "false" in Perl is &lt;tt&gt;if( not &lt;i&gt;EXPR&lt;/i&gt; )&lt;/tt&gt; or the other variants I [id://1203398|showed]. The way to check for "true" is &lt;tt&gt;if( &lt;i&gt;EXPR&lt;/i&gt; )&lt;/tt&gt;, or, if you want to be really explicit about it, which was how I understood your argument, then use &lt;tt&gt;if( !!(&lt;i&gt;EXPR&lt;/i&gt;) )&lt;/tt&gt; (see also "Bang bang" in [mod://perlsecret]).&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;
+&lt;blockquote&gt;Not quite, in Perl it could also be &lt;c&gt;"0 but true"&lt;/c&gt; (e.g. [doc://sysseek]), or in theory any other "true" value.&lt;/blockquote&gt;
+Sysseek does not return a conditional, it returns a position or undef. ... Ironically, mentioning sysseek is important, they couldn't do if( ! sysseek() ){...} because the failure state, undef, and a success state, 0, both become a truthful value after not so they ended up using an exception to get around a lousy logic style. 
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Are you talking about C or Perl here? Because in Perl, you &lt;i&gt;can&lt;/i&gt; do &lt;c&gt;if( !sysseek() )&lt;/c&gt; to test for failure, that is the point of the &lt;c&gt;"0 but true"&lt;/c&gt; return value - when evaluated as a number, it is 0, and in a boolean context, it is true. So the only false value [doc://sysseek] should return is &lt;c&gt;undef&lt;/c&gt; on failure, and it shouldn't normally throw an exception either. Note that the string &lt;c&gt;"0 but true"&lt;/c&gt; is special-cased in Perl to not warn when it is used as a number, this is described in [doc://fcntl] and [doc://ioctl]. Another value that is sometimes used as a "numerically zero but true in a boolean context" value is the string &lt;c&gt;"0E0"&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+sysseek($fh,0,0) returned "0 but true"
+sysseek($fh,42,0) returned 42
+sysseek($fh,-1,0) returned undef
+
+        undef: bool=false, str=          "", num=0 (warns: uninit x 2)
+           "": bool=false, str=          "", num=0 (warns: numeric)
+            0: bool=false, str=         "0", num=0
+          "0": bool=false, str=         "0", num=0
+            1: bool=true , str=         "1", num=1
+          "1": bool=true , str=         "1", num=1
+        "foo": bool=true , str=       "foo", num=0 (warns: numeric)
+  Perl's true: bool=true , str=         "1", num=1
+ Perl's false: bool=false, str=          "", num=0
+ "0 but true": bool=true , str="0 but true", num=0
+ "3 and true": bool=true , str="3 and true", num=3 (warns: numeric)
+        "0E0": bool=true , str=       "0E0", num=0
+          0E0: bool=false, str=         "0", num=0
+          1E0: bool=true , str=         "1", num=1
+        "1E0": bool=true , str=       "1E0", num=1
+&lt;/c&gt;
+&lt;readmore title="code used to generate"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use File::Temp qw/tempfile/;
+use Data::Dumper;
+sub pp { Data::Dumper-&gt;new([@_])-&gt;Useqq(1)-&gt;Terse(1)
+	-&gt;Indent(0)-&gt;Dump }
+
+my ($fh) = tempfile(UNLINK=&gt;1);
+print $fh "Perl"x12;
+for my $pos (0, 42, -1) {
+	my $rv = sysseek($fh,$pos,0);
+	print "sysseek(\$fh,$pos,0) returned ",pp($rv),"\n";
+}
+print "\n";
+
+my @vals = (
+	'undef'        =&gt; undef,         # warns as number and string
+	'""'           =&gt; "",            # warns as number
+	'0'            =&gt; 0,
+	'"0"'          =&gt; "0",
+	'1'            =&gt; 1,
+	'"1"'          =&gt; "1",
+	'"foo"'        =&gt; "foo",         # warns as number
+	"Perl's true"  =&gt; !0,
+	"Perl's false" =&gt; !1,
+	'"0 but true"' =&gt; "0 but true",  # doesn't warn as number (!)
+	'"3 and true"' =&gt; "3 and true",  # warns as number
+	'"0E0"'        =&gt; "0E0",
+	'0E0'          =&gt; 0E0,
+	'1E0'          =&gt; 1E0,
+	'"1E0"'        =&gt; "1E0",
+);
+while (@vals) {
+	my ($desc, $val) = (shift @vals, shift @vals);
+	#no warnings qw/ uninitialized numeric /;
+	printf "%13s: bool=%-5s, str=%12s, num=%s%s\n", do {
+		my %w;
+		local $SIG{__WARN__} = sub {
+				my $w = shift;
+				if ($w=~/numeric/)
+					{ $w{numeric}++ }
+				elsif ($w=~/uninitialized/)
+					{ $w{uninit}++ }
+				else { warn $w }
+			};
+		($desc, $val?'true':'false', '"'.$val.'"', 0+$val, keys(%w)
+			? " (warns: ".join(',',map {$w{$_}&gt;1?"$_ x $w{$_}":$_}
+			sort keys %w).")" : '' );
+	};
+}
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;[pryrt] also wrote a good post in a similar vein [id://1203495|here].&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;Defined itself not returning the value on success or undef on not defined is probably the core reason we can't have sensible returns.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sorry, I don't understand this point.&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;In C there are more than one return values on failures, and there are functions which return status values or pointers.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Right, which is why I said "you &lt;u&gt;don't&lt;/u&gt; check that with &lt;c&gt;somefunc()==-1&lt;/c&gt;". What I meant is that if a function is documented to return a negative value on failure, I'd first use &lt;c&gt;if( somefunc()&lt;0 )&lt;/c&gt;, or, if I needed to inspect it closer, &lt;c&gt;int rv = somefunc(); if ( rv&lt;0 ) { handle_error(rv); }&lt;/c&gt; or something along those lines.&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;Additionally, even if you use defined, you have to know in advance whether or not your function can return a defined-but-false value. ... And documentation is nice, except if you've ever worked in a production environment with code more than five minutes old.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I completely agree that poorly maintained documentation is a problem. Fortunately, the Perl documentation for the most part doesn't suffer from that problem and can be taken seriously.&lt;/p&gt;
+
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update 2019-08-17:&lt;/i&gt; Updated the link to "Truth and Falsehood".&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203386</root_node>
+<parent_node field_name="parent_node">1203481</parent_node>
+<thread id="1203386">
+<node id="1203389"><node id="1203396"><node id="1203398"/>
+<node id="1203400"><node id="1203404"/>
+<node id="1203405"><node id="1203410"><node id="1203481"><node id="1203495"><node id="1203613"><node id="1203724"/>
+</node>
+<node id="1224565"><node id="1224568"/>
+<node id="1224592"/>
+</node>
+</node>
+<node id="1203512"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1203401"><node id="1203407"><node id="1203408"><node id="1203415"/>
+</node>
+</node>
+<node id="1203417"/>
+</node>
+</node>
+<node id="1203399"/>
+</thread></node>

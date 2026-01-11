@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116369" title="[Free Nodelet Hack] AJAX Chatterbox" created="2020-05-02 18:44:49" updated="2020-05-02 18:44:49" _doctext_mode="strict"><type id="1036">monkdiscuss</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You need to be logged in, then enable the Chatterbox and the Free Nodelet in your [id://25185], and in your [id://492700], paste the following, and you get a chatterbox that refreshes itself dynamically, with optional browser notifications! Sending messages also works without reloading the entire page. It now also refreshes the "Other Users" nodelet and the Chatterbox regularly.&lt;/p&gt;
+&lt;p&gt;Since it was a little quiet in the Monastery when I implemented this, it's currently not 100% tested yet, let me know if you have any issues. (&lt;i&gt;Update:&lt;/i&gt; So far, so good...)&lt;/p&gt;
+&lt;c&gt;
+&lt;script src="https://code.jquery.com/jquery-3.5.0.min.js"
+  integrity="sha256-xNzN2a4ltkB44Mc/Jz3pT4iU1cmeR0FkXs4pru/JxaQ="
+  crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script src="/?node_id=11116369;displaytype=displaycode;part=2"
+  type="text/javascript"&gt;&lt;/script&gt;
+&lt;/c&gt;
+&lt;p&gt;(If you've already got jQuery loaded from another nodelet hack, you don't need to put that &lt;c&gt;&lt;script&gt;&lt;/c&gt; tag twice, of course.)&lt;/p&gt;
+&lt;p&gt;If you don't want the AJAX CB enabled by default, then put this &lt;i&gt;before&lt;/i&gt; the above &lt;c&gt;&lt;script&gt;&lt;/c&gt; tags: "&lt;c&gt;&lt;script&gt; AJAXCB_DEFAULTOFF=true; &lt;/script&gt;&lt;/c&gt;".&lt;/p&gt;
+&lt;readmore title="the code"&gt;
+&lt;p&gt;I've created [https://gist.github.com/haukex/33da4e0d4f3c7a1e2be8d1cffe75dc76#file-pm_ajaxcb-js|a Gist] to version-control this code. I'll consider this particular node a "living document", as in I'm not going to add an "&lt;small&gt;&lt;b&gt;Updated&lt;/b&gt;&lt;/small&gt;" tag every time I make a change - if you want the version history, see [https://gist.github.com/haukex/33da4e0d4f3c7a1e2be8d1cffe75dc76/revisions|the Gist].&lt;/p&gt;
+&lt;c&gt;
+"use strict";
+$(function () {
+	var CB_FETCHTIME_MS = 15 * 1000;
+	var GERNERAL_REFRESHTIME_MS = 60 * 1000;
+	// AJAX CB Refresh
+	var refresh = function () {
+		$.ajax({ url: '/', dataType: 'html',
+			// testing shows the table rendered here is the same as in the nodelet
+			data: { node: 'showchatmessages', displaytype: 'raw', ticker: 'yes' } })
+			.done(function (data) {
+				var source = $('&lt;div/&gt;').html(data).find('table.cb_table, .cb_quiet');
+				$('#Chatterbox table.cb_table, #Chatterbox .cb_quiet').replaceWith(source);
+				$('#Chatterbox table.cb_table + br, #Chatterbox .cb_quiet + br').remove();
+				$('#Chatterbox .cb_quiet').append('&lt;br/&gt;');
+			})
+			.fail(function (jqXHR, textStatus, errorThrown) {
+				console.warn("AJAX error: " + textStatus + " / " + jqXHR.status + " " + errorThrown);
+			});
+	};
+	// Refresh "Other Users" (followed by CB refresh!)
+	var refresh_all = function () {
+		$.ajax({ url: '/', dataType: 'html',
+			// testing shows the body rendered here is the same as in the nodelet
+			data: { node: 'showotherusers', displaytype: 'raw', ticker: 'yes' } })
+			.done(function (data) {
+				// sadly, the &lt;body&gt; tag is not preserved, so we need to do some funky parsing here
+				var inSection = false;
+				var source = $.grep( $('&lt;div/&gt;').html(data).contents().toArray(), function (obj) {
+					if (inSection) {
+						if ( $(obj).is('.update-time') ) inSection = false;
+						return true;
+					}
+					else if ( $(obj).is('.other-users-text') )
+						{ inSection = true; return true; }
+					return false;
+				});
+				$('#Other_Users .nodelet_body').empty();
+				$('#Other_Users .nodelet_body').append(source);
+			})
+			.fail(function (jqXHR, textStatus, errorThrown) {
+				console.warn("AJAX error: " + textStatus + " / " + jqXHR.status + " " + errorThrown);
+			})
+			.always(refresh);
+	};
+	// AJAX Message Fetching
+	var notify_cb = $('&lt;input/&gt;', { type: 'checkbox' });
+	var ajax_cb = $('&lt;input/&gt;', { type: 'checkbox', checked: !window["AJAXCB_DEFAULTOFF"] });
+	var fetch_timer;
+	var fetchit;
+	var start_fetch = function () {
+		if ( ajax_cb[0].checked )
+			fetch_timer = setTimeout(fetchit, CB_FETCHTIME_MS);
+	};
+	var lastid;
+	fetchit = function () {
+		if (fetch_timer) clearTimeout(fetch_timer);
+		fetch_timer = null;
+		if ( !ajax_cb[0].checked ) return;
+		var query = { node_id: '207304', xmlstyle: 'modern', ticker: 'yes' };
+		if ( lastid ) query['fromid'] = lastid;
+		$.ajax({ url: '/', dataType: 'xml', data: query })
+			.done(function (data) {
+				var count = parseInt($("info", data).attr("count"));
+				if ( count&gt;0 ) {
+					refresh();
+					if ( notify_cb[0].checked ) {
+						var authors = {};
+						$('message author', data).each(function () { authors[ $(this).text() ] = 1; });
+						authors = Object.keys(authors).sort().join(", ");
+						var notification = new Notification('New PerlMonks Chatter',
+							{ body: count+" new messages by "+authors,
+							tag: "PerlMonksChatter", icon: "/favicon.ico", badge: "/favicon.ico" });
+					}
+				}
+				var li = $("info", data).attr("lastid");
+				if ( li ) lastid = li;
+			})
+			.fail(function (jqXHR, textStatus, errorThrown) {
+				console.warn("AJAX error: " + textStatus + " / " + jqXHR.status + " " + errorThrown);
+			})
+			.always(start_fetch);
+	};
+	var all_refresh_timer;
+	if ( !window["AJAXCB_DEFAULTOFF"] ) {
+		start_fetch();
+		all_refresh_timer = setInterval(refresh_all, GERNERAL_REFRESHTIME_MS);
+	}
+	// AJAX Form Submission
+	var form = $('#Chatterbox form');
+	form.on('submit', function (evt) {
+		evt.preventDefault();
+		// use the frame from the FullPage Chat as it renders faster
+		var thedata = { op: 'message', node_id: '3193',
+			displaytype: 'raw', message: $('#talkbox').val() };
+		$(":input",form).prop("disabled", true);
+		$.ajax({ url: form.attr("action"), method: 'post', data: thedata })
+			.done(function (data) {
+				$('#talkbox').val("");
+				// want to use fetchit() if possible here to update the lastid
+				if ( ajax_cb[0].checked ) fetchit(); else refresh();
+			})
+			.fail(function ( jqXHR, textStatus, errorThrown ) {
+				alert("CB submission error: "+textStatus+" / "+jqXHR.status+" "+errorThrown);
+			})
+			.always(function () {
+				$(":input",form).prop("disabled", false);
+			});
+	});
+	// Checkboxes
+	var cb_div = $('&lt;div/&gt;', { style: "font-size: 12px; display: inline-block;" });
+	cb_div.append( $('&lt;label/&gt;', { text: "AJAX Refresh" }).prepend(ajax_cb) );
+	form.after($("&lt;br/&gt;"), cb_div);
+	ajax_cb.change(function () {
+		if ( this.checked ) {
+			start_fetch();
+			all_refresh_timer = setInterval(refresh_all, GERNERAL_REFRESHTIME_MS);
+			refresh_all();
+		}
+		else {
+			if (fetch_timer) clearTimeout(fetch_timer);
+			fetch_timer = null;
+			if (all_refresh_timer) clearInterval(all_refresh_timer);
+			all_refresh_timer = null;
+		}
+	});
+	if ( "Notification" in window ) {
+		cb_div.append( $('&lt;label/&gt;', { text: "Notifications" }).prepend(notify_cb) );
+		notify_cb.change(function () {
+			if ( !this.checked ) return;
+			if ( Notification.permission == "default" ) {
+				notify_cb.attr("disabled", true);
+				Notification.requestPermission(function (result) {
+					notify_cb.removeAttr("disabled");
+					if ( result != "granted" ) notify_cb[0].checked = false;
+				});
+			}
+			else if ( Notification.permission != "granted" ) {
+				alert("You've denied this page the ability to send notifications, please change this via your browser's settings.");
+				this.checked = false;
+			}
+		});
+	}
+});
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<thread id="11116369">
+<node id="11116372"/>
+<node id="11116373"/>
+</thread></node>

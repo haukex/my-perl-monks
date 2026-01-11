@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200006" title="Re: PPI replacing/updating a stub" created="2017-09-24 14:05:53" updated="2017-09-24 14:05:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;What's going on behind the scenes is actually pretty interesting. So when you say &lt;c&gt;PPI::Document-&gt;new(\$sub_h{$name}{content})-&gt;find_first('PPI::Statement::Sub')&lt;/c&gt;, you're creating a new document, however, you're not keeping a reference to that document, so it is immediately &lt;c&gt;DESTROY&lt;/c&gt;ed - which clobbers every element of that document - including the &lt;c&gt;sub&lt;/c&gt; returned from &lt;c&gt;find_first&lt;/c&gt;!&lt;/p&gt;
+&lt;p&gt;So to fix that, split that statement into two, saving the document in a variable so that it is not immediately destroyed. But the code still doesn't work, because that document is still getting destroyed at the end of the loop body, removing the elements before you get to &lt;c&gt;save&lt;/c&gt;. So to fix that, you need to disassociate the &lt;c&gt;sub&lt;/c&gt; element from its document via &lt;c&gt;remove&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;There's one more minor issue, which is that you need to &lt;c&gt;remove&lt;/c&gt; the stub, since you're replacing it with the stored one. So putting all that together gets you this, which works (file &lt;c&gt;after&lt;/c&gt; should be identical to &lt;c&gt;before&lt;/c&gt;):&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use 5.010;
+use PPI;
+
+my $raw = &lt;&lt;'__RAW__';
+package FeeFi;
+sub Fee {
+	print "Fee\n";
+}
+sub Fi {
+	print "Fi\n";
+}
+1;
+__RAW__
+
+my %sub_h;
+{
+	my $document = PPI::Document-&gt;new(\$raw)
+		or die "oops!";
+	$document-&gt;save('before');
+	for my $sub (@{$document-&gt;find('PPI::Statement::Sub') || []}) {
+		next if $sub-&gt;forward;
+		$sub_h{$sub-&gt;name}{content} = $sub-&gt;content;
+		my @elements = $sub-&gt;block-&gt;children;
+		for (my $i=0; $i &lt; @elements; $i++) {
+			$elements[$i]-&gt;remove;
+		}
+	}
+	$sub_h{''}{content} = $document-&gt;content;
+}
+{
+	my $document = PPI::Document-&gt;new(\$sub_h{''}{content})
+		or die "oops creating ''!";
+	for my $stub (@{$document-&gt;find('PPI::Statement::Sub') || []}) {
+		next if $stub-&gt;forward;
+		# 1. store the document in its own variable
+		my $doc = PPI::Document-&gt;new(\$sub_h{$stub-&gt;name}{content});
+		my $sub = $doc-&gt;find_first('PPI::Statement::Sub');
+		# 2. remove the sub element from its document
+		$stub-&gt;insert_after($sub-&gt;remove)
+			or warn "Can't insert_after!";
+		# 3. remove the stub
+		$stub-&gt;remove;
+	}
+	$document-&gt;save('after');
+}
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1199996</root_node>
+<parent_node field_name="parent_node">1199996</parent_node>
+<thread id="1199996">
+<node id="1199999"><node id="1200002"/>
+</node>
+<node id="1200006"><node id="1200007"/>
+</node>
+<node id="1200010"/>
+</thread></node>

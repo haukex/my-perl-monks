@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230296" title="Re: Performing addition on hex value extracted from a string" created="2019-02-21 05:49:41" updated="2019-02-21 05:49:41" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;What's going wrong in your code is that &lt;c&gt;$1&lt;/c&gt; contains the &lt;i&gt;string&lt;/i&gt; &lt;c&gt;"0xdf7780"&lt;/c&gt;, which Perl does not automatically convert to a number. You can use the [doc://hex] function to convert it to a number first, and then use [doc://sprintf] to convert the output back to hex:&lt;/p&gt;
+&lt;c&gt;
+$line1 =~ /addr:([a-z0-9-]+)\s+/;
+my $one = $num + hex $1;
+$one = sprintf "0x%x", $one;
+$line1 =~ s/addr\:0x.*qospri/addr\:$one qospri/;
+&lt;/c&gt;
+&lt;p&gt;However, it's also possible to do it all in one statement, using the special &lt;c&gt;s///e&lt;/c&gt;, which runs the replacement part as Perl code and inserts its return value as the replacement, so you can use it to run &lt;c&gt;sprintf&lt;/c&gt; directly. I've also used &lt;c&gt;\K&lt;/c&gt; and a &lt;c&gt;(?=...)&lt;/c&gt; [doc://perlre#Lookaround-Assertions|lookahead] to exclude those strings from the match, so they're not changed by the replacement.&lt;/p&gt;
+&lt;c&gt;
+$line1 =~ s{ addr:0x \K ([0-9a-fA-F]*) (?=\s+qospri) }
+	{ sprintf "%x", hex($1)+$num }xe;
+&lt;/c&gt;
+&lt;p&gt;By the way, you should always [id://111088], and use proper indentation to make your code easier to read ([mod://perltidy] can help with that).&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; I added the &lt;c&gt;/x&lt;/c&gt; modifier to the regex to make it easier to read. Also switched from &lt;c&gt;(?=\ qospri)&lt;/c&gt; to &lt;c&gt;(?=\s+qospri)&lt;/c&gt; to make it equivalent to the original regex.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1230292</root_node>
+<parent_node field_name="parent_node">1230292</parent_node>
+<thread id="1230292">
+<node id="1230296"><node id="1230320"/>
+<node id="1230355"/>
+</node>
+<node id="1230319"><node id="1230321"/>
+</node>
+<node id="1230326"/>
+</thread></node>

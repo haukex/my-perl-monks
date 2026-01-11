@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11153952" title="Using AnyEvent to create a TLS server" created="2023-08-17 20:40:40" updated="2023-08-17 20:40:40" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1090710">Bodger</author>
+<doctext field_name="doctext">&lt;H1&gt;Use AnyEvent to stand up a TLS server&lt;/H1&gt;
+
+&lt;P&gt;I have written select based TLS servers before, but I want to do it the
+&lt;strong&gt;right&lt;/strong&gt; way, by using AnyEvent and an event loop.&lt;/P&gt;
+
+&lt;p&gt;So first here is a TLS client that works with another TLS server I wrote
+using select.&lt;/p&gt;
+
+&lt;p&gt;Writer.pl, connects to the server and sends 3 short messages and
+disconnects&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use AnyEvent;
+use AnyEvent::Log;
+use AnyEvent::Handle;
+use AnyEvent::Socket;
+use EV;
+
+use Data::Dumper;
+
+$AnyEvent::Log::FILTER-&gt;level ("trace");
+
+my $handle;
+
+my @queue;
+
+tcp_connect "127.0.0.1", 9999, sub {
+    my ($fh) = @_;
+
+    print "Before push_write\n";
+    push (@queue, "XX\n");
+    push (@queue, "YY\n");
+    push (@queue, "ZZ\n");
+    print "After push_write\n";
+
+    $handle = new AnyEvent::Handle (
+        fh =&gt; $fh,
+        tls =&gt; "connect",
+        tls_ctx =&gt; { verify =&gt; 0 },
+        on_error =&gt; sub {
+            my ($xhandle, $fatal, $message) = @_;
+
+            print "on_error: ($xhandle) ($fatal) ($message)\n";
+
+            exit 1;
+        },
+        on_eof =&gt; sub {
+            my ($handle) = @_;
+
+            print "on_eof:\n";
+            exit 0;
+        },
+        on_drain =&gt; sub {
+            my ($handle) = @_;
+
+            print "on_drain:\n";
+            if (@queue)
+            {
+                my $write = shift @queue;
+                print "Write :$write";
+                $handle-&gt;push_write ($write);
+            }
+            else
+            {
+                print "Queue is empty\n";
+                $handle-&gt;push_shutdown ();
+            }
+        },
+        on_starttls =&gt; sub {
+            my ($handle, $success, $error) = @_;
+
+            print "on_starttls ($success) ($error)\n";
+
+            return;
+        }
+    );
+};
+
+EV::run;
+&lt;/code&gt;
+
+&lt;p&gt;This works with an IO::Select based server.&lt;/p&gt;
+
+&lt;p&gt;Now to create the TLS server via AnyEvent&lt;/p&gt;
+
+&lt;p&gt;I metacpan'd my fingers till they bled, to find working example code.  But
+Alas I could not get it to work, and I have no idea what I am doing, not doing
+or just am an idiot with.&lt;/p&gt;
+
+&lt;p&gt;Using the Metacpan article for AnyEvent::Handle, in the NONFREQUENTLY-ASKED-QUESTIONS, there is a small snippet that seems that it should work.&lt;/p&gt;
+
+&lt;code&gt;
+tcp_server undef, $port, sub {
+   my ($fh) = @_;
+ 
+   my $handle = new AnyEvent::Handle
+      fh       =&gt; $fh,
+      tls      =&gt; "accept",
+      tls_ctx  =&gt; { cert_file =&gt; "my-server-keycert.pem" },
+      ...
+&lt;/code&gt;
+
+&lt;p&gt;So here is my attempt to write it into a server.&lt;/p&gt;
+
+&lt;p&gt;Server4.pl&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Data::Dumper;
+
+use AnyEvent;
+use AnyEvent::Handle;
+use AnyEvent::Socket;
+use AnyEvent::Log;
+
+use IO::Socket::SSL;
+
+use EV;
+
+use Cpanel::JSON::XS;
+use Path::Tiny qw(path);
+
+$IO::Socket::SSL::DEBUG = 3;
+$AnyEvent::Log::FILTER-&gt;level ("trace");
+
+my $json_obj = Cpanel::JSON::XS-&gt;new-&gt;ascii-&gt;pretty(1)-&gt;allow_nonref;
+
+my $config_file = Path::Tiny::path ("config.json");
+die "Must have config file" if (!$config_file-&gt;exists);
+
+my $config_raw = $config_file-&gt;slurp ();
+my $config;
+
+my $ret = eval {
+    $config = $json_obj-&gt;decode ($config_raw);
+};
+
+if (!$ret) {
+    die "Error Parsing JSON\n$@\n";
+}
+
+tcp_server $config-&gt;{LocalAddr}, $config-&gt;{LocalPort}, sub {
+    my ($fh) = @_;
+
+    print "host started\n";
+
+    my $handle = new AnyEvent::Handle (
+        fh           =&gt; $fh,
+        tls          =&gt; "accept",
+        tls_ctx      =&gt; {
+            cert_file =&gt; $config-&gt;{cert_file},
+            key_file =&gt; $config-&gt;{key_file}
+        },
+        on_read      =&gt; sub {
+            my ($handle) = @_;
+
+            print "ON_READ :" . $handle-&gt;{rbuf} . ":\n";
+        },
+        on_eof       =&gt; sub {
+            my ($handle) = @_;
+
+            print "ON_EOF\n";
+        },
+        on_error     =&gt; sub {
+            my ($handle, $fatal, $message) = @_;
+
+            print "ON_ERROR ($fatal) ($message)\n";
+        },
+    );
+
+    print "Handle created :$handle:\n";
+};
+
+print "Loop started\n";
+EV::run;
+&lt;/code&gt;
+
+&lt;p&gt;So when I run it, I see Loop Started, and netstat -anop says it is listening on 127.0.0.1:9999, per the config file.  I see the message "Loop Started".&lt;/p&gt;
+&lt;p&gt;In another window I start Writer.pl&lt;/p&gt;
+&lt;p&gt;I get the server messages "host started" and "Handle created"&lt;/p&gt;
+&lt;p&gt;Writer.pl tries to Write XX the first of 3 short messages, then gets an on_eof. And exits out of the program.&lt;/p&gt;
+
+&lt;p&gt;Here is the server side of the window output&lt;/p&gt;
+&lt;code&gt;
+julian@work:~/git/LLMAssistant/reference/server$ ./Server4.pl
+2023-08-17 19:18:28.000000 -0500 info  AnyEvent: Autodetected model 'AnyEvent::Impl::EV', using it.
+Loop started
+host started
+Handle created :AnyEvent::Handle=HASH(0x555b2b5d6eb0):
+host started
+Handle created :AnyEvent::Handle=HASH(0x555b2aa87610):
+host started
+Handle created :AnyEvent::Handle=HASH(0x555b2aa876d0):
+^C
+&lt;/code&gt;
+
+&lt;p&gt;Here is the output of the client side window&lt;/p&gt;
+&lt;code&gt;
+julian@work:~/git/LLMAssistant/reference/client$ ./Writer.pl 
+2023-08-17 19:18:32.000000 -0500 info  AnyEvent: Autodetected model 'AnyEvent::Impl::EV', using it.
+Before push_write
+After push_write
+on_drain:
+Write :XX
+on_eof:
+julian@work:~/git/LLMAssistant/reference/client$ ./Writer.pl 
+2023-08-17 19:18:33.000000 -0500 info  AnyEvent: Autodetected model 'AnyEvent::Impl::EV', using it.
+Before push_write
+After push_write
+on_drain:
+Write :XX
+on_eof:
+julian@work:~/git/LLMAssistant/reference/client$ ./Writer.pl 
+2023-08-17 19:18:35.000000 -0500 info  AnyEvent: Autodetected model 'AnyEvent::Impl::EV', using it.
+Before push_write
+After push_write
+on_drain:
+Write :XX
+on_eof:
+&lt;/code&gt;
+
+&lt;p&gt;My config file is:&lt;/p&gt;
+&lt;code&gt;
+{
+    "LocalAddr": "127.0.0.1",
+    "LocalPort": 9999,
+    "cert_file": "cert.pem",
+    "key_file": "key.pem"
+}
+&lt;/code&gt;
+
+&lt;p&gt;The cert and key are self signed cert files&lt;/p&gt;
+
+&lt;H1&gt;Any advice?&lt;/H1&gt;
+
+&lt;p&gt;On how I can get this to work?&lt;/p&gt;
+
+
+
+
+
+</doctext>
+<thread id="11153952">
+<node id="11153953"/>
+<node id="11153956"><node id="11153957"/>
+</node>
+</thread></node>

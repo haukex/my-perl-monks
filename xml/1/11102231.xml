@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11102231" title="Re: Side effect of using undefined variable in regex" created="2019-07-01 07:01:51" updated="2019-07-01 07:01:51" _doctext_mode="lenient"><type id="11">note</type>
+<author id="634253">AnomalousMonk</author>
+<doctext field_name="doctext">&lt;p&gt;
+I think [haukex] is [id://11102216|right]. I think a narrative of what's happening might be something like this:
+&lt;c&gt;
+c:\@Work\Perl\monks&gt;perl -Mstrict -le
+"my @services = qw(BANG one two three STOP four five six);
+ ;;
+ my $side_effect = 'xxx';
+ $side_effect =~ /xxx/ if @ARGV;
+ ;;
+ func('STOP');
+ ;;
+ func();
+ ;;
+ sub func {
+   my $done = shift;
+   while (my $serv = pop @services) {
+     printf qq{$serv  };
+     last if $serv =~ /$done/i
+     }
+   print '';
+   }
+"
+six  five  four  STOP
+three
+&lt;/C&gt;
+In this example (no side-effect match at all), the &lt;b&gt;first&lt;/B&gt; call to &lt;c&gt; func('STOP') &lt;/C&gt; loops until it sees a match on &lt;c&gt;STOP&lt;/C&gt;, as expected. The &lt;b&gt;second&lt;/B&gt; call to &lt;c&gt; func() &lt;/C&gt; ([doc://warnings] not enabled!) matches on an empty pattern (&lt;c&gt; /undef/ -&gt; // &lt;/C&gt;) because there has been no previous &lt;i&gt;successful&lt;/I&gt; match &lt;i&gt;in the dynamic scope of the matching operator&lt;/I&gt;. Matching on &lt;c&gt;//&lt;/C&gt; always matches, so the &lt;c&gt;while&lt;/C&gt;-loop terminates after &lt;c&gt;three&lt;/C&gt;.
+&lt;/P&gt;
+
+&lt;p&gt;
+&lt;c&gt;
+c:\@Work\Perl\monks&gt;perl -Mstrict -le
+"my @services = qw(BANG one two three STOP four five six);
+ ;;
+ my $side_effect = 'xxx';
+ $side_effect =~ /xxx/ if @ARGV;
+ ;;
+ func('STOP');
+ ;;
+ func();
+ ;;
+ sub func {
+   my $done = shift;
+   while (my $serv = pop @services) {
+     printf qq{$serv  };
+     last if $serv =~ /$done/i
+     }
+   print '';
+   }
+"  ARGUMENT
+six  five  four  STOP
+three  two  one  BANG
+&lt;/C&gt;
+In this example, identical except that an argument is passed to the script and a successful side-effect match occurs, the &lt;b&gt;first&lt;/B&gt; call to &lt;c&gt; func('STOP') &lt;/C&gt; runs as before. The &lt;b&gt;second&lt;/B&gt; call to &lt;c&gt; func() &lt;/C&gt; matches on the pattern &lt;c&gt; /xxx/ &lt;/C&gt; because there &lt;i&gt;has&lt;/I&gt; been a previous &lt;i&gt;successful&lt;/I&gt; match &lt;i&gt;in the dynamic scope of the matching operator,&lt;/I&gt; the side-effect match &lt;c&gt;/xxx/&lt;/C&gt;. Matching on &lt;c&gt;/xxx/&lt;/C&gt; never succeeds, so the &lt;c&gt;while&lt;/C&gt;-loop runs to completion: &lt;c&gt;BANG&lt;/C&gt;.
+&lt;/P&gt;
+
+&lt;p&gt;
+The critical point is that the match in &lt;c&gt; func() &lt;/C&gt; during the &lt;i&gt;second&lt;/I&gt; call is not in the dynamic scope of the match during the &lt;i&gt;first&lt;/I&gt; call, but only in the dynamic scope of the side-effect match, should it have occurred.
+&lt;/P&gt;
+
+&lt;p&gt;
+If that makes any sense...
+&lt;/P&gt;
+
+&lt;p&gt;
+Run under Perl version 5.8.9 &lt;i&gt;without&lt;/I&gt; &lt;c&gt;warnings&lt;/C&gt;.
+&lt;/P&gt;
+
+&lt;p&gt;
+&lt;b&gt;Update:&lt;/B&gt; A few trivial wording changes &lt;small&gt;(&lt;b&gt;update:&lt;/B&gt; and a spelling correction)&lt;/SMALL&gt;.
+&lt;/P&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-634253"&gt;
+&lt;hr&gt;&lt;p&gt;Give a man a fish&lt;b&gt;:&lt;/B&gt; &lt;c&gt; &lt;%-{-{-{-&lt;&lt;/C&gt;&lt;/P&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11102215</root_node>
+<parent_node field_name="parent_node">11102215</parent_node>
+<thread id="11102215">
+<node id="11102216"><node id="11102217"><node id="11102237"><node id="11102239"><node id="11102241"><node id="11102244"><node id="11102251"/>
+</node>
+</node>
+</node>
+<node id="11102250"><node id="11102253"/>
+</node>
+</node>
+</node>
+<node id="11102223"/>
+</node>
+<node id="11102231"/>
+<node id="11102285"/>
+</thread></node>

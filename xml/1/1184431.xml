@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1184431" title="Returning an array in a specific way for csv" created="2017-03-13 11:32:45" updated="2017-03-13 11:32:45" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1184375">Arengin</author>
+<doctext field_name="doctext">Hi &lt;br/&gt;
+
+I was wondering how to alternate the return of an array.
+&lt;br/&gt; 
+As from another question I have the following code:&lt;br/&gt;&lt;br/&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+use strict; 
+use warnings;
+
+my %data;
+my $cur_tag;
+open (FILE, '&lt;', $ARGV[0]) or die "Could not open file: $!";
+while (&lt;FILE&gt;) {
+    chomp;
+    if ( my ($tag,$line) = /^(X\S+)\s+(.+)$/ ) {
+        $data{$tag} .= "\n" if exists $data{$tag};
+        $data{$tag} .= $line;
+        $cur_tag = $tag;
+    }
+    elsif ($cur_tag &amp;&amp; !/^BEGIN_TAG/) {
+        $data{$cur_tag} .= " NEWLINE ".$_;
+    }
+}
+
+for my $tag (sort keys %data) {
+    print "$tag: $data{$tag}\n";
+}
+&lt;/code&gt;
+With the input file like
+&lt;code&gt;
+BEGIN_TAG
+X1 test test test
+X2 no no no no
+X3 yes yes yes
+BEGIN_TAG
+X1 test test test
+tes test test
+X2 no no no no no 
+nono non no no
+ nononono no no  no
+X3 hi hi hi hi hi hi 
+hi hi hi hi 
+hi hi
+&lt;/code&gt;
+And the return
+&lt;code&gt;
+X1: test test test
+test test test NEWLINE tes test test
+X2: no no no no
+no no no no no  NEWLINE nono non no no NEWLINE  nononono no no  no
+X3: yes yes yes
+hi hi hi hi hi hi  NEWLINE hi hi hi hi  NEWLINE hi hi
+&lt;/code&gt;
+Meaning all X1, all X2 and than all X3
+&lt;br/&gt;&lt;br/&gt;
+However now I was wondering how I can change that to get
+&lt;br/&gt;&lt;br/&gt;
+First X1, first X2, first X3&lt;br/&gt;
+second X1, second X2, second X3&lt;br/&gt;
+&lt;br/&gt;&lt;br/&gt;
+like
+&lt;br/&gt;&lt;br/&gt;
+X1;X2;X3&lt;br/&gt;
+X1;X2;X3&lt;br/&gt;
+&lt;br/&gt;
+Any ideas? I tried to play around with the sort of the data array but that didn't do it at all.&lt;br/&gt;&lt;br/&gt;
+
+Thanks for any ideas.&lt;br/&gt;&lt;br/&gt;
+
+Arengin</doctext>
+<thread id="1184431">
+<node id="1184434"><node id="1184438"><node id="1184441"><node id="1184521"/>
+</node>
+</node>
+</node>
+<node id="1184437"/>
+<node id="1184480"><node id="1184522"/>
+</node>
+</thread></node>

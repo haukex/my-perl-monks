@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1175868" title="Re^3: Passing the logger's object (updated)" created="2016-11-14 05:16:52" updated="2016-11-14 05:16:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [v_melnik],&lt;/p&gt;
+&lt;p&gt;If you're referring to my inheritance example &lt;c&gt;Library::Bar&lt;/c&gt;, then no, it's not a crime and absolutely normal to call a method inherited from the parent class this way. A subclass is just a mixture of methods inherited from the parent, parent methods overridden by the subclass, and methods defined only in the subclass. Except for the case of a method in the parent class being intended to be completely private to the parent, the subclass's methods can call each other all they want.&lt;/p&gt;
+&lt;p&gt;If you're referring to my &lt;c&gt;Library::Foo&lt;/c&gt; example of calling a class method, then again no, any class is free to call any other class's (public) class methods - the most common example of a class method is &lt;c&gt;new&lt;/c&gt;! The disadvantage of class methods is that they don't operate on individual objects, which in your example would mean that the class method that hands out the logger object could not hand out different &lt;c&gt;Library::Logger&lt;/c&gt; objects based on different &lt;c&gt;Library&lt;/c&gt; instances. You may not need to do so at the moment, but perhaps you might decide in the future you'd like to do so, hence an instance method would be more extensible.&lt;/p&gt;
+&lt;p&gt;Just as an aside, in Perl, it's easy to write a method that can be used both as a class and an instance method, since the only difference between the two is that a class method gets the name of the class it was called on as its first argument, while an instance method gets the object as its first argument. Also note how inheritance works in the following example:&lt;/p&gt;
+&lt;c&gt;
+package Foo;
+sub new { bless {}, shift }
+sub foo {
+    my $self = shift;
+    if (ref $self) {
+        print "Instance method called on $self\n";
+    }
+    else {
+        print "Class method called on class $self\n";
+    }
+}
+
+package Bar;
+use parent -norequire, 'Foo';
+
+package main;
+Foo-&gt;foo;       # "Class method called on class Foo"
+Foo-&gt;new-&gt;foo;  # "Instance method called on Foo=HASH(0x...)"
+Bar-&gt;foo;       # "Class method called on class Bar"
+Bar-&gt;new-&gt;foo;  # "Instance method called on Bar=HASH(0x...)"
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1175816</root_node>
+<parent_node field_name="parent_node">1175838</parent_node>
+<thread id="1175816">
+<node id="1175817"><node id="1175839"><node id="1175841"/>
+</node>
+</node>
+<node id="1175821"><node id="1175838"><node id="1175842"/>
+<node id="1175868"/>
+</node>
+</node>
+<node id="1175843"/>
+</thread></node>

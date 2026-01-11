@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1202409" title="Removing doubles and printing only unique values" created="2017-10-31 06:35:13" updated="2017-10-31 06:35:13" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1190632">zarath</author>
+<doctext field_name="doctext">&lt;p&gt;Hello everybody!&lt;/p&gt;
+&lt;p&gt;Not yet very experienced with Perl, but getting there at a slow and steady pace.&lt;/p&gt;
+&lt;p&gt;Working on a new code that needs to do the following:&lt;/p&gt;
+&lt;p&gt;Read &lt;code&gt;$input&lt;/code&gt; (.csv), extract the field that comes after the first comma and print each found value exactly once (no more, no less).&lt;/p&gt;
+&lt;p&gt;It is that last part that I'm having trouble with, I have tried different things, but I will post 2 pretty different versions of what I have tried and what I thought would work, but alas.&lt;/p&gt;
+&lt;readmore&gt;
+&lt;p&gt;An extract of &lt;code&gt;$input&lt;/code&gt;:&lt;/p&gt;
+&lt;code&gt;AgreementId;SalesId;PriceComponentId;ProductTermsId;FromDate;ToDate;TransType;FixedPrepaym;NoteType
+C000004923;VK11070778;Delta;;16/08/2017;15/09/2017;Prepayment;Yes;Additional note
+C000004923;VK11070778;Rounding;;16/08/2017;15/09/2017;Prepayment;Yes;Additional note
+C000004924;VK11070778;Delta Gas;;16/08/2017;15/09/2017;Prepayment;Yes;Additional note
+C000858948;VK11070783;Delta;;3/01/2017;2/02/2017;Prepayment;Yes;Additional note
+C001028127;VK11070844;Delta;;1/07/2017;31/07/2017;Prepayment;Yes;Additional note
+C000863388;VK11070869;Delta;;14/03/2016;13/04/2016;Prepayment;Yes;Additional note
+C000863388;VK11070869;Rounding;;14/03/2016;13/04/2016;Prepayment;Yes;Additional note
+C000863389;VK11070869;Delta Gas;;14/03/2016;13/04/2016;Prepayment;Yes;Additional note
+C001041275;VK11070873;Delta;;14/04/2017;13/05/2017;Prepayment;Yes;Additional note
+C000457921;VK11070913;Delta;;11/12/2014;10/01/2015;Prepayment;Yes;Additional note
+C000457922;VK11070913;Delta Gas;;11/12/2014;10/01/2015;Prepayment;Yes;Additional note
+C000354278;VK11070920;Delta;;21/09/2015;20/10/2015;Prepayment;Yes;Additional note
+C000354278;VK11070920;Rounding;;21/09/2015;20/10/2015;Prepayment;Yes;Additional note
+C001139698;VK11070923;Delta;;12/08/2017;11/09/2017;Prepayment;Yes;Additional note
+C001139698;VK11070923;Rounding;;12/08/2017;11/09/2017;Prepayment;Yes;Additional note
+C001072986;VK11070933;Delta;;14/03/2017;15/05/2017;Prepayment;Yes;Additional note
+C001072986;VK11070933;Rounding;;14/03/2017;15/05/2017;Prepayment;Yes;Additional note
+C000833421;VK11074400;Delta;;1/05/2017;31/05/2017;Prepayment;Yes;Additional note
+C000833422;VK11074400;Delta Gas;;1/05/2017;31/05/2017;Prepayment;Yes;Additional note
+C000833422;VK11074400;Rounding;;1/05/2017;31/05/2017;Prepayment;Yes;Additional note
+C000147059;VK11074404;Delta;;20/06/2017;19/07/2017;Prepayment;Yes;Additional note
+C000147062;VK11074404;Delta Gas;;20/06/2017;19/07/2017;Prepayment;Yes;Additional note
+C001109215;VK11074415;Delta;;24/08/2017;23/09/2017;Prepayment;Yes;Additional note
+C000313157;VK11074418;Delta;;15/11/2016;14/12/2016;Prepayment;Yes;Additional note
+C000313157;VK11074418;Rounding;;15/11/2016;14/12/2016;Prepayment;Yes;Additional note
+C000313158;VK11074418;Delta Gas;;11/11/2016;10/12/2016;Prepayment;Yes;Additional note
+C001099002;VK11074430;Delta;;1/08/2017;31/08/2017;Prepayment;Yes;Additional note
+C001117234;VK11074441;Delta Gas;;15/06/2017;14/07/2017;Prepayment;Yes;Additional note
+C001009800;VK11074443;Delta;;16/11/2016;15/12/2016;Prepayment;Yes;Additional note
+C000679686;VK11074451;Delta;;20/06/2016;19/07/2016;Prepayment;Yes;Additional note
+C000679687;VK11074451;Delta Gas;;20/06/2016;19/07/2016;Prepayment;Yes;Additional note
+C001242987;VK11074454;Delta Gas;;15/06/2017;14/07/2017;Prepayment;Yes;Additional note
+C001080282;VK11074470;Delta;;2/03/2017;1/04/2017;Prepayment;Yes;Additional note
+C001080283;VK11074470;Delta Gas;;2/03/2017;1/04/2017;Prepayment;Yes;Additional note
+C001192414;VK11074473;Delta;;14/07/2017;13/08/2017;Prepayment;Yes;Additional note
+C001192414;VK11074473;Rounding;;14/07/2017;13/08/2017;Prepayment;Yes;Additional note
+C001192415;VK11074473;Delta Gas;;14/07/2017;13/08/2017;Prepayment;Yes;Additional note
+C001192415;VK11074473;Rounding;;14/07/2017;13/08/2017;Prepayment;Yes;Additional note
+C000268914;VK11074478;Delta;;9/10/2016;8/11/2016;Prepayment;Yes;Additional note
+C000268914;VK11074478;Rounding;;9/10/2016;8/11/2016;Prepayment;Yes;Additional note&lt;/code&gt;
+&lt;p&gt;So I need to write every VKxxxxxxxx once to &lt;code&gt;$output&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Most lines (especially the ones that might be the problem) in my codes have a comment that explains my thinking there.&lt;/p&gt;
+&lt;p&gt;First version of my code:&lt;/p&gt;
+&lt;code&gt;use strict;
+use warnings;
+use autodie;
+
+my $input = 'D:/Some/Specific/Path/To/Input.CSV';
+my $output = 'D:/Some/Specific/Path/To/Output.CSV';
+open IN,$input;
+binmode(IN);
+open OUT,'&gt;'.$output;
+my $count = 0;
+
+while (my $line = &lt;IN&gt;) {
+	chomp $line; # good practice?
+	next if $. &lt; 2; # do not need first line
+	my @fields = split ";" , $line; # define input-lines
+	my @vk = $fields[1]; # extract all VK-codes
+	my %seen; # declare hash to 'memorise' which VK has already been pushed
+	my @uniq; # declare array to store unique values
+	for my $vk (@vk) { # need to 'check' all VK-codes in @vk
+		push (@uniq, $vk) unless $seen{$vk}; # only push VK-codes that are not yet pushed
+		for my $uvk (@uniq) { # uvk = unique VK
+			if ($count != 10) { # we want 10 VK-codes per line -- works as intended
+				print OUT $uvk.';';
+				++ $count;
+			} else {
+				print OUT "\n";
+				$count = 0;
+			}
+		}
+	}
+}
+
+close IN;
+close OUT;
+exit 0;&lt;/code&gt;
+&lt;p&gt;After seeing it writes double values (a VK that appears 3 times in &lt;code&gt;$input&lt;/code&gt; gets printed 3 times in &lt;code&gt;$output&lt;/code&gt;) I stared at this code for a while and realised it might be because I'm printing to OUT inside the &lt;code&gt;while&lt;/code&gt;-block and each &lt;code&gt;$line&lt;/code&gt; is unique, so I tweaked the code and ended up with version 2:&lt;/p&gt;
+&lt;code&gt;use strict;
+use warnings;
+use autodie;
+
+my $input = 'D:/Some/Specific/Path/To/Input.CSV';
+my $output = 'D:/Some/Specific/Path/To/Output.CSV';
+open IN,$input;
+binmode(IN);
+open OUT,'&gt;'.$output;
+my $count = 0;
+
+my @vk; # declare array to store all unique VK-codes
+my %seen; # declare hash to 'memorise' which VK has already been pushed
+
+while (my $line = &lt;IN&gt;) {
+	chomp $line; # good practice?
+	next if $. &lt; 2; # do not need first line
+	my @fields = split ";" , $line; # define input-lines
+	push (@vk,$fields[1]) unless $seen{$fields[1]}; # extract all and only unique VK-codes
+}
+
+close IN; # do not need this anymore
+
+for my $vk (@vk) { # we need to print each one
+	if ($count != 10) { # we want 10 VK-codes per line -- works as intended
+		print OUT $vk.';';
+		++ $count;
+	} else {
+		print OUT "\n";
+		$count = 0;
+	}
+}
+close OUT;
+exit 0;&lt;/code&gt;
+&lt;p&gt;Both versions of the code do the exact same thing, print double values, not what I need.&lt;/p&gt;
+&lt;p&gt;The output from both codes (from posted input).&lt;/p&gt;
+&lt;code&gt;VK11070778;VK11070778;VK11070778;VK11070783;VK11070844;VK11070869;VK11070869;VK11070869;VK11070873;VK11070913;
+VK11070920;VK11070920;VK11070923;VK11070923;VK11070933;VK11070933;VK11074400;VK11074400;VK11074400;VK11074404;
+VK11074415;VK11074418;VK11074418;VK11074418;VK11074430;VK11074441;VK11074443;VK11074451;VK11074451;VK11074454;
+VK11074470;VK11074473;VK11074473;VK11074473;VK11074473;VK11074478;VK11074478;&lt;/code&gt;
+&lt;p&gt;So printing inside the &lt;code&gt;while&lt;/code&gt;-block is not the (only) mistake here. But I can't seem to find my other mistake(s).&lt;/p&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Any tips on how to make one of both versions work will of course be appreciated.&lt;/p&gt;
+&lt;p&gt;Thank you in advance!&lt;/p&gt;</doctext>
+<thread id="1202409">
+<node id="1202410"><node id="1202424"><node id="1202431"/>
+</node>
+</node>
+<node id="1202412"/>
+<node id="1202414"><node id="1202435"/>
+</node>
+<node id="1202415"><node id="1202437"><node id="1202559"><node id="1202562"/>
+</node>
+</node>
+</node>
+<node id="1202428"><node id="1202438"><node id="1202444"/>
+</node>
+<node id="1202443"/>
+<node id="1202445"/>
+</node>
+<node id="1202458"/>
+</thread></node>

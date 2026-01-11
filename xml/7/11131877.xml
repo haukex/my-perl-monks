@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11131877" title="/ee -&gt; Use of uninitialized value in substitution iterator (without back references)" created="2021-04-29 10:54:49" updated="2021-04-29 10:54:49" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1112908">karlberry</author>
+<doctext field_name="doctext">&lt;p&gt;Code to do a basic s//ee (no particular reason to use !! delimiters instead of //, that's immaterial):&lt;/p&gt;
+&lt;pre&gt;
+use strict; use warnings;
+my $str = "AxyzB";
+my $lhs = qr/xyz/;
+my $rhs = "qqq";
+$str =~ s!$lhs!"$rhs"!ee;
+print "str=$str\n";
+&lt;/pre&gt;
+
+&lt;p&gt;Result:&lt;/p&gt;
+&lt;pre&gt;
+Use of uninitialized value in substitution iterator at /tmp/try.pl line 5.
+str=AB
+&lt;/pre&gt;
+
+&lt;p&gt;Question: how are substitution iterators involved here? Web searches turn up that term and warning in relation to back references, but there are no back references here, at least not specified by me. Same warning results with s!$lhs!$rhs!ee, that is, no quotes.&lt;/p&gt;
+
+&lt;p&gt;On the other hand, there is no warning if I use '$rhs' on the rhs, as in s!$lhs!'$rhs'!ee. (And of course there's no warning with just /e instead of /ee; in the real program, I need /ee.)&lt;/p&gt;
+
+&lt;p&gt;My (clearly wrong) intuition was that we would first get the string "qqq" after interpolation of $rhs, and that would eval to itself, or possibly the empty string. Running perl -e 'print eval("qqq");' prints qqq.&lt;/p&gt;
+
+&lt;p&gt;I tried both perl 5.24.0 and 5.32.1, same results (not that I expected any difference).&lt;/p&gt;
+
+&lt;p&gt;I seek your wisdom. Thanks.&lt;/p&gt;
+
+
+</doctext>
+<thread id="11131877">
+<node id="11131880"><node id="11131886"><node id="11131888"/>
+</node>
+</node>
+<node id="11131879"/>
+</thread></node>

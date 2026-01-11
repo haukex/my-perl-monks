@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11123509" title="Re^2: Escape newlines in POD / (Selectively) don't generate space characters instead" created="2020-11-08 20:42:52" updated="2020-11-08 20:42:52" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11123488">Ionic</author>
+<doctext field_name="doctext">&lt;p&gt;Oh, those are some excellent points. I probably should have looked at more code than just [mod://Pod::Simple::HTML].&lt;/p&gt;
+
+&lt;p&gt;
+&lt;blockquote&gt;At least for Pod::Simple, this appears to happen deep within the parser, specifically, here.&lt;/blockquote&gt;
+Right, and to specify, both [mod://Pod::Man] and Pod::Simple::HTML naturally use it.
+&lt;/p&gt;
+
+&lt;p&gt;
+&lt;blockquote&gt;The &lt;c&gt;preserve_whitespace&lt;/c&gt; probably wouldn't help here because it would just preserve the newlines.&lt;/blockquote&gt;
+Yes, it does quite exactly the opposite of what I'm looking for - selectively squash whitespace completely. But, oh, look at [https://github.com/Perl/perl5/blob/blead/cpan/podlators/lib/Pod/Man.pm#L95|what does use &lt;c&gt;preserve_whitespace&lt;/c&gt;]! Just like [https://github.com/Perl/perl5/blob/blead/cpan/podlators/lib/Pod/Text.pm#L71|Pod::Text], really. But even quickly scanning the code reveals some inconsistencies between code and comments in [https://github.com/Perl/perl5/blob/blead/cpan/podlators/lib/Pod/Text.pm#L67|Pod::Text] and [https://github.com/Perl/perl5/blob/blead/cpan/podlators/lib/Pod/Man.pm#L91|Pod::Man] - although for a completely different parsing aspect. In recap, Pod::Man seems to handle such line-broken &lt;c&gt;L&lt;&gt;&lt;/c&gt; tags correctly, but that's almost not surprising since [man://man] doesn't have any (real) notion of (hyper-) links, as far as I know.
+&lt;/p&gt;
+
+&lt;p&gt;To elaborate a bit: I don't even really plan on generating HTML documentation (at least not personally), but the HTML output was a prime candidate for testing my internal and external links within the documentation. [man://podchecker] does a basic sanity checks on links, but nothing's better than actually seeing your generated links in a fully generated documentation. I guess I could have also used [man://pod2texi], but I try to avoid GNU Info because I can never remember how to use it correctly &amp;hellip;
+&lt;/p&gt;
+
+&lt;p&gt;
+&lt;blockquote&gt;Unfortunately, it looks to me like the &amp;quot;best&amp;quot; choice is to not break &lt;c&gt;L&lt;&gt;&lt;/c&gt;s across multiple lines.&lt;/blockquote&gt;
+Unfortunately it looks like that. However, I think that this could be classified as a bug or at least a somewhat valid intent to add a new feature for escaping capabilities to Pod::Simple.
+&lt;/p&gt;
+
+&lt;p&gt;
+&lt;blockquote&gt;Looking at the output of pod2man, this appears to be an effect of &lt;c&gt;*roff&lt;/c&gt; typesetting, see e.g. Sentences and &lt;c&gt;.ss&lt;/c&gt;.&lt;/blockquote&gt;
+Exactly - and I have been misinterpreting this as the same &amp;quot;space instead of newline&amp;quot; behavior, when in reality it's some special property of the &lt;c&gt;roff&lt;/c&gt; language family. From the &lt;c&gt;groff&lt;/c&gt; manual, I've learned that it's only applying that special rule if the punctuation character is located at exactly the end of the line. Interestingly, and I also learned that, the &lt;c&gt;groff&lt;/c&gt; style guide recommends to start each sentence (and thus also end each sentence) on a proper line. Since Pod::Man is not changing whitespace (mostly), this explains why I noticed that behavior at times and didn't at other times.
+&lt;/p&gt;
+
+&lt;p&gt;
+&lt;blockquote&gt;An argument could be made that Pod::Man should be merging POD paragraphs into one line to avoid the issue you're seeing.&lt;/blockquote&gt;
+Yep, that would help. Either that, or split up sentences on punctuation marks so that each sentence starts/ends on its proper line, to adhere to &lt;c&gt;groff&lt;/c&gt;'s recommendations (in which case every sentence would get a double space by default - which is fine, since then at least it would be consistent), although that would probably quickly get unwieldy. That would require a parser that is sophisticated enough to detect sentences (and, e.g., ignore mid-sentence punctuation characters or those surrounding the special characters given in the &lt;c&gt;groff&lt;/c&gt; manual) and that, frankly, is probably too much to ask for. Instead, I could format my POD directly in a &lt;c&gt;groff&lt;/c&gt;-recommended way, which generally shouldn't have any negative impact on other POD renderers.
+&lt;/p&gt;
+
+&lt;hr/&gt;
+&lt;p&gt;OT: what's the proper way to quote on PerlMonks? Just copying the text loses all formatting, naturally, so I had to re-add the most important ones. Yes, fetching the data out of the browser would be possible, but then it's processed and not the bare markup any longer.&lt;/p&gt;
+&lt;p&gt;OT2: &lt;c&gt;[apc://]&lt;/c&gt; seems to be broken since the repository was renamed to &amp;quot;perl5&amp;quot;. Given that, it's easier to link to GitHub, which is also one of the documented source code locations.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11123491</root_node>
+<parent_node field_name="parent_node">11123499</parent_node>
+<thread id="11123491">
+<node id="11123499"><node id="11123509"><node id="11123510"><node id="11123512"/>
+</node>
+<node id="11123542"><node id="11123551"><node id="11123622"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11123501"><node id="11123505"/>
+<node id="11123511"/>
+</node>
+<node id="11123516"><node id="11123519"><node id="11123520"><node id="11123570"/>
+</node>
+</node>
+</node>
+<node id="11123533"/>
+</thread></node>

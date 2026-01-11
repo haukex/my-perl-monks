@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227177" title="Killer byte tripping up Perl?" created="2018-12-12 17:22:13" updated="2018-12-12 17:22:13" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="883980">echo5</author>
+<doctext field_name="doctext">&lt;p&gt;I have a simple script that appears to show that some byte in the output is causing Perl to behave strangely.&lt;/p&gt;
+&lt;p&gt;The script calls a command that coughs up 150 bytes or so of binary data. One stream of returned data behaves as expected. Another stream causes chaos.&lt;/p&gt;
+
+&lt;code&gt;
+The script:
+
+$cmd = "/usr/local/bin/mycmd";
+print "The cmd to be run is: $cmd \n";
+open(CMD, "$cmd |" ) or die "Can't run '$cmd'\n$!\n";
+while (&lt;CMD&gt;)
+	{
+	chomp;
+	print "My raw output is: $_ \n";
+	$dataout = $_;
+	print "My DATAOUT is: $dataout \n";
+        }
+
+&lt;/code&gt;
+
+&lt;p&gt;When I run the above script in a &lt;i&gt;"good"&lt;/i&gt; scenario I get the below output:&lt;/p&gt;
+&lt;code&gt;
+The cmd to be run is: /usr/local/bin/mycmd
+My raw output is:  &amp;#65533; ` /11&amp;#65533;%_$&amp;#65533;%f$&amp;#65533;&amp;c$&amp;#65533;%a$&amp;#65533;%\$&amp;c$&amp;^$&amp;#65533;&amp;i$
+My DATAOUT is: &amp;#65533; ` /11&amp;#65533;%_$&amp;#65533;%f$&amp;#65533;&amp;c$&amp;#65533;%a$&amp;#65533;%\$&amp;c$&amp;^$&amp;#65533;&amp;i$
+&lt;/code&gt;
+
+&lt;p&gt;When I run the above script in a &lt;i&gt;"bad"&lt;/i&gt; scenario I get the below output:&lt;/p&gt;
+&lt;code&gt;
+The cmd to be run is: /usr/local/bin/mycmd
+My raw output is:
+My DATAOUT is: 
+My raw output is: &amp;#65533;0]&amp;#65533;c &amp;#65533;&amp;#65533;
+My DATAOUT is: &amp;#65533;0]&amp;#65533;c &amp;#65533;&amp;#65533;
+&lt;/code&gt;
+
+&lt;p&gt;Ultimately the goal is to ingest the data and process it using unpack but that was failing as $_ didn't contain data is should contain to process. The "bad" behavior above seems to show that there is some sort of "killer byte" being output from mycmd that throws a wrench into things. Below is the good and bad output in hex form via xxd. Is there a byte in there tripping up Perl?&lt;/p&gt;
+
+&lt;code&gt;
+Good data stream:
+
+0000000: 0202 00d0 0000 0000 0000 0000 0100 0000  ................
+0000010: 0100 0000 0100 0000 0100 0000 0100 0000  ................
+0000020: 0100 0000 0100 0000 0500 0000 0500 0000  ................
+0000030: 0500 0000 0500 0000 0500 0020 0100 0000  ........... ....
+0000040: 0100 0000 0100 0000 0100 0000 0100 0000  ................
+0000050: 0100 0000 0100 0000 0500 0000 0500 0000  ................
+0000060: 0500 0000 0100 0000 0100 0000 0000 0000  ................
+0000070: 0200 0060 0100 0020 0000 0000 0100 2d00  ...`... ......-.
+0000080: 0100 2f00 0100 3000 0000 0000 0100 0000  ../...0.........
+0000090: 0000 0000 0102 ca25 0102 4a24 0102 bd25  .......%..J$...%
+00000a0: 0102 5024 0102 da25 0102 4c24 0102 d525  ..P$...%..L$...%
+00000b0: 0102 4c24 0102 c325 0102 4624 0102 e025  ..L$...%..F$...%
+00000c0: 0102 4e24 0102 e225 0102 4824 0102 dd25  ..N$...%..H$...%
+00000d0: 0102 5224                                ..R$
+&lt;/code&gt;
+
+&lt;code&gt;
+Bad data stream:
+
+0000000: 020a 009c 0000 0000 0000 0000 0100 0000  ................
+0000010: 0100 0000 0100 0000 0100 0000 0100 0000  ................
+0000020: 0100 0000 0100 0000 0100 0000 0500 0000  ................
+0000030: 0500 0000 0500 0000 0500 0000 0500 0000  ................
+0000040: 0500 0000 0500 0000 0500 0000 0500 0000  ................
+0000050: 0500 0000 0500 0000 0500 0000 0500 0000  ................
+0000060: 0500 0000 0500 0000 0100 0000 0000 0000  ................
+0000070: 0100 3000 0000 0000 0100 005c 0100 00b4  ..0........\....
+0000080: 0000 0000 0100 0000 0000 0000 0200 0063  ...............c
+0000090: 0100 0020 0000 0000 0103 9206 0103 8506  ... ............
+&lt;/code&gt;
+
+</doctext>
+<thread id="1227177">
+<node id="1227179"/>
+<node id="1227180"/>
+<node id="1227181"/>
+<node id="1227182"/>
+</thread></node>

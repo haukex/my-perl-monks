@@ -1,0 +1,1055 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11104202" title="Planning a new CPAN module for WARC support (DSLIP: IdpOp)" created="2019-08-08 19:59:59" updated="2019-08-08 19:59:59" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1149436">jcb</author>
+<doctext field_name="doctext">&lt;p&gt;After a long sojourn in the wilderness, I have returned to the Monastery with part of an API in hand and several questions for my fellow monks.&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;b&gt;Is there a better namespace for this than the top-level?  If so, where?&lt;/b&gt;
+&lt;div&gt;&lt;p&gt;Archive:: seems to fit at first glance, but this module has a radically different interface from most of the modules in that namespace because WARC files store subtly different information.  (Most archives store "files"; WARC can store files, but are designed to store HTTP request/response exchanges.)  An Archive::WARC interface could be reasonable, but it would provide a special "view" of a WARC file that omits most details.  (Recognizing this was a major step in designing this API -- and took me a few years to do!)&lt;/p&gt;
+&lt;p&gt;HTTP:: could be a possibility, but does not really fit because WARC files can also store information from other protocols. (The WARC spec envisions storing DNS records "as observed" as an example.)&lt;/p&gt;
+&lt;p&gt;LWP:: fits the eventual goal of providing transparent access to WARC files as a sort of "local Wayback" but is probably better reserved for the interface modules that *actually* implement that "local Wayback" than the generic support for accessing and building WARC files. (The baseline WARC distribution uses the HTTP::* classes, but has no other dependencies on LWP and no dependencies in the LWP:: namespace.)&lt;/p&gt;&lt;/div&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;b&gt;Any problems with the use of "meaningful" constructors?&lt;/b&gt;
+&lt;div&gt;&lt;p&gt;The WARC::Collection and WARC::Volume modules provide read-only access to existing (collections of)? WARC files.  The constructors have been given names to reflect this:  WARC::Volume-&gt;mount and WARC::Collection-&gt;assemble.&lt;/p&gt;
+&lt;p&gt;The use of "open" for a WARC::Volume constructor was considered, but cannot be used in the indirect object syntax that I prefer for a constructor due to a parse conflict with the "open" builtin that perl resolves by raising a parse error instead of looking for a class method.&lt;/p&gt;
+&lt;p&gt;("open WARC::File ($name)" would have been ideal, but looks too much like a typo using the "open" builtin.)&lt;/p&gt;&lt;/div&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;b&gt;How best to provide options on the "replay" method of WARC::Record?&lt;/b&gt;
+&lt;div&gt;&lt;p&gt;The current API envisions some means of retrieving the content of a WARC record as a file handle or string and another means of getting a reconstructed protocol response object.  (An HTTP::Response in the usual case, but possibly something else.)&lt;/p&gt;
+&lt;p&gt;Options also include whether or not to actually retrieve the request chain or to just synthesize a request from the information in the "response" record.  (There is no point in reading several WARC records for a long redirect chain if the user only cares about the URL and the server's final response.)  This is a significant concern because the common CDX index format only indexes response records.&lt;/p&gt;&lt;/div&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;b&gt;Should the tied hash and tied array interfaces for &lt;del&gt;WARC::Record&lt;/del&gt; WARC::Fields be automatically invoked using overloaded dereference operators?&lt;/b&gt;
+&lt;div&gt;&lt;p&gt;Or is this asking for trouble?&lt;/p&gt;&lt;/div&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;b&gt;Is overloading the == (or &lt;=&gt;) operator on WARC::Record to use file:offset tuples as good an idea as it seems?&lt;/b&gt;
+&lt;div&gt;&lt;p&gt;This would be most useful to coalesce duplicate records from multiple indexes.  Logically, two record objects that refer to the same physical record should compare as equal.&lt;/p&gt;&lt;/div&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;b&gt;What to do with a segmented record if we lack index information to find the next segment?&lt;/b&gt;
+&lt;div&gt;&lt;p&gt;WARC file names are normally systematic:  we can probably guess the next WARC filename in "normal" cases, but there will always be edge cases where we have no idea.&lt;/p&gt;
+&lt;p&gt;How far should I go in trying to make this Just Work?  When the "It Just Works" logic fails, is it better to return an undefined value or raise an exception?  And should we ensure that all segments are available when first opening a segmented payload or defer failure to when we actually "run out of road"?&lt;/p&gt;&lt;/div&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;b&gt;Should the WARC::Collection class have a concept of "next volume"?&lt;/b&gt;
+&lt;div&gt;&lt;p&gt;This would mean that $record-&gt;next on the last record in a file returns the first record in the next file.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Related:&lt;/b&gt;Should WARC::Collection expose information about the set of volumes in a collection?  If so, how?&lt;/p&gt;&lt;/div&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;b&gt;Any advice on attaching contents to WARC records?&lt;/b&gt;
+&lt;div&gt;&lt;p&gt;Simply keeping the contents in memory is not always an option -- WARC segmentation permits payloads of unlimited size.
+&lt;/p&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Nothing is too trivial here:  this is intended for CPAN and bikeshedding public APIs is the best way to avoid backwards compatibility becoming unpleasant later.&lt;/p&gt;
+
+&lt;p&gt;The modules are not ready for CPAN yet, mostly due to the still-lingering namespace question.  Nor has any significant code been written yet, since I prefer to have a solid idea of the API before getting too involved in implementation.  The rest of this node is a copy of the current documentation draft as formatted with pod2html:  (internal links are probably broken, sorry)&lt;/p&gt;
+
+&lt;readmore&gt;
+&lt;hr /&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;h3&gt;&lt;a name="name"&gt;NAME&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;WARC - Web ARChive support for Perl&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="synopsis"&gt;SYNOPSIS&lt;/a&gt;&lt;/h3&gt;
+&lt;pre&gt;
+  use WARC;&lt;/pre&gt;
+&lt;pre&gt;
+  $collection = assemble WARC::Collection (@indexes);&lt;/pre&gt;
+&lt;pre&gt;
+  $record = $collection-&amp;gt;search(url =&amp;gt; $url, time =&amp;gt; $when);&lt;/pre&gt;
+&lt;pre&gt;
+  $volume = mount WARC::Volume ($filename);&lt;/pre&gt;
+&lt;pre&gt;
+  $record = $volume-&amp;gt;first_record;
+  $next_record = $record-&amp;gt;next;&lt;/pre&gt;
+&lt;pre&gt;
+  $record = $volume-&amp;gt;record_at($offset);&lt;/pre&gt;
+&lt;pre&gt;
+  # $record is a WARC::Record object&lt;/pre&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="description"&gt;DESCRIPTION&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;The &lt;code&gt;WARC&lt;/code&gt; module is a convenience module for loading basic WARC support.
+After loading this module, the &lt;a href="#item_warc_3a_3avolume"&gt;&lt;code&gt;WARC::Volume&lt;/code&gt;&lt;/a&gt; and &lt;a href="#item_warc_3a_3acollection"&gt;&lt;code&gt;WARC::Collection&lt;/code&gt;&lt;/a&gt;
+classes are available.&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;h4&gt;&lt;a name="overview_of_the_warc_reader_support_modules"&gt;Overview of the WARC reader support modules&lt;/a&gt;&lt;/h4&gt;
+&lt;dl&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_warc_3a_3acollection"&gt;WARC::Collection&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+A &lt;a href="#item_warc_3a_3acollection"&gt;&lt;code&gt;WARC::Collection&lt;/code&gt;&lt;/a&gt; object represents a set of indexed WARC files.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_warc_3a_3avolume"&gt;WARC::Volume&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+A &lt;a href="#item_warc_3a_3avolume"&gt;&lt;code&gt;WARC::Volume&lt;/code&gt;&lt;/a&gt; object represents a single WARC file.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_warc_3a_3arecord"&gt;WARC::Record&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Each record in a WARC volume is analogous to an &lt;code&gt;HTTP::Message&lt;/code&gt;, with
+headers specific to the WARC format.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_warc_3a_3arecord_3a_3apayload"&gt;WARC::Record::Payload&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_warc_3a_3arecord_3a_3asegment"&gt;WARC::Record::Segment&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_warc_3a_3afields"&gt;WARC::Fields&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+A &lt;a href="#item_warc_3a_3afields"&gt;&lt;code&gt;WARC::Fields&lt;/code&gt;&lt;/a&gt; object represents the set of headers in a WARC record,
+analogous to the use of &lt;code&gt;HTTP::Headers&lt;/code&gt; with &lt;code&gt;HTTP::Message&lt;/code&gt;.  The
+&lt;code&gt;HTTP::Headers&lt;/code&gt; class is not reused because it has protocol-specific
+knowledge of a set of valid headers and a standard ordering.  WARC headers
+come from a different set and order is preserved.
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;The key-value format used in WARC headers has its own MIME type
+``application/warc-fields'' and is also usable as the contents of a
+``warcinfo'' record and elsewhere.  The &lt;a href="#item_warc_3a_3afields"&gt;&lt;code&gt;WARC::Fields&lt;/code&gt;&lt;/a&gt; class also provides
+support for objects of this type.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_warc_3a_3aindex"&gt;WARC::Index&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+&lt;a href="#item_warc_3a_3aindex"&gt;&lt;code&gt;WARC::Index&lt;/code&gt;&lt;/a&gt; is the base class for WARC index formats and also holds a
+registry of loaded index formats for convenience when assembling
+&lt;a href="#item_warc_3a_3acollection"&gt;&lt;code&gt;WARC::Collection&lt;/code&gt;&lt;/a&gt; objects.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_warc_3a_3aindex_3a_3acdx"&gt;WARC::Index::CDX&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Access module for the common CDX WARC index format.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_warc_3a_3aindex_3a_3asdbm"&gt;WARC::Index::SDBM&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Planned ``fast index'' format using ``SDBM_File'' to index multiple CDX indexes
+for fast lookup by URL/timestamp pairs.  Planned because sdbm is included
+with Perl and the 1008 byte record limit should be a minor problem by
+storing URL prefixes and splitting records.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_warc_3a_3aindex_3a_3asqlite"&gt;WARC::Index::SQLite&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Another planned ``fast index'' format using DBI and DBD::SQLite.  This module
+avoids the limitations of SDBM, but depends on modules from CPAN.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;&lt;/dl&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;h4&gt;&lt;a name="overview_of_the_warc_writer_support_modules"&gt;Overview of the WARC writer support modules&lt;/a&gt;&lt;/h4&gt;
+&lt;dl&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_warc_3a_3avolume_3a_3abuilder"&gt;WARC::Volume::Builder&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+The &lt;a href="#item_warc_3a_3avolume_3a_3abuilder"&gt;&lt;code&gt;WARC::Volume::Builder&lt;/code&gt;&lt;/a&gt; class provides a means to write new WARC files.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_warc_3a_3aindex_3a_3acdx_3a_3abuilder"&gt;WARC::Index::CDX::Builder&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_warc_3a_3aindex_3a_3asdbm_3a_3abuilder"&gt;WARC::Index::SDBM::Builder&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_warc_3a_3aindex_3a_3asqlite_3a_3abuilder"&gt;WARC::Index::SQLite::Builder&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+The &lt;code&gt;WARC::Index::*::Builder&lt;/code&gt; classes provide tools for building indexes
+either incrementally while writing the corresponding WARC file or
+after-the-fact by scanning an existing WARC file.
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;The &lt;code&gt;build&lt;/code&gt; constructor that &lt;a href="#item_warc_3a_3aindex"&gt;&lt;code&gt;WARC::Index&lt;/code&gt;&lt;/a&gt; provides uses one of these
+classes for the actual work.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;&lt;/dl&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="caveats"&gt;CAVEATS&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;Support for WARC record segmentation is planned but not yet implemented.&lt;/p&gt;
+&lt;p&gt;Handling segmented WARC records requires using the &lt;a href="#item_warc_3a_3acollection"&gt;&lt;code&gt;WARC::Collection&lt;/code&gt;&lt;/a&gt;
+interface to find the next segment in a different WARC file.  The
+&lt;a href="#item_warc_3a_3avolume"&gt;&lt;code&gt;WARC::Volume&lt;/code&gt;&lt;/a&gt; interface is only usable for access within one WARC file.&lt;/p&gt;
+&lt;p&gt;The older ARC format is not yet supported, nor are other archival formats
+directly supported.  Interfaces for ``WARC-alike'' handlers are planned as
+&lt;code&gt;WARC::Alike::*&lt;/code&gt;.  Metadata normally present in WARC volumes may not be
+available from other formats.&lt;/p&gt;
+&lt;p&gt;Formats planned for eventual inclusion include MAFF described at
+&lt;a href="http://maf.mozdev.org/maff-specification.html"&gt;http://maf.mozdev.org/maff-specification.html&lt;/a&gt; and the MHTML format
+defined in RFC 2557.&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="author"&gt;AUTHOR&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;Jacob Bachmeyer, &amp;lt;&lt;a href="mailto:jcb@cpan.org"&gt;jcb@cpan.org&lt;/a&gt;&amp;gt;&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="see_also"&gt;SEE ALSO&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;Information about the WARC format at &lt;a href="http://bibnum.bnf.fr/WARC/"&gt;http://bibnum.bnf.fr/WARC/&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;An overview of the WARC format at
+&lt;a href="https://www.loc.gov/preservation/digital/formats/fdd/fdd000236.shtml"&gt;https://www.loc.gov/preservation/digital/formats/fdd/fdd000236.shtml&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;# TODO: add relevant RFCs.&lt;/p&gt;
+&lt;p&gt;The POD pages for the modules mentioned in the overview lists.&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="copyright_and_license"&gt;COPYRIGHT AND LICENSE&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;Copyright (C) 2019 by Jacob Bachmeyer&lt;/p&gt;
+&lt;p&gt;This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="name"&gt;NAME&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;WARC::Builder - Web ARChive construction support for Perl&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="synopsis"&gt;SYNOPSIS&lt;/a&gt;&lt;/h3&gt;
+&lt;pre&gt;
+  use WARC::Builder;&lt;/pre&gt;
+&lt;pre&gt;
+  $warcinfo_data = new WARC::Fields (software =&amp;gt; 'MyWebCrawler/1.2.3 ...',
+                                     format =&amp;gt; 'WARC File Format 1.0',
+                                     # other fields omitted ...
+                                     );&lt;/pre&gt;
+&lt;pre&gt;
+  $warcinfo = new WARC::Record (type =&amp;gt; 'warcinfo',
+                                content =&amp;gt; $warcinfo_data);&lt;/pre&gt;
+&lt;pre&gt;
+  # for a small-scale crawl
+  $build = new WARC::Builder (warcinfo =&amp;gt; $warcinfo,
+                              filename =&amp;gt; $warcfilename);&lt;/pre&gt;
+&lt;pre&gt;
+  # for a large-scale crawl
+  $index1 = build WARC::Index::CDX (into =&amp;gt; $indexprefix.'.cdx');
+  $index2 = build WARC::Index::SDBM (into =&amp;gt; $indexprefix.'.sdbm');
+  $build = new WARC::Builder (warcinfo =&amp;gt; $warcinfo,
+                              filename_template =&amp;gt;
+                                $warcprefix.'-%s-%05d-'.$hostname.'.warc.gz',
+                              index =&amp;gt; &amp;#91;$index1, $index2&amp;#93;);&lt;/pre&gt;
+&lt;pre&gt;
+  # for each collected object
+  $build-&amp;gt;append(@records);     # or ...
+  $build-&amp;gt;append($record1, $record2, ... );&lt;/pre&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="description"&gt;DESCRIPTION&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;The &lt;code&gt;WARC::Builder&lt;/code&gt; class is the high-level interface for writing WARC
+archives.  It is a very simple interface, because, at this level, WARC is a
+very simple format: a simple sequence of WARC records, which
+&lt;code&gt;WARC::Builder&lt;/code&gt; accepts as &lt;a href="#item_warc_3a_3arecord"&gt;&lt;code&gt;WARC::Record&lt;/code&gt;&lt;/a&gt; objects to append to the
+in-progress WARC file.&lt;/p&gt;
+&lt;p&gt;WARC file size limits are handled automatically if configured.&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;h4&gt;&lt;a name="methods"&gt;Methods&lt;/a&gt;&lt;/h4&gt;
+&lt;dl&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_builder"&gt;$build = new WARC::Builder (&lt;em&gt;key&lt;/em&gt; =&amp;gt; &lt;em&gt;value&lt;/em&gt;, ...)&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Construct a &lt;code&gt;WARC::Builder&lt;/code&gt; object.  The following keys are supported:
+&lt;/dd&gt;
+&lt;dl&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_index__3d_3e__5b_24index_5d"&gt;index =&amp;gt; &amp;#91;$index&amp;#93;&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_index__3d_3e__5b_24index1_2c__24index2_2c__2e_2e_2"&gt;index =&amp;gt; &amp;#91;$index1, $index2, ...&amp;#93;&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+If set, must be an array reference of a list of index builder objects.
+Each newly-added WARC::Record will be presented to all index builder
+objects in this list.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_filename__3d_3e__24warcfilename"&gt;filename =&amp;gt; $warcfilename&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+If set, create a single WARC file with the given file name.  The file name
+must match m/\.warc(?:\.gz)?$/.  The presence of a final ``.gz'' indicates
+that the WARC file should be written with per-record gzip compression.
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;This option is mutually exclusive with the &lt;code&gt;filename_template&lt;/code&gt; option.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;Using this option inhibits starting a new WARC file and causes the
+&lt;code&gt;max_file_size&lt;/code&gt; option to be ignored.  A warning is emitted in this case.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_filename_template__3d_3e__24warcprefix_2e_27_2d_25"&gt;filename_template =&amp;gt; $warcprefix.'-%s-%05d-'.$hostname.'.warc.gz'&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Establish an sprintf format string to construct file names.  The file name
+produced by the template string must match m/\.warc(?:\.gz)?$/.  The
+presence of a final ``.gz'' indicates that the WARC file should be written
+with per-record gzip compression.
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;The &lt;code&gt;filename_template&lt;/code&gt; option gives the format string, while
+&lt;code&gt;filename_template_vars&lt;/code&gt; gives an array reference of named parameters to
+be used with the format.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;If constructing file names in accordance with the IIPC WARC implementation
+guidelines, this string should be of the form
+'PREFIX-%s-%05d-HOSTNAME.warc.gz' where PREFIX is any chosen prefix to name
+the crawl and HOSTNAME is the name or other identifier for the machine
+writing the file.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;This option is mutually exclusive with the &lt;code&gt;filename&lt;/code&gt; option.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_filename_template_vars__3d_3e__5bqw_2ftimestamp_se"&gt;filename_template_vars =&amp;gt; &amp;#91;qw/timestamp serial/&amp;#93;&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Provide the list of parameters to the sprintf call used to produce a WARC
+filename from the &lt;code&gt;filename_template&lt;/code&gt; option.
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;The available variables are:&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dl&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_serial"&gt;serial&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+A number, incremented each time adding a record causes a new WARC file to
+be started.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_timestamp"&gt;timestamp&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+A 14-digit timestamp in the YYYYmmddHHMMSS format recommended in the IIPC
+WARC implementation guidelines.  The timestamp is always in UTC.  The time
+used is the time at which the &lt;code&gt;WARC::Builder&lt;/code&gt; object was constructed and
+is constant between WARC files.  This should be substituted as a string.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;&lt;/dl&gt;
+&lt;p&gt;Default &amp;#91;qw/timestamp serial/&amp;#93; in accordance with IIPC guidelines.&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_first_serial__3d_3e__24count"&gt;first_serial =&amp;gt; $count&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+The initial value of the &lt;a href="#item_serial"&gt;&lt;code&gt;serial&lt;/code&gt;&lt;/a&gt; filename variable for this object.
+Default 0.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_max_file_size__3d_3e__24size"&gt;max_file_size =&amp;gt; $size&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Maximum size of a WARC file.  A new WARC file is started if appending a
+record would cause the current file to exceed this length.
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;The limit can be specified as an exact number of bytes, or a number
+followed by a size suffix m/&amp;#91;KMG&amp;#93;i?/.  The ``K'', ``M'', and ``G'' suffixes
+indicate base-10 multiples (10**(3*n)), while the ``Ki'', ``Mi'', and ``Gi''
+suffixes indicate base-2 multiples (2**(10*n)) widely used in computing.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;Default ``1G'' == 1_000_000_000.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_warcinfo__3d_3e__24warcinfo_record"&gt;warcinfo =&amp;gt; $warcinfo_record&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+A &lt;a href="#item_warc_3a_3arecord"&gt;&lt;code&gt;WARC::Record&lt;/code&gt;&lt;/a&gt; object of type ``warcinfo'' that will be written at the
+start of each WARC file.  This record will be cloned and written with a
+distinct ``WARC-Record-ID'' as the first record in each WARC file, including
+the first.  As a consequence, it does not require a ``WARC-Record-ID'' header
+and any ``WARC-Record-ID'' given is silently ignored.
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;Each clone of this record will also have the ``WARC-Filename'' header added.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;Each clone of this record will also have the ``WARC-Date'' header set to the
+time at which the &lt;code&gt;WARC::Builder&lt;/code&gt; object was constructed.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_warcversion__3d_3e__27warc_2f1_2e0_27"&gt;warcversion =&amp;gt; 'WARC/1.0'&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Set the version of the WARC format to be written.  This string is the first
+line of each WARC record.  It must begin with the prefix 'WARC/' and should
+be the version from the WARC specification that the crawler follows.
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;Default ``WARC/1.0''.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;&lt;/dl&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_append"&gt;$build-&amp;gt;append( $record1, ... )&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Add any number of &lt;a href="#item_warc_3a_3arecord"&gt;&lt;code&gt;WARC::Record&lt;/code&gt;&lt;/a&gt; objects to the growing WARC file.  If
+WARC file size limits are configured, and a record would cause the current
+WARC file to exceed the configured size limits, a new WARC file is opened
+automatically.
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;All records passed to a single &lt;a href="#item_append"&gt;&lt;code&gt;append&lt;/code&gt;&lt;/a&gt; call are added to the same WARC
+file.  If a new WARC file is to be started, it will be started &lt;strong&gt;before&lt;/strong&gt;
+any records are written.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;All records passed to a single &lt;a href="#item_append"&gt;&lt;code&gt;append&lt;/code&gt;&lt;/a&gt; call are considered ``concurrent''
+and all subsequent records will have a ``WARC-Concurrent-To'' header added
+referencing the first record, if they do not already have a
+``WARC-Concurrent-To'' header.  This is a convenience feature for simpler
+crawlers and is inhibited if any record already has a ``WARC-Concurrent-To''
+header when &lt;a href="#item_append"&gt;&lt;code&gt;append&lt;/code&gt;&lt;/a&gt; is called.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;If a &lt;a href="#item_warc_3a_3arecord"&gt;&lt;code&gt;WARC::Record&lt;/code&gt;&lt;/a&gt; passed to this method lacks a ``WARC-Record-ID'' header,
+a warning will be emitted using carp(), a UUID will be generated, and a
+record ID of the form ``urn:uuid:UUID'' will be assigned.  If the record
+object is read-only, this method will &lt;code&gt;croak()&lt;/code&gt; instead.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;If a &lt;a href="#item_warc_3a_3arecord"&gt;&lt;code&gt;WARC::Record&lt;/code&gt;&lt;/a&gt; passed to this method lacks any of the ``WARC-Date'',
+``WARC-Type'', or ``Content-Length'' headers, this method will croak().&lt;/p&gt;
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;&lt;/dl&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="author"&gt;AUTHOR&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;Jacob Bachmeyer, &amp;lt;&lt;a href="mailto:jcb@cpan.org"&gt;jcb@cpan.org&lt;/a&gt;&amp;gt;&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="see_also"&gt;SEE ALSO&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;&lt;em&gt;WARC&lt;/em&gt;, &lt;u&gt;the WARC::Record manpage&lt;/u&gt;&lt;/p&gt;
+&lt;p&gt;International Internet Preservation Consortium (IIPC) WARC implementaion
+guidelines.  &lt;a href="https://netpreserve.org/resources/WARC_Guidelines_v1.pdf"&gt;https://netpreserve.org/resources/WARC_Guidelines_v1.pdf&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;...&lt;/p&gt;
+&lt;hr /&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="name"&gt;NAME&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;WARC::Collection - Interface to a group of WARC files&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="synopsis"&gt;SYNOPSIS&lt;/a&gt;&lt;/h3&gt;
+&lt;pre&gt;
+  use WARC::Collection;&lt;/pre&gt;
+&lt;pre&gt;
+  $collection = assemble WARC::Collection ($index_1, $index_2, ...);
+  $collection = assemble WARC::Collection from =&amp;gt; ($index_1, ...);&lt;/pre&gt;
+&lt;pre&gt;
+  $record = $collection-&amp;gt;search(url =&amp;gt; $url, time =&amp;gt; $when);&lt;/pre&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="description"&gt;DESCRIPTION&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;The &lt;a href="#item_warc_3a_3acollection"&gt;&lt;code&gt;WARC::Collection&lt;/code&gt;&lt;/a&gt; class is the primary means by which user code is
+expected to use the WARC library.  This class uses indexes to efficiently
+search for records in one or more WARC files.&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;h4&gt;&lt;a name="methods"&gt;Methods&lt;/a&gt;&lt;/h4&gt;
+&lt;dl&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_collection"&gt;$collection = assemble WARC::Collection ($index_1, $index_2, ...);&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item__24collection__3d_assemble_warc_3a_3acollection_fr"&gt;$collection = assemble WARC::Collection from =&amp;gt; ($index_1, ...);&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Assemble a collection of WARC files from one index or multiple indexes,
+specified either as objects derived from &lt;a href="#item_warc_3a_3aindex"&gt;&lt;code&gt;WARC::Index&lt;/code&gt;&lt;/a&gt; or filenames.
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;While multiple indexes can be used in a collection, note that searching a
+collection requires individually searching every index in the collection.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_search"&gt;$record = $collection-&amp;gt;search( ... )&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dt&gt;&lt;strong&gt;@records = $collection-&amp;gt;search( ... )&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Search the index for records matching the parameters and return the best
+match in scalar context or a list of all matches in list context.  The
+returned values are &lt;a href="#item_warc_3a_3arecord"&gt;&lt;code&gt;WARC::Record&lt;/code&gt;&lt;/a&gt; objects.
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;The parameters are specified as key =&amp;gt; value pairs and each narrows the
+search, sorts the results, or both, indicated in the following list with
+``&amp;#91;N &amp;#93;'', ``&amp;#91; S&amp;#93;'', or ``&amp;#91;NS&amp;#93;'', respectively.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;The keys supported are:&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dl&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item__5bn__5d_url"&gt;&amp;#91;N &amp;#93; url&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+An exact match for a URL.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item__5bns_5d_url_prefix"&gt;&amp;#91;NS&amp;#93; url_prefix&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+A prefix match for a URL.  Prefers records with shorter URLs.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item__5b_s_5d_time"&gt;&amp;#91; S&amp;#93; time&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Prefer records collected nearer to the requested time.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;&lt;/dl&gt;
+&lt;/dl&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;...&lt;/p&gt;
+&lt;hr /&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="name"&gt;NAME&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;WARC::Date - datestamp objects for WARC library&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="synopsis"&gt;SYNOPSIS&lt;/a&gt;&lt;/h3&gt;
+&lt;pre&gt;
+  use WARC::Date;&lt;/pre&gt;
+&lt;pre&gt;
+  $datestamp = WARC::Date-&amp;gt;now();               # construct from current time
+  $datestamp = WARC::Date-&amp;gt;from_epoch(time);    # likewise&lt;/pre&gt;
+&lt;pre&gt;
+  # construct from string
+  $datestamp = parse WARC::Date ($text);        # full-featured
+  $datestamp = WARC::Date-&amp;gt;from_text($string);  # standard format only&lt;/pre&gt;
+&lt;pre&gt;
+  $time = $datestamp-&amp;gt;as_epoch;         # as seconds since epoch
+  $text = $datestamp-&amp;gt;as_string;        # as &amp;quot;YYYY-MM-DDThh:mm:ssZ&amp;quot;&lt;/pre&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="description"&gt;DESCRIPTION&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;WARC::Date&lt;/code&gt; objects encapsulate the details of the required format for
+timestamps in WARC headers.&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;h4&gt;&lt;a name="methods"&gt;Methods&lt;/a&gt;&lt;/h4&gt;
+&lt;dl&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_now"&gt;$datestamp = WARC::Date-&amp;gt;now&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Construct a &lt;code&gt;WARC::Date&lt;/code&gt; object representing the current time.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_from_epoch"&gt;$datestamp = WARC::Date-&amp;gt;from_epoch( $timestamp )&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Construct a &lt;code&gt;WARC::Date&lt;/code&gt; object representing the time indicated by an
+epoch timestamp.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_from_text"&gt;$datestamp = WARC::Date-&amp;gt;from_text( $string )&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Construct a &lt;code&gt;WARC::Date&lt;/code&gt; object representing the time indicated by a
+string in the same format returned by the &lt;a href="#item_as_string"&gt;&lt;code&gt;as_string&lt;/code&gt;&lt;/a&gt; method.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_date"&gt;$datestamp = parse WARC::Date ($text)&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Construct a &lt;code&gt;WARC::Date&lt;/code&gt; object from a textual representation.  If
+&lt;u&gt;the HTTP::Date manpage&lt;/u&gt; is installed, accepts any input acceptable to
+&lt;code&gt;HTTP::Date::str2time&lt;/code&gt;.  Otherwise, this method is equivalent to the
+&lt;a href="#item_from_text"&gt;&lt;code&gt;from_text&lt;/code&gt;&lt;/a&gt; method.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_as_string"&gt;$datestamp-&amp;gt;as_string&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Return a string in the format specified by &amp;#91;W3C-NOTE-datetime&amp;#93; restricted
+to 14 digits and UTC time zone, which is
+``&lt;em&gt;YYYY&lt;/em&gt;-&lt;em&gt;MM&lt;/em&gt;-&lt;em&gt;DD&lt;/em&gt;&lt;strong&gt;T&lt;/strong&gt;&lt;em&gt;hh&lt;/em&gt;:&lt;em&gt;mm&lt;/em&gt;:&lt;em&gt;ss&lt;/em&gt;&lt;strong&gt;Z&lt;/strong&gt;''.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;&lt;/dl&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="caveats"&gt;CAVEATS&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;WARC::Date&lt;/code&gt; objects use epoch time internally and are therefore limited
+by the range of Perl's integers.&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="author"&gt;AUTHOR&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;Jacob Bachmeyer, &amp;lt;&lt;a href="mailto:jcb@cpan.org"&gt;jcb@cpan.org&lt;/a&gt;&amp;gt;&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="see_also"&gt;SEE ALSO&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;&lt;em&gt;WARC&lt;/em&gt;, &lt;u&gt;the HTTP::Date manpage&lt;/u&gt;&lt;/p&gt;
+&lt;p&gt;&amp;#91;W3C-NOTE-datetime&amp;#93; ``Date and Time Formats''
+&lt;a href="http://www.w3.org/TR/NOTE-datetime"&gt;http://www.w3.org/TR/NOTE-datetime&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;...&lt;/p&gt;
+&lt;hr /&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="name"&gt;NAME&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;WARC::Fields - WARC record headers and application/warc-fields&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="synopsis"&gt;SYNOPSIS&lt;/a&gt;&lt;/h3&gt;
+&lt;pre&gt;
+  require WARC::Fields;&lt;/pre&gt;
+&lt;pre&gt;
+  $f = new WARC::Fields;
+  $f = $record-&amp;gt;fields;                 # get WARC record headers&lt;/pre&gt;
+&lt;pre&gt;
+  $f-&amp;gt;field('WARC-Type' =&amp;gt; 'metadata'); # set
+  $f-&amp;gt;field('WARC-Type');               # get
+  $f-&amp;gt;remove_field('WARC-Type');        # delete&lt;/pre&gt;
+&lt;pre&gt;
+  tie @field_names, ref $f, $f;         # bind ordered list of field names&lt;/pre&gt;
+&lt;pre&gt;
+  tie %fields, ref $f, $f;              # bind hash of field names =&amp;gt; values&lt;/pre&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="description"&gt;DESCRIPTION&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;The &lt;a href="#item_warc_3a_3afields"&gt;&lt;code&gt;WARC::Fields&lt;/code&gt;&lt;/a&gt; class encapsulates information in the
+``application/warc-fields'' format used for WARC record headers.  This is a
+simple key-value format closely analogous to HTTP headers, however
+differences are significant enough that the &lt;code&gt;HTTP::Headers&lt;/code&gt; class cannot
+be reliably reused for WARC fields.&lt;/p&gt;
+&lt;p&gt;Instances of this class are usually created as member variables of the
+&lt;a href="#item_warc_3a_3arecord"&gt;&lt;code&gt;WARC::Record&lt;/code&gt;&lt;/a&gt; class, but can also be returned as the content of WARC
+records with Content-Type ``application/warc-fields''.&lt;/p&gt;
+&lt;p&gt;Instances of &lt;a href="#item_warc_3a_3afields"&gt;&lt;code&gt;WARC::Fields&lt;/code&gt;&lt;/a&gt; retrieved from WARC files are read-only and
+will &lt;code&gt;croak()&lt;/code&gt; if any attempt is made to change their contents.&lt;/p&gt;
+&lt;p&gt;This class strives to faithfully represent the contents of a WARC file,
+although the field names are defined to be case-insensitive.&lt;/p&gt;
+&lt;p&gt;Most WARC headers may only appear once and with a single value in valid
+WARC records, with the notable exception of the WARC-Concurrent-To header.
+&lt;a href="#item_warc_3a_3afields"&gt;&lt;code&gt;WARC::Fields&lt;/code&gt;&lt;/a&gt; neither attempts to enforce nor relies upon this
+constraint.  Headers that appear multiple times are considered to have
+multiple values, that is, the value associated with the header name will be
+an array reference.  Similarly, the name of a recurring header is
+&lt;strong&gt;repeated&lt;/strong&gt; in the tied array interface.  When iterating a tied hash, all
+values of a recurring header are collected and returned with the &lt;strong&gt;first&lt;/strong&gt;
+occurrence of its key.&lt;/p&gt;
+&lt;p&gt;As with &lt;code&gt;HTTP::Headers&lt;/code&gt;, the '_' character is converted to '-' in field
+names unless the first character of the name is ':', which cannot itself
+appear in a field name.  Unlike &lt;code&gt;HTTP::Headers&lt;/code&gt;, the leading ':' is
+stripped off immediately and the name stored otherwise exactly as given.
+The method and tied hash interfaces allow this convenience feature.  The
+field names exposed via the tied array interface are reported &lt;strong&gt;exactly&lt;/strong&gt; as
+they appear in the WARC file.&lt;/p&gt;
+&lt;p&gt;Strictly, ``X-Crazy-Header'' and ``X_Crazy_Header'' are two &lt;strong&gt;different&lt;/strong&gt;
+headers that the above convenience mechanism conflates.  The solution is
+simple: if (and only if) a header field &lt;strong&gt;already exists&lt;/strong&gt; with the &lt;strong&gt;exact&lt;/strong&gt;
+name given, it is used, otherwise y/_/-/ occurs and the name is rechecked
+for another exact match.  If no match is found, case is folded and a third
+check performed.  If a match is found, the existing header is updated,
+otherwise a new header is created with character case as given.&lt;/p&gt;
+&lt;p&gt;The WARC standard specifically states that field names are
+case-insensitive, accordingly, ``X-Crazy-Header'' and ``X-CRAZY-HeAdEr'' are
+considered the same header for the method and tied hash interfaces.  They
+will appear exactly as given in the tied array interface, however.&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;h4&gt;&lt;a name="methods"&gt;Methods&lt;/a&gt;&lt;/h4&gt;
+&lt;dl&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_new"&gt;$f = WARC::Fields-&amp;gt;new&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Construct a new &lt;a href="#item_warc_3a_3afields"&gt;&lt;code&gt;WARC::Fields&lt;/code&gt;&lt;/a&gt; object.  Initial contents can be passed as
+key-value pairs to this constructor and will be added in the given order.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_clone"&gt;$f-&amp;gt;clone&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Copy a &lt;a href="#item_warc_3a_3afields"&gt;&lt;code&gt;WARC::Fields&lt;/code&gt;&lt;/a&gt; object.  A copy of a read-only object is writable.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_field"&gt;$f-&amp;gt;field( $name )&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dt&gt;&lt;strong&gt;$f-&amp;gt;field( $name =&amp;gt; $value )&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dt&gt;&lt;strong&gt;$f-&amp;gt;field( $n1 =&amp;gt; $v1, $n2 =&amp;gt; $v2, ... )&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Get or set the value of one or more fields.  The field name is not case
+sensitive, but &lt;a href="#item_warc_3a_3afields"&gt;&lt;code&gt;WARC::Fields&lt;/code&gt;&lt;/a&gt; will preserve its case if a new entry is
+created.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_parse"&gt;$f = WARC::Fields-&amp;gt;parse( $text )&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_parse_from"&gt;$f = WARC::Fields-&amp;gt;parse_from( $fh )&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Construct a new &lt;a href="#item_warc_3a_3afields"&gt;&lt;code&gt;WARC::Fields&lt;/code&gt;&lt;/a&gt; object, reading initial contents from the
+provided text string or filehandle.
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;If either &lt;a href="#item_parse"&gt;&lt;code&gt;parse&lt;/code&gt;&lt;/a&gt; method encounters a field name with a leading ':', which
+implies an empty name and is not allowed, the leading ':' is silently
+dropped from the line and parsing retried.  If the line is not valid after
+this change, the &lt;a href="#item_parse"&gt;&lt;code&gt;parse&lt;/code&gt;&lt;/a&gt; method croaks.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;$f-&amp;gt;as_string&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Return the contents as a formatted WARC header or application/warc-fields
+block.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_set_readonly"&gt;$f-&amp;gt;set_readonly&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Mark a &lt;a href="#item_warc_3a_3afields"&gt;&lt;code&gt;WARC::Fields&lt;/code&gt;&lt;/a&gt; object read-only.  All methods that modify the
+object will &lt;code&gt;croak()&lt;/code&gt; if called on a read-only object.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;&lt;/dl&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;h4&gt;&lt;a name="tied_array_access"&gt;Tied Array Access&lt;/a&gt;&lt;/h4&gt;
+&lt;p&gt;The order of field names can be fully controlled by tying an array to a
+&lt;a href="#item_warc_3a_3afields"&gt;&lt;code&gt;WARC::Fields&lt;/code&gt;&lt;/a&gt; object and manipulating the array using ordinary Perl
+operations.  Removing a name from the array effectively removes the field
+from the object, but the value for that name is still remembered, allowing
+names to be moved about without loss of data.&lt;/p&gt;
+&lt;p&gt;&lt;a href="#item_warc_3a_3afields"&gt;&lt;code&gt;WARC::Fields&lt;/code&gt;&lt;/a&gt; will &lt;code&gt;croak()&lt;/code&gt; if an attempt is made to set a field name with
+a leading ':' using the tied array interface.&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;h4&gt;&lt;a name="tied_hash_access"&gt;Tied Hash Access&lt;/a&gt;&lt;/h4&gt;
+&lt;p&gt;The contents of a &lt;a href="#item_warc_3a_3afields"&gt;&lt;code&gt;WARC::Fields&lt;/code&gt;&lt;/a&gt; object can be easily examined by tying a
+hash to the object.  Reading or setting a hash key is equivalent to the
+&lt;a href="#item_field"&gt;&lt;code&gt;field&lt;/code&gt;&lt;/a&gt; method, but the tied hash will iterate keys and values in the
+order in which each key &lt;strong&gt;first&lt;/strong&gt; appears in the internal list.&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;...&lt;/p&gt;
+&lt;hr /&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="name"&gt;NAME&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;WARC::Index - base class for WARC index classes&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h4&gt;&lt;a name="synopsis"&gt;SYNOPSIS&lt;/a&gt;&lt;/h4&gt;
+&lt;pre&gt;
+  use WARC::Index::CDX; # or ...
+  use WARC::Index::SDBM;
+  # or some other WARC::Index::* implementation&lt;/pre&gt;
+&lt;pre&gt;
+  $index = attach WARC::Index::CDX (...);       # or ...
+  $index = attach WARC::Index::SDBM (...);&lt;/pre&gt;
+&lt;pre&gt;
+  $record = $index-&amp;gt;search(url =&amp;gt; $url, time =&amp;gt; $when);
+  @results = $index-&amp;gt;search(url =&amp;gt; $url, time =&amp;gt; $when);&lt;/pre&gt;
+&lt;pre&gt;
+  build WARC::Index::CDX (...); # or ...
+  build WARC::Index::SDBM (...);&lt;/pre&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="description"&gt;DESCRIPTION&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;&lt;a href="#item_warc_3a_3aindex"&gt;&lt;code&gt;WARC::Index&lt;/code&gt;&lt;/a&gt; is an abstract base class for indexes on WARC files and
+WARC-alike files.  This class establishes the expected interface and
+provides a simple interface for building indexes.&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;h4&gt;&lt;a name="methods"&gt;Methods&lt;/a&gt;&lt;/h4&gt;
+&lt;dl&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item__24index__3d_attach_warc_3a_3aindex_3a_3a_2a__28_2"&gt;$index = attach WARC::Index::* (...)&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Construct an index object using the indicated technology and whatever
+parameters the index implementation needs.
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;Typically, indexes are file-based and a single parameter is the name of an
+index file which in turn contains the names of the indexed WARC files.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;$record = $collection-&amp;gt;search( ... )&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dt&gt;&lt;strong&gt;@records = $collection-&amp;gt;search( ... )&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Search an index for records matching parameters.  The &lt;a href="#item_warc_3a_3acollection"&gt;&lt;code&gt;WARC::Collection&lt;/code&gt;&lt;/a&gt;
+class uses this method to search each index in a collection.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_build_warc_3a_3aindex_3a_3a_2a__28into__3d_3e__24d"&gt;build WARC::Index::* (into =&amp;gt; $dest, from =&amp;gt; ...)&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_build_warc_3a_3aindex_3a_3a_2a__28from__3d_3e__5b_"&gt;build WARC::Index::* (from =&amp;gt; &amp;#91;...&amp;#93;, into =&amp;gt; $dest)&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+The &lt;a href="#item_warc_3a_3aindex"&gt;&lt;code&gt;WARC::Index&lt;/code&gt;&lt;/a&gt; base class &lt;strong&gt;does&lt;/strong&gt; provide this method, however.  The
+&lt;code&gt;build&lt;/code&gt; method works by loading the corresponding index builder class and
+driving the process or simply returning the newly-constructed object.
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;The &lt;code&gt;build&lt;/code&gt; method itself handles the &lt;code&gt;from&lt;/code&gt; key for specifying the files
+to index.  The &lt;code&gt;from&lt;/code&gt; key can be given an array reference, after which
+more key =&amp;gt; value pairs may follow, or can simply use the rest of the
+argument list as its value.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;If the &lt;code&gt;from&lt;/code&gt; key is given, the &lt;code&gt;build&lt;/code&gt; method will read the indicated
+files, construct an index, and return nothing.  If the &lt;code&gt;from&lt;/code&gt; key is not
+given, the &lt;code&gt;build&lt;/code&gt; method will construct and return an index builder.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;All index builders accept at least the &lt;code&gt;into&lt;/code&gt; key for specifying where to
+store the index.  See the documentation for WARC::Index::*::Builder for
+more information.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;&lt;/dl&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;h4&gt;&lt;a name="index_system_registration"&gt;Index system registration&lt;/a&gt;&lt;/h4&gt;
+&lt;p&gt;The &lt;a href="#item_warc_3a_3aindex"&gt;&lt;code&gt;WARC::Index&lt;/code&gt;&lt;/a&gt; package also maintains a registry of loaded index
+support.  The &lt;a href="#item_register"&gt;&lt;code&gt;register&lt;/code&gt;&lt;/a&gt; function adds the calling package to the list.&lt;/p&gt;
+&lt;dl&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_register"&gt;WARC::Index::register( filename =&amp;gt; $filename_re )&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Add the calling package to an internal list of available index handlers.
+The calling package must be a subclass of &lt;a href="#item_warc_3a_3aindex"&gt;&lt;code&gt;WARC::Index&lt;/code&gt;&lt;/a&gt; or this function
+will croak().
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;The &lt;code&gt;filename&lt;/code&gt; key indicates that the calling package expects to handle
+index files with names matching the provided regex.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_find_handler"&gt;WARC::Index::find_handler( $filename )&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Return the registered handler for $filename or undef if none match.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;&lt;/dl&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;...&lt;/p&gt;
+&lt;hr /&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="name"&gt;NAME&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;WARC::Record - one record from a WARC file&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="synopsis"&gt;SYNOPSIS&lt;/a&gt;&lt;/h3&gt;
+&lt;pre&gt;
+  use WARC;             # or ...
+  use WARC::Volume;     # or ...
+  use WARC::Collection;&lt;/pre&gt;
+&lt;pre&gt;
+  # WARC::Record objects are returned from -&amp;gt;record_at and -&amp;gt;search methods&lt;/pre&gt;
+&lt;pre&gt;
+  # Construct a record, as when preparing a WARC file
+  $warcinfo = new WARC::Record (type =&amp;gt; 'warcinfo');&lt;/pre&gt;
+&lt;p&gt;...&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="description"&gt;DESCRIPTION&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;&lt;a href="#item_warc_3a_3arecord"&gt;&lt;code&gt;WARC::Record&lt;/code&gt;&lt;/a&gt; objects come in two flavors with a common interface.
+Records read from WARC files are read-only and have meaningful return
+values from the methods listed in ``Methods on records from WARC files''.
+Records constructed in memory can be updated and those same methods all
+return undef.&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;h4&gt;&lt;a name="common_methods"&gt;Common Methods&lt;/a&gt;&lt;/h4&gt;
+&lt;dl&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_fields"&gt;$record-&amp;gt;fields&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Get the internal &lt;a href="#item_warc_3a_3afields"&gt;&lt;code&gt;WARC::Fields&lt;/code&gt;&lt;/a&gt; object that contains WARC record headers.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;$record-&amp;gt;field( $name )&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Get the value of the WARC header named $name from the internal
+&lt;a href="#item_warc_3a_3afields"&gt;&lt;code&gt;WARC::Fields&lt;/code&gt;&lt;/a&gt; object.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;&lt;/dl&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;h4&gt;&lt;a name="methods_on_records_from_warc_files"&gt;Methods on records from WARC files&lt;/a&gt;&lt;/h4&gt;
+&lt;p&gt;These methods all return undef if called on a &lt;a href="#item_warc_3a_3arecord"&gt;&lt;code&gt;WARC::Record&lt;/code&gt;&lt;/a&gt; object that
+does not represent a record in a WARC file.&lt;/p&gt;
+&lt;dl&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_protocol"&gt;$record-&amp;gt;protocol&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Return the format and version tag for this record.  For WARC 1.0, this
+method returns 'WARC/1.0'.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_volume"&gt;$record-&amp;gt;volume&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Return the &lt;a href="#item_warc_3a_3avolume"&gt;&lt;code&gt;WARC::Volume&lt;/code&gt;&lt;/a&gt; object representing the file in which this
+record is located.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_offset"&gt;$record-&amp;gt;offset&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Return the file offset at which this record can be found.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_next"&gt;$record-&amp;gt;next&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Return the next &lt;a href="#item_warc_3a_3arecord"&gt;&lt;code&gt;WARC::Record&lt;/code&gt;&lt;/a&gt; in the WARC file that contains this record.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_replay"&gt;$record-&amp;gt;replay&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Return a protocol-specific object representing the record contents.
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;This method returns undef if the library does not recognize the protocol
+message stored in the record.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;A record with Content-Type ``application/http'' with an appropriate ``msgtype''
+parameter produces an &lt;code&gt;HTTP::Request&lt;/code&gt; or &lt;code&gt;HTTP::Response&lt;/code&gt; object.  An
+unknown ``msgtype'' on ``application/http'' produces a generic
+&lt;code&gt;HTTP::Message&lt;/code&gt;.  The returned object may be a subclass to support
+deferred loading of entity bodies.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_open_payload"&gt;$record-&amp;gt;open_payload&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Return a tied filehandle that reads the WARC record payload.
+&lt;/dd&gt;
+&lt;dd&gt;
+&lt;p&gt;The WARC record payload is defined as the decoded content of the protocol
+response or other resource stored in the record.  This method returns undef
+if called on a WARC record that has no payload or content that we do not
+recognize.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;&lt;/dl&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;h4&gt;&lt;a name="methods_on_fresh_warc_records"&gt;Methods on fresh WARC records&lt;/a&gt;&lt;/h4&gt;
+&lt;dl&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_record"&gt;$record = new WARC::Record (&lt;em&gt;key&lt;/em&gt; =&amp;gt; &lt;em&gt;value&lt;/em&gt;, ...)&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Construct a fresh WARC record, suitable for use with &lt;code&gt;WARC::Builder&lt;/code&gt;.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;&lt;/dl&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;...&lt;/p&gt;
+&lt;hr /&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="name"&gt;NAME&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;WARC::Volume - Web ARChive file access for Perl&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="synopsis"&gt;SYNOPSIS&lt;/a&gt;&lt;/h3&gt;
+&lt;pre&gt;
+  use WARC::Volume;&lt;/pre&gt;
+&lt;pre&gt;
+  $volume = mount WARC::Volume ($filename);&lt;/pre&gt;
+&lt;pre&gt;
+  $record = $volume-&amp;gt;first_record;&lt;/pre&gt;
+&lt;pre&gt;
+  $record = $volume-&amp;gt;record_at($offset);&lt;/pre&gt;
+&lt;pre&gt;
+  $record = $volume-&amp;gt;search(url =&amp;gt; $url, time =&amp;gt; $when);&lt;/pre&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="description"&gt;DESCRIPTION&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;&lt;a href="#item_warc_3a_3avolume"&gt;&lt;code&gt;WARC::Volume&lt;/code&gt;&lt;/a&gt; ...&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;h4&gt;&lt;a name="methods"&gt;Methods&lt;/a&gt;&lt;/h4&gt;
+&lt;dl&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_volume"&gt;$volume = mount WARC::Volume ($filename)&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Construct a &lt;a href="#item_warc_3a_3avolume"&gt;&lt;code&gt;WARC::Volume&lt;/code&gt;&lt;/a&gt; object.  The parameter is the name of an
+existing WARC file.  An exception is raised if the first record does not
+have a valid WARC header.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_first_record"&gt;$volume-&amp;gt;first_record&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Construct and return a &lt;a href="#item_warc_3a_3arecord"&gt;&lt;code&gt;WARC::Record&lt;/code&gt;&lt;/a&gt; object representing the first WARC
+record in $volume.  This should be a ``warcinfo'' record, but it is not
+required to be so.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;dt&gt;&lt;strong&gt;&lt;a name="item_record_at"&gt;$volume-&amp;gt;record_at( $offset )&lt;/a&gt;&lt;/strong&gt;&lt;br /&gt;
+&lt;/dt&gt;
+&lt;dd&gt;
+Construct and return a &lt;a href="#item_warc_3a_3arecord"&gt;&lt;code&gt;WARC::Record&lt;/code&gt;&lt;/a&gt; object representing the WARC record
+beginning at $offset within $volume.  An exception is raised if an
+appropriate magic number is not found at $offset.
+&lt;/dd&gt;
+&lt;p&gt;&lt;/p&gt;&lt;/dl&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="author"&gt;AUTHOR&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;Jacob Bachmeyer, &amp;lt;&lt;a href="mailto:jcb@cpan.org"&gt;jcb@cpan.org&lt;/a&gt;&amp;gt;&lt;/p&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;...&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h3&gt;&lt;a name="copyright_and_license"&gt;COPYRIGHT AND LICENSE&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;Copyright (C) 2019 by Jacob Bachmeyer&lt;/p&gt;
+&lt;p&gt;This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.&lt;/p&gt;
+&lt;/readmore&gt;
+
+&lt;p&gt;&lt;i&gt;Edited 2019-08-09 by [jcb]:  Demote headings and elide boilerplate to make draft documentation easier to read.  Also clarify first question.&lt;/i&gt;&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Edited 2019-08-09 by [jcb]:  Oops:  the only class that has tied array/hash interfaces is WARC::Fields, not WARC::Record.&lt;/i&gt;&lt;/p&gt;</doctext>
+<thread id="11104202">
+<node id="11104236"><node id="11104240"/>
+</node>
+<node id="11104246"><node id="11104251"/>
+</node>
+<node id="11104259"><node id="11104267"/>
+</node>
+</thread></node>

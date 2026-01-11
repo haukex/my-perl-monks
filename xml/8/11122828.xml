@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11122828" title="Re: remove first and last character of string - benchmarks" created="2020-10-14 08:27:50" updated="2020-10-14 08:27:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I thought it might be interesting to benchmark the various solutions:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Benchmark qw/cmpthese/;
+use JSON::PP ();
+use Cpanel::JSON::XS ();
+
+my $IN = '"654321_1111"';
+my $EXP = '654321_1111';
+use constant TEST=&gt;0;
+print "Testing is ", TEST?"enabled":"disabled", "\n";
+
+my $json_pp = JSON::PP-&gt;new-&gt;allow_nonref;
+my $json_xs = Cpanel::JSON::XS-&gt;new-&gt;allow_nonref;
+
+cmpthese(-2, {
+	regex_strip =&gt; sub { # GrandFather
+		(my $out = $IN) =~ s/^"|"$//g;
+		$out eq $EXP or die $out if TEST;
+	},
+	regex_match =&gt; sub { # BillKSmith
+		my ($out) = $IN =~ /^\"(.+)\"$/;
+		$out eq $EXP or die $out if TEST;
+	},
+	tr_strip =&gt; sub { # kcott and hippo
+		(my $out = $IN) =~ y/"//d;
+		$out eq $EXP or die $out if TEST;
+	},
+	substr =&gt; sub { # syphilis and AnomalousMonk
+		my $out = substr $IN, 1, -1;
+		$out eq $EXP or die $out if TEST;
+	},
+	reverse =&gt; sub { # rsFalse
+		my $out = $IN;
+		for (1..2) {
+			$out = reverse $out;
+			chop $out;
+		}
+		$out eq $EXP or die $out if TEST;
+	},
+	json_pp =&gt; sub { # haukex
+		my $out = $json_pp-&gt;decode($IN);
+		$out eq $EXP or die $out if TEST;
+	},
+	json_xs =&gt; sub { # haukex
+		my $out = $json_xs-&gt;decode($IN);
+		$out eq $EXP or die $out if TEST;
+	},
+});
+
+__END__
+
+Testing is disabled
+                  Rate json_pp regex_strip regex_match reverse json_xs tr_strip substr
+json_pp       161266/s      --        -85%        -96%    -96%    -97%     -97%   -99%
+regex_strip  1081962/s    571%          --        -73%    -74%    -81%     -81%   -91%
+regex_match  3989148/s   2374%        269%          --     -2%    -29%     -30%   -67%
+reverse      4091430/s   2437%        278%          3%      --    -28%     -28%   -66%
+json_xs      5654082/s   3406%        423%         42%     38%      --      -0%   -53%
+tr_strip     5663601/s   3412%        423%         42%     38%      0%       --   -53%
+substr      12107824/s   7408%       1019%        204%    196%    114%     114%     --
+&lt;/c&gt;
+&lt;p&gt;However, it's also very noteworthy that all of the solutions have their caveats, as already highlighted by [AnomalousMonk] and [hippo]:&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;&lt;c&gt;regex_strip&lt;/c&gt; will also remove unbalanced quotes, as in &lt;c&gt;q{"foo}&lt;/c&gt; becomes &lt;c&gt;q{foo}&lt;/c&gt;&lt;/li&gt;
+	&lt;li&gt;&lt;c&gt;regex_match&lt;/c&gt; will also remove quotes from things that - depending on your input format - may not be syntactically valid, like &lt;c&gt;q{"foo"bar"}&lt;/c&gt; becomes &lt;c&gt;q{foo"bar}&lt;/c&gt;&lt;/li&gt;
+	&lt;li&gt;&lt;c&gt;tr_strip&lt;/c&gt; will remove &lt;i&gt;all&lt;/i&gt; quotes in the string no matter where they appear, i.e. &lt;c&gt;q{"foo""bar"}&lt;/c&gt; becomes &lt;c&gt;q{foobar}&lt;/c&gt;&lt;/li&gt;
+	&lt;li&gt;&lt;c&gt;substr&lt;/c&gt; and &lt;c&gt;reverse&lt;/c&gt; will remove the first and last character unconditionally, i.e. &lt;c&gt;q{foobar}&lt;/c&gt; becomes &lt;c&gt;q{ooba}&lt;/c&gt;&lt;/li&gt;
+	&lt;li&gt;&lt;c&gt;json_pp&lt;/c&gt; and &lt;c&gt;json_xs&lt;/c&gt; only apply if the input format is actually JSON or something that can be parsed as if it were, e.g. they will refuse to parse &lt;c&gt;q{"foo"bar"}&lt;/c&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;This underscores what others have already said: it would be better if you could better specify your input format.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11122798</root_node>
+<parent_node field_name="parent_node">11122798</parent_node>
+<thread id="11122798">
+<node id="11122800"><node id="11122803"><node id="11122808"><node id="11122818"/>
+<node id="11122847"><node id="11122856"/>
+</node>
+</node>
+<node id="11122838"/>
+</node>
+<node id="11122812"/>
+</node>
+<node id="11122802"><node id="11122804"><node id="11122807"><node id="11122824"/>
+</node>
+</node>
+</node>
+<node id="11122805"><node id="11122821"><node id="11122822"/>
+</node>
+</node>
+<node id="11122810"/>
+<node id="11122811"><node id="11122840"/>
+</node>
+<node id="11122817"/>
+<node id="11122828"><node id="11122841"/>
+</node>
+<node id="11122837"/>
+</thread></node>

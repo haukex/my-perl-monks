@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118307" title="Re^3: Efficient but elegant Cross-Product iterator ? (updated)" created="2020-06-21 05:56:15" updated="2020-06-21 05:56:15" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;The code in [mod://Algorithm::Odometer::Tiny] is indeed tiny, but loops over lists/arrays not subs. (like the other listed solutions)&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, part of the idea of the module was to have the code small and simple enough so that it can be copy &amp;amp; pasted into other code. This simple patch allows you to produce your expected output from your shown input:&lt;/p&gt;
+&lt;c&gt;
+ 	croak "no wheels specified" unless @_;
+-	my @w = map { [ 1, ref eq 'ARRAY' ? @$_ : $_ ] } @_;
++	my @w = map { [ 1, ref eq 'CODE' ? $_-&gt;() : $_ ] } @_;
+ 	my $done;
+&lt;/c&gt;
+&lt;p&gt;You can of course do the same kind of mapping simply before calling the sub, as in &lt;c&gt;odometer( map { ref eq 'CODE' ? [$_-&gt;()] : $_ } ... )&lt;/c&gt;, that'd allow you to use the other modules as well.&lt;/p&gt;
+&lt;p&gt;Of course, it's a different story if the &lt;c&gt;sub&lt;/c&gt;s passed to the function are to be called as iterators themselves? &lt;b&gt;Update:&lt;/b&gt; That'd look something like this:&lt;/p&gt;
+&lt;c&gt;
+sub odometer {
+	die "no wheels specified" unless @_;
+	my @w = map { [ $_, $_-&gt;() ] } @_;
+	my $done;
+	return sub {
+		if ($done) { $done=0; return }
+		my @cur = map { $_-&gt;[1] } @w;
+		for ( my $i=$#w; $i&gt;=0; $i-- ) {
+			defined( $w[$i][1] = $w[$i][0]-&gt;() ) and last;
+			$w[$i][1] = $w[$i][0]-&gt;();
+			$done=1 unless $i;
+		}
+		return wantarray ? @cur : join '', map {defined()?$_:''} @cur;
+	};
+}
+&lt;/c&gt;
+&lt;readmore title="test code"&gt;
+&lt;c&gt;
+use Test::More;
+sub array_it {
+	my ($i,@arr) = (0,@_);
+	return sub { if ( $i&gt;$#arr ) { $i=0; return } $arr[$i++] }
+}
+{
+	my $odo = odometer( array_it('foo','bar'), array_it('-'),
+		array_it(3..5) );
+	my @o;
+	while (defined( my $x = $odo-&gt;() )) { push @o, $x }
+	while (my @x = $odo-&gt;()) { push @o, \@x }
+	is_deeply \@o, ["foo-3", "foo-4", "foo-5", "bar-3", "bar-4",
+		"bar-5", ["foo","-","3"], ["foo","-","4"], ["foo","-","5"],
+		["bar","-","3"], ["bar","-","4"], ["bar","-","5"] ];
+}
+{
+	my $odo = odometer(
+		array_it(qw/ a b c /),
+		array_it(qw/ 1 2 /,undef,qw/ 3 4 /),
+	);
+	my @o;
+	while (defined( my $x = $odo-&gt;() )) { push @o, $x }
+	is_deeply \@o, [qw/ a1 a2 b3 b4 c1 c2 /];
+	@o = ();
+	while (defined( my $x = $odo-&gt;() )) { push @o, $x }
+	is_deeply \@o, [qw/ a3 a4 b1 b2 c3 c4 /];
+}
+done_testing;
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">11118273</root_node>
+<parent_node field_name="parent_node">11118276</parent_node>
+<thread id="11118273">
+<node id="11118274"><node id="11118276"><node id="11118307"><node id="11118316"><node id="11118323"><node id="11118327"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11118283"><node id="11118285"/>
+</node>
+<node id="11118286"><node id="11118287"><node id="11118288"><node id="11118289"><node id="11118290"><node id="11118292"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11118344"><node id="11143160"/>
+</node>
+</thread></node>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1165192" title="Using IPC::Open3 instead of backtick operator" created="2016-06-08 21:28:34" updated="2016-06-08 21:28:34" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1004120">rcrews</author>
+<doctext field_name="doctext">&lt;p&gt;I am wrapping my head around a new technique today: Use IPC::Open3 instead of backticks. Here is the program I started with:&lt;/p&gt;
+
+&lt;code&gt;#!/usr/bin/env perl
+use 5.016;
+use autodie;
+use warnings;
+
+our $VERSION = 'v.0.0.1';
+
+say qx[/bin/ls];
+
+exit 0;
+__END__&lt;/code&gt;
+
+&lt;p&gt;It it simple and works. Then I ran perlcritic:&lt;/p&gt;
+
+&lt;code&gt;$ perlcritic -1 syscall1.pl 
+Backtick operator used at line 8, column 5.  Use IPC::Open3 instead.  (Severity: 3)&lt;/code&gt;
+
+&lt;p&gt;I am eager to learn new techniques and become a better Perl programmer. My goal is to update the script to pass the perlcritic test and use other best practices while keeping the code Perlish, readable, maintainable, and reusable. Here's what I came up with:&lt;/p&gt;
+
+&lt;code&gt;#!/usr/bin/env perl
+use 5.016;
+use autodie;
+use warnings;
+use English '-no_match_vars';
+use IPC::Open3;
+use Symbol 'gensym';
+use Readonly;
+
+our $VERSION = 'v.0.0.2';
+
+say system_ipc_open3('/bin/ls')-&gt;{'output'};
+
+sub system_ipc_open3 {
+    my @command = map { split m{\s+}xms } @ARG;
+
+    Readonly my $SYSCALL_EXIT_STATUS_MASK =&gt; 8;
+    Readonly my $BUFFER_SIZE              =&gt; 2_000_000;
+
+    my (
+        $child_in_fh, $child_out_fh, $child_err_fh,
+        $child_in,    $child_out,    $child_err,
+        $buffer,      $child_pid,    $child_exit_status
+    ) = q[];
+
+    $child_err_fh = gensym;
+    $child_pid = open3( $child_in_fh, $child_out_fh, $child_err_fh,
+        @command );
+    $child_exit_status = $CHILD_ERROR &gt;&gt; $SYSCALL_EXIT_STATUS_MASK;
+
+    while ( my $read = sysread $child_out_fh, $buffer,
+        $BUFFER_SIZE ) {
+        $child_out .= $buffer;
+    }
+    while ( my $read = sysread $child_err_fh, $buffer,
+        $BUFFER_SIZE ) {
+        $child_err .= $buffer;
+    }
+
+    waitpid $child_pid, 0;
+
+    return {
+        exit_status =&gt; $child_exit_status,
+        error       =&gt; $child_err || q[],
+        output      =&gt; $child_out || q[],
+    };
+}
+
+exit 0;
+__END__&lt;/code&gt;
+
+&lt;p&gt;Version 2 is verbose and "low level". My question to the monks: How is this an improvement? Is there a better way to Use IPC::Open3 instead of backticks?&lt;/p&gt;</doctext>
+<thread id="1165192">
+<node id="1165194"/>
+<node id="1165195"/>
+<node id="1165196"><node id="1165310"><node id="1165367"><node id="1165368"/>
+</node>
+</node>
+</node>
+<node id="1165199"/>
+<node id="1165203"/>
+<node id="1165204"/>
+<node id="1165208"/>
+<node id="1165238"><node id="1165307"><node id="1165322"/>
+</node>
+</node>
+<node id="1165249"><node id="1165308"><node id="1165326"><node id="1165336"/>
+</node>
+</node>
+</node>
+<node id="1165298"/>
+<node id="1165393"/>
+</thread></node>

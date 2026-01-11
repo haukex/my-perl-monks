@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229415" title="Re: Fastest way to sort a list of integers into 0,1,2,3,-3,-2,-1" created="2019-02-05 11:00:51" updated="2019-02-05 11:00:51" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1020196">vr</author>
+<doctext field_name="doctext">&lt;c&gt;
+use warnings;
+use strict;
+use Benchmark 'cmpthese';
+use constant DO_CHECK =&gt; 0;
+use if DO_CHECK, 'Data::Compare', qw/Compare/;
+
+my @input = (-50..50);
+my @output = (0..50,-50..-1);
+
+use List::Util 'shuffle';
+srand 123;
+@input = shuffle @input;        # NB. NB. NB. NB.
+
+cmpthese(-2, {
+    packz =&gt; sub {
+        my @list = @input;
+        @list = 
+            unpack 'i*', pack 'I*',
+            sort { $a &lt;=&gt; $b }
+            unpack 'I*', pack 'i*', @list;        
+        Compare(\@list,\@output) or die "@list" if DO_CHECK;
+    },
+    Eily =&gt; sub { # https://www.perlmonks.org/?node_id=1229411
+        my @list = @input;
+        @list = sort { ~$b &lt;=&gt; ~$a } @list;
+        Compare(\@list,\@output) or die "@list" if DO_CHECK;
+    },
+});
+
+__END__
+
+         Rate  Eily packz
+Eily   6495/s    --  -66%
+packz 18967/s  192%    --
+
+&lt;/c&gt;
+
+&lt;p&gt;Slow machine here. Shuffled input is important, otherwise [Eily]'s code seems to be faster.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1229406</root_node>
+<parent_node field_name="parent_node">1229406</parent_node>
+<thread id="1229406">
+<node id="1229407"/>
+<node id="1229408"/>
+<node id="1229409"/>
+<node id="1229410"/>
+<node id="1229411"><node id="1229428"/>
+<node id="1229462"/>
+</node>
+<node id="1229415"><node id="1229418"/>
+<node id="1229422"/>
+<node id="1229429"/>
+<node id="1229451"><node id="1229457"><node id="1229495"/>
+</node>
+</node>
+</node>
+<node id="1229416"><node id="1229417"/>
+</node>
+<node id="1229419"><node id="1229420"><node id="1229437"/>
+<node id="1229463"><node id="1229465"/>
+</node>
+</node>
+<node id="1229458"/>
+</node>
+<node id="1229425"/>
+<node id="1229444"><node id="1229448"/>
+</node>
+<node id="1229446"><node id="1229447"><node id="1229512"/>
+</node>
+<node id="1229454"><node id="1229505"><node id="1229509"/>
+</node>
+</node>
+</node>
+<node id="1229450"><node id="1229456"/>
+<node id="1229602"/>
+</node>
+<node id="1229466"/>
+<node id="1229492"><node id="1229511"/>
+<node id="1229529"/>
+</node>
+<node id="1229493"><node id="1229496"/>
+</node>
+<node id="1229500"/>
+</thread></node>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1223486" title="Re: Loop is not working" created="2018-10-03 15:38:20" updated="2018-10-03 15:38:20" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Welcome to Perl and PerlMonks, [ozdemmer]!&lt;/p&gt;
+&lt;p&gt;There are quite a few things that should be improved in your script. First of all, you should start your script with the following, which is explained in [id://111088] and the [id://745674]:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+use diagnostics;
+&lt;/c&gt;
+&lt;p&gt;When you do this, you will unfortunately see quite a few errors that you need to fix. For example, &lt;c&gt;cd ..&lt;/c&gt; is not valid Perl ([doc://chdir] is the right function), and you'll need to declare variables like &lt;c&gt;@files&lt;/c&gt; and &lt;c&gt;$s&lt;/c&gt; before using them. Also, you should be checking for errors in several more places, such as [doc://opendir] (&lt;c&gt;opendir my $dh, '.' or die "opendir: $!";&lt;/c&gt;) and [doc://chdir]. This might seem a bit tedious at first, but in the long run, it will make for much better code, which is why these are important habits to get into.&lt;/p&gt;
+&lt;p&gt;I think you might benefit from a read of [doc://perlintro]. Among other things, you'll be introduced to some of the basic ways to process files. [doc://Tie::File] is a good start, but note that it is quite inefficient - when you're processing files line-by-line, a &lt;c&gt;while&lt;/c&gt; loop will be better. A few more notes:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;You do &lt;c&gt;opendir(DIR,".");&lt;/c&gt;, but then don't do anything with &lt;c&gt;DIR&lt;/c&gt;. You only need [doc://opendir] if you'll be getting a list of files in that directory, but since you have a fixed list of files, it doesn't look like you need this. If you &lt;i&gt;do&lt;/i&gt; want to list files, you could take a look at [doc://glob], but please note that [id://1206848|it has several caveats] - but if you use it with a fixed string as an argument (like &lt;c&gt;my @files = glob('*');&lt;/c&gt;), it should be fine.&lt;/li&gt;
+&lt;li&gt;You're using backticks (&lt;c&gt;`...`&lt;/c&gt;) to run an external command and get its output, but then are not doing anything with that output. You might want to use [doc://system] instead, and you should always check for errors. The bare minimum I suggest is &lt;c&gt;die "exited with \$?=$?" if $?;&lt;/c&gt;, see [doc://$?], and I wrote at length about using modules to do this much better [id://1180578|here]. (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; In this case, I might recommend [mod://IPC::System::Simple], which takes care of the error handling for you.)&lt;/li&gt;
+&lt;li&gt;You're doing &lt;c&gt;foreach (@files)&lt;/c&gt;, which will put each filename in the special variable [doc://$_]. I would recommend that you use a named variable, such as &lt;c&gt;foreach my $file (@files)&lt;/c&gt;, this will make for much easier to read code.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Now, on to your issue: You say you want to work on multiple files, but I see that you are doing &lt;c&gt;chdir "/mnt/hgfs/ExpAutism/Scripts";&lt;/c&gt; (a &lt;i&gt;fixed&lt;/i&gt; directory) and then operating on a file &lt;c&gt;Level1Run1_spec.fsf&lt;/c&gt; (also a &lt;i&gt;fixed&lt;/i&gt; filename). I think your loop probably &lt;i&gt;is&lt;/i&gt; running twice, but you're always operating on the same files. I don't see where the filenames you've specified in &lt;c&gt;@files&lt;/c&gt; come into play?&lt;/p&gt;
+&lt;p&gt;Thank you for posting your code and output. Could you please describe your input and expected behavior more? For example, I don't know if &lt;c&gt;SubjectASD202&lt;/c&gt; and &lt;c&gt;SubjectASD203&lt;/c&gt; are files or maybe directories, whether they are located in &lt;c&gt;/mnt/hgfs/ExpAutism/Scripts&lt;/c&gt; or somewhere else, and so on. The best thing you can do, and the way you'll get help the quickest, is if you could post a [id://1177642]: something that we can just download and run and debug for ourselves.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1223482</root_node>
+<parent_node field_name="parent_node">1223482</parent_node>
+<thread id="1223482">
+<node id="1223485"><node id="1223503"/>
+</node>
+<node id="1223486"/>
+<node id="1223488"><node id="1223494"><node id="1223498"/>
+<node id="1223499"/>
+<node id="1223501"><node id="1223506"/>
+</node>
+<node id="1223505"/>
+</node>
+</node>
+<node id="1223500"><node id="1223502"><node id="1223504"/>
+<node id="1223507"><node id="1223585"/>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1214162" title="Import a DLL from C# to Perl" created="2018-05-07 14:10:00" updated="2018-05-07 14:10:00" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1213439">paulorfmmb</author>
+<doctext field_name="doctext">Hi Monks,
+
+&lt;p&gt;I'm trying to import a simple messagebox from C# to Perl. To do so I wrapped my C# dll through a C++ code.
+C# code:&lt;/p&gt;
+&lt;c&gt;
+namespace ManagerCSharp
+{
+    public static class ManagedClassTest
+    {
+        public static void ShowValue(ref int value)
+        {
+            DialogResult result = MessageBox.Show("C# Message Box", "C# Message Box", MessageBoxButtons.OKCancel);
+            if (result == DialogResult.OK)
+                value = 1;
+            else
+                value = 2;
+            return;
+        }
+    }
+}
+&lt;/c&gt;
+C++ wrapper:
+&lt;c&gt;
+public ref class CSharpClass
+{
+public:
+	void ShowCSharpMessageBox(int *value)
+	{
+		ManagerCSharp::ManagedClassTest::ShowValue(*value);
+		return;
+	}
+}
+
+__declspec(dllexport) void __stdcall ShowMessageBox2(int *value)
+{
+	CSharpClass myCSharp;
+	myCSharp.ShowCSharpMessageBox(value);
+}
+&lt;/c&gt;
+&lt;p&gt;With this code I was able to call the dll from a C code. But when I try to call from Perl I get this error:&lt;/p&gt;
+&lt;b&gt;&lt;p&gt;System.IO.FileNotFoundException: Could not load file or assembly 'ManagerCSharp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null' or one of its dependencies. The specified module could not be found.&lt;/p&gt;
+   &lt;p&gt;in CSharpClass..ctor()&lt;/p&gt;
+   &lt;p&gt;in ShowMessageBox2(Int32* value)&lt;/p&gt;&lt;/b&gt;
+My Perl code is:
+&lt;c&gt;
+use strict;
+use Win32::API;
+
+Win32::API-&gt;Import('ManagedCPP.dll', 'void __stdcall ShowMessageBox2(int *value);');
+
+my $result;
+ShowMessageBox2(\$result);
+&lt;/c&gt;
+I have all the relevant files on the same folder.</doctext>
+<thread id="1214162">
+<node id="1214185"><node id="1214193"/>
+<node id="1214224"><node id="1214242"><node id="1214276"/>
+</node>
+</node>
+</node>
+<node id="1214206"><node id="1214225"/>
+</node>
+<node id="1214231"><node id="1214244"><node id="1214275"/>
+</node>
+</node>
+<node id="1214277"><node id="1214279"><node id="1214302"><node id="1214306"><node id="1214307"><node id="1214310"/>
+</node>
+</node>
+<node id="1214347"><node id="1214362"/>
+</node>
+</node>
+</node>
+<node id="1214348"/>
+</node>
+<node id="1214308"/>
+<node id="1214318"><node id="1214346"/>
+</node>
+<node id="1214424"/>
+</thread></node>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1167083" title="Re: Default variable $_ is not getting overwritten" created="2016-07-03 14:02:00" updated="2016-07-03 14:02:00" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [fireblood],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;... the inner "for" would replace that list with a list of its own&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This is the bit of logic that [choroba] already [id://1167078|pointed out] is the mistake: the outer &lt;c&gt;for&lt;/c&gt; sets a [doc://local] &lt;c&gt;$_&lt;/c&gt; to each of the lines of input, while the inner &lt;c&gt;for&lt;/c&gt; sets a [doc://local] &lt;c&gt;$_&lt;/c&gt; to each return value of the [doc://split] (which is only called once on each iteration of the outer loop, and it splits the outer loop's &lt;c&gt;$_&lt;/c&gt;, i.e. the line).&lt;/p&gt;
+&lt;p&gt;See [doc://perlsyn#Foreach-Loops] (emphasis mine):&lt;/p&gt;
+&lt;blockquote&gt;The &lt;c&gt;foreach&lt;/c&gt; loop iterates over a normal list value and sets the scalar variable VAR to be each element of the list in turn. If the variable is preceded with the keyword [doc://my], then it is lexically scoped, and is therefore visible only within the loop. Otherwise, &lt;b&gt;the variable is implicitly local to the loop and regains its former value upon exiting the loop&lt;/b&gt;. If the variable was previously declared with [doc://my], it uses that variable instead of the global one, but it's still localized to the loop. &lt;b&gt;This implicit localization occurs &lt;i&gt;only&lt;/i&gt; in a &lt;c&gt;foreach&lt;/c&gt; loop.&lt;/b&gt; ... If VAR is omitted, &lt;c&gt;$_&lt;/c&gt; is set to each value.&lt;/blockquote&gt;
+&lt;p&gt;I acutally wanted to pick up on something else:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Before I start relying on this behavior in production programs&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I would be very careful with nested loops setting multiple versions of &lt;c&gt;$_&lt;/c&gt; in production programs. It's incredibly easy to introduce a bug by just moving a line around. My view on this is not as strict as some other peoples' that I have seen, who say to avoid &lt;c&gt;$_&lt;/c&gt; as much as possible and use named lexicals everywhere. I think that for &lt;i&gt;short&lt;/i&gt; loops of maybe 1-3 lines of code, using &lt;c&gt;$_&lt;/c&gt; is usually fine. However, nested loops usually exceed that limit and so in the example you've posted, I'd recommend you use named lexicals in both your loops.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1167076</root_node>
+<parent_node field_name="parent_node">1167076</parent_node>
+<thread id="1167076">
+<node id="1167078"/>
+<node id="1167083"/>
+<node id="1167090"><node id="1167212"/>
+</node>
+</thread></node>

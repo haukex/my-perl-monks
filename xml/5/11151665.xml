@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11151665" title="Socket buffer errors" created="2023-04-14 13:30:00" updated="2023-04-14 13:30:00" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">I have a sensor that sends data using an HTTP write that I want to log. I am new to socket programming but found an example in O’Reilly’s “Advanced Perl Programming”. After adjusting the code for my network, I get the input properly from the sensor and am able to process it without problems.
+The code is: &lt;code&gt;#!/usr/local/bin/perl
+#
+#  usage:
+#
+    use warnings;
+    use strict;
+
+use IO::Socket;
+
+open PIDfile, '&gt;', '/var/run/aws.rcvr.pid';
+print PIDfile "$$\n";
+close PIDfile;
+
+my ($sock, $new_sock, $buf );
+$sock = new IO::Socket::INET    (LocalHost =&gt; '192.168.100.7',
+                                LocalPort =&gt; 8081,
+                                Proto   =&gt; 'tcp',
+                                Listen  =&gt; 1,
+                                Reuse   =&gt; 1
+                                );
+die "Socket could not be created. Reason: $!" unless $sock;
+while ($new_sock = $sock-&gt;accept()) {
+     while (defined ($buf = &lt;$new_sock&gt;)) {
+        if (index($buf, "/DATA_String/") &gt; 0) {
+            system("sh", "/home/app_scripts/process.input", "$buf");
+#       } else {
+        }
+     }
+}
+close ($sock);
+&lt;/code&gt;&lt;br&gt;
+I run the code on a FreeBSD 13.0 system in background. However I am doing something wrong (or have missed something) because I get the error:&lt;br&gt;
+&lt;code&gt; +sonewconn: pcb 0xfffff8003e9f4d90 (192.168.100.7:8081 (proto 6)): Listen queue overflow: 2 already in queue awaiting acceptance (6 occurrences)&lt;/code&gt;&lt;br&gt;repeatedly in the system logs. I tried increasing the buffers but that just increased the number in the queue. Can someone explain what is wrong or point me to a more appropriate example?&lt;br&gt;
+TIA - JJ</doctext>
+<reputation field_name="reputation">12</reputation>
+<thread id="11151665">
+<node id="11151676"/>
+<node id="11151678"/>
+<node id="11151680"><node id="11151681"/>
+</node>
+<node id="11151682"/>
+<node id="11151686"/>
+</thread></node>

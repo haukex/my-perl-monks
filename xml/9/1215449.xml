@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1215449" title="Re: non-capture mode sometimes erases previous capture" created="2018-05-30 08:56:27" updated="2018-05-30 08:56:27" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;the documentation for /n is a little sketchy, saying only "Non-capture mode. Don't let () fill in $1, $2, etc..."&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Then you're looking at [doc://perlop#Regexp-Quote-Like-Operators|perlop] or [doc://perlreref#OPERATORS|perlreref] - the central regexp documentation, [doc://perlre#*n*|perlre], is more specific. While it does include the IMO misleading "This modifier ... will stop &lt;c&gt;$1&lt;/c&gt;, &lt;c&gt;$2&lt;/c&gt;, &lt;i&gt;etc&lt;/i&gt;... from being filled in", it goes on to say&lt;/p&gt;
+&lt;blockquote&gt;
+This is equivalent to putting &lt;c&gt;?:&lt;/c&gt; at the beginning of every capturing group
+&lt;/blockquote&gt;
+&lt;p&gt;... which I hope clarifies the situation. If you write &lt;c&gt;/([aeiou])(.)/; /([aeiou])(?:.)/;&lt;/c&gt;, do you expect &lt;c&gt;$2&lt;/c&gt; to keep its value from the first match? (I hope not, because it doesn't &lt;c&gt;:-)&lt;/c&gt;&amp;nbsp;) Your regexes are the equivalent of &lt;c&gt;/(..)(..)(..)/; /(?:j)/; /(?:g)/;&lt;/c&gt;. I hope it's becoming clear that the clearing of the match variables is pretty logical when you look at it this way.&lt;/p&gt;
+&lt;p&gt;The rule [Corion] [id://1215431|named] still applies: Only rely on the values of &lt;tt&gt;$1&lt;/tt&gt;-&lt;tt&gt;$&lt;i&gt;N&lt;/i&gt;&lt;/tt&gt; and the other special regex variables immediately after the successful pattern match that set them. Although in some programs, they may retain their value for a long time &lt;i&gt;if&lt;/i&gt; you don't run another regex in the same scope, I would still strongly recommend against using them for more than a couple of lines after the regex - it's too easy to overlook when editing the code later, and someone may insert a second regex after the first one.&lt;/p&gt;
+&lt;p&gt;As [BrowserUk] already [id://1215436|said], if you want to keep match variables, the only reliable way to do so is by making a copy.&lt;/p&gt;
+&lt;p&gt;BTW, if you're doing complex stuff with regexes, you may want to look into named capture groups and the [doc://%+] variable (which you also have to make a copy of if you want to keep it).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1215430</root_node>
+<parent_node field_name="parent_node">1215430</parent_node>
+<thread id="1215430">
+<node id="1215431"><node id="1215434"><node id="1215436"><node id="1215443"/>
+</node>
+<node id="1215452"/>
+</node>
+</node>
+<node id="1215449"><node id="1215651"/>
+</node>
+</thread></node>

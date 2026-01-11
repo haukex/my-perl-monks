@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193161" title="Re^2: Find the last item in a series of files" created="2017-06-20 13:13:09" updated="2017-06-20 13:13:09" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1183663">jamroll</author>
+<doctext field_name="doctext">okay.  i haven't tested this code...but, here's what i got...
+
+&lt;code&gt;
+# firstly, i'm gonna use the working directory, for laziness' sake! lol
+# secondly, i haven't thoroughtly tested this.  'sub external_files($$)' is tested, and does work according to my tests
+# i'm working in a windows 10 environment, apache24 and activestate's perl 5.020002 (i think that version # is right)
+#
+# thridly, this script assumes all the files in the folder are named with .xxx where each x is a digit 0..9
+# fourth, this will do no error checking! it will work perfect, so long as you adhere to the file extension convention
+# fifth, and finally, i have not tested this code
+
+##############################
+# i copied this from a project i'm working on
+# yes.  i use prototypes.  SUE me!
+sub external_files($;$) {
+  #*
+  # lists files within a specified folder (eg: config, txt)
+  # folders will not be included in this list - just the filenames only
+  # if no type is provided, *.* is assumed
+  # type should be just "png" or "txt", no need to include a leading dot
+  #*
+  my ($folder, $type) = @_; # a location (eg: users), relative to web root &amp;&amp; a file type
+
+  if ($type) {
+    # the following is just in case the user of this
+    # subroutine ignores instructions (mainly me lol)
+    $type =~ s/(\*)*//g; # remove stars
+    $type =~ s/(\.)*//; # remove dots
+    $type =~ s/\///g; # remove forward slashes
+    if ($type) { $type = ".$type"; }
+  }
+
+  if ($folder) {
+    # same idea here as for $type
+    # this one, however, may seem weird, but i've
+    # found it better to account for all possibilities
+    # rather than leave it up to the user of this
+    # code to ensure correct params are given
+    #
+    # besides, i tend to forget to follow my own
+    # instructions, so this saves me tons of head
+    # scratching, see?
+    $folder =~ s/(\/)*$//; # remove trailing /'s
+    $folder =~ s/^(\/)*//; # remove leading /'s
+    $folder =~ s/\/\//\//g; # convert //'s to /
+    $folder .= "/"; # attach trailing /*
+  }
+
+  my @fixed;
+  my $filespec = $folder . "*" . $type;
+
+  my @dirs = glob($filespec);
+  $folder =~ s/\./\\./g;
+  $folder =~ s/\//\\\//g;
+  foreach my $dir (@dirs) {
+    if (-f $dir) {
+      $dir =~ s/$folder//;
+      push (@fixed, $dir);
+    }
+  }
+
+  return @fixed; # an array
+  #usage: my @fileList = external_files("D:/", "txt");
+} # end of sub external_files($$);
+
+#sub get_last($) { # you could uncomment this line...and turn the following into a sub!
+#my ($folder) = @_; # and yes, i do this, too!  again, sue me (i believe wholeheartedly, and pedantically so, in the K.I.S.S concept)
+
+# my @files = external_files($folder); # i'll leave it up to you to make sure $folder is a valid location, but give it whatever you like, really
+my @files = external_files("d:/myNumberedFiles");
+# @ files should now contain all yer files stored in d:/myNumberedFiles/
+# now, you want the file with an extension that works out to being the highest #?
+# easy!
+
+# first, i'm gonna rip through the list, and build a new one.
+# the new one will contain just the extension with no dots.
+# leading zeros will be removed from the extension.  this should
+# result in a list with elements that are just numbers.
+# then, i'm gonna sort the bugger, and pit out the last element.
+
+my @exts = ();
+
+foreach my $file (@files) {
+  $file =~ s/^(.)*\.(0)*//; # remove everything before and including the dot and any leading zeros after the dot
+  # now, pop that into your list
+  push @exts, $file;
+}
+
+# now sort the list!
+sort @exts;
+
+print $exts[$#exts];
+#return $exts[$#exts];
+#}
+
+# and you have yer answer...
+#you could drop the above "main" code into a sub of it's own, too, of course.
+#just uncomment the #sub... line and the line after it, and the #return and #} lines at the bottom
+&lt;/code&gt;
+
+&lt;p&gt;i hope this one works, and doesn't get too butchered by the rest of the monks here :D
+i like to think i'm pretty decent at this coding thing, so, go easy on me. i'm 100% self taught, and i have no personal group of PERL programmers in my midst - i'm alone, and i'm a one man band.&lt;/p&gt;
+
+&lt;p&gt;sincerely,&lt;/p&gt;
+
+jamroll</doctext>
+<root_node field_name="root_node">1192943</root_node>
+<parent_node field_name="parent_node">1192951</parent_node>
+<thread id="1192943">
+<node id="1192946"/>
+<node id="1192949"/>
+<node id="1192951"><node id="1192963"/>
+<node id="1192968"><node id="1192991"/>
+</node>
+<node id="1193161"><node id="1193167"/>
+</node>
+</node>
+<node id="1192985"><node id="1192994"><node id="1193012"/>
+<node id="1193258"><node id="1193326"><node id="1193437"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1193094"/>
+<node id="11159738"/>
+</thread></node>

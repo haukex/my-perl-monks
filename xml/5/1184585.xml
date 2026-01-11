@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1184585" title="Re^2: Text::CSV - parsing" created="2017-03-14 14:16:35" updated="2017-03-14 14:16:35" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Good post, just a note: this will not work right if the quoted strings happen to be broken onto two lines. In that case, [mod://Text::CSV]'s &lt;c&gt;getline&lt;/c&gt; is better (see the section "Embedded newlines" in [mod://Text::CSV|the doc]):&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Text::CSV;
+use Data::Dump;
+
+my $csv = Text::CSV-&gt;new ({ binary=&gt;1, auto_diag=&gt;2,
+	quote_char=&gt;"'", allow_whitespace=&gt;1 });
+while ( my $row = $csv-&gt;getline( \*DATA ) ) {
+	dd $row;
+}
+$csv-&gt;eof;
+
+__DATA__
+(101, '1997-02-25', 'S1', 31.00, NULL, 0.00, 'this becomes two fields,
+so no go', 5.11),
+(102, '1998-03-26', 'S1', 31.00, NULL, 0.00, 'this
+will remain one field', 6.11),
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+[
+  "(101",
+  "1997-02-25",
+  "S1",
+  "31.00",
+  "NULL",
+  "0.00",
+  "this becomes two fields,\nso no go",
+  "5.11)",
+  "",
+]
+[
+  "(102",
+  "1998-03-26",
+  "S1",
+  "31.00",
+  "NULL",
+  "0.00",
+  "this\nwill remain one field",
+  "6.11)",
+  "",
+]
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1184575</root_node>
+<parent_node field_name="parent_node">1184579</parent_node>
+<thread id="1184575">
+<node id="1184579"><node id="1184585"><node id="1184588"/>
+</node>
+</node>
+<node id="1184581"/>
+<node id="1184582"/>
+<node id="1184595"/>
+<node id="1184698"/>
+</thread></node>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110663" title="How to Bisect Perl" created="2019-12-27 14:42:20" updated="2019-12-27 14:42:20" _doctext_mode="strict"><type id="120">perlmeditation</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;In [href://?node_id=3989;BIT=bisect;a=haukex|several of my nodes], I've used [wp://Bisection (software engineering)|&lt;b&gt;bisection&lt;/b&gt;] to figure out when certain bugs/features were fixed/introduced. I find this useful because it'll often uncover the discussion that went into a feature or the detailed reasons behind a bug. I thought I'd write about this process, since I don't always document how I ran each bisect.&lt;/p&gt;
+
+&lt;p&gt;First, &lt;b&gt;what is bisection?&lt;/b&gt; Basically, it's a (partly automated) binary search to find the exact commit where some behavior changed.&lt;/p&gt;
+&lt;p&gt;A simplified example: Say you want to find out which Perl release &lt;c&gt;s///r&lt;/c&gt; was introduced. So, you run &lt;c&gt;perl -e 's///r'&lt;/c&gt; on the oldest Perl you've got, say 5.6, and on the newest, 5.30 - the former dies, the latter runs, confirming the change happened somewhere between those releases. So then you divide the search space into two, and run the same test on 5.18 - it works, so you now know the change must have happened between 5.6 and 5.18, and you don't need to test the other half of the search space. Divide the search space again, and run the test on 5.12 - it fails, so you know the change must have happened between 5.12 and 5.18. Repeat the process again, and eventually you'll find out that Perl 5.12 dies, but 5.14 works - so you've now confirmed that &lt;c&gt;s///r&lt;/c&gt; was introduced in release 5.14, and you didn't have to test all 13 Perl releases from 5.6 to 5.30! &lt;small&gt;(Technically, the change happened in a development version between those two releases, but for this example we've only looked at non-development releases as a stand-in for commits.)&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;A real bisect is different from this example in that it works on the granularity of &lt;c&gt;git&lt;/c&gt; commits, and it's mostly automated - the Perl source code includes scripts to assist you in running a [man://git-bisect]. And instead of using pre-built Perls, the bisection process will check out each commit of Perl and build it from scratch (even applying patches as needed to get older versions of Perl to compile). It can take half an hour to several hours to run a bisect, but once you set it running, you can go and do something else in the meantime.&lt;/p&gt;
+
+&lt;readmore&gt;
+&lt;p&gt;To do this yourself, &lt;b&gt;you'll need&lt;/b&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;I've always done this on a Linux machine - I suspect it's possible on Windows too, but that's beyond the scope of this node.&lt;/li&gt;
+&lt;li&gt;A copy of the [https://github.com/Perl/perl5|Perl 5 source tree] checked out using [man://git].&lt;/li&gt;
+&lt;li&gt;The libraries and headers needed to build Perl, e.g. on Debian/Ubuntu you can do: &lt;c&gt;sudo apt-get install build-essential&lt;/c&gt; and &lt;c&gt;sudo apt-get build-dep perl&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;I strongly recommend having a [https://perlbrew.pl/|perlbrew] environment set up.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Then, &lt;b&gt;the steps are&lt;/b&gt; as follows:&lt;/p&gt;
+
+&lt;ol&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;b&gt;Boil down&lt;/b&gt; your code to the smallest bit of code possible that reproduces the issue - [id://1217469|sometimes] that'll just be a short oneliner, [id://11110616|sometimes] you need a script. The bisect scripts don't care about what the output of your test code is, only whether the test code exits with a nonzero code ([doc://die]), or an exit code of zero to indicate success. Sometimes, you might be looking for a change in Perl's output - in that case, you may need to use a bit of trickery and run an external Perl, for that you can use [doc://$^X] to get the name of the binary (like in [id://1218903|this] example at the bottom, or [id://11110616|this] recent slightly more complex example, where I'm inspecting the output of the Perl debugger, and for that I need to interact with environment variables and files).&lt;/p&gt;
+&lt;p&gt;Note that it's best if your code does not make use of any non-core modules, since including CPAN modules in a bisect is possible, but more tricky and slower. And of course this test needs to be reliable - anything with random behavior (like hash ordering!) will give you very misleading results or cause the bisect process to fail. If you write a script, it's best to put it outside the source tree, since that will be checked out many times by the bisection process.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;Use &lt;b&gt;perlbrew&lt;/b&gt; to check if this really is a version-dependent issue, and on which releases things worked and which they didn't (this step is optional but I strongly recommend it). So for example, I have Perl 5.6 through the latest release installed, and with a simple &lt;c&gt;perlbrew exec perl script.pl&lt;/c&gt; or &lt;c&gt;perlbrew exec perl -e '...'&lt;/c&gt; I can test on all versions and narrow down the range of versions for the bisect. Sometimes, what you're looking for may be a bug introduced in some version and fixed in a later version - like in [id://11110616|this example], where I had to break the search range into two, because the bisect process will only work if there is &lt;i&gt;only one&lt;/i&gt; transition from failing to succeeding or succeeding to failing. Also, doing this step will help you avoid false positive errors, for example if your test script uses a construct such as &lt;c&gt;//&lt;/c&gt; that was added in 5.10 and will fail in older versions, this step will show you much more clearly than during the bisect.&lt;/p&gt;
+&lt;p&gt;At this point I'll also often just check the [https://perldoc.perl.org/index-history.html|perldeltas] to see if the change in behavior is easy to find there.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;b&gt;Run the bisect:&lt;/b&gt; The documentation is contained in the file [https://metacpan.org/pod/release/SHAY/perl-5.30.1/Porting/bisect-runner.pl|&lt;c&gt;Porting/bisect-runner.pl&lt;/c&gt;] (you can also read it with &lt;tt&gt;perldoc &lt;i&gt;FILENAME&lt;/i&gt;&lt;/tt&gt;), but the script you'll be running is &lt;c&gt;Porting/bisect.pl&lt;/c&gt;. The most common options I use are:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;--start=...&lt;/c&gt; and &lt;c&gt;--end=...&lt;/c&gt; to indicate which git tags to use as the beginning and end of the range for the search - you could just take these from the above &lt;c&gt;perlbrew&lt;/c&gt; run, but it also doesn't hurt to expand the range a little, because the binary search will still be fairly efficient. (To get a list of tags, just use &lt;c&gt;git tag&lt;/c&gt;.)&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;--expect-fail&lt;/c&gt; - Normally, the bisection script will look for the commit where the test code goes &lt;i&gt;from succeeding to failing&lt;/i&gt;. If you want to look for the opposite, when did the test code go &lt;i&gt;from failing to succeeding&lt;/i&gt;, you need to supply this option.&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;--target=miniperl&lt;/c&gt; - [id://1218903|Sometimes], you might just be testing Perl's syntax, independently of &lt;i&gt;any&lt;/i&gt; modules. In such cases, you can speed up the bisection a bit by specifying this option to stop the build once &lt;c&gt;miniperl&lt;/c&gt; has been built (basically a stripped-down precursor version of &lt;c&gt;perl&lt;/c&gt;).&lt;/li&gt;
+&lt;li&gt;If you want to run a oneliner, it's enough to use the option &lt;c&gt;-e 'code here'&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;If you want to run a script, you need to use &lt;c&gt;bisect.pl ... -- ./perl -Ilib /path/to/script.pl&lt;/c&gt; - The "&lt;c&gt;./perl&lt;/c&gt;" is because you explicitly want to run the &lt;c&gt;perl&lt;/c&gt; built by the bisect process, and "&lt;c&gt;-Ilib"&lt;/c&gt; because that &lt;c&gt;perl&lt;/c&gt; was built with the default &lt;c&gt;@INC&lt;/c&gt; for your system, but it hasn't been installed there, so the libraries are still in the &lt;c&gt;lib&lt;/c&gt; directory of the source tree.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The process can take up to an hour or two. Once you've got the commit, you can pull it up on GitHub via the URL &lt;tt&gt;https://github.com/Perl/perl5/commit/&lt;i&gt;COMMIT&lt;/i&gt;&lt;/tt&gt;. Read the log message and code changes to get an idea if the commit is in fact related to the issue, because once in a while the bisect can return a misleading result - for example [id://1176900|here]: The commit found by the bisect was actually one where an optimization was changed that exposed the underlying bug.&lt;/p&gt;
+&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;Look for any related &lt;b&gt;bug reports&lt;/b&gt;, most of the time commit messages will mention them; sometimes they'll be mentioned in the code changes. Note that the bug reports have recently been migrated away from &lt;c&gt;rt.perl.org&lt;/c&gt; [https://github.com/Perl/perl5/issues|to GitHub], which changed their numbering: At the moment, when you see bugs mentioned in the notation &lt;tt&gt;#&lt;i&gt;1234&lt;/i&gt;&lt;/tt&gt;, that'll usually be referring to the RT bug number, although I suspect that'll start changing now with the move to GitHub. On GitHub, you can find the old issue numbers using the search term &lt;tt&gt;RT&lt;i&gt;1234&lt;/i&gt;$&lt;/tt&gt;. Another thing you can do to find more information is look in the [https://www.nntp.perl.org/group/perl.perl5.porters/|P5P archives] for the commits or bug numbers to see if there is additional discussion there.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;Use &lt;tt&gt;git tag --contains &lt;i&gt;COMMIT&lt;/i&gt;&lt;/tt&gt; to check &lt;b&gt;which Perl releases&lt;/b&gt; the commits are contained in. If it's an old release, I'll also sometimes look at [doc://perlhist] to get the release date to tell someone how many years their Perl is outdated &lt;c&gt;;-)&lt;/c&gt;&lt;/p&gt;&lt;/li&gt;
+
+&lt;/ol&gt;
+
+&lt;p&gt;In case you want to try this yourself, here are the nodes where I did document the bisect commands, particularly the first two of these links are (relatively) simple examples:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;[id://11121812]&lt;/li&gt;
+&lt;li&gt;[id://1218903]&lt;/li&gt;
+&lt;li&gt;[id://1217469]&lt;/li&gt;
+&lt;li&gt;[id://11110616]&lt;/li&gt;
+&lt;li&gt;[id://11135658] (this one with CPAN modules)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Updates:&lt;/i&gt; Minor edits for clarification. Added a bit of info to point 2 and the first paragraph. Added another link.&lt;/small&gt;&lt;/p&gt;
+&lt;/readmore&gt;
+&lt;p&gt;&lt;b&gt;Update 2021:&lt;/b&gt; I now have a talk about this topic as well (audio currently only in German, slides in English): [https://github.com/haukex/bisectalk]&lt;/p&gt;</doctext>
+<thread id="11110663">
+</thread></node>

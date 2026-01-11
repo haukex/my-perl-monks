@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224539" title="Serial data delay" created="2018-10-23 02:21:24" updated="2018-10-23 02:21:24" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1224537">StepSteve</author>
+<doctext field_name="doctext">Hi All,
+&lt;p&gt;
+I need to manipulate data sent from a Nurse call system ( Device::SerialPort ).
+The Nurse call system introduces delays during transmission, it gets interpreted by my code as a newline.
+&lt;/p&gt;
+&lt;p&gt;
+lookfor() by default looks for \n and works fine in testing when there is no delay.
+&lt;/p&gt;
+
+&lt;code&gt;
+#/usr/bin/perl
+use Device::SerialPort;
+my $port = Device::SerialPort-&gt;new("/dev/ttyUSB0");
+
+$port-&gt;baudrate(9600); # Configure this to match your device
+$port-&gt;databits(8);
+$port-&gt;parity("none");
+$port-&gt;stopbits(1);
+$port-&gt;stty_icrnl(1);
+$port-&gt;handshake("none") || print "failed setting handshake";
+$port-&gt;write_settings    || print "no settings";
+$port-&gt;buffers(4096, 4096);       
+@max_values = $port-&gt;buffer_max;   
+$port-&gt;reset_error;
+
+while (1) {
+
+my $char = $port-&gt;lookfor();
+ if ($char) {
+        print "$char\n";
+open (DO, '&gt;/home/pi/temp.txt');
+print DO $char;
+close DO;
+
+    }
+    $port-&gt;lookclear; # needed to prevent blocking
+    sleep (1);
+}
+&lt;/code&gt;
+&lt;p&gt;
+If I use this code to send data to the script, it works fine:
+&lt;/p&gt;
+&lt;code&gt;
+$port-&gt;write("26Jul1998 16:00   P000 0080 CALL  , unit 0\r\n");
+&lt;/code&gt;
+&lt;p&gt;
+To reproduce the Nurse call system transmission, I use this: 
+&lt;/p&gt;
+&lt;code&gt;
+#/usr/bin/perl
+
+use Device::SerialPort;
+my $port = Device::SerialPort-&gt;new("/dev/ttyUSB0");
+
+$port-&gt;baudrate(9600); # Configure this to match your device
+$port-&gt;databits(8);
+$port-&gt;parity("none");
+$port-&gt;stopbits(1);
+$port-&gt;handshake("none") || die "failed setting handshake";
+$port-&gt;write_settings    || die "no settings";
+
+$port-&gt;write("26Jul1998 16:00");
+sleep(1);
+$port-&gt;write("   P000 0070 CALL ");
+$sleep(1);
+$port-&gt;write(" , unit 0\r\n");
+&lt;/code&gt;
+&lt;p&gt;
+I have done a Hex dump of the Nurse call system transmission and confirmed there is no hidden new lines or cartridge returns.
+I'd appreciate any tips. Thanks you.
+&lt;/P&gt;</doctext>
+<thread id="1224539">
+<node id="1224543"/>
+<node id="1224554"><node id="1224573"/>
+</node>
+<node id="1224572"/>
+<node id="1224575"><node id="1224582"/>
+</node>
+</thread></node>

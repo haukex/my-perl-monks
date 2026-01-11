@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116627" title="Re: Counting and Filtering Words From File" created="2020-05-09 18:07:24" updated="2020-05-09 18:07:24" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I am guessing it's because it reads one line at a time from the file.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;My guess is different: you've got several nested loops - for &lt;i&gt;each&lt;/i&gt; word, you loop over &lt;c&gt;@excluded&lt;/c&gt; and &lt;c&gt;@excluded_chars&lt;/c&gt; and run a regex for each, so with what you showed here, that's 50 regex runs per word. Instead, see [id://1179840]. Also, I use [doc://lc] to lowercase instead of a regex, which handles unicode as well (though you would need to make sure your inputs are properly decoded for that case).&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use autodie;
+
+my @excluded_words  = qw( a about although also an and another are as
+	at be been before between but by can do during for from has how
+	however in into is it many may more most etc );
+my @excluded_chars = ( "'", ':', '@', '-', '~', ',', '.', '(', ')',
+	'?', '*', '%', '/', '[', ']', '=', '"' );
+my ($word_regex) = map {qr/$_/} join '|', map {"\\b".quotemeta."\\b"}
+	sort { length $b &lt;=&gt; length $a or $a cmp $b } @excluded_words;
+my ($char_regex) = map {qr/$_/} join '|', map {quotemeta}
+	sort { length $b &lt;=&gt; length $a or $a cmp $b } @excluded_chars;
+
+my %count;
+while (&lt;&gt;) {
+	for (split) {
+		$_ = lc;
+		s/$char_regex//g;
+		s/$word_regex//g;
+		$count{$_}++;
+	}
+}
+
+for my $word ( sort { $count{$a} &lt;=&gt; $count{$b}
+	or $a cmp $b } keys %count ) {
+		print "$count{$word} $word\n";
+}
+&lt;/c&gt;
+&lt;p&gt;On my machine on a test file, this is faster than the original code by a factor of roughly 7x.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; The first regex is written a bit more cleanly as: &lt;c&gt;my ($word_regex) = map {qr/\b(?:$_)\b/} join '|', map {quotemeta} sort ...&lt;/c&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11116620</root_node>
+<parent_node field_name="parent_node">11116620</parent_node>
+<thread id="11116620">
+<node id="11116627"><node id="11116633"/>
+</node>
+<node id="11116629"/>
+<node id="11116631"><node id="11116647"/>
+</node>
+<node id="11116687"/>
+</thread></node>

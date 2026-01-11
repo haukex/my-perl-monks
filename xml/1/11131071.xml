@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11131071" title="Re: Adding Filename to the end of each line" created="2021-04-09 15:45:29" updated="2021-04-09 15:45:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;!--
+#!/usr/bin/perl -w
+use strict;
+use warnings;
+use Text::ParseWords;
+
+opendir IN, 'Master';
+my @in = grep { /\.txt$/ } readdir IN; # read all file names form dir except names started with dot
+closedir IN;
+
+for my $in (@in) {
+  open IN, '&lt;', "Master/$in" || next;
+  open OUT, '&gt;', "Update/$in" || die "can't open file Update/$in";
+my @file = @in
+while (my $file = &lt;IN&gt;) {
+	my $line = $_;
+	$updateline = $line . $file;
+	print OUT "$updateline";
+	}
+  close OUT;
+  close IN;
+}
+--&gt;
+&lt;p&gt;Note that your code does not compile: you're missing a semicolon on the line &lt;c&gt;my @file = @in&lt;/c&gt; (and I don't think that line is necessary in the first place, since &lt;c&gt;@file&lt;/c&gt; never gets used), and you haven't declared &lt;c&gt;$updateline&lt;/c&gt;. And a few comments on other parts of the code: your two [doc://open] statements are incorrect in that the &lt;c&gt;||&lt;/c&gt; operator is not the right thing to use here, see [id://11102684] for why. Also, your comment "&lt;c&gt;read all file names form dir except names started with dot&lt;/c&gt;" doesn't actually describe what the code is doing, so it's confusing, and you should check your &lt;c&gt;opendir&lt;/c&gt; for errors as well. And I final nit: you don't need [doc://warnings] and the &lt;c&gt;-w&lt;/c&gt; on the shebang, drop the latter.&lt;/p&gt;
+&lt;p&gt;In regards to the actual issue: You're reading lines from the &lt;c&gt;IN&lt;/c&gt; filehandle into the &lt;c&gt;$file&lt;/c&gt; variable. Because of this, &lt;c&gt;$_&lt;/c&gt; does not contain the current line. Your outer &lt;c&gt;for&lt;/c&gt; loop is putting each filename in &lt;c&gt;$in&lt;/c&gt;, not &lt;c&gt;$file&lt;/c&gt;. Also, note that lines read from the input file will still contain the newline character at the end, so you probably should [doc://chomp] that so that appending something to the line works properly. Taking all that together, changing some variable names, and indenting your code properly:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+
+opendir my $dh, 'Master' or die "opendir: $!";
+my @files = grep { /\.txt$/ } readdir $dh;
+closedir $dh;
+
+for my $file (@files) {
+	open my $ifh, '&lt;', "Master/$file" or next;
+	open my $ofh, '&gt;', "Update/$file" or die "can't open file Update/$file: $!";
+	while ( my $line = &lt;$ifh&gt; ) {
+		chomp($line);
+		my $updateline = $line . $file;
+		print $ofh $updateline, "\n";
+	}
+	close $ofh;
+	close $ifh;
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11131070</root_node>
+<parent_node field_name="parent_node">11131070</parent_node>
+<thread id="11131070">
+<node id="11131071"><node id="11131075"/>
+</node>
+</thread></node>

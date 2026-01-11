@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11141247" title="Getting an SSL Certificate Expiration Date" created="2022-02-08 17:06:52" updated="2022-02-08 17:06:52" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="448430">enemyofthestate</author>
+<doctext field_name="doctext">&lt;p&gt;Is there a way to get the SSL certificate information from LWP::UserAgent? Specifically I am looking for the expiration date. The information has to have been retrieved during the SSL handshake so I am wondering if there is any way I get at it. Even the raw cert would be helpful.&lt;/p&gt;
+
+&lt;p&gt;This is part of a project to monitor the ssl offloading on haproxy servers and an F5 BigIP.  The testing done by XYMon properly considers a 400 or 500 status from the upstream servers to be a failure which leaves the accuracy of the monitoring at the mercy of less than ideal code in the upstream pool.&lt;/p&gt;
+
+&lt;p&gt;With LWP::UserAgent I can apply my own filters to give me better reporting of how the offload devices are actually performing.&lt;/p&gt;
+
+&lt;p&gt;Not doing anything fancy, just a straightforward request&lt;/p&gt;
+
+&lt;code&gt;
+  # get site headers if it is reachable
+
+  # create the agent
+  my $ua = new LWP::UserAgent;
+  my $url = "https://" . $site;
+
+  # try to connect
+  my $resp = $ua-&gt;get($url);
+
+  # we don't care if the response code is a 200, 300, or 400 but 500 is still a
+  # bad thing
+
+  if ($resp-&gt;code &gt;= 500) {
+    $resp_line = $resp-&gt;status_line ? $resp-&gt;status_line : "Unable to connect to " .  $site;
+
+    $resp_headers = "";
+    $status_color = "red";
+  } else {
+    $resp_line = $resp-&gt;protocol . " " . $resp-&gt;status_line;
+    $resp_headers = $resp-&gt;headers_as_string;
+
+    chomp($resp_headers);
+  }
+
+  # calculate Elapsed Time
+  my $et = tv_interval ($t0);
+
+  my $time = localtime;
+
+  my $httpout = sprintf $HTTPFMT, $site, "http", $status_color, $time, $url, $resp_line, $resp_headers, $et;
+
+  # send output to xymon
+  send_2_xymon($XYMON_SVR, $XYMON_PORT, $httpout);
+&lt;/code&gt;
+
+&lt;p&gt;If worse comes to worse, I can get it calling openssl and parsing the output. It would just be kind of nice to not have to make a second connection to the site.&lt;/p&gt;
+</doctext>
+<thread id="11141247">
+<node id="11141250"><node id="11141252"/>
+</node>
+<node id="11141251"><node id="11141267"/>
+</node>
+<node id="11141289"/>
+</thread></node>

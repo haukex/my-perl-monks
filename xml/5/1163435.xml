@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1163435" title="Re: Recover a variable from a function" created="2016-05-19 03:35:23" updated="2016-05-19 03:35:23" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [Chaoui05],&lt;/p&gt;
+&lt;p&gt;One approach, which avoids directly manipulating a global, is to pass around a "context" (a term/concept commonly used e.g. in Java), basically a data structure that holds state information that would normally be stored in globals. The advantage is you can have multiple contexts at the same time, and at least in Java context objects are often thread-safe, serializable containers for what essentially are global variables. The following approach has similarities to an OO approach (you could imagine the &lt;c&gt;sub&lt;/c&gt;s in the example being methods on an object which holds the state), but the difference is that a context data structure is independent of the functions/methods that use it - it's often an object of its own (although in this example I've just used a hashref). Implementing such a "context" data structure to replace globals can be a good first step in modularizing a legacy script.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $ctx = {};
+run($ctx);
+stop($ctx);
+stats($ctx);
+
+sub run {
+	my ($ctx) = @_;
+	$ctx-&gt;{start} = time;
+	sleep 2;
+}
+
+sub stop {
+	my ($ctx) = @_;
+	$ctx-&gt;{end} = time;
+}
+
+sub stats {
+	my ($ctx) = @_;
+	$ctx-&gt;{runtime} = $ctx-&gt;{end} - $ctx-&gt;{start};
+	print "Start: ".gmtime($ctx-&gt;{start})." UTC\n";
+	print " Stop: ".gmtime($ctx-&gt;{end})." UTC\n";
+	print " Time: ".$ctx-&gt;{runtime}." s\n";
+}
+
+__END__
+
+Start: Thu May 19 07:29:27 2016 UTC
+ Stop: Thu May 19 07:29:29 2016 UTC
+ Time: 2 s
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Expanded description a bit.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1163428</root_node>
+<parent_node field_name="parent_node">1163428</parent_node>
+<thread id="1163428">
+<node id="1163431"><node id="1163437"/>
+<node id="1163446"><node id="1163450"><node id="1163453"/>
+</node>
+</node>
+</node>
+<node id="1163435"><node id="1163438"><node id="1163443"><node id="1163447"><node id="1163448"><node id="1163591"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1163454"><node id="1163483"/>
+</node>
+<node id="1163461"><node id="1163462"/>
+</node>
+</thread></node>

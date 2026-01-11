@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1226873" title="Dynamic Dereferencing" created="2018-12-07 06:26:55" updated="2018-12-07 06:26:55" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1226866">Flip76</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Monks,&lt;/p&gt;
+
+&lt;p&gt;I'm stucked and can't find any solution. Since 3 days I am researching all kind of forums/documentation but I can't get any hint.&lt;/p&gt;
+
+&lt;p&gt;Here is my problem:&lt;/p&gt;
+
+&lt;p&gt;I'm requesting data from a REST-API and I'm receiving JSON-Format.
+Now I want to build a Dereference (e. g. &lt;c&gt;$item-&gt;{meta}-&gt;{created}&lt;/c&gt;) dynamically but it does only work for the 1st level (&lt;c&gt;$item-&gt;{userName}&lt;/c&gt;).&lt;/p&gt;
+
+&lt;p&gt;Maybe you can help relieving my headache? &lt;/p&gt;
+
+&lt;p&gt;Regards,&lt;br /&gt;
+Flip&lt;/p&gt;
+
+&lt;/pre&gt;
+&lt;code&gt;
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Code Sniplet
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+my $data_structure = decode_json($client-&gt;responseContent());
+print Dumper($data_structure);
+
+# Output of print Dumper($data_structure);
+$VAR1 = {
+          'Resources' =&gt; [
+                             'displayName' =&gt; 'User 1',
+                             'userName' =&gt; 'user1@test.com',
+                             'id' =&gt; '1234567',
+                             'meta' =&gt; {
+                                         'created' =&gt; '2018-04-16T11:57:19.376Z'
+                                       }
+                           },
+                           {
+                             'displayName' =&gt; 'User 2',
+                             'userName' =&gt; 'user2@test.com',
+                             'id' =&gt; '1234568',
+                             'meta' =&gt; {
+                                         'created' =&gt; '2018-04-16T11:59:27.111Z'
+                                       }
+                           },
+                           {
+                             'displayName' =&gt; 'User 3',
+                             'userName' =&gt; 'user3@test.com',
+                             'id' =&gt; '12345679',
+                             'meta' =&gt; {
+                                         'created' =&gt; '2018-11-21T14:49:33.821Z'
+                                       }
+                           },
+                         ],
+          'totalResults' =&gt; 3,
+          'itemsPerPage' =&gt; 50,
+          'startIndex' =&gt; 1,
+          'schemas' =&gt; [
+                         'urn:ietf:params:scim:api:messages:2.0:ListResponse'
+                       ]
+        };
+
+# Normally @elements is filled by entries from a config-file
+# but for make it easy, I set the values here
+my @elements;
+push(@elements,"userName");
+push(@elements,"displayName");
+push(@elements,"meta.created");
+
+foreach $item ( @{ $data_structure-&gt;{Resources} } ) {
+
+	foreach $element (@elements) {
+
+		# Convert a . to }-&gt;{ in order for meta.created to look like meta}-&gt;{created
+		$element =~ s/\./}-&gt;{/g;
+
+		# This works for all elements except of meta}-&gt;{created
+		$deref = $item-&gt;{$element};
+		print "Convert: \$item-&gt;{" . $element . "}\t\t\t" .  $deref . "\n";
+
+	}
+
+	# But this works
+	deref = $item-&gt;{meta}-&gt;{created};
+	print "When use direct: \$item-&gt;{meta}-&gt;{created}\t" . $deref . "\n";
+
+	print "\n";
+}
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Output:
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Convert: $item-&gt;{userName}                      user1@test.com
+Convert: $item-&gt;{displayName}                   User 1
+Use of uninitialized value $deref in concatenation (.) or string at /home/dczesak/cis4oci/cis4oci.pl line 291.
+Convert: $item-&gt;{meta}-&gt;{created}
+When use direct: $item-&gt;{meta}-&gt;{created}       2018-04-16T11:57:19.376Z
+
+Convert: $item-&gt;{userName}                      user2@test.com
+Convert: $item-&gt;{displayName}                   User 2
+Use of uninitialized value $deref in concatenation (.) or string at /home/dczesak/cis4oci/cis4oci.pl line 291.
+Convert: $item-&gt;{meta}-&gt;{created}
+When use direct: $item-&gt;{meta}-&gt;{created}       2018-04-16T11:59:27.111Z
+
+Convert: $item-&gt;{userName}                      user3@test.com
+Convert: $item-&gt;{displayName}                   User 3
+Use of uninitialized value $deref in concatenation (.) or string at /home/dczesak/cis4oci/cis4oci.pl line 291.
+Convert: $item-&gt;{meta}-&gt;{created}
+When use direct: $item-&gt;{meta}-&gt;{created}       2018-11-21T14:49:33.821Z
+&lt;/code&gt;
+
+&lt;p&gt;&lt;small&gt;&lt;i&gt;2018-12-08 [Athanasius] changed &amp;lt;pre&amp;gt; to &amp;lt;p&amp;gt; tags around text&lt;/small&gt;&lt;/p&gt;
+</doctext>
+<thread id="1226873">
+<node id="1226874"><node id="1226886"><node id="1226887"><node id="1226890"/>
+</node>
+</node>
+</node>
+<node id="1226875"><node id="1226891"><node id="1226893"/>
+</node>
+</node>
+<node id="1226878"><node id="1226889"><node id="1226892"/>
+</node>
+</node>
+<node id="1226879"><node id="1226883"><node id="1226894"/>
+</node>
+</node>
+</thread></node>

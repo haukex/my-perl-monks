@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11135108" title="Re^7: Recalcitrant placeholders" created="2021-07-17 15:40:31" updated="2021-07-17 15:40:31" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Sorry for the late reply.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I addressed this in the original question: Things I have tried...Forcing array context &lt;c&gt;my ($crid) = $crm-&gt;db-&gt;selectrow_array&lt;/c&gt; - no change&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I missed that, sorry about that.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Some testing has proved that it is about tainted data being passed to the placeholders and only with selectrow_array, not execute and fetchrow_array. With taint mode on, if I pass a value to the placeholder that has come from STDIN then it fails silently. But if I pass the same value assigned to the variable in my script and pass that to the placeholder, it works.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Thanks for the further information, that does somewhat make sense. Unfortunately, I still haven't been able to reproduce it. What version of MySQL, [mod://DBI], [mod://DBD::mysql], etc. are you using? Does the code below produce the incorrect results for you?&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;This behaviour makes sense but it would also make sense for it to throw an error when I try to do it rather than failing silently.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The [mod://DBI] docs say that as of v1.31, you can turn on the &lt;c&gt;TaintIn&lt;/c&gt; option, which works for me in that it causes DBI to die with tainted arguments.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl -T
+use warnings;
+use strict;
+use feature 'say';
+use Scalar::Util qw/tainted/;
+use DBI;
+use DBI::Const::GetInfoType;
+
+my $dbh = DBI-&gt;connect(
+	"DBI:mysql:database=testing;host=127.0.0.1", $ENV{USER},
+	'barfoo', { RaiseError=&gt;1, AutoCommit=&gt;1, TaintIn=&gt;0 });
+
+say "Perl: $]";
+say "Database: ",
+	$dbh-&gt;get_info( $GetInfoType{SQL_DBMS_NAME} ), " ",
+	$dbh-&gt;get_info( $GetInfoType{SQL_DBMS_VER} );
+say "Driver: ", $dbh-&gt;{Driver}-&gt;{Name};
+say "DBI Ver: ", $DBI::VERSION;
+say "DBD::mysql Ver: ", $DBD::mysql::VERSION;
+
+$dbh-&gt;do('DROP TABLE IF EXISTS Person');
+$dbh-&gt;do(&lt;&lt;'ENDSQL');
+CREATE TABLE Person (
+	idPerson VARCHAR(256),
+	email VARCHAR(256),
+	altEmail VARCHAR(256)
+);
+ENDSQL
+$dbh-&gt;do('INSERT INTO Person (idPerson, email, altEmail) VALUES ("hello","foo@bar.com","foo@bar.com");');
+
+die "run me with an empty string as the first argument"
+	unless @ARGV &amp;&amp; !length $ARGV[0];
+my %data = ( email =&gt; 'foo@bar.com'.shift(@ARGV) );
+die unless tainted($data{'email'});
+
+my $query = $dbh-&gt;prepare("SELECT idPerson FROM Person WHERE email = ? OR altEmail = ?");
+$query-&gt;execute($data{'email'}, $data{'email'});
+my ($crid) = $query-&gt;fetchrow_array;
+say "CRID: $crid";
+
+my ($test) = $dbh-&gt;selectrow_array("SELECT idPerson FROM Person WHERE email = ? OR altEmail = ?", undef, $data{'email'}, $data{'email'});
+say "TEST: $test";
+
+__END__
+
+Perl: 5.032001
+Database: MySQL 5.7.33
+Driver: mysql
+DBI Ver: 1.643
+DBD::mysql Ver: 4.050
+CRID: hello
+TEST: hello
+&lt;/c&gt;
+&lt;p&gt;I spun up the test database with Docker as I showed in [id://11123492|this node].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11134633</root_node>
+<parent_node field_name="parent_node">11134899</parent_node>
+<thread id="11134633">
+<node id="11134634"><node id="11134638"><node id="11134686"><node id="11134687"><node id="11134733"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11134635"><node id="11134640"><node id="11134643"/>
+<node id="11134644"/>
+</node>
+</node>
+<node id="11134636"><node id="11134639"/>
+</node>
+<node id="11134637"><node id="11134641"/>
+</node>
+<node id="11134645"/>
+<node id="11134654"><node id="11134681"><node id="11134748"><node id="11134858"><node id="11134866"><node id="11134899"><node id="11135108"><node id="11135379"><node id="11135426"><node id="11135565"/>
+<node id="11135622"><node id="11135633"><node id="11135636"><node id="11135637"><node id="11135652"/>
+<node id="11135704"/>
+</node>
+</node>
+</node>
+<node id="11135658"><node id="11135707"><node id="11135708"><node id="11135709"><node id="11135714"><node id="11135716"><node id="11135729"><node id="11135737"><node id="11135742"><node id="11135744"/>
+<node id="11135745"/>
+</node>
+</node>
+<node id="11135738"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11134867"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11134678"><node id="11134682"><node id="11134729"/>
+</node>
+<node id="11134726"/>
+</node>
+</thread></node>

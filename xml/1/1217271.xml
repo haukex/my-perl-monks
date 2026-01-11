@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217271" title="Re: Overloading Weirdness" created="2018-06-23 04:31:22" updated="2018-06-23 04:31:22" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I boiled your examples down to the case of &lt;c&gt;"$str1 $str2"&lt;/c&gt;, and I can confirm the behavior you observed on Perl 5.26 as well. The answer seems to be that Perl optimizes away the extra stringification step in certain cases - note how in the below, &lt;c&gt;stringify&lt;/c&gt; becomes &lt;c&gt;ex-stringify&lt;/c&gt;:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+$ perl -MO=Concise -e 'my $x; $x = "$y $z"'
+b  &lt;@&gt; leave[1 ref] vKP/REFC -&gt;(end)
+1     &lt;0&gt; enter -&gt;2
+2     &lt;;&gt; nextstate(main 1 -e:1) v:{ -&gt;3
+3     &lt;0&gt; padsv[$x:1,2] vM/LVINTRO -&gt;4
+4     &lt;;&gt; nextstate(main 2 -e:1) v:{ -&gt;5
+a     &lt;@&gt; stringify[$x:1,2] sK/TARGMY,1 -&gt;b
+-        &lt;0&gt; ex-pushmark s -&gt;5
+9        &lt;2&gt; concat[t3] sKS/2 -&gt;a
+7           &lt;2&gt; concat[t2] sK/2 -&gt;8
+-              &lt;1&gt; ex-rv2sv sK/1 -&gt;6
+5                 &lt;$&gt; gvsv(*y) s -&gt;6
+6              &lt;$&gt; const(PV " ") s -&gt;7
+-           &lt;1&gt; ex-rv2sv sK/1 -&gt;9
+8              &lt;$&gt; gvsv(*z) s -&gt;9
+-e syntax OK
+$ perl -MO=Concise -e 'my $x; $x = ""."$y $z"'
+c  &lt;@&gt; leave[1 ref] vKP/REFC -&gt;(end)
+1     &lt;0&gt; enter -&gt;2
+2     &lt;;&gt; nextstate(main 1 -e:1) v:{ -&gt;3
+3     &lt;0&gt; padsv[$x:1,2] vM/LVINTRO -&gt;4
+4     &lt;;&gt; nextstate(main 2 -e:1) v:{ -&gt;5
+b     &lt;2&gt; concat[$x:1,2] sK/TARGMY,2 -&gt;c
+5        &lt;$&gt; const(PV "") s -&gt;6
+-        &lt;1&gt; ex-stringify sK/1 -&gt;b
+-           &lt;0&gt; ex-pushmark s -&gt;6
+a           &lt;2&gt; concat[t3] sKS/2 -&gt;b
+8              &lt;2&gt; concat[t2] sK/2 -&gt;9
+-                 &lt;1&gt; ex-rv2sv sK/1 -&gt;7
+6                    &lt;$&gt; gvsv(*y) s -&gt;7
+7                 &lt;$&gt; const(PV " ") s -&gt;8
+-              &lt;1&gt; ex-rv2sv sK/1 -&gt;a
+9                 &lt;$&gt; gvsv(*z) s -&gt;a
+-e syntax OK
+$ perl -MO=Concise -e 'my $x = "$y $z"'
+a  &lt;@&gt; leave[1 ref] vKP/REFC -&gt;(end)
+1     &lt;0&gt; enter -&gt;2
+2     &lt;;&gt; nextstate(main 1 -e:1) v:{ -&gt;3
+9     &lt;2&gt; sassign vKS/2 -&gt;a
+-        &lt;1&gt; ex-stringify sK/1 -&gt;8
+-           &lt;0&gt; ex-pushmark s -&gt;3
+7           &lt;2&gt; concat[t3] sKS/2 -&gt;8
+5              &lt;2&gt; concat[t2] sK/2 -&gt;6
+-                 &lt;1&gt; ex-rv2sv sK/1 -&gt;4
+3                    &lt;$&gt; gvsv(*y) s -&gt;4
+4                 &lt;$&gt; const(PV " ") s -&gt;5
+-              &lt;1&gt; ex-rv2sv sK/1 -&gt;7
+6                 &lt;$&gt; gvsv(*z) s -&gt;7
+8        &lt;0&gt; padsv[$x:1,2] sRM*/LVINTRO -&gt;9
+-e syntax OK
+$ perl -MO=Concise -e 'my $x; $x = $y." ".$z'
+c  &lt;@&gt; leave[1 ref] vKP/REFC -&gt;(end)
+1     &lt;0&gt; enter -&gt;2
+2     &lt;;&gt; nextstate(main 1 -e:1) v:{ -&gt;3
+3     &lt;0&gt; padsv[$x:1,2] vM/LVINTRO -&gt;4
+4     &lt;;&gt; nextstate(main 2 -e:1) v:{ -&gt;5
+b     &lt;2&gt; sassign vKS/2 -&gt;c
+9        &lt;2&gt; concat[t3] sKS/2 -&gt;a
+7           &lt;2&gt; concat[t2] sK/2 -&gt;8
+-              &lt;1&gt; ex-rv2sv sK/1 -&gt;6
+5                 &lt;$&gt; gvsv(*y) s -&gt;6
+6              &lt;$&gt; const(PV " ") s -&gt;7
+-           &lt;1&gt; ex-rv2sv sK/1 -&gt;9
+8              &lt;$&gt; gvsv(*z) s -&gt;9
+a        &lt;0&gt; padsv[$x:1,2] sRM* -&gt;b
+-e syntax OK
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;I'm not yet sure what you could do about this, or even &lt;i&gt;if&lt;/i&gt; you can do something about it, because apparently the final stringification is always part of Perl's intended operations, but it's just optimized away in some cases. Plus, at the moment I can't remember and can't find in the docs whether Perl even makes any guarantees as to what order the concatenations and stringifications are executed in a case like &lt;c&gt;"$str1 $str2"&lt;/c&gt;, which one might think is equivalent to &lt;c&gt;$str1." ".$str2&lt;/c&gt;, but apparently is not, because the former &lt;i&gt;sometimes&lt;/i&gt; involves an extra stringification. Normally the order doesn't really make a difference, except unfortunately when you rely on overloading. One might even argue that the aforementioned inconsistency could be seen as bug in Perl.&lt;/p&gt;
+&lt;p&gt;Of course the other possible argument is that in this case, relying on overloading is the problem. If I take a step back and look at this from an "XY Problem" angle: You've got objects that you want to behave as normal strings, except that they (loosely speaking) have an extra layer of encoding wrapped around them. You're generating HTML, so that encoding is for example &lt;c&gt;"&lt;&gt;"&lt;/c&gt; to &lt;c&gt;"&amp;lt;&amp;gt;"&lt;/c&gt;. You're worried because you see this encoding happening too early. But my question here is: you've got some strings that should be encoded (your &lt;c&gt;str&lt;/c&gt; objects), and others that shouldn't (plain strings). But in the end, everything is going to become a plain string anyway, so &lt;i&gt;why&lt;/i&gt; do you care &lt;i&gt;when&lt;/i&gt; the encoding step happens? (Maybe I'm missing something.)&lt;/p&gt;
+&lt;p&gt;I completely understand that this kind of an implementation is "neat" :-) But why not use the existing solutions for HTML generation? For example, [mod://Template::Toolkit], [mod://Mojo::Template], ...&lt;/p&gt;
+&lt;p&gt;By the way: [https://stackoverflow.com/questions/50998365/perl-overloading-weirdness|Crossposted to StackOverflow]. Crossposting is ok, but it is considered polite to inform about it so that efforts are not duplicated.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1217269</root_node>
+<parent_node field_name="parent_node">1217269</parent_node>
+<thread id="1217269">
+<node id="1217270"><node id="1217280"><node id="1217310"><node id="1217313"/>
+</node>
+</node>
+<node id="1217284"><node id="1217304"/>
+<node id="1217312"><node id="1217336"/>
+</node>
+</node>
+</node>
+<node id="1217271"><node id="1217279"><node id="1217290"><node id="1217301"><node id="1217662"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1217306"/>
+</thread></node>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201611" title="Re: Why doesn't this die with &quot;Can't use an undefined value as an ARRAY reference&quot;?&quot;" created="2017-10-18 14:57:22" updated="2017-10-18 14:57:22" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Interesting... a minimal test case is the following, which throws the "Can't use an undefined value as an ARRAY reference" error in all Perl releases from 5.6 to 5.20, but doesn't cause an error in Perl 5.22 thru 5.26.&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -le 'sub x{} my $h={50=&gt;[1]}; x(scalar @{$h-&gt;{100}})'
+&lt;/c&gt;
+&lt;p&gt;It apparently has something to do with that specific call, since the following two always fail:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -le 'sub x{} my $h={50=&gt;[1]}; x(0+@{$h-&gt;{100}})'
+Can't use an undefined value as an ARRAY reference at -e line 1.
+$ perl -wMstrict -le 'my $h={50=&gt;[1]}; print(scalar @{$h-&gt;{100}})'
+Can't use an undefined value as an ARRAY reference at -e line 1.
+&lt;/c&gt;
+&lt;p&gt;A bisect boils this down to commit [https://perl5.git.perl.org/perl.git/commit/569ddb4a|569ddb4a]: "scalar($#foo) needs to propagate lvalue context" and [doc://perl5220delta] says: "[doc://scalar|&lt;c&gt;scalar()&lt;/c&gt;] now propagates lvalue context, so that &lt;c&gt;for(scalar($#foo)) { ... }&lt;/c&gt; can modify &lt;c&gt;$#foo&lt;/c&gt; through &lt;c&gt;$_&lt;/c&gt;."&lt;/p&gt;
+&lt;p&gt;The following two don't cause any failures on any release from 5.6 to 5.26, and in both cases cause the hash entry &lt;c&gt;100=&gt;[]&lt;/c&gt; to autovivify:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -le 'sub x {} my $h={50=&gt;[1]}; x(@{$h-&gt;{100}})'
+
+$ perl -wMstrict -le 'sub x ($) {} my $h={50=&gt;[1]}; x(@{$h-&gt;{100}})'
+&lt;/c&gt;
+&lt;p&gt;So the change to [doc://scalar] in 5.22 is simply passing the autovivification behavior through.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1201610</root_node>
+<parent_node field_name="parent_node">1201610</parent_node>
+<thread id="1201610">
+<node id="1201611"><node id="1201619"><node id="1201627"/>
+</node>
+<node id="1201678"><node id="1201687"/>
+</node>
+</node>
+</thread></node>

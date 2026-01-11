@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1187602" title="'if' pragma and modules with an empty import list" created="2017-04-10 20:38:09" updated="2017-04-10 20:38:09" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="861371">kcott</author>
+<doctext field_name="doctext">&lt;p&gt;
+I encountered a problem when using the [http://perldoc.perl.org/if.html|if] pragma
+and modules with an empty import list.
+I suspect this is a bug or, at the very least, a limitation which should be documented.
+Before I raise a bug report, any feedback on this issue would be welcome
+(can you reproduce it? have I missed something? anything else?). 
+To demonstrate, here's some examples using [http://perldoc.perl.org/warnings.html|warnings] for the module.
+&lt;/p&gt;
+
+&lt;p&gt;
+Firstly, results with no list and an empty list are as expected:
+&lt;/p&gt;
+&lt;code&gt;
+$ perl -Mstrict -E 'use warnings; my $x; say $x+1'
+Use of uninitialized value $x in addition (+) at -e line 1.
+1
+$ perl -Mstrict -E 'use warnings (); my $x; say $x+1'
+1
+&lt;/code&gt;
+
+&lt;p&gt;
+Adding the [http://perldoc.perl.org/if.html|if] pragma into the mix, and the empty list acts like no list:
+&lt;/p&gt;
+&lt;code&gt;
+$ perl -Mstrict -E 'use if 1==1, warnings =&gt; (); my $x; say $x+1'
+Use of uninitialized value $x in addition (+) at -e line 1.
+1
+&lt;/code&gt;
+
+&lt;p&gt;
+Of course, a workaround is straightforward (but not what I'm looking for):
+&lt;/p&gt;
+&lt;code&gt;
+$ perl -Mstrict -E 'BEGIN { require warnings if 1==1 } my $x; say $x+1'
+1
+&lt;/code&gt;
+
+&lt;p&gt;
+Running the code through [http://perldoc.perl.org/B/Deparse.html|B::Deparse] shows the syntax is fine;
+however, using the code it produces doesn't resolve the problem:
+&lt;/p&gt;
+&lt;code&gt;
+$ perl -MO=Deparse,-p -e 'use if 1==1, warnings =&gt; ()'
+use if (1, 'warnings', ());
+-e syntax OK
+$ perl -Mstrict -E 'use if (1, "warnings", ()); my $x; say $x+1'
+Use of uninitialized value $x in addition (+) at -e line 1.
+1
+&lt;/code&gt;
+
+&lt;p&gt;
+I've used [http://perldoc.perl.org/warnings.html|warnings] because it was handy for illustrating the problem
+(I don't actually have any real code with '&lt;c&gt;use warnings ();&lt;/c&gt;').
+Here's a few more examples, all of which abort compilation when 
+the [http://perldoc.perl.org/if.html|if] pragma is used.
+&lt;/p&gt;
+
+&lt;code&gt;
+$ perl -wMstrict -E 'use open ()'
+$ perl -wMstrict -E 'use if 1==1, open =&gt; ()'
+open: needs explicit list of PerlIO layers at -e line 1.
+BEGIN failed--compilation aborted at -e line 1.
+$ perl -wMstrict -E 'use feature ()'
+$ perl -wMstrict -E 'use if 1==1, feature =&gt; ()'
+No features specified at -e line 1.
+BEGIN failed--compilation aborted at -e line 1.
+$ perl -wMstrict -E 'use List::Util ()'
+$ perl -wMstrict -E 'use if 1==1, List::Util =&gt; ()'
+Bareword "List::Util" not allowed while "strict subs" in use at -e line 1.
+Execution of -e aborted due to compilation errors.
+&lt;/code&gt;
+
+&lt;p&gt;
+I've looked at the source code for the [http://perldoc.perl.org/if.html|if] pragma.
+It's actually fairly short (without the POD) so I've posted it here for reference.
+This version (&lt;c&gt;0.0606&lt;/c&gt;) is what's used in the latest production (&lt;c&gt;5.24.1&lt;/c&gt;) 
+and development (&lt;c&gt;5.25.11&lt;/c&gt;) Perls.
+&lt;/p&gt;
+&lt;code&gt;
+package if;
+
+$VERSION = '0.0606';
+
+sub work {
+  my $method = shift() ? 'import' : 'unimport';
+  unless (@_ &gt;= 2) {
+    my $type = ($method eq 'import') ? 'use' : 'no';
+    die "Too few arguments to '$type if' (some code returning an empty list in list context?)"
+  }
+  return unless shift;		# CONDITION
+
+  my $p = $_[0];		# PACKAGE
+  (my $file = "$p.pm") =~ s!::!/!g;
+  require $file;		# Works even if $_[0] is a keyword (like open)
+  my $m = $p-&gt;can($method);
+  goto &amp;$m if $m;
+}
+
+sub import   { shift; unshift @_, 1; goto &amp;work }
+sub unimport { shift; unshift @_, 0; goto &amp;work }
+
+1;
+&lt;/code&gt;
+
+&lt;p&gt;
+As you can see, [http://perldoc.perl.org/functions/goto.html|goto &amp;NAME] is used in all subroutines.
+I'm fairly sure that the empty import list gets lost in '&lt;c&gt;goto &amp;work&lt;/c&gt;' 
+because '&lt;c&gt;@_&lt;/c&gt;' gets flattened:
+&lt;/p&gt;
+&lt;code&gt;
+$ perl -wMstrict -E '@_ = (1, 2, ()); say 0+@_'
+2
+&lt;/code&gt;
+
+&lt;p&gt;
+This results in all statements like this:
+&lt;/p&gt;
+&lt;code&gt;
+use if CONDITION, MODULE =&gt; ();
+&lt;/code&gt;
+&lt;p&gt;
+effectively becoming this:
+&lt;/p&gt;
+&lt;code&gt;
+use if CONDITION, MODULE;
+&lt;/code&gt;
+&lt;p&gt;
+without &lt;c&gt;MODULE&lt;/c&gt; being quoted.
+&lt;/p&gt;
+
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-861371"&gt;
+&lt;p&gt;&amp;mdash; Ken&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1187602">
+<node id="1187603"><node id="1187610"><node id="1187621"><node id="1187698"/>
+</node>
+</node>
+</node>
+<node id="1187613"><node id="1187616"><node id="1187684"><node id="1187693"/>
+</node>
+<node id="1187685"/>
+</node>
+</node>
+<node id="1187618"><node id="1187709"/>
+</node>
+<node id="1187816"/>
+</thread></node>

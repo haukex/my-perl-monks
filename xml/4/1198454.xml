@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198454" title="Re: Recursive data structure munging - arrayrefs to hashrefs" created="2017-08-31 15:35:49" updated="2017-08-31 15:35:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;First, the data structure you've shown isn't actually valid: &lt;c&gt;$foo = { [ ... ] };&lt;/c&gt; is missing a hash key, so for now I'm just going to assume &lt;c&gt;$foo = { foo =&gt; [ ... ] };&lt;/c&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I need to create a path-type lookup&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You may be interested in [mod://Data::Diver]. I also showed some custom "diver" type code [id://1171313|here] and [id://1187920|here].&lt;/p&gt;
+&lt;p&gt;Also, it's unclear to me if your data structure always alternates between array and hash refs? Or can you ever have a hash of hashes? If not, this code will work on the sample data you showed, but it does make some assumptions about the structure of the input data. If you need to differentiate between arrays and hashrefs, you'll have to add things like &lt;c&gt;if (ref $e eq 'ARRAY') { ... } elsif (ref $e eq 'HASH') { ... }&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+sub rekey {
+	my $h = shift;
+	for my $k (keys %$h) {
+		next unless ref $$h{$k};
+		my %n;
+		for my $e (@{$$h{$k}}) {
+			die "duplicate key '$$e{name}'"
+				if exists $n{$$e{name}};
+			$n{$$e{name}} = $e;
+			rekey($e);
+		}
+		$$h{$k} = \%n;
+	}
+}
+rekey( $foo );
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; You might also want to take a look at [mod://Data::DPath] or [mod://Data::Path], I haven't used these myself but they sound like they might be fitting.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update 2:&lt;/i&gt; Fixed typo in text.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1198452</root_node>
+<parent_node field_name="parent_node">1198452</parent_node>
+<thread id="1198452">
+<node id="1198454"><node id="1198457"><node id="1198462"/>
+</node>
+</node>
+<node id="1198455"><node id="1198459"><node id="1198460"><node id="1198464"><node id="1198467"><node id="1198468"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

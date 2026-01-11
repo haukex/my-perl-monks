@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101084" title="Re^5: What is an ordinary statement?" created="2019-06-07 06:13:07" updated="2019-06-07 06:13:07" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Perl is not as different as you suggest.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You are of course correct that Perl "bytecode" can be saved and restored (with some limitations), and taken individually, I agree with many of the statements you've made and they are useful additional information. However, in the context of this thread, and because it appears you're presenting them as a counterpoint to what I was saying, I have to strongly disagree.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;the Perl virtual machine (PVM)&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I've never heard the term PVM before and it is used nowhere in the Perl core or documentation. You'll find only a single reference in the Camel: "the Perl virtual machine (which we refuse to call a PVM)".&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;In theory, the PVM could be implemented in hardware.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In theory, &lt;i&gt;any&lt;/i&gt; piece of software could be implemented in hardware.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;The optimized C backend attempts to de-compile the Perl ops and operands into C code.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I think "attempts" is a key word here. Although I admit I haven't worked with this C backend, I am also not aware of any implementation of compiled Perl that is able to do everything that &lt;c&gt;perl&lt;/c&gt; can.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;If a Perl program is written to have no "run time side effects" at compile time&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In other words, if I omit exactly those dynamic features that I was making a point of, then I no longer have a point &lt;c&gt;:-P&lt;/c&gt; You also make no mention of [doc://eval], which is quite significant here as well.&lt;/p&gt;
+&lt;p&gt;If I compile a C program, the binary it generates is entirely independent from the compiler, it can be copied onto a machine with no compiler at all, and it is executed directly by the hardware. Perl code is executed by its interpreter, which runs alongside the compiler, so the Perl compiler has the ability to reach directly into the interpreter, and the Perl interpreter has the ability to directly reach into the compiler, simply because it is always there. Of course, &lt;i&gt;in theory&lt;/i&gt; it's possible to link a C compiler into a C program, and maybe it's possible to have dynamically compiled C interact seamlessly with previously compiled and currently running C code, and maybe it's possible to have C code affect the complication phase of the surrounding C code, but at some point, I could just as well link &lt;c&gt;perl&lt;/c&gt;, &lt;c&gt;lua&lt;/c&gt;, &lt;c&gt;python&lt;/c&gt;, etc. into my C program.&lt;/p&gt;
+&lt;p&gt;To bring this back into the context of the thread: how the compiler and interpreter interact in regards to declarations. Consider this example:&lt;/p&gt;
+&lt;p&gt;&lt;c&gt;Foo.pm&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+package Foo;
+use warnings;
+use strict;
+use Exporter 'import';
+our @EXPORT = qw/foo $FOO/;
+sub foo { print @_, "\n" }
+our $FOO = 'bar';
+&lt;/c&gt;
+&lt;p&gt;&lt;c&gt;test.pl&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Foo;
+foo $FOO;
+&lt;/c&gt;
+&lt;p&gt;In &lt;c&gt;test.pl&lt;/c&gt;, [doc://strict] is enabled and I make no prior mention of the function &lt;c&gt;foo&lt;/c&gt; or the variable &lt;c&gt;$FOO&lt;/c&gt;, yet I am able to use them. This is because &lt;c&gt;use Foo;&lt;/c&gt; is essentially equivalent to &lt;c&gt;BEGIN { eval ... }&lt;/c&gt; - during the compilation phase of &lt;c&gt;test.pl&lt;/c&gt;, &lt;c&gt;perl&lt;/c&gt; loaded another file, compiled it, executed it all the way through, and this execution of &lt;c&gt;Foo.pm&lt;/c&gt; affected the further compile time phase of &lt;c&gt;test.pl&lt;/c&gt;, allowing the compiler to distinguish that both &lt;c&gt;foo&lt;/c&gt; and &lt;c&gt;$FOO&lt;/c&gt; are valid here.&lt;/p&gt;
+&lt;p&gt;Taking it a step further:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+eval( rand() &lt; 0.5
+	? q{ sub foo { print "Hello!\n" } sub quz { print "Quz!\n" } }
+	: q{ sub foo { print "Perl!\n"  } sub baz { print "Baz!\n" } } );
+foo(); # will it print "Hello!" or "Perl!" ?
+quz(); # will it die or won't it?
+&lt;/c&gt;
+&lt;p&gt;I maintain that this is &lt;i&gt;fundamentally different&lt;/i&gt; from how C and similarly compiled languages operate.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Minor edits to wording.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11100959</root_node>
+<parent_node field_name="parent_node">11101071</parent_node>
+<thread id="11100959">
+<node id="11100961"><node id="11101004"/>
+</node>
+<node id="11100972"><node id="11100986"><node id="11101017"><node id="11101071"><node id="11101084"><node id="11101302"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11101039"><node id="11101068"/>
+</node>
+</node>
+<node id="11100973"/>
+<node id="11100974"/>
+<node id="11100978"><node id="11101021"/>
+</node>
+<node id="11101006"/>
+<node id="11101035"><node id="11101040"/>
+<node id="11101045"/>
+<node id="11101057"/>
+</node>
+<node id="11101121"/>
+<node id="11101664"/>
+</thread></node>

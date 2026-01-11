@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108732" title="Re^5: Correct Perl settings for sending zipfile to browser" created="2019-11-15 08:43:11" updated="2019-11-15 08:43:11" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The [doc://IO::Compress::Zip] docs say you can pass a reference to a scalar to get the data written there. This will use more memory, but here's an example that includes the Content-Length header:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+use CGI::Simple;
+use IO::Compress::Zip qw/$ZipError/;
+use Encode qw/encode/;
+
+my @lines = (qw/ Hello World Foo Bar /, "\N{U+1F42A}");
+my $CRLF = "\r\n";
+my $encoding = "UTF-8"; # or maybe "CP1252" for Windows
+
+my $zipdata;
+my $z = IO::Compress::Zip-&gt;new(\$zipdata,
+	Name =&gt; "Filename.txt" )
+		or die "zip failed: $ZipError\n";
+for my $line (@lines) {
+	$z-&gt;print( encode($encoding, $line.$CRLF,
+		Encode::FB_CROAK|Encode::LEAVE_SRC) );
+}
+$z-&gt;close();
+
+my $q = CGI::Simple-&gt;new();
+
+print $q-&gt;header( -type =&gt; 'application/zip',
+	-Content_Disposition =&gt; qq{attachment; filename="Download.zip"},
+	-Content_Length =&gt; length($zipdata) );
+
+binmode STDOUT;  # just to play it safe
+print $zipdata;
+&lt;/c&gt;
+&lt;p&gt;As for the code you showed, I'd strongly recommend proper indentation ([mod://perltidy] can help with that). I also have the feeling that you might not be [id://111088|using strict and warnings], or that you're using too many global variables (e.g. &lt;c&gt;$statement&lt;/c&gt;). And a nitpick: I wouldn't use &lt;c&gt;$CRLF&lt;/c&gt; for outputting the HTTP headers, &lt;c&gt;"\n"&lt;/c&gt; is enough, every webserver I've worked with understands that (but really, you should be using a module to write the headers anyway, as I showed above).&lt;/p&gt;
+&lt;p&gt;Also, as I mentioned, you can save the memory of the &lt;c&gt;@resp&lt;/c&gt; array by merging those two loops. For example:&lt;/p&gt;
+&lt;c&gt;
+$z-&gt;print( encode( $encoding, "RECORD#\tREVISION#\tBOOK#\tCHAP#\tVERSE#\tTEXT, AS EDITED BY: $curdate $curtime (Pacific Time)$CRLF", Encode::FB_CROAK|Encode::LEAVE_SRC ) );
+while ( ( $recnum, $revnum, $book, $chap, $verse, $text ) = $quest-&gt;fetchrow_array() ) {
+	$z-&gt;print( encode( $encoding, "$recnum\t$revnum\t$book\t$chap\t$verse\t$text$CRLF", Encode::FB_CROAK|Encode::LEAVE_SRC ) );
+}
+&lt;/c&gt;
+&lt;p&gt;If any of the fields you're outputting could possibly contain tabs, you might want to switch to [mod://Text::CSV] for proper handling of all of those complexities.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11108658</root_node>
+<parent_node field_name="parent_node">11108722</parent_node>
+<thread id="11108658">
+<node id="11108660"/>
+<node id="11108663"><node id="11108712"><node id="11108713"><node id="11108715"/>
+</node>
+<node id="11108761"/>
+</node>
+</node>
+<node id="11108666"><node id="11108710"><node id="11108726"/>
+</node>
+</node>
+<node id="11108673"/>
+<node id="11108692"><node id="11108714"><node id="11108716"><node id="11108722"><node id="11108732"><node id="11108832"><node id="11108833"><node id="11108836"><node id="11108837"/>
+</node>
+</node>
+<node id="11108856"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

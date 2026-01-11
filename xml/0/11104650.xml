@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11104650" title="Re^6: The error says the value is uninitialized, but it works anyway" created="2019-08-18 06:19:43" updated="2019-08-18 06:19:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Here is a look at the internals with [doc://Devel::Peek]:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -MDevel::Peek -le '$a=1; $b="$a"; Dump($a)'
+SV = PVIV(0x5841e3fdfc40) at 0x5841e3fe36e0
+  REFCNT = 1
+  FLAGS = (IOK,POK,pIOK,pPOK)
+  IV = 1
+  PV = 0x5841e4024ad0 "1"\0
+  CUR = 1
+  LEN = 10
+&lt;/c&gt;
+&lt;p&gt;Here, you can see that the variable &lt;c&gt;$a&lt;/c&gt; has both the string component &lt;c&gt;PV = "1"\0&lt;/c&gt;, and it is marked as valid with &lt;c&gt;POK&lt;/c&gt;, and an integer component &lt;c&gt;IV = 1&lt;/c&gt;, also marked as valid with &lt;c&gt;IOK&lt;/c&gt;. So they are &lt;b&gt;both&lt;/b&gt; valid, and as I said, there is no reliable way to ask Perl for the difference. Modules like [doc://Data::Dumper] have to &lt;i&gt;guess&lt;/i&gt; what to output based on this internal information. (AFAICT from [https://perl5.git.perl.org/perl.git/blob/7654aaa1134e:/dist/Data-Dumper/Dumper.xs#l1323|the source], the XS implementation of &lt;c&gt;Data::Dumper&lt;/c&gt; simply prefers the integer version when that is valid. Other dumper modules handle such cases differently.)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;What's going on here?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dumper;
+use Devel::Peek;
+
+my $n="1";
+print Dumper $n;
+Dump($n);
+$n++;
+print Dumper $n;
+Dump($n);
+$n--;
+print Dumper $n;
+Dump($n);
+
+__END__
+
+$VAR1 = '1';
+SV = PV(0x53a29eb00fd0) at 0x53a29eb278b8
+  REFCNT = 1
+  FLAGS = (POK,IsCOW,pPOK)
+  PV = 0x53a29ec907b0 "1"\0
+  CUR = 1
+  LEN = 10
+  COW_REFCNT = 1
+$VAR1 = '2';
+SV = PV(0x53a29eb00fd0) at 0x53a29eb278b8
+  REFCNT = 1
+  FLAGS = (POK,pPOK)
+  PV = 0x53a29ec3f310 "2"\0
+  CUR = 1
+  LEN = 10
+$VAR1 = 1;
+SV = PVIV(0x53a29eb23ac0) at 0x53a29eb278b8
+  REFCNT = 1
+  FLAGS = (IOK,pIOK)
+  IV = 1
+  PV = 0x53a29ec3f310 "2"\0
+  CUR = 1
+  LEN = 10
+&lt;/c&gt;
+&lt;p&gt;As you can see, what happens in this case internally is that the postincrement keeps only the string component, while the postdecrement converts it to an integer. If I had to guess why this is is the case, it might have to do with the [doc://perlop#Auto-increment-and-Auto-decrement|"magic string increment"] feature.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;However,&lt;/b&gt; these are &lt;i&gt;internal&lt;/i&gt; implementation details that one should not rely on!&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11104608</root_node>
+<parent_node field_name="parent_node">11104648</parent_node>
+<thread id="11104608">
+<node id="11104609"><node id="11104610"><node id="11104611"/>
+</node>
+</node>
+<node id="11104616"><node id="11104619"/>
+</node>
+<node id="11104623"><node id="11104624"><node id="11104694"/>
+</node>
+<node id="11104625"><node id="11104626"/>
+<node id="11104641"><node id="11104645"><node id="11104651"><node id="11104660"><node id="11104663"/>
+</node>
+</node>
+<node id="11104658"><node id="11104664"/>
+</node>
+</node>
+</node>
+<node id="11104643"><node id="11104646"><node id="11104648"><node id="11104650"/>
+</node>
+</node>
+</node>
+<node id="11104644"/>
+<node id="11104659"><node id="11104661"/>
+</node>
+<node id="11104668"/>
+<node id="11104708"><node id="11104717"><node id="11104757"/>
+</node>
+</node>
+<node id="11104852"><node id="11104858"><node id="11104868"><node id="11104869"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11104642"><node id="11104665"/>
+</node>
+</node>
+<node id="11104629"><node id="11104633"><node id="11104653"/>
+</node>
+</node>
+<node id="11104652"><node id="11104670"><node id="11104679"/>
+<node id="11104695"/>
+</node>
+</node>
+<node id="11104683"><node id="11104685"/>
+<node id="11104693"/>
+</node>
+<node id="11104696"/>
+<node id="11104698"/>
+<node id="11104794"><node id="11104813"/>
+</node>
+</thread></node>

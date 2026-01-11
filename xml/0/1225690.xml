@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1225690" title="Re: Unable to make shallow copy of Moo hash ref attribute" created="2018-11-13 03:28:47" updated="2018-11-13 03:28:47" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;It sounds to me like you want a deep copy rather than a shallow one? That's what [doc://Storable]'s &lt;c&gt;dclone&lt;/c&gt; does.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump 'dd';
+use Storable 'dclone';
+
+my $hr =                        { foo =&gt; { bar =&gt; "quz" } };
+
+my $deep = dclone($hr);
+$deep-&gt;{foo}{bar} = 'baz';
+$deep-&gt;{x} = 'y';
+dd $deep;                     # { foo =&gt; { bar =&gt; "baz" }, x =&gt; "y" }
+dd $hr;                       # { foo =&gt; { bar =&gt; "quz" } } unchanged
+
+my $shallow = { %{ $hr } };
+$shallow-&gt;{foo}{bar} = 'baz';
+$shallow-&gt;{x} = 'y';
+dd $shallow;                  # { foo =&gt; { bar =&gt; "baz" }, x =&gt; "y" }
+dd $hr;                       # { foo =&gt; { bar =&gt; "baz" } }
+                              #  original changed  ^^^
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1225684</root_node>
+<parent_node field_name="parent_node">1225684</parent_node>
+<thread id="1225684">
+<node id="1225687"/>
+<node id="1225690"><node id="1225724"><node id="1225727"><node id="1225804"><node id="1225942"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

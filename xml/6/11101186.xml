@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101186" title="Re: Months between dates ?" created="2019-06-10 03:38:52" updated="2019-06-10 03:38:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;First of all, note that by writing &lt;c&gt;$delta-&gt;{'months'}&lt;/c&gt; you are reaching into the internals of the object, which bypasses any accessors and may break if the field names happen to change. So don't do that and use only the accessors instead. Second, note the section "Math Methods" in [mod://DateTime] and the documentation of [mod://DateTime::Duration]: Because the number of days per month is not fixed, IMHO it's better to tell the modules exactly what kind of math you want to do. For instance, in your case, you might want the &lt;c&gt;-&gt;delta_md&lt;/c&gt; method. Note that it returns an absolute difference, which is why an additional check of &lt;c&gt;$date&gt;$now&lt;/c&gt; is necessary, but personally I don't mind being explicit.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime;
+use DateTime::Format::Human::Duration;
+
+my $now = DateTime-&gt;new( time_zone =&gt; "UTC",
+	year =&gt; 2019, month =&gt; 6, day =&gt; 10 );
+
+my $fmt = DateTime::Format::Human::Duration-&gt;new();
+
+for my $mon ( 4, 6, 8 ) {
+	for my $day ( 1, 9 , 10, 11, 19 ) {
+		my $date = DateTime-&gt;new( time_zone =&gt; "UTC",
+			year =&gt; 2019, month =&gt; $mon, day =&gt; $day );
+		my $delta = $now-&gt;delta_md($date);
+		my ($months,$days) = $delta-&gt;in_units(qw/ months days /);
+		
+		print $now-&gt;ymd, " to ", $date-&gt;ymd, " is ",
+			$fmt-&gt;format_duration($delta,
+				units=&gt;[qw/months days/]); 
+		
+		if ( $date&gt;$now &amp;&amp; ( $months&gt;2 || $months==2 &amp;&amp; $days&gt;0 ) ) {
+			print " *** Alert ***";
+		}
+		print "\n";
+	}
+}
+
+__END__
+
+2019-06-10 to 2019-04-01 is 2 months and 9 days
+2019-06-10 to 2019-04-09 is 2 months and 1 day
+2019-06-10 to 2019-04-10 is 2 months
+2019-06-10 to 2019-04-11 is 1 month and 29 days
+2019-06-10 to 2019-04-19 is 1 month and 21 days
+2019-06-10 to 2019-06-01 is 9 days
+2019-06-10 to 2019-06-09 is 1 day
+2019-06-10 to 2019-06-10 is no time
+2019-06-10 to 2019-06-11 is 1 day
+2019-06-10 to 2019-06-19 is 9 days
+2019-06-10 to 2019-08-01 is 1 month and 21 days
+2019-06-10 to 2019-08-09 is 1 month and 29 days
+2019-06-10 to 2019-08-10 is 2 months
+2019-06-10 to 2019-08-11 is 2 months and 1 day *** Alert ***
+2019-06-10 to 2019-08-19 is 2 months and 9 days *** Alert ***
+&lt;/c&gt;
+&lt;p&gt;(Of course it's also possible to do this in SQL.)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11101176</root_node>
+<parent_node field_name="parent_node">11101176</parent_node>
+<thread id="11101176">
+<node id="11101186"><node id="11101190"/>
+</node>
+<node id="11101188"><node id="11101189"/>
+</node>
+<node id="11101192"/>
+<node id="11101193"/>
+</thread></node>

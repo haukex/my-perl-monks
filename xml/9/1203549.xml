@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203549" title="I want to change something in this code" created="2017-11-15 23:12:51" updated="2017-11-15 23:12:51" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1183153">hegaa</author>
+<doctext field_name="doctext">&lt;p&gt; Hi &lt;/p&gt;
+&lt;p&gt; I'm using this sip scanner &lt;/p&gt; 
+&lt;p&gt; I want to make it take ips form a text file not to give it an ip range &lt;/p&gt;
+&lt;p&gt; i want to put a list of ips in text file   &lt;/p&gt;
+&lt;p&gt; Like : &lt;/p&gt;
+&lt;code&gt; ip-list.txt
+127.0.0.1
+127.0.0.2
+127.0.0.3 &lt;/code&gt;
+ 
+&lt;p&gt; this is the code &lt;/p&gt;
+
+&lt;code&gt; 
+#!/usr/bin/perl
+
+# TODO:
+# - SIP over TCP and TLS
+# - mass INVITE
+
+use Getopt::Std;
+use Socket;
+use IO::Socket::INET;
+use IO::Select;
+use Time::HiRes qw(time);
+use Digest::MD5 qw(md5_base64);
+#use Date::Format;
+
+use IP_iterator;
+
+$udp_maxlength = 100000;
+
+$lport = $rport = $ARGV[1];		# default ports
+$delay = 1;
+$wait  = 1;
+
+sub HELP_MESSAGE {
+  print &lt;&lt;EOH
+  Usage: sip-scan [options] &lt;network spec&gt;
+
+ -v        Be verbose.
+ -i ip|if  Interface/IP for SIP-headers (default: IP from ppp0)
+ -p port   remote port to scan. (default: 5060)
+ -l port   local origin of packets. (default: 5060)
+ -d n[p]   Wait n ms after each sent packet (default: 50ms) or if 'p' is
+           given, send n packets per second (default: 20)
+ -w n      Wait n ms for remaining answers (default: 2000ms)
+
+ Network spec contains the wildcard * or ranges n-m.
+EOH
+}
+
+
+sub verbose {
+  if ($opt_v) {
+    print $_[0];
+  }
+}
+
+
+sub scan_host {
+  my $ip = shift;
+  my $callid = md5_base64("$myip:$ip");
+  $callid =~ s/[^a-zA-Z1-9]//g;
+  my $fromtag = 1000000000 + int(rand(1000000000));
+  my $cseq = 60000 + int(rand(5001));
+  my $branch = md5_base64("$callid");
+  $branch =~ s/[^a-zA-Z1-9]//g;
+
+  my $sip = &lt;&lt;SIP;
+OPTIONS sip:foobar\@$ip SIP/2.0\r
+To: test &lt;sip:foobar\@$ip&gt;\r
+From: sip-scan &lt;sip:sip-scan\@$myip&gt;;tag=$fromtag\r
+Via: SIP/2.0/udp $myip;branch=$branch
+CSeq: $cseq OPTIONS\r
+Call-ID: $callid\@sipgate.de\r
+Max_forwards: 70\r
+Date: Fri Oct 14 17:48:37 GMT+01:00 2005\r
+Contact: &lt;sip:foobar\@$myip&gt;\r
+Content-Type: application/sdp\r
+Content-Length: 0\r
+\r
+
+SIP
+
+  my $toaddr = pack_sockaddr_in($rport, inet_aton($ip));
+  $udp-&gt;send($sip, 0, $toaddr);
+}
+
+
+sub recvsip {
+  my $sock = shift;
+
+  my $addr = $sock-&gt;recv(my $msg, $udp_maxlength);
+  my ($port, $ip) = sockaddr_in($addr);
+  $ip = inet_ntoa($ip);
+
+  if ($msg =~ /^User-Agent:[ ]*(.*)$/mi) {
+    print "$ip:$rport $1\n";
+  }
+}
+
+
+sub start_scan {
+  my $ips = IP_iterator-&gt;new($ARGV[0]);
+
+  my $done = 0;
+  while (1) {
+    my $ip = $ips-&gt;next;
+    if (defined $ip) {
+      scan_host($ip);
+      verbose "Scan $ip\n";
+      $rdelay = $delay;
+    } elsif ($done == 0) {			# just wait a few seconds for remaining answers
+      verbose "Done...waiting for remaining answers!\n";
+      $rdelay = $wait;
+      $done = 1;
+    }
+
+    if ($done == 0) {		# never reset timer after last sent packet
+      $rdelay &gt; 0 or $rdelay = $delay;
+    }
+    my $t = time();
+#    print "$rdelay\n";
+    my @ready = $sel-&gt;can_read($rdelay);
+    my $tdiff = (time() - $t);
+#    print "tdiff=$tdiff\n";
+    my $rdelay = $rdelay - $tdiff;
+    if ($done == 1 &amp;&amp; $rdelay - 0.000001 &lt;= 0) { return }
+
+    foreach my $sock (@ready) {
+      if ($sock == $udp) {	# incoming UDP
+	recvsip($sock);
+      }
+    }
+  }
+}
+
+
+sub setip {
+  my $iface = shift;
+
+  if ($iface =~ /[0-9\-\*]+(?:\.[0-9\-\*]+){3}/) { return $iface } # is already ip
+
+  my $ifconfig = `ifconfig $iface`;
+  verbose "Using interface $iface\n";
+  $ifconfig =~ /inet[a-zA-Z ]*:([0-9\.]+)/;
+#  verbose $ifconfig;
+  return $1;
+}
+
+
+$Getopt::Std::STANDARD_HELP_VERSION = 1;
+getopts('vl:p:d:i:w:');
+
+!defined $opt_l or $lport = $opt_l;
+!defined $opt_p or $rport = $opt_p;
+!defined $opt_w or $wait = $opt_w;
+if (defined $opt_d) {
+  if ($opt_d =~ /([0-9]+)p/) {		# packet rate given
+    $delay = int(10 / $1)
+  } else {			# ms given
+    $delay = $opt_d;
+  }
+}
+$delay /= 10;
+
+$opt_i = defined $opt_i ? $opt_i : "ppp0";
+$myip = setip($opt_i);
+
+$ARGV[0] =~ /[0-9\-\*]+(?:\.[0-9\-\*]+){3}/ or die "Not allowed netspec!";
+
+verbose "Using own IP $myip\n";
+
+$udp = IO::Socket::INET-&gt;new(
+			     Proto     =&gt; "udp",
+			     LocalPort =&gt; "$lport",
+			     PeerPort  =&gt; "$rport"
+			    ) or die "Cannot create UDP socket: $@";
+$sel = IO::Select-&gt;new($udp);
+
+start_scan();
+&lt;/code&gt;</doctext>
+<thread id="1203549">
+<node id="1203551"/>
+<node id="1203552"/>
+<node id="1203559"/>
+</thread></node>

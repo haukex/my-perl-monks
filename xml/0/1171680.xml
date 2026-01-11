@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1171680" title="Re: Curious: are anon-hashes in random order? (updated)" created="2016-09-13 11:00:55" updated="2016-09-13 11:00:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [perl-diddler],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Isn't the stuff in brackets an anonymous hash? Isn't the ordering of hashes strictly not guaranteed by default?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes and yes.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;So how could that work, since the numbers and the labels in the hash, it would seem, should end up in a random order?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note that "random order" does &lt;i&gt;not&lt;/i&gt; mean this:&lt;/p&gt;
+&lt;c&gt;
+use List::Util qw/shuffle/;
+my @order = shuffle qw/ continue 0 next 1 redo 2 last 3 /;
+&lt;/c&gt;
+&lt;p&gt;What it means is this:&lt;/p&gt;
+&lt;c&gt;
+my @keyorder = shuffle qw/ continue next redo last /;
+&lt;/c&gt;
+&lt;p&gt;So [doc://constant] will always define four subs, which return the value associated with each key in the hash. It is equivalent to the following code; the order in which the &lt;c&gt;sub&lt;/c&gt;s are defined does not matter. (By the way, I think that defining subs with the same name as those Perl builtins is likely to cause confusion later.)&lt;/p&gt;
+&lt;c&gt;
+sub continue () { 0 }
+sub next () { 1 }
+sub redo () { 2 }
+sub last () { 3 }
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;I know the following would fail (because the RHS of the 'our $clist' won't be done at compile time):&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Correct, but this would work:&lt;/p&gt;
+&lt;c&gt;
+our $clist;
+BEGIN { $clist = {continue=&gt;0, next=&gt;1, redo=&gt;2, last=&gt;3 } }
+use constant $clist;
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;But how is it that this seems to always work:&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If I understand [mod://mem] correctly, it's essentially doing the same thing as the code with the &lt;c&gt;BEGIN&lt;/c&gt; block above. Also, remember that [doc://use|use Module LIST] is exactly equivalent to &lt;c&gt;BEGIN { require Module; Module-&gt;import( LIST ); }&lt;/c&gt;.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Is it that compile-time hashes are not randomized?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;&lt;strike&gt;No, AFAIK Perl always iterates over hashes in a random order.&lt;/strike&gt; No, you should always treat Perl hashes as being in a random order. Also, if you note the language for example in [doc://perl5180delta#Hash-overhaul], it says "the order which keys/values will be returned ... will differ from run to run". &lt;strike&gt;So it's not like hashes themselves are shuffled in memory, it's the order in which they are iterated over that is randomized. So this always happens at runtime, no matter where the hashes come from.&lt;/strike&gt; &lt;b&gt;Update:&lt;/b&gt; Struck/reworded these sentences as potentially misleading; see [BrowserUk]'s reply below.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1171667</root_node>
+<parent_node field_name="parent_node">1171667</parent_node>
+<thread id="1171667">
+<node id="1171669"><node id="1171675"><node id="1171676"/>
+</node>
+</node>
+<node id="1171672"><node id="1171693"/>
+</node>
+<node id="1171680"><node id="1171682"><node id="1171683"/>
+<node id="1171692"><node id="1171697"/>
+<node id="1171728"/>
+</node>
+</node>
+<node id="1171696"><node id="1171721"/>
+<node id="1171727"><node id="1171809"/>
+</node>
+</node>
+</node>
+<node id="1171688"/>
+</thread></node>

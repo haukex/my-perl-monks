@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101763" title="Re^3: foreach a writing open fails through not found file" created="2019-06-23 11:03:13" updated="2019-06-23 11:03:13" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;The &lt;c&gt;return(0)&lt;/c&gt; are the usual code. I just commented them out while debugging to find out, on which point the &lt;c&gt;open()&lt;/c&gt; fails. The gathered information showed me that the print behaves, like it was called after the &lt;c&gt;close($fh)&lt;/c&gt;. This behavior is, what I don't understand. &lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Even during testing, you should still check [doc://open] for success, and in the case of failure, output [doc://$!] to see the error. Instead of commenting out the &lt;c&gt;or return(0);&lt;/c&gt;, replace it with &lt;c&gt;or do { warn $file-&gt;{full_path}.": $!"; return 0 };&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;Again, in the code as you showed it above, if the [doc://open] fails, then the code will continue on to the &lt;c&gt;print $fh $file-&gt;{content};&lt;/c&gt;, which will cause the &lt;c&gt;print() on closed filehandle $fh&lt;/c&gt; warning, and then the code should continue executing (the &lt;c&gt;close&lt;/c&gt;, then the second &lt;c&gt;print&lt;/c&gt;, and so on). Based on the information I see at the moment, the [doc://open] is the most likely problem.&lt;/p&gt;
+&lt;p&gt;I'm sorry, but I don't know what you mean by &lt;i&gt;"the print behaves like it was called after the &lt;c&gt;close($fh)&lt;/c&gt;"&lt;/i&gt;, because I don't know how you would have determined this. It's also unclear to me where the "&lt;c&gt;Can't open perl script "../Path/to/file.pm": File or directory not found&lt;/c&gt;" message is coming from. This is why a [id://1177642] is important: could you edit down your code to the minimum required to reproduce the problem, while still being runnable? Also include any sample input, the expected output for that input, and the actual output you're getting instead, including any error messages, each within &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags. The aim is to provide a piece of code that we can simply download and run, and that reproduces the problem - you'll get help fastest that way. Often, this process will also help you see what the issue might be.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I think this works, but why does it stop to work, when I make it writing instead of reading and &lt;c&gt;return()&lt;/c&gt;ing instead of &lt;c&gt;die()&lt;/c&gt;ing?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Same thing, I'd have to see the actual code you're running to say more. See also [id://174051]&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11101758</root_node>
+<parent_node field_name="parent_node">11101762</parent_node>
+<thread id="11101758">
+<node id="11101759"><node id="11101762"><node id="11101763"><node id="11120357"/>
+</node>
+</node>
+</node>
+</thread></node>

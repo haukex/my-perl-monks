@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11137405" title="count backrefenence regex" created="2021-10-10 16:15:28" updated="2021-10-10 16:15:28" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11137403">tmolosh</author>
+<doctext field_name="doctext">&lt;p&gt;hi all - i have a workaround for this but want to understand why my 1st approach did not work. This relates to reporting on "direct repeats" in DNA|RNA sequences.&lt;/p&gt;&lt;p&gt;here is a command line example to generate a 1,000,000 sequence and try to find direct repeats of length &gt; 3&lt;/p&gt; 
+&lt;code&gt;perl -e '@a=qw(g a t c g a t c g a t c); for(1..1000000){$x=int(1000*rand());$s.=$a[$x]} while($s=~/(?&lt;repeat&gt;\w{3,})\w*\g{repeat}/g){ $+{repeat};$c=()=$s=~/$+{repeat}/g;print "$+{repeat} : $c\n"}'
+agtcg : 0
+agtcg : 0
+agtcg : 0
+^C
+&lt;/code&gt;
+&lt;p&gt;if i remove the //g, it reports a count of 1 but no substring&lt;/p&gt;
+&lt;code&gt;perl -e '@a=qw(g a t c g a t c g a t c); for(1..1000000){$x=int(1000*rand());$s.=$a[$x]} while($s=~/(?&lt;repeat&gt;\w{3,})\w*\g{repeat}/g){ $+{repeat};$c=()=$s=~/$+{repeat}/;print "$+{repeat} : $c\n"}'
+ : 1
+ : 1
+ : 1
+ : 1
+&lt;/code&gt;
+&lt;p&gt;if i  1st assign $+{repeat} to a variable, i get the substring, but without //g, the count is still  (as expected since it is not global)&lt;/p&gt;
+&lt;code&gt;perl -e '@a=qw(g a t c g a t c g a t c); for(1..1000000){$x=int(1000*rand());$s.=$a[$x]} while($s=~/(?&lt;repeat&gt;\w{3,})\w*\g{repeat}/g){ $m=$+{repeat};$c=()=$s=~/$m/;print "$m : $c\n"}'
+gcacgt : 1
+cga : 1
+tggg : 1
+ttg : 1
+tta : 1
+cct : 1
+&lt;/code&gt;
+&lt;p&gt;adding //g back gets back to the non-functional state:&lt;/p&gt;
+&lt;code&gt;perl -e '@a=qw(g a t c g a t c g a t c); for(1..1000000){$x=int(1000*rand());$s.=$a[$x]} while($s=~/(?&lt;repeat&gt;\w{3,})\w*\g{repeat}/g){ $m=$+{repeat};$c=()=$s=~/$m/g;print "$m : $c\n"}'
+gctgca : 0
+gctgca : 0
+gctgca : 0
+^C
+&lt;/code&gt;
+&lt;p&gt;any explanation so i can better understand regexs would be greatly appreciated&lt;/p&gt;&lt;p&gt;thanks&lt;/p&gt;</doctext>
+<thread id="11137405">
+<node id="11137406"><node id="11137411"><node id="11137413"/>
+<node id="11137414"/>
+</node>
+</node>
+<node id="11137407"><node id="11137410"/>
+</node>
+<node id="11137409"/>
+<node id="11137631"/>
+</thread></node>

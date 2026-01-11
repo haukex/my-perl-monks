@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11131320" title="SerialPort issues under Windows 10" created="2021-04-15 06:46:51" updated="2021-04-15 06:46:51" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11131318">clinicalAD</author>
+<doctext field_name="doctext">Hello,
+Am trying to use Win32::SerialPort on a portable strawberry perl implementation, version 5-32-1. (32 bit). Using it to try and set up a datalogger on a Win10 machine, for an instrument that reports through a RS232 output. Also have a general test bed which is two windows PCs connected by a serial cable, and one sending messages (from Powershell) to the other - which testing has shown acts in the same way as the end use.
+Have come across a variety of scripts online. For some reason though, I can't get any Perl script to output the RS232 input on its own. However, if I open and close the port &lt;i&gt;in powershell&lt;/i&gt;, suddenly the exact same Perl script DOES work! The perl script continues to work as expected until the PC is rebooted. So I'm wondering if there's a key parameter needing to be set, which is sorted by Powershell but not by Perl? Couldn't see anything obvious in the SerialPort documentation.
+An example script that only works when powershell has "activated" the port is:
+&lt;code&gt;
+use Win32::SerialPort;  # Use instead for Windows
+my $port=Win32::SerialPort-&gt;new("COM1") || die "couldn't open COM1";
+$port-&gt;baudrate(9600); # Configure this to match your device
+$port-&gt;databits(8);
+$port-&gt;parity("none");
+$port-&gt;stopbits(1);
+#$port-&gt;handshake("none");
+$port-&gt;user_msg(ON);
+print "Port COM1 successfully opened\n"; 
+$count = 0;
+my $chars=0;
+my $buffer="";
+print "1\n";
+do {
+       print "2\n";
+       my ($count,$saw)=$port-&gt;read(255); # will read _up to_ 255 chars
+       print "3\n";
+       if ($count &gt; 0) {
+               $chars+=$count;
+               $buffer.=$saw;
+               print $saw;
+       }
+       print "4\n";
+       $port-&gt;lookclear;
+       print "5\n";
+} while 1;
+$port-&gt;close;
+&lt;/code&gt;
+This code stops after printing "2" if I've not opened/closed the port in Powershell yet - it's the reading of RS232 input where the script seems to get blocked quite consistently across different scripts. 
+
+Powershell code to open and close is:
+&lt;code&gt;
+$port = new-Object System.IO.Ports.SerialPort COM1,9600,None,8,one
+$port.open()
+$port.close()
+&lt;/code&gt;
+
+Powershell to send RS232 on test bed is:
+&lt;code&gt;$port.WriteLine("test")&lt;/code&gt;
+Unfortunately access permissions do not let me run a powershell script, and I'd rather not have the end user have to manually type in powershell code each time the PC is turned on...
+Many thanks for any advice provided.</doctext>
+<thread id="11131320">
+<node id="11131327"/>
+<node id="11131348"><node id="11131371"/>
+<node id="11131510"/>
+</node>
+<node id="11131355"/>
+</thread></node>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1184387" title="Re: Scanning a file and extracting certains values within one or multiple lines" created="2017-03-13 06:44:49" updated="2017-03-13 06:44:49" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1184375">Arengin</author>
+<doctext field_name="doctext">Ok I used the code in the comments and tryed adding the scanning for X2 and X3 the same way as for X1 but for some reason the saveto vars are mixed up at the end&lt;br/&gt;
+
+The wrong one I get is: &lt;br/&gt;
+&lt;code&gt; X3: yes yes yes BEGIN_TAG X1 test test test tes test test X2 no no no no no  nono non no no  nononono no no  no X3 hi hi hi hi hi hi  hi hi hi hi  hi hi&lt;/code&gt;
+
+&lt;br/&gt;&lt;br/&gt;
+
+The right one would be:&lt;br/&gt;
+&lt;code&gt;
+X1: test test test
+test test test tes test test
+X2: no no no no
+no no no no no nono non no no nononono no no  no
+X3: yes yes yes
+hi hi hi hi hi hi hi hi hi hi hi hi
+&lt;/code&gt;
+
+&lt;br/&gt;&lt;br/&gt;&lt;br/&gt;
+
+The code I have is:&lt;br/&gt;&lt;br/&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+use strict; 
+use warnings;
+open (FILE, '&lt;', $ARGV[0]) or die "Could not open file: $!";
+my $saveX1=0;
+my $saveX2=0;
+my $saveX3=0; 
+my $savetoX1=''; 
+my $savetoX2='';
+my $savetoX3='';
+while (my $line=&lt;FILE&gt;){
+  chomp $line; 
+  my @parts=split(' ',$line,2); 
+  if ( (!$saveX1) &amp;&amp; $parts[0] eq 'X1') { $savetoX1=$parts[1]; $saveX1=1; } 
+  elsif ($parts[0] eq 'X2' ||($parts[0] eq 'BEGIN' &amp;&amp; $parts[2] eq 'TAG' ) ){ 
+       #print $savetoX1."\n" if ($savetoX1) ; 
+       $savetoX1=''; 
+       $saveX1=0; 
+       } 
+  elsif ($saveX1) { $savetoX1.=' '.$line; } 
+
+  
+  if ( (!$saveX2) &amp;&amp; $parts[0] eq 'X2') { $savetoX2=$parts[1]; $saveX2=1; } 
+  elsif ($parts[0] eq 'X3' ||($parts[0] eq 'BEGIN' &amp;&amp; $parts[2] eq 'TAG' ) ){ 
+       #print $savetoX2."\n" if ($savetoX2) ; 
+       $savetoX2=''; 
+       $saveX2=0; 
+       } 
+  elsif ($saveX2) { $savetoX2.=' '.$line; } 
+
+  
+  if ( (!$saveX3) &amp;&amp; $parts[0] eq 'X3') { $savetoX3=$parts[1]; $saveX3=1; } 
+  elsif ($parts[0] eq 'BEGIN' &amp;&amp; $parts[2] eq 'TAG' ){ 
+		#print $savetoX3."\n" if ($savetoX3) ; 
+		$savetoX3=''; 
+		$saveX3=0; 
+       } 
+  elsif ($saveX3) { $savetoX3.=' '.$line; } 
+  
+  
+  
+  
+  }
+print "X1: ".$savetoX1."\n" if ($savetoX1) ; 
+print "X2: ".$savetoX2."\n" if ($savetoX2) ; 
+print "X3: ".$savetoX3."\n" if ($savetoX3) ; 
+
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">1184378</root_node>
+<parent_node field_name="parent_node">1184378</parent_node>
+<thread id="1184378">
+<node id="1184380"/>
+<node id="1184383"><node id="1184385"/>
+</node>
+<node id="1184384"/>
+<node id="1184387"><node id="1184388"><node id="1184389"/>
+</node>
+<node id="1184390"><node id="1184391"/>
+</node>
+<node id="1184398"/>
+</node>
+</thread></node>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201156" title="Re: XML data extraction (updated x2)" created="2017-10-11 07:58:18" updated="2017-10-11 07:58:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Whenever I hear "big XML file" I think [mod://XML::Twig], as this can efficiently process the XML file record by record without loading the whole thing into memory. The following gives you the desired output. As for your example code, I don't think you can mix [mod://XML::XPath] with [mod://XML::LibXML] - I think it'd be best if you use only tried to use the operations provided by [mod://XML::XPath].&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::Twig;
+use Data::Dumper;
+
+my $file = 'OpenApi.xml';
+my @records;
+XML::Twig-&gt;new(
+	twig_roots =&gt; {
+		'/nodes/node/children/node/children/node' =&gt; sub {
+			my ($t, $elt) = @_;
+			my $dim = $elt-&gt;first_child('dimension');
+			push @records, {
+				name =&gt; $elt-&gt;att('name'),
+				citype =&gt; $elt-&gt;att('ciType'),
+				status =&gt; $dim-&gt;att('status'),
+				Time =&gt; $dim-&gt;first_child('body')
+					-&gt;first_child('entry[@key="Last Status Change"]')
+					-&gt;text  };
+			$t-&gt;purge;
+		},
+	},
+)-&gt;parsefile($file);
+print Dumper(\@records);
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; As for your code, it's just a matter of getting the XPath expression right, this also gives the desired output:&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+use XML::XPath;
+use Data::Dumper;
+
+my $bamxml = 'OpenApi.xml';
+my $bamxp = XML::XPath-&gt;new(filename =&gt; $bamxml);
+my $bamxpath =  $bamxp-&gt;findnodes('//nodes/node/children/node/children/node');
+
+my @records;
+foreach my $bamnode ($bamxpath-&gt;get_nodelist) {
+	my $name   = $bamxp-&gt;find('./@name',$bamnode)-&gt;string_value;
+	my $citype = $bamxp-&gt;find('./@ciType',$bamnode)-&gt;string_value;
+	my $status = $bamxp-&gt;find('./dimension/@status',$bamnode)-&gt;string_value;
+	my $time = $bamxp-&gt;find('./dimension/body/entry[@key="Last Status Change"]',$bamnode)-&gt;string_value;
+	s/^\s+|\s+$//g for $name,$citype,$status,$time;
+	push @records, {
+		name =&gt; $name,
+		citype =&gt; $citype,
+		status =&gt; $status,
+		Time =&gt; $time
+	};
+}
+print Dumper(\@records);
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; Oops, missed your requirement &lt;i&gt;"want to read node only where ciType='application'"&lt;/i&gt;. The same XPath that [choroba] [id://1201159|showed] works in my code samples: &lt;c&gt;'/nodes/node/children/node/children/node[@ciType="application"]'&lt;/c&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1201152</root_node>
+<parent_node field_name="parent_node">1201152</parent_node>
+<thread id="1201152">
+<node id="1201153"><node id="1201154"/>
+</node>
+<node id="1201156"><node id="1201194"><node id="1201197"><node id="1201199"><node id="1201202"/>
+<node id="1201203"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1201157"><node id="1201158"/>
+<node id="1201162"><node id="1201163"><node id="1201164"/>
+<node id="1201166"><node id="1201173"/>
+</node>
+</node>
+</node>
+<node id="1201165"/>
+</node>
+<node id="1201159"/>
+<node id="1201174"><node id="1201218"><node id="1201235"><node id="1201495"><node id="1201496"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

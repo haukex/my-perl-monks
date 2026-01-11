@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1206043" title="Mixing configuration options and exports in 'use' statement" created="2017-12-22 10:30:42" updated="2017-12-22 10:30:42" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="826278">Dallaylaen</author>
+<doctext field_name="doctext">&lt;p&gt;Hello dear esteemed monks,&lt;/p&gt;
+
+&lt;p&gt;I would like to be able to add per-package configuration parameters to the &lt;tt&gt;use&lt;/tt&gt; statement of my module, but also let the module export some functions. Something like:&lt;/p&gt;
+
+&lt;code&gt;
+use My::Module { hairiness =&gt; 2 }, qw(:core frobnicate);
+
+frobnicate( $foo ); # with hairiness = 2
+&lt;/code&gt;
+
+&lt;p&gt;I came up with the following:&lt;/p&gt;
+
+&lt;code&gt;
+package My::Module;
+
+use parent qw(Exporter);
+our @EXPORT_OK = qw(frobnicate);
+our %EXPORT_TAGS = (
+    core =&gt; [],
+);
+
+sub import {
+    # or do it via a foreach and extra @args array
+    my %setup = map { %$_ } grep { ref $_ eq 'HASH' } @_;
+    @_ = grep { ref $_ ne 'HASH' } @_;
+
+    $_[0]-&gt;per_package_setup( scalar caller, %setup );
+    goto \&amp;Exporter::import;
+};
+
+my %per_package_conf; # or our?..
+sub per_package_setup {
+    my ($self, $target, %options) = @_;
+    # setup for target
+};
+
+sub frobnicate {
+    my $x = shift;
+    return $x; # TODO actually use parameters here
+};
+&lt;/code&gt;
+
+&lt;p&gt;I don't want to remove exporter because it does the job and is predictable (and also has export tags).&lt;/p&gt;
+
+&lt;p&gt;Are there better/shorter/more common ways to do the same? &lt;/p&gt;
+
+&lt;p&gt;Thank you.&lt;/p&gt;</doctext>
+<thread id="1206043">
+<node id="1206050"><node id="1206054"/>
+</node>
+<node id="1206066"><node id="1206073"/>
+</node>
+</thread></node>

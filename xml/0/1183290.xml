@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1183290" title="Lower-Level Serial Port Access on *NIX" created="2017-03-01 10:07:05" updated="2017-03-01 10:07:05" _doctext_mode="strict"><type id="1042">CUFP</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Dear Monks,&lt;/p&gt;
+&lt;p&gt;Most likely, everyone who's needed to access a serial port on *NIX systems
+has used, or at least come across, [mod://Device::SerialPort].
+It's nice because it provides a decent level of portability, being designed to be
+a replacement for [mod://Win32::SerialPort]. However, it's always bugged me a
+little bit that the module is a bit unwieldy, with a lot of configuration and
+functions I never use, several documented as being experimental, and that its
+filehandle interface is tied instead of native.
+So, I'd like to present an alternative that has been working well for me over
+the past months, &lt;b&gt;[mod://IO::Termios]&lt;/b&gt;. It's a subclass of
+[mod://IO::Handle], and the handles can be used directly in [mod://IO::Select]
+loops, which can be used to implement nonblocking I/O and timeouts, or for
+example a [http://poe.perl.org/|POE] [mod://POE::Wheel::ReadWrite], just to mention two possibilities.
+(Note: I'm not saying [mod://IO::Termios] is "better" than [mod://Device::SerialPort],
+just that so far it has been a viable alternative.)&lt;/p&gt;
+&lt;p&gt;Here's a basic example:&lt;/p&gt;
+&lt;c&gt;
+use IO::Termios ();
+
+my $handle = IO::Termios-&gt;open('/tmp/fakepty', '4800,8,n,1')
+	or die  "IO::Termios-&gt;open: $!";
+while (&lt;$handle&gt;) { # read the port line-by-line
+	chomp;
+	print time." &lt;$_&gt;\n";
+	# write something to the port
+	print {$handle} "Three!\n" if /3/;
+}
+close $handle;
+&lt;/c&gt;
+&lt;h3&gt;An Aside: Fake Serial Ports on *NIX&lt;/h3&gt;
+&lt;p&gt;You may have noticed that in the above example, instead of the usual device names like e.g. &lt;c&gt;/dev/ttyAMA*&lt;/c&gt;, &lt;c&gt;/dev/ttyS*&lt;/c&gt;, or &lt;c&gt;/dev/ttyUSB*&lt;/c&gt;, I used "&lt;c&gt;/tmp/fakepty&lt;/c&gt;".
+I created this for testing using the versatile tool &lt;c&gt;socat&lt;/c&gt;, here are two examples:&lt;/p&gt;
+&lt;c&gt;
+  # connect the fake pty to a process that generates output
+$ socat pty,raw,echo=0,link=/tmp/fakepty \
+  exec:'perl -e "$|=1;while(1){print q{Foo },$x++,qq{\n};sleep 2}"'
+
+  # connect the fake pty to the current terminal
+$ socat pty,raw,echo=0,link=/tmp/fakepty -,icanon=0,min=1
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update 2020-03-19:&lt;/i&gt; I posted a slightly more complex example as part of my node [id://11114488]. &lt;i&gt;/Update&lt;/i&gt;&lt;/p&gt;
+&lt;h3&gt;More Fine-Grained Control&lt;/h3&gt;
+&lt;p&gt;It's also possible to use [doc://sysopen] for the ports, if you want to
+have control over the exact flags used to open the port. Also, if you need
+to set some [man://stty] modes, you can do so with [mod://IO::Stty].
+I've found that for several of the USB-to-Serial converters I've used that
+it's necessary to set the mode &lt;c&gt;-echo&lt;/c&gt; for them to work correctly,
+and &lt;c&gt;raw&lt;/c&gt; is necessary for binary data streams.&lt;/p&gt;
+&lt;c&gt;
+use Fcntl qw/:DEFAULT/;
+use IO::Termios ();
+use IO::Stty ();
+
+sysopen my $fh, '/tmp/fakepty', O_RDWR or die "sysopen: $!";
+my $handle = IO::Termios-&gt;new($fh) or die "IO::Termios-&gt;new: $!";
+$handle-&gt;set_mode('4800,8,n,1');
+IO::Stty::stty($handle, qw/ raw -echo /);
+
+my $tosend = "Hello, World!\n";
+$handle-&gt;syswrite($tosend)
+	== length($tosend) or die "syswrite";
+
+for (1..3) {
+	my $toread = 1;
+	$handle-&gt;sysread(my $in, $toread)
+		== $toread or die "sysread";
+	print "Read $_: &lt;$in&gt;\n";
+}
+
+$handle-&gt;close;
+&lt;/c&gt;
+&lt;p&gt;My error checking in the above example is a little simplistic, but
+I just wanted to demonstrate that using [doc://sysread] and [doc://syswrite]
+is possible like on any other handle.&lt;/p&gt;
+&lt;p&gt;I've noticed that there is some interaction between [mod://IO::Termios]
+and [mod://IO::Stty] - for example, when I had to connect to a serial device
+using 7-bit and even parity, I hat to set the termios mode to
+&lt;c&gt;4800,7,e,1&lt;/c&gt; &lt;i&gt;and&lt;/i&gt; set the stty modes
+&lt;c&gt;cs7 parenb -parodd raw -echo&lt;/c&gt; for things to work correctly.&lt;/p&gt;
+&lt;p&gt;I have written a module that wraps an [mod://IO::Termios] handle
+and provides read timeout, flexible readline, signal handling support,
+and a few other things. However, I need to point out that while I've
+been using the module successfully in several data loggers over the past
+few months in a research environment, it should &lt;i&gt;not&lt;/i&gt; yet be considered
+production quality! The major reason is that it's not (yet?) a real CPAN
+distro, and it has zero tests! But if you're still curious, for example how
+I implemented a read timeout with [mod://IO::Select], you can find the code
+[https://bitbucket.org/haukex/hgpstools/src/HEAD/SerialPort.pm|here].&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Added mention of some &lt;c&gt;/dev/*&lt;/c&gt; device names.&lt;/small&gt;&lt;/p&gt;</doctext>
+<thread id="1183290">
+<node id="1183344"><node id="1183495"><node id="1183497"/>
+</node>
+</node>
+</thread></node>

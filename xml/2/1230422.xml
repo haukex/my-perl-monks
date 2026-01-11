@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230422" title="Re^2: Export and use different package in module" created="2019-02-22 15:24:15" updated="2019-02-22 15:24:15" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1202478">chenhonkhonk</author>
+<doctext field_name="doctext">&lt;p&gt; I'll try to post it, see if it makes more sense.&lt;/p&gt;
+
+&lt;p&gt;main&lt;/p&gt;
+&lt;code&gt;
+use strict;
+use warnings;
+
+use File::Basename qw(dirname);
+use Cwd qw(abs_path);
+use lib dirname(dirname abs_path $0);
+
+use Library;
+
+print STDOUT $hash{"key"} . "\n";
+
+exit 0;
+&lt;/code&gt;
+
+&lt;p&gt;this works&lt;/p&gt;
+&lt;p&gt;Library.pm&lt;/p&gt;
+&lt;code&gt;
+
+package Library;
+use strict;
+use warnings;
+
+use Exporter qw(import);
+
+our @EXPORT = qw(
+	%hash
+);
+
+our %hash = (
+	"key" =&gt; "Hello world!"
+);
+
+1;
+&lt;/code&gt;
+
+&lt;p&gt;these don't work&lt;/p&gt;
+&lt;p&gt;Library2.pm&lt;/p&gt;
+&lt;code&gt;
+package Library2;
+use strict;
+use warnings;
+
+our @EXPORT = qw(
+	return_string
+);
+
+
+sub
+return_string
+{
+	return "Hello embedded library";
+}
+&lt;/code&gt;
+&lt;p&gt;Library.pm&lt;/p&gt;
+
+&lt;code&gt;
+package Library;
+use strict;
+use warnings;
+
+use Exporter qw(import);
+
+our @EXPORT = qw(
+	%hash
+);
+
+use File::Basename qw(dirname);
+use Cwd qw(abs_path);
+use lib dirname(dirname abs_path $0);
+
+use Library2;
+package Library2;
+
+our %hash = (
+	"key" =&gt; return_string()
+);
+
+1;
+&lt;/code&gt;
+&lt;p&gt;I can understand it looks like the namespaces are overlapping, but the definition isn't exported even with 'our'. Just fiddled around with it, I can do our %hash = (); BEFORE the package othernamespace, and export the modification. That'll work for my case, but I'd rather not have 3-4 places I need to put the hash instead of just export and our. It seems my gripe is that a variable declared before the package othernamespace trickles down, but a variable declared after the package othernamespace doesn't trickle up when it's the same file, even though there's no complaint about the definition in another namespace and not in the original.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1230405</root_node>
+<parent_node field_name="parent_node">1230408</parent_node>
+<thread id="1230405">
+<node id="1230408"><node id="1230422"><node id="1230424"><node id="1230425"><node id="1230427"><node id="1230431"><node id="1230437"><node id="1230450"><node id="1230456"><node id="1230467"><node id="1230470"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1232253" title="Re^2: fix ODT files with line breaks looking poor" created="2019-04-07 17:55:58" updated="2019-04-07 17:55:58" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1232239">melutovich</author>
+<doctext field_name="doctext">Took a stab at Option 1; need to test it more but looks promising.
+
+&lt;code&gt;
+my $dom = XML::LibXML-&gt;load_xml(string =&gt; &lt;&lt;'END_XML');
+&lt;?xml version="1.0"?&gt;
+&lt;office:document-content office:version="1.2"
+    xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+    xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"&gt;
+&lt;office:body&gt;&lt;office:text&gt;
+&lt;text:p text:style-name="P1"&gt;
+    Fo&lt;text:span text:style-name="T1"&gt;o&lt;text:line-break/&gt;
+    B&lt;/text:span&gt;&lt;text:span text:style-name="T3"&gt;a&lt;/text:span&gt;
+    &lt;text:span text:style-name="T5"&gt;r&lt;text:line-break/&gt;&lt;/text:span&gt;
+  &lt;/text:p&gt;
+&lt;text:p text:style-name="P3"&gt;
+  TEST is a &amp;apos; real test.
+  &lt;/text:p&gt;
+&lt;/office:text&gt;&lt;/office:body&gt;
+&lt;/office:document-content&gt;
+END_XML
+my $xpc = XML::LibXML::XPathContext-&gt;new($dom);
+ $xpc-&gt;registerNs('office',
+     'urn:oasis:names:tc:opendocument:xmlns:office:1.0');
+ $xpc-&gt;registerNs('text',
+     'urn:oasis:names:tc:opendocument:xmlns:text:1.0');
+
+while (1) {
+    my ($lb) = $xpc-&gt;findnodes('//text:line-break') or last;
+    die "can't handle &lt;text:line-break&gt; with children: $lb"
+        if $lb-&gt;hasChildNodes;
+    my ($a) = $xpc-&gt;findnodes('ancestor::text:*[1]',$lb)
+      or die "failed to find ancestor of $lb";
+    my ($a_a) = $xpc-&gt;findnodes('ancestor::*[1]',$a)
+      or die "failed to find ancestor of ancestor of $a";
+    my $clone_a = $a-&gt;cloneNode(0);
+    my $nextSibling = $lb-&gt;nextSibling();
+    while ( $nextSibling ) {
+        my $currentSibling = $nextSibling;
+        $nextSibling = $currentSibling-&gt;nextSibling();
+        $currentSibling = $a-&gt;removeChild($currentSibling);
+        $clone_a-&gt;addChild($currentSibling);
+    }
+    $a-&gt;removeChild($lb);
+    $a_a-&gt;insertAfter($clone_a,$a);
+}
+
+print $dom;
+&lt;/code&gt;
+
+Which produces
+&lt;pre&gt;
+&lt;?xml version="1.0"?&gt;
+&lt;office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" office:version="1.2"&gt;
+&lt;office:body&gt;&lt;office:text&gt;
+&lt;text:p text:style-name="P1"&gt;
+    Fo&lt;text:span text:style-name="T1"&gt;o&lt;/text:span&gt;&lt;text:span text:style-name="T1"&gt;
+    B&lt;/text:span&gt;&lt;text:span text:style-name="T3"&gt;a&lt;/text:span&gt;
+    &lt;text:span text:style-name="T5"&gt;r&lt;/text:span&gt;&lt;text:span text:style-name="T5"/&gt;
+  &lt;/text:p&gt;
+&lt;text:p text:style-name="P3"&gt;
+  TEST is a ' real test.
+  &lt;/text:p&gt;
+&lt;/office:text&gt;&lt;/office:body&gt;
+&lt;/office:document-content&gt;
+&lt;/pre&gt;</doctext>
+<root_node field_name="root_node">1232242</root_node>
+<parent_node field_name="parent_node">1232245</parent_node>
+<thread id="1232242">
+<node id="1232243"><node id="1232244"/>
+</node>
+<node id="1232245"><node id="1232251"/>
+<node id="1232253"><node id="1232314"/>
+</node>
+</node>
+<node id="1232696"><node id="1232727"><node id="1232759"/>
+</node>
+</node>
+</thread></node>

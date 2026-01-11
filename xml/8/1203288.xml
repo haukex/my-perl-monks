@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203288" title="Re: Conditional use of Win32::TieRegistry" created="2017-11-13 14:54:16" updated="2017-11-13 14:54:16" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;c&gt;
+use warnings;
+use strict;
+
+my $have_tie_registry = defined eval
+	q{ use Win32::TieRegistry Delimiter=&gt;"/"; 1 };
+if ($have_tie_registry) {
+	print "Have module\n";
+	our $Registry;
+	my $IEKey = $Registry-&gt;{'HKEY_CURRENT_USER/Software/'
+		.'Microsoft/Internet Explorer/Main/'};
+	print "&lt;$_&gt;\n" for keys %$IEKey;
+}
+else {
+	chomp( my $err = $@//'unknown' );
+	die $err if $^O eq 'MSWin32';
+	print "On $^O, don't have module (reason: '$err')\n";
+}
+print "Continuing program...\n";
+
+__END__
+
+#### Linux:
+On linux, don't have module (reason: 'Can't locate Win32/TieRegistry.pm in @INC (you may need to install the Win32::TieRegistry module) (@INC contains: ...) at (eval 1) line 1.
+BEGIN failed--compilation aborted at (eval 1) line 1.')
+Continuing program...
+
+### Windows:
+Have module
+&lt;...&gt;
+&lt;...&gt;
+...
+Continuing program...
+&lt;/c&gt;
+&lt;p&gt;(&lt;i&gt;Update:&lt;/i&gt; Note that as opposed to several of the other solutions here, this uses slightly different logic: if [mod://Win32::TieRegistry] is available, it is used no matter which OS this is being run on; otherwise, if it's not available, that's only a fatal error if this is being run on Windows. Of course that logic can be changed, my point was mostly to show the &lt;c&gt;my $have_module = eval q{ use Module; 1 };&lt;/c&gt; technique.)&lt;/p&gt;
+&lt;p&gt;See also:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;[id://1195426]&lt;/li&gt;
+&lt;li&gt;[id://1165148]&lt;/li&gt;
+&lt;li&gt;[id://1153468]&lt;/li&gt;
+&lt;li&gt;[doc://Module::Load::Conditional]&lt;/li&gt;
+&lt;!--li&gt;[id://1199791]&lt;/li--&gt;
+&lt;!--li&gt;[id://1168146]&lt;/li--&gt;
+&lt;/ul&gt;</doctext>
+<root_node field_name="root_node">1203276</root_node>
+<parent_node field_name="parent_node">1203276</parent_node>
+<thread id="1203276">
+<node id="1203279"><node id="1203282"/>
+</node>
+<node id="1203280"><node id="1203285"><node id="1203304"/>
+</node>
+</node>
+<node id="1203281"/>
+<node id="1203288"/>
+<node id="1203289"><node id="1203293"/>
+</node>
+</thread></node>

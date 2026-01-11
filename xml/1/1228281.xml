@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228281" title="load a module or another: Dumper or dd" created="2019-01-09 17:09:01" updated="2019-01-09 17:09:01" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="174111">Discipulus</author>
+<doctext field_name="doctext">dear community,&lt;P&gt;
+
+I'm almost finished witha little module and I forget to implement debugging. In some points I'll just want to dump some datastructure, maybe preceded by a short description.&lt;P&gt;
+
+The fact is that I'm now addicted to [METAMOD://Data::Dump] cleaner output but it is no in core, while [METAMOD://Data::Dumper] is everywhere since ever, and I dont want to add a prerequisite (well I can, or I can use what in core but if so no question arise ;)&lt;P&gt;
+
+I'm planning something like:&lt;P&gt;
+
+&lt;c&gt;
+
+package MyModule;
+use strict;
+use warnings;
+
+{
+	local $@;
+	eval { use Data::Dump; 1;};
+		# tried the following to simulate
+		# Data::Dump absence but did not work
+		# $@ = 1; no Data::Dump;
+	use if $@, 'Data::Dumper';
+}
+
+_mydump('this is %INC',\%INC);
+
+sub _mydump{
+	my ( $msg, $ref) = @_;
+	print "$msg:\n";
+	{
+		local $@;
+		eval {dd $ref};
+		print Dumper $ref if $@;
+	}
+
+}
+
+&lt;/c&gt;&lt;P&gt;
+
+
+But: 
+&lt;UL&gt;
+&lt;LI&gt; 1) I'm unable to simulate the absence of the [METAMOD://Data::Dump] module (all strawberrys have it bundled): if I try &lt;C&gt;use Data::DumpNOTEXISTING&lt;/C&gt; I got errors about &lt;C&gt;%INC&lt;/C&gt; or if I use require in a &lt;C&gt;BEGIN&lt;/C&gt; block I receive &lt;C&gt;print() on unopened filehandle Dumper&lt;/C&gt; error.
+&lt;LI&gt; 2) I got also &lt;C&gt;Dumper&lt;/C&gt; used only once warning in other tests
+&lt;LI&gt; 3) Is this something sane or just a byzantinisme?
+&lt;/UL&gt;
+thanks&lt;P&gt;
+
+L*&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-174111"&gt;
+There are no rules, there are no thumbs..&lt;BR&gt;
+Reinvent the wheel, then learn The Wheel; may be one day you reinvent one of THE WHEELS.
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.142} --&gt;</doctext>
+<thread id="1228281">
+<node id="1228282"><node id="1228286"><node id="1228292"/>
+</node>
+<node id="1228297"/>
+</node>
+<node id="1228283"><node id="1228284"><node id="1228288"/>
+</node>
+</node>
+<node id="1228285"><node id="1228301"/>
+</node>
+<node id="1228293"><node id="1228296"><node id="1228298"/>
+</node>
+</node>
+<node id="1228300"/>
+</thread></node>

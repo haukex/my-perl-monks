@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11140740" title="Re: Perl's feature to determine, in current point of loop, that this is the last one? (updated)" created="2022-01-23 03:32:17" updated="2022-01-23 03:32:17" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;meant is there some Perl's simple internal variable or feature, not resort to some added line code/variable must be done by coder ?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Having wished for this myself, I can say that the answer to the &lt;ins&gt;general&lt;/ins&gt; question is unfortunately: No, with the exception of [doc://eof] when reading from files, as mentioned by [kcott].&lt;/p&gt;
+&lt;p&gt;TIMTOWTDI, though. You haven't shown any example code so it's really hard to say which variation below (if any) might be most appropriate or easiest in your case.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my @array = qw/ Foo Bar Quz /;
+
+# C-style loop, not very perlish (but *sometimes* useful)
+for ( my $i = 0; $i &lt; @array; $i++ ) {
+	print $array[$i], $i==$#array ? ".\n" : ", ";
+}
+
+# the perlish variant of the above
+for my $i (0..$#array) {
+	print $array[$i], $i==$#array ? ".\n" : ", ";
+}
+
+use 5.012;  # so keys/values/each work on arrays
+while ( my ($i, $v) = each @array ) {
+	print $v, $i==$#array ? ".\n" : ", ";
+}
+
+# as suggested by jwkrahn
+my $cnt = @array;
+for my $v (@array) {
+	print $v, --$cnt ? ", " : ".\n";
+}
+
+# or sometimes it's as simple as "join"
+print join(", ", @array), ".\n";
+
+my @array_copy = @array; # because it's destructive!
+while ( my $v = shift @array_copy ) {
+	print $v, @array_copy ? ", " : ".\n";
+}
+&lt;/c&gt;
+&lt;p&gt;And lastly, while it might seem overkill, the concept of iterators can be extremely useful in some cases. The book [https://hop.perl.plover.com/|Higher-Order Perl] is a great read on this and other topics. &lt;strike&gt;Here, I've extended the concept with a "peekable" iterator class. One can even overload the &lt;c&gt;&lt;&gt;&lt;/c&gt; operator as I showed [https://metacpan.org/dist/Algorithm-Odometer-Tiny/source/lib/Algorithm/Odometer/Tiny.pm#L10|here] (note one does need Perl v5.18 or better for the overloaded &lt;c&gt;&lt;&gt;&lt;/c&gt; to work in list context).&lt;/strike&gt; &lt;b&gt;Update:&lt;/b&gt; In the following code, I've replaced my own classes with [mod://Iterator::Simple] and [mod://Iterator::Simple::Lookahead]. &lt;b&gt;/Update&lt;/b&gt;&lt;/p&gt;
+&lt;c&gt;
+# demo of a basic iterator
+use Iterator::Simple 'iter';
+my $it = iter(\@array);
+while (defined( my $v = $it-&gt;() )) {
+	print $v, " ";
+}
+print "\n";
+
+# demo the peekable iterator
+use Iterator::Simple::Lookahead;
+my $itp = Iterator::Simple::Lookahead-&gt;new( iter(\@array) );
+while (defined( my $v = $itp-&gt;() )) {
+	print $v, defined $itp-&gt;peek ? ", " : ".\n";
+}
+&lt;/c&gt;
+&lt;p&gt;Bonus: For some &lt;i&gt;experimental&lt;/i&gt; stuff, see &lt;c&gt;FIRST&lt;/c&gt; and &lt;c&gt;LAST&lt;/c&gt; in [mod://Perl6::Controls].&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Also minor edits to wording.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11140729</root_node>
+<parent_node field_name="parent_node">11140729</parent_node>
+<thread id="11140729">
+<node id="11140735"/>
+<node id="11140737"/>
+<node id="11140738"/>
+<node id="11140739"/>
+<node id="11140740"/>
+<node id="11140741"/>
+<node id="11140743"><node id="11140744"/>
+<node id="11140745"/>
+</node>
+<node id="11140746"/>
+<node id="11140749"><node id="11140764"><node id="11140768"><node id="11140774"><node id="11140785"><node id="11140852"/>
+</node>
+</node>
+<node id="11140860"><node id="11140865"><node id="11140877"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11140875"/>
+</thread></node>

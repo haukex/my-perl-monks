@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1194593" title="Is foreach split Optimized? (Update: No.)" created="2017-07-09 06:36:54" updated="2017-07-09 06:36:54" _doctext_mode="strict"><type id="115">perlquestion</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I think I've found an interesting optimization, but even after some digging here on PerlMonks, the Perl docs,
+and looking through the Camel I haven't yet found it documented*. Of course, it's also possible that I made a mistake
+in my benchmark, or that this optimization is common knowledge, in which case I would be happy to be enlightened :-)&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/b&gt;
+* Because it isn't there :-) It appears that the answer is that while [doc://split] is quite fast, it still splits the string
+into an array before iterating over that array (that's what the memory consumption seems to show). The filehandle method
+[id://1194601|proposed] by [Laurent_R] seems to be the best way to go about my task instead, assuming what you're splitting
+on is a fixed string. See the all the replies below for more details.
+&lt;b&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+
+&lt;p&gt;I had a multiline string and wanted to iterate through the lines, and became curious what the fastest way to do that was.
+I was pleasantly surprised that in my benchmark, on v5.24.1, &lt;c&gt;for (split /\n/, $string)&lt;/c&gt; was fastest, despite my original
+worry that it might split the string into a long list before iterating over it.&lt;/p&gt;
+
+&lt;p&gt;I know that &lt;c&gt;foreach (1..1000000)&lt;/c&gt; has been optimized to use an iterator instead of building a huge list
+[doc://perl5005delta#foreach-(1..1000000)-optimized|since 5.005], and I found some discussion of the optimization of
+&lt;c&gt;split //&lt;/c&gt; in [id://833345|this thread].&lt;/p&gt;
+
+&lt;p&gt;I also found several references to &lt;c&gt;@x = split ...&lt;/c&gt; being optimized, which I think might be the reason that
+&lt;c&gt;for (split ...)&lt;/c&gt; is so fast. I don't know how long this optimization has been present, but I found, for example,
+commit [https://perl5.git.perl.org/perl.git/commit/e4e95921cd0fd0|e4e95921cd0fd0], which seems to indicate it's been
+present since Perl 3. If anyone knows more and wants to set the record straight, please do so! :-)&lt;/p&gt;
+
+&lt;readmore&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump qw/dd pp/;
+use Benchmark qw/cmpthese/;
+
+# example output:
+# 5.024001
+#         Rate regex index split
+# regex 9.64/s    --   -8%  -41%
+# index 10.5/s    9%    --  -36%
+# split 16.4/s   70%   56%    --
+
+my $str = "\nFoo\n\nBar Quz\nBaz\nx" x 50000;
+use constant TEST =&gt; 0;
+my $expect = join "\0", split /\n/, $str;
+$expect=~s/o/i/g;
+#dd [split /\n/, $str], $expect;
+
+dd $];
+cmpthese(-2, {
+	split =&gt; sub {
+		my @lines;
+		my @x = split /\n/, $str;
+		#@x = map {$_} @x; # significant slowdown
+		#for my $line (map {$_} split /\n/, $str) { # still fairly fast
+		for my $line (@x) {
+			$line=~s/o/i/g;
+			push @lines, $line;
+		}
+		if (TEST) { die pp(@lines) unless $expect eq join "\0", @lines }
+	},
+	regex =&gt; sub {
+		my @lines;
+		pos($str)=0;
+		#while ($str=~/^(.*)$/mgc) { # slower
+		while ($str=~/\G(?|(.*?)\n|(.+)\z)/gc) {
+			my $line = $1;
+			$line=~s/o/i/g;
+			push @lines, $line;
+		}
+		if (TEST) {
+			die unless pos($str)==length($str);
+			die pp(@lines) unless $expect eq join "\0", @lines;
+		}
+	},
+	index =&gt; sub {
+		my @lines;
+		for ( my ($pos,$nextpos) = (0); $pos&lt;length($str);
+			$pos=$nextpos+1 ) {
+				$nextpos = do { my $i=index($str,"\n",$pos);
+					$i&lt;0?length($str):$i };
+				my $line = substr $str, $pos, $nextpos-$pos;
+				$line=~s/o/i/g;
+				push @lines, $line
+		}
+		if (TEST) { die pp(@lines) unless $expect eq join "\0", @lines }
+	},
+});
+&lt;/c&gt;</doctext>
+<thread id="1194593">
+<node id="1194597"><node id="1194598"><node id="1194602"><node id="1194606"><node id="1194609"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1194601"><node id="1194605"><node id="1194614"/>
+<node id="1194620"><node id="1194804"/>
+</node>
+</node>
+</node>
+<node id="1194616"><node id="1194626"/>
+<node id="1194627"/>
+<node id="1194924"/>
+</node>
+<node id="1194625"><node id="1194802"/>
+</node>
+<node id="1194635"><node id="1194799"/>
+</node>
+</thread></node>

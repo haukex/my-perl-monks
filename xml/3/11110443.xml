@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110443" title="Re: unexpected modify hash in a distance with grep { $_ }" created="2019-12-20 13:26:16" updated="2019-12-20 13:26:16" _doctext_mode="lenient"><type id="11">note</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">Hi&lt;P&gt;
+
+the $_ inside the grep is an alias of the hash-values, i.e. any assignment would be mirrored.&lt;P&gt;
+
+For reasons that I don't understand yet (under-coffeination perhaps) this triggers an autovivification. °&lt;P&gt;
+
+compare [id://11110442]&lt;P&gt;
+
+This can easily circumvented with a more common approach to only pass the keys.&lt;P&gt;
+
+&lt;c&gt;
+#!/usr/bin/perl 
+
+use strict;
+use warnings;
+use Data::Dumper;
+
+my $h = {
+          'a' =&gt; 1,
+          'b' =&gt; 2,
+          'c' =&gt; 3,
+        };
+
+warn Dumper [ $$h{a}, $$h{x}, $$h{b}, $$h{c} ];
+warn Dumper [ keys %$h ];
+
+warn Dumper [ grep {$$h{$_}} qw/a b c x/ ];      # &lt;-- no side effect
+warn Dumper [ keys %$h ];
+&lt;/c&gt;&lt;P&gt;
+
+&lt;c&gt;
+C:/Perl_524/bin\perl.exe  d:/tmp/pm/grep_autovivify.pl 
+$VAR1 = [
+          1,
+          undef,
+          2,
+          3
+        ];
+$VAR1 = [
+          'a',
+          'c',
+          'b'
+        ];
+$VAR1 = [
+          'a',
+          'b',
+          'c'
+        ];
+$VAR1 = [
+          'a',
+          'c',
+          'b'
+        ];
+&lt;/c&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;small&gt;&lt;strike&gt;Football&lt;/strike&gt;Perl is like chess, only without the dice&lt;/small&gt;
+&lt;/sub&gt; &lt;P&gt;
+
+&lt;/div&gt;&lt;/div&gt;&lt;P&gt;
+
+
+°) my guess is it's an implementation detail/bug&lt;!-- Wiki2Monks {"version":1.142} --&gt;</doctext>
+<root_node field_name="root_node">11110437</root_node>
+<parent_node field_name="parent_node">11110437</parent_node>
+<thread id="11110437">
+<node id="11110438"><node id="11110442"><node id="11110455"><node id="11110456"><node id="11110457"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11110443"><node id="11110446"><node id="11110448"/>
+<node id="11110460"/>
+</node>
+<node id="11110447"><node id="11110459"><node id="11110461"><node id="11110462"><node id="11110480"/>
+</node>
+</node>
+<node id="11110475"><node id="11110482"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

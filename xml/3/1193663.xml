@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193663" title="Re^3: Escaping double quotes in complete document" created="2017-06-27 03:50:48" updated="2017-06-27 03:50:48" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;please don't facepalm on me over this&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, I understand, but this is a very old style of generating HTML - probably my very first attempts at CGI scripts from over 20 years ago looked like this :-) But also, the issues with double quotes would have existed the entire time, even without the Perl upgrade. Also, I agree with [huck] that it's possible that maybe something has changed in the way the data gets handed to your script.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;my boss is going to kill me&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, if he needs further convincing, then tell him that HTML generation code like this exposes your customers to a [wp://Cross-site scripting] (XSS) attack ([https://excess-xss.com/|longer explanation]).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I get that I have to manually escape every HTML entity by hand, right?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm sorry to say yes. The minimal change needed to the code you showed is the following (&lt;c&gt;encode_entities&lt;/c&gt;), keeping in mind that it encodes &lt;c&gt;$SOAPResult&lt;/c&gt; once and then the value stays that way, so if you need the value for something else later you should modify a copy instead, like e.g. &lt;c&gt;encode_entities(my $copy=$SOAPResult);&lt;/c&gt;&lt;/p&gt;
+&lt;c&gt;
+use HTML::Entities qw/encode_entities/;
+my $SOAPResult = q{ "Hello" &lt;world&gt; &amp;amp; };
+encode_entities($SOAPResult);
+print &lt;&lt;"EndOfText";
+  &lt;input type="text" name="mytext" id="mytext" value="$SOAPResult"/&gt;
+EndOfText
+
+__END__
+
+  &lt;input type="text" name="mytext" id="mytext" value=" &amp;quot;Hello&amp;quot; &amp;lt;world&amp;gt; &amp;amp;amp; "/&gt;
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1193555</root_node>
+<parent_node field_name="parent_node">1193657</parent_node>
+<thread id="1193555">
+<node id="1193559"><node id="1193562"><node id="1193565"><node id="1193658"/>
+</node>
+</node>
+</node>
+<node id="1193609"><node id="1193659"/>
+</node>
+<node id="1193612"><node id="1193657"><node id="1193662"/>
+<node id="1193663"/>
+<node id="1193676"><node id="1193694"/>
+</node>
+</node>
+</node>
+<node id="1193698"><node id="1193699"><node id="1193702"/>
+</node>
+</node>
+<node id="1193806"><node id="1193808"/>
+</node>
+</thread></node>

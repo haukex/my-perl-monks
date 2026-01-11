@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11131056" title="Formatting Regex for File::Find::Rule" created="2021-04-09 10:52:09" updated="2021-04-09 10:52:09" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11131053">springgem</author>
+<doctext field_name="doctext">&lt;p&gt;I'm new to PerlMonks and fairly new to PERL. Long story short, I'm trying to clean up and speed up code and am struggling with Find::File::Rule. I read other posts here and on StackOverflow that helped, but I can't get to that last little bit.&lt;/p&gt;
+&lt;p&gt;The story: I want to build a list of directories or files, but exclude some based on patterns.&lt;/p&gt;
+&lt;p&gt;It started with:&lt;/p&gt;
+&lt;code&gt;
+find ( {
+    no_chdir =&gt; 0,
+    wanted =&gt; sub {
+        return unless -d;   # skip files; we're tagging folders
+        return if $File::Find::name =~ /\/\./;
+        return if $File::Find::name =~ /\./;
+        return if $File::Find::name =~ /\.store$/i;
+        return if $File::Find::name =~ /\/LOG(\/|$)/i;
+        return if $File::Find::name =~ /\.go\./i;    
+        return if $File::Find::name =~ /\/cache(\/|$)/i; 
+        return if $File::Find::name =~ /\.store$/i;    
+        return if $File::Find::name =~ /\/AVCHD(\/|$)/i; 
+        push ( @fileList, $File::Find::name ); # get name with path
+        }},
+    $tagLocation );
+&lt;/code&gt;
+&lt;p&gt;Hideous, but it worked. So I cleaned it up to:&lt;/p&gt;
+&lt;code&gt;
+our @dirExclusions = qw( \.
+    \/LOG(\/|$)
+    \/cache(\/|$)
+    \/AVCHD(\/|$)
+    );
+# call regex only once
+our $dirExclusionsQR = join( '|', @dirExclusions );
+# compile the expression
+$dirExclusionsQR = qr{$dirExclusionsQR}i;
+
+my @fileList3;
+find ( {
+    no_chdir =&gt; 0,
+    wanted =&gt; sub {
+        return unless -d;   # skip files; we're tagging folders
+        return if $File::Find::name =~ $dirExclusionsQR;
+        push ( @fileList3, $File::Find::name );         
+        }},
+    $tagLocation );
+&lt;/code&gt;
+&lt;p&gt;Much better, and I get the benefit from qr//. Life is good. Now I want to make it more readable and perhaps faster with "File::Find::Rule" and -&gt;name()-&gt;prune. So:&lt;/p&gt;
+&lt;code&gt;
+our @dirExclusions = qw( \.
+    \/LOG(\/|$)
+    \/cache(\/|$)
+    \/AVCHD(\/|$)
+    );
+our @dirExclusionsQR = map { qr/$_/i } @dirExclusions;
+
+my $rule = File::Find::Rule-&gt;new;
+$rule-&gt;or(
+    $rule-&gt;new-&gt;directory-&gt;name( @dirExclusionsQR )-&gt;prune-&gt;discard,
+    $rule-&gt;new-&gt;directory);
+
+my @fileList2;
+@fileList2 = $rule-&gt;in($tagLocation);
+&lt;/code&gt;
+&lt;p&gt;This version doesn't return anything. I'll spare you the variants of putting qr inside @dirExclusions, using q() instead of qw(), 
+taking off the '\/' (on the assumption File::Find::Rule wasn't matching on the full path), and such.&lt;/p&gt;
+&lt;p&gt;Next attempt: use a string, as in @fileList3 above.&lt;/p&gt;
+&lt;code&gt;
+our @dirExclusions = qw( \.
+    \/LOG(\/|$)
+    \/cache(\/|$)
+    \/AVCHD(\/|$)
+    );
+our $dirExclusionsQR = join( '|', @dirExclusions );
+$dirExclusionsQR = qr{$dirExclusionsQR}i;
+
+my $rule = File::Find::Rule-&gt;new;
+$rule-&gt;or(
+    $rule-&gt;new-&gt;directory-&gt;name( $dirExclusionsQR )-&gt;prune-&gt;discard,
+    $rule-&gt;new-&gt;directory);
+
+my @fileList2;
+@fileList2 = $rule-&gt;in($tagLocation);
+&lt;/code&gt;
+&lt;p&gt;Null output. How about typing it in directly?&lt;/p&gt;
+&lt;code&gt;
+$rule-&gt;or(
+    $rule-&gt;new-&gt;directory
+        -&gt;name( qr/(\.|\/LOG(\/|$)|\/cache(\/|$)|\/AVCHD(\/|$))/i )
+        -&gt;prune-&gt;discard,
+    $rule-&gt;new-&gt;directory);
+&lt;/code&gt;
+&lt;p&gt;Doesn't work either.&lt;/p&gt;
+&lt;br&gt;
+&lt;p&gt;Finally, out of desperation:&lt;/p&gt;
+&lt;code&gt;
+our @de = qw (*.* LOG cache AVCHD);
+
+my $rule = File::Find::Rule-&gt;new;
+$rule-&gt;or(
+    $rule-&gt;new-&gt;directory-&gt;name( @de )-&gt;prune-&gt;discard,
+    $rule-&gt;new-&gt;directory);
+
+my @fileList2;
+@fileList2 = $rule-&gt;in($tagLocation);
+&lt;/code&gt;
+&lt;p&gt;It does work, but I cannot use regex and I don't think the wildcards are compiled. And it doesn't solve my regex issue. What am I missing?&lt;/p&gt;
+&lt;p&gt;Thanks!&lt;/p&gt;
+</doctext>
+<thread id="11131056">
+<node id="11131059"><node id="11131060"><node id="11131061"><node id="11131063"><node id="11131066"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

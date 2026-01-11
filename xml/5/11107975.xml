@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11107975" title="Re: Portably unit testing scripts" created="2019-10-26 03:46:02" updated="2019-10-26 03:46:02" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I could actually execute the script, but that isn't much of a "unit" test anymore&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Why not? As you said, it's a thin wrapper around your library, and I assume you've got plenty of tests for that, so you've got that covered. The script is an interface between the command line and the library, and that's the "unit" you're testing here - IMHO actually executing Perl is the only "real" way to test it. In any case, don't be too strict with yourself regarding the formal definitions of "unit" and "integration" tests here - while certainly important in some contexts (e.g. large projects with multiple devs), IMHO the far more important metrics here are whether you're testing everything, as in code coverage and so on.&lt;/p&gt;
+&lt;p&gt;I have various command-line tools that I test, see e.g. [https://bitbucket.org/haukex/htools/src/master/t/|&lt;c&gt;t/&lt;/c&gt; in htools], although in that particular repository I haven't tested them on Windows. For that, you could take a look at [https://github.com/haukex/Badge-Simple/blob/e524571e/t/badge-simple.t#L82|the tests] for my [mod://Badge::Simple] command-line tool, or perhaps even more closely related to your question, [https://github.com/haukex/Shell-Tools/blob/3b6c70ce9/t/22_opts_usage.t|this test] for my [mod://Shell::Tools]. Here's a short example for your script, assuming it's in a &lt;c&gt;bin&lt;/c&gt; subdir and the tests in a &lt;c&gt;t&lt;/c&gt; subdir, and if the script actually had a Synopsis POD. Running [doc://prove] on this works on Linux and on Windows.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use FindBin;
+use File::Spec::Functions qw/catfile updir/;
+use Capture::Tiny 'capture';
+use Config;
+use Test::More tests =&gt; 2;
+
+# Unit Under Test
+my $UUT = catfile($FindBin::Bin, updir, 'bin', 'foo.pl');
+
+subtest '--version' =&gt; sub { plan tests =&gt; 3;
+	my ($out,$err,$exit) = capture {
+		system $Config{perlpath}, $UUT, '--version' };
+	is $exit, 0, 'perl ok';
+	is $out, "my_script version 1.00\n\n",
+		'stdout message correct';
+	is $err, '', 'no stderr';
+};
+
+subtest '--help' =&gt; sub { plan tests =&gt; 3;
+	my ($out,$err,$exit) = capture {
+		system $Config{perlpath}, $UUT, '--help' };
+	is $exit, 0, 'perl ok';
+	like $out, qr/\bUsage:\s+foo\.pl FOO BAR\b/si,
+		'stdout message correct';
+	is $err, '', 'no stderr';
+};
+&lt;/c&gt;
+&lt;p&gt;(Note: I've often used [doc://$^X] instead of [doc://Config]'s &lt;c&gt;perlpath&lt;/c&gt; without problems, but the [http://cpanwiki.grango.org/wiki/CPANAuthorNotes|CPAN Authors FAQ] recommends the latter.)&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11107968</root_node>
+<parent_node field_name="parent_node">11107968</parent_node>
+<thread id="11107968">
+<node id="11107970"/>
+<node id="11107974"><node id="11107981"><node id="11107984"/>
+</node>
+</node>
+<node id="11107975"><node id="11107978"><node id="11107980"/>
+</node>
+<node id="11107985"><node id="11107986"/>
+</node>
+</node>
+<node id="11107989"/>
+<node id="11108001"/>
+</thread></node>

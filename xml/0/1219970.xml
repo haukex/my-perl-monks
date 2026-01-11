@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1219970" title="Re^2: Doing every X seconds" created="2018-08-06 19:00:38" updated="2018-08-06 19:00:38" _doctext_mode="lenient"><type id="11">note</type>
+<author id="62512">mr_mischief</author>
+<doctext field_name="doctext">&lt;p&gt; You forgot to check the definedness of &lt;c&gt;$child&lt;/c&gt;, as upon failure to fork you'll get &lt;c&gt;undef&lt;/c&gt;. You likely do not want to pretend you're supposed to be executing the child case code in that circumstance.
+&lt;/p&gt;
+
+&lt;p&gt;
+I'm puzzled by "&lt;c&gt;# child must explicitly exit otherwise both would continue executing this&lt;/c&gt;". The wording suggests both parent and child will continue executing the child case which of course is untrue. As written, the child would fall out of the &lt;c&gt;else&lt;/c&gt; clause and the parent's [doc://waitpid] would still see the child's exit status if that call to &lt;c&gt;exit&lt;/c&gt; were not present. You then say to "&lt;c&gt;# reach here if job processing completed successfully&lt;/c&gt;" which in your case only the parent will and the child won't because of the above-mentioned exit. Perhaps it would be clearer for the first one to say "... or the child will continue past the else block and we only want the parent to do so" or something similar.
+&lt;/p&gt;
+
+&lt;p&gt;
+If the intent is for both programs to be done after the branch, a shared [doc://exit] just after the entire &lt;c&gt;if&lt;/c&gt; statement could be useful. Any code you intend for the parent only to run after the child is gone could be placed in the parent's case in the &lt;c&gt;if&lt;/c&gt; block, after the loop on [doc://waitpid]. It's also possible to have the parent exit and the child continue, and that's desirable under certain circumstances.&lt;/p&gt;
+
+&lt;p&gt;
+At this point I think it's worth mentioning there are tools to do this handling for you. Depending on your exact needs, there are [doc://Parallel::ForkManager], [doc://AnyEvent::ForkManager], [doc://IPC::Run], [doc://IPC::Run3], [doc://Proc::Fork], [doc://Proc::Fork::Control], [doc://Proc::Daemon], and a whole lot more.
+&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1219754</root_node>
+<parent_node field_name="parent_node">1219772</parent_node>
+<thread id="1219754">
+<node id="1219763"/>
+<node id="1219768"/>
+<node id="1219772"><node id="1219970"><node id="1219978"><node id="1219980"><node id="1219985"><node id="1219988"><node id="1219991"><node id="1219993"/>
+<node id="1220002"><node id="1220009"><node id="1220014"/>
+<node id="1220019"><node id="1220054"><node id="1220063"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1220012"/>
+</node>
+</node>
+<node id="1220138"/>
+</node>
+</node>
+<node id="1219981"/>
+<node id="1220128"/>
+</node>
+</node>
+</node>
+<node id="1219790"/>
+<node id="1219858"><node id="1219905"/>
+</node>
+<node id="1219894"/>
+<node id="1219989"/>
+<node id="1221916"/>
+</thread></node>

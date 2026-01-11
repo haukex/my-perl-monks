@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1162930" title="Re: searching two pattern sequentially from one file" created="2016-05-13 05:45:50" updated="2016-05-13 05:45:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [mrityunjaynath],&lt;/p&gt;
+&lt;p&gt;When I create a simple test input file&lt;/p&gt;
+&lt;c&gt;
+ORIGINAL_QUARTUS_VERSION a b c d
+LAST_QUARTUS_VERSION w x y z
+&lt;/c&gt;
+&lt;p&gt;Your code works for me (after commenting out the initial [doc://opendir], which appears unnecessary), giving the (I assume) expected output "the original quartus c" and "the latest quartus y".&lt;/p&gt;
+&lt;p&gt;Are you sure your input file contains the string "LAST_QUARTUS_VERSION"? Could you show a sample input file for which your code fails? See [http://www.sscce.org/|Short, Self Contained, Correct Example].&lt;/p&gt;
+&lt;p&gt;Note that you don't need to open the file twice, you can combine your two loops into one:&lt;/p&gt;
+&lt;c&gt;
+my $originalquartus;
+my $latestquartus;
+open( my $OFILE, $synthfilelist ) || die "couldnt open file: $!";
+while ( my $readlineqo = &lt;$OFILE&gt; ) {
+	chomp $readlineqo;
+	if ( $readlineqo =~ /ORIGINAL_QUARTUS_VERSION/ ) {
+		my @originalqarray = ( split / +/, $readlineqo );
+		$originalquartus = $originalqarray[3];
+		print "\nthe original quartus $originalquartus\n";
+	}
+	if ( $readlineqo =~ /LAST_QUARTUS_VERSION/ ) {
+		my @latestqarray = ( split / +/, $readlineqo );
+		$latestquartus = $latestqarray[3];
+		print "\nthe latest quartus $latestquartus\n";
+	}
+	next if $readlineqo =~ /^ $/;
+}
+close($OFILE);
+&lt;/c&gt;
+&lt;p&gt;Also, you use [doc://glob] in scalar context, which only returns one file at a time, but you call the results variable &lt;c&gt;$synthfilelist&lt;/c&gt; and you output it as "input file&lt;u&gt;s&lt;/u&gt; in current directory" - this might lead to some confusion as it will only ever be one file per [doc://glob] call.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Small update:&lt;/i&gt; Using a [doc://next] statement as the very last thing in a loop is not necessary as the loop will go to the next iteration anyway, so unless you have code following it you can remove that line.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1162928</root_node>
+<parent_node field_name="parent_node">1162928</parent_node>
+<thread id="1162928">
+<node id="1162930"><node id="1162932"><node id="1162933"><node id="1162936"><node id="1162939"><node id="1163118"><node id="1163119"/>
+<node id="1163120"/>
+</node>
+</node>
+<node id="1162943"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

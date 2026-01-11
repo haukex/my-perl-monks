@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1219060" title="Re: how to stop command" created="2018-07-22 17:42:37" updated="2018-07-22 17:42:37" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Note that the pattern &lt;c&gt;eval { ... }; if ($@) { ... }&lt;/c&gt; suffers from [id://1153468|issues], and this pattern is better: &lt;c&gt;eval { ...; 1 } or { ... };&lt;/c&gt; - or just use a module like [mod://Try::Tiny].&lt;/p&gt;
+&lt;p&gt;Other than the scoping issue of &lt;c&gt;@file_list&lt;/c&gt; that [hippo] pointed out, I'm not sure I understand what problems you're having. I tried the following code on Linux and it times out the &lt;c&gt;ls&lt;/c&gt; just fine:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dumper;
+
+my @file_list;
+eval {
+	local $SIG{ALRM} = sub { die "alarm\n" }; 
+	alarm 5;
+	chomp( @file_list = `sleep 10; ls /tmp` );
+	die "ls: \$?=$?" if $?;
+	alarm 0;
+1 } or do {
+	die $@ unless $@ eq "alarm\n";
+	warn "Timed out";
+};
+
+print Dumper(\@file_list);
+&lt;/c&gt;
+&lt;p&gt;Also, have a look at [mod://IPC::Run], it has timeout support, and support for several more powerful features. Here's an example that also shows [mod://Try::Tiny]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dumper;
+use IPC::Run qw/ run timeout /;
+use Try::Tiny;
+
+my @file_list;
+try {
+	run ['ls','/tmp'], \undef, \my $lines, timeout(5)
+		or die "ls: \$?=$?";
+	@file_list = split /\n/, $lines;
+}
+catch {
+	die $_ unless /^IPC::Run: timeout/;
+	warn "Timed out";
+};
+
+print Dumper(\@file_list);
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1219040</root_node>
+<parent_node field_name="parent_node">1219040</parent_node>
+<thread id="1219040">
+<node id="1219041"><node id="1219042"><node id="1219043"/>
+</node>
+</node>
+<node id="1219060"><node id="1219072"><node id="1219121"/>
+</node>
+<node id="1219104"><node id="1219124"/>
+</node>
+</node>
+</thread></node>

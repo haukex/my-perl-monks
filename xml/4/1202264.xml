@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1202264" title="Maintaining date modified timestamp when copying files" created="2017-10-29 05:40:01" updated="2017-10-29 05:40:01" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1201390">Maire</author>
+<doctext field_name="doctext">&lt;p&gt;Good morning Monks,&lt;/p&gt;
+
+&lt;p&gt; I have a large folder of text files, and I want to substitute all instances of a certain string within those files with another string (essentially every time the word “end” appears, I want to start a new line).&lt;/p&gt;
+
+&lt;p&gt;To do this, I thought it would be safer to use a script that copies the files to a new folder before it modified them. After a bit of Googling, I found a Perl script (created by durden_tyler and uploaded to [https://www.unix.com/302318333-post5.html]) which, with a couple of modifications, allows me to do just this.
+
+&lt;code&gt;
+#!perl -w
+# Script to process all *.txt files in current directory and put the output
+# in the corresponding *.txt.new files in the current directory again.
+my $indir  = 'C:\Users\li\test';  # the input directory name
+my $outdir = 'C:\Users\li\test2';  # the output directory name
+
+my $i = 0;         # loop index
+my $infile;        # the input file name
+my $outfile;       # the output file name
+
+
+while (defined($infile = glob($indir."\\*.txt"))) {             # loop through the txt files in directory $indir
+
+  printf("(%d)\tNow processing file =&gt; %s\t",++$i,$infile);
+  
+  
+  $outfile = $outdir."\\".substr($infile,rindex($infile,"\\")+1);  # name the output file
+  
+ 
+  open (IFILE, "&lt;$infile") or die "Can't open $infile: $!";     # open input file for reading
+  
+  open (OFILE, "&gt;$outfile") or die "Can't create file: $!";     # create output file for writing
+  
+  while (&lt;IFILE&gt;) {        # loop through contents of the input file
+  my @lines = &lt;IFILE&gt;;
+	my @newlines;
+	foreach(@lines) {
+   $_ =~ s/&lt;\/end&gt;/&lt;\/end&gt;\n/g;
+   push(@newlines,$_);
+
+    print OFILE $_;
+  }
+  close(IFILE) or die "Can't close $infile: $!";                # close input file
+  close(OFILE) or die "Can't close $outfile: $!";               # close output file
+  printf("Output file =&gt; %s\n",$outfile);
+}
+}
+
+&lt;/code&gt;
+&lt;/p&gt;
+
+&lt;p&gt;The only problem is that this process (obviously) alters the original “date modified” Windows timestamps (that are displayed in File Explorer) for the files. This is unfortunate because the timestamps, at the moment, are one of the key ways that I’m keeping track of the large amount of data I’ve got.&lt;/p&gt;
+&lt;p&gt;Is there any way that I can still substitute the string within each file without losing the original date modified timestamp?&lt;/p&gt;
+
+&lt;p&gt;Thanks a lot!&lt;/p&gt;
+</doctext>
+<thread id="1202264">
+<node id="1202265"><node id="1202401"/>
+</node>
+<node id="1202271"><node id="1202272"><node id="1202403"/>
+</node>
+<node id="1202402"/>
+</node>
+</thread></node>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11103675" title="Re: How to Map a scalar to a key that is an array?" created="2019-07-31 18:01:06" updated="2019-07-31 18:01:06" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You probably want to take a look at "Hashes of Arrays" in [doc://perldsc], and perhaps [doc://perlreftut]. There are several ways to process the file, depending on what the largest file is that you want to process, and how large each section can be - for example, you could read the entire file into memory and process that, you could read the file line-by-line and keep the current state in variables, or, the approach that I'll show an example of would be to use the [doc://$/] variable to read the file in "paragraph mode", where Perl will break the file apart when it encounters one or more empty lines. Of course, this assumes the file format will always be exactly as you showed it - if there are ever sections that don't conform to the "the first line is the key" pattern, then most likely a slightly more complex approach will become necessary.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dumper;
+
+local $/ = ""; # "paragraph mode"
+
+my %records;
+while (&lt;DATA&gt;) {
+	chomp;
+	my @rows = split /\n/;   # break apart lines
+	my $key = shift @rows;   # first line is hash key
+	$records{$key} = \@rows; # store reference to array in hash
+}
+
+print Dumper(\%records);
+
+__DATA__
+arn:aws:iam::11111111111:role/ADFS-MyRoleName
+"Alexa for Business"
+"AWS Certificate Manager"
+"AWS Certificate Manager Private Certificate Authority"
+"AWS Amplify"
+"Manage - Amazon API Gateway"
+"AWS App Mesh"
+"Amazon AppStream 2.0"
+"AWS AppSync"
+"Amazon Athena"
+"AWS Auto Scaling"
+
+arn:aws:iam::12345678901:role/Role2-Role2
+"Alexa for Business"
+"AWS Certificate Manager"
+"AWS Certificate Manager Private Certificate Authority"
+"AWS Amplify"
+"Manage - Amazon API Gateway"
+"Application Auto Scaling"
+"AWS App Mesh"
+"Amazon AppStream 2.0"
+"AWS AppSync"
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+$VAR1 = {
+	'arn:aws:iam::11111111111:role/ADFS-MyRoleName' =&gt; [
+		'"Alexa for Business"',
+		'"AWS Certificate Manager"',
+		'"AWS Certificate Manager Private Certificate Authority"',
+		'"AWS Amplify"',
+		'"Manage - Amazon API Gateway"',
+		'"AWS App Mesh"',
+		'"Amazon AppStream 2.0"',
+		'"AWS AppSync"',
+		'"Amazon Athena"',
+		'"AWS Auto Scaling"'
+	],
+	'arn:aws:iam::12345678901:role/Role2-Role2' =&gt; [
+		'"Alexa for Business"',
+		'"AWS Certificate Manager"',
+		'"AWS Certificate Manager Private Certificate Authority"',
+		'"AWS Amplify"',
+		'"Manage - Amazon API Gateway"',
+		'"Application Auto Scaling"',
+		'"AWS App Mesh"',
+		'"Amazon AppStream 2.0"',
+		'"AWS AppSync"'
+	]
+};
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11103671</root_node>
+<parent_node field_name="parent_node">11103671</parent_node>
+<thread id="11103671">
+<node id="11103675"/>
+<node id="11103676"><node id="11103740"/>
+</node>
+<node id="11103679"><node id="11103702"/>
+<node id="11103711"/>
+<node id="11103715"><node id="11103731"><node id="11103738"/>
+<node id="11103741"/>
+<node id="11103760"/>
+</node>
+</node>
+<node id="11103766"/>
+</node>
+<node id="11103764"/>
+</thread></node>

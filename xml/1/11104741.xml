@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11104741" title="CUPS Printing - Using a Variable as a Filename" created="2019-08-20 11:29:42" updated="2019-08-20 11:29:42" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1231801">Wayne</author>
+<doctext field_name="doctext">&lt;p&gt;Hello,&lt;br&gt;&lt;br&gt;
+
+I am attempting to print data from a variable directly to a CUPS printer - as opposed to a writing a hard-disk file and then sending it to the printer. The reason is because the file system will eventually be a read-only one.&lt;br&gt;&lt;br&gt;   
+
+I have created a file handle for the variable that stores the data and populated it. If I print the contents of $variable it is correct.&lt;br&gt;&lt;br&gt;
+
+To send the data to the printer I am opening a file handle for reading and passing it as an argument to a CUPS printer.&lt;br&gt;&lt;br&gt;
+
+However, I am getting a "No such file or directory" error. Yet, the variable and file handle both exist.&lt;br&gt;&lt;br&gt;
+
+Does CUPS not accept a variable tied to a file handle as a parameter or (more likely) am I doing it improperly?&lt;br&gt;&lt;br&gt;
+
+Thanks in advance.&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl -t
+
+use strict;
+use warnings;
+use Net::CUPS::Destination;
+
+# Define Printer
+my $cups = Net::CUPS-&gt;new() or die $!;
+my $printer = $cups-&gt;getDestination("CITIZEN-CT-S801") or die $!;
+
+# Read Data
+my($variable)='';
+
+open(my $fh, '&gt;', \$variable) or die "Cannot open file for writing: $!\n";
+
+print $fh "Some data 1\n";
+print $fh "Some data 2\n";
+print $fh "Some data 3\n";
+
+close($fh);
+
+# Print Data
+open($fh, '&lt;', \$variable) or die "Cannot open file for reading: $!\n";
+
+if ($printer-&gt;printFile($fh, 'jobx')) { print 'Success';} 
+
+else
+{
+	my $error = $printer-&gt;getError();
+	if ($error) { print "Printer Error: " . $error . "\n"; }
+}
+close($fh);
+
+exit;
+
+&lt;/code&gt;</doctext>
+<thread id="11104741">
+<node id="11104743"/>
+<node id="11104744"><node id="11104746"/>
+</node>
+<node id="11104745"/>
+<node id="11104747"/>
+<node id="11104748"><node id="11104758"/>
+</node>
+</thread></node>

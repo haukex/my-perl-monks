@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116971" title="Re: What does a failed regular expression match actually return? (updated)" created="2020-05-20 05:36:03" updated="2020-05-20 05:36:03" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Usually where Perl operators return false they do so by either returning an empty string or 0&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Actually, they return [id://11104607|both at the same time].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;What is the actual value returned by a failed regular expression match?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Please see [id://1215373|this table of regular expression return values]. &lt;c&gt;print Dumper( "a" =~ m/b/ );&lt;/c&gt; is providing list context to its arguments, so it's the same as writing &lt;c&gt;print Dumper( );&lt;/c&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Why does ... !~ returns the more common empty string version?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Because &lt;c&gt;"a" !~ m/a/&lt;/c&gt; is the same as &lt;c&gt;!('a' =~ /a/)&lt;/c&gt;, and that returns Perl's [id://11104607|special false value].&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Your initial issue can be solved by [doc://scalar] or [mod://PerlX::Maybe]:&lt;/p&gt;
+&lt;c&gt;
+warn Dumper(
+	{
+		a =&gt; scalar( "a" =~ m/b/ ),
+		b =&gt; 'asdf'
+	}
+);
+
+use PerlX::Maybe;
+warn Dumper(
+	{
+		maybe a =&gt; "a" =~ m/b/,
+		b =&gt; 'asdf'
+	}
+);
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;Eventually I realised that the failed match for the regular expression was somehow tricking the first comma to be evaluated in a scalar context, rather than a list context (note that if the regular expression matches then it returns 1 and the comma is evaluated in a list context).&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sorry, no, your analysis is not correct - the hash assignment is entirely in list context, in the examples you showed there's no scalar context going on there at all; only in the &lt;c&gt;my $a = ...&lt;/c&gt; assignments. &lt;i&gt;Update 2:&lt;/i&gt; To nitpick myself a little, the arguments to the &lt;c&gt;=~&lt;/c&gt; operator are in scalar context.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11116970</root_node>
+<parent_node field_name="parent_node">11116970</parent_node>
+<thread id="11116970">
+<node id="11116971"/>
+<node id="11116982"><node id="11116999"/>
+</node>
+<node id="11116998"/>
+<node id="11117009"/>
+</thread></node>

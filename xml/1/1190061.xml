@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1190061" title="Re: Check array for several matches" created="2017-05-11 09:38:11" updated="2017-05-11 09:38:11" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1182586">ankitpati</author>
+<doctext field_name="doctext">&lt;p&gt;
+    A shorter, more portable solution that uses only Perl built-ins.
+&lt;/p&gt;
+
+&lt;p&gt;
+    Also, since you are starting out with Perl, knowledge of these techniques
+    will be essential in your journey to Perl greatness!
+&lt;/p&gt;
+
+&lt;p&gt;
+    Upto &lt;code&gt;my %hash&lt;/code&gt; should be clear from the previous responses.
+&lt;/p&gt;
+
+&lt;p&gt;
+    Enhancement (thank you, AnomalousMonk):
+    &lt;blockquote&gt;
+        The deduplication code which I previously thought would be necessary is
+        not actually required.
+    &lt;/blockquote&gt;
+&lt;/p&gt;
+
+&lt;p&gt;
+    The next statement prints &lt;code&gt;do stuff&lt;/code&gt; if the specified condition
+    is met. Let us look at each part of the condition.
+&lt;/p&gt;
+
+&lt;p&gt;
+    Evaluated in scalar context, arrays in Perl return the number of elements
+    they contain. So &lt;code&gt;@required&lt;/code&gt; returns the number of elements it
+    contains.
+&lt;/p&gt;
+
+&lt;p&gt;
+    &lt;code&gt;@hash{@required}&lt;/code&gt; uses the hash-slice syntax to extract a list
+    of values associated with the keys that happen to be members of
+    &lt;code&gt;@required&lt;/code&gt;. Trying to extract a value against a key which does
+    not exist in a hash results in an undefined value.
+&lt;/p&gt;
+
+&lt;p&gt;
+    Enhancement:
+    &lt;blockquote&gt;
+        The &lt;code&gt;defined&lt;/code&gt; test is not really required, as it is implicit.
+    &lt;/blockquote&gt;
+&lt;/p&gt;
+
+&lt;p&gt;
+    &lt;code&gt;grep { $_ }&lt;/code&gt; returns a list of all defined elements from the
+    list previously returned. Recall that non-existent keys return an undefined
+    value, which evaluates to false in the boolean context, so they are weeded
+    out by this.
+&lt;/p&gt;
+
+&lt;p&gt;
+    Enhancement (thank you, haukex):
+    &lt;blockquote&gt;
+        In scalar context, &lt;code&gt;grep&lt;/code&gt; returns the number of elements in
+        the list that match the condition. Since that is what we need, we just
+        use the value in scalar context directly.
+    &lt;/blockquote&gt;
+&lt;/p&gt;
+
+&lt;p&gt;
+    I leave figuring out the remainder of the code as an exercise to the reader.
+&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+my @allwords = qw( this is a list of words that is required for tests );
+my @required = qw( this is a list of words that is required );
+
+my %hash = map { $_ =&gt; 1 } @allwords;
+
+print "do stuff\n"
+    if @required == grep { $_ } @hash{@required};
+
+my @notthere = qw( this list is not there in allwords );
+
+print "don't do stuff\n"
+    unless @notthere == grep { $_ } @hash{@notthere};
+&lt;/code&gt;
+
+&lt;p&gt;
+    I know this could get a bit overwhelming, so feel free to ask for any
+    clarifications.
+&lt;/p&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1182586"&gt;
+&lt;a href="https://ankitpati.in" title="Ankit Pati"&gt;State.&lt;/a&gt; &lt;a href="https://github.com/ankitpati" title="GitHub"&gt;Science.&lt;/a&gt; &lt;a href="https://google.com/+AnkitPati" title="Google+"&gt;Love.&lt;/a&gt;
+&lt;/div&gt;&lt;/div&gt;
+</doctext>
+<root_node field_name="root_node">1190016</root_node>
+<parent_node field_name="parent_node">1190016</parent_node>
+<thread id="1190016">
+<node id="1190020"/>
+<node id="1190021"/>
+<node id="1190026"><node id="1190136"><node id="1190171"><node id="1190173"/>
+</node>
+</node>
+</node>
+<node id="1190030"/>
+<node id="1190061"><node id="1190063"/>
+<node id="1190073"/>
+</node>
+<node id="1190133"/>
+</thread></node>

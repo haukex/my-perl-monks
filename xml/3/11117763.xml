@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117763" title="Re^13: Summing numbers in a file (updated)" created="2020-06-06 11:18:02" updated="2020-06-06 11:18:02" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I will just agree to disagree and carry on.&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;If you don't feel like continuing the discussion, that's fine with 
+me. I actually did think a fair bit about whether to respond, but in 
+the end I did want to complete my list of arguments for lexical 
+filehandles so that this thread might be a useful collection of such 
+arguments for others as well.&lt;/p&gt;
+
+&lt;p&gt;I am also left wondering a bit what exactly you disagree with. 
+That you will continue to use them? That's fine with me, as I said 
+early on. That bareword filehandles shouldn't be recommended to 
+newcomers? I still believe that and have provided plenty of 
+arguments. That there is no functional difference? I feel like I've 
+shown this isn't true. Anyway, on to the other points:&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;A lexical file handle declared at top-level only goes 
+out of scope at the end of the script, just like a bareword file 
+handle.&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;Right, that's true, and yes, part of my argument was for a broader 
+case. Much of what I've said applies no matter the scope of the 
+filehandles.&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;We have gone way off into the weeds and have now 
+talked past each other.&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;I feel like I've been responding to nearly every one of the points 
+you made. But to re-focus, your [id://11117517|initial post] was:&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;... I will quibble with &amp;#91;"the preferred style is 
+to use a scalar variable for a file handle"&amp;#93; at top-level as in 
+this case: there is no functional difference between the lexical file 
+handles in your example and the traditional global file handles — in 
+both cases, a handle opened at top-level is defined until the end of 
+the script and valid until closed. Please correct me if I am somehow 
+misinformed about this.&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;I've already given plenty of examples of how &lt;i&gt;"there is no 
+functional difference between the lexical file handles in your 
+example and the traditional global file handles"&lt;/i&gt; isn't true - 
+unless by &lt;i&gt;"functional"&lt;/i&gt; you really just mean "it works", to 
+which I'd say that code using bareword filehandles can stop working 
+much more easily than code using lexical filehandles, and I've named 
+examples of how that can happen (name collisions etc.).&lt;/p&gt;
+
+&lt;p&gt;As for the specific &lt;i&gt;"in both cases, a handle opened at 
+top-level is defined until the end of the script and valid until 
+closed"&lt;/i&gt;, a nitpicky response to that is that a lexical filehandle 
+can simply be assigned to, as in &lt;c&gt;$fh = undef;&lt;/c&gt;, to undefine it, 
+close it, and cause fatal errors in case one attempts to use it 
+again, but I haven't yet found an equivalent for bareword 
+handles.&lt;/p&gt;
+
+&lt;p&gt;The closest I've found so far is
+&lt;c&gt;use Symbol qw/geniosym/; *FH = geniosym;&lt;/c&gt; (thanks to 
+[Discipulus] for pointing this out), which closes the underlying 
+filehandle, but aside from being cumbersome to say, afterwards 
+&lt;c&gt;print FOO ...&lt;/c&gt; will only cause a warning, not an error, which I 
+think is a &lt;i&gt;serious&lt;/i&gt; drawback. Other methods, like
+&lt;c&gt;undef *FH&lt;/c&gt;, &lt;c&gt;*FH = *DUMMY&lt;/c&gt;, or
+&lt;c&gt;*FH = do { local *HANDLE; \*HANDLE  }&lt;/c&gt; have the major 
+disadvantage that they affect &lt;i&gt;every&lt;/i&gt; package variable with the 
+name &lt;c&gt;FH&lt;/c&gt;, as in &lt;c&gt;$FH&lt;/c&gt;, &lt;c&gt;@FH&lt;/c&gt;, &lt;c&gt;%FH&lt;/c&gt;, etc. Maybe 
+another Monk knows if there's a real equivalent (it's probably 
+possible with XS), but for now, I have my doubts.&lt;/p&gt;
+
+&lt;p&gt;Another thing to nitpick is that often, code examples posted here 
+are [id://1177642|SSCCE]'s, i.e. the asker has taken code out of a 
+&lt;c&gt;sub&lt;/c&gt; and used it at the top level, or someone answering the 
+question is showing a much simplified example where the code is in 
+the file scope, but the code is actually intended to go into a 
+&lt;c&gt;sub&lt;/c&gt; somewhere. Since you've said yourself you think bareword 
+filehandles are incorrect in this case, this means that everyone who 
+sees bareword filehandles would have to &lt;i&gt;know and remember&lt;/i&gt; to 
+rewrite the bareword filehandles into lexical ones when refactoring 
+code from the top level into a &lt;c&gt;sub&lt;/c&gt;. Just using lexicals 
+everywhere seems a much easier solution.&lt;/p&gt;
+
+&lt;p&gt;Sorry, but I don't really see what arguments &lt;i&gt;for&lt;/i&gt; bareword 
+filehandles are left, other than making newcomers to the language 
+aware of the fact that they exist but are &lt;i&gt;not&lt;/i&gt; a best 
+practice.&lt;/p&gt;
+
+&lt;p&gt;And again, all this is not to say that I hate them or they should 
+"never, ever" be used. Bareword filehandles are definitely something
+that make Perl interesting; for example in the one-argument
+[doc://open]:&lt;/p&gt;
+
+&lt;c&gt;
+our $FH = "input.txt";
+open FH or die $!;      # opens input.txt !
+&lt;/c&gt;
+
+&lt;p&gt;But there's a huge difference between writing "interesting" code, 
+which I do enjoy, and writing modern, robust, well-maintainable 
+applications.&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt;&lt;/p&gt;
+
+&lt;p&gt;I don't think it's been referenced in this thread yet, but of course
+[TheDamian]'s [https://www.oreilly.com/library/view/perl-best-practices/0596001738/|Perl Best Practices]
+has several pages of arguments at the beginning of Chapter 10 (I/O) against
+bareword filehandles and for lexical ones ("indirect filehandles"),
+and there's the corresponding [mod://Perl::Critic::Policy::InputOutput::ProhibitBarewordFileHandles]
+(defaulting to the highest severity),
+and [chromatic]'s [http://modernperlbooks.com/books/modern_perl_2016/index.html|Modern Perl]
+also [http://modernperlbooks.com/books/modern_perl_2016/11-what-to-avoid-in-perl.html#QmFyZXdvcmRmaWxlaGFuZGxlcw|names] them
+in the chapter "What to Avoid".&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11117483</root_node>
+<parent_node field_name="parent_node">11117709</parent_node>
+<thread id="11117483">
+<node id="11117489"><node id="11117517"><node id="11117523"><node id="11117541"><node id="11117548"><node id="11117638"/>
+</node>
+</node>
+</node>
+<node id="11117525"><node id="11117543"><node id="11117547"><node id="11117580"><node id="11117586"><node id="11117616"/>
+</node>
+<node id="11117617"><node id="11117621"><node id="11117637"><node id="11117678"><node id="11117703"><node id="11117709"><node id="11117763"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11117496"/>
+<node id="11117497"/>
+<node id="11117498"/>
+<node id="11117522"><node id="11117640"><node id="11117649"/>
+</node>
+</node>
+<node id="11117639"/>
+<node id="11117641"/>
+</thread></node>

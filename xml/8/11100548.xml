@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100548" title="Re^4: r/w attached infrared head on /dev/ttyUSB0" created="2019-05-26 03:36:35" updated="2019-05-26 03:36:35" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11100516">stoerti</author>
+<doctext field_name="doctext">I tried different versions of Ubuntu. Now I have installed the actual image from volkszaehler.org&lt;br&gt;
+It runs on a raspberry pi&lt;br&gt;
+The "cat /dev/ttyUSB0&amp;" makes no difference if started before or after the stty settings.&lt;br&gt;
+&lt;br&gt;
+The stty arguments are from a documentation, I tried your style and it seems to be running the same as before.&lt;br&gt;
+The meter system giving the commands "/?!" and "000" back, when I send it to him.&lt;br&gt;
+Every line ends with "\r\n".&lt;br&gt;
+&lt;br&gt;
+I changed my code:&lt;br&gt;
+&lt;br&gt;
+&lt;code&gt;
+use Fcntl qw/:DEFAULT/;&lt;br&gt;
+use IO::Termios ();&lt;br&gt;
+use IO::Stty ();&lt;br&gt;
+&lt;br&gt;
+sysopen my $fh, '/dev/ttyUSB0', O_RDWR or die "sysopen: $!";&lt;br&gt;
+my $handle = IO::Termios-&gt;new($fh) or die "IO::Termios-&gt;new: $!";&lt;br&gt;
+$handle-&gt;set_mode('300,7,e,1');&lt;br&gt;
+IO::Stty::stty($handle, qw/ cs7 parenb -parodd raw -echo /);&lt;br&gt;
+&lt;br&gt;
+my $raw = "\x2F\x3F\x21\x0D\x0A";&lt;br&gt;
+$handle-&gt;syswrite($raw) == length($raw) or die "syswrite";&lt;br&gt;
+my $raw = "\x06\x30\x30\x30\x0D\x0A";&lt;br&gt;
+$handle-&gt;syswrite($raw) == length($raw) or die "syswrite";&lt;br&gt;
+&lt;br&gt;
+while(1) {&lt;br&gt;
+    my $toread = 1;&lt;br&gt;
+    $handle-&gt;sysread(my $in, $toread) == $toread or die "sysread";&lt;br&gt;
+    print $in;&lt;br&gt;
+}&lt;br&gt;
+&lt;br&gt;
+$handle-&gt;close;&lt;br&gt;
+&lt;br&gt;
+&lt;br&gt;
+&lt;/code&gt;
+And you see in strace my problem: (only last lines of output)&lt;br&gt;
+&lt;code&gt;
+read(4, "/", 1)                         = 1&lt;br&gt;
+read(4, "L", 1)                         = 1&lt;br&gt;
+read(4, "O", 1)                         = 1&lt;br&gt;
+read(4, "G", 1)                         = 1&lt;br&gt;
+read(4, "4", 1)                         = 1&lt;br&gt;
+read(4, "L", 1)                         = 1&lt;br&gt;
+read(4, "K", 1)                         = 1&lt;br&gt;
+read(4, "1", 1)                         = 1&lt;br&gt;
+read(4, "3", 1)                         = 1&lt;br&gt;
+read(4, "B", 1)                         = 1&lt;br&gt;
+read(4, "D", 1)                         = 1&lt;br&gt;
+read(4, "2", 1)                         = 1&lt;br&gt;
+read(4, "0", 1)                         = 1&lt;br&gt;
+read(4, "2", 1)                         = 1&lt;br&gt;
+read(4, "0", 1)                         = 1&lt;br&gt;
+read(4, "1", 1)                         = 1&lt;br&gt;
+read(4, "5", 1)                         = 1&lt;br&gt;
+read(4, "\r", 1)                        = 1&lt;br&gt;
+read(4, "\n", 1)                        = 1&lt;br&gt;
+write(1, "/LOG4LK13BD202015\r\n", 19/LOG4LK13BD202015)   = 19&lt;br&gt;
+read(4, &lt;br&gt;
+&lt;/code&gt;
+&lt;br&gt;
+After "read(4," the script waits endless&lt;br&gt;
+&lt;br&gt;
+The only way it works, when I send the sequence (stty setting, then /?!\r\n, then 000\r\n) directly into a shell&lt;br&gt;
+So I can not understand what the problem could be. 
+</doctext>
+<root_node field_name="root_node">11100518</root_node>
+<parent_node field_name="parent_node">11100541</parent_node>
+<thread id="11100518">
+<node id="11100520"><node id="11100535"><node id="11100538"><node id="11100542"><node id="11100543"/>
+</node>
+</node>
+<node id="11100541"><node id="11100548"><node id="11100550"><node id="11100553"><node id="11100558"><node id="11100596"><node id="11100600"/>
+</node>
+</node>
+<node id="11100622"/>
+</node>
+</node>
+<node id="11100707"><node id="11100713"><node id="11100717"/>
+<node id="11100729"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

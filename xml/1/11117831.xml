@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117831" title="Re^3: Logic Help - Output to csv" created="2020-06-08 17:28:25" updated="2020-06-08 17:28:25" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I have no idea what you did but it gives me a place to start and learn.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, [mod://XML::Rules] does take a bit of studying its docs to understand all the rules. As for my [mod://XML::LibXML] [id://11117789|code], I hope that's a bit more clear. If you add &lt;c&gt;use Data::Dump;&lt;/c&gt; at the top and add a &lt;c&gt;dd \%items;&lt;/c&gt; just after the loop, you'll see the data structure:&lt;/p&gt;
+&lt;c&gt;
+{
+  "00123" =&gt; {
+               "File 1" =&gt; "www.site.com/path/to/file/file.pdf",
+               "File 2" =&gt; "www.site.com/path/to/file/file.pdf",
+             },
+  "00124" =&gt; {
+               "File 1" =&gt; "www.site.com/path/to/file/file.pdf",
+               "File 6" =&gt; "www.site.com/path/to/file/file.pdf",
+             },
+  "00125" =&gt; {
+               "File 2" =&gt; "www.site.com/path/to/file/file.pdf",
+               "File 7" =&gt; "www.site.com/path/to/file/file.pdf",
+             },
+}
+&lt;/c&gt;
+&lt;p&gt;The other tricky bit is the line that generates the &lt;c&gt;@columns&lt;/c&gt; array. It has two main parts: &lt;c&gt;map {keys %$_} values %items&lt;/c&gt; takes the [doc://values] of the &lt;c&gt;%items&lt;/c&gt;, which are hashes themselves (&lt;c&gt;{ "File 1" =&gt; "www..."&lt;/c&gt; etc.), and then uses [doc://map] to get the [doc://keys] of each of those hashes. In other words, the &lt;c&gt;map&lt;/c&gt; statement will return the list &lt;c&gt;"File 1", "File 2", "File 1", "File 6", ...&lt;/c&gt;. The second part is the &lt;c&gt;keys %{{map {$_=&gt;1} ...}}&lt;/c&gt;, which is an idiom to get only unique values from a list. It does this by first building an anonymous hash with &lt;tt&gt;{map {$_=&amp;gt;1} &lt;i&gt;values&lt;/i&gt;}&lt;/tt&gt;, and then immediately dereferencing the hash (&lt;c&gt;%{...}&lt;/c&gt;) and getting its [doc://keys]. Then, all that's left to do is [doc://sort] the unique strings.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I’m trying to print this out to a file but I’m getting errors about print usage.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;What [hippo] [id://11117806|said]: first, you're opening the file for reading instead of writing. Second, note that the first argument of &lt;c&gt;$csv-&gt;print&lt;/c&gt; should be the filehandle, which you did, but note that I was getting the output filehandle (&lt;c&gt;STDOUT&lt;/c&gt; by default) using [doc://select], so you need to remove that call. This works for me:&lt;/p&gt;
+&lt;c&gt;
+open my $fh, "&gt;:encoding(UTF-8)", "output.csv" or die "output.csv: $!";
+my $csv = Text::CSV-&gt;new({binary=&gt;1, auto_diag=&gt;2, eol=&gt;$/,
+	always_quote=&gt;1 });
+$csv-&gt;print($fh, ["sku", @columns]);
+for my $sku (sort keys %$itms) {
+	$csv-&gt;print($fh, [$sku, map { $itms-&gt;{$sku}{$_} } @columns ]);
+}
+close $fh;
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11117783</root_node>
+<parent_node field_name="parent_node">11117794</parent_node>
+<thread id="11117783">
+<node id="11117785"><node id="11117788"/>
+</node>
+<node id="11117789"/>
+<node id="11117793"><node id="11117794"><node id="11117806"/>
+<node id="11117831"/>
+</node>
+</node>
+<node id="11117800"><node id="11117814"/>
+</node>
+</thread></node>

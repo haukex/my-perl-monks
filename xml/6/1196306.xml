@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1196306" title="Filtering certain multi-line patterns from a file" created="2017-07-30 09:37:36" updated="2017-07-30 09:37:36" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1196304">ivanbrennan</author>
+<doctext field_name="doctext">&lt;p&gt;
+I wrote a script to filter "uninteresting" commands (ls, cat, man) from my .bash_history, because I wanted them included in the current session's history but not persisted for future sessions (using Bash's HISTIGNORE variable would exclude them from both).
+&lt;/p&gt;
+
+&lt;p&gt;
+I've configured Bash to save multiline history entries with embedded newlines, and entries are separated by unix timestamps, like:
+&lt;/p&gt;
+
+&lt;code&gt;
+#1501293767
+foo() {
+echo foo
+}
+#1501293785
+ls
+&lt;/code&gt;
+
+&lt;p&gt;
+I wanted to remove the "uninteresting" single-line entries, but keep all multiline entries. I figure if a command was complex enough to warrant multiple lines, it's worth remembering. So, for example, this entry should be removed:
+&lt;/p&gt;
+&lt;code&gt;
+#1501293785
+cat afile
+&lt;/code&gt;
+
+&lt;p&gt;
+whereas this (somewhat contrived) entry should be kept:
+&lt;/p&gt;
+
+&lt;code&gt;
+#1501293785
+cat afile | while read -r line; do
+  echo "line: " $line
+done
+&lt;/code&gt;
+&lt;p&gt;
+I implemented it as a finite-state machine using Awk, and was impressed with its performance. It processes a 50,000 line file in about 70 milliseconds. My .bash_history is unlikely to grow beyond 25,000 lines, so that's great, especially since I trigger this in the background when exiting the shell.
+&lt;/p&gt;
+&lt;p&gt;
+Nonetheless, I'm curious whether Perl might be a better tool for the job. The Awk code is not particularly elegant, and I've heard Perl is a performant scripting language. I've never written any though, so I wanted to check here and see if this seems like a good use-case for Perl.
+&lt;/p&gt;
+&lt;p&gt;
+I'm not necessarily asking how to translate this into Perl, though I'm open to doing so, but wondering if Perl offers other approaches to solving this problem.
+&lt;p&gt;
+A graph of the finite-state machine can be seen here: https://i.stack.imgur.com/fLG4K.png
+&lt;/p&gt;
+&lt;p&gt;
+For reference here's the Awk code:
+&lt;/p&gt;
+&lt;code&gt;
+BEGIN {
+  timestamp = ""
+  entryline = ""
+  timestamp_regex = "^#[[:digit:]]{10}$"
+  exclusion_regex = "^(ls?|man|cat)$"
+  state = "begin"
+}
+{
+  if (state == "begin")
+  {
+    if ($0 ~ timestamp_regex)
+    {
+      timestamp = $0
+      state = "readtimestamp"
+    }
+    else
+    {
+      print
+      state = "printedline"
+    }
+  }
+  else if (state == "printedline")
+  {
+    if ($0 ~ timestamp_regex)
+    {
+      timestamp = $0
+      state = "readtimestamp"
+    }
+    else
+    {
+      print
+      state = "printedline"
+    }
+  }
+  else if (state == "readtimestamp")
+  {
+    if ($0 ~ timestamp_regex &amp;&amp; $0 &gt;= timestamp)
+    {
+      timestamp = $0
+      state = "readtimestamp"
+    }
+    else if ($1 ~ exclusion_regex)
+    {
+      entryline = $0
+      state = "readentryline"
+    }
+    else
+    {
+      print timestamp
+      print
+      state = "printedline"
+    }
+  }
+  else if (state == "readentryline")
+  {
+    if ($0 ~ timestamp_regex)
+    {
+      entryline = ""
+      timestamp = $0
+      state = "readtimestamp"
+    }
+    else
+    {
+      print timestamp
+      print entryline
+      print
+      state = "printedline"
+    }
+  }
+}
+&lt;/code&gt;</doctext>
+<thread id="1196306">
+<node id="1196308"><node id="1196317"/>
+</node>
+<node id="1196309"/>
+<node id="1196358"/>
+</thread></node>

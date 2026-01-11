@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1172007" title="Windows newlines in unicode" created="2016-09-17 11:48:48" updated="2016-09-17 11:48:48" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="957973">BillKSmith</author>
+<doctext field_name="doctext">I am  using ActivePerl on Windows 10, and having problelms reading a file which I downloaded from an attachment on the "Perl Guru" forum. (The attachment has since been removed.)  This is the first time I have ever had to deal with unicode. The OP specified an encoding(utf-16).
+
+The file uses the windows newline convention of CR/LF.  Each of these characters is encoded as a 2-byte character.  The perl operator &lt;&gt; reads the text correctly, but it returns a "\r\n" at the end of  every line instead of "\n".
+
+This is a problem because messages can be spread over several lines.  They are separated by 'blank' lines.  Reading messages by setting $/ to the null string does not work because the 'blank' lines are not blank (They contain only that nasty "\r").  As a work-arournd, I have been able to set $/="\n\r\n".  My question is "How can I make perl interpret the newline sequence correctly?"  
+
+The following code demonstrates the problem by printing the ordinal of the second last character of the first line.  It is a 13 (carriage return).  The length (43) of the line is two more than the number of printed characters.  Sorry, they are hard to count because of the way this forum displays the \cA near the middle of the line.
+&lt;c&gt;
+use strict;
+use warnings;
+open(my $in, "&lt;:encoding(UTF-16)", "INPUT.TXT" )
+        || die("Error open INPUT.TXT\n");
+my $first_line = &lt;$in&gt;;
+my $length_of_line = length $first_line;
+my $second_last_character = substr $first_line, -2;
+print $first_line;
+print $length_of_line, ' ', ord($second_last_character), "\n";
+close $in;
+
+OUTPUT:
+24.07.2016 18:26:19.171 [&gt;] &amp;#9786;?;20;0;37;0;
+43 13
+
+For reference, here is a hex dump of the first few lines of the file.
+(reposted with permission)
+
+
+0000000: fffe 3200 3400 2e00 3000 3700 2e00 3200  ..2.4...0.7...2.
+0000010: 3000 3100 3600 2000 3100 3800 3a00 3200  0.1.6. .1.8.:.2.
+0000020: 3600 3a00 3100 3900 2e00 3100 3700 3100  6.:.1.9...1.7.1.
+0000030: 2000 5b00 3e00 5d00 2000 0100 3f00 3b00   .[.&gt;.]. ...?.;.
+0000040: 3200 3000 3b00 3000 3b00 3300 3700 3b00  2.0.;.0.;.3.7.;.
+0000050: 3000 3b00 0d00 0a00 0d00 0a00 fffe 3200  0.;...........2.
+&lt;/c&gt;
+   
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-957973"&gt;
+Bill
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1172007">
+<node id="1172011"><node id="1172013"><node id="1172014"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224314" title="Re: Question about tr (updated)" created="2018-10-19 03:46:41" updated="2018-10-19 03:46:41" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Note that &lt;c&gt;tr///&lt;/c&gt; supports ranges, so this works too: &lt;strike&gt;&lt;c&gt;tr|\0-9|A-Za-z|&lt;/c&gt;&lt;/strike&gt;&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;(IIRC this might not work on systems that aren't ASCII based; [doc://perlebcdic])&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; You said &lt;i&gt;"the first 52 bytes of a character map"&lt;/i&gt;, but &lt;c&gt;\0-9&lt;/c&gt; is the first 58 bytes. So maybe you want to do &lt;c&gt;tr/\0-3/A-Za-z/&lt;/c&gt;? Or only the nonprintable characters with &lt;c&gt;tr/\0-\x1F/A-Za-f/&lt;/c&gt;?&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update 2:&lt;/i&gt; [https://webperl.zero-g.net/democode/perleditor.html#%7B%22script%22%3A%22use%20warnings%3B%5Cnuse%20strict%3B%5Cn%5Cnprint%20join(%5C%22%20%20%20%5C%22%2C%5C%22%20%20%5C%22%2Cmap%20%7Bsprintf%20%5C%22%25X.%5C%22%2C%24_%7D%200..7)%2C%20%5C%22%5C%5Cn%5C%22%3B%5Cnfor%20my%20%24l%20(0..15)%20%7B%5Cn%5Ctprintf%20%5C%22.%25X%5C%22%2C%20%24l%3B%5Cn%5Ctfor%20my%20%24c%20(%20map%20%7B%20chr(%20%24l%7C(%24_%3C%3C%204)%20)%20%7D%200..7%20)%20%7B%5Cn%5Ct%5Ct%23%24c%20%3D~%20tr%2F%5C%5C0-9%2FA-Za-z%2F%3B%20%20%20%23%20doesn't%20work%20correctly!%5Cn%5Ct%5Ct%23%24c%20%3D~%20tr%2F%5C%5C0-3%2FA-Za-z%2F%3B%20%20%20%23%20option%201%5Cn%5Ct%5Ct%24c%20%3D~%20tr%2F%5C%5C0-%5C%5Cx1F%2FA-Za-f%2F%3B%20%23%20option%202%5Cn%5Ct%5Ctprint%20%5C%22%20%20%20%24c%20%5C%22%3B%5Cn%5Ct%7D%5Cn%5Ctprint%20%5C%22%5C%5Cn%5C%22%3B%5Cn%7D%5Cn%22%2C%22script_fn%22%3A%22ascii.pl%22%2C%22cmdline%22%3A%22perl%20ascii.pl%22%7D|WebPerl live demo of the following]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+print join("   ","  ",map {sprintf "%X.",$_} 0..7), "\n";
+for my $l (0..15) {
+	printf ".%X", $l;
+	for my $c ( map { chr( $l|($_&lt;&lt;4) ) } 0..7 ) {
+		#$c =~ tr/\0-9/A-Za-z/;   # doesn't work correctly!
+		#$c =~ tr/\0-3/A-Za-z/;   # option 1
+		$c =~ tr/\0-\x1F/A-Za-f/; # option 2
+		print "   $c ";
+	}
+	print "\n";
+}
+
+__END__
+
+     0.   1.   2.   3.   4.   5.   6.   7.
+.0   A    Q         0    @    P    `    p 
+.1   B    R    !    1    A    Q    a    q 
+.2   C    S    "    2    B    R    b    r 
+.3   D    T    #    3    C    S    c    s 
+.4   E    U    $    4    D    T    d    t 
+.5   F    V    %    5    E    U    e    u 
+.6   G    W    &amp;    6    F    V    f    v 
+.7   H    X    '    7    G    W    g    w 
+.8   I    Y    (    8    H    X    h    x 
+.9   J    Z    )    9    I    Y    i    y 
+.A   K    a    *    :    J    Z    j    z 
+.B   L    b    +    ;    K    [    k    { 
+.C   M    c    ,    &lt;    L    \    l    | 
+.D   N    d    -    =    M    ]    m    } 
+.E   O    e    .    &gt;    N    ^    n    ~ 
+.F   P    f    /    ?    O    _    o     
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1224299</root_node>
+<parent_node field_name="parent_node">1224299</parent_node>
+<thread id="1224299">
+<node id="1224302"><node id="1224434"/>
+</node>
+<node id="1224309"><node id="1224371"/>
+</node>
+<node id="1224314"/>
+</thread></node>

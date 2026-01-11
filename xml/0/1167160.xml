@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1167160" title="RegExp error PLEASE HELP!" created="2016-07-04 15:33:29" updated="2016-07-04 15:33:29" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1166559">harangzsolt33</author>
+<doctext field_name="doctext">&lt;p&gt;I am a beginner perl programmer. I am trying to write a function getArgsURL() that will extract the parameters from an URL string. I have samples $A, $B, and $C which I would like my function to work on. But every time I run this code, it throws me an error. And I have no clue how or why this error occurs. It says:
+
+&lt;p&gt;Quantifier follows nothing in regex; marked by &lt;-- HERE in m/? &lt;-- HERE / at C:\
+BIN\PERL\Example.pl line 104.
+
+&lt;p&gt;Press any key to continue . . .
+
+&lt;code&gt;
+use strict;
+use warnings;
+
+# Samples
+
+my $A = "file:///c:/html/testing.html?P1=123&amp;P2=%28%28BLAH+BLAH+BLAH%29%29";
+my $B = "http://www.cnn.org/g/ar.shtml?c=123055&amp;s=%28Top+Stories+%29";
+my $C = "http://www.something.com/example/article.php?P1=123&amp;P2=%28%28DATA+GOES+HERE%29%29%0D%0A#PGTOP";
+
+my @R = getArgsURL($A);
+
+foreach my $S (@R)
+{
+  print "\nR: ", $S;
+}
+
+
+###############################################
+# This function extracts arguments from an URL
+# string and returns them in pairs.
+#
+# Example: @R = getArgsURL("http://www.cnn.org/g/ar.shtml?c=123055&amp;s=%28Top+Stories+%29#PGTOP");
+#   R[0] ---&gt; "c"
+#   R[1] ---&gt; "123055"
+#   R[2] ---&gt; "s"
+#   R[3] ---&gt; "(Top Stories)"
+#
+sub getArgsURL
+{
+  my $S = shift;
+  my @OUTPUT;
+  my @X;
+  my $P;
+
+  splitAB($S, '?');
+  splitAB($b, '#');
+  @X = split('&amp;', $a);
+
+  foreach $S (@X)
+  {
+    $P = index($S, '=');
+    if ($P &lt; 0) { push(@OUTPUT, $S); }
+    push(@OUTPUT, decodeURLstr(substr($S, 0, $P)));
+    push(@OUTPUT, decodeURLstr(substr($S, $P+1)));
+  }
+  return @OUTPUT;
+}
+################################################
+# This function works like the split function,
+# however it will only split STRING into two
+# chunks at the first occurrence of PATTERN.
+# The section before the first occurrence of
+# PATTERN goes into $a, and rest goes into $b.
+#
+# (This function has no return value.
+# It simply changes the values of $a and $b.)
+#
+# Usage : splitAB(STRING, PATTERN)
+#
+sub splitAB
+{
+  my $STRING = shift;
+  my $PATTERN = shift;
+  my @OUTPUT = split($PATTERN, $STRING, 2);
+  $a = $b = '';
+  if (@OUTPUT &gt; 0) { $a = $OUTPUT[0]; }
+  if (@OUTPUT &gt; 1) { $b = $OUTPUT[1]; }
+}
+############################################
+# This is the opposite of the escape() function.
+#
+sub unescape
+{
+  my $XX;
+  my $BYTE;
+  my $INPUT = shift;
+  my @OUTPUT;
+
+  for (my $i = 0; $i &lt; length($INPUT); $i++)
+  {
+    $BYTE = substr($INPUT, $i, 1);
+    if (ord($BYTE) == 37)
+    {
+      $BYTE = '';
+      $XX = substr($INPUT, $i+1, 2);
+      if (length($XX) == 2)
+      {
+        $i += 2;
+        $BYTE = chr(hex($XX));
+      }
+    }
+    push(@OUTPUT, $BYTE);
+  }
+  return join("", @OUTPUT);
+}
+################################################
+# This function decodes an URL-style string.
+# Works like the unescape function, however
+# it will also convert '+' signs to spaces.
+#
+sub decodeURLstr
+{
+  my $S = shift;
+#  return unescape( join(' ', split('+', $S) ) );
+}
+&lt;/code&gt;
+
+&lt;p&gt;What on earth is going on? It gives me an error when I call the split() function.</doctext>
+<thread id="1167160">
+<node id="1167163"/>
+<node id="1167164"/>
+<node id="1167165"><node id="1167167"><node id="1167177"/>
+</node>
+</node>
+<node id="1167170"/>
+<node id="1167176"/>
+<node id="1167182"/>
+<node id="1167226"/>
+</thread></node>

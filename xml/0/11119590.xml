@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11119590" title="File::Find and remove invalid symlinks question" created="2020-07-21 07:48:12" updated="2020-07-21 07:48:12" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11115541">redtux</author>
+<doctext field_name="doctext">Hi&lt;/p&gt;
+&lt;p&gt;I have two approaches to getting a list of invalid symlinks (using File::Find). Both of which appear to give the same results.&lt;/p&gt;
+
+&lt;p&gt;Is anyone aware of any gotchas between the two&lt;/p&gt;
+
+1. Using dangling_symlinks&lt;p&gt;
+&lt;code&gt;
+    my %findopts=(wanted=&gt;sub{},follow =&gt; 1,
+    dangling_symlinks =&gt; 
+	sub  {
+			my ($link,$dir)=@_;
+			if (-l $link){
+			$dangle{$dir.$link}=$dir;#$File::Find::name
+			}
+		}
+	,follow_skip =&gt; 2
+     );
+
+find(\%findopts,
+			@{$dirs}
+	);
+&lt;/code&gt;
+
+&lt;p&gt;2. using -l &amp;&amp; !-e&lt;/p&gt;
+
+&lt;code&gt;
+     find(
+	{wanted=&gt;
+		sub{if (-l &amp;&amp; !-e){
+			my $dir=$File::Find::dir;
+			$dir=~s/\\/\\\\/gxsm;
+			push @dangle,$File::Find::name;
+			}
+			return 1
+			},follow=&gt;0}, 
+			@{$dirs}
+	);
+&lt;/code&gt;
+
+&lt;p&gt;thanks&lt;/p&gt;
+
+Mike</doctext>
+<thread id="11119590">
+<node id="11119610"><node id="11119613"><node id="11119631"/>
+</node>
+</node>
+<node id="11119623"/>
+</thread></node>

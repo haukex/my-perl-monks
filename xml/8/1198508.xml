@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198508" title="Re^5: Which &quot;use&quot; statements in a module do &quot;bubble up&quot; to the callers?" created="2017-09-01 08:23:53" updated="2017-09-01 08:23:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;"use open ..." is lexically scoped as well&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This one is a bit tricky, but the answer turns out to be no, &lt;c&gt;use open qw/:std :utf8/;&lt;/c&gt; has a global effect.&lt;/p&gt;
+&lt;p&gt;If you read the documentation again, what it says is "Any two-argument open(), readpipe() (aka qx//) and similar operators found within the lexical scope of this pragma will use the declared defaults." But that's not what we're doing here, we're not trying to affect [doc://open] calls, instead we're trying to change &lt;c&gt;STD(IN|OUT|ERR)&lt;/c&gt;, and the documentation about that says "The :std subpragma ... converts the standard filehandles (STDIN, STDOUT, STDERR) to comply with encoding selected for input/output handles" without mentioning lexical scope. So as it turns out, the effect of this pragma is actually global, as this quick test shows:&lt;/p&gt;
+&lt;pre&gt;
+sub pr { print join(",",@_,PerlIO::get_layers(*STDOUT), "\x{20AC}"),"\n" }
+BEGIN { pr(1); } pr(4);
+do {
+	use open qw/:std :utf8/;
+	BEGIN { pr(2); } pr(5);
+};
+BEGIN { pr(3); } pr(6);
+
+__END__
+
+Wide character in print at o.pl line 5.
+1,unix,perlio,€
+2,unix,perlio,utf8,€
+3,unix,perlio,utf8,€
+4,unix,perlio,utf8,€
+5,unix,perlio,utf8,€
+6,unix,perlio,utf8,€
+&lt;/pre&gt;
+&lt;p&gt;That warning comes from the very first &lt;c&gt;pr(1);&lt;/c&gt; call, because afterwards the &lt;c&gt;utf8&lt;/c&gt; layer is added to &lt;c&gt;STDOUT&lt;/c&gt;, and as you can see it stays active for the rest of the script regardless of lexical scope.&lt;/p&gt;
+&lt;p&gt;Even if the &lt;c&gt;:std&lt;/c&gt; option of the [http://perldoc.perl.org/open.html|open pragma] were to be lexically scoped, what I understand [choroba] is [id://1198503|saying] is that if you put the pragma at the top of the main file, it is effectively active for the entire run of the program as well (&lt;i&gt;Update:&lt;/i&gt; not quite, see replies).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1198411</root_node>
+<parent_node field_name="parent_node">1198499</parent_node>
+<thread id="1198411">
+<node id="1198416"><node id="1198417"><node id="1198420"><node id="1198426"><node id="1198430"><node id="1198530"><node id="1198533"/>
+<node id="1198537"><node id="1198543"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1198419"/>
+<node id="1198421"><node id="1198433"><node id="1198441"><node id="1198499"><node id="1198503"/>
+<node id="1198508"><node id="1198571"><node id="1198572"><node id="1198582"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1198424"/>
+<node id="1198435"/>
+<node id="1198516"/>
+<node id="1198517"><node id="1198519"><node id="1198522"><node id="1198525"/>
+</node>
+</node>
+</node>
+</thread></node>

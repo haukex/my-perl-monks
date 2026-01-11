@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100541" title="Re^3: r/w attached infrared head on /dev/ttyUSB0" created="2019-05-25 19:59:27" updated="2019-05-25 19:59:27" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Unfortunately, I wasn't able to reproduce anything like the issue you're having on my system, at least using a fake PTY. I ran both a shell script with the commands from the root node and this Perl script under &lt;c&gt;strace -s256 -fe trace=read,write,ioctl&lt;/c&gt;, and in both cases the basic outline seemed to be the same, in particular, this bit was the same for both commands:&lt;/p&gt;
+&lt;c&gt;
+write(1, "/?!\r\n", 5)                  = 5
+write(1, "\006000\r\n", 6)              = 6
+&lt;/c&gt;
+&lt;p&gt;... and I was able to send all of the response lines from your root node to the Perl script and it received it just fine. This seems to indicate to me that the device you are talking to is behaving differently for the shell commands and the Perl script, for which I think the most likely explanation is either differing configuration or differences in what gets sent to the device, which is why I was wondering what the difference between the two is, but I don't see it yet.&lt;/p&gt;
+&lt;p&gt;I did have some issues where my &lt;c&gt;stty&lt;/c&gt; complained about not knowing the modes &lt;c&gt;crtscts onlcr echoctl echoke&lt;/c&gt;, but I'm not sure that has to do with the issue. Do you need all of those switches, or would the simpler form I showed in [id://1183290|my node], &lt;c&gt;cs7 parenb -parodd raw -echo&lt;/c&gt;, be enough? What OS are you on exactly? Do you happen to know what kernel driver this device is using? You could try running the same [man://strace] I showed above to see if there are significant differences between the shell commands and the Perl script on your system.&lt;/p&gt;
+&lt;p&gt;A couple of other ideas to check on: I did notice you added &lt;c&gt;raw&lt;/c&gt; to the &lt;c&gt;stty&lt;/c&gt; modes, I'm not sure if that makes a difference on your system. Also, I am wondering why you are getting the output &lt;c&gt;/?! 000&lt;/c&gt;, since that's actually what your code is sending, i.e. maybe something went wrong in disabling &lt;c&gt;echo&lt;/c&gt;. Plus, in the root node you're opening the port with [man://cat] &lt;i&gt;before&lt;/i&gt; you do the [man://stty], have you tried the &lt;c&gt;cat&lt;/c&gt; afterwards to see if that makes a difference? Are you sure the code you've posted here is &lt;i&gt;exactly&lt;/i&gt; what you are running? (In your root node, I'm not sure what the "Finish!" means.) Are you [id://111088|using strict and warnings]? Lastly, are you sure that no other commands are mucking with the port while your Perl script is running, e.g. did you remember to kill all the backgrounded &lt;c&gt;cat &amp;&lt;/c&gt; commands?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11100518</root_node>
+<parent_node field_name="parent_node">11100535</parent_node>
+<thread id="11100518">
+<node id="11100520"><node id="11100535"><node id="11100538"><node id="11100542"><node id="11100543"/>
+</node>
+</node>
+<node id="11100541"><node id="11100548"><node id="11100550"><node id="11100553"><node id="11100558"><node id="11100596"><node id="11100600"/>
+</node>
+</node>
+<node id="11100622"/>
+</node>
+</node>
+<node id="11100707"><node id="11100713"><node id="11100717"/>
+<node id="11100729"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

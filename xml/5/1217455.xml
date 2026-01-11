@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217455" title="using Path::Tiny and reformating result" created="2018-06-26 14:56:19" updated="2018-06-26 14:56:19" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;p&gt;Hi monks, &lt;/p&gt;
+
+&lt;p&gt;I've recently started into perl again and find that a lot of what I "knew" is no longer valid. It would seem that File::Slurp is outmoded. If I'm going to replace it with Path::Tiny, maybe I should do likewise with Path::Class, as suggested at this link by Path::Tiny's author. [http://www.dagolden.com/index.php/1838/goodbye-path-class-hello-path-tiny/|path class versus path tiny]&lt;/p&gt;
+
+&lt;p&gt;I'm using Path::Tiny for a pet project just to get my feet wet, and I think I'm using it correctly, but I'm not sure why I'm being warned about wide characters. If I &lt;c&gt;use utf8;&lt;/c&gt; and &lt;code&gt;$path1-&gt;lines_utf8;&lt;/code&gt;, am I not projecting my intent? Where I'm really stumbling is with the logic of how to format this cleanly.&lt;/p&gt;
+
+
+&lt;p&gt;What I want is for the one-word titles to be centered. There are 71 characters in my lines. Vertical whitespace is to be preserved, that is, blank lines remain blank lines. Then I want the newlines removed if there is text on the next line. Such a look-ahead regex is well beyond my abilities, so I am asking for help. What I want in the end is for paragraphs to look like paragraphs with a 5-space indentation. I'm also doing some word substitution to make these promises more ecumenical for the less-believing types, who will bristle at the G-word. Here is the script:&lt;/p&gt;
+
+&lt;code&gt;#!/usr/bin/perl -w
+use strict;
+use 5.010;
+use Path::Tiny;
+use utf8;
+ 
+# creating Path::Tiny objects
+ 
+my $dir = path("/home/bob");
+my $name = "1.promises.txt";
+my $new_name = path($dir,"1.revised.txt");
+ 
+my $path1 = path($dir, $name); # list
+say $path1;
+my $path2 = path(".");  
+say $path2;              # cwd
+my $path3 = path("~user/file.txt");   # tilde processing
+say $path3;   
+ 
+#say "lines are @lines";
+my @lines = $path1-&gt;lines_utf8;
+
+foreach my $i (0 .. $#lines) 
+{
+ say "i is $i";
+ say "$lines[$i]";
+ $lines[$i] =~ s/God/an arbitrary higher power/;
+ $lines[$i]=~ s/&amp;#1041;&amp;#1086;&amp;#1075;/&amp;#1073;&amp;#1086;&amp;#1083;&amp;#1100;&amp;#1096;&amp;#1072;&amp;#1103; &amp;#1089;&amp;#1080;&amp;#1083;&amp;#1072;/;
+}
+
+$new_name-&gt;spew_utf8( @lines );
+
+__END__ 
+&lt;/code&gt;
+&lt;p&gt;I am getting partial results in that I have output with the substitutions. Here is the source text, similar to many such texts I might pull out of the pdf's in which they originate:&lt;/p&gt;
+&lt;readmore&gt;&lt;pre&gt;                      O&amp;#1073;&amp;#1077;&amp;#1097;&amp;#1072;&amp;#1085;&amp;#1080;&amp;#1103;   
+
+  &amp;#1045;&amp;#1089;&amp;#1083;&amp;#1080; &amp;#1101;&amp;#1090;&amp;#1072; &amp;#1092;&amp;#1072;&amp;#1079;&amp;#1072; &amp;#1085;&amp;#1072;&amp;#1096;&amp;#1077;&amp;#1075;&amp;#1086; &amp;#1088;&amp;#1072;&amp;#1079;&amp;#1074;&amp;#1080;&amp;#1090;&amp;#1080;&amp;#1103; &amp;#1073;&amp;#1086;&amp;#1083;&amp;#1077;&amp;#1079;&amp;#1085;&amp;#1077;&amp;#1085;&amp;#1085;&amp;#1072; &amp;#1076;&amp;#1083;&amp;#1103; &amp;#1085;&amp;#1072;&amp;#1089;, &amp;#1084;&amp;#1099;
+&amp;#1073;&amp;#1091;&amp;#1076;&amp;#1077;&amp;#1084; &amp;#1091;&amp;#1076;&amp;#1080;&amp;#1074;&amp;#1083;&amp;#1077;&amp;#1085;&amp;#1099;, &amp;#1082;&amp;#1086;&amp;#1075;&amp;#1076;&amp;#1072; &amp;#1087;&amp;#1086;&amp;#1083;&amp;#1086;&amp;#1074;&amp;#1080;&amp;#1085;&amp;#1072; &amp;#1087;&amp;#1091;&amp;#1090;&amp;#1080; &amp;#1086;&amp;#1082;&amp;#1072;&amp;#1078;&amp;#1077;&amp;#1090;&amp;#1089;&amp;#1103; &amp;#1087;&amp;#1086;&amp;#1079;&amp;#1072;&amp;#1076;&amp;#1080;. &amp;#1052;&amp;#1099;
+&amp;#1087;&amp;#1086;&amp;#1079;&amp;#1085;á&amp;#1077;&amp;#1084; &amp;#1085;&amp;#1086;&amp;#1074;&amp;#1091;&amp;#1102; &amp;#1089;&amp;#1074;&amp;#1086;&amp;#1073;&amp;#1086;&amp;#1076;&amp;#1091; &amp;#1080; &amp;#1085;&amp;#1086;&amp;#1074;&amp;#1086;&amp;#1077; &amp;#1089;&amp;#1095;&amp;#1072;&amp;#1089;&amp;#1090;&amp;#1100;&amp;#1077;. &amp;#1052;&amp;#1099; &amp;#1085;&amp;#1077; &amp;#1073;&amp;#1091;&amp;#1076;&amp;#1077;&amp;#1084; &amp;#1089;&amp;#1086;&amp;#1078;&amp;#1072;&amp;#1083;&amp;#1077;&amp;#1090;&amp;#1100;
+&amp;#1086; &amp;#1085;&amp;#1072;&amp;#1096;&amp;#1077;&amp;#1084; &amp;#1087;&amp;#1088;&amp;#1086;&amp;#1096;&amp;#1083;&amp;#1086;&amp;#1084; &amp;#1080; &amp;#1074;&amp;#1084;&amp;#1077;&amp;#1089;&amp;#1090;&amp;#1077; &amp;#1089; &amp;#1090;&amp;#1077;&amp;#1084; &amp;#1085;&amp;#1077; &amp;#1079;&amp;#1072;&amp;#1093;&amp;#1086;&amp;#1090;&amp;#1080;&amp;#1084; &amp;#1087;&amp;#1086;&amp;#1083;&amp;#1085;&amp;#1086;&amp;#1089;&amp;#1090;&amp;#1100;&amp;#1102;
+&amp;#1079;&amp;#1072;&amp;#1073;&amp;#1099;&amp;#1074;&amp;#1072;&amp;#1090;&amp;#1100; &amp;#1086; &amp;#1085;&amp;#1077;&amp;#1084;. &amp;#1052;&amp;#1099; &amp;#1091;&amp;#1079;&amp;#1085;&amp;#1072;&amp;#1077;&amp;#1084;, &amp;#1095;&amp;#1090;&amp;#1086; &amp;#1090;&amp;#1072;&amp;#1082;&amp;#1086;&amp;#1077; &amp;#1095;&amp;#1080;&amp;#1089;&amp;#1090;&amp;#1086;&amp;#1090;&amp;#1072;, &amp;#1103;&amp;#1089;&amp;#1085;&amp;#1086;&amp;#1089;&amp;#1090;&amp;#1100;, &amp;#1087;&amp;#1086;&amp;#1082;&amp;#1086;&amp;#1081;.
+&amp;#1050;&amp;#1072;&amp;#1082; &amp;#1073;&amp;#1099; &amp;#1085;&amp;#1080;&amp;#1079;&amp;#1082;&amp;#1086; &amp;#1084;&amp;#1099; &amp;#1085;&amp;#1080; &amp;#1087;&amp;#1072;&amp;#1083;&amp;#1080; &amp;#1074; &amp;#1087;&amp;#1088;&amp;#1086;&amp;#1096;&amp;#1083;&amp;#1086;&amp;#1084;, &amp;#1084;&amp;#1099; &amp;#1087;&amp;#1086;&amp;#1081;&amp;#1084;&amp;#1077;&amp;#1084;, &amp;#1095;&amp;#1090;&amp;#1086; &amp;#1085;&amp;#1072;&amp;#1096; &amp;#1086;&amp;#1087;&amp;#1099;&amp;#1090;
+&amp;#1084;&amp;#1086;&amp;#1078;&amp;#1077;&amp;#1090; &amp;#1073;&amp;#1099;&amp;#1090;&amp;#1100; &amp;#1087;&amp;#1086;&amp;#1083;&amp;#1077;&amp;#1079;&amp;#1077;&amp;#1085; &amp;#1076;&amp;#1088;&amp;#1091;&amp;#1075;&amp;#1080;&amp;#1084;. &amp;#1048;&amp;#1089;&amp;#1095;&amp;#1077;&amp;#1079;&amp;#1085;&amp;#1091;&amp;#1090; &amp;#1086;&amp;#1097;&amp;#1091;&amp;#1097;&amp;#1077;&amp;#1085;&amp;#1080;&amp;#1103; &amp;#1085;&amp;#1077;&amp;#1085;&amp;#1091;&amp;#1078;&amp;#1085;&amp;#1086;&amp;#1089;&amp;#1090;&amp;#1080; &amp;#1080;
+&amp;#1078;&amp;#1072;&amp;#1083;&amp;#1086;&amp;#1089;&amp;#1090;&amp;#1080; &amp;#1082; &amp;#1089;&amp;#1077;&amp;#1073;&amp;#1077;. &amp;#1052;&amp;#1099; &amp;#1087;&amp;#1086;&amp;#1090;&amp;#1077;&amp;#1088;&amp;#1103;&amp;#1077;&amp;#1084; &amp;#1080;&amp;#1085;&amp;#1090;&amp;#1077;&amp;#1088;&amp;#1077;&amp;#1089; &amp;#1082; &amp;#1074;&amp;#1077;&amp;#1097;&amp;#1072;&amp;#1084;, &amp;#1082;&amp;#1086;&amp;#1090;&amp;#1086;&amp;#1088;&amp;#1099;&amp;#1077;
+&amp;#1087;&amp;#1086;&amp;#1076;&amp;#1086;&amp;#1075;&amp;#1088;&amp;#1077;&amp;#1074;&amp;#1072;&amp;#1102;&amp;#1090; &amp;#1085;&amp;#1072;&amp;#1096;&amp;#1077; &amp;#1089;&amp;#1072;&amp;#1084;&amp;#1086;&amp;#1083;&amp;#1102;&amp;#1073;&amp;#1080;&amp;#1077;, &amp;#1080; &amp;#1074; &amp;#1085;&amp;#1072;&amp;#1089; &amp;#1091;&amp;#1089;&amp;#1080;&amp;#1083;&amp;#1080;&amp;#1090;&amp;#1089;&amp;#1103; &amp;#1080;&amp;#1085;&amp;#1090;&amp;#1077;&amp;#1088;&amp;#1077;&amp;#1089; &amp;#1082;
+&amp;#1076;&amp;#1088;&amp;#1091;&amp;#1075;&amp;#1080;&amp;#1084; &amp;#1083;&amp;#1102;&amp;#1076;&amp;#1103;&amp;#1084;. &amp;#1052;&amp;#1099; &amp;#1086;&amp;#1089;&amp;#1074;&amp;#1086;&amp;#1073;&amp;#1086;&amp;#1076;&amp;#1080;&amp;#1084;&amp;#1089;&amp;#1103; &amp;#1086;&amp;#1090; &amp;#1101;&amp;#1075;&amp;#1086;&amp;#1080;&amp;#1079;&amp;#1084;&amp;#1072;. &amp;#1048;&amp;#1079;&amp;#1084;&amp;#1077;&amp;#1085;&amp;#1080;&amp;#1090;&amp;#1089;&amp;#1103; &amp;#1085;&amp;#1072;&amp;#1096;&amp;#1077;
+&amp;#1084;&amp;#1080;&amp;#1088;&amp;#1086;&amp;#1074;&amp;#1086;&amp;#1079;&amp;#1079;&amp;#1088;&amp;#1077;&amp;#1085;&amp;#1080;&amp;#1077;, &amp;#1080;&amp;#1089;&amp;#1095;&amp;#1077;&amp;#1079;&amp;#1085;&amp;#1091;&amp;#1090; &amp;#1089;&amp;#1090;&amp;#1088;&amp;#1072;&amp;#1093; &amp;#1087;&amp;#1077;&amp;#1088;&amp;#1077;&amp;#1076; &amp;#1083;&amp;#1102;&amp;#1076;&amp;#1100;&amp;#1084;&amp;#1080; &amp;#1080; &amp;#1085;&amp;#1077;&amp;#1091;&amp;#1074;&amp;#1077;&amp;#1088;&amp;#1077;&amp;#1085;&amp;#1085;&amp;#1086;&amp;#1089;&amp;#1090;&amp;#1100;
+&amp;#1074; &amp;#1101;&amp;#1082;&amp;#1086;&amp;#1085;&amp;#1086;&amp;#1084;&amp;#1080;&amp;#1095;&amp;#1077;&amp;#1089;&amp;#1082;&amp;#1086;&amp;#1084; &amp;#1073;&amp;#1083;&amp;#1072;&amp;#1075;&amp;#1086;&amp;#1087;&amp;#1086;&amp;#1083;&amp;#1091;&amp;#1095;&amp;#1080;&amp;#1080;. &amp;#1052;&amp;#1099; &amp;#1080;&amp;#1085;&amp;#1090;&amp;#1091;&amp;#1080;&amp;#1090;&amp;#1080;&amp;#1074;&amp;#1085;&amp;#1086; &amp;#1073;&amp;#1091;&amp;#1076;&amp;#1077;&amp;#1084; &amp;#1079;&amp;#1085;&amp;#1072;&amp;#1090;&amp;#1100;, &amp;#1082;&amp;#1072;&amp;#1082;
+&amp;#1074;&amp;#1077;&amp;#1089;&amp;#1090;&amp;#1080; &amp;#1089;&amp;#1077;&amp;#1073;&amp;#1103; &amp;#1074; &amp;#1089;&amp;#1080;&amp;#1090;&amp;#1091;&amp;#1072;&amp;#1094;&amp;#1080;&amp;#1103;&amp;#1093;, &amp;#1082;&amp;#1086;&amp;#1090;&amp;#1086;&amp;#1088;&amp;#1099;&amp;#1077; &amp;#1088;&amp;#1072;&amp;#1085;&amp;#1100;&amp;#1096;&amp;#1077; &amp;#1085;&amp;#1072;&amp;#1089; &amp;#1086;&amp;#1079;&amp;#1072;&amp;#1076;&amp;#1072;&amp;#1095;&amp;#1080;&amp;#1074;&amp;#1072;&amp;#1083;&amp;#1080;. &amp;#1052;&amp;#1099;
+&amp;#1087;&amp;#1086;&amp;#1081;&amp;#1084;&amp;#1077;&amp;#1084;, &amp;#1095;&amp;#1090;&amp;#1086; &amp;#1041;&amp;#1086;&amp;#1075; &amp;#1076;&amp;#1077;&amp;#1083;&amp;#1072;&amp;#1077;&amp;#1090; &amp;#1076;&amp;#1083;&amp;#1103; &amp;#1085;&amp;#1072;&amp;#1089; &amp;#1090;&amp;#1086;, &amp;#1095;&amp;#1090;&amp;#1086; &amp;#1084;&amp;#1099; &amp;#1085;&amp;#1077; &amp;#1089;&amp;#1084;&amp;#1086;&amp;#1075;&amp;#1083;&amp;#1080; &amp;#1089;&amp;#1072;&amp;#1084;&amp;#1080;
+&amp;#1089;&amp;#1076;&amp;#1077;&amp;#1083;&amp;#1072;&amp;#1090;&amp;#1100; &amp;#1076;&amp;#1083;&amp;#1103; &amp;#1089;&amp;#1077;&amp;#1073;&amp;#1103;.
+
+     &amp;#1053;&amp;#1077; &amp;#1089;&amp;#1083;&amp;#1080;&amp;#1096;&amp;#1082;&amp;#1086;&amp;#1084; &amp;#1083;&amp;#1080; &amp;#1101;&amp;#1090;&amp;#1086; &amp;#1079;&amp;#1074;&amp;#1091;&amp;#1095;&amp;#1080;&amp;#1090; &amp;#1084;&amp;#1085;&amp;#1086;&amp;#1075;&amp;#1086;&amp;#1086;&amp;#1073;&amp;#1077;&amp;#1097;&amp;#1072;&amp;#1102;&amp;#1097;&amp;#1077;? &amp;#1053;&amp;#1077;&amp;#1090;. &amp;#1042;&amp;#1089;&amp;#1077; &amp;#1101;&amp;#1090;&amp;#1086;
+&amp;#1087;&amp;#1088;&amp;#1086;&amp;#1080;&amp;#1079;&amp;#1086;&amp;#1096;&amp;#1083;&amp;#1086; &amp;#1089;&amp;#1086; &amp;#1084;&amp;#1085;&amp;#1086;&amp;#1075;&amp;#1080;&amp;#1084;&amp;#1080; &amp;#1080;&amp;#1079; &amp;#1085;&amp;#1072;&amp;#1089;, &amp;#1089; &amp;#1086;&amp;#1076;&amp;#1085;&amp;#1080;&amp;#1084;&amp;#1080; &amp;#1088;&amp;#1072;&amp;#1085;&amp;#1100;&amp;#1096;&amp;#1077;, &amp;#1089; &amp;#1076;&amp;#1088;&amp;#1091;&amp;#1075;&amp;#1080;&amp;#1084;&amp;#1080;
+&amp;#1087;&amp;#1086;&amp;#1079;&amp;#1078;&amp;#1077;. &amp;#1042;&amp;#1089;&amp;#1077; &amp;#1101;&amp;#1090;&amp;#1086; &amp;#1089;&amp;#1090;&amp;#1072;&amp;#1085;&amp;#1086;&amp;#1074;&amp;#1080;&amp;#1090;&amp;#1089;&amp;#1103; &amp;#1103;&amp;#1074;&amp;#1100;&amp;#1102;, &amp;#1077;&amp;#1089;&amp;#1083;&amp;#1080; &amp;#1087;&amp;#1088;&amp;#1080;&amp;#1083;&amp;#1086;&amp;#1078;&amp;#1080;&amp;#1090;&amp;#1100; &amp;#1091;&amp;#1089;&amp;#1080;&amp;#1083;&amp;#1080;&amp;#1103;.
+
+                      Promises
+
+       If we are painstaking about this phase of our development, we will be amazed
+     before half through! We are going to know a new freedom and happiness. We
+     will not regret the past nor wish to shut the door on it. We will comprehend the
+     word serenity and know peace. No matter how far down the scale we have
+     gone, we will see how our experience can benefit others. That feeling of use-
+     lessness and self-pity will disappear. We will lose interest in selfish things and
+     gain interest in our fellows. Self-seeking will slip away. Our whole attitude
+     and outlook upon life will change. Fear of people and of economic insecurity
+     will leave us. We will intuitively know how to handle situations which used to
+     baffle us. We will suddenly realize that God is doing for us what we could not
+     do for ourselves.
+
+       Are these extravagant promises? We think not. They are being fulfilled among
+     us—sometimes quickly, sometimes slowly. They will always materialize if we
+     work for them.&lt;/p&gt;&lt;/pre&gt;
+
+&lt;p&gt;Typical output&lt;/p&gt;
+&lt;pre&gt;$ ./1.tiny.pl 
+/home/bob/1.promises.txt
+.
+~user/file.txt
+i is 0
+Wide character in say at ./1.tiny.pl line 26.
+                       O&amp;#1073;&amp;#1077;&amp;#1097;&amp;#1072;&amp;#1085;&amp;#1080;&amp;#1103;   
+
+i is 1
+
+
+i is 2
+Wide character in say at ./1.tiny.pl line 26.
+  &amp;#1045;&amp;#1089;&amp;#1083;&amp;#1080; &amp;#1101;&amp;#1090;&amp;#1072; &amp;#1092;&amp;#1072;&amp;#1079;&amp;#1072; &amp;#1085;&amp;#1072;&amp;#1096;&amp;#1077;&amp;#1075;&amp;#1086; &amp;#1088;&amp;#1072;&amp;#1079;&amp;#1074;&amp;#1080;&amp;#1090;&amp;#1080;&amp;#1103; &amp;#1073;&amp;#1086;&amp;#1083;&amp;#1077;&amp;#1079;&amp;#1085;&amp;#1077;&amp;#1085;&amp;#1085;&amp;#1072; &amp;#1076;&amp;#1083;&amp;#1103; &amp;#1085;&amp;#1072;&amp;#1089;, &amp;#1084;&amp;#1099;
+
+i is 3
+Wide character in say at ./1.tiny.pl line 26.
+&amp;#1073;&amp;#1091;&amp;#1076;&amp;#1077;&amp;#1084; &amp;#1091;&amp;#1076;&amp;#1080;&amp;#1074;&amp;#1083;&amp;#1077;&amp;#1085;&amp;#1099;, &amp;#1082;&amp;#1086;&amp;#1075;&amp;#1076;&amp;#1072; &amp;#1087;&amp;#1086;&amp;#1083;&amp;#1086;&amp;#1074;&amp;#1080;&amp;#1085;&amp;#1072; &amp;#1087;&amp;#1091;&amp;#1090;&amp;#1080; &amp;#1086;&amp;#1082;&amp;#1072;&amp;#1078;&amp;#1077;&amp;#1090;&amp;#1089;&amp;#1103; &amp;#1087;&amp;#1086;&amp;#1079;&amp;#1072;&amp;#1076;&amp;#1080;. &amp;#1052;&amp;#1099;
+
+&lt;/pre&gt;
+&lt;p&gt;It would seem that I only have bad choices for displaying this material as the p tags destroy the whitespace and the c tags make the cyrillic unreadable. Thank you for your comment. &lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;Update&lt;/b&gt;: attempting to use pre tags.&lt;/p&gt;</doctext>
+<thread id="1217455">
+<node id="1217461"><node id="1217473"><node id="1217665"><node id="1217787"><node id="1217788"><node id="1217907"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1217478"/>
+</thread></node>

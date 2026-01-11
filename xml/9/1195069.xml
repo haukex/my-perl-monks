@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1195069" title="number of elements in array ref wtf" created="2017-07-13 14:57:02" updated="2017-07-13 14:57:02" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="584583">natxo</author>
+<doctext field_name="doctext">using IPC::Cmd I am writing a nagios check that will warn whenever one of the systemd services is not running. &lt;p&gt;
+
+&lt;code&gt;
+use IPC::Cmd qw[can_run run run_forked];
+my $cmd = "systemctl --failed --no-legend";
+                                          
+my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
+  run( command =&gt; $cmd, verbose =&gt; 0 );
+                                              
+if ($success) {
+    my $nr_els = @$full_buf;
+    if ( $nr_els == 0 ) {
+        print "OK: all systemd units in their desired state\n";
+    }
+    else {
+        print "WARNING: ";
+        print "$nr_els systemd units not running\n"; 
+        for (@$full_buf) {
+            print "$_\n";
+        }
+    } 
+}
+
+&lt;/code&gt;
+
+Quite straight forward. I have killed -9 (yes, with signal 1 or 15 then they are not in a failed state, you need to really kill them)  two services and then I run this and get this:
+
+&lt;code&gt;
+WARNING: 1 systemd units not running
+avahi-daemon.service loaded failed failed Avahi mDNS/DNS-SD Stack
+packagekit.service   loaded failed failed PackageKit Daemon 
+&lt;/code&gt;
+
+Why do I get '1' instead of 2? When looping throught the elements of @$full_buf I get two lines of text, so I should also get '2' in $nr_els but I get '1'. &lt;pre&gt;
+
+I must be missing something very basic ..., but I cannot see it. Thanks for your input!
+
+
+
+
+</doctext>
+<thread id="1195069">
+<node id="1195070"><node id="1195073"><node id="1195087"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1167099" title="Unable to reuse STDIN" created="2016-07-03 22:04:53" updated="2016-07-03 22:04:53" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1005449">fireblood</author>
+<doctext field_name="doctext">&lt;p&gt;Hello, I'm trying to use STDIN first to read from the output of the previous process and then to read from the terminal.  According to &lt;a href=http://perldoc.perl.org/perlop.html#I%2fO-Operators&gt;http://perldoc.perl.org/perlop.html#I%2fO-Operators&lt;/a&gt; I should be able to do this:&lt;/p&gt;
+
+&lt;p&gt;"The &lt;&gt; symbol will return undef for end-of-file only once. If you call it again after this, it will assume you are processing another @ARGV list, and if you haven't set @ARGV , will read input from STDIN."&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;p&gt;That's what I need!  My simplified program, called &lt;code&gt;pgm&lt;/code&gt;, is the following:&lt;/p&gt;
+&lt;code&gt;
+#!/opt/local/tools/bin/perl
+
+    use 5.24.0;
+    use strict;
+    use warnings;
+
+    my $response;
+
+    unless (-t STDIN)
+
+        {
+            while (&lt;STDIN&gt;)
+
+                {
+                    chomp;
+                    print "input line is $_\n";
+                }
+        }
+
+    print "Now enter something: ";
+    $response = &lt;&gt;;
+    print "You entered --&gt;", $response, "&lt;--\n";
+&lt;/code&gt;
+&lt;p&gt;and I invoke it as follows:&lt;/p&gt;
+&lt;code&gt;echo Hello | pgm&lt;/code&gt;
+&lt;p&gt;But it doesn't wait for anything to be entered at the &lt;&gt;:&lt;/p&gt;
+&lt;code&gt;
+echo Hello | pgm
+input line is Hello
+Use of uninitialized value $response in print at /userdata/cfor/utils/worklib/pgm line 25.
+Now enter something: You entered --&gt;&lt;--
+&lt;/code&gt;
+&lt;p&gt;Wouldn't the &lt;code&gt;while (&lt;STDIN&gt;)&lt;/code&gt; end because it encountered EOF, after which it should then read input from STDIN?&lt;/p&gt;</doctext>
+<thread id="1167099">
+<node id="1167100"/>
+<node id="1167101"/>
+<node id="1167119"/>
+<node id="1167277"/>
+</thread></node>

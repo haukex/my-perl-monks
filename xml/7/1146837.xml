@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1146837" title="A question about method return values and error checking" created="2015-11-03 14:03:33" updated="2015-11-03 14:03:33" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="54189">wee</author>
+<doctext field_name="doctext">&lt;p&gt;So a coworker and I were having a friendly debate about something and I'd like get the opinions of you fine folks.&lt;/p&gt;
+
+&lt;p&gt;In short: Do you think it's good style for a method that is normally expected to return a string to return undef in some cases?&lt;/p&gt;
+
+&lt;p&gt;In particular: The Sys::Info::OS module has a name() object method. It's normally is expected to return the operating system's name. The example given in the module's POD offers this as sample usage:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;printf "Operating System: %s\n", $os-&gt;name( long =&gt; 1 );&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;The problem is that on certain linuxes, the name() method returns undef, which causes the above example code to output something like this:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;Use of uninitialized value in printf at /tmp/test.pl line 20.
+Operating System:&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;The debate: I'm of the opinion that -- in general -- returning undef isn't a great idea. For subroutines, I think it's fairly terrible due to a caller's possible scalar or list context, which is unknown to the subroutine author and certainly of his control. For methods that are expected to be used in concatenation and the like, as in the example above, I think it's a little rude.&lt;/p&gt;
+
+&lt;p&gt;My coworker says that it's up to the end user to check for a valid string being returned. I say that there's nothing in the docs which says that undef might sometimes be emitted and that it would be more polite to have it return the output of 'uname -o -r' or 'unknown' or whatever. It sets up the expectation that a string will be returned, and then forces you to deal with a possible undef. Does every method call return undef sometimes?&lt;/p&gt;
+
+&lt;p&gt;I mean, it's not hard to do this instead of the module's example:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;my $osname = $os-&gt;name() ? $os-&gt;name() : `uname -o -r`;
+chomp($osname);
+print "Operating System: $osname\n";&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;But there's a part of me that says it'd be better to have the name() method do that rather than require it for (I suppose; I don't know) every method call the module offers. Where else might there be errors waiting to be checked for?&lt;/p&gt;
+
+&lt;p&gt;Also, this comes from code that was shipped to a customer. We've got perhaps 6 various Linuxes in house (including a very old version of RHEL), and all of them print the OS name reliably. The customer got the "Use of uninitialized value ..." error, and we, frankly, looked like chumps because of it.&lt;/p&gt;
+
+&lt;p&gt;It's nothing earth-shattering, and the fix was easy, but it's the genesis of the debate. I think it's not really our fault since the module doesn't do what it says it would do (the is_unknown() method notwithstanding). The coworker claims it is our fault due to shoddy error checking. And I can certainly see his side of things since we shipped the code, after all. We're ultimately responsible for what it does.&lt;/p&gt;
+
+&lt;p&gt;Your thoughts?&lt;/p&gt;</doctext>
+<thread id="1146837">
+<node id="1146838"><node id="1146942"><node id="1146961"/>
+</node>
+</node>
+<node id="1146839"/>
+<node id="1146882"/>
+<node id="1146885"><node id="1146917"><node id="1146972"><node id="1146977"/>
+<node id="1146994"><node id="1147006"><node id="1147046"><node id="1147080"/>
+</node>
+</node>
+<node id="1147075"/>
+</node>
+</node>
+</node>
+<node id="1147125"><node id="1147265"><node id="1147274"><node id="1147280"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1146911"><node id="1147111"><node id="1147264"/>
+</node>
+</node>
+<node id="1146932"/>
+<node id="1146982"/>
+</thread></node>

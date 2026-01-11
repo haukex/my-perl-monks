@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201489" title="Re^4: Parsing HTML/XML with Regular Expressions (validation of the content)" created="2017-10-17 07:24:24" updated="2017-10-17 07:24:24" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Thanks for looking into that! So as for the &lt;c&gt;&amp;nbsp;&lt;/c&gt;, my understanding so far is this: of course an HTML parser will know what it is, but a generic XML parser will by default not know that entity - for that, it has to load the DTDs, but apparently not all XML parsers do that. So, to separate the two problems (the parsing of the XML in the root node vs. figuring out the right options to get the XML parser to recognize the HTML entities), I've updated the example XHTML in the root node to replace the &lt;c&gt;&amp;nbsp;&lt;/c&gt; (and a few other updates - unfortunately causing &lt;c&gt;load_html&lt;/c&gt; to throw more errors, but &lt;c&gt;load_xml&lt;/c&gt; to work better).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Which is the best module to report formal errors in the XML structure?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I typically use [man://xmllint], which is also based on &lt;c&gt;libxml2&lt;/c&gt; just like [mod://XML::LibXML], so really either of those two tools should do XML validation pretty well (as I said above I'm not sure yet what's going on with the DTDs). For example, to validate the example from the root node against the XHTML schema, the following command works; it's also possible to speed it up by downloading the schema files locally and using the options &lt;c&gt;--nonet --path /path/to/schemas/ --schema /path/to/schemas/xhtml1-strict.xsd&lt;/c&gt; (the "&lt;c&gt;I/O error : Attempt to load network entity&lt;/c&gt;" messages can usually be ignored).&lt;/p&gt;
+&lt;c&gt;
+$ xmllint --noout --schema \
+  'http://www.w3.org/2002/08/xhtml/xhtml1-strict.xsd' example.xhtml
+example.xhtml validates
+&lt;/c&gt;
+&lt;p&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt; Or, you can use the &lt;c&gt;--valid&lt;/c&gt; option for DTD validation. &lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;For any (X)HTML, I'd consider the [https://validator.w3.org/|W3C Validator] the gold standard. I've also often just used the above &lt;c&gt;xmllint&lt;/c&gt; command.&lt;/p&gt;
+&lt;p&gt;As for your problem with parsing the XML file from the &lt;c&gt;DATA&lt;/c&gt; section, I'd have to look into that a bit when I find some more time. Perhaps the parser is doing something with the filehandle that is not compatible with &lt;c&gt;DATA&lt;/c&gt;. Also, [ikegami] made an excellent [id://1199923|point] a while back: XML files should be treated like binary files, and it's better to let the XML parser handle the decoding (although my example file is currently pure 7-bit ASCII).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1201438</root_node>
+<parent_node field_name="parent_node">1201483</parent_node>
+<thread id="1201438">
+<node id="1201443"><node id="1201454"><node id="1201483"><node id="1201489"/>
+</node>
+</node>
+</node>
+<node id="1201450"><node id="1201457"/>
+</node>
+<node id="1201473"><node id="1201488"><node id="1201493"><node id="1201521"><node id="1201551"/>
+</node>
+</node>
+<node id="1201633"><node id="1201689"><node id="1201709"/>
+<node id="1201716"><node id="1201740"><node id="1201776"/>
+<node id="1201933"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201490"><node id="1201529"><node id="1201612"/>
+</node>
+</node>
+</node>
+<node id="1201497"/>
+<node id="1201514"><node id="1201621"><node id="1201623"><node id="1201624"><node id="1201625"><node id="1201628"><node id="1201663"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201540"><node id="1201622"><node id="1201657"/>
+</node>
+</node>
+<node id="1201544"><node id="1201553"/>
+</node>
+<node id="1201545"><node id="1201554"/>
+</node>
+</thread></node>

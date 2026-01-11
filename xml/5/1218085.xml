@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1218085" title="Re^2: Overriding &quot;-s&quot;, &quot;-f&quot; and other -X functions" created="2018-07-07 04:00:46" updated="2018-07-07 04:00:46" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Note that this only works if the thing that you're calling the &lt;c&gt;-X&lt;/c&gt; on is an object of the overloaded class.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+{
+	package Foo;
+	use Data::Dump;
+	use overload fallback=&gt;0,
+		'-X' =&gt; sub { dd @_; return 1 };
+}
+
+my $foo = bless {}, 'Foo';
+print -e $foo ? 'yes' : 'no', "\n";
+my $bar = "doesnotexist";
+print -e $bar ? 'yes' : 'no', "\n";
+
+__END__
+
+(bless({}, "Foo"), "e", "")
+yes
+no
+&lt;/c&gt;
+
+</doctext>
+<root_node field_name="root_node">1218081</root_node>
+<parent_node field_name="parent_node">1218083</parent_node>
+<thread id="1218081">
+<node id="1218083"><node id="1218085"/>
+</node>
+<node id="1218084"/>
+</thread></node>

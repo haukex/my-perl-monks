@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112698" title="Re: glob a folder of images, and open text doc, find the matches and move the images." created="2020-02-09 15:42:29" updated="2020-02-09 15:42:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;my @line = $file; for (@line) { ... &lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This is basically just using &lt;c&gt;$_&lt;/c&gt; instead of &lt;c&gt;$file&lt;/c&gt;. Is that really what you want to do? In fact, there are a &lt;i&gt;lot&lt;/i&gt; of intermediate variables that could be removed to simplify the code. AFAICT, the following does exactly the same as the code you posted. See how much nicer of a [id://1177642|SSCCE] this is? If you edit your code down like this, I'll help us immensely, and it may even help you find the bug in the process.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use File::Copy 'move';
+
+my $findme = '/Volumes/photorepos/Perl/SLAperlDropback/';
+
+chdir($findme.'2SLAday') or die "chdir: $!";
+
+foreach my $file (glob "*.*") {
+	open my $fh, '&lt;', $findme.'dropback.txt' or die "open: $!";
+	while ( my $row = &lt;$fh&gt; ) {
+		chomp $row;
+		if ( $file =~ /$row/ ) {
+			move( $file, $row ) or die "move: $!";
+		}
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;From this code, I see a couple of things:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Unless what's in &lt;c&gt;dropback.txt&lt;/c&gt; are regular expressions, you probably should say &lt;c&gt;/\Q$row/&lt;/c&gt; (see [doc://quotemeta]).&lt;/li&gt;
+&lt;li&gt;You don't show the contents of &lt;c&gt;dropback.txt&lt;/c&gt;. Since &lt;c&gt;$file&lt;/c&gt; will probably be plain filenames, if &lt;c&gt;$row&lt;/c&gt; is a full pathname, note that if you're checking whether &lt;c&gt;$row&lt;/c&gt; contains &lt;c&gt;$file&lt;/c&gt;, you've got the regex reversed, and it should be &lt;c&gt;$row =~ /\Q$file/&lt;/c&gt;, perhaps with an anchor or other things to prevent it from accidentally matching a string that's just part of a pathname. Or, even better, you already loaded [doc://File::Basename] but didn't use it - use its &lt;c&gt;fileparse&lt;/c&gt; to strip the pathname off, and then do a plain &lt;c&gt;eq&lt;/c&gt; on the filenames.&lt;/li&gt;
+&lt;li&gt;You use [doc://chomp] in several places where it isn't needed. If you're worried about excess whitespace, see the corresponding points in the [id://745674] - use either [doc://Data::Dumper] with &lt;c&gt;$Data::Dumper::Useqq=1;&lt;/c&gt;, or use [mod://Data::Dump].&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;If that's not the advice you're looking for, then please better explain the issue with the code, i.e. provide some short sample data and show the values of the variables using the debugging methods I mentioned above at different stages in the loop, explaining how they differ from what you expect.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11112693</root_node>
+<parent_node field_name="parent_node">11112693</parent_node>
+<thread id="11112693">
+<node id="11112698"><node id="11112710"><node id="11112727"><node id="11112736"><node id="11112737"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11112701"><node id="11112711"/>
+</node>
+<node id="11112738"/>
+</thread></node>

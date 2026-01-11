@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11127703" title="Re: Comparing a value to a list of numbers" created="2021-01-30 23:50:21" updated="2021-01-30 23:50:21" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1149436">jcb</author>
+<doctext field_name="doctext">&lt;p&gt;Other monks have suggested a binary search solution, but did not provide an example.  I took writing an optimized binary search for this as a challenge and wrote this:&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+# -*- CPerl -*-
+
+use strict;
+use warnings;
+
+# sparse range structure:
+#  array of arrayref/number
+#   single integers represented as number
+#   contigous ranges as arrayref [LOW,HIGH] inclusive
+
+# given: string "A,B,C,X-Y,Z"
+# return: sorted array [A, B, C, [X, Y], Z]
+sub parse ($) {
+  my @elements = split /,/, shift;
+
+  foreach (@elements) {
+    s/\s+//g;				# prune whitespace
+    next unless m/\d+-\d+/;		# skip conversion if single integer
+    $_ = [split /-/, $_];		# convert ranges to arrayrefs
+  }
+
+  # sort range set
+  @elements = sort {(ref($a)?$a-&gt;[0]:$a) &lt;=&gt; (ref($b)?$b-&gt;[0]:$b)} @elements;
+
+  # merge overlapping loose elements into preceding ranges
+  for (my $i = 0; $i &lt; $#elements; $i++) {
+    next unless ref $elements[$i];	# skip single integers
+    while ($i+1 &lt;= $#elements and $elements[$i+1] &lt;= $elements[$i][1])
+      { splice @elements, $i+1, 1 }	# remove elements included in range
+  }
+
+  # coalesce contiguous integers into ranges
+  for (my $i = 0; $i &lt; $#elements; $i++) {
+    next if ref $elements[$i];		# skip ranges
+    if ($elements[$i]+1 == $elements[$i+1]) {
+      my $j = 1+$i;
+      $j++ while !ref($elements[$j]) &amp;&amp; $elements[$j]+1 == $elements[$j+1];
+      splice @elements, $i, 1+$j-$i, [$elements[$i], $elements[$j]];
+    }
+  }
+
+  # merge adjacent loose elements into succeeding ranges
+  for (my $i = 0; $i &lt; $#elements; $i++) {
+    next if ref $elements[$i];		# skip ranges
+    next unless ref $elements[$i+1];	# but next element is a range
+    # There can be at most one such element, since contiguous integers were
+    # coalesced into ranges above.
+    if ($elements[$i]+1 == $elements[$i+1][0])
+      { splice @elements, $i, 2, [$elements[$i], $elements[$i+1][1]] }
+  }
+
+  # merge adjacent loose elements into preceding ranges
+  for (my $i = 0; $i &lt; $#elements; $i++) {
+    next unless ref $elements[$i];	# skip single integers
+    next if ref $elements[$i+1];	# but next element is a single integer
+    # There can be at most one such element, since contiguous integers were
+    # coalesced into ranges above.
+    if ($elements[$i][1]+1 == $elements[$i+1])
+      { splice @elements, $i, 2, [$elements[$i][0], $elements[$i+1]] }
+  }
+
+  # merge overlapping ranges
+  for (my $i = 0; $i &lt; $#elements; $i++) {
+    next unless ref $elements[$i] and ref $elements[$i+1];
+    splice @elements, $i, 2, [$elements[$i][0], $elements[$i+1][1]]
+      if $elements[$i][1] &gt;= $elements[$i+1][0];
+  }
+
+  # merge adjacent ranges
+  for (my $i = 0; $i &lt; $#elements; $i++) {
+    next unless ref $elements[$i] and ref $elements[$i+1];
+    splice @elements, $i, 2, [$elements[$i][0], $elements[$i+1][1]]
+      if $elements[$i][1]+1 == $elements[$i+1][0];
+  }
+
+  return \@elements;
+}
+
+# given: sorted array from sub parse and integer
+# return true if the integer is in the sorted array
+sub search ($$) {
+  my $set = shift;
+  my $num = shift;
+
+  my $left = 0; my $right = $#$set;
+  my $i = $#$set &gt;&gt; 1;			# bitshift for integer /2
+  while ($left &lt; $right) {
+    if (ref($set-&gt;[$i])) {		# evaluate a range
+      return 1		# number within this range
+	if $num &gt;= $set-&gt;[$i][0] &amp;&amp; $num &lt;= $set-&gt;[$i][1];
+      if ($num &gt; $set-&gt;[$i][0])	{ $left  = $i+1 }
+      else			{ $right = $i-1 }
+    } else {				# evaluate a single integer
+      return 1		# number matched
+	if $num == $set-&gt;[$i];
+      if ($num &gt; $set-&gt;[$i])	{ $left  = $i+1 }
+      else			{ $right = $i-1 }
+    }
+    $i = ($left + $right) &gt;&gt; 1;		# bitshift for integer /2
+  }
+
+
+  # last check
+  if (ref($set-&gt;[$i])) {
+    return $num &gt;= $set-&gt;[$i][0] &amp;&amp; $num &lt;= $set-&gt;[$i][1]
+  } else {
+    return $num == $set-&gt;[$i]
+  }
+}
+
+my $Set = parse shift;
+
+use Data::Dumper;
+print Data::Dumper-&gt;new([$Set],[qw(Set)])-&gt;Indent(0)-&gt;Dump,"\n";
+
+foreach (@ARGV) {
+  print $_, search($Set, $_) ? ' is' : ' is not', " in the set\n";
+}
+&lt;/code&gt;
+
+&lt;p&gt;The script expects a set of numbers as its first command line argument, and then various numbers to test against the set as additional arguments.  Examples:&lt;/p&gt;
+
+&lt;code&gt;
+$ ./bsearch.pl 1,2,5,6,9,10,41-56 1 4 42 17
+$Set = [[1,2],[5,6],[9,10],[41,'56']];
+1 is in the set
+4 is not in the set
+42 is in the set
+17 is not in the set
+&lt;/code&gt;
+
+&lt;code&gt;
+$ ./bsearch.pl 1,2,11-16,6,7,19,9,5-8,13,14,15,4 1 2 3 4 5 8 9 10 11 12 16 17 18 19 20
+$Set = [[1,2],[4,9],[11,16],19];
+1 is in the set
+2 is in the set
+3 is not in the set
+4 is in the set
+5 is in the set
+8 is in the set
+9 is in the set
+10 is not in the set
+11 is in the set
+12 is in the set
+16 is in the set
+17 is not in the set
+18 is not in the set
+19 is in the set
+20 is not in the set
+&lt;/code&gt;
+
+&lt;p&gt;This latter example was used for developing the set-optimization logic.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11127640</root_node>
+<parent_node field_name="parent_node">11127640</parent_node>
+<thread id="11127640">
+<node id="11127643"/>
+<node id="11127644"/>
+<node id="11127646"><node id="11127673"><node id="11127675"/>
+</node>
+</node>
+<node id="11127647"/>
+<node id="11127648"><node id="11127650"><node id="11127663"/>
+</node>
+</node>
+<node id="11127649"/>
+<node id="11127651"><node id="11127652"/>
+<node id="11127674"/>
+</node>
+<node id="11127656"><node id="11127666"/>
+</node>
+<node id="11127657"><node id="11127659"><node id="11127668"><node id="11127696"><node id="11127729"><node id="11127732"/>
+</node>
+</node>
+<node id="11127724"/>
+</node>
+</node>
+</node>
+<node id="11127703"><node id="11127707"><node id="11127720"><node id="11127743"><node id="11127744"><node id="11127757"><node id="11127758"/>
+<node id="11127782"><node id="11127849"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11127719"><node id="11127726"><node id="11127735"/>
+</node>
+</node>
+</node>
+<node id="11127725"/>
+<node id="11127789"/>
+</thread></node>

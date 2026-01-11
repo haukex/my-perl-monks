@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11131887" title="Re^8: Referencing the locals" created="2021-04-29 13:55:14" updated="2021-04-29 13:55:14" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Right, but wouldn't a deep copy mean that the nested stuff also gets copied, so it's even slower?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, a deep copy would be even slower. When I [id://11131866|said] "The shallow copy would be a problem if your arrays are large", the emphasis was supposed to be on &lt;u&gt;copy&lt;/u&gt; - in other words, it would be wasteful to make a copy of a large array, no matter whether it's a shallow or deep copy, but if the array is always small, making a copy may be acceptable (though as I said, I still don't recommend it).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;And the fast way would be to make an alias, i.e. copy just the reference to the whole array? ... I'm still interested in learning about copying/aliasing though, even if it's not needed for this particular thing.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note that "aliases" in Perl [id://11119164|are distinct from] references. There are ways to do aliasing, e.g. [mod://Data::Alias]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Alias;
+use Data::Dump;
+
+my %animals = (
+	cat =&gt; [1,2,3],
+	dog =&gt; [5,6],
+	pig =&gt; [4,3,2,1],
+);
+
+alias my @cat = @{ $animals{cat} };
+
+$cat[1] = 'cat';
+push @cat, 4;
+
+dd \%animals;
+
+__END__
+
+{ cat =&gt; [1, "cat", 3, 4], dog =&gt; [5, 6], pig =&gt; [4, 3, 2, 1] }
+&lt;/c&gt;
+&lt;p&gt;But note its documentation says "The core's aliasing facilities are implemented more robustly than this module and are better supported. If you can rely on having a sufficiently recent Perl version, you should prefer to use the core facility rather than use this module. If you are already using this module and are now using a sufficiently recent Perl, you should attempt to migrate to the core facility." which refers to the currently still experimental &lt;c&gt;refaliasing&lt;/c&gt; I [id://11131848|mentioned]. That's why I suggested references, since those are fully supported everywhere and let you build complex data structures.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;but then the array would be referred to as @$cat, which would be confusing in the rest of the code.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, the reference would have to be dereferenced. Since nested data structures are pretty common, I'd suggest practicing using references so it's less confusing.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+my @cat=(1,2,3);
+my @dog=(5,6);
+my @pig=(4,3,2,1);
+my %animals;
+$animals{'cat'}=\@cat;
+$animals{'dog'}=\@dog;
+$animals{'pig'}=\@pig;
+&lt;/c&gt;
+Slightly wordy, but fulfils all the criteria: No symbolic references, no globals, no copying, and @cat etc. look like they're supposed to for the remaining code. Right?
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note that this code does pretty much the same as the code in [id://11131811|my first reply], with the exception that this also creates the three arrays as lexicals. But otherwise yes, this is one way to do it.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;\@{$animals{'cat'}}&lt;/c&gt; ... &lt;c&gt;${$animals{$_}}[1]&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note that these two are written more simply as &lt;c&gt;$animals{cat}&lt;/c&gt; and &lt;c&gt;$animals{$_}[1]&lt;/c&gt;, respectively. I would strongly recommend a read of [doc://perlreftut], [doc://perlref], and [doc://perldsc].&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11131804</root_node>
+<parent_node field_name="parent_node">11131881</parent_node>
+<thread id="11131804">
+<node id="11131813"/>
+<node id="11131811"><node id="11131822"><node id="11131825"><node id="11131839"/>
+</node>
+<node id="11131840"/>
+<node id="11131826"/>
+</node>
+</node>
+<node id="11131833"/>
+<node id="11131835"><node id="11131848"><node id="11131864"><node id="11131866"><node id="11131875"><node id="11131876"><node id="11131881"><node id="11131887"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11131809"><node id="11131814"><node id="11131816"><node id="11131818"/>
+</node>
+</node>
+</node>
+<node id="11131805"/>
+</thread></node>

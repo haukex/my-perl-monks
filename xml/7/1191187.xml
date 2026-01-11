@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1191187" title="Undefined Subroutine error" created="2017-05-25 05:34:46" updated="2017-05-25 05:34:46" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1183095">pdahal</author>
+<doctext field_name="doctext">&lt;p&gt; hello monks!
+Below I have posted my code. I am getting an error which says "Undefined subroutine &amp;main::fields called at test.pl line 34, &lt;$data&gt; line 2." Can anyone help me?
+&lt;/p&gt;
+&lt;code&gt;
+#Written by Prasuna Dahal
+
+use warnings;
+use XML::Simple;
+use LWP::UserAgent;
+use HTTP::Request::Common;
+use URI::Escape;
+use Text::CSV;
+use Data::Dumper;
+
+my $i = 0;
+my @keystr;
+my @kwrds = {"inhibitors", "activity", "complex", "activator", "activity", "activities", "activated", "proteins", "deficiency", "levels", "functions", "reductions", "protease", "proteases"};
+my $file = "proteinlist.csv";
+my $ua = LWP::UserAgent-&gt;new;
+my $csv = Text::CSV-&gt;new({sep_char =&gt; ','});
+
+#Open the result in a CSV file
+open (my $fh, "&gt;", "test1.csv");
+print $fh "Valid Proteins\n";
+
+#open file containig protein_name
+#open(my $data1, '&lt;', "proteinlist.csv");
+
+#Open the file containing the PubMed IDs
+open(my $data, '&lt;', "test.csv");
+while (my $line = &lt;$data&gt;) {
+chomp $line;
+
+if ($csv-&gt;parse($line)) {
+	#Skip 1st line
+	next if ($. == 1);
+
+	my @fields = $csv-fields();
+	#Replace (-) with (,)
+	$fields[0] =~ tr/-/,/;
+	my $id = $fields[0];
+
+	#Initialize http request
+	my $args = "db=pubmed&amp;id=$id&amp;retmode=text&amp;rettype=abstract";
+	my $req = new HTTP::Request POST =&gt; 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi';
+	$req-&gt;content_type('application/x-www-form-urlencoded');
+	$req-&gt;content($args);
+
+	#Get response
+	my $response = $ua-&gt;request($req);
+	my $content = $response-&gt;content;
+	
+	$fields[0] =~ tr/,/-/;
+
+	my @abstract = split (/[.]/, $content);
+	for $abstract(@abstract){
+		@var1 = split ((/[ ]|[,]/), $abstract);
+		foreach $var1(@var1){
+			open(my $data1, "&lt;", $file);
+			while (my $line1 = &lt;$data1&gt;) {
+				chomp $line1;
+				my @fields1 = split ",", $line1;
+				$keystr[$i] = $fields1[0];
+				$i++;
+				if ($var1=~ /\b$keystr[$i]\b/i){
+					foreach $kwrds(@kwrds){
+						if ($var1=~ /\b$kwrds\b/i){
+							my $valid_prot = $var1;
+							}
+						}
+						print $fh "$valid_prot\n";
+						print "$valid_prot\n";
+						}
+					}
+				}
+			}	
+		}
+	}
+close($fh);
+			
+
+
+&lt;/code&gt;
+			</doctext>
+<thread id="1191187">
+<node id="1191190"><node id="1191194"/>
+</node>
+<node id="1191192"/>
+<node id="1191193"/>
+<node id="1191254"><node id="1191257"/>
+</node>
+</thread></node>

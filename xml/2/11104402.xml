@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11104402" title="Re: Complex file manipulation challenge" created="2019-08-13 13:52:27" updated="2019-08-13 13:52:27" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Path::Class qw/dir/;
+use IO::Compress::Gzip qw/Z_BEST_COMPRESSION/;
+use Text::CSV; # also install Text::CSV_XS for speed
+
+my $VERBOSE = 1;
+# Note: Currently using a fixed pattern for the output file names
+
+die "Usage: $0 DIR LINES\n" unless @ARGV==2;
+my $DIR = dir($ARGV[0]);
+die "Bad DIR '$DIR'" unless -d $DIR;
+my $LINES = $ARGV[1];
+$LINES =~ /\A(?!0)[0-9]+\z/ or die "Bad LINES '$LINES'\n";
+
+my @files = map { $$_[0] } sort { $$a[1]&lt;=&gt;$$b[1] } map { [$_,-s $_] }
+	grep { !$_-&gt;is_dir &amp;&amp; $_-&gt;basename=~/\.csv\z/i } $DIR-&gt;children;
+
+my $csv = Text::CSV-&gt;new({ binary=&gt;1, auto_diag=&gt;2, eol=&gt;$/ });
+
+my ($ofcnt,$ofln,$ofh) = (0,0);
+for my $infile (@files) {
+	print STDERR "Reading $infile\n" if $VERBOSE;
+	my $ifh = $infile-&gt;openr;
+	$csv-&gt;getline($ifh); # drop first line
+	while ( my $row = $csv-&gt;getline($ifh) ) {
+		if (!defined $ofh) {
+			my $outfile = $DIR-&gt;file("part-".(++$ofcnt).".csv.gz");
+			if ( -e $outfile )
+				{ warn "Warning: Overwriting $outfile\n" }
+			else { print STDERR "Writing $outfile\n" if $VERBOSE }
+			$ofh = IO::Compress::Gzip-&gt;new( $outfile-&gt;openw,
+				Level =&gt; Z_BEST_COMPRESSION )
+				or die "$outfile: $IO::Compress::Gzip::GzipError\n";
+			$ofln = 0;
+		}
+		$csv-&gt;print($ofh, $row);
+		if ( ++$ofln &gt;= $LINES ) { $ofh-&gt;close; $ofh=undef }
+	}
+	$csv-&gt;eof or $csv-&gt;error_diag;
+}
+$ofh-&gt;close if defined $ofh;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11104399</root_node>
+<parent_node field_name="parent_node">11104399</parent_node>
+<thread id="11104399">
+<node id="11104401"><node id="11104404"><node id="11104406"><node id="11104410"/>
+</node>
+</node>
+</node>
+<node id="11104402"/>
+<node id="11104413"/>
+<node id="11104416"><node id="11104418"><node id="11104419"><node id="11104432"><node id="11104440"><node id="11104452"><node id="11104467"><node id="11104492"><node id="11104620"><node id="11104621"><node id="11104649"><node id="11104654"><node id="11104655"/>
+<node id="11104656"><node id="11104657"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1214538" title="Re: check if string is valid with special cases" created="2018-05-15 06:48:10" updated="2018-05-15 06:48:10" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1171030">swl</author>
+<doctext field_name="doctext">&lt;p&gt;If your strings could contain embedded commas then use [metamod://Text::CSV_XS] or similar to split it into an array, then &lt;code&gt;all&lt;/code&gt; or &lt;code&gt;any&lt;/code&gt; from [metamod://List::Util] to check that none or some are blank.&lt;/p&gt;
+
+&lt;code&gt;
+use Text::CSV_XS;
+use List::Util qw /any/;
+my $csv = Text::CSV_XS-&gt;new;
+
+my @strings = (
+    'a,b,c,d,e,f',
+    'a,b,,d,e,f',
+    'a,b,"c,and,some,commas",d,e,f',
+    'a,b,c,d,e',
+);
+
+foreach my $string (@strings) {
+    print "Checking $string\n";
+    my $status = $csv-&gt;parse ($string);
+    my @array  = $csv-&gt;fields;
+    warn ($csv-&gt;error_input) 
+      if !$status;
+    
+    print "Did not get six entries in $string\n"
+      if not @array == 6;
+    
+    print "one entry in $string is zero length\n"
+      if any {!length $_} @array;
+          
+    print join ':', @array;
+    print "\n\n";
+}
+
+&lt;/code&gt;
+</doctext>
+<root_node field_name="root_node">1214533</root_node>
+<parent_node field_name="parent_node">1214533</parent_node>
+<thread id="1214533">
+<node id="1214536"><node id="1214537"><node id="1214539"><node id="1214543"><node id="1214544"/>
+</node>
+<node id="1214546"/>
+</node>
+</node>
+</node>
+<node id="1214538"/>
+<node id="1214542"/>
+<node id="1214557"/>
+<node id="1214561"/>
+<node id="1214586"/>
+<node id="1214622"/>
+</thread></node>

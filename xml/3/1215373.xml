@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1215373" title="Re: difference in regex" created="2018-05-29 10:03:32" updated="2018-05-29 10:03:32" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You will find the answer to your question in [doc://perlop#Regexp-Quote-Like-Operators|"Regexp Quote-Like Operators" in perlop] - basically, different regex operations have different return values in different contexts. See also [doc://perlretut] for a tutorial.&lt;/p&gt;
+
+&lt;table border=1 cellpadding=2 cellspacing=0&gt;
+
+&lt;tr&gt;
+&lt;th&gt;Operation&lt;/th&gt;
+&lt;th&gt;Context&lt;/th&gt;
+&lt;th&gt;&lt;c&gt;()&lt;/c&gt; Capturing&lt;br&gt;Groups&lt;/th&gt;
+&lt;th&gt;Return Value on Match&lt;br&gt;(and notes on behavior)&lt;/th&gt;
+&lt;th&gt;Return Value on Failure&lt;/th&gt;
+&lt;th width="250"&gt;Example&lt;/th&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;&lt;c&gt;m//&lt;/c&gt;&lt;/td&gt;
+&lt;td&gt;scalar&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;true&lt;/td&gt;
+&lt;td&gt;false&lt;/td&gt;
+&lt;td width="250"&gt;
+&lt;c&gt;
+my $x = "foobar"=~/[aeiou]/;  # =&gt; $x is true
+my $y = "foobar"=~/[xyz]/;    # =&gt; $y is false
+&lt;/c&gt;
+&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;&lt;c&gt;m//g&lt;/c&gt;&lt;/td&gt;
+&lt;td&gt;scalar&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;true&lt;br&gt;
+(each execution of &lt;c&gt;m//g&lt;/c&gt; finds the &lt;i&gt;next&lt;/i&gt; match,&lt;br&gt;
+see [doc://perlretut#Global-matching|"Global matching" in perlretut])&lt;/td&gt;
+&lt;td&gt;false if there is no further match&lt;/td&gt;
+&lt;td width="250"&gt;
+&lt;c&gt;
+my $str = "foobar";
+my $x = $str=~/[aeiou]/g;
+# matches first "o"  =&gt; $x is true,  pos($str) is 2
+$x = $str=~/[aeiou]/g;
+# matches second "o" =&gt; $x is true,  pos($str) is 3
+$x = $str=~/[aeiou]/g;
+# matches "a"        =&gt; $x is true,  pos($str) is 5
+$x = $str=~/[aeiou]/g;
+# no more matches    =&gt; $x is false, pos($str) is undef
+&lt;/c&gt;
+&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;&lt;c&gt;m//&lt;/c&gt;&lt;/td&gt;
+&lt;td&gt;list&lt;/td&gt;
+&lt;td&gt;no&lt;/td&gt;
+&lt;td&gt;the list &lt;c&gt;(1)&lt;/c&gt;&lt;/td&gt;
+&lt;td&gt;the empty list &lt;c&gt;()&lt;/c&gt;&lt;/td&gt;
+&lt;td width="250"&gt;
+&lt;c&gt;
+my ($x) = "foobar"=~/[aeiou]/;  # =&gt; $x is 1
+&lt;/c&gt;
+&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;&lt;c&gt;m//g&lt;/c&gt;&lt;/td&gt;
+&lt;td&gt;list&lt;/td&gt;
+&lt;td&gt;no&lt;/td&gt;
+&lt;td&gt;a list of all the matched strings, as if there were parentheses around the whole pattern&lt;/td&gt;
+&lt;td&gt;the empty list &lt;c&gt;()&lt;/c&gt;&lt;/td&gt;
+&lt;td width="250"&gt;
+&lt;c&gt;
+my ($x,$y,$z) = "foobar"=~/[aeiou]/g;
+# =&gt; $x is "o", $y is "o", $z is "a"
+&lt;/c&gt;
+&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;&lt;c&gt;m//&lt;/c&gt;&lt;/td&gt;
+&lt;td&gt;list&lt;/td&gt;
+&lt;td&gt;yes&lt;/td&gt;
+&lt;td&gt;a list consisting of the subexpressions matched by the parentheses in the pattern, that is, (&lt;c&gt;$1&lt;/c&gt;, &lt;c&gt;$2&lt;/c&gt;, &lt;c&gt;$3&lt;/c&gt;...)&lt;/td&gt;
+&lt;td&gt;the empty list &lt;c&gt;()&lt;/c&gt;&lt;/td&gt;
+&lt;td width="250"&gt;
+&lt;c&gt;
+my ($x,$y) = "foobar"=~/([aeiou])(.)/;
+# =&gt; $x is "o", $y is "o"
+&lt;/c&gt;
+&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;&lt;c&gt;m//g&lt;/c&gt;&lt;/td&gt;
+&lt;td&gt;list&lt;/td&gt;
+&lt;td&gt;yes&lt;/td&gt;
+&lt;td&gt;a list of the substrings matched by any capturing parentheses in the regular expression, that is, (&lt;c&gt;$1&lt;/c&gt;, &lt;c&gt;$2&lt;/c&gt;...) repeated for each match&lt;/td&gt;
+&lt;td&gt;the empty list &lt;c&gt;()&lt;/c&gt;&lt;/td&gt;
+&lt;td width="250"&gt;
+&lt;c&gt;
+my ($w,$x,$y,$z) = "foobar"=~/([aeiou])(.)/g;
+# =&gt; $w is "o", $x is "o", $y is "a", $z is "r"
+&lt;/c&gt;
+&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;&lt;c&gt;s///&lt;/c&gt;&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;the number of substitutions made&lt;/td&gt;
+&lt;td&gt;false&lt;/td&gt;
+&lt;td width="250"&gt;
+&lt;c&gt;
+my $x = "foobar";
+my $y = $x=~s/[aeiou]/x/g;  # =&gt; $y is 3
+&lt;/c&gt;
+&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;&lt;c&gt;s///r&lt;/c&gt;&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;a copy of the original string with substitution(s) applied&lt;br&gt;
+&lt;i&gt;(available since Perl 5.14)&lt;/i&gt;&lt;/td&gt;
+&lt;td&gt;the original string&lt;/td&gt;
+&lt;td width="250"&gt;
+&lt;c&gt;
+my $x = "foobar"=~s/[aeiou]/x/gr;
+# =&gt; $x is "fxxbxr"
+&lt;/c&gt;
+&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;/table&gt;
+
+&lt;p&gt;In this table, "true" and "false" refer to Perl's notion of [id://11104607]. &lt;b&gt;Remember&lt;/b&gt; not to rely on any of the capture variables like &lt;c&gt;$1&lt;/c&gt;, &lt;c&gt;$2&lt;/c&gt;, etc. unless the match succeeds!&lt;/p&gt;
+
+&lt;p&gt;In &lt;c&gt;my $foo = "bar"=~/a/;&lt;/c&gt;, the right-hand side of the assignment (&lt;c&gt;"bar"=~/a/&lt;/c&gt;) is in scalar context. In &lt;c&gt;my ($foo) = "bar"=~/a/;&lt;/c&gt; or &lt;c&gt;my @foo = "bar"=~/a/;&lt;/c&gt;, the right-hand side is in list context. That's why, in your example, you need those parens in &lt;c&gt;($value)&lt;/c&gt;: because you want the matching operation to return the contents of the capture group.&lt;/p&gt;
+&lt;p&gt;Note that your expressions can be slightly simplified, not all the parens you showed are needed:&lt;/p&gt;
+&lt;c&gt;
+my ($value) = $row =~ /.*,(.*)/;
+# and
+$row =~ s/,[^,]*$//;
+&lt;/c&gt;
+&lt;p&gt;A few additional comments on your code:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;($row =~ s/,[^,]*$//); # gets substring before the last comma&lt;/c&gt; - this comment isn't quite right or at least potentially misleading, since it &lt;i&gt;deletes&lt;/i&gt; the string &lt;del&gt;before&lt;/del&gt; &lt;ins&gt;after and including&lt;/ins&gt; the last comma.&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;/.*,(.*)/&lt;/c&gt; matches any comma anywhere in the string, for simple input strings it may behave correctly, but I'd strongly recommend coding more defensively and writing it like your second expression: &lt;c&gt;my ($value) = $row=~/,([^,]*)$/;&lt;/c&gt; - the &lt;c&gt;$&lt;/c&gt; anchor makes sure that the regex only matches the last comma and what follows it (unless you use the &lt;c&gt;/m&lt;/c&gt; modifier, since it changes the meaning of &lt;c&gt;$&lt;/c&gt;).&lt;/li&gt;
+&lt;li&gt;While the use of [doc://Scalar::Util]'s &lt;c&gt;looks_like_number&lt;/c&gt; is often a good idea, note that if you don't mind being a little more restrictive, [mod://Regexp::Common] (or a hand-written regex) would allow you to combine the two regular expressions:
+&lt;c&gt;
+use Regexp::Common qw/number/;
+
+my $row = "a,b,c,d,15";
+
+if ( $row=~s/,($RE{num}{real})$// ) {
+    print "matched &lt;$1&gt;\n";
+}
+print "row is now &lt;$row&gt;\n";
+
+__END__
+
+matched &lt;15&gt;
+row is now &lt;a,b,c,d&gt;
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;If this is a CSV file, consider using [mod://Text::CSV] (also install [mod://Text::CSV_XS] for speed)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Added &lt;c&gt;s///r&lt;/c&gt; to the table and added a few more doc links. A few other edits and updates. &lt;i&gt;2019-02-16:&lt;/i&gt; Added "Return Value on Failure" column to table, and a few other small updates. &lt;i&gt;2019-08-17:&lt;/i&gt; Updated the link to "Truth and Falsehood".&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1215361</root_node>
+<parent_node field_name="parent_node">1215361</parent_node>
+<thread id="1215361">
+<node id="1215364"/>
+<node id="1215367"><node id="1215372"><node id="1215376"/>
+<node id="1215378"/>
+</node>
+</node>
+<node id="1215370"/>
+<node id="1215371"/>
+<node id="1215373"><node id="1215377"><node id="1215380"/>
+</node>
+</node>
+<node id="1215379"><node id="1215404"><node id="1215412"/>
+</node>
+<node id="1215457"/>
+</node>
+<node id="1215441"/>
+<node id="1215459"/>
+</thread></node>

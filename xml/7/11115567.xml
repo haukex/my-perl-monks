@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11115567" title="Re^2: perlcritic and heredocs" created="2020-04-15 09:09:21" updated="2020-04-15 09:09:21" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11115541">redtux</author>
+<doctext field_name="doctext">&lt;code&gt;
+(my $lintags_inssql = &lt;&lt;~'SQLSTR') =~s/(?:^\t*|\n)/ /gmx;
+	INSERT INTO linktags (filesrc, metadir, tagname, tagvalue, symlink, filesref, dirtype,status) 
+	SELECT  a.filesrc, a.metadir, tagname, tagvalue,
+## This is line 4486 ##		metadir||'/'||tagname||$1||tagvalue||$1||filenameparts[1]||'_'||array_to_string(linka[linkano-2:linkano-1]
+## line 4486 ##
+	,'_')||filenameparts[2] symlink
+		,filesref,dirtype,'new'
+	FROM
+		(SELECT DISTINCT  l.filesrc, c.metadir||'/0_meta' metadir, tagname, tagvalue
+			,string_to_array(filesrc,$1)linka,
+		 
+			cardinality(string_to_array(filesrc,$1)) linkano,
+			regexp_matches(filesrc,'.*/(.*)(\..*)') filenameparts,
+			filesref, dirtype
+			FROM public.linktags l
+			JOIN chkmeta c ON l.filesrc  LIKE c.metadir||'%' WHERE (status='new')
+		) a
+
+	 ON CONFLICT(symlink) DO UPDATE SET dirtype=EXCLUDED.dirtype
+	SQLSTR
+&lt;/code&gt;
+&lt;p&gt;perlcritic error&lt;/p&gt;
+&lt;p&gt;Hard tabs used at line 4486, column 64.  See page 20 of PBP.  (Severity: 3)&lt;br /&gt;
+Literal line breaks in a string at line 4486, column 64.  See pages 60,61 of PBP.  &lt;br /&gt;(Severity: 3)&lt;/p&gt;
+
+&lt;p&gt;perlcritic cmd&lt;/p&gt;
+
+&lt;p&gt;sudo perlcritic --force -1 /usr/bin/use_videotagspg|grep -i -B2 'hard tabs'&lt;/p&gt;
+
+&lt;p&gt;.perlcriticrc&lt;/p&gt;
+&lt;code&gt;[TestingAndDebugging::ProhibitNoStrict]
+allow = refs 
+&lt;/code&gt;
+</doctext>
+<root_node field_name="root_node">11115557</root_node>
+<parent_node field_name="parent_node">11115558</parent_node>
+<thread id="11115557">
+<node id="11115558"><node id="11115567"><node id="11115575"><node id="11115576"/>
+</node>
+<node id="11115578"><node id="11115591"><node id="11115592"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11115563"><node id="11115593"/>
+</node>
+</thread></node>

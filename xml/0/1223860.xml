@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1223860" title="Re^3: Using a git filter to Cache HTML Resources Locally" created="2018-10-11 06:15:26" updated="2018-10-11 06:15:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+You can just invoke the linked htmlrescache program as
+&lt;c&gt;
+htmlrescache clean my/file.html 
+&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sorry, that's not quite right: git filters are provided the files on &lt;c&gt;STDIN&lt;/c&gt; and must output on &lt;c&gt;STDOUT&lt;/c&gt;, the filename on the command line is only informative for the script - because filters can be used on files that are being added/deleted, git doesn't make any guarantees that the file even exists. In fact, git filters aren't normally even given the filename, I had to specify &lt;c&gt;%f&lt;/c&gt; in the git filter setting. My script just uses the filename to calculate the path of the cache directory relative to the file.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;However,&lt;/b&gt; your comment served as the inspiration to update [https://bitbucket.org/haukex/htools/src/HEAD/htmlrescache|the script] so that it now supports new options: &lt;c&gt;-i&lt;/c&gt; for inplace editing (use &lt;tt&gt;-I&lt;i&gt;EXT&lt;/i&gt;&lt;/tt&gt; to specify an extension for the backup file; uses [doc://$^I] under the hood), and &lt;c&gt;-G&lt;/c&gt; to disable the use of &lt;c&gt;git&lt;/c&gt;, so paths are resolved relative to the current working directory instead of the git working directory. So thank you for that! &lt;c&gt;:-)&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;So now you can do:&lt;/p&gt;
+&lt;c&gt;
+$ htmlrescache -GI.bak smudge my/file.html  # cache HTML resources
+$ mv my/file.html.bak my/file.html          # restore original file
+&lt;/c&gt;
+&lt;p&gt;or&lt;/p&gt;
+&lt;c&gt;
+$ htmlrescache -Gi smudge my/file.html      # cache HTML resources
+$ htmlrescache -Gi clean my/file.html       # restore original URLs
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1223642</root_node>
+<parent_node field_name="parent_node">1223857</parent_node>
+<thread id="1223642">
+<node id="1223855"><node id="1223857"><node id="1223860"/>
+</node>
+<node id="1223861"><node id="1223902"><node id="1223903"><node id="1223905"/>
+<node id="1223986"><node id="1223988"/>
+</node>
+</node>
+<node id="1223906"><node id="1223987"><node id="1223990"><node id="1224003"><node id="1224005"><node id="1224020"/>
+</node>
+</node>
+<node id="1224031"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

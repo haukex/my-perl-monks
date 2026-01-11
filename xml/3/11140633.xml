@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11140633" title="Re: Replace empty alt tag on &lt;img&gt; tag" created="2022-01-20 04:21:45" updated="2022-01-20 04:21:45" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;&lt;image href = "images/cron1.png"&gt;&lt;&lt;alt&gt;&gt;&lt;/alt&gt;&lt;/image&gt;&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;More than a single example would be better. Note that &lt;c&gt;&lt;image&gt;&lt;/c&gt; [https://developer.mozilla.org/en-US/docs/Web/HTML/Element/image|is] "... an ancient and poorly supported precursor to the &lt;c&gt;&lt;img&gt;&lt;/c&gt; element. &lt;b&gt;It should not be used.&lt;/b&gt;" whereas &lt;c&gt;&lt;img&gt;&lt;/c&gt; [https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#technical_summary|is] an [https://developer.mozilla.org/en-US/docs/Glossary/Empty_element|empty element], meaning it can't have content. &lt;tt&gt;&amp;lt;img &lt;del&gt;href&lt;/del&gt;&lt;ins&gt;src&lt;/ins&gt;="images/cron1.png" alt="" /&amp;gt;&lt;/tt&gt; would be a valid HTML example.&lt;/p&gt;
+&lt;p&gt;But assuming your example is accurate, i.e. it is not actually HTML (and ignoring the likely erroneous &lt;c&gt;&lt;&lt;alt&gt;&gt;&lt;/c&gt;), you can use [mod://Mojo::DOM] in XML mode to parse your data. I've made a guess that by "empty" you mean that it does not contain other tags or non-whitespace text, but please clarify this as well.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Mojo::DOM;
+
+my $html = &lt;&lt;'END_HTML';
+&lt;image href = "images/cron1.png"&gt;&lt;/image&gt;
+&lt;image href = "images/cron2.png"&gt;	 &lt;/image&gt;
+&lt;image href = "images/cron3.png"&gt;abc&lt;/image&gt;
+&lt;image href = "images/cron4.png"&gt;&lt;alt&gt;&lt;/alt&gt;&lt;/image&gt;
+&lt;image href = "images/cron5.png"&gt;&lt;alt&gt;&lt;br/&gt;&lt;/alt&gt;&lt;/image&gt;
+&lt;image href = "images/cron6.png"&gt;&lt;i&gt;&lt;alt&gt;	 &lt;/alt&gt;&lt;/i&gt;&lt;/image&gt;
+&lt;image href = "images/cron7.png"&gt;&lt;alt&gt;xyz&lt;/alt&gt;&lt;/image&gt;
+&lt;image href = "images/cron8.png"&gt;&lt;alt&gt;&lt;b&gt;xyz&lt;/b&gt;ijk&lt;/alt&gt;&lt;/image&gt;
+&lt;image href = "images/cron9.png"&gt;abc &lt;alt&gt;&lt;!-- foo --&gt;&lt;/alt&gt; def&lt;/image&gt;
+END_HTML
+
+my $dom = Mojo::DOM-&gt;new-&gt;xml(1)-&gt;parse($html);
+
+$dom-&gt;find('image alt')-&gt;grep(sub { # find all &lt;alt&gt; tags inside &lt;image&gt;
+	not $_-&gt;child_nodes-&gt;grep(sub { # check whether they have content
+		$_-&gt;type eq 'text' || $_-&gt;type eq 'cdata'
+			? $_-&gt;content=~/\S/ : $_-&gt;type ne 'comment'
+	})-&gt;size;
+})-&gt;map('remove');
+
+print $dom;
+
+__END__
+
+&lt;image href="images/cron1.png" /&gt;
+&lt;image href="images/cron2.png"&gt;	 &lt;/image&gt;
+&lt;image href="images/cron3.png"&gt;abc&lt;/image&gt;
+&lt;image href="images/cron4.png" /&gt;
+&lt;image href="images/cron5.png"&gt;&lt;alt&gt;&lt;br /&gt;&lt;/alt&gt;&lt;/image&gt;
+&lt;image href="images/cron6.png"&gt;&lt;i /&gt;&lt;/image&gt;
+&lt;image href="images/cron7.png"&gt;&lt;alt&gt;xyz&lt;/alt&gt;&lt;/image&gt;
+&lt;image href="images/cron8.png"&gt;&lt;alt&gt;&lt;b&gt;xyz&lt;/b&gt;ijk&lt;/alt&gt;&lt;/image&gt;
+&lt;image href="images/cron9.png"&gt;abc  def&lt;/image&gt;
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor edits;&lt;/i&gt; changed selector from &lt;c&gt;'image &gt; alt'&lt;/c&gt; to &lt;c&gt;'image alt'&lt;/c&gt; to find all descendants. &lt;i&gt;Also:&lt;/i&gt; Comments are now not considered as content.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11140628</root_node>
+<parent_node field_name="parent_node">11140628</parent_node>
+<thread id="11140628">
+<node id="11140630"><node id="11140639"><node id="11140640"><node id="11140663"><node id="11140664"/>
+</node>
+</node>
+<node id="11140641"><node id="11140648"><node id="11140652"/>
+<node id="11140657"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11140633"/>
+<node id="11140666"/>
+<node id="11141006"><node id="11141008"><node id="11141010"><node id="11141011"/>
+<node id="11141012"/>
+</node>
+</node>
+</node>
+</thread></node>

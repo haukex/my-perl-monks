@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1213711" title="How to make a reference to a hash cell" created="2018-04-27 19:18:49" updated="2018-04-27 19:18:49" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="750012">ibm1620</author>
+<doctext field_name="doctext">I'm building a hash, &lt;b&gt;%student&lt;/b&gt;, whose key is a student ID, and whose value is a reference to an array of course descriptions of every course they've taken.
+&lt;p&gt;
+I want to print each student ID, and their course numbers ... and a lot of extra information about each course that can be found using the course number but is expensive to do.
+&lt;p&gt;
+Many students will have taken the same courses, and I only want to gather that extra information once per course. So I keep another hash, &lt;b&gt;%catalog&lt;/b&gt;, whose key is the course number and whose value is "a lot of extra information that was expensive to gather". If &lt;b&gt;exists $catalog{$course_number}&lt;/b&gt;, I needn't look up the extra information again.
+&lt;p&gt;
+Now I want for &lt;b&gt;$student{$student_id}&lt;/b&gt; to be a reference to an array of &lt;em&gt;references&lt;/em&gt; to the key/value pair stored at &lt;b&gt;$catalog{$course_number}&lt;/b&gt;. I'm having a lot of trouble concocting the Perl grammar to create this.
+&lt;code&gt;
+# if this course ID hasn't yet been added to the catalog
+if (!exists $catalog{$course_id}) {    
+   # add course ID and complex description to catalog
+   $catalog{$course_id} = 1;           
+}
+# add a reference to the catalog entry to the student's course array
+push @{$students{$student_id}}, \$catalog{$course_id};  
+&lt;/code&gt;
+
+When I look at &lt;b&gt;%students&lt;/b&gt; in the debugger with the 'x' command, this is how it looks:
+&lt;code&gt;
+0  10002538
+1  HASH(0x1d3a850)
+   'SCALAR(0x1d21458)' =&gt; 1
+   'SCALAR(0x1d3a868)' =&gt; 1
+2  681462925
+3  HASH(0x1bcea58)
+   'SCALAR(0x1010cc0)' =&gt; 1
+   'SCALAR(0x1d21458)' =&gt; 1
+   'SCALAR(0x1d215c0)' =&gt; 1
+   'SCALAR(0x1d21608)' =&gt; 1
+   'SCALAR(0x1d216f8)' =&gt; 1
+   'SCALAR(0x1d3a868)' =&gt; 1
+   'SCALAR(0x1d3ac70)' =&gt; 1
+
+&lt;/code&gt;
+What I expected to be a course number is coming out 'SCALAR(0x1d3ac70)'.
+&lt;p&gt;
+(In the time it's taken to write this, it occurred to me I could store the course number, rather than a catalog reference, in the student's array of courses. But assuming there *might* be a reason to do it as I described, how do you do it?
+
+</doctext>
+<thread id="1213711">
+<node id="1213712"/>
+<node id="1213716"><node id="1213847"/>
+</node>
+<node id="1213717"><node id="1213849"/>
+</node>
+<node id="1213728"/>
+<node id="1213745"/>
+</thread></node>

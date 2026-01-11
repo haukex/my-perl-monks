@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1225115" title="Re: Merge 2 or more logs, sort by date &amp; time" created="2018-11-02 12:30:22" updated="2018-11-02 12:30:22" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You can use [doc://Time::Piece] or [mod://DateTime::Format::Strptime] to parse the dates into an object (the advantage of [mod://DateTime] being that it has better time zone support). If the files are small enough to fit into memory, you can use [doc://sort] and a [wp://Schwartzian transform] to sort them.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Time::Piece;
+
+use List::Util qw/shuffle/;
+my @input = shuffle(
+	"Wed Oct  5 04:08:28 2018", "Fri Nov  2 14:11:28 2018",
+	"Tue Oct 16 17:10:00 2018", "Fri Nov  2 14:11:03 2018", );
+
+my @output = map { $_-&gt;[0] } sort { $a-&gt;[1] &lt;=&gt; $b-&gt;[1] }
+	map { [$_, Time::Piece-&gt;strptime($_, '%a %b %d %H:%M:%S %Y')
+		-&gt;epoch ] } @input;
+
+print "$_\n" for @output;
+
+__END__
+
+Wed Oct  5 04:08:28 2018
+Tue Oct 16 17:10:00 2018
+Fri Nov  2 14:11:03 2018
+Fri Nov  2 14:11:28 2018
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1225106</root_node>
+<parent_node field_name="parent_node">1225106</parent_node>
+<thread id="1225106">
+<node id="1225110"><node id="1225111"/>
+<node id="1225117"><node id="1225120"><node id="1225123"><node id="1225126"><node id="1225130"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1225115"/>
+<node id="1225121"/>
+<node id="1225127"/>
+<node id="1225131"/>
+<node id="1225141"/>
+</thread></node>

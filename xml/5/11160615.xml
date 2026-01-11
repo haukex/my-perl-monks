@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11160615" title="Re: Repeating a capture group pattern within a pattern" created="2024-07-15 06:39:12" updated="2024-07-15 06:39:12" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Sounds like a case for [doc://perlre#(?PARNO)-(?-PARNO)-(?+PARNO)-(?R)-(?0)|recursive subpatterns].&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+my $x = "0.01 NaN 2.30 4.44";
+
+# the following works as desired
+my $r1 = qr/([Na0-9\.\-\+]+)\s+
+        ([Na0-9\.\-\+]+)\s+
+        ([Na0-9\.\-\+]+)\s+
+        ([Na0-9\.\-\+]+)/x;
+my ($d, $e, $f, $g) = ($x =~ m/$r1/x );
+print "good: $d, $e, $f, $g\n";
+
+# recursive subpatterns
+my $rx = qr{ ([Na0-9\.\-\+]+)
+	\s+ ((?1)) \s+ ((?1)) \s+ ((?1)) }x;
+($d, $e, $f, $g) = $x =~ $rx or die;
+print "good? $d, $e, $f, $g\n";
+
+# or match / validate first, then split
+my $ry = qr{ ([Na0-9\.\-\+]+) (?: \s+ (?1)){3} }x;
+$x =~ $ry or die;
+($d, $e, $f, $g) = split ' ', $&amp;;
+print "good? $d, $e, $f, $g\n";
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11160609</root_node>
+<parent_node field_name="parent_node">11160609</parent_node>
+<thread id="11160609">
+<node id="11160610"/>
+<node id="11160613"><node id="11160614"><node id="11160617"><node id="11160618"><node id="11160619"/>
+<node id="11160623"/>
+<node id="11160628"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11160615"/>
+<node id="11160616"/>
+<node id="11160627"/>
+<node id="11160667"/>
+<node id="11160763"/>
+</thread></node>

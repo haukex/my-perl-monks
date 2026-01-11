@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111976" title="Re^2: [OT] SQL &quot;on duplicate key&quot; custom action" created="2020-01-28 10:00:00" updated="2020-01-28 10:00:00" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Here's the solution I've ended up with, based on your suggestion:&lt;/p&gt;
+&lt;c&gt;
+CREATE FUNCTION skip_update() RETURNS trigger AS $$
+	BEGIN
+		RETURN NULL;
+	END;
+$$ LANGUAGE plpgsql;
+CREATE FUNCTION fail_update() RETURNS trigger AS $$
+	BEGIN
+		RAISE EXCEPTION 'can''t modify row values for existing primary key';
+	END;
+$$ LANGUAGE plpgsql;
+CREATE TABLE Dummy_Test (
+	Timestamp TIMESTAMP WITH TIME ZONE PRIMARY KEY,
+	Foo TEXT,
+	Bar TEXT
+);
+CREATE TRIGGER Dummy_Test_dupe BEFORE UPDATE ON Dummy_Test FOR EACH ROW
+	WHEN ( OLD.Timestamp IS NOT DISTINCT FROM NEW.Timestamp AND OLD.Foo IS NOT DISTINCT FROM NEW.Foo AND OLD.Bar IS NOT DISTINCT FROM NEW.Bar )
+	EXECUTE FUNCTION skip_update();
+CREATE TRIGGER Dummy_Test_modify BEFORE UPDATE ON Dummy_Test FOR EACH ROW
+	WHEN ( OLD.Foo IS DISTINCT FROM NEW.Foo OR OLD.Bar IS DISTINCT FROM NEW.Bar )
+	EXECUTE FUNCTION fail_update();
+
+INSERT INTO Dummy_Test (Timestamp,Foo,Bar) VALUES ('2020-01-02 12:34','Hello','World') ON CONFLICT ON CONSTRAINT Dummy_Test_pkey DO UPDATE SET Foo=EXCLUDED.Foo, Bar=EXCLUDED.Bar;
+INSERT INTO Dummy_Test (Timestamp,Foo,Bar) VALUES ('2020-01-02 12:34','Hello','World') ON CONFLICT ON CONSTRAINT Dummy_Test_pkey DO UPDATE SET Foo=EXCLUDED.Foo, Bar=EXCLUDED.Bar;
+INSERT INTO Dummy_Test (Timestamp,Foo,Bar) VALUES ('2020-01-02 12:34','Hello','abcde') ON CONFLICT ON CONSTRAINT Dummy_Test_pkey DO UPDATE SET Foo=EXCLUDED.Foo, Bar=EXCLUDED.Bar;
+&lt;/c&gt;
+&lt;p&gt;The last statement will fail, which is exactly what I wanted. The function &lt;c&gt;FUNCTION skip_update()&lt;/c&gt; and &lt;c&gt;TRIGGER Dummy_Test_dupe&lt;/c&gt; really only prevent the &lt;c&gt;UPDATE&lt;/c&gt; from happening, they can be omitted - I haven't yet tested whether it's more performant to have the &lt;c&gt;TRIGGER&lt;/c&gt; or the &lt;c&gt;UPDATE&lt;/c&gt; fire. In any case, thank you very much!&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11107746</root_node>
+<parent_node field_name="parent_node">11107748</parent_node>
+<thread id="11107746">
+<node id="11107748"><node id="11107765"><node id="11107768"><node id="11107774"/>
+</node>
+</node>
+<node id="11107769"><node id="11107770"/>
+</node>
+<node id="11111976"><node id="11113365"/>
+<node id="11137400"/>
+</node>
+</node>
+<node id="11107752"><node id="11107776"/>
+</node>
+<node id="11107753"><node id="11107775"><node id="11107838"/>
+</node>
+<node id="11111977"/>
+</node>
+<node id="11107767"><node id="11107778"><node id="11107831"/>
+<node id="11137456"/>
+<node id="11137477"/>
+</node>
+</node>
+<node id="11137458"><node id="11137472"/>
+</node>
+</thread></node>

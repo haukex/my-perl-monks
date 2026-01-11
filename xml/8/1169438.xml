@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1169438" title="Re: finding intermediate range values from two file columns" created="2016-08-09 17:07:32" updated="2016-08-09 17:07:32" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [utpalmtbi],&lt;/p&gt;
+&lt;p&gt;First, I recommend you have a look at the [id://745674], especially the first two points. For example, if you had turned on [doc://warnings], you'd see some hints which might help in figuring out what's going on: &lt;c&gt;Argument "40-42" isn't numeric in numeric ge (&gt;=)&lt;/c&gt; means you're trying to use a string like "40-42" as a number. Your current [doc://split] regex &lt;c&gt;/\s+/&lt;/c&gt; only splits on whitespace. It looks to me like you expect it to split on dashes as well, but for that, you'd have to write &lt;c&gt;/[\s\-]+/&lt;/c&gt;. Or, you can [doc://split] a string like "40-42" into its components using something like &lt;c&gt;my ($from,$to) = split /-/, $range, 2;&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;Second, note that the code &lt;c&gt;my $secondLine = &lt;$second&gt;;&lt;/c&gt; will read a line from the file each time it is called. Since you're doing this inside the loop over the lines of the first file, that means that every time you read a line from the first file via &lt;c&gt;&lt;$first&gt;&lt;/c&gt;, you'll also read a line from the second file, so that you'll only ever be comparing "file 1 line 1" with "file 2 line 1", then "file 1 line 2" with "file 2 line 2", and so on.&lt;/p&gt;
+&lt;p&gt;There was a recent thread with discussion on how to compare each line of one file with each line of another file, and some of the solutions there might help you out: [id://1168667]. The first approach is to loop over both files and compare each line with each other line; however this is inefficient and won't fare well with large files. The second approach is to load one of the two files into a data structure in memory, for example into a hash (&lt;i&gt;Update:&lt;/i&gt; or array, as [choroba] [id://1169437|demonstrated]), and then loop over the lines of the other file and compare them to the data in memory. Since you're dealing with intervals, instead of a hash/array, an [wp://Interval tree] might be helpful. There are modules on CPAN such as [mod://Set::IntervalTree] (disclaimer: I haven't used this) that might be useful.&lt;/p&gt;
+&lt;p&gt;Here's a skeleton (based on my post [id://1168716]) using the aforementioned inefficient approach of comparing each line in the first file with each line in the second file, which might still be good enough for your purposes if one or both of the files is small. (If one file is small and the other is not, make file1 be the large one and file2 the small one.)&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use Tie::File;
+tie my @file1, 'Tie::File', '/tmp/file1.txt' or die $!;
+tie my @file2, 'Tie::File', '/tmp/file2.txt' or die $!;
+
+for (@file1) {
+	my ($name,$lo1,$hi1) = split /[\s\-]+/;
+	for (@file2) {
+		my ($lo2,$hi2) = split /-/;
+		# your comparison logic here
+		print "name=$name, lo1=$lo1, hi1=$hi1; lo2=$lo2, hi2=$hi2\n";
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+name=a, lo1=11, hi1=23; lo2=33, hi2=39
+name=a, lo1=11, hi1=23; lo2=40, hi2=42
+name=a, lo1=11, hi1=23; lo2=43, hi2=46
+name=a, lo1=11, hi1=23; lo2=51, hi2=52
+name=b, lo1=33, hi1=39; lo2=33, hi2=39
+name=b, lo1=33, hi1=39; lo2=40, hi2=42
+name=b, lo1=33, hi1=39; lo2=43, hi2=46
+name=b, lo1=33, hi1=39; lo2=51, hi2=52
+name=c, lo1=40, hi1=45; lo2=33, hi2=39
+name=c, lo1=40, hi1=45; lo2=40, hi2=42
+name=c, lo1=40, hi1=45; lo2=43, hi2=46
+name=c, lo1=40, hi1=45; lo2=51, hi2=52
+name=d, lo1=48, hi1=58; lo2=33, hi2=39
+name=d, lo1=48, hi1=58; lo2=40, hi2=42
+name=d, lo1=48, hi1=58; lo2=43, hi2=46
+name=d, lo1=48, hi1=58; lo2=51, hi2=52
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update 2:&lt;/i&gt; Fixed thinko in regex.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1169432</root_node>
+<parent_node field_name="parent_node">1169432</parent_node>
+<thread id="1169432">
+<node id="1169433"><node id="1169439"/>
+</node>
+<node id="1169437"/>
+<node id="1169438"><node id="1169447"/>
+</node>
+<node id="1169499"/>
+</thread></node>

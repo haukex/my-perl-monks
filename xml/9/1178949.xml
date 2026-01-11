@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1178949" title="Re: Scan Files - Match String" created="2017-01-04 13:31:23" updated="2017-01-04 13:31:23" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [deelinux],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The reason your code isn't working is the way you've saved your regex. In strings surrounded by double quotes, backslash escapes like &lt;c&gt;\d&lt;/c&gt; and &lt;c&gt;\s&lt;/c&gt; mean something different than in regexes. In fact, &lt;c&gt;\d&lt;/c&gt; and &lt;c&gt;\s&lt;/c&gt; are not valid in double-quoted strings, only regexes (for details, see [doc://perlop#Quote-Like-Operators], [doc://perlrebackslash] and [doc://perlop#Gory-details-of-parsing-quoted-constructs]). You can see this if you use [doc://Data::Dumper] to look at the variable (see also the [id://745674]):&lt;/p&gt;
+&lt;c&gt;
+my $match1 = "^$datestring\s+\d{2}:\d{2}:\d{2},\d{3}\s+-\s+\d{2}:\d{2}:\d{2},\d{3}\s+$SLEVEL1";
+use Data::Dumper;
+$Data::Dumper::Useqq=1;
+print Dumper($match1);
+
+__END__
+
+$VAR1 = "^2017-01-04s+d{2}:d{2}:d{2},d{3}s+-s+d{2}:d{2}:d{2},d{3}s+ERROR";
+&lt;/c&gt;
+&lt;p&gt;Also, if you had turned on [doc://warnings], you would have gotten warnings about this, which is why in my other post I recommended [id://111088]!&lt;/p&gt;
+&lt;p&gt;Personally, I think the best way to fix this is to use [doc://perlretut#Compiling-and-saving-regular-expressions|&lt;c&gt;qr//&lt;/c&gt;]. If I do the following, your code starts working:&lt;/p&gt;
+&lt;c&gt;
+my $match1 = qr/^$datestring\s+\d{2}:\d{2}:\d{2},\d{3}\s+-\s+\d{2}:\d{2}:\d{2},\d{3}\s+$SLEVEL1/;
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1178945</root_node>
+<parent_node field_name="parent_node">1178945</parent_node>
+<thread id="1178945">
+<node id="1178947"/>
+<node id="1178948"/>
+<node id="1178949"><node id="1178950"/>
+</node>
+</thread></node>

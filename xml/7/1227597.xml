@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227597" title="Unix socket domain datagram within local server" created="2018-12-22 02:31:01" updated="2018-12-22 02:31:01" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1227595">evergreen</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Monks,&lt;/p&gt;
+
+&lt;p&gt;I have a need for multiple producer processes to send small messages to a single consumer process all living on the same server - these do not have to be received in order or be guaranteed. Based on reading about socket domains and types, I decided to use AF_UNIX domain and datagram type.&lt;/p&gt;
+
+&lt;p&gt;Patching together what I could glean from perldoc and the perl cookbook, here is my code for server and client further below.&lt;/p&gt;
+
+&lt;p&gt;The problem is the server starts up and seems to wait at &lt;code&gt;$sock-&gt;recv()&lt;/code&gt; as expected, but as soon as I run the client, the server comes out of the while loop without printing the data that was received and exits. I would have expected a server output of "Hello" and for the server to continue to listen. Also, nothing is printed for &lt;code&gt;$@&lt;/code&gt; or &lt;code&gt;$!&lt;/code&gt; in either server or client&lt;/p&gt;
+
+&lt;p&gt;This has been driving me crazy for some hours now. Any help would be appreciated. Thanks!&lt;/p&gt;
+
+Server:&lt;br/&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+
+$| = 1;
+use strict;
+use IO::Socket::UNIX;
+
+my $SOCK_PATH = "/tmp/mysock";
+unlink $SOCK_PATH;
+my $sock = IO::Socket::UNIX-&gt;new(
+  Type =&gt; SOCK_DGRAM(),
+  Local =&gt; $SOCK_PATH,
+  Listen =&gt; 10,
+) or die "error: $@";
+
+my $data;
+while ($sock-&gt;recv($data, 1024)) {
+  print "received: $data\n";
+}
+print "exiting: $!\n";
+&lt;/code&gt;
+
+Client&lt;br/&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+
+$| = 1;
+use strict;
+use IO::Socket::UNIX;
+
+my $SOCK_PATH = "/tmp/mysock";
+my $sock = IO::Socket::UNIX-&gt;new(
+  Type =&gt; SOCK_DGRAM(),
+  Peer =&gt; $SOCK_PATH,
+);
+$sock-&gt;send("Hello") or die "error: $@";
+&lt;/code&gt;</doctext>
+<thread id="1227597">
+<node id="1227598"><node id="1227615"/>
+</node>
+<node id="1227599"/>
+</thread></node>

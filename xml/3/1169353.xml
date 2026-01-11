@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1169353" title="Re: Push array" created="2016-08-08 08:27:43" updated="2016-08-08 08:27:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [reswaran],&lt;/p&gt;
+&lt;p&gt;I'm assuming you meant &lt;c&gt;push @comb, [$val, @$_] for combine \@rest, $n-1;&lt;/c&gt; (please use &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags).&lt;/p&gt;
+&lt;p&gt;I'm not sure what &lt;c&gt;combine&lt;/c&gt; is, but I'm going to guess that it's a function that returns a list of array references (to find out more, find out which module &lt;c&gt;combine&lt;/c&gt; is coming from and read its documentation). For testing, I'm going to substitute the function call with a plain array.&lt;/p&gt;
+&lt;p&gt;Then, &lt;c&gt;for&lt;/c&gt; will loop over the elements of the list returned by &lt;c&gt;combine&lt;/c&gt; and set &lt;c&gt;$_&lt;/c&gt; to each of those values. &lt;c&gt;[ ... ]&lt;/c&gt; creates a new array reference. This new arrayref will contain the value &lt;c&gt;$val&lt;/c&gt;, followed by the elements of the arrayref which is stored in &lt;c&gt;$_&lt;/c&gt; and dereferenced via &lt;c&gt;@$_&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Here, I've rewritten the for loop in a more verbose but hopefully more clear way:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $val = "foo";
+my @combine = (["bar","quz"],["abc","def"]);
+
+my @comb;
+for my $el (@combine) {
+	push @comb, [$val, @$el];
+}
+
+use Data::Dumper;
+print Dumper(\@comb);
+
+__END__
+$VAR1 = [
+          [ 'foo', 'bar', 'quz' ],
+          [ 'foo', 'abc', 'def' ]
+        ];
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1169349</root_node>
+<parent_node field_name="parent_node">1169349</parent_node>
+<thread id="1169349">
+<node id="1169353"><node id="1169354"/>
+</node>
+</thread></node>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228768" title="Re^3: Error: Attempt to reload module.. while testing failing require" created="2019-01-21 05:27:08" updated="2019-01-21 05:27:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;So i have no chanche at all to make the &lt;c&gt;require&lt;/c&gt; or &lt;c&gt;use&lt;/c&gt; to fail (in the right, intended way, aka leaving &lt;c&gt;%INC&lt;/c&gt; clean)?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That depends on what you're testing. You can override [doc://require] (e.g. &lt;c&gt;BEGIN { *CORE::GLOBAL::require = sub { ... } }&lt;/c&gt;, newer versions of Perl required), point [doc://require] at a different file that returns a false value, or, if you really wanted to, you could put a &lt;c&gt;return;&lt;/c&gt; in &lt;c&gt;Win32::Backup::Robocopy&lt;/c&gt; (because simplifying a lot, [doc://use] is [doc://require] is [doc://do] is [doc://eval], and you can [doc://return] from the latter two). &lt;i&gt;However,&lt;/i&gt; I wouldn't recommend that, because having a bare &lt;c&gt;return&lt;/c&gt; in the main code of module is IMO quite unusual, and in a normal Perl script would cause an "&lt;c&gt;Can't return outside a subroutine&lt;/c&gt;" error. If what you are testing is the behavior of &lt;c&gt;Win32::Backup::Robocopy&lt;/c&gt;, then I'd only consider two options realistic: it &lt;c&gt;die&lt;/c&gt;ing, or it succeeding. To test that, yes, you will have to [doc://delete] from [doc://%INC] to get [doc://require] to reload the module - but actually, I'd recommend the solutions I [id://1228760|suggested above] instead.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;the &lt;c&gt;our&lt;/c&gt; solution: are not to avoid these in modules?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I don't see why not? IMHO it's fine to use them in the way I showed, it allows setting a global default while still giving the user per-object control via a &lt;c&gt;new&lt;/c&gt; argument. If a package variable was the &lt;i&gt;only&lt;/i&gt; way to set a module's option, then yes, I'd agree that's not the best design choice, since users would have to use [doc://local] or risk action-at-a-distance. But in some cases, some defaults really are global - just one example, in my [mod://File::Replace], I have a [https://metacpan.org/source/HAUKEX/File-Replace-0.12/lib/File/Replace.pm#L57|&lt;c&gt;$File::Replace::DISABLE_CHMOD&lt;/c&gt;] global, which can be set in the case that the system doesn't support &lt;c&gt;chmod&lt;/c&gt; (but it can still be set on a per-object basis).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;definetively I have to &lt;c&gt;die&lt;/c&gt; or &lt;c&gt;croack&lt;/c&gt; if what is set in &lt;c&gt;%ENV&lt;/c&gt; is invalid.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Hm, I think I understand, you want to let the user know if what they set in &lt;c&gt;%ENV&lt;/c&gt; is invalid? I think it's a design choice at which point you do that and &lt;del&gt;why&lt;/del&gt;&lt;ins&gt;how&lt;/ins&gt;. For example, if &lt;c&gt;$ENV{PERL_ROBOCOPY_EXE}&lt;/c&gt; contains an invalid location, but a valid location is passed to &lt;c&gt;new&lt;/c&gt;, is that really a fatal error? TIMTOWTDI, but I might consider just issuing a [doc://warn]ing when &lt;c&gt;Win32::Backup::Robocopy&lt;/c&gt; is loaded with a bad &lt;c&gt;$ENV{PERL_ROBOCOPY_EXE}&lt;/c&gt; setting.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1228758</root_node>
+<parent_node field_name="parent_node">1228764</parent_node>
+<thread id="1228758">
+<node id="1228760"><node id="1228764"><node id="1228768"/>
+</node>
+<node id="1228765"/>
+</node>
+</thread></node>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117637" title="Re^9: Summing numbers in a file" created="2020-06-03 05:58:22" updated="2020-06-03 05:58:22" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;My original argument was (intended to be) that global file handles and file-scope lexical file handles are equivalent, and the choice between them is a neutral matter of style.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;But they're not equivalent, I've already named two disadvantages (no typo protection and potential clashes with other globals like package names), and I have yet to hear an advantage to bareword filehandles.&lt;/p&gt;
+&lt;p&gt;Even in the limited case that you name (file-scope lexical file handles), there is yet another difference: if there ever &lt;i&gt;is&lt;/i&gt; a clash in names, with lexicals it's incredibly easy to limit the scope of the issue: simply place the statements in a block, and you've limited the scope of the lexical, including a visual scope that allows one to glance at the code and know with certainty that this filehandle is contained within that scope. If one were using bareword filehandles instead, their scope is the entire package, beyond the bounaries of any blocks, so either you'd have to go through the &lt;i&gt;entire&lt;/i&gt; package, renaming the filehandles to eliminate any name clashes, or you'd have to use bare blocks and the &lt;c&gt;local *FH&lt;/c&gt; "hack", which has its own [id://11115734|disadvantages]. I see this as yet another disadvantage to bareword filehandles, again with no advantage.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;... a file-scope lexical can possibly have wider scope than a global if the same file defines multiple packages ...&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That's true, but again easily solved by placing the package in a block, and Perl 5.14 introduced the [doc://package|&lt;c&gt;package NAMESPACE BLOCK&lt;/c&gt;] syntax to make this look even nicer. [mod://Perl::Critic::Policy::Modules::ProhibitMultiplePackages|Some people] even argue against multiple &lt;c&gt;package&lt;/c&gt;s in one file. And even with the (admittedly sometimes confusing) issue of lexicals potentially crossing package boundaries, the scope of the lexical is still "visually" limited to the file; I would argue that name clashes because a global of the same name was used in a different file is a &lt;i&gt;much&lt;/i&gt; more tricky issue.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;My concern is opposing unthinking "never use globals!" policies that then result in using file-scope lexicals in exactly the same way as globals ...&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, a valid concern, but like you, I would argue that file-scope lexicals used in exactly the same way as globals are globals too. But that kind of dogmatic policy is not what I meant (or said). Instead, IMHO "globals can and should nearly always be avoided" is intended to cause people to think about what would be a better solution, which is usually a change in design.&lt;/p&gt;
+&lt;p&gt;To someone who knows what they're doing, it may be acceptable to sometimes use globals, but again, this thread is in the context of giving advice to a beginner.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;... (as far as I know) are almost impossible to debug because there is no way to look inside a closure.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm far from an expert with the debugger, but that doesn't appear to be correct.&lt;/p&gt;
+&lt;c&gt;
+$ cat x.pl 
+use warnings;
+use strict;
+sub x {
+	my $y = 123;
+	sub {
+		$y += shift;
+		print "$y\n";
+		print shift-&gt;(), "\n";
+	}
+}
+my $z = x;
+my $foo = "abc";
+$DB::single=1;
+$z-&gt;(111, sub {
+	return $foo."def";
+});
+
+$ perl -d x.pl 
+...
+main::(x.pl:11):	my $z = x;
+  DB&lt;1&gt; c
+main::(x.pl:16):	});
+  DB&lt;1&gt; s
+main::CODE(0x543ed97f20a0)(x.pl:6):
+6:			$y += shift;
+  DB&lt;1&gt; y 0
+$y = 123
+  DB&lt;2&gt; s
+main::CODE(0x543ed97f20a0)(x.pl:7):
+7:			print "$y\n";
+  DB&lt;2&gt; y 0
+$y = 234
+  DB&lt;3&gt; s
+234
+main::CODE(0x543ed97f20a0)(x.pl:8):
+8:			print shift-&gt;(), "\n";
+  DB&lt;3&gt; s
+main::CODE(0x55d4d6a31da8)(x.pl:15):
+15:		return $foo."def";
+  DB&lt;3&gt; y 0
+$foo = 'abc'
+$z = CODE(0x543ed97f20a0)
+   -&gt; &amp;main::__ANON__[x.pl:9] in x.pl:5-9
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11117483</root_node>
+<parent_node field_name="parent_node">11117621</parent_node>
+<thread id="11117483">
+<node id="11117489"><node id="11117517"><node id="11117523"><node id="11117541"><node id="11117548"><node id="11117638"/>
+</node>
+</node>
+</node>
+<node id="11117525"><node id="11117543"><node id="11117547"><node id="11117580"><node id="11117586"><node id="11117616"/>
+</node>
+<node id="11117617"><node id="11117621"><node id="11117637"><node id="11117678"><node id="11117703"><node id="11117709"><node id="11117763"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11117496"/>
+<node id="11117497"/>
+<node id="11117498"/>
+<node id="11117522"><node id="11117640"><node id="11117649"/>
+</node>
+</node>
+<node id="11117639"/>
+<node id="11117641"/>
+</thread></node>

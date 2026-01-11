@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11159037" title="Re^3: using TIEHASH as wrapper/proxy, while avoiding recursion and warnings" created="2024-04-22 09:29:21" updated="2024-04-22 09:29:21" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I wanted to be able to tie the original variable while changing the original data.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I see. I remember that when I tried something similar to that with tied filehandles, [https://github.com/Perl/perl5/issues/16138|I got Perl to segfault], so I'm not sure if [doc://tie] is meant to be used that way.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;It's not always possible to replace the monitored variable with a proxy, you just want to attach the magic directly.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That's probably true, but I imagine it wouldn't be too difficult to refactor the code in question from using a hash to a hashref?&lt;/p&gt;
+&lt;p&gt;Otherwise, if this is just for debugging, you could use [doc://perlref#Assigning-to-References|refaliasing] to replace the target hash with the tied hash? (though to unite you'd probably have to keep a reference to the original hash around)&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use feature 'refaliasing';
+use Data::Dump;
+use Tie::Subset::Hash;
+
+my %hash;
+@hash{"a".."e"} = 41..45;
+
+dd \%hash;
+
+tie my %hash2, 'Tie::Subset::Hash', \%hash, ['b'];
+\%hash = \%hash2;
+
+dd \%hash;
+
+__END__
+
+Aliasing via reference is experimental at foo.pl line 13.
+{ a =&gt; 41, b =&gt; 42, c =&gt; 43, d =&gt; 44, e =&gt; 45 }
+{
+  # tied Tie::Subset::Hash
+  b =&gt; 42,
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11159010</root_node>
+<parent_node field_name="parent_node">11159026</parent_node>
+<thread id="11159010">
+<node id="11159011"><node id="11159012"/>
+</node>
+<node id="11159024"><node id="11159026"><node id="11159037"/>
+</node>
+</node>
+</thread></node>

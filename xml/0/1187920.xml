@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1187920" title="Re: determine the variable causing the error: Use of uninitialized value" created="2017-04-14 06:38:17" updated="2017-04-14 06:38:17" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;From your various posts in this thread:&lt;/p&gt;
+&lt;blockquote&gt;&lt;p&gt;&lt;i&gt;I'm dealing with large hash structures and big input data ... &amp;#91;validation&amp;#93; is highly inefficient&lt;/i&gt;&lt;/p&gt;&lt;/blockquote&gt;
+&lt;p&gt;Please clarify. How big and deep are your data structures? Did you try running the code I posted [id://1187875|here] on your data, and how long did it take?&lt;/p&gt;
+&lt;p&gt;Also, how are you accessing your data structure? Directly, as in &lt;c&gt;printf "%s", $data-&gt;{foo}{bar}{quz}{baz}&lt;/c&gt;, do you copy subsections into temporary variables, do you walk the structure recursively, etc.? Again, please see [id://1177642|SSCCE], if you could show us something that's actually representative of your code, we can give better advice.&lt;/p&gt;
+&lt;blockquote&gt;&lt;p&gt;&lt;i&gt;I don't want to add any kind of extra checking code to avoid the error ... I just want to know if it's possible (without writing any specific checking code) to know the name of the variable that produces the error&lt;/i&gt;&lt;/p&gt;&lt;/blockquote&gt;
+&lt;p&gt;I believe that [LanX|Rolf] [id://1187877|showed] (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; now even [id://1145594|including] a post by [dave_the_m|the P5Porter] who [https://perl5.git.perl.org/perl.git/commitdiff/29489e7c74|implemented] it himself!) conclusively that in many cases, this isn't built into Perl, so the answer to your question is &lt;b&gt;no&lt;/b&gt;. You'll have to add the checks yourself, even if you &lt;i&gt;"don't want to"&lt;/i&gt; :-P&lt;/p&gt;
+&lt;p&gt;You could check the arguments:&lt;/p&gt;
+&lt;c&gt;
+use Carp qw/cluck/;
+sub myprintf {
+	cluck "myprintf: undef argument(s)"
+		if grep {!defined} @_;
+	printf @_
+}
+myprintf "%s-%s-%s-%s\n", 'quz', undef, 'baz', undef;
+
+__END__
+
+myprintf: undef argument(s) at - line 4.
+	main::myprintf("%s-%s-%s-%s\x{a}", "quz", undef, "baz", undef) called at - line 7
+Use of uninitialized value in printf at - line 5.
+Use of uninitialized value in printf at - line 5.
+quz--baz-
+&lt;/c&gt;
+&lt;p&gt;Or you could check for &lt;c&gt;undef&lt;/c&gt;s when accessing the data:&lt;/p&gt;
+&lt;c&gt;
+use Carp;
+
+sub dive {
+	my ($ref,@path) = @_;
+	for my $i (0..$#path) {
+		$ref = $path[$i]=~/^\[(\d+)\]$/
+			? $ref-&gt;[$1] : $ref-&gt;{$path[$i]};
+		if (!defined $ref) {
+			carp "undef at: ".join('',
+				map {/^\[\d+\]$/?$_:"{$_}"} @path[0..$i]);
+			return undef;
+		}
+	}
+	return $ref;
+}
+
+my $data = { this =&gt; { is =&gt; { a =&gt;
+		{ deep =&gt; { structure =&gt; [ 'abc', 'def', undef ]
+	} } } } };
+
+printf "&lt;%s&gt;\n", dive($data, qw/ this is a deep structure [0] /);
+printf "&lt;%s&gt;\n", dive($data, qw/ this is a deep structure [3] /);
+printf "&lt;%s&gt;\n", dive($data, qw/ this is an example /);
+
+__END__
+
+&lt;abc&gt;
+undef at: {this}{is}{a}{deep}{structure}[3] at - line 10.
+	main::dive(HASH(0x9e47a4), "this", "is", "a", "deep", "structure", "[3]") called at - line 22
+Use of uninitialized value in printf at - line 22.
+&lt;&gt;
+undef at: {this}{is}{an} at - line 10.
+	main::dive(HASH(0x9e47a4), "this", "is", "an", "example") called at - line 23
+Use of uninitialized value in printf at - line 23.
+&lt;&gt;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1187864</root_node>
+<parent_node field_name="parent_node">1187864</parent_node>
+<thread id="1187864">
+<node id="1187865"><node id="1187867"><node id="1187869"><node id="1187872"><node id="1187989"/>
+<node id="1188037"><node id="1188045"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1187866"><node id="1187871"><node id="1187875"/>
+<node id="1187877"><node id="1187881"/>
+</node>
+<node id="1187893"><node id="1187904"><node id="1187908"/>
+<node id="1187932"/>
+</node>
+</node>
+<node id="1187938"/>
+</node>
+</node>
+<node id="1187873"/>
+<node id="1187906"><node id="1187909"><node id="1187910"><node id="1187914"/>
+<node id="1187926"/>
+</node>
+</node>
+</node>
+<node id="1187920"/>
+<node id="1187930"/>
+<node id="1187935"/>
+<node id="1188671"/>
+</thread></node>

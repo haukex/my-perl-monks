@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1156857" title="subroutine and good practices" created="2016-03-04 17:36:39" updated="2016-03-04 17:36:39" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1156854">jmsnet</author>
+<doctext field_name="doctext">&lt;p&gt; Hi all &lt;/p&gt;
+
+Have some general questions about subroutines in terms of good practices to follow to make 
+the code as readable but also efficient as possible -
+
+&lt;code&gt;
+
+my $ticket = get_ticket($rest_client, $sdn_controller); 
+
+if (! defined $ticket) { 
+    print "Could not get ticket from $sdn_controller\n"; 
+    exit; 
+}
+
+more code .....
+
+sub get_ticket { 
+
+    my ($rest_client, $sdn_controller) = @_; 
+    my $ticket;
+     ........;
+
+    return $ticket;
+
+}
+
+&lt;/code&gt;
+
+&lt;p&gt; so the subroutine connects to an SDN controller and sends a REST call, gets JSON back and extracts
+an authorisation ticket for subsequent requests. I have another subroutine for sending all the other requests because the initial ticket request is 
+handled differently. But both subroutines take the same arguments, are doing error checking 
+on the HTTP response code etc. so there is some code replication which leads to first question &lt;/p&gt;
+
+&lt;p&gt; 1) should a subroutine do one thing and one thing well rather than trying to combine both subroutines
+into one because of the common code between them. In other words I could use one subroutine to use 
+the common code but then would have to make it more complex and test whether I was asking for a ticket
+or a just requesting data from the controller. &lt;/p&gt;
+
+&lt;p&gt;  2) the return value from the ticket and data subroutines are values, scalar for the ticket, and a reference
+to a data structure for the data subroutine, the exact type of structure depending on what JSON sent back.
+
+So if the ticket request or data request fails then the return value is undef.  Each time i call the subroutine
+and get a return value i then have to do an if loop to check whether the value is defined or not. 
+
+Is there a more efficient way of doing this because I am basically just repeating if statements after each call 
+eg. if i didn't get a ticket I could just call exit in the subroutine but it seems more logical to me and easier
+to follow if I handle it outside the subroutine. &lt;/p&gt;
+
+&lt;p&gt; 3) finally as you can see from above i use the same variable names in both main and the subroutine but use my 
+to keep them separate. I can see how that might confuse someone else looking at the code later and also if I 
+forget to use my how it might confuse me :) 
+
+I just keep running out of names. Is there a good standard to follow that others have found works ? &lt;/p&gt;
+
+Thanks for your time. 
+</doctext>
+<thread id="1156857">
+<node id="1156858"/>
+<node id="1156867"/>
+<node id="1156872"><node id="1156875"/>
+</node>
+<node id="1156879"/>
+</thread></node>

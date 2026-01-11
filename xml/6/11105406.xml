@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11105406" title="Re^3: How to declare a dependency on PerlIO in a CPAN module?" created="2019-09-02 02:25:49" updated="2019-09-02 02:25:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Fortunately, most of the code does not rely on being able to use in-memory filehandles, only the feature for parsing "application/warc-fields" from a string. Unfortunately, that feature is how the test suite tests parsing&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Here's something that works down to at least 5.6, or just use [doc://File::Temp] in the first place, or [mod://IO::String] for that matter:&lt;/p&gt;
+&lt;c&gt;
+sub tempfh {
+        my $data = shift;
+        my $fh;
+        eval {
+                open $fh, "&lt;", \$data or die $!;
+        1 } or do {
+                require File::Temp;
+                $fh = File::Temp::tempfile();
+                print $fh $data;
+                seek $fh, 0, 0 or die "seek: $!";
+        };
+        return $fh;
+}
+&lt;/c&gt;
+&lt;p&gt;However, having worked quite heavily with tied filehandles myself, I can say: They're neat, and allow for some cool stuff like my [mod://File::Replace::Inplace] module, &lt;i&gt;but&lt;/i&gt; I strongly recommend against making them a central part of your API unless you have to. There's various issues across various version of Perl - for example, look at the hoops I have to jump through in [https://metacpan.org/source/HAUKEX/File-Replace-0.14/t/25_tie_handle_argv.t#L41|&lt;c&gt;t/25_tie_handle_argv.t&lt;/c&gt; lines 41-49 (and 70-71)] just to get the tests working. And even in my module [mod://File::Replace], I've come to prefer the API without tied filehandles, even though I initially [id://1199805|thought] they were pretty neat.&lt;/p&gt;
+&lt;p&gt;So from my experience let me suggest: use tied filehandles if they're the only way to provide certain APIs (such as my [mod://File::Replace::Inplace], or the transparent uncompression of the &lt;c&gt;IO::Uncompress::*&lt;/c&gt; family), but otherwise, make your API OO based (modeling it on [doc://IO::Handle], if you like), and provide a tied API only as an optional layer of sugar.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Improved wording.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11105354</root_node>
+<parent_node field_name="parent_node">11105393</parent_node>
+<thread id="11105354">
+<node id="11105357"><node id="11105362"><node id="11105372"/>
+</node>
+</node>
+<node id="11105365"><node id="11105368"><node id="11105369"><node id="11105390"><node id="11105391"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11105377"><node id="11105393"><node id="11105406"><node id="11105477"><node id="11105515"><node id="11105550"><node id="11105666"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1184575" title="Text::CSV - parsing" created="2017-03-14 13:51:28" updated="2017-03-14 13:51:28" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="600379">sphalaris</author>
+<doctext field_name="doctext">O Munificent Ones!
+
+&lt;p&gt;
+The two lines of data emanate from a MySql CSV/dump, which I'm trying to prepare for insertion into an SQLite table. (The import function on SQlitebrowser doesn't parse the dump correctly).
+&lt;/p&gt;
+&lt;p&gt;
+As you can see the CSV dump contains a quoted text field, which, unfortunately, sometimes contains the ", " separator of the CSV line.
+&lt;/p&gt;
+&lt;p&gt;
+We are told not to try to parse CSV ourselves, but to get Text::CSV to do it....but that module, as I use it, doesn't cope with this either. Have I overlooked some attribute which is supposed to deal with this?  
+Any suggestions gratefully received. 
+&lt;/p&gt;
+&lt;code&gt;
+use strict; use Text::CSV; 
+my @lines=&lt;DATA&gt;;
+my $csv = Text::CSV-&gt;new ({sep_char  =&gt; ', '  });
+
+my @AoA;
+
+for (@lines) { if    (/^\((.+?)\).?/){my $con=$1; 
+ 
+  if ($csv-&gt;parse($con)) {
+ 
+      my @fields = $csv-&gt;fields();   push @AoA,[@fields];
+ 
+  } else {     warn "Line could not be parsed: $_\n";  }
+}
+}
+
+
+
+$"="//";for (@AoA){print "no_fields: $#$_ : @$_\n";}
+
+__DATA__
+(101, '1997-02-25', 'S1', 31.00, NULL, 0.00, 'this becomes two fields, so no go', 5.11),
+(102, '1998-03-26', 'S1', 31.00, NULL, 0.00, 'this will remain one field', 6.11),
+
+&lt;/code&gt;</doctext>
+<thread id="1184575">
+<node id="1184579"><node id="1184585"><node id="1184588"/>
+</node>
+</node>
+<node id="1184581"/>
+<node id="1184582"/>
+<node id="1184595"/>
+<node id="1184698"/>
+</thread></node>

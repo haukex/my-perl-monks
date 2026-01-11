@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109451" title="Re: How to get the key - value names from a hash" created="2019-11-29 15:34:30" updated="2019-11-29 15:34:30" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;To help figure things out, I very strongly recommend you clean up your code - you've got some stray indentation, a whole bunch of unused variables and ones irrelevant to the question (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; and lots of whitespace), and in a few cases the order of statements is a bit confusing (e.g. defining &lt;c&gt;$odd&lt;/c&gt; and &lt;c&gt;$even&lt;/c&gt; in between the use of &lt;c&gt;$column_count&lt;/c&gt;). Also, lines 61 and 81 are not producing the warning, as you said. Fixing these things will help people who are trying to help you.&lt;/p&gt;
+&lt;p&gt;Second, see the [id://745674], in this case the fourth point: use [doc://Data::Dumper] or [mod://Data::Dump] to look at your data structures. I've taken the liberty of doing all the above for you:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use Data::Dump;
+
+my @items = (2,14,7,17,1,12,3,4,11,5,13,6,8,10,9,16,15,18);
+
+@items = map { sprintf '%02u', $_ } @items;
+dd @items;
+
+@items = sort @items;
+dd @items;
+
+my ($odd,$even)=(0,0);
+$_ % 2 ? $odd++ : $even++ for @items;
+print "Odd = $odd, Even = $even\n";
+
+my %odd_even;
+$odd_even{"$odd $even"}++;
+dd \%odd_even;               # { "9 9" =&gt; 1 }
+dd $odd_even{0};             # undef
+
+my $sum;
+$sum += $_ for @items;
+my $avg = $sum / @items;
+$avg = ($avg - int($avg)) &gt;= 0.5 ? int($avg) + 1 : int($avg);
+
+my %average;
+$average{$avg}++;
+dd \%average;                # { 10 =&gt; 1 }
+dd $average{0};              # undef
+&lt;/c&gt;
+&lt;p&gt;So the reason you're getting that warning is because each of your hashes have only one key, each of which is not &lt;c&gt;"0"&lt;/c&gt;. If you want to iterate over a hash, see [doc://keys], [doc://values], and [doc://each]. Personally, my code for iterating over a hash typically looks something like this:&lt;/p&gt;
+&lt;c&gt;
+for my $key (sort keys %hash) {
+	my $value = $hash{$key};
+}
+&lt;/c&gt;
+&lt;p&gt;Note that while your method of doing a numeric sort may work in this case, it will break on 3-digit and longer numbers. A numeric [doc://sort] in Perl is written as: &lt;c&gt;sort {$a&lt;=&gt;$b} @array&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Also, a nitpick: using [doc://map] only for its side effects can be a little confusing, so I've changed it to a &lt;c&gt;for&lt;/c&gt; loop instead.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update 2:&lt;/i&gt; Note that &lt;c&gt;($avg - int($avg)) &gt;= 0.5 ? int($avg) + 1 : int($avg)&lt;/c&gt; can also be written as: &lt;c&gt;use POSIX 'lround'; $avg = lround($avg);&lt;/c&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11109448</root_node>
+<parent_node field_name="parent_node">11109448</parent_node>
+<thread id="11109448">
+<node id="11109449"/>
+<node id="11109451"><node id="11109462"><node id="11109466"><node id="11109477"><node id="11109716"/>
+</node>
+</node>
+<node id="11109474"><node id="11109590"/>
+</node>
+</node>
+<node id="11109589"><node id="11109592"/>
+</node>
+</node>
+<node id="11109460"/>
+</thread></node>

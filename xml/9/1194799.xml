@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1194799" title="Re^2: Is foreach split Optimized?" created="2017-07-11 06:28:35" updated="2017-07-11 06:28:35" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Thank you, this is probably the best way of looking at it! I took your idea and expanded on it, below. It seems that the answer to my original question is No, there isn't any magic going on with &lt;c&gt;for (split ...)&lt;/c&gt;, it's just that while it may be a memory hog, [doc://split] is still pretty fast - that's what threw me off initially.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use 5.014;
+
+my $cnt = 5000000;
+system($^X,'-sE',&lt;&lt;'_END_','--',"-cnt=$cnt");
+	say `ps -orss $$`=~s/\s+/ /gr;  # RSS 4340
+	$x = "abc\n" x $cnt;
+	say `ps -orss $$`=~s/\s+/ /gr;  # RSS 23936
+	@y = ("abc") x $cnt;
+	say `ps -orss $$`=~s/\s+/ /gr;  # RSS 455604
+_END_
+say "---";
+system($^X,'-sE',&lt;&lt;'_END_','--',"-cnt=$cnt");
+	say `ps -orss $$`=~s/\s+/ /gr;  # RSS 4544
+	$x = "abc\n" x $cnt;
+	say `ps -orss $$`=~s/\s+/ /gr;  # RSS 23972
+	@y = split /\n/, $x;
+	say `ps -orss $$`=~s/\s+/ /gr;  # RSS 423544
+_END_
+say "---";
+system($^X,'-sE',&lt;&lt;'_END_','--',"-cnt=$cnt");
+	say `ps -orss $$`=~s/\s+/ /gr;  # RSS 4540
+	$x = "abc\n" x $cnt;
+	say `ps -orss $$`=~s/\s+/ /gr;  # RSS 23964
+	for (split /\n/, $x) {
+	say `ps -orss $$`=~s/\s+/ /gr;  # RSS 457512
+	last }
+_END_
+say "---";
+system($^X,'-sE',&lt;&lt;'_END_','--',"-cnt=$cnt");
+	say `ps -orss $$`=~s/\s+/ /gr;  # RSS 4336
+	$x = "abc\n" x $cnt;
+	say `ps -orss $$`=~s/\s+/ /gr;  # RSS 23932
+	open my $fh, '&lt;', \$x or die $!;
+	while (&lt;$fh&gt;) {
+	say `ps -orss $$`=~s/\s+/ /gr;  # RSS 24000
+	last }
+_END_
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1194593</root_node>
+<parent_node field_name="parent_node">1194635</parent_node>
+<thread id="1194593">
+<node id="1194597"><node id="1194598"><node id="1194602"><node id="1194606"><node id="1194609"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1194601"><node id="1194605"><node id="1194614"/>
+<node id="1194620"><node id="1194804"/>
+</node>
+</node>
+</node>
+<node id="1194616"><node id="1194626"/>
+<node id="1194627"/>
+<node id="1194924"/>
+</node>
+<node id="1194625"><node id="1194802"/>
+</node>
+<node id="1194635"><node id="1194799"/>
+</node>
+</thread></node>

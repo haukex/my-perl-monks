@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1232734" title="Re^2: Difference between exists and defined (updated)" created="2019-04-17 17:31:15" updated="2019-04-17 17:31:15" _doctext_mode="lenient"><type id="11">note</type>
+<author id="634253">AnomalousMonk</author>
+<doctext field_name="doctext">&lt;p&gt;
+&lt;b&gt;Update:&lt;/B&gt; The ideas I've expressed in this post are apparently neither entirely correct nor entirely incorrect! Please see the posts of [LanX] [id://1232736|here], [haukex] [id://1232743|here] and [dsheroh] [id://1232747|here].
+&lt;/P&gt;
+
+&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;$array[3]&lt;/C&gt; is the only element you've assigned a value to ... so there's no reason for Perl to have allocated storage space for any other elements. ... Perl arrays are sparse data structures ... you can assign to &lt;c&gt;$array[8675309]&lt;/C&gt; without consuming ... memory to store ... unused elements ...
+&lt;/I&gt;&lt;/BLOCKQUOTE&gt;
+
+&lt;p&gt;
+I think these statements are incorrect regarding Perl &lt;i&gt;positional&lt;/I&gt; (if that's the correct term) arrays. (Perl &lt;i&gt;associative&lt;/I&gt; arrays are sparse.) Using Windows Task Manager to graph memory usage in real time (Windoze gotta be good for &lt;i&gt;something&lt;/I&gt;) when the following code is executed, one can see that assignment to an array element causes contiguous allocation of enough memory to "grow" the array sufficiently to include the assigned element.
+&lt;c&gt;
+c:\@Work\Perl\monks&gt;perl -wMstrict -le
+"my @ra;
+ print 'array declared';
+ sleep 5;
+ ;;
+ $ra[ 100_000_000 ] = 42;
+ print '1st array assignment';
+ sleep 5;
+ ;;
+ $ra[ 200_000_000 ] = 137;
+ print '2nd array assignment';
+ sleep 5;
+ ;;
+ print 'byebye';
+"
+array declared
+1st array assignment
+2nd array assignment
+byebye
+&lt;/C&gt;
+The same effect is seen with assignment to array length rather than to any element: &lt;br&gt;
+&lt;c&gt;    $#ra = 100_000_000;&lt;/c&gt; &lt;br&gt; 
+&lt;/P&gt;
+
+&lt;p&gt;
+It's a question of what to do with the allocated memory. Perl arrays are arrays of scalars, and a scalar is constructed by default in the very well-defined state of un-[doc://defined]-ness; an "undefined" scalar is a completely specified C/C++ object. So how do you initialize the space for 100,000,000 scalars allocated in the example above? The specific way this question is answered from one CPU/OS/Perl implementation to another is the basis of the ambiguity surrounding the use of [doc://exists] on allocated but never-accessed array elements.
+&lt;/P&gt;
+
+&lt;p&gt;
+My fuzzy understanding of the Perl guts is that to save time (not space!), array elements in the situation described above are quickly created in a state of quasi-existence: the memory is not left as random garbage, but neither is it a sequence of fully-fledged, default-initialized scalars. Hence the advice regarding use of [doc://exists] with array elements: &lt;i&gt;Don't Do That!&amp;trade;&lt;/I&gt;
+&lt;/P&gt;
+
+&lt;p&gt;
+Perhaps others more familiar with the details of this question can comment on specifics.
+&lt;/P&gt;
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-634253"&gt;
+&lt;hr&gt;&lt;p&gt;Give a man a fish&lt;b&gt;:&lt;/B&gt; &lt;c&gt; &lt;%-{-{-{-&lt;&lt;/C&gt;&lt;/P&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1232631</root_node>
+<parent_node field_name="parent_node">1232701</parent_node>
+<thread id="1232631">
+<node id="1232632"/>
+<node id="1232633"><node id="1232637"><node id="1232640"/>
+</node>
+</node>
+<node id="1232639"/>
+<node id="1232701"><node id="1232734"><node id="1232736"/>
+<node id="1232743"/>
+<node id="1232747"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1167642" title="Re^2: Creating a xml file in chunks" created="2016-07-12 15:07:42" updated="2016-07-12 15:07:42" _doctext_mode="lenient"><type id="11">note</type>
+<author id="917684">vagabonding electron</author>
+<doctext field_name="doctext">&lt;p&gt;Thank you very much [haukex]!&lt;/p&gt;
+&lt;p&gt;The API of [mod://XML::Writer] appeared to be a bit too complex for me at first. However I tried it just now - and indeed it seems to write the output continually (which I checked with the commented "Hi" line below. The syntax was not very verbose either on the second look :-) A bit strange (to my taste) is the option NEWLINES which adds a newline &lt;i&gt;before&lt;/i&gt; the closing delimiter, however it does make the output human readable.&lt;/p&gt;
+&lt;p&gt;I will test the module with my real data. Many thanks again!&lt;/p&gt;
+&lt;code&gt;
+#!/perl
+use strict;
+use warnings FATAL =&gt; qw(all);
+
+use Text::CSV_XS;
+use XML::Writer;
+
+my $csv_par =  { binary =&gt; 1, auto_diag =&gt; 1, 
+     allow_whitespace =&gt; 1, sep_char =&gt; ';', 
+     eol =&gt; $/, quote_char =&gt; undef, };
+
+my $csv = Text::CSV_XS-&gt;new($csv_par);
+my @header = @{$csv-&gt;getline(*DATA)};
+
+my %rec;
+$csv-&gt;bind_columns(\@rec{@header});
+
+my $writer = XML::Writer-&gt;new(NEWLINES =&gt; 1,
+          ENCODING =&gt; 'UTF-8'); # stdout.
+$writer-&gt;xmlDecl(); # ("UTF-8") already mentioned above.
+$writer-&gt;startTag('ROOT');
+
+while ( $csv-&gt;getline(*DATA) )
+{
+     $writer-&gt;startTag('alpha', 'name' =&gt; $rec{"alpha"});
+     for my $other( qw(beta gamma) )
+     {
+          $writer-&gt;startTag($other, 'name' =&gt; $rec{$other});
+          $writer-&gt;endTag($other);
+     }
+     # print "\t\tHi!\n";
+     $writer-&gt;endTag('alpha');
+}
+$writer-&gt;endTag('ROOT');
+$writer-&gt;end();
+
+__DATA__
+alpha;beta;gamma
+q;2;3
+w;9;8
+e;1;2
+r;6;7
+t;5;9
+y;3;1
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">1167626</root_node>
+<parent_node field_name="parent_node">1167630</parent_node>
+<thread id="1167626">
+<node id="1167630"><node id="1167642"><node id="1167646"/>
+</node>
+</node>
+<node id="1167644"><node id="1167712"/>
+</node>
+</thread></node>

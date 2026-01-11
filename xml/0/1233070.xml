@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1233070" title="Re: remove element from 2D array after comparing it with other 2D array" created="2019-04-28 07:30:14" updated="2019-04-28 07:30:14" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Welcome to the Monastery, [Newbie95].&lt;/p&gt;
+&lt;p&gt;Please be aware that the code you've posted does not compile, does not [id://111088], and you haven't shown what your expected output is - please have a look at [id://174051] and [id://1177642].&lt;/p&gt;
+&lt;p&gt;Looking at your code, the first thing that jumps out at me is the first two &lt;c&gt;foreach&lt;/c&gt; loops: on every iteration of the loop, you're overwriting the contents of &lt;c&gt;@array1_split_2D&lt;/c&gt; and &lt;c&gt;@array2_split_2D&lt;/c&gt;. But since on every iteration of the loop you're processing the entire &lt;c&gt;@array1&lt;/c&gt; and &lt;c&gt;@array2&lt;/c&gt; with [doc://map], really the &lt;c&gt;foreach&lt;/c&gt; loops aren't necessary at all.&lt;/p&gt;
+&lt;p&gt;Next, I see that there are quite a few variables that are only being used once, so perhaps you haven't provided us with enough context, but to simplify the code, I'm going to remove them, and also remove the [doc://print]s, and any other code that now becomes useless, such as the inner &lt;c&gt;if&lt;/c&gt; and &lt;c&gt;for ($j=0;...&lt;/c&gt;. I also renamed &lt;c&gt;$i_sec&lt;/c&gt; to &lt;c&gt;$j&lt;/c&gt;, since the latter got freed up.&lt;/p&gt;
+&lt;p&gt;Note that you don't need to use scalar variables to store the sizes of arrays, as long as you use the array in scalar [id://738558|context], it'll return the number of elements. So for example, instead of &lt;c&gt;$array1_row_size = @array1_split_2D; ... $i&lt;$array1_row_size&lt;/c&gt; you can just say &lt;c&gt;$i&lt;@array1_split_2D&lt;/c&gt; - it's the same, as long as the array doesn't change its size! Also, loops such as &lt;c&gt;for ($i=0; $i&lt;@array1_split_2D; $i++)&lt;/c&gt; can be written a bit nicer in Perl using [doc://perlop#Range-Operators], so for example: &lt;c&gt;for my $i (0..$#array1_split_2D)&lt;/c&gt;, where &lt;c&gt;$#array1_split_2D&lt;/c&gt; returns the index of the last element ([doc://perldata]).&lt;/p&gt;
+&lt;p&gt;So here's your code, rewritten like I described:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict; 
+
+my @array1 = ('ux_prim_clk', 'ux_side_clk', 'ux_xtal_frm_refclk');
+my @array2 = ('ccu_ux_xtal_frm_refclk_ack', 'ibbs_ux_prim_clkack',
+	'sbr_ux_side_clkack');
+
+my @array1_split_2D = map { [ split /_/, $_ ] } @array1;
+my @array2_split_2D = map { [ split /_/, $_ ] } @array2;
+
+for my $i ( 0 .. $#array1_split_2D ) {
+	for my $j ( 0 .. $#array2_split_2D ) {
+		my $array2_column_size = @{$array2_split_2D[$j]};
+		while ( @{$array1_split_2D[$i]} != $array2_column_size ) {
+			splice @{$array2_split_2D[$j]}, 0, 1;
+		}
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;So hopefully now it's easier to read and understand. You may notice that even though I removed &lt;c&gt;$array1_column_size = @{$array1_split_2D[$i]};&lt;/c&gt;, I did not do the same for &lt;c&gt;$array2_column_size = @{$array2_split_2D[$i_sec]};&lt;/c&gt; - why? Because the size of &lt;c&gt;@{$array2_split_2D[$j]}&lt;/c&gt; changes due to the [doc://splice], but in your original code you've saved the original size in &lt;c&gt;$array2_column_size&lt;/c&gt;. Now if you look at your &lt;c&gt;while&lt;/c&gt; loop, I hope it becomes clear where the infinite loop is coming from?&lt;/p&gt;
+&lt;p&gt;The fix is to always access the &lt;i&gt;current&lt;/i&gt; size of &lt;c&gt;@{$array2_split_2D[$j]}&lt;/c&gt; in the condition of the &lt;c&gt;while&lt;/c&gt;. Also, the condition is &lt;c&gt;!=&lt;/c&gt;, but what if &lt;c&gt;@{$array2_split_2D[$j]}&lt;/c&gt; happens to be shorter than &lt;c&gt;@{$array1_split_2D[$i]}&lt;/c&gt; to begin with? Then you've got another infinite loop. The solution there is to change the condition to &lt;c&gt;&lt;&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Okay, so now your code is hopefully easier to understand, plus it runs. Next, I'd have a look at the [id://745674], in particular, I like to use [mod://Data::Dump] to output data structures ([doc://Data::Dumper] is an alternative that's in the core):&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+my @array1 = ('ux_prim_clk', 'ux_side_clk', 'ux_xtal_frm_refclk');
+my @array2 = ('ccu_ux_xtal_frm_refclk_ack', 'ibbs_ux_prim_clkack',
+	'sbr_ux_side_clkack');
+
+my @array1_split_2D = map {[split /_/,$_]} @array1;
+my @array2_split_2D = map {[split /_/,$_]} @array2;
+dd "before", \@array1_split_2D, \@array2_split_2D;
+
+for my $i (0..$#array1_split_2D) {
+	for my $j (0..$#array2_split_2D) {
+		dd $i, $j;
+		dd $array1_split_2D[$i], $array2_split_2D[$j];
+		while ( @{$array1_split_2D[$i]} &lt; @{$array2_split_2D[$j]} ) {
+			splice @{$array2_split_2D[$j]}, 0, 1;
+		}
+		dd $array2_split_2D[$j];
+	}
+}
+
+dd "after", \@array1_split_2D, \@array2_split_2D;
+&lt;/c&gt;
+&lt;readmore title="Output"&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+(
+  "before",
+  [
+    ["ux", "prim", "clk"],
+    ["ux", "side", "clk"],
+    ["ux", "xtal", "frm", "refclk"],
+  ],
+  [
+    ["ccu", "ux", "xtal", "frm", "refclk", "ack"],
+    ["ibbs", "ux", "prim", "clkack"],
+    ["sbr", "ux", "side", "clkack"],
+  ],
+)
+(0, 0)
+(
+  ["ux", "prim", "clk"],
+  ["ccu", "ux", "xtal", "frm", "refclk", "ack"],
+)
+["frm", "refclk", "ack"]
+(0, 1)
+(["ux", "prim", "clk"], ["ibbs", "ux", "prim", "clkack"])
+["ux", "prim", "clkack"]
+(0, 2)
+(["ux", "prim", "clk"], ["sbr", "ux", "side", "clkack"])
+["ux", "side", "clkack"]
+(1, 0)
+(["ux", "side", "clk"], ["frm", "refclk", "ack"])
+["frm", "refclk", "ack"]
+(1, 1)
+(["ux", "side", "clk"], ["ux", "prim", "clkack"])
+["ux", "prim", "clkack"]
+(1, 2)
+(["ux", "side", "clk"], ["ux", "side", "clkack"])
+["ux", "side", "clkack"]
+(2, 0)
+(["ux", "xtal", "frm", "refclk"], ["frm", "refclk", "ack"])
+["frm", "refclk", "ack"]
+(2, 1)
+(["ux", "xtal", "frm", "refclk"], ["ux", "prim", "clkack"])
+["ux", "prim", "clkack"]
+(2, 2)
+(["ux", "xtal", "frm", "refclk"], ["ux", "side", "clkack"])
+["ux", "side", "clkack"]
+(
+  "after",
+  [
+    ["ux", "prim", "clk"],
+    ["ux", "side", "clk"],
+    ["ux", "xtal", "frm", "refclk"],
+  ],
+  [
+    ["frm", "refclk", "ack"],
+    ["ux", "prim", "clkack"],
+    ["ux", "side", "clkack"],
+  ],
+)
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;I don't know if this output is anything like what you want, since you didn't say what you want. Now, based purely on the input data, my guess is that maybe you're doing some kind of a [wp://Longest common substring problem|longest common substring] search? Note that there are several modules on CPAN to help with that, such as [mod://String::LCSS].&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use String::LCSS qw/lcss/;
+
+my @array1 = ('ux_prim_clk', 'ux_side_clk', 'ux_xtal_frm_refclk');
+my @array2 = ('ccu_ux_xtal_frm_refclk_ack', 'ibbs_ux_prim_clkack',
+	'sbr_ux_side_clkack');
+
+for my $one (@array1) {
+	for my $two (@array2) {
+		my $lcss = lcss($one, $two);
+		printf "%-18s / %-26s -&gt; %s\n", $one, $two, $lcss;
+	}
+}
+
+__END__
+
+ux_prim_clk        / ccu_ux_xtal_frm_refclk_ack -&gt; ux_
+ux_prim_clk        / ibbs_ux_prim_clkack        -&gt; ux_prim_clk
+ux_prim_clk        / sbr_ux_side_clkack         -&gt; _clk
+ux_side_clk        / ccu_ux_xtal_frm_refclk_ack -&gt; ux_
+ux_side_clk        / ibbs_ux_prim_clkack        -&gt; _clk
+ux_side_clk        / sbr_ux_side_clkack         -&gt; ux_side_clk
+ux_xtal_frm_refclk / ccu_ux_xtal_frm_refclk_ack -&gt; ux_xtal_frm_refclk
+ux_xtal_frm_refclk / ibbs_ux_prim_clkack        -&gt; ux_
+ux_xtal_frm_refclk / sbr_ux_side_clkack         -&gt; ux_
+&lt;/c&gt;
+&lt;p&gt;On the other hand, if you're simply trying to determine if one of the strings contains the other string exactly, you might want to have a look at my node [id://1179840]. It would be possible to adapt a regex solution such that it only matches elements separated by underscores, as your original code seems to be doing.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1233063</root_node>
+<parent_node field_name="parent_node">1233063</parent_node>
+<thread id="1233063">
+<node id="1233064"><node id="1233072"/>
+</node>
+<node id="1233070"><node id="1233073"/>
+<node id="1233259"><node id="1233274"><node id="1233309"><node id="1233310"><node id="1233312"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1233095"/>
+</thread></node>

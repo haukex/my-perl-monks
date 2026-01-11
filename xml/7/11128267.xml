@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11128267" title="Re: Linux Perl with zenity progress bar (updated)" created="2021-02-11 15:32:05" updated="2021-02-11 15:32:05" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Turning on &lt;c&gt;autoflush&lt;/c&gt; on the handle worked for me (IIRC, this may require a &lt;c&gt;use IO::File;&lt;/c&gt; on old Perls, before 5.14). Also please note the advice in [id://1180578]!&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+open(my $Progress, '|-', qw/ zenity --title Explore --progress 
+	--percentage 0 --text Test --auto-close --auto-kill /) or die $!;
+$Progress-&gt;autoflush;
+foreach my $Percent ( qw{10 20 30 40 50 60 70 80 90 100} ) {
+	sleep 2;
+	print "DBG&gt; ", $Percent, "\n";
+	print $Progress "$Percent\n";
+	print $Progress "# Test $Percent\n";
+}
+close($Progress) or die $! ? $! : $?;
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; And here's a version that handles the user clicking the "Cancel" button, which apparently causes a SIGHUP.&lt;/p&gt;
+&lt;c&gt;
+{
+	my $run = 1;
+	local $SIG{HUP} = sub { $run=0; };
+	open(my $Progress, '|-', qw/ zenity --title Explore --progress 
+		--percentage 0 --text Test --auto-close --auto-kill /)
+			or die $!;
+	$Progress-&gt;autoflush;
+	print $Progress "# Test 0%\n";
+	foreach my $Percent ( qw{10 20 30 40 50 60 70 80 90 100} ) {
+		sleep 1 if $run;
+		unless ($run) { print "Canceled\n"; last }
+		print "DBG&gt; ", $Percent, "\n";
+		print $Progress "$Percent\n";
+		print $Progress "# Test $Percent%\n";
+	}
+	close($Progress) or $run and die $! ? $! : $?;
+	print "Done.\n";
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update 2:&lt;/i&gt; Minor edits to second example.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11128265</root_node>
+<parent_node field_name="parent_node">11128265</parent_node>
+<thread id="11128265">
+<node id="11128267"><node id="11128282"/>
+</node>
+</thread></node>

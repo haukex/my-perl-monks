@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11123645" title="Re: Apache Pulsar modules" created="2020-11-14 07:37:39" updated="2020-11-14 07:37:39" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Does anyone have or know of Perl modules to publish data to an Apache Pulsar messaging bus?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I don't see any, sorry. However, according to the [https://pulsar.apache.org/docs/en/client-libraries-websocket/|Plusar docs]:&lt;/p&gt;
+&lt;blockquote&gt;Pulsar's WebSocket API is meant to provide a simple way to interact with Pulsar using languages that do not have an official client library. Through WebSockets you can publish and consume messages and use all the features available in the Java, Go, Python and C++ client libraries.&lt;/blockquote&gt;
+&lt;p&gt;Here's a simple producer and consumer implemented using [mod://Mojolicious], based on the Node.js examples in the above link:&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;&lt;c&gt;consumer.pl&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;c&gt;
+use Mojo::Base -strict, -signatures;
+use Mojo::UserAgent;
+use Mojo::IOLoop;
+use Mojo::Util qw/b64_decode/;
+use Data::Dump qw/dd pp/;
+
+my $ADDR = 'ws://localhost:8080/ws/v2/consumer/persistent/public/default/my-topic/my-sub';
+
+say "Opening WebSocket...";
+my $ua = Mojo::UserAgent-&gt;new;
+$ua-&gt;websocket($ADDR =&gt; sub ($ua, $tx) {
+	die 'WebSocket handshake failed!'.pp($tx)
+		unless $tx-&gt;is_websocket;
+	$tx-&gt;on(finish =&gt; sub ($tx, $code, $reason=undef) {
+		say "WebSocket closed ", pp($code, $reason);
+	});
+	$tx-&gt;on(json =&gt; sub ($tx, $json) {
+		say "Received: ", pp($json);
+		say "Payload: ", pp( b64_decode($json-&gt;{payload}) );
+		say "Sending ack";
+		$tx-&gt;send({ json =&gt; { messageId =&gt; $json-&gt;{messageId} } });
+	});
+});
+
+Mojo::IOLoop-&gt;start unless Mojo::IOLoop-&gt;is_running;
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;&lt;c&gt;producer.pl&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;c&gt;
+use Mojo::Base -strict, -signatures;
+use Mojo::UserAgent;
+use Mojo::IOLoop;
+use Mojo::Util qw/b64_encode/;
+use Data::Dump qw/dd pp/;
+
+my $ADDR = 'ws://localhost:8080/ws/v2/producer/persistent/public/default/my-topic';
+
+say "Opening WebSocket...";
+my $ua = Mojo::UserAgent-&gt;new;
+$ua-&gt;websocket($ADDR =&gt; sub ($ua, $tx) {
+	die 'WebSocket handshake failed!'.pp($tx)
+		unless $tx-&gt;is_websocket;
+	$tx-&gt;on(finish =&gt; sub ($tx, $code, $reason=undef) {
+		say "WebSocket closed ", pp($code, $reason);
+	});
+	$tx-&gt;on(json =&gt; sub ($tx, $json) {
+		say "Received ack: ", pp($json);
+		$tx-&gt;finish; # close socket after sending test message
+	});
+	$tx-&gt;send({ json =&gt; {
+		payload =&gt; b64_encode("Hello World", ''),
+		properties =&gt; {
+			key1 =&gt; "value1",
+			key2 =&gt; "value2",
+		},
+		context =&gt; "1",
+	} });
+});
+
+Mojo::IOLoop-&gt;start unless Mojo::IOLoop-&gt;is_running;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11123636</root_node>
+<parent_node field_name="parent_node">11123636</parent_node>
+<thread id="11123636">
+<node id="11123645"/>
+</thread></node>

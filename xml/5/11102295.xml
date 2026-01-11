@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11102295" title="Re: Need to print file contents on page (updated)" created="2019-07-02 06:32:19" updated="2019-07-02 06:32:19" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;my $first = $cgi-&gt;param('first_name'); my $last = $cgi-&gt;param('last_name'); my $file = $first . '_' . $last . '.csv'; open(DF,'&lt;',$file);&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;First of all, note that this it is quite dangerous to use unfiltered user input to read a file. I would strongly recommend reading [doc://perlsec], enabling the &lt;c&gt;-T&lt;/c&gt; taint switch, and filtering &lt;c&gt;$first&lt;/c&gt; and &lt;c&gt;$last&lt;/c&gt; for allowed characters.&lt;/p&gt;
+&lt;p&gt;The problem might be that you aren't checking your [doc://open] for errors, as in &lt;c&gt;open(DF,'&lt;',$file) or die "$file: $!";&lt;/c&gt;. This would give you an error message that you can see in the server's logs, or for debugging (not production!) you can add &lt;c&gt;use CGI::Carp qw/fatalsToBrowser/;&lt;/c&gt; to the top of the script. In general, see [id://165253] and [id://380424].&lt;/p&gt;
+&lt;p&gt;Also, please use &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags to format any code, sample input, output, error messages, etc.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; I missed this because of the missing formatting at first, but you're trying to write the contents of the file (&lt;c&gt;print $line;&lt;/c&gt;) before you output the headers (&lt;c&gt;print "Content-type:text/html\n\n";&lt;/c&gt;). You need to print any headers before the contents of the page, and since you're already using [mod://CGI].pm, you should use its &lt;c&gt;header&lt;/c&gt; function instead of writing the headers manually. Also, &lt;c&gt;while ( my $line = &lt;DF&gt; )&lt;/c&gt; is generally better than &lt;c&gt;foreach my $line(&lt;DF&gt;)&lt;/c&gt; because the latter reads the entire file into memory before looping over the lines. And using a lexical filehandle (&lt;c&gt;open my $fh, ...&lt;/c&gt;) instead of &lt;c&gt;DF&lt;/c&gt; would be better too.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11102294</root_node>
+<parent_node field_name="parent_node">11102294</parent_node>
+<thread id="11102294">
+<node id="11102325"/>
+<node id="11102295"><node id="11102297"><node id="11102302"/>
+</node>
+</node>
+<node id="11102301"/>
+<node id="11102326"/>
+<node id="11102382"/>
+</thread></node>

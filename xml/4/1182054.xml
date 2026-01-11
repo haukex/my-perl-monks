@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1182054" title="Re: Interactive commands via ssh" created="2017-02-15 04:13:32" updated="2017-02-15 04:13:32" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [Seq],&lt;/p&gt;
+&lt;p&gt;The power of [mod://Net::OpenSSH] is that it can give you a lot of low-level control, which does mean you may need to implement some low-level stuff yourself, or instead use a higher-level module like [mod://Expect]. The following works for me (both client and server are Debian-based Linux systems).&lt;/p&gt;
+&lt;p&gt;Server-side script that just prompts the user three times and generates some output. Drop this into &lt;c&gt;/tmp/test.pl&lt;/c&gt; on the remote machine.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use IO::Prompt 'prompt';
+
+print STDOUT "I am STDOUT\n";
+print STDERR "I am STDERR\n";
+for (qw/Bar Quz Baz/) {
+	my $resp = prompt("Foo $_? ", -yn);
+	warn "You said no\n" if lc($resp) eq 'n';
+	print "&lt;$resp&gt;\n";
+}
+print "Goodbye.\n";
+&lt;/c&gt;
+&lt;p&gt;Client-side script that executes the remote script. Note how it automatically answers two of the prompts, while allowing the user to answer the third.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Net::OpenSSH;
+use Expect;
+
+die "Usage: $0 HOST" unless @ARGV==1;
+my $ssh = Net::OpenSSH-&gt;new($ARGV[0]);
+die $ssh-&gt;error if $ssh-&gt;error;
+
+my @cmd = ('/tmp/test.pl');
+my ($pty, $pid) = $ssh-&gt;open2pty(@cmd)
+	or die $ssh-&gt;error;
+my $exp = Expect-&gt;init($pty);
+$exp-&gt;log_stdout(1);
+
+$exp-&gt;expect(5, 
+	[ qr/foo .+\?/i, sub {
+		my $exp = shift;
+		# prompt user
+		if ($exp-&gt;match=~/quz/i) {
+			$exp-&gt;send(scalar &lt;STDIN&gt;);
+		}
+		# automatic responses
+		elsif ($exp-&gt;match=~/bar/i) {
+			$exp-&gt;send("y\n");
+		}
+		else { 
+			$exp-&gt;send("n\n");
+		}
+		exp_continue;
+	} ]
+);
+
+$exp-&gt;soft_close;
+waitpid($pid, 0);
+$ssh-&gt;disconnect;
+print "Done.\n";
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1181955</root_node>
+<parent_node field_name="parent_node">1181955</parent_node>
+<thread id="1181955">
+<node id="1181959"><node id="1181960"><node id="1181971"/>
+</node>
+</node>
+<node id="1181997"/>
+<node id="1182054"/>
+</thread></node>

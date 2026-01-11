@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11149035" title="Re^3: Encoding problem with function in C library" created="2022-12-22 08:32:31" updated="2022-12-22 08:32:31" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Then, when the chr(177) gets written to a text file, it displays as the desired plus-or-minus symbol when viewed in Windows notepad.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In this case it just so happens that the UTF-8 encoding of &lt;c&gt;U+00B1 PLUS-MINUS SIGN&lt;/c&gt; is &lt;c&gt;C2 B1&lt;/c&gt; and I guess that the C compiler is doing the equivalent of &lt;c&gt;unsigned char a = 0xC2B1 &amp; 0xFF&lt;/c&gt;. It also just so happens that &lt;c&gt;0xB1&lt;/c&gt; (177) is the character &amp;plusmn; in [wp://Windows-1252|CP1252], [wp://ISO/IEC 8859-1|Latin-1], and others (which I guess is Notepad's interpretation), but in [wp://Code page 850|CP850] and [wp://Code page 437|CP437], &lt;c&gt;0xB1&lt;/c&gt; is &amp;#x2592;. You'll probably not see this happening with &amp;infin; &lt;c&gt;U+221E INFINITY&lt;/c&gt;, whose UTF-8 encoding is &lt;c&gt;E2 88 9E&lt;/c&gt;, but which is &lt;c&gt;0xEC&lt;/c&gt; in CP437, and which has no representation in the other three encodings I mentioned. Oh, the joys of single-byte encodings &lt;c&gt;:-)&lt;/c&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Using that codepage, this troublesome C library function (in mpc-1.3.x) by the name of "mpcr_out_str", then displays correctly when accessed from the Math::MPC module. &lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It would seem logical to me then that the library is outputting UTF-8.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Is there some way I can manipulate the active code page in perl (on windows) without shelling out to chcp ?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I should note I'm not an expert on this topic - but this works for me:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use open qw/:std :encoding(UTF-8)/;
+use Win32;
+Win32::SetConsoleOutputCP(65001);
+
+print "\N{U+B1}\N{U+221E}\n";
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;I'm thinking that, for Windows only, Math::MPC needs to change the codepage to 65001 before calling this function ... and then it ought also revert the codepage to its original setting immediately after the function has been run. &lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;CP65001 is UTF-8, and IMHO UTF-8 is probably the most universal, so unless you've got some other funky Unicode stuff going on, I don't think you'd need to change it back, the boilerplate I showed above should be fine for the entire process - that and, according to the sources I found, making sure that your terminal is using a Unicode-capable font.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11149013</root_node>
+<parent_node field_name="parent_node">11149032</parent_node>
+<thread id="11149013">
+<node id="11149017"><node id="11149018"/>
+</node>
+<node id="11149019"/>
+<node id="11149023"><node id="11149032"><node id="11149033"/>
+<node id="11149034"><node id="11149036"><node id="11149037"><node id="11149038"/>
+</node>
+</node>
+</node>
+<node id="11149035"><node id="11149039"><node id="11149043"><node id="11149047"/>
+</node>
+<node id="11149045"><node id="11149046"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11149031"/>
+</thread></node>

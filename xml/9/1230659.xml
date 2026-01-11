@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230659" title="Re: truncate string to byte count" created="2019-02-28 04:36:03" updated="2019-02-28 04:36:03" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;TIMTOWTDI...&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More tests=&gt;12;
+
+my $in = "\N{U+CF} \N{U+2764} \N{U+1F42A}";
+is utf8cut($in, 11), "\N{U+CF} \N{U+2764} \N{U+1F42A}";
+is utf8cut($in, $_), "\N{U+CF} \N{U+2764} " for 10,9,8,7;
+is utf8cut($in,  6), "\N{U+CF} \N{U+2764}";
+is utf8cut($in, $_), "\N{U+CF} " for 5,4,3;
+is utf8cut($in,  2), "\N{U+CF}";
+is utf8cut($in, $_), "" for 1,0;
+
+sub utf8cut {
+	my ($str, $bytelen) = @_;
+	utf8::encode($str);
+	$str = substr $str, 0, $bytelen;
+	$str =~ s/(?: [\xC0-\xDF] | [\xE0-\xEF] [\x80-\xBF]?
+		| [\xF0-\xF7] [\x80-\xBF]{0,2} )\z//x;
+	utf8::decode($str);
+	return $str;
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Updates 1 &amp;amp; 2:&lt;/i&gt; As per replies, fixed by removing the code which did special handling when &lt;c&gt;!utf8::is_utf8($str)&lt;/c&gt; (and the corresponding tests), which I had originally added to the code as an ill-conceived afterthought.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1230633</root_node>
+<parent_node field_name="parent_node">1230633</parent_node>
+<thread id="1230633">
+<node id="1230639"/>
+<node id="1230640"><node id="1230641"/>
+<node id="1230660"><node id="1230708"/>
+</node>
+</node>
+<node id="1230642"><node id="1230643"/>
+</node>
+<node id="1230645"/>
+<node id="1230646"><node id="1230647"/>
+<node id="1230667"/>
+<node id="1230685"/>
+</node>
+<node id="1230659"><node id="1230686"><node id="1230688"><node id="1230690"/>
+</node>
+</node>
+</node>
+<node id="1230687"><node id="1230689"><node id="1230691"><node id="1230692"><node id="1230693"/>
+<node id="1230694"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1230711"/>
+</thread></node>

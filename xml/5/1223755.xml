@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1223755" title="Re: Filesystem and SMB/NFS share Access" created="2018-10-09 16:31:11" updated="2018-10-09 16:31:11" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;First of all, a couple of general recommendations to improve the code:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;Always [id://111088]. Although your current program only needs a few fixups, those pragmas will help you avoid typos and other mistakes.&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Use consistent indentation. [mod://perltidy] can help.&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Reduce repetitions. I would have written something like this:&lt;/p&gt;
+&lt;c&gt;
+sub exit_with_msg {
+    my ($message,$returnid) = @_;
+    print "CURRVALUE_STRING: $message\n";
+    print "RETURNID: $returnid\n";
+    exit 0;
+}
+&lt;/c&gt;
+&lt;p&gt;And then used it everywhere like e.g. &lt;c&gt;exit_with_msg("a File-Path must be given",1);&lt;/c&gt;. This will shorten your code significantly.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;In the same vein, you seem to be assigning to &lt;c&gt;$Username&lt;/c&gt; and &lt;c&gt;$Password&lt;/c&gt; twice, and I'm wondering if this is correct: &lt;c&gt;$Password = $opt_s;&lt;/c&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Now, moving on to your task, note that the core Perl module [doc://File::Spec] is good for cross-platform handling of filenames. For example, you can use its &lt;c&gt;splitpath&lt;/c&gt; method to find out the volume of a path, instead of manually splitting like you are currently doing.&lt;/p&gt;
+&lt;p&gt;As for your main question, unfortunately I'm a bit rusty on my Perl+Windows+UNC. So it's a little unclear to me how you want to go about testing the files on network shares: do you want to map the shares to network drives? A quick search found several threads with information:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;[id://239353]&lt;/li&gt;
+&lt;li&gt;[id://495570]&lt;/li&gt;
+&lt;li&gt;[id://676238]&lt;/li&gt;
+&lt;li&gt;[id://1025881]&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;For example, most of these threads mention [mod://Win32::FileOp] as a possibility. It's also possible to shell out to run commands like &lt;c&gt;NET USE&lt;/c&gt;, but running external commands is usually a tricky topic, which I wrote about at length [id://1180578|here] (in this case for example, I might recommend the latest version of [mod://IPC::Run3] because it should provide for the "best" quoting of command arguments).&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1223731</root_node>
+<parent_node field_name="parent_node">1223731</parent_node>
+<thread id="1223731">
+<node id="1223755"><node id="1223778"><node id="1224323"/>
+</node>
+</node>
+</thread></node>

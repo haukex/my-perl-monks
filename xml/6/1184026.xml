@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1184026" title="Re: Serialzed Date Recurrence" created="2017-03-09 07:34:17" updated="2017-03-09 07:34:17" _doctext_mode="lenient"><type id="11">note</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;i&gt; There's also DateTime::Event::Recurrence, but that seems to have no serialization/inflation. Maybe I could dump the object as perl and store that in the database, but yuck. &lt;/i&gt;&lt;p&gt;huh? &lt;c&gt; 
+
+sub clone {
+    my $self = shift;
+    my $new = $self-&gt;SUPER::clone( @_ );
+    $new-&gt;set_ical( $self-&gt;get_ical );
+    $new;
+}
+
+sub clone { 
+    my $self = bless { %{ $_[0] } }, ref $_[0];
+    $self-&gt;{set} = $_[0]-&gt;{set}-&gt;copy;
+    return $self;
+}
+sub copy {
+    my $self = shift;
+    my $copy = $self-&gt;empty_set();
+    ## return $copy unless ref($self);   # constructor!
+    foreach my $key (keys %{$self}) {
+        if ( ref( $self-&gt;{$key} ) eq 'ARRAY' ) {
+            @{ $copy-&gt;{$key} } = @{ $self-&gt;{$key} };
+        }
+        else {
+            $copy-&gt;{$key} = $self-&gt;{$key};
+        }
+    }
+    return $copy;
+}
+
+&lt;/c&gt;
+
+[Href://https://metacpan.org/pod/Set::Infinite#as_string]
+
+</doctext>
+<root_node field_name="root_node">1184017</root_node>
+<parent_node field_name="parent_node">1184017</parent_node>
+<reputation field_name="reputation">9</reputation>
+<thread id="1184017">
+<node id="1184026"><node id="1184041"><node id="1184108"/>
+</node>
+</node>
+<node id="1184259"/>
+</thread></node>

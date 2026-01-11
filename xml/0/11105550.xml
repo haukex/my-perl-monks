@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11105550" title="Re^6: How to declare a dependency on PerlIO in a CPAN module?" created="2019-09-03 22:23:56" updated="2019-09-03 22:23:56" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1149436">jcb</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;it's easier to provide an OO interface instead of something that looks like a filehandle but really isn't&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;As I understand, tied filehandles really &lt;i&gt;are&lt;/i&gt; filehandles, so that issue is avoided.  The main motivation for using tied values in this API is to reuse Perl APIs instead of inventing new ones.&lt;/p&gt;
+
+&lt;p&gt;This led to the tied aggregate interfaces in &lt;c&gt;WARC::Fields&lt;/c&gt; when I realized that I could either reinvent array and hash access with OO methods, or just &lt;c&gt;tie&lt;/c&gt; the real thing and "fill out" the ready-made interface form from [doc://perltie].  That class has very few instance methods as a result, with only one for data access:  &lt;c&gt;-&gt;field&lt;/c&gt;, which takes a field name (and possibly a new value for that field).  Yet complex operations are possible:  adding a concurrent record is &lt;c&gt;push @{$record-&gt;fields-&gt;{WARC_Concurrent_To}}, $other_record-&gt;field('WARC-Record-ID');&lt;/c&gt; regardless of how many &lt;tt&gt;WARC-Concurrent-To&lt;/tt&gt; values &lt;c&gt;$record&lt;/c&gt; currently has.  I am considering adding convenience accessors to &lt;c&gt;WARC::Record&lt;/c&gt; for some fields, like &lt;c&gt;-&gt;id&lt;/c&gt; for &lt;tt&gt;WARC-Record-ID&lt;/tt&gt; and &lt;c&gt;-&gt;date&lt;/c&gt; for &lt;tt&gt;WARC-Date&lt;/tt&gt; (as a &lt;c&gt;WARC::Date&lt;/c&gt; object instead of the string that &lt;c&gt;-&gt;field&lt;/c&gt; would return).&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;Is your code already online somewhere (GitHub?), for context?&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;The code that needs tied handles has not been written yet, but I have been making development preview releases on CPAN and collecting smoketest reports.  (Amusingly, I have had more failures with the bundled POD test than with the code so far.)  Look for JCB/WARC/WARC-v0.0.0_2.tar.gz for the version that prompted this question.  It has the &lt;c&gt;WARC::Fields&lt;/c&gt; module implemented and some POD describing the planned API so far.  I posted a very early draft of that planned API on PerlMonks as [id://11104202].&lt;/p&gt;
+
+&lt;p&gt;Back then, the &lt;c&gt;parse WARC::Fields&lt;/c&gt; method was two different methods that have since been merged into a single &lt;c&gt;parse WARC::Fields&lt;/c&gt; method.  I do not have a problem with distinguishing IO handles and strings because I decided to require slightly different calls:  &lt;c&gt;parse WARC::Fields $text&lt;/c&gt; vs. &lt;c&gt;parse WARC::Fields from =&gt; $filehandle&lt;/c&gt; &amp;mdash; "from" is not a valid "application/warc-fields" document, so there is no ambiguity.  The library itself will always use the &lt;c&gt;from =&gt; $filehandle&lt;/c&gt; form since it is reading from a WARC volume.  The other form internally opens a filehandle on the passed string and reads from that instead of duplicating the entire parser.&lt;/p&gt;
+
+&lt;p&gt;On a side note, do you know of any community Git hosting sites suitable for Perl libraries that do not rely on JavaScript to function and preferably run on Free software?  Those are my chief objections to using GitHub for a new project.  I have occasionally made pull requests there to contribute to other projects, but I would not want to actually host a project there.  Or is this last paragraph itself a good question for the SoPW section here?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11105354</root_node>
+<parent_node field_name="parent_node">11105515</parent_node>
+<thread id="11105354">
+<node id="11105357"><node id="11105362"><node id="11105372"/>
+</node>
+</node>
+<node id="11105365"><node id="11105368"><node id="11105369"><node id="11105390"><node id="11105391"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11105377"><node id="11105393"><node id="11105406"><node id="11105477"><node id="11105515"><node id="11105550"><node id="11105666"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

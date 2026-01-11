@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116742" title="Re: removing perldata , hashref from XML file (updated)" created="2020-05-13 05:02:24" updated="2020-05-13 05:02:24" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I assume this is a followup to your previous post "[id://11116697]", so what you've shown here is the Perl data structure returned by [mod://TAP3::Tap3edit]'s &lt;c&gt;$tap3-&gt;structure&lt;/c&gt; run through [mod://XML::Dumper]. That module allows me to parse back the XML into the data structure I show below (anonymized, in case this happens to be real data? &lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; [SaraMirabi] confirmed in the CB that it is fake data&lt;/small&gt;) - it would have been better if you'd showed us the Perl data structure to begin with, using [mod://Data::Dumper] or [mod://Data::Dump].&lt;/p&gt;
+&lt;p&gt;I think it would be best if you didn't rely on munging the output of [mod://XML::Dumper], but instead build the XML output from the Perl data structure yourself, because that gives you full control over the produced XML. Personally, although it's a bit more verbose, I prefer to write XML with [mod://XML::LibXML] and some helper functions. The following is an example of how one might go about that, the idea being that you can adapt this however you need.&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;p&gt;&lt;small&gt;&lt;b&gt;Update:&lt;/b&gt; Significantly simplified &lt;c&gt;toxml&lt;/c&gt; and made it more flexible (output is unchanged).&lt;/small&gt;&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use open qw/:std :utf8/;
+use XML::LibXML;
+
+my $data = { employee =&gt; [ {
+		"************" =&gt; "M", age =&gt; { dob =&gt; "01-04-1993" },
+		department =&gt; { departmentname =&gt; "Operations",
+			title =&gt; "Manager" },
+		location =&gt; { town =&gt; { county =&gt; "Somewhere",
+			name =&gt; "Someplace" } },
+		name =&gt; { forename =&gt; "John", surname =&gt; "Doe" },
+	}, {
+		"************" =&gt; "M", age =&gt; { dob =&gt; "12-12-1979" },
+		department =&gt; { departmentname =&gt; "Internet",
+			title =&gt; "Developer" },
+		location =&gt; { town =&gt; { county =&gt; "Somewhere",
+			name =&gt; "Othertown" } },
+		name =&gt; { forename =&gt; "Jane", surname =&gt; "Doe" },
+	} ] };
+
+my $doc = XML::LibXML::Document-&gt;createDocument('1.0', 'UTF-8');
+toxml($doc, 'data', $data);
+print $doc-&gt;toString(1);
+
+sub toxml {
+	my ($parent, $name, $data) = @_;
+	my @args = $name=~/\A\w+\z/ ? ($name) : ('value', name=&gt;$name);
+	if ( ref $data eq 'HASH' ) {
+		my $el = newel($parent, @args);
+		toxml($el, $_, $data-&gt;{$_}) for sort keys %$data;
+	}
+	elsif ( ref $data eq 'ARRAY' ) {
+		toxml(ref eq 'ARRAY' ? newel($parent, @args) : $parent,
+			$name, $_) for @$data;
+	}
+	elsif ( ref $data ) { die "Can't handle $data (yet)" }
+	else { newel($parent, @args)-&gt;appendText($data) }
+}
+
+sub newel {
+	my ($parent, $name, %attrs) = @_;
+	my $el = $parent-&gt;ownerDocument-&gt;createElement($name);
+	$el-&gt;setAttribute( $_ =&gt; $attrs{$_} ) for keys %attrs;
+	if ( $parent-&gt;nodeType==XML_DOCUMENT_NODE )
+		{ $parent-&gt;setDocumentElement($el) }
+	else { $parent-&gt;appendChild($el) }
+	return $el;
+}
+
+__END__
+
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;data&gt;
+  &lt;employee&gt;
+    &lt;value name="************"&gt;M&lt;/value&gt;
+    &lt;age&gt;
+      &lt;dob&gt;01-04-1993&lt;/dob&gt;
+    &lt;/age&gt;
+    &lt;department&gt;
+      &lt;departmentname&gt;Operations&lt;/departmentname&gt;
+      &lt;title&gt;Manager&lt;/title&gt;
+    &lt;/department&gt;
+    &lt;location&gt;
+      &lt;town&gt;
+        &lt;county&gt;Somewhere&lt;/county&gt;
+        &lt;name&gt;Someplace&lt;/name&gt;
+      &lt;/town&gt;
+    &lt;/location&gt;
+    &lt;name&gt;
+      &lt;forename&gt;John&lt;/forename&gt;
+      &lt;surname&gt;Doe&lt;/surname&gt;
+    &lt;/name&gt;
+  &lt;/employee&gt;
+  &lt;employee&gt;
+    &lt;value name="************"&gt;M&lt;/value&gt;
+    &lt;age&gt;
+      &lt;dob&gt;12-12-1979&lt;/dob&gt;
+    &lt;/age&gt;
+    &lt;department&gt;
+      &lt;departmentname&gt;Internet&lt;/departmentname&gt;
+      &lt;title&gt;Developer&lt;/title&gt;
+    &lt;/department&gt;
+    &lt;location&gt;
+      &lt;town&gt;
+        &lt;county&gt;Somewhere&lt;/county&gt;
+        &lt;name&gt;Othertown&lt;/name&gt;
+      &lt;/town&gt;
+    &lt;/location&gt;
+    &lt;name&gt;
+      &lt;forename&gt;Jane&lt;/forename&gt;
+      &lt;surname&gt;Doe&lt;/surname&gt;
+    &lt;/name&gt;
+  &lt;/employee&gt;
+&lt;/data&gt;
+&lt;/c&gt;
+&lt;/readmore&gt;
+</doctext>
+<root_node field_name="root_node">11116740</root_node>
+<parent_node field_name="parent_node">11116740</parent_node>
+<thread id="11116740">
+<node id="11116742"><node id="11116748"><node id="11116749"><node id="11116830"><node id="11116833"><node id="11116834"/>
+</node>
+<node id="11116835"><node id="11116836"/>
+</node>
+</node>
+</node>
+<node id="11116750"><node id="11116831"/>
+</node>
+</node>
+<node id="11116885"><node id="11116888"/>
+</node>
+</node>
+<node id="11116768"><node id="11116832"/>
+</node>
+<node id="11116845"/>
+</thread></node>

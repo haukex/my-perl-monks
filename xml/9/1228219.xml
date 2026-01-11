@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228219" title="Re^4: Validating an XML file with multiple schemas" created="2019-01-08 11:30:24" updated="2019-01-08 11:30:24" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1227983">mart0000</author>
+<doctext field_name="doctext">&lt;p&gt;
+Here's an exaggerated example where a Personal Information schema (captured as personal.xsd) uses a flexible Contact schema. A contact can be an Address, Email, a specific online id, a phone number etc., I've provided a sample address.xsd and email.xsd. The Contact section of the Personal Information schema allows such content extension using the broader, "any" element, but still keeps the validations strict on purpose.
+&lt;/p&gt;
+
+&lt;p&gt;
+To test, create a temporary folder for the 5 files (2 .xml &amp; 3 .xsd) I've provided below. I used C:\temp1 in my example, but alter the attached perl code to point to your path.
+&lt;/p&gt;
+
+&lt;p&gt;&lt;u&gt;&lt;b&gt;personal.xsd&lt;/b&gt;&lt;/u&gt;&lt;/p&gt;
+&lt;code&gt;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;schema
+    xmlns="http://www.w3.org/2001/XMLSchema"
+    xmlns:per="urn:tempuri:Personal"
+    targetNamespace="urn:tempuri:Personal"
+    elementFormDefault="unqualified"&gt;
+
+    &lt;element name="PersonalInfo"&gt;
+        &lt;complexType&gt;
+            &lt;sequence&gt;
+                &lt;element name="FirstName" type="string"/&gt;
+                &lt;element name="LastName" type="string"/&gt;
+                &lt;element name="Contact" type="per:ContactType"/&gt;
+            &lt;/sequence&gt;
+        &lt;/complexType&gt;
+    &lt;/element&gt;
+
+    &lt;complexType name="ContactType"&gt;
+        &lt;sequence&gt;
+            &lt;any namespace="##other" processContents="strict"
+                maxOccurs="unbounded"/&gt;
+        &lt;/sequence&gt;
+    &lt;/complexType&gt;
+&lt;/schema&gt;
+&lt;/code&gt;
+
+
+&lt;p&gt;&lt;u&gt;&lt;b&gt;address.xsd&lt;/b&gt;&lt;/u&gt;&lt;/p&gt;
+&lt;code&gt;
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:Contact="urn:tempuri:Contact"
+    targetNamespace="urn:tempuri:Contact"
+    elementFormDefault="unqualified"&gt;
+
+    &lt;xs:element name="Address"&gt;
+        &lt;xs:complexType&gt;
+            &lt;xs:sequence&gt;
+                &lt;xs:element name="Street" type="xs:string"/&gt;
+                &lt;xs:element name="City" type="xs:string"/&gt;
+            &lt;/xs:sequence&gt;
+        &lt;/xs:complexType&gt;
+    &lt;/xs:element&gt;
+&lt;/xs:schema&gt;
+&lt;/code&gt;
+
+&lt;p&gt;&lt;u&gt;&lt;b&gt;email.xsd&lt;/b&gt;&lt;/u&gt;&lt;/p&gt;
+&lt;code&gt;
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:Contact="urn:tempuri:Contact"
+    targetNamespace="urn:tempuri:Contact"
+    elementFormDefault="unqualified"&gt;
+
+    &lt;xs:element name="Email"&gt;
+        &lt;xs:complexType&gt;
+            &lt;xs:sequence&gt;
+                &lt;xs:element name="EmailAddress" type="xs:string"/&gt;
+            &lt;/xs:sequence&gt;
+        &lt;/xs:complexType&gt;
+    &lt;/xs:element&gt;
+&lt;/xs:schema&gt;
+&lt;/code&gt;
+
+
+&lt;p&gt;&lt;u&gt;&lt;b&gt;example1.xml&lt;/b&gt;&lt;/u&gt;&lt;/p&gt;
+&lt;code&gt;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;pinfo:PersonalInfo
+    xmlns:pinfo="urn:tempuri:Personal"
+    xmlns:cinfo="urn:tempuri:Contact"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="urn:tempuri:Personal personal.xsd"&gt;
+
+    &lt;FirstName&gt;First Name&lt;/FirstName&gt;
+    &lt;LastName&gt;Last Name&lt;/LastName&gt;
+    &lt;Contact&gt;
+      &lt;cinfo:Address
+          xsi:schemaLocation="urn:tempuri:Contact address.xsd"&gt;
+        &lt;Street&gt;Main Street&lt;/Street&gt;
+        &lt;City&gt;Main City&lt;/City&gt;
+      &lt;/cinfo:Address&gt;
+    &lt;/Contact&gt;
+&lt;/pinfo:PersonalInfo&gt;
+&lt;/code&gt;
+
+&lt;p&gt;&lt;u&gt;&lt;b&gt;example2.xml&lt;/b&gt;&lt;/u&gt;&lt;/p&gt;
+&lt;code&gt;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;pinfo:PersonalInfo
+    xmlns:pinfo="urn:tempuri:Personal"
+    xmlns:cinfo="urn:tempuri:Contact"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="urn:tempuri:Personal personal.xsd"&gt;
+
+    &lt;FirstName&gt;First Name&lt;/FirstName&gt;
+    &lt;LastName&gt;Last Name&lt;/LastName&gt;
+    &lt;Contact&gt;
+      &lt;cinfo:Email xsi:schemaLocation="urn:tempuri:Contact email.xsd"&gt;
+        &lt;EmailAddress&gt;email1@test.org&lt;/EmailAddress&gt;
+      &lt;/cinfo:Email&gt;
+    &lt;/Contact&gt;
+&lt;/pinfo:PersonalInfo&gt;
+&lt;/code&gt;
+
+&lt;p&gt;
+And finally the Perl code:
+&lt;/p&gt;
+&lt;p&gt;&lt;u&gt;&lt;b&gt;testExample.pl&lt;/b&gt;&lt;/u&gt;&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+
+package example;
+
+use XML::LibXML;
+
+use strict;
+use warnings;
+
+testExample1();
+testExample2();
+
+sub testExample1 {
+    my $schema = XML::LibXML::Schema-&gt;new(
+        location =&gt; "C:/temp1/personal.xsd"
+    );
+    my $document = XML::LibXML-&gt;load_xml(
+        location =&gt; "C:/temp1/example1.xml"
+    );
+
+    $schema-&gt;validate( $document );
+}
+
+sub testExample2 {
+    my $schema = XML::LibXML::Schema-&gt;new(
+        location =&gt; "C:/temp1/personal.xsd"
+    );
+    my $document = XML::LibXML-&gt;load_xml(
+        location =&gt; "C:/temp1/example2.xml"
+    );
+
+    $schema-&gt;validate( $document );
+}
+&lt;/code&gt;
+
+
+&lt;p&gt;
+Hopefully, you'll see an error similar to the following for the 1st example: &lt;br&gt;&lt;br&gt;
+&lt;font color="blue"&gt;
+C:/temp1/example1.xml:0: Schemas validity error : &lt;br&gt;
+&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;Element '{urn:tempuri:Contact}Address': &lt;br&gt;
+&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;No matching global element declaration available, but demanded &lt;br&gt;
+&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;by the strict wildcard.
+&lt;/font&gt;
+&lt;/p&gt;
+
+&lt;p&gt;
+It's possible I'm missing an appropriate way to reference the contact namespace for the address and email schemas within the xml. There are other ways to successfully achieve validation, such as altering the personal.xsd file to statically import the other 2 schemas. Unfortunately, that won't be an option, unless I've mistyped/overlooked a schema definition nuance while creating the example.
+&lt;br/&gt;&lt;br/&gt;
+Running the test outside Perl works correctly with strict validation turned on. I did have to add (with ease) those schemas programmatically though. If there's a similar way to import the Contact namespace of either schemas in Perl, right before the XML validation, it should solve the problem too.
+&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1228005</root_node>
+<parent_node field_name="parent_node">1228074</parent_node>
+<thread id="1228005">
+<node id="1228010"><node id="1228052"><node id="1228074"><node id="1228123"/>
+<node id="1228219"><node id="1228224"><node id="1228294"><node id="1228304"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1228330"/>
+</thread></node>

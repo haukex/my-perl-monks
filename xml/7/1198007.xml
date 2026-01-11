@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198007" title="Re: deconstructing tinydns(djbdns) SRV records (updated)" created="2017-08-25 06:36:28" updated="2017-08-25 06:36:28" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;[Corion] [id://1198005|is right] that if there is an appropriate module to do this for you, you should use that. &lt;b&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/b&gt;&amp;nbsp;For example as [VinsWorldcom] demonstrated [id://1198010|here].&amp;nbsp;&lt;b&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;If it turns out you do need to do this yourself, here are two ideas based on [doc://unpack] (templates explained in [doc://perlpacktut] and [doc://pack]) and [doc://perlre|regexes]. The first is a little more robust in its parsing, the second a little shorter and simpler.&lt;/p&gt;
+&lt;c&gt;
+my $data = "\000\012\000\144\023\304\003pbx\007example\003com\000:3600";
+
+my ($pri,$weight,$port,$rest) = unpack "S&gt;3A*", $data;
+my $target='';
+$target .= (length($target)?'.':'').$2
+	while $rest=~/\G([\x01-\xFF])((??{".{".ord($1)."}"}))/saagc;
+my ($ttl) = $rest=~/\G\x00:(.+)\z/saagc or die "failed to parse";
+
+# - OR -
+
+my ($pri,$weight,$port,$target,$ttl) = unpack "S&gt;3Z*A*", $data;
+$target = join '.', unpack "(C/A)*", $target;
+$ttl=~s/\A://;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1198003</root_node>
+<parent_node field_name="parent_node">1198003</parent_node>
+<thread id="1198003">
+<node id="1198005"><node id="1198008"><node id="1198009"/>
+</node>
+<node id="1198010"/>
+</node>
+<node id="1198007"><node id="1198011"/>
+</node>
+<node id="1198012"/>
+</thread></node>

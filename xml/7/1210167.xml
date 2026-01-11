@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1210167" title="Did the JSON module change?" created="2018-03-01 12:07:24" updated="2018-03-01 12:07:24" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1172232">nilesOien</author>
+<doctext field_name="doctext">&lt;P&gt; We have perl code that used to produce JSON that looked, in part, something like this : &lt;/p&gt;
+
+&lt;code&gt; "count" : "3" &lt;/code&gt;
+
+&lt;P&gt; And then after installing a new module via cpanm, which caused a lot of updates, it produced JSON that looks like this : &lt;/p&gt;
+
+&lt;code&gt; "count" : 3 &lt;/code&gt;
+
+&lt;P&gt; Notice that there are no quotes around the number now. This caused much confusion as it caused the downstream parser of the JSON to choke. After a lot of chasing, it seems like after the update, if you do math with a hash reference, it changes the type of the variable from a string to a number, even if the hash reference is not used to store the output. It's probably best illustrated by the script below.
+&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+
+use warnings;
+use strict;
+use JSON;
+
+my $json = 
+    JSON-&gt;new-&gt;allow_nonref-&gt;allow_unknown-&gt;allow_blessed-&gt;pretty(1);
+
+
+
+# Take the string "1", put it in a hash, encode as JSON and print.
+# This prints :
+# {
+#    "num" : "1"
+# }
+# The quotes around the number 1 are significant, they mean
+# that perl treats the has entry as a string (not surprising).
+my $data1;
+$data1-&gt;{"num"} = "1";
+my $body1 = $json-&gt;encode($data1);
+print $body1;
+
+
+
+
+# Take the number (not string!) 2, put in in a hash,
+# encode as JSON and print.
+# This prints :
+# {
+#    "num" : 2
+# }
+# There are no quotes around the 2, since perl 
+# treats it as a number.
+# Again, not surprising.
+my $data2;
+$data2-&gt;{"num"} = 2;
+my $body2 = $json-&gt;encode($data2);
+print $body2;
+
+
+
+
+
+# Take the string "3", put it in a hash, do some math with it,
+# then encode as JSON and print.
+# This prints :
+# {
+#    "num" : 3
+# }
+# So, perl is treating the hash entry, which was a sting, 
+# as a number, because using it to do math seems to cause 
+# perl to treat it as a number in the JSON.
+# Not sure if the hash entry changed type, or had some internal
+# flag set on it, but this is surprising, and this behavior 
+# seems to be a departure from the past.
+# Did something change in the JSON module? 
+my $data3;
+$data3-&gt;{"num"} = "3";
+my $addr = $data3-&gt;{"num"} + 7;
+my $body3 = $json-&gt;encode($data3);
+print $body3;
+
+exit 0;
+&lt;/code&gt;
+
+&lt;P&gt;
+We are running on CentOS 6.8 with this perl :
+&lt;/p&gt;
+
+&lt;code&gt;
+/usr/bin/perl --version
+This is perl, v5.10.1 (*) built for x86_64-linux-thread-multi
+&lt;/code&gt;
+
+&lt;P&gt; 
+What changed? Is it the JSON module? It seems like it used to make a number out of the string in a temporary way, do math with it, and then discard that number, but now it actually changes the type of the hash reference. And is this new way the desired behavior? Is this change documented? It was hard to figure out in our case.
+&lt;/p&gt;
+
+&lt;P&gt;
+Thanks, all - Niles Oien.
+&lt;/p&gt;</doctext>
+<thread id="1210167">
+<node id="1210172"><node id="1210208"><node id="1210213"/>
+</node>
+</node>
+<node id="1210175"><node id="1210206"/>
+</node>
+<node id="1210179"/>
+<node id="1210209"><node id="1210224"><node id="1210259"/>
+</node>
+</node>
+<node id="1210239"><node id="1210260"/>
+</node>
+</thread></node>

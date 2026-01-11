@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108837" title="Re^9: Correct Perl settings for sending zipfile to browser" created="2019-11-17 17:23:08" updated="2019-11-17 17:23:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;That is because the source of the "wide characters" is embedded in the code itself, and is not brought in from an external file which must be opened.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The source of the warnings is most likely that some string in your Perl program contains Unicode characters that you are trying to output through a stream that is not set to the proper encoding. Those characters can get there in a number of different ways: a file, a value submitted on an HTML form, from the database, or a Perl string such as the one I showed above - no &lt;c&gt;use utf8&lt;/c&gt; necessary.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;That would silence the false alarm.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It's not a false alarm - something really is wrong. It may seem to work for now, but it's possible that if a user with a browser different from yours visits your site, things may break in mysterious ways.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Adding the "use open qw/:std :utf8/;" pragma did not remove the useless warning.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That could mean that it's some other output stream, or possibly that some module reset &lt;c&gt;STDOUT&lt;/c&gt; back to the default, and you might have to do an e.g. &lt;c&gt;binmode STDOUT, ':raw:encoding(UTF-8)';&lt;/c&gt; at runtime.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I have tested the code both with and without those characters in that HTML header, and removing them is the only way to erase the error message.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;As I said, a [id://1177642|SSCCE] would be helpful in demonstrating that to us, if you'd like help with that.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;The "use utf8;" pragma should be unnecessary. It should be the built-in default.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, that's certainly a very valid argument, and one that others have raised. Perl has a long history of backwards-compatibility though, so (unfortunately) it's unlikely to be changed.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;It may be worth noting that I have already required UTF8 for the HTML form, and have specified it in the output&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, that's good (except &lt;c&gt;utf8&lt;/c&gt; is not a valid &lt;c&gt;lang&lt;/c&gt;, it should probably be &lt;c&gt;en&lt;/c&gt; or whatever language your page is in). You could also specify it in the HTTP headers (e.g. by supplying &lt;c&gt;-charset=&gt;'UTF-8'&lt;/c&gt; to [mod://CGI::Simple]'s &lt;c&gt;header&lt;/c&gt; method).&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11108658</root_node>
+<parent_node field_name="parent_node">11108836</parent_node>
+<thread id="11108658">
+<node id="11108660"/>
+<node id="11108663"><node id="11108712"><node id="11108713"><node id="11108715"/>
+</node>
+<node id="11108761"/>
+</node>
+</node>
+<node id="11108666"><node id="11108710"><node id="11108726"/>
+</node>
+</node>
+<node id="11108673"/>
+<node id="11108692"><node id="11108714"><node id="11108716"><node id="11108722"><node id="11108732"><node id="11108832"><node id="11108833"><node id="11108836"><node id="11108837"/>
+</node>
+</node>
+<node id="11108856"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

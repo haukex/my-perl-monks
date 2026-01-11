@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1171737" title="Re: Receive certificate ASN1 structure" created="2016-09-14 08:59:01" updated="2016-09-14 08:59:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [LoraIlieva],&lt;/p&gt;
+&lt;p&gt;I haven't used this module before, but if you look at the [mod://Convert::ASN1] distribution, in the examples you'll find the script [http://cpansearch.perl.org/src/GBARR/Convert-ASN1-0.27/examples/x509decode|x509decode] (in fact, part of your code looks like you got it from there). It contains a lot of supporting ASN.1 definitions that I'm assuming you can't do without; my guess is that's what your script is currently missing. However, it looks like the "x509decode" script will only process files in binary format. I took your [mod://MIME::Base64] decoding idea, inserted it into that script, tested it, and it looks like it is able to decode an example &lt;c&gt;.pem&lt;/c&gt; file. My modified &lt;c&gt;while&lt;/c&gt; loop looks like this:&lt;/p&gt;
+&lt;c&gt;
+use MIME::Base64 qw/decode_base64/;
+while ( my $filename = shift ) {
+	my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
+		$atime,$mtime,$ctime,$blksize,$blocks) = stat $filename;
+	open FILE, "&lt;$filename" or die "no such file";
+	binmode FILE;
+	my $pem_cert;
+	read FILE, $pem_cert, $size;
+	close FILE;
+	$pem_cert =~ /-----BEGIN CERT\w*-----(.+?)-----END CERT\w*-----/s;
+	my $der = decode_base64($1);
+	decodeCert( $der );
+}
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Updated wording slightly. &lt;b&gt;Update 2:&lt;/b&gt; Replaced the regex to be a little more selective.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1171735</root_node>
+<parent_node field_name="parent_node">1171735</parent_node>
+<thread id="1171735">
+<node id="1171737"/>
+<node id="1171744"/>
+</thread></node>

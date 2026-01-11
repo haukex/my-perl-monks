@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193741" title="Re: Very Odd Issue When Using pp to Create an .exe File Including Date::Calc" created="2017-06-28 00:04:06" updated="2017-06-28 00:04:06" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1171030">swl</author>
+<doctext field_name="doctext">&lt;p&gt;pp uses [metacpan://Module::ScanDeps] to find dependencies, and it looks like it is not properly parsing lines containing &lt;code&gt;/use\s+\d/&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Using the current version of Module::ScanDeps:&lt;/p&gt;
+
+&lt;code&gt;
+perl -MModule::ScanDeps -e"print $Module::ScanDeps::VERSION"
+1.23
+&lt;/code&gt;
+
+&lt;p&gt;and shortening the code somewhat:&lt;/p&gt;
+&lt;code&gt;
+use utf8; use strict; use List::Util qw(max); use Date::Calc qw(Delta_Days); use 42;
+&lt;/code&gt;
+
+&lt;p&gt;And then running it through scandeps.bat (in this case the code is in &lt;code&gt;use_on_one_line_42_at_end.pl&lt;/code&gt;).&lt;/p&gt;
+
+&lt;code&gt;
+scandeps use_on_one_line_42_at_end.pl
+'Portable'                      =&gt; '1.22',
+'File::Which'                   =&gt; '1.21',
+'CryptX'                        =&gt; '0.044',
+'Portable::CPAN'                =&gt; '1.22',
+'Portable::Config'              =&gt; '1.22',
+'Portable::HomeDir'             =&gt; '1.22',
+'Portable::LoadYaml'            =&gt; '1.22',
+'Portable::minicpan'            =&gt; '1.22',
+'Portable::FileSpec'            =&gt; '1.22',
+'File::HomeDir'                 =&gt; '1.00',
+'File::HomeDir::Darwin::Carbon' =&gt; '1.00',
+'File::HomeDir::Darwin::Cocoa'  =&gt; '1.00',
+'File::HomeDir::FreeDesktop'    =&gt; '1.00',
+'File::HomeDir::MacOS9'         =&gt; '1.00',
+'File::HomeDir::Test'           =&gt; '1.00',
+'File::HomeDir::Windows'        =&gt; '1.00',
+'File::HomeDir::Unix'           =&gt; '1.00',
+'File::HomeDir::Darwin'         =&gt; '1.00',
+'File::HomeDir::Driver'         =&gt; '1.00',
+'Math::BigInt::GMP'             =&gt; '1.6003',
+'Math::BigInt::LTM'             =&gt; '0.044',
+&lt;/code&gt;
+
+&lt;p&gt;The above also does not list List::Util, but that can be done using the -B flag in the scandeps.pl call&lt;/p&gt;
+
+&lt;p&gt;In fact, the issue also manifests in one-liners as these two are also missing Date::Calc in their outputs:&lt;/p&gt;
+
+&lt;code&gt;
+scandeps -e"use 5.022; use Date::Calc"
+scandeps -e"use Date::Calc; use 5.022"
+&lt;/code&gt;
+
+&lt;p&gt;But on further checking, it is triggered for any value &gt;= 5.01&lt;/p&gt;
+
+&lt;p&gt;These list Date::Calc and Date::Calc::PP&lt;/p&gt;
+
+&lt;code&gt;
+scandeps -e"use 5.009; use Date::Calc"
+scandeps -e"use 4; use Date::Calc"
+&lt;/code&gt;
+
+&lt;p&gt;This does not:&lt;/p&gt;
+
+&lt;code&gt;scandeps -e"use 5.01; use Date::Calc"&lt;/code&gt;
+
+&lt;p&gt;And for general reference:&lt;/p&gt;
+
+&lt;code&gt;
+scandeps -e"use 5.009;"
+No modules found!
+&lt;/code&gt;
+
+&lt;p&gt;It can also be reproduced using other modules.  This one-liner does not list Text::CSV_XS.&lt;/p&gt;
+
+&lt;code&gt;scandeps -e"use 5.01; use Text::CSV_XS"&lt;/code&gt;
+
+&lt;p&gt;It is probably worth raising as a [metacpan://Module::ScanDeps] issue.&lt;/p&gt;
+
+
+</doctext>
+<root_node field_name="root_node">1193701</root_node>
+<parent_node field_name="parent_node">1193701</parent_node>
+<thread id="1193701">
+<node id="1193707"><node id="1193716"><node id="1193720"><node id="1193730"/>
+</node>
+</node>
+</node>
+<node id="1193710"><node id="1193717"><node id="1193778"/>
+</node>
+</node>
+<node id="1193741"><node id="1193781"><node id="1193792"><node id="1194117"/>
+</node>
+</node>
+</node>
+</thread></node>

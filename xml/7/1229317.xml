@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229317" title="Re: returning reference of a variable defined inside a subroutine." created="2019-02-03 06:54:57" updated="2019-02-03 06:54:57" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Perl uses a method called reference counting to ensure that memory stays allocated as long as there is at least one reference pointing to it. The code you've showed is fine. On every call of the &lt;c&gt;sub&lt;/c&gt;, a new array will be allocated, and the reference pointing to it will keep it alive, even after the &lt;c&gt;sub&lt;/c&gt; ends.&lt;/p&gt;
+&lt;c&gt;
+sub foo {
+    my $m = shift;
+    my @array = ($m*1, $m*2, $m*3);
+    return \@array;
+}
+my $x = foo(2);
+my $y = foo(3);
+
+use Data::Dump;
+dd $x;  # [2, 4, 6]
+dd $y;  # [3, 6, 9]
+
+$x = undef;  # *now* the memory for that array is freed
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; For more details, see [doc://perlref].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1229316</root_node>
+<parent_node field_name="parent_node">1229316</parent_node>
+<thread id="1229316">
+<node id="1229317"/>
+<node id="1229323"/>
+<node id="1229325"/>
+</thread></node>

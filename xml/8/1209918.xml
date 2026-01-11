@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1209918" title="try catch getting ignored by SIG DIE subroutine" created="2018-02-25 02:08:23" updated="2018-02-25 02:08:23" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1171359">dkhosla1</author>
+<doctext field_name="doctext">&lt;p&gt;Appreciate insight on why if I have a defined SIG{__DIE__}, it is overriding a try/catch block? If I comment out the SIG{__DIE__} code, the 'catch' works; but otherwise it does not.&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+#use diagnostics;
+use JSON qw(decode_json encode_json);
+use Try::Tiny;
+use warnings;
+
+$SIG{__DIE__} = sub {
+    my $item = shift;
+    my $lasterr = "";
+    $lasterr = $@ if (defined($@));
+    chomp ($item);
+    print STDERR "DIE ERROR: $item : $lasterr\n";
+    local $! = 2;
+    exit $!;
+}; # end SIG_DIE
+
+sub write_mets {
+    my $collref;
+
+    # Read first line of test file
+    my $file = "data1";
+    open (my $f, "&lt;", $file) || die "Error opening: $!";
+    my $json1 = &lt;$f&gt;;
+    close ($f);
+
+    try {
+        $collref = decode_json ($json1);
+        print STDOUT "Read file $file\n";
+    } catch {
+        print STDERR "Error decoding data from $file $@ \n";
+    };
+}
+
+write_mets();
+
+1;
+&lt;/code&gt;
+
+&lt;p&gt;As run above, I get the following: (data1 has some bad json)&lt;/p&gt;
+&lt;code&gt;$ perl S2.pl
+DIE ERROR: garbage after JSON object, at character offset 7413 (before "n\n") at S2.pl line 30. :
+&lt;/code&gt;
+
+&lt;p&gt;If I comment out the SIG_DIE code, I get&lt;/p&gt;
+&lt;code&gt;$ perl S2.pl
+Error decoding data from data1
+&lt;/code&gt;
+Noticed also that $@ also does not have a value in this case. The detailed error is missing. I really need the SIG_DIE functionality for the rest of the code, just not have it get int he way in the try/catch section :-). After several hours of googling and trying, have given up. Monks! Help!
+
+Thanks!
+
+
+
+ 
+
+
+</doctext>
+<thread id="1209918">
+<node id="1209919"/>
+<node id="1209920"><node id="1209936"/>
+</node>
+<node id="1209922"><node id="1209939"/>
+<node id="1209950"/>
+</node>
+</thread></node>

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1223791" title="Skript help needed - RegEx &amp; Hashes" created="2018-10-10 06:35:02" updated="2018-10-10 06:35:02" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1223788">PandaRaey</author>
+<doctext field_name="doctext">Hello everyone,
+
+I am really, really new to perl, just started recently and so far I have always tried to do as much as possible by using bash and avoiding perl.
+However my professor and I have decided that for this problem perl is better of use and easier - now here I am. I also apologize for the huge code below, I somehow didn't get the readmore thing to work to shorten everything up.&lt;p&gt;
+I still run into several problems with the script below:
+&lt;br&gt;- Everything till I print the reads works (yeay)&lt;br/&gt; 
+&lt;br&gt;- Everything after that...not really. My main issue is that I do not get the content I should printed into the Merge-File and I have absolutely no clue what and where something went wrong.&lt;br/&gt;&lt;/p&gt;
+I already tried running the debugger without results though. And everything else I tried only made things worse.
+My suspicion is that the tRNAname variables are not correct and that the work with the multi-dimensional has is not fully correct, however I have no idea what and where.
+I am really concerned right now because I do not know anymore where I should start and work from here.
+
+&lt;p&gt;Any help is much appreciated
+~Panda&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+#Initiate all variables, hashes and co
+
+my @folders;
+my $folder;
+my $file;
+my $tocount;
+
+my $reads;
+
+my $trftable;
+my $head;
+my @line;
+my $line;
+
+my %hash;
+my $tRNAname;
+my @tRF_types;
+my $tRF_type;
+
+
+
+#Open folders in working directy
+
+@folders=glob("*"); #to get all folders in directory; extension ("*") as wildcard to get all names
+foreach$folder(@folders) #to speak to each element in directory
+	{
+	next if ($folder!~/^UNITAS_/); #skip elements which do not start with "UNITAS"
+	opendir(DIR,$folder)||die print$!; #open folder, end script when opening is not possible (DIR is the "filehandle" for the directory)
+	print"\n$folder";
+	while($file=readdir(DIR)) #returns content of folder
+		{
+		next if($file!~/\.mapped_sequences$/); #get the mapped_sequences file we need to read out the reads
+		print"\n$file"; #print out file names to make sure we get the right files
+
+		$reads = 0; #set the number of reads to 0 for each run
+
+		open(FILE,"$folder/$file")||die print$!; #open file
+		while($tocount=&lt;FILE&gt;)#read file
+			{
+			$tocount =~ s/&gt;//g; #remove all "&gt;"
+			next if ($tocount =~ /[A-Za-z]/); #skip lines which contain the sequence
+					
+			if ($tocount =~ /[0-9]/) #get the read-number
+				{
+				print"\n$tocount";
+				$reads = ($reads + $tocount); # add up all reads
+				}
+			print"\n$reads";
+
+			}
+		close FILE;
+
+		$trftable = 'unitas.tRF-table.txt'; #save file name in variable
+		open(TRF,"$folder/$trftable"); #open trf-table.txt
+
+		$head=&lt;TRF&gt;; #remove the first four lines of the trf-table.txt file
+		$head=&lt;TRF&gt;;
+		$head=&lt;TRF&gt;;
+		$head=&lt;TRF&gt;;
+
+		%hash = (); #initiate empty hash
+
+		while($line=&lt;TRF&gt;)
+			{
+			@line=split("\t",$trftable);
+		
+			if($line[0]=~s/tRNA-[^-]+-...//) # "tRNA-"(matched tRNA und -) "[^-]+" beginning bis Ende, egal was "-..."(weiterer Strich bis Ende)
+				{
+				$tRNAname=$line[0];
+				$tRNAname=$&amp;; # "$&amp;" = last pattern match
+				print"\n$tRNAname";
+				}
+			else
+				{
+				$tRNAname=$line[0];
+				$tRNAname=~s/-ENS.+$//; # "-ENS.+$" ( matched allen die -ENS. bis Ende enthalten)
+				print"\n$tRNAname";
+				}
+		
+			$hash{$tRNAname}{"5p-tR-halves"}+=$line[1]/$reads*1000000;
+			$hash{$tRNAname}{"5p-tRFs"}+=$line[3]/$reads*1000000;
+			$hash{$tRNAname}{"3p-tR-halves"}+=$line[5]/$reads*1000000;
+			$hash{$tRNAname}{"3p-CCA-tRFs"}+=$line[7]/$reads*1000000;
+			$hash{$tRNAname}{"3p-tRFs"}+=$line[9]/$reads*1000000;
+			$hash{$tRNAname}{"tRF-1"}+=$line[11]/$reads*1000000;
+			$hash{$tRNAname}{"tRNA-leader"}+=$line[13]/$reads*1000000;
+			$hash{$tRNAname}{"misc-tRFs"}+=$line[15]/$reads*1000000;
+			}
+
+
+		open(MERGE,"&gt;merge"); #open new file to save the new sortet stuff in
+		
+		@tRF_types=("5p-tR-halves","5p-tRFs","3p-tR-halves","3p-CCA-tRFs","3p-tRFs","tRF-1","tRNA-leader","misc-tRFs");
+		foreach$tRNAname(sort{$a cmp $b}keys%hash) #sortiert die alphabetisch nach keys
+			{
+			print MERGE $tRNAname; # print tRNA name
+			foreach$tRF_type(@tRF_types) 
+				{
+				print MERGE"\t$hash{$tRNAname}{$tRF_type}"; # print counts for each tRF type separated by tab
+				}
+			print MERGE"\n";# print newline
+			}
+
+		close TRF;
+		close MERGE;
+		close DIR;
+		}
+	}
+&lt;/code&gt;</doctext>
+<thread id="1223791">
+<node id="1223793"/>
+<node id="1223794"><node id="1223795"><node id="1223796"/>
+</node>
+</node>
+<node id="1223798"/>
+<node id="1223816"><node id="1223839"/>
+</node>
+<node id="1223825"/>
+<node id="1223879"><node id="1223882"><node id="1223889"/>
+</node>
+<node id="1223883"/>
+<node id="1223913"><node id="1223917"><node id="1223919"/>
+</node>
+</node>
+</node>
+<node id="1224047"><node id="1224060"/>
+<node id="1224086"><node id="1224087"><node id="1224090"/>
+</node>
+</node>
+</node>
+</thread></node>

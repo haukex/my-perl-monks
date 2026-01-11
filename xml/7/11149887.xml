@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11149887" title="Re: Hash/Array slice : how to exclude items? -- tie hash to mask values" created="2023-01-26 04:17:15" updated="2023-01-26 04:17:15" _doctext_mode="lenient"><type id="11">note</type>
+<author id="174111">Discipulus</author>
+<doctext field_name="doctext">Hello [bliako],&lt;P&gt;
+
+
+very interesting question and discussion. I am not able to offer a solution but this lead to me to something different: temporary hide or mask the value of some key of a tied hash. &lt;P&gt;
+
+Mostly copying [ikegami]'s [https://stackoverflow.com/questions/57207508/locking-hash-keys-to-prevent-deletion|SO answer] I got something working.&lt;P&gt;
+
+I'm sure some monk can play also with &lt;C&gt;FIRTSKEY&lt;/C&gt; and &lt;C&gt;NEXTKEY&lt;/C&gt; vodoo to make some key temporary invisible (see the comment line in fetch..), not me :)&lt;P&gt;
+
+&lt;c&gt;
+package MaskKeys;
+
+use strict;
+use warnings;
+use Tie::Hash ();
+our @ISA = 'Tie::ExtraHash';
+
+sub TIEHASH {
+		my $class = shift;
+		my $content = shift;
+		my $tomask = shift;
+		my $self = bless([{@$content}, {}]);
+		$self-&gt;[1]{$_} = 1 for @$tomask;
+		return $self;
+} 
+sub FETCH { 
+		my $self = shift;
+		my $key = shift;
+		if ( $self-&gt;[1]{$key} ){
+			return 'NA';
+			# {return $self-&gt;{ $self-&gt;FETCH($self-&gt;SUPER::NEXTKEY ($key))} || undef ;
+		}
+		else { return $self-&gt;[0]{$key} }
+}
+sub mask_key{
+	my $self = shift;
+	my $key = shift;
+	$self-&gt;[1]{$key} = 1;	
+}
+sub unmask_key{
+	my $self = shift;
+	my $key = shift;
+	# delete @{ $self-&gt;[1] }{ $key }; unecessary from cut and paste code that accepted a list
+	delete $self-&gt;[1]{$key};	
+}
+
+package main;
+                         # content                       # to mask
+tie my %hash, 'MaskKeys',[schema=&gt;11111, aaaaaa=&gt;33333], ['schema'];
+
+print "\noriginally masked: \n";
+print "$_ -&gt; $hash{$_}\n" for keys %hash;
+
+print "\nunmasked: \n";
+tied(%hash)-&gt;unmask_key('schema');
+print "$_ -&gt; $hash{$_}\n" for keys %hash;
+
+print "\nmasked again: \n";
+tied(%hash)-&gt;mask_key('schema');
+print "$_ -&gt; $hash{$_}\n" for keys %hash;
+
+
+__END__
+
+originally masked:
+aaaaaa -&gt; 33333
+schema -&gt; NA
+
+unmasked:
+aaaaaa -&gt; 33333
+schema -&gt; 11111
+
+masked again:
+aaaaaa -&gt; 33333
+schema -&gt; NA
+
+&lt;/c&gt;&lt;P&gt;
+
+L*&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-174111"&gt;
+There are no rules, there are no thumbs..&lt;BR&gt;
+Reinvent the wheel, then learn The Wheel; may be one day you reinvent one of THE WHEELS.
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.161} --&gt;</doctext>
+<root_node field_name="root_node">11149816</root_node>
+<parent_node field_name="parent_node">11149816</parent_node>
+<thread id="11149816">
+<node id="11149817"><node id="11149823"><node id="11149837"/>
+<node id="11149848"><node id="11149851"><node id="11149852"/>
+</node>
+<node id="11149855"><node id="11149861"><node id="11149873"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11149818"/>
+<node id="11149819"/>
+<node id="11149821"><node id="11149822"><node id="11149824"><node id="11149842"/>
+</node>
+</node>
+</node>
+<node id="11149834"/>
+<node id="11149846"/>
+<node id="11149847"/>
+<node id="11149863"/>
+<node id="11149887"><node id="11149900"/>
+</node>
+<node id="11149983"/>
+</thread></node>

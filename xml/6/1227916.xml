@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227916" title="Contextual find and replace large config file" created="2019-01-02 08:01:06" updated="2019-01-02 08:01:06" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1213470">Veltro</author>
+<doctext field_name="doctext">&lt;p&gt;Hello, I hope someone can help me with some ideas on this.&lt;/p&gt;
+&lt;p&gt;Quite often I end up working with big text files (~500k lines) which have configuration data that I want to change using a Perl program. The data files often don't have any official format. The structure of these kind of files are often similar and the content could look something like the following examples:&lt;/p&gt;
+&lt;c&gt;
+#ObjectType1
+Param1: 8
+Param2: SomeText
+
+#ObjectType1.NestedObject
+Param1: 3
+Param2: SomeText
+
+#ObjectType1
+...
+
+#ObjectType2
+...
+&lt;/c&gt;
+&lt;p&gt;or&lt;/p&gt;
+&lt;c&gt;
+ObjectType1
+{
+   Param1 = 8
+   Param2 = SomeText
+   NestedObject
+   {
+      Param1 = 3
+      Param2 = SomeText
+   }
+}
+ObjectType2
+{
+   ...
+}
+ObjectType1
+{
+   ...
+}
+&lt;/c&gt;
+&lt;p&gt;Most of the time I want to do something like changing the values of parameters for a certain object type and leave all the other lines inside the data file 'untouched'. A very simplistic approach that I used looks like the next code example (second data example). It reads the file line by line and keeps track of which 'context' it is currently reading and acts depending on that context. It works fine (as long as the format does not change too much), however the more complex things that I want to do these kind of snippets tend to become very complex and difficult to maintain.&lt;/p&gt;
+&lt;c&gt;
+use strict ;
+use warnings ;
+
+my $file = "test" ;
+
+open (my $fhi, "&lt;", $file . ".dat" ) or die "Cannot open $file.dat\n" ;
+open (my $fho, "&gt;", $file . "_out.dat" ) or die "Cannot open $file" . "_out.dat\n" ;
+
+my $context = "" ;
+
+while ( my $line = &lt;$fhi&gt; ) {
+	chomp $line ;
+	if ( $line =~ /ObjectType1/ ) {
+		$context = "ObjectType1" ;
+	}
+	if ( $line =~ /$\}/ ) {
+		$context = "" ;
+	}
+	if ( $context eq "ObjectType1" ) {
+		if ( $line =~ /Param1/ ) {
+			print $fho "Param1 = 0\n" ;
+		} elsif ( $line =~ /Param2/ ) {
+			print $fho "Param2 = SomeOtherText\n" ;
+		} else {
+			print $fho $line . "\n" ;
+		}
+	} else {
+		print $fho $line . "\n" ;
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;Does anyone know of a better or more generic way to do these kind of things? I am looking for a very simple approach (search and replace, not reading the entire data file to memory) where I can flexibly define a formula that is applied to a parameter within the scope of the context it is in.&lt;/p&gt;
+&lt;p&gt;Thanks, Veltro&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;edit:&lt;/b&gt;&lt;c&gt;/\}/&lt;/c&gt;&lt;b&gt; =&gt; &lt;/b&gt;&lt;c&gt;/$\}/&lt;/c&gt;&lt;/p&gt;</doctext>
+<thread id="1227916">
+<node id="1227935"><node id="1227960"><node id="1227979"/>
+</node>
+</node>
+<node id="1227939"><node id="1227990"><node id="1227992"><node id="1228031"/>
+</node>
+</node>
+<node id="1228002"/>
+</node>
+<node id="1227941"/>
+<node id="1227942"><node id="1227963"><node id="1227986"/>
+</node>
+</node>
+<node id="1227987"/>
+<node id="1228072"/>
+<node id="1228229"/>
+</thread></node>

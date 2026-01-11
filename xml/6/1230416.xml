@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230416" title="Re: User name character classes" created="2019-02-22 14:58:00" updated="2019-02-22 14:58:00" _doctext_mode="lenient"><type id="11">note</type>
+<author id="634253">AnomalousMonk</author>
+<doctext field_name="doctext">&lt;p&gt;
+If you want to avoid scary experimental features, the "classic" way to do this is by composition:
+&lt;c&gt;
+c:\@Work\Perl\monks&gt;perl -wMstrict -MData::Dump -le
+"my $rx_vowel = qr{ [aeiouAEIOU] }xms;
+ my $rx_cons  = qr{ (?! $rx_vowel) [[:alpha:]] }xms;
+ ;;
+ my $rx_cvc = qr{ \b $rx_cons $rx_vowel $rx_cons \b }xms;
+ ;;
+ my $s = 'when did the cop get his cap and tape and run out too?';
+ my @captures = $s =~ m{ $rx_cvc }xmsg;
+ dd \@captures;
+"
+["did", "cop", "get", "his", "cap", "run"]
+&lt;/C&gt;
+See [doc://perlre], [doc://perlretut], and [doc://perlrequick].
+&lt;/P&gt;
+
+&lt;p&gt;
+&lt;b&gt;Update 1:&lt;/B&gt; Changed example string slightly to highlight difference between "cap" and "tape" (was "cape").
+&lt;/P&gt;
+
+&lt;p&gt;
+&lt;b&gt;Update 2:&lt;/B&gt; Another ancient way to do this purely with character classes may be slightly faster because it avoids a lookaround:
+&lt;c&gt;
+c:\@Work\Perl\monks&gt;perl -wMstrict -MData::Dump -le
+"my $vowel = 'aeiouAEIOU';
+ my $rx_vowel = qr{ [\Q$vowel\E] }xms;
+ my $rx_cons  = qr{ [^[:^alpha:]\Q$vowel\E] }xms;
+ ;;
+ my $rx_cvc = qr{ \b $rx_cons $rx_vowel $rx_cons \b }xms;
+ ;;
+ my $s = 'when did the cop get his cap and tape and run out too?';
+ my @captures = $s =~ m{ $rx_cvc }xmsg;
+ dd \@captures;
+"
+["did", "cop", "get", "his", "cap", "run"]
+&lt;/C&gt;
+Note, however, the tricky double-negative &lt;c&gt; [^[:^alpha:]\Q$vowel\E] &lt;/C&gt; in &lt;c&gt;$rx_cons&lt;/C&gt;: "not &lt;i&gt;not-an-alpha&lt;/I&gt; or a vowel". See "The POSIX character class syntax" in [doc://perlre].
+&lt;/P&gt;
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-634253"&gt;
+&lt;hr&gt;&lt;p&gt;Give a man a fish&lt;b&gt;:&lt;/B&gt; &lt;c&gt; &lt;%-{-{-{-&lt;&lt;/C&gt;&lt;/P&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1230409</root_node>
+<parent_node field_name="parent_node">1230409</parent_node>
+<thread id="1230409">
+<node id="1230410"><node id="1230594"/>
+</node>
+<node id="1230416"><node id="1230417"><node id="1230420"><node id="1230421"/>
+</node>
+</node>
+<node id="1230593"/>
+</node>
+</thread></node>

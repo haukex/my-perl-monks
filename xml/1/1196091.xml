@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1196091" title="Re: Calculating holidays" created="2017-07-26 05:34:49" updated="2017-07-26 05:34:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;how do I parse a date&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Personally I like [mod://DateTime::Format::Strptime] because it lets you define exactly the expected input format.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;figure out if it is the 4th Thursday of the month&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;&lt;c&gt;( $datetime-&gt;dow==4 &amp;&amp; $datetime-&gt;weekday_of_month==4 )&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;Putting that together:&lt;/p&gt;
+&lt;c&gt;
+use DateTime::Format::Strptime;
+my $strp = DateTime::Format::Strptime-&gt;new(
+	pattern =&gt; '%Y-%m-%d', time_zone=&gt;'UTC', on_error=&gt;'croak' );
+my $dt = $strp-&gt;parse_datetime('2017-11-23');
+my $is_thanksgiving = $dt-&gt;month==11 &amp;&amp; $dt-&gt;dow==4
+	&amp;&amp; $dt-&gt;weekday_of_month==4;
+&lt;/c&gt;
+&lt;p&gt;As for determining the date of Thanksgiving, I agree with [choroba] that the best thing to do is use an existing module. But just to demonstrate one way to do a calculation like that:&lt;/p&gt;
+&lt;c&gt;
+sub thanksgiving {
+	my $year = shift;
+	my $dt = DateTime-&gt;new(year=&gt;$year,month=&gt;11,day=&gt;1);
+	$dt-&gt;add(days=&gt;1) while $dt-&gt;dow!=4;
+	$dt-&gt;add(weeks=&gt;3);
+	return $dt;
+}
+&lt;/c&gt;
+&lt;p&gt;(Tested against data from Wikipedia for the years 2000 to 2399.)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1196050</root_node>
+<parent_node field_name="parent_node">1196050</parent_node>
+<thread id="1196050">
+<node id="1196052"/>
+<node id="1196065"/>
+<node id="1196083"><node id="1196088"/>
+</node>
+<node id="1196091"><node id="1196101"><node id="1196149"/>
+</node>
+</node>
+</thread></node>

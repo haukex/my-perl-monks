@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11113094" title="Re: scp file from windows10 to unix server" created="2020-02-18 07:19:24" updated="2020-02-18 07:19:24" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Unfortunately, I don't have a system where I can test at the moment, but here are some things I'd try:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Split the command into a list, e.g. &lt;c&gt;my @cmd = ('C:/Windows/System32/OpenSSH/scp', $src_file, 'vinothg@'.$server.':'.$target_path );&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;Use either [mod://IPC::System::Simple]'s &lt;c&gt;capturex&lt;/c&gt; (comes preinstalled with Strawberry Perl), as in: &lt;c&gt;use IPC::System::Simple qw/capturex/; my $output = capturex(@cmd);&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;Or, use [mod://Win32::ShellQuote]'s &lt;c&gt;quote_system_string&lt;/c&gt;, as in: &lt;c&gt;use Win32::ShellQuote qw/quote_system_string/; my $cmd = quote_system_string(@cmd); my $output = qx/$cmd/;&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;In terms of error handling, the only case that indicates success is when [doc://$?] is zero, so you shouldn't be checking &lt;c&gt;$status&lt;/c&gt; the way you are, you should be checking &lt;c&gt;if ( $? != 0 )&lt;/c&gt;. &lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; Note that an advantage of [mod://IPC::System::Simple] is that it does the error handling for you.&lt;/li&gt;
+&lt;li&gt;Although I don't think this is the issue, try saying &lt;c&gt;scp.exe&lt;/c&gt; instead of just &lt;c&gt;scp&lt;/c&gt;. Also, do try backslashes in the command one more time, as in &lt;c&gt;my @cmd = ('C:\\Windows\\System32\\OpenSSH\\scp.exe', ...&lt;/c&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</doctext>
+<root_node field_name="root_node">11113093</root_node>
+<parent_node field_name="parent_node">11113093</parent_node>
+<thread id="11113093">
+<node id="11113094"><node id="11113100"><node id="11113108"/>
+</node>
+</node>
+<node id="11113097"><node id="11113121"/>
+</node>
+<node id="11113099"><node id="11113101"><node id="11113104"/>
+<node id="11113109"><node id="11113123"/>
+</node>
+</node>
+<node id="11113103"/>
+<node id="11113116"><node id="11113140"><node id="11113142"/>
+</node>
+</node>
+</node>
+<node id="11113106"/>
+<node id="11113118"/>
+</thread></node>

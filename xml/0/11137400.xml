@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11137400" title="Re^3: [OT] SQL &quot;on duplicate key&quot; custom action" created="2021-10-10 05:47:23" updated="2021-10-10 05:47:23" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Just for the record, here's the same thing for SQLite. As above, the &lt;c&gt;TRIGGER Dummy_Test_dupe&lt;/c&gt; is optional and I haven't tested the performance difference yet.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DBI;
+
+my $dbh = DBI-&gt;connect("dbi:SQLite:dbname=:memory:", undef, undef,
+	{ RaiseError=&gt;1, AutoCommit=&gt;1 } );
+
+$dbh-&gt;do(&lt;&lt;'ENDSQL');
+CREATE TABLE Dummy_Test (
+	Timestamp INTEGER PRIMARY KEY,
+	Foo TEXT,
+	Bar TEXT
+);
+ENDSQL
+$dbh-&gt;do(&lt;&lt;'ENDSQL');
+CREATE TRIGGER Dummy_Test_dupe BEFORE UPDATE ON Dummy_Test FOR EACH ROW
+	WHEN ( OLD.Timestamp IS NEW.Timestamp AND OLD.Foo IS NEW.Foo AND OLD.Bar IS NEW.Bar )
+	BEGIN SELECT RAISE(IGNORE); END;
+ENDSQL
+$dbh-&gt;do(&lt;&lt;'ENDSQL');
+CREATE TRIGGER Dummy_Test_modify BEFORE UPDATE ON Dummy_Test FOR EACH ROW
+	WHEN ( OLD.Foo IS NOT NEW.Foo OR OLD.Bar IS NOT NEW.Bar )
+	BEGIN SELECT RAISE(ABORT, "same Timestamp but different values"); END;
+ENDSQL
+
+my $in = $dbh-&gt;prepare(&lt;&lt;'ENDSQL');
+INSERT INTO Dummy_Test (Timestamp,Foo,Bar) VALUES (?,?,?)
+	ON CONFLICT (Timestamp) DO UPDATE SET Foo=EXCLUDED.Foo, Bar=EXCLUDED.Bar;
+ENDSQL
+
+$in-&gt;execute(12345,'Hello','World');
+$in-&gt;execute(12345,'Hello','World');
+my $e;
+eval { $in-&gt;execute(12345,'Hello','abcde'); 1 } or do { $e = $@ };
+if ( defined $e ) { print "Third insert failed as expected: $e" }
+else { die "Third insert didn't fail as expected" }
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11107746</root_node>
+<parent_node field_name="parent_node">11111976</parent_node>
+<thread id="11107746">
+<node id="11107748"><node id="11107765"><node id="11107768"><node id="11107774"/>
+</node>
+</node>
+<node id="11107769"><node id="11107770"/>
+</node>
+<node id="11111976"><node id="11113365"/>
+<node id="11137400"/>
+</node>
+</node>
+<node id="11107752"><node id="11107776"/>
+</node>
+<node id="11107753"><node id="11107775"><node id="11107838"/>
+</node>
+<node id="11111977"/>
+</node>
+<node id="11107767"><node id="11107778"><node id="11107831"/>
+<node id="11137456"/>
+<node id="11137477"/>
+</node>
+</node>
+<node id="11137458"><node id="11137472"/>
+</node>
+</thread></node>

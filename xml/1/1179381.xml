@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1179381" title="Re: NFSLock - Continue in code if another server already has lock on file (updated)" created="2017-01-11 04:55:16" updated="2017-01-11 04:55:16" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [mightyMrJawz],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I could have up to 50 servers trying to determine if the file exists&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;To be honest, it really sounds like you need a database instead. &lt;b&gt;Update:&lt;/b&gt; Note this quote from the [mod://File::NFSLock] documentation: "Locks are not necessarily obtained on a first come first serve basis. Not only does this not seem fair to new processes trying to obtain a lock, but it may cause a process starvation condition on heavily locked files."&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;changed the code from "LOCK_EX" to "LOCK_NB"&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;AFAIK &lt;c&gt;LOCK_NB&lt;/c&gt; is an option that is needed &lt;i&gt;in addition to&lt;/i&gt; either &lt;c&gt;LOCK_EX&lt;/c&gt; or &lt;c&gt;LOCH_SH&lt;/c&gt; (&lt;i&gt;Update:&lt;/i&gt; see also [doc://flock]). See the example code at the top of [mod://File::NFSLock] (I trimmed it down slightly):&lt;/p&gt;
+&lt;c&gt;
+use File::NFSLock;
+use Fcntl qw(LOCK_EX LOCK_NB);
+my $file = "somefile";
+if (my $lock = new File::NFSLock {
+    file      =&gt; $file,
+    lock_type =&gt; LOCK_EX|LOCK_NB,
+    blocking_timeout   =&gt; 10,      # 10 sec
+    stale_lock_timeout =&gt; 30 * 60, # 30 min
+}) {
+    open(FILE, "+&lt;$file") || die $!;
+    # or open it any way you like
+    # ...
+    $lock-&gt;unlock();
+}else{
+    die "I couldn't lock the file [$File::NFSLock::errstr]";
+}
+&lt;/c&gt;
+&lt;p&gt;Instead of [doc://die]ing, you would let your code continue.&lt;/p&gt;
+&lt;p&gt;BTW, there seems to be something wrong with the &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags in your post. Perhaps you could [id://17557|edit] your node to fix that.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1179374</root_node>
+<parent_node field_name="parent_node">1179374</parent_node>
+<thread id="1179374">
+<node id="1179381"><node id="1179458"/>
+</node>
+</thread></node>

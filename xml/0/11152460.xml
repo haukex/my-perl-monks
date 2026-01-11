@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11152460" title="Re: perl 5.32 format question" created="2023-05-29 08:15:51" updated="2023-05-29 08:15:51" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I reduced your code down to this test case: &lt;c&gt;perl -e '$_=" "; formline q{^&lt;&lt;&lt;~~}, $_; length $^A or die'&lt;/c&gt; and a [id://11110663|bisect] reported that "[https://github.com/Perl/perl5/commit/9b4bdfd44e0e6d44a447f231c281f967c7ca35c9|&lt;c&gt;9b4bdfd4&lt;/c&gt;] is the first bad commit". This is a commit that fixes several bugs in &lt;c&gt;format&lt;/c&gt;s; it was first released as part of Perl v5.20.0 9 years ago.&lt;/p&gt;
+&lt;p&gt;If you read the documentation, note that a [doc://perlform#Repeating-Format-Lines|double tilde] means "the line will be repeated until all the fields on the line are exhausted, i.e. undefined", however, a [doc://perlform#Suppressing-Lines-Where-All-Fields-Are-Void|single tilde] "anywhere in the line" means to suppress "lines where all fields are blank". Although I think the documentation could be a lot more clear on this (&lt;small&gt;&lt;b&gt;Update:&lt;/b&gt; [https://github.com/Perl/perl5/pull/21130|patch applied]&lt;/small&gt;), a double tilde implies the single tilde, as is confirmed by [https://github.com/Perl/perl5/blob/perl-5.000/pp_ctl.c#L2207|the relevant code in Perl 5.0.0] and [https://github.com/Perl/perl5/blob/v5.36.1/pp_ctl.c#L5638|today].&lt;/p&gt;
+&lt;p&gt;Anyway, the following provides your expected output both on older and recent Perl versions (tested on 5.14 to 5.36):&lt;/p&gt;
+&lt;c&gt;
+format REP =
+^&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+$rep_line
+^&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; ~~
+$rep_line
+.
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11152452</root_node>
+<parent_node field_name="parent_node">11152452</parent_node>
+<thread id="11152452">
+<node id="11152460"><node id="11152524"/>
+</node>
+<node id="11152465"><node id="11152526"/>
+</node>
+</thread></node>

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112418" title="[Solved] Inheritance when subclass passed as a parameter" created="2020-02-05 05:17:14" updated="2020-02-05 05:17:14" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="436161">davies</author>
+<doctext field_name="doctext">&lt;p&gt;I have four files, two in a subdirectory:&lt;/p&gt;
+&lt;p&gt;00.t:
+&lt;c&gt;
+use strict;
+use warnings;
+use lib '.';
+use Test::More;
+
+use_ok 'Service', 'Service.pl loads';
+my $xml = Service-&gt;new('xml', 'xmldata');
+use Data::Dumper; print Dumper $xml;
+$xml-&gt;populate;
+is $xml-&gt;{template}, '&lt;data&gt;xmldata&lt;/data&gt;', 'XML OK';
+my $json = Service-&gt;new('json', 'jsondata');
+$json-&gt;populate;
+is $json-&gt;{template}, '{"data": jsondata}', 'JSON OK';
+
+done_testing;&lt;/c&gt;
+&lt;/p&gt;
+&lt;p&gt;Service.pm
+&lt;c&gt;
+package Service;
+use strict;
+use warnings;
+use Module::Find;
+
+sub new {
+     my $class = shift;
+     my $self = bless {
+          data     =&gt; undef,
+          service  =&gt; undef,
+     }, $class;
+     $self-&gt;{data} = shift;
+     my $service = $self-&gt;{data};
+     my @found = useall 'Service';
+     for my $plugin (@found) {
+        if ($plugin =~ /::\Q$service\E$/i) {
+            $self-&gt;{service} = $plugin;
+        }
+        last if defined $self-&gt;{service};
+     }
+     return $self;
+}
+
+sub populate {
+     my $self = shift;
+     $self-&gt;{template} =~ s/[data]/$self-&gt;{data}/msi;
+     # $self-&gt;{service}-&gt;{template} =~ s/[data]/$self-&gt;{data}/msi;
+}
+
+1;&lt;/c&gt;
+&lt;/p&gt;
+&lt;p&gt;Service/XML.pm
+&lt;c&gt;
+package Service::XML;
+use strict;
+use warnings;
+use parent 'Service';
+
+sub new {
+     my $class = shift;
+     my $self = bless {
+          template =&gt; '&lt;data&gt;[data]&lt;/data&gt;',
+     }, $class;
+     return $self;
+}
+
+1;&lt;/c&gt;
+&lt;/p&gt;
+&lt;p&gt; and Service/JSON.pm
+&lt;c&gt;
+package Service::JSON;
+use strict;
+use warnings;
+use parent 'Service';
+
+sub new {
+     my $class = shift;
+     my $self = bless {
+          template =&gt; '{"data": [data]}',
+     }, $class;
+     return $self;
+}
+
+1;&lt;/c&gt;
+&lt;/p&gt;
+&lt;p&gt;The plan is for several, possibly dozens, of subclass files, with the
+subclass name passed to Service.pl as a parameter. But I cannot find any
+docs on how to make inheritance work in this case. The tests are returning
+warnings about uninitialised values in substitution and Data::Dumper
+shows that the objects have not inherited the 'template' property.&lt;/p&gt;
+&lt;p&gt;What am I doing wrong, please, and what docs should I have read?&lt;/p&gt;
+&lt;p&gt;Regards,&lt;/p&gt;
+&lt;p&gt;John Davies&lt;/p&gt;</doctext>
+<thread id="11112418">
+<node id="11112419"/>
+<node id="11112420"/>
+<node id="11112421"/>
+<node id="11112422"><node id="11112423"><node id="11112425"><node id="11112437"/>
+</node>
+</node>
+</node>
+<node id="11112427"><node id="11112428"><node id="11112481"/>
+</node>
+</node>
+</thread></node>

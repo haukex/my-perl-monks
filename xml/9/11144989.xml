@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11144989" title="Re: Perlsecret - plus no-ops (updated)" created="2022-06-23 11:45:07" updated="2022-06-23 11:45:07" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;with a note of : (The + is in the above line is a no-op, used to tell grep that the parentheses are not enclosing its arguments.)
+what does that note actually mean?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If [doc://grep] is immediately followed by an opening parenthesis, that parenthesis would be interpreted as starting the argument list of [doc://grep], so for example &lt;c&gt;grep( /foo/, @array )&lt;/c&gt; or &lt;c&gt;grep( {$_&gt;123} @array )&lt;/c&gt;. However, in this case, the expression being used to search the list is "&lt;c&gt;()=@$_&lt;/c&gt;". One could write this in the &lt;c&gt;grep BLOCK LIST&lt;/c&gt; form of [doc://grep] as &lt;c&gt;grep {()=@$_} @arrays&lt;/c&gt;, however, in this case the author has chosen the &lt;c&gt;grep EXPR, LIST&lt;/c&gt; form of [doc://grep]. But if one wrote &lt;c&gt;grep ()=@$_, @arrays&lt;/c&gt;, then Perl would think that you were calling [doc://grep] with no arguments ("&lt;c&gt;grep()&lt;/c&gt;"), followed by "&lt;c&gt;=@$_, @arrays&lt;/c&gt;", which is invalid syntax. Therefore, to tell Perl that the parentheses are actually &lt;i&gt;not&lt;/i&gt; introducing the arguments of [doc://grep], one has to disambiguate and add the &lt;c&gt;+&lt;/c&gt; operator. Because in this case it has no effect except informing the Perl parser, it is in that sense a no-op. Another way to disambiguate the situation would have been an extra pair of parentheses, as in &lt;c&gt;grep( ()=@$_, @arrays )&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;This is one of the reasons that I perfer the &lt;c&gt;BLOCK LIST&lt;/c&gt; forms of [doc://grep] and [doc://map], and the same issue with parentheses commonly comes up in the arguments to [doc://print].&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Typo fix in the last sentence.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; In this case, the use of the "Saturn" [doc://perlsecret#Goatse|"secret"] operator doesn't even really make sense, since all that is being done is that empty array references are being filtered out. This could be written as &lt;c&gt;grep {@$_} @arrays&lt;/c&gt; (or &lt;c&gt;grep @$_, @arrays&lt;/c&gt;), or if one wanted to be explicit that one is filtering on the number of elements the arrays contain, e.g. &lt;c&gt;grep {0+@$_} @arrays&lt;/c&gt;.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11144986</root_node>
+<parent_node field_name="parent_node">11144986</parent_node>
+<thread id="11144986">
+<node id="11144989"><node id="11144999"/>
+<node id="11145017"><node id="11145018"><node id="11145031"><node id="11145032"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

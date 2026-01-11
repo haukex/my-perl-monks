@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227691" title="Re: Preserving newlines with Web::Scraper" created="2018-12-25 06:35:05" updated="2018-12-25 06:35:05" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;It seems that [mod://Web::Scraper] uses [mod://HTML::TreeBuilder::XPath], and [mod://HTML::TreeBuilder] has an &lt;c&gt;no_space_compacting&lt;/c&gt; option that is disabled by default, causing that module to [https://metacpan.org/source/KENTNL/HTML-Tree-5.07/lib/HTML/TreeBuilder.pm#L1304|do] &lt;c&gt;s/[\n\r\f\t ]+/ /g&lt;/c&gt; by default. At the moment I don't see a way to set arbitrary options on the parser via [mod://Web::Scraper], this is probably worth opening an [https://github.com/miyagawa/web-scraper/issues|issue] for.&lt;/p&gt;
+&lt;p&gt;Two workarounds I see at the moment: replacing [mod://Web::Scraper] with [mod://Web::Scraper::LibXML] works for me:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+use Web::Scraper::LibXML;
+
+my $scraper = scraper {
+		process '//p[contains(@class, "myClass")]',
+			'paragraph' =&gt; 'TEXT';
+	};
+
+dd $scraper-&gt;scrape(\&lt;&lt;'END_HTML');
+&lt;p class="myClass"&gt;Blah
+
+Blah
+
+Blah
+&lt;/p&gt;
+END_HTML
+
+__END__
+
+{ paragraph =&gt; "Blah\n\nBlah\n\nBlah\n" }
+&lt;/c&gt;
+&lt;p&gt;Or, monkey-patching [https://metacpan.org/source/MIYAGAWA/Web-Scraper-0.38/lib/Web/Scraper.pm#L112|Web::Scraper::build_tree]:&lt;/p&gt;
+&lt;c&gt;
+*Web::Scraper::build_tree = sub {
+	my($self, $html) = @_;
+	my $t = HTML::TreeBuilder::XPath-&gt;new;
+	$t-&gt;store_comments(1) if ($t-&gt;can('store_comments'));
+	$t-&gt;no_space_compacting(1);
+	$t-&gt;ignore_unknown(0);
+	$t-&gt;parse($html);
+	$t-&gt;eof;
+	$t;
+};
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1227690</root_node>
+<parent_node field_name="parent_node">1227690</parent_node>
+<thread id="1227690">
+<node id="1227691"><node id="1227693"/>
+</node>
+<node id="1227692"/>
+</thread></node>

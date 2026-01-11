@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1194547" title="Odd perl/ssh interaction" created="2017-07-07 22:54:26" updated="2017-07-07 22:54:26" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1194545">mlf</author>
+<doctext field_name="doctext">Given the following script:
+&lt;code&gt;
+#!/usr/bin/perl
+
+while (&lt;STDIN&gt;) {
+   chomp;
+   open(H, "ssh $_ 'uptime' 2&gt;&amp;1 |");
+   $b = &lt;H&gt;;
+   close(H);
+   printf("%s: %s\n", $_, $b);
+}
+&lt;/code&gt;
+and a file hosts.dat containing the the host names
+&lt;code&gt;
+larry
+curley
+moe
+&lt;/code&gt;
+and assuming appropriate ssh keys in place and passphases entered, I'd expect the output  of 
+&lt;code&gt;
+./test.pl &lt;hosts
+&lt;/code&gt;
+to be something along the line of 
+&lt;code&gt;
+larry:  22:20:46 up 53 days,  1:27,  1 user,  load average: 0.06, 0.04, 0.05
+curley:  22:20:46 up 67 days,  7:56,  1 user,  load average: 0.07, 0.05, 0.05
+moe:  22:20:47 up 12 days,  11:22,  1 user,  load average: 0.04, 0.04, 0.05
+&lt;/code&gt;
+Instead, I get only the first line before the program exits.
+Commenting out these two lines:
+&lt;code&gt; 
+   $b = &lt;H&gt;;
+   close(H);
+&lt;/code&gt;
+allows the script to hit all three hosts, but without the requested uptime info.  Uncommenting either line reverts to single line output.  Also prefixing the ssh command with 'echo' correctly echos the command for all three hosts.&lt;p&gt;Based on my tinkering it would appear that reading any input from the ssh command or closing it's filehandle is somehow clobbering perl's STDIN stream.  I can think of a number of possible ways around this situation, but I'm curious about why it's happening in the first place.
+</doctext>
+<thread id="1194547">
+<node id="1194548"><node id="1194560"/>
+</node>
+<node id="1194555"><node id="1194559"/>
+<node id="1194563"/>
+</node>
+<node id="1194557"><node id="1194558"><node id="1194561"/>
+</node>
+</node>
+</thread></node>

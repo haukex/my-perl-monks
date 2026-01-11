@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1206786" title="Re: Renaming files in directory (updated)" created="2018-01-05 16:02:02" updated="2018-01-05 16:02:02" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;There are quite a few ways in which the code you showed can be improved.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;You should use lexical filehandles, or rather in this case directory handles.&lt;/li&gt;
+&lt;li&gt;As documented in [doc://readdir], you need to prefix the directory name to the filenames returned, for example with &lt;c&gt;catfile&lt;/c&gt; from [doc://File::Spec].&lt;/li&gt;
+&lt;li&gt;[doc://readdir] will return &lt;i&gt;every&lt;/i&gt; entry in the directory, including other directories, which you can filter with [doc://-X], and including the special entires &lt;c&gt;.&lt;/c&gt; and &lt;c&gt;..&lt;/c&gt;, which you can filter e.g. with &lt;c&gt;no_upwards&lt;/c&gt; from [doc://File::Spec].&lt;/li&gt;
+&lt;li&gt;You should check the return value of &lt;c&gt;move&lt;/c&gt; for errors.&lt;/li&gt;
+&lt;li&gt;I don't quite understand why you want to rename all the files to single letters, but consider this: what happens if &lt;c&gt;readdir&lt;/c&gt; happens to return the filenames in a random order, or more filenames than you have letters for? This is why below I use [doc://sort] and Perl's [doc://perlop#Auto-increment-and-Auto-decrement|magic string increment].&lt;/li&gt;
+&lt;/ul&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use File::Copy qw/move/;
+use File::Spec::Functions qw/no_upwards catfile/;
+
+my $dir = "/home/porter/blue";
+
+opendir my $dh, $dir or die "$dir: $!";
+my @files = grep {-f} map {catfile $dir, $_}
+	sort +no_upwards readdir $dh;
+closedir $dh;
+
+my $newname = "a";
+for my $file (@files) {
+	my $newfile = catfile($dir,$newname);
+	print "$file -&gt; $newfile\n"; # Debug
+	move $file, $newfile or warn "$file: $!";
+	$newname++;
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Fixed: "&lt;c&gt;sort no_upwards&lt;/c&gt;" was not correct, but the &lt;c&gt;-f&lt;/c&gt; test was hiding the issue.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1206784</root_node>
+<parent_node field_name="parent_node">1206784</parent_node>
+<thread id="1206784">
+<node id="1206786"/>
+<node id="1206787"/>
+<node id="1206789"><node id="1206790"><node id="1206805"><node id="1206836"/>
+<node id="1207146"><node id="1207154"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

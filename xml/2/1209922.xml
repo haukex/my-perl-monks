@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1209922" title="Re: try catch getting ignored by SIG DIE subroutine (updated!)" created="2018-02-25 03:27:29" updated="2018-02-25 03:27:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Appreciate insight on why if I have a defined SIG{__DIE__}, it is overriding a try/catch block?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It doesn't override it - you are, by calling [doc://exit] inside the handler. You don't need to do that, since [doc://perlvar#%SIG|&lt;c&gt;$SIG{__DIE__}&lt;/c&gt;] gets called when the program is [doc://die]ing anyway. If I remove the &lt;c&gt;exit&lt;/c&gt; and leave the rest of the code unchanged, I get the output:&lt;/p&gt;
+&lt;c&gt;
+DIE ERROR: malformed JSON string, neither array, object, number, string or atom, at character offset 0 (before "(end of string)") at 1209918.pl line 26. : 
+Error decoding data from data1  
+&lt;/c&gt;
+&lt;p&gt;Which is hopefully getting a bit closer to what you want. As for the special variables, I think you've got a couple of things mixed up:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;del&gt;[doc://$!] doesn't have anything to do with the exit status of the program (and especially not when you set it with [doc://local]).&lt;/del&gt; &lt;ins&gt;Setting [doc://$!] with [doc://local] won't work, as the changes will be local to the handler only.&lt;/ins&gt;&lt;/li&gt;
+&lt;li&gt;[mod://Try::Tiny] gives you the error in [doc://$_], not [doc://$@].&lt;/li&gt;
+&lt;li&gt;Checking [doc://$@] inside of the handler doesn't make sense to me - you aren't supposed to rely on the values of any of the [doc://perlvar#Error-Variables] except for &lt;u&gt;immediately after&lt;/u&gt; an operation that is &lt;u&gt;documented to set them&lt;/u&gt; &lt;u&gt;fails&lt;/u&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;&lt;i&gt;I really need the SIG_DIE functionality for the rest of the code, just not have it get int he way in the try/catch section&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If you really don't want the handler to be called inside a &lt;c&gt;try&lt;/c&gt;/&lt;c&gt;catch&lt;/c&gt;, you can temporarily disable it like [Athanasius] [id://1209920|suggested], although personally I would do it with [doc://local], that is: &lt;c&gt;try { local $SIG{__DIE__} = 'DEFAULT'; ...&lt;/c&gt; (no other changes needed). It's also possible to use [doc://$^S], like [Corion] [id://1209919|suggested], to customize the behavior of the handler based on whether it's inside an [doc://eval] or not, for example by sticking &lt;c&gt;die @_ if $^S;&lt;/c&gt; at the very beginning - although make sure to read all of the documentation, for example [doc://%SIG] strongly cautions &lt;i&gt;against&lt;/i&gt; using &lt;c&gt;$^S&lt;/c&gt;!&lt;/p&gt;
+&lt;p&gt;Now, as for the custom exit code, it seems that unfortunately you can't set [doc://$?] from within a &lt;c&gt;$SIG{__DIE__}&lt;/c&gt; handler - although you can set it from inside an [doc://perlmod#BEGIN,-UNITCHECK,-CHECK,-INIT-and-END|&lt;c&gt;END&lt;/c&gt;] block. &lt;del&gt;Although I don't consider this the most elegant solution, something like this might be closer to what you want:&lt;/del&gt;&lt;/p&gt;
+&lt;del&gt;&lt;c&gt;
+{ # block to hide $_exitcode from rest of program
+	my $_exitcode;
+	$SIG{__DIE__} = sub {
+		die @_ if $^S; # don't run this handler from inside "eval"
+		my $err = shift;
+		chomp($err);
+		print STDERR "DIE ERROR: $err\n";
+		$_exitcode = 2;
+	};
+	END { $?=$_exitcode if defined $_exitcode }
+}
+&lt;/c&gt;&lt;/del&gt;
+&lt;p&gt;In any case, all of this seems like you're doing some relatively complicated error handling - I suggest you read all of the documentation I've linked above. Also, I would encourage considering if such complex error handling is necessary in the first place - if you could give some more background, like &lt;i&gt;why&lt;/i&gt; you need all this (especially the custom exit code), and how you expect your program to behave exactly in the face of different errors, what kind of errors you are expecting, etc., perhaps we can suggest a better overall solution.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; As [ikegami] pointed out, [doc://$!] is in fact related to the exit code, I was wrong above. And as it turns out, you can set it from inside the handler, which significantly simplifies the above code:&lt;/p&gt;
+&lt;c&gt;
+$SIG{__DIE__} = sub {
+	die @_ if $^S; # don't run this handler from inside "eval"
+	my $err = shift;
+	chomp($err);
+	print STDERR "DIE ERROR: $err\n";
+	$! = 2;
+};
+&lt;/c&gt;
+&lt;p&gt;Although if, as you said in the reply, you want to temporarily disable the handler with &lt;c&gt;local $SIG{__DIE__} = 'DEFAULT';&lt;/c&gt;, you can remove the &lt;c&gt;die @_ if $^S;&lt;/c&gt; (I think that's probably better). If I use this handler in your original code (and I fix the &lt;c&gt;$@&lt;/c&gt;/&lt;c&gt;$_&lt;/c&gt; mixup), I get the following output, without the "&lt;c&gt;DIE ERROR:&lt;/c&gt;" message, which I think is what you wanted?&lt;/p&gt;
+&lt;c&gt;
+Error decoding data from data1 malformed JSON string, neither array, object, number, string or atom, at character offset 0 (before "(end of string)") at 1209918.pl line 25.
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1209918</root_node>
+<parent_node field_name="parent_node">1209918</parent_node>
+<thread id="1209918">
+<node id="1209919"/>
+<node id="1209920"><node id="1209936"/>
+</node>
+<node id="1209922"><node id="1209939"/>
+<node id="1209950"/>
+</node>
+</thread></node>

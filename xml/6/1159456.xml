@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1159456" title="print stack of &quot;do&quot; files on error" created="2016-04-03 15:20:08" updated="2016-04-03 15:20:08" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1081651">kir</author>
+<doctext field_name="doctext">&lt;p&gt;Hi!&lt;/p&gt;
+
+&lt;p&gt;I have a set of config files (written in perl) that can include each other. How can I get an error message with a line number for each including file? It should resemble C compiler errors:&lt;/p&gt;
+
+&lt;c&gt;
+included from a line 2:
+included from b line 5:
+error in err:
+Bareword "z" not allowed while "strict subs" in use at err line 25.
+&lt;/c&gt;
+
+By now I've been able to get only this:
+
+&lt;c&gt;
+included from a:
+included from b:
+included from err:
+Bareword "z" not allowed while "strict subs" in use at err line 25.
+&lt;/c&gt;
+
+I use the following module for "include" function:
+
+&lt;c&gt;
+package L;
+
+sub include {
+    my $f = shift;
+    my $r = do $f;
+    unless (defined $r) {
+        die "included from $f:\n$@" if $@;
+    }
+}
+
+1;
+&lt;/c&gt;
+
+And config looks like this:
+
+&lt;c&gt;
+use L;
+...
+L::include "a";
+...
+L::include "b";
+&lt;/c&gt;
+
+&lt;p&gt;My configs are many and each may be included many times, so it's hard to pinpoint an error without this.&lt;/p&gt;
+
+&lt;p&gt;UPDATE: there are also some function calls inside configs I need their line too in a trace&lt;/p&gt;
+
+&lt;p&gt;UPDATE: Finally I've got what I wanted. Includes are A -&gt; B -&gt; C -&gt; D -&gt; ERR where file ERR is malformed:&lt;/p&gt;
+&lt;c&gt;
+error loading 'ERR': Bareword "z" not allowed while "strict subs" in use at ERR line 5.
+stack trace:
+   L::include called at D line 1
+   L::include called at C line 1
+   L::include called at B line 11
+   L::bar called at B line 7
+   L::foo called at B line 14
+   L::include called at A line 2
+&lt;/c&gt;
+
+&lt;p&gt;The downside is that the code (below) relies on the presence of 'stack trace' string. There must be a better solution.&lt;/p&gt;
+&lt;c&gt;
+package L;
+use warnings;
+use strict;
+use File::Slurp;
+
+sub include {
+    my ($f) = @_;
+
+    eval {
+        my $e = eval qq(#line 1 "$f"\n) . read_file $f;
+        die $@ if $@;
+    };
+
+    if ($@) {
+        die $@
+            if ref($@) ne '' or $@ =~ /stack trace:/s;
+
+        my $max_depth = 30;
+        my $err       = "error loading '$f': $@stack trace:\n";
+        my $e         = -1;
+        my @stack;
+        my $i;
+        for ($i = 0 ; $i &lt; $max_depth ; ++$i) {
+            my ($package, $filename, $line, $subroutine) = caller($i);
+            last unless $package;
+
+            # removing two evals below every include
+            splice(@stack, -2, 2)
+                if @stack &gt; 2 and $subroutine eq "L::include";
+
+            push(@stack, "   $subroutine called at $filename line $line");
+        }
+        $err .= join("\n", @stack, "");
+        $err .= "...\n"
+            if $i == $max_depth;
+        die $err;
+    }
+}
+
+1;
+&lt;/c&gt;</doctext>
+<thread id="1159456">
+<node id="1159458"/>
+<node id="1159464"><node id="1159475"><node id="1159662"/>
+</node>
+</node>
+</thread></node>

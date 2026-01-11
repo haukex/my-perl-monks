@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110005" title="Beware of global! And bless the local!" created="2019-12-12 03:40:34" updated="2019-12-12 03:40:34" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="1176678">alexander_lunev</author>
+<doctext field_name="doctext">&lt;p&gt;Hello monks.&lt;/p&gt; 
+&lt;p&gt;Today I found that a little negligence can cause a week-long debugging. &lt;/p&gt;
+
+&lt;p&gt;I wrote a program that uses [mod://Crypt::OpenPGP] module, and for a strange reason module works great when I simply initialize it with keyrings from file, but it crashes when i first read keyrings from files and combines them for my needs and then initialize module with constructed keyring objects. Terrible crashes of the Perl interpreter itself (sic!) was accompanied by &lt;i&gt;cryptic messages&lt;/i&gt; like these: &lt;/p&gt;
+
+&lt;code&gt;
+Win32::API::parse_prototype: WARNING unknown parameter type 'PVOID' at C:/Strawberry32/perl/vendor/lib/Win32/API.pm line  568.
+Win32::API::parse_prototype: WARNING unknown parameter type 'ULONG' at C:/Strawberry32/perl/vendor/lib/Win32/API.pm line  568.
+Win32::API::parse_prototype: WARNING unknown output parameter type 'INT' at C:/Strawberry32/perl/vendor/lib/Win32/API.pm  line 600.
+Argument "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0..." isn't numeric in subroutine entry at C:/Strawberry32/perl/vendor/lib/Crypt/Random/Seed.pm line 247.
+&lt;/code&gt;
+
+&lt;p&gt;I was wondering - what have i done to bring this punishment upon me? I compared objects that come out from keyring-file initialization and from keyring-objects initializations with [mod://Data::Dumper] and couldn't find a difference. I even saved constructed keyring objects to files and initialize [mod://Crypt::OpenPGP] with this newly created files - still all was crashing. The holy fear seized me and I decided to start my journey to the depth of module forest to find deliverance. I walk through [mod://Crypt::OpenPGP] to [mod://Bytes::Random::Secure], to know that road leads - as it was told to me in the cryptic omen - to [mod://Crypt::Random::Seed], line 247, which was a &lt;i&gt;Call&lt;/i&gt; to [mod://Win32::API] function:&lt;/p&gt;
+
+&lt;code&gt;
+my $rtlgenrand = Win32::API-&gt;new( 'advapi32', &lt;&lt;'_RTLGENRANDOM_PROTO_');
+INT SystemFunction036(
+  PVOID RandomBuffer,
+  ULONG RandomBufferLength
+)
+_RTLGENRANDOM_PROTO_
+   return unless defined $rtlgenrand;
+   return ('RtlGenRand',
+     sub {
+        my $nbytes = shift;
+        my $buffer = chr(0) x $nbytes;
+        my $result = $rtlgenrand-&gt;Call($buffer, $nbytes); # &lt;= 247 
+&lt;/code&gt;
+
+&lt;p&gt;My journey comes to a dead end, for I didn't find deliverance there. And I started from the beginning of my code, turning lines of code off one by one. And I found it. &lt;/p&gt;
+
+&lt;p&gt;This is the code that was a root of all misfortunes.&lt;/p&gt;
+&lt;code&gt;
+		open my $fh, "&lt;", $file or die "can't open $file";
+		$/ = undef;
+		my $key_string = &lt;$fh&gt;;
+		close $fh;
+&lt;/code&gt;
+&lt;p&gt;If you're  enlightened enough, you will see my sin right away. I'm not enlightened enough to see it right away, but a &lt;i&gt;doubt&lt;/i&gt; crawls into my mind - could it be the line &lt;code&gt;$/ = undef;&lt;/code&gt;? I stared at this line for a minute and go search wisdom on the Internet. And then I found the Truth. And as always the Truth was under my nose all the time, but I couldn't see it. It should be &lt;code&gt;local $/ = undef;&lt;/code&gt;!&lt;/p&gt;
+
+&lt;p&gt;I don't know if it is &lt;i&gt;clean&lt;/i&gt; and &lt;i&gt;right&lt;/i&gt; way to read all file in a string, but even the great [szabgab|Gabor Szabo] blesses &lt;i&gt;slurp mode&lt;/i&gt; by setting &lt;code&gt;$/ = undef;&lt;/code&gt;. But beware if you read his [https://perlmaven.com/slurp|great article] not thoroughly! The great misfortune awaits those who forget about &lt;code&gt;local&lt;/code&gt; in a rush! Like me for example. &lt;/p&gt;
+
+&lt;p&gt;You see? Setting &lt;code&gt;$/ = undef;&lt;/code&gt; globally make things broken all the way up to the Perl interpreter itself, which was casting strange messages on his way to crash.&lt;/p&gt; 
+
+&lt;p&gt;But why would anyone write about it again, and again, and again? Because, as it said in every language: &lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Repetitio mater studiorum est. &lt;/i&gt;&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Repetition is the mother of all learning. &lt;/i&gt;&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Wiederholen ist die Mutter des Studierens. &lt;/i&gt;&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;La répétition est la mère de la science.&lt;/i&gt;&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;&amp;#1055;&amp;#1086;&amp;#1074;&amp;#1090;&amp;#1086;&amp;#1088;&amp;#1077;&amp;#1085;&amp;#1080;&amp;#1077; - &amp;#1084;&amp;#1072;&amp;#1090;&amp;#1100; &amp;#1091;&amp;#1095;&amp;#1077;&amp;#1085;&amp;#1080;&amp;#1103;.&lt;/i&gt;&lt;/p&gt;
+
+&lt;p&gt;Let my mistake will be a lesson to others. Using global variables is always a risky and erroneous path, local variables is the only way to enlightenment. But this is the Truth that we were told from the beginning and we are still making this silly mistakes. And while we code simple programs, errors are simple and debuggable. But when we become more mature - so are the errors that we cause by violation of a simple rules that we doesn't learned well from the start. Beware of global! And bless the local! Amen. &lt;/p&gt; 
+</doctext>
+<thread id="11110005">
+<node id="11110006"><node id="11110010"><node id="11110020"><node id="11110027"><node id="11110028"/>
+</node>
+<node id="11110029"/>
+</node>
+<node id="11110049"/>
+</node>
+</node>
+<node id="11110012"><node id="11110037"/>
+</node>
+<node id="11110038"><node id="11110062"><node id="11110069"/>
+</node>
+</node>
+</thread></node>

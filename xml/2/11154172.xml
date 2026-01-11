@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11154172" title="Re: Wrapping code in a sub causes an error I don't understand." created="2023-08-30 17:44:43" updated="2023-08-30 17:44:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Note the error happens regardless of the presence of the &lt;c&gt;sub main&lt;/c&gt;; that's not what's causing it, instead it is [doc://Pod::Usage] trying to read the POD. From its documentation (emphasis mine):&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;c&gt;-input&lt;/c&gt; handle&lt;br&gt;
+A reference to a filehandle, or the pathname of a file from which the invoking script's pod documentation should be read. &lt;u&gt;It defaults to the file indicated by &lt;c&gt;$0&lt;/c&gt;&lt;/u&gt; (&lt;c&gt;$PROGRAM_NAME&lt;/c&gt; for users of English.pm).
+&lt;/blockquote&gt;
+&lt;p&gt;And when you run Perl with the &lt;c&gt;-e&lt;/c&gt; switch, the [doc://$0] variable will be &lt;c&gt;"-e"&lt;/c&gt;, which is where the error message is coming from; it's trying to open a file with that name. The documentation further goes on to state:&lt;/p&gt;
+&lt;blockquote&gt;
+If you are calling pod2usage() from a module and want to display that module's POD, you can use this:
+&lt;c&gt;
+use Pod::Find qw(pod_where);
+pod2usage( -input =&gt; pod_where({-inc =&gt; 1}, __PACKAGE__) );
+&lt;/c&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Which, when applied to your example code, works for me.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11154171</root_node>
+<parent_node field_name="parent_node">11154171</parent_node>
+<thread id="11154171">
+<node id="11154172"><node id="11154189"/>
+</node>
+<node id="11154173"><node id="11154190"><node id="11154194"/>
+</node>
+</node>
+<node id="11154178"/>
+</thread></node>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230284" title="A little golfing challenge: Replacing letters with numbers" created="2019-02-21 03:48:33" updated="2019-02-21 03:48:33" _doctext_mode="strict"><type id="115">perlquestion</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;In [https://stackoverflow.com/questions/54698540/how-can-i-replace-letter-to-certain-number|this StackOverflow question], user "Learner" asked how to replace a set of certain letters in the first column of a file with numbers. In other words, given this set of replacements:&lt;/p&gt;
+&lt;c&gt;
+A=&gt;1,  B=&gt;5,  C=&gt;6,  D=&gt;4,  E=&gt;7,  F=&gt;16, G=&gt;10, H=&gt;11,
+I=&gt;12, K=&gt;14, L=&gt;13, M=&gt;15, N=&gt;3,  P=&gt;17, Q=&gt;8,  R=&gt;2,
+S=&gt;18, T=&gt;19, V=&gt;22, W=&gt;20, Y=&gt;21, Z=&gt;9
+&lt;/c&gt;
+&lt;p&gt;And this input:&lt;/p&gt;
+&lt;c&gt;
+NDDDDTSVCLGTRQCSWFAGCTNRTWNSSA 0
+VCLGTRQCSWFAGCTNRTWNSSAVPLIGLP 0
+LTWSGNDTCLYSCQNQTKGLLYQLFRNLFC 0
+CQNQTKGLLYQLFRNLFCSYGLTEAHGKWR 0
+ITNDKGHDGHRTPTWWLTGSNLTLSVNNSG 0
+GHRTPTWWLTGSNLTLSVNNSGLFFLCGNG 0
+FLCGNGVYKGFPPKWSGRCGLGYLVPSLTR 0
+KGFPPKWSGRCGLGYLVPSLTRYLTLNASQ 0
+QSVCMECQGHGERISPKDRCKSCNGRKIVR 1
+&lt;/c&gt;
+&lt;p&gt;The expected output is:&lt;/p&gt;
+&lt;c&gt;
+3 4 4 4 4 19 18 22 6 13 10 19 2 8 6 18 20 16 1 10 6 19 3 2 19 20 3 18 18 1
+22 6 13 10 19 2 8 6 18 20 16 1 10 6 19 3 2 19 20 3 18 18 1 22 17 13 12 10 13 17
+13 19 20 18 10 3 4 19 6 13 21 18 6 8 3 8 19 14 10 13 13 21 8 13 16 2 3 13 16 6
+6 8 3 8 19 14 10 13 13 21 8 13 16 2 3 13 16 6 18 21 10 13 19 7 1 11 10 14 20 2
+12 19 3 4 14 10 11 4 10 11 2 19 17 19 20 20 13 19 10 18 3 13 19 13 18 22 3 3 18 10
+10 11 2 19 17 19 20 20 13 19 10 18 3 13 19 13 18 22 3 3 18 10 13 16 16 13 6 10 3 10
+16 13 6 10 3 10 22 21 14 10 16 17 17 14 20 18 10 2 6 10 13 10 21 13 22 17 18 13 19 2
+14 10 16 17 17 14 20 18 10 2 6 10 13 10 21 13 22 17 18 13 19 2 21 13 19 13 3 1 18 8
+8 18 22 6 15 7 6 8 10 11 10 7 2 12 18 17 14 4 2 6 14 18 6 3 10 2 14 12 22 2
+&lt;/c&gt;
+&lt;p&gt;Here are my two solutions:&lt;/p&gt;
+&lt;c&gt;
+$ perl '-M5;%h=map{$_,++$i}split//,"ARNDBCEQZGHILKMFPSTWYV"' -alpe '
+  ($_=$F[0])=~s/[A-Z]/$h{$&amp;} /g'
+$ perl -alpe '
+  ($_=$F[0])=~s/[A-Z]/(index("ARNDBCEQZGHILKMFPSTWYV",$&amp;)+1)." "/ge'
+&lt;/c&gt;
+&lt;p&gt;[https://webperl.zero-g.net/democode/perleditor.html#%7B%22cmdline%22%3A%22perl%20'-M5%3B%25h%3Dmap%7B%24_%2C%2B%2B%24i%7Dsplit%2F%2F%2C%5C%22ARNDBCEQZGHILKMFPSTWYV%5C%22'%20-alpe%20'(%24_%3D%24F%5B0%5D)%3D~s%2F%5BA-Z%5D%2F%24h%7B%24%26%7D%20%2Fg'%20input.txt%22%2C%22inputs%22%3A%5B%7B%22fn%22%3A%22input.txt%22%2C%22text%22%3A%22NDDDDTSVCLGTRQCSWFAGCTNRTWNSSA%200%5CnVCLGTRQCSWFAGCTNRTWNSSAVPLIGLP%200%5CnLTWSGNDTCLYSCQNQTKGLLYQLFRNLFC%200%5CnCQNQTKGLLYQLFRNLFCSYGLTEAHGKWR%200%5CnITNDKGHDGHRTPTWWLTGSNLTLSVNNSG%200%5CnGHRTPTWWLTGSNLTLSVNNSGLFFLCGNG%200%5CnFLCGNGVYKGFPPKWSGRCGLGYLVPSLTR%200%5CnKGFPPKWSGRCGLGYLVPSLTRYLTLNASQ%200%5CnQSVCMECQGHGERISPKDRCKSCNGRKIVR%201%22%7D%5D%2C%22autorun%22%3Atrue%7D|WebPerl link]&lt;/p&gt;
+&lt;p&gt;I personally consider the extra space character at the end of the line produced by my solutions acceptable (I think &lt;c&gt;diff -b&lt;/c&gt; is probably ok too). Unfortunately the OP didn't specify what would happen in case the input strings contained letters that aren't in the set, so I guess "bonus points" for solutions that only affect &lt;c&gt;[A-IK-NP-TV-WY-Z]&lt;/c&gt; instead of &lt;c&gt;[A-Z]&lt;/c&gt; like my solution does. Bonus question: Can anyone come up with a short, preferably pure Perl, solution to produce such a regex character set for any given list of letters?&lt;/p&gt;
+&lt;c&gt;
+$ echo "ARNDBCEQZGHILKMFPSTWYV" | perl -MSet::IntSpan -ple '
+  $_=Set::IntSpan-&gt;new([map{ord}split//,$_])-&gt;run_list;
+  s/\d+/chr$&amp;/eg;s/,//g;$_="[$_]"'
+&lt;/c&gt;
+&lt;p&gt;Have at it ;-)&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Thank you for the inspired and inspiring responses so far, [Discipulus], [Eily], [rsFalse], [Veltro], and [vr]! I really enjoy the creativity in the solutions &lt;c&gt;:-)&lt;/c&gt;&lt;/p&gt; </doctext>
+<thread id="1230284">
+<node id="1230286"/>
+<node id="1230287"><node id="1230311"><node id="1230368"/>
+</node>
+</node>
+<node id="1230317"/>
+<node id="1230323"><node id="1230330"/>
+</node>
+<node id="1230369"/>
+</thread></node>

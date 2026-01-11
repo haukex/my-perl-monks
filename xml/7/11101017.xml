@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101017" title="Re^3: What is an ordinary statement?" created="2019-06-05 10:54:19" updated="2019-06-05 10:54:19" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Does the compiler do inlining?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Very rarely, because Perl is such a dynamic language, variables and even things such as &lt;c&gt;sub&lt;/c&gt;routine declarations can change at any time and at a distance (kind of like &lt;c&gt;volatile&lt;/c&gt; variables in C). The only place I can think of inlining off the top of my head is [doc://perlsub#Constant-Functions], the rest is optimization that Perl may or may not do internally (such as constant folding), but that should not be visible to the user.&lt;/p&gt;
+&lt;p&gt;But in general, it sounds to me like you might be drawing too many parallels between Perl and a truly compiled language such as C/C++, where there are things such as generating a binary and a very clear distinction between compile time and run time. In the Perl interpreter, the lines between the traditional "compile time" and "run time" can be blurred - you can run code at compile time with [doc://perlmod#BEGIN,-UNITCHECK,-CHECK,-INIT-and-END|BEGIN] and [doc://use], and compile and run code at runtime with [doc://eval], [doc://do], and [doc://require]. "Compilation" is really just translating source code into the in-memory opcode tree, that the interpreter then executes (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; remember that the &lt;c&gt;perl&lt;/c&gt; binary is both the compiler and interpreter, which is why it can do the aforementioned flexible compile-/run-time things).&lt;/p&gt;
+&lt;p&gt;For example, here's a common mistake:&lt;/p&gt;
+&lt;c&gt;
+our $FOO = 1;
+use if $FOO, 'SomeModule';
+print $FOO, "\n";
+&lt;/c&gt;
+&lt;p&gt;This will compile fine and print &lt;c&gt;1&lt;/c&gt;, but &lt;c&gt;SomeModule&lt;/c&gt; won't be loaded! What is going on here is that &lt;c&gt;use&lt;/c&gt; is equivalent to a &lt;c&gt;BEGIN&lt;/c&gt; block, which is code that will be executed &lt;i&gt;during the compile time&lt;/i&gt; of the code. So &lt;c&gt;our $FOO = 1;&lt;/c&gt; declares a variable &lt;c&gt;$FOO&lt;/c&gt;, so that it can be used in the following &lt;c&gt;use&lt;/c&gt; statement, but the assignment &lt;c&gt;$FOO = 1&lt;/c&gt; doesn't actually happen until runtime, at which time the &lt;c&gt;use&lt;/c&gt; statement will have already finished executing. To fix this, one needs to write e.g. &lt;c&gt;our $FOO; BEGIN { $FOO = 1 }&lt;/c&gt; to move the assignment into the compile time as well, before the &lt;c&gt;use&lt;/c&gt; executes.&lt;/p&gt;
+&lt;p&gt;May I ask what the background of these questions is - is it just curiosity, or are you trying to implement something specific, or are having problems with something?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11100959</root_node>
+<parent_node field_name="parent_node">11100986</parent_node>
+<thread id="11100959">
+<node id="11100961"><node id="11101004"/>
+</node>
+<node id="11100972"><node id="11100986"><node id="11101017"><node id="11101071"><node id="11101084"><node id="11101302"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11101039"><node id="11101068"/>
+</node>
+</node>
+<node id="11100973"/>
+<node id="11100974"/>
+<node id="11100978"><node id="11101021"/>
+</node>
+<node id="11101006"/>
+<node id="11101035"><node id="11101040"/>
+<node id="11101045"/>
+<node id="11101057"/>
+</node>
+<node id="11101121"/>
+<node id="11101664"/>
+</thread></node>

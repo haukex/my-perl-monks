@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1216360" title="Array of Arrays: why is &quot;$VAR1-&gt;[0][1]&quot; and the like embedded within?" created="2018-06-10 22:58:02" updated="2018-06-10 22:58:02" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="329759">corenth</author>
+<doctext field_name="doctext">&lt;b&gt;EDIT:&lt;/b&gt;
+&lt;pre&gt;&lt;/pre&gt;&lt;i&gt;
+After reading the responses to my post, I've come to two tentative conclusions: 1) I have only a loose grasp of how references work in Perl. It's obvious I have a lot to learn on the subject. 2) In this case, I'm mistaking output for content (Data::Dumper does not represent the reference structure's content in the way I imagined). 3) This is frustrating but fun as hell.
+&lt;pre&gt;&lt;/pre&gt;
+
+Here's my edited code that gives me what I want (thank you all for helping me with this):
+&lt;code&gt;
+
+sub inc{
+   my $ref=shift;
+   my $span=shift;
+   $span?($span--):($span=1);
+
+   my @b=map{ clone([@$ref[$_-$span..$_]])  }($span..$#$ref);
+
+   \@b
+}
+sub clone{#clone references
+   my $ref=shift;
+   my@array=map{ ref($_)?clone($_):$_ }@$ref;
+   \@array
+}
+my@b=(1..5);
+my $c = inc(inc(\@b));
+print Dumper $c;
+&lt;/code&gt;
+Which produces:
+&lt;code&gt;
+$VAR1 = [
+          [
+            [
+              1,
+              2
+            ],
+            [
+              2,
+              3
+            ]
+          ],
+          [
+            [
+              2,
+              3
+            ],
+            [
+              3,
+              4
+            ]
+          ],
+          [
+            [
+              3,
+              4
+            ],
+            [
+              4,
+              5
+            ]
+          ]
+        ];
+&lt;/code&gt;
+Woohoo!&lt;/i&gt;
+&lt;pre&gt;&lt;/pre&gt;
+&lt;b&gt;ORIGINAL POST:&lt;/b&gt;
+&lt;pre&gt;&lt;/pre&gt;
+I have come across a strange thing. If I run the following code with an array of scalars, then I get what I expect. E.g.,
+&lt;code&gt;
+@a = (1,2,3,4,5,6);
+increment(\@a);
+
+#produces tuples of:
+[1,2],[2,3],[3,4],[4,5],[5,6] #yay!!
+&lt;/code&gt;
+But, I want to run increment() with arrays of arrays. But, the result is all sorts of funky.
+Here's Data::Dumper output:
+
+&lt;code&gt;
+$VAR1 = [
+          [
+            [
+              1,
+              2
+            ],
+            [
+              2,
+              3
+            ]
+          ],
+          [
+            $VAR1-&gt;[0][1],
+            [
+              3,
+              4
+            ]
+          ],
+          [
+            $VAR1-&gt;[1][1],
+            [
+              4,
+              6
+            ]
+          ]
+        ];
+&lt;/code&gt;
+
+I'm using the following test code:
+
+&lt;code&gt;
+my @a = (1,2,3,4,6);
+
+print Dumper increment(increment(\@a));
+
+sub increment{
+   my $d=shift;
+   my @b;
+   for my $i (1..$#$d){
+      my @a = @$d[$i-1..$i];
+      push @b,\@a;
+   }
+   \@b
+}
+&lt;/code&gt;
+
+The output is half-right --the second part of each tuple is itself a tuple (and is what's expected). But, what's with the first part of each tupple? The &lt;code&gt;"$VAR-&gt;[n][1]"&lt;/code&gt;
+
+&lt;pre&gt;&lt;/pre&gt;
+I am flummoxed.
+
+&lt;pre&gt;&lt;/pre&gt;
+Thanks much for whatever advice you might have.
+&lt;pre&gt;&lt;/pre&gt;
+
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-329759"&gt;
+$state{tired}?sleep(40):eat($food);
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1216360">
+<node id="1216364"><node id="1216365"><node id="1216366"><node id="1216367"><node id="1216397"/>
+</node>
+</node>
+<node id="1216396"/>
+</node>
+<node id="1216395"/>
+</node>
+<node id="1216372"><node id="1216399"/>
+</node>
+</thread></node>

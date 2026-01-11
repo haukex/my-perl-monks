@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112802" title="Mojo database routing" created="2020-02-11 15:15:40" updated="2020-02-11 15:15:40" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1153812">rajaman</author>
+<doctext field_name="doctext">&lt;p&gt;
+Dear Monks,
+&lt;br&gt;&lt;br&gt;
+I am just starting to learn Mojolicious with a toy example:
+&lt;br&gt;&lt;br&gt;
+1. User inputs query keywords (e.g. 'John Doe') in a search form (at home page '/')&lt;br&gt;
+2. The keywords are used to search a sqlite table with three columns (id, name, department)&lt;br&gt;
+3. The output page shows the search box above the result from sqlite: 'id, name, department' for John Doe (at page '/John Doe')&lt;br&gt;&lt;br&gt;
+
+My raw pseudo-code with comments is below, but I am getting lost on how to connect different pieces together.&lt;br&gt;&lt;br&gt;
+
+Please guide how such a task could be done efficiently.&lt;br&gt;&lt;br&gt;
+
+Thanks a lot!&lt;br&gt;&lt;br&gt;
+
+&lt;/p&gt;
+
+
+&lt;code&gt;
+#!/usr/bin/env perl
+use strict;
+use warnings;
+#use Mojo::SQLite;
+use Mojolicious::Lite;
+use DBI;
+
+#hypnotoad
+app-&gt;config(
+    hypnotoad =&gt; {
+        listen =&gt; [ 'http://127.0.0.1:8083/' ],
+        proxy  =&gt; 1,
+    },
+);
+
+# interact with database
+my $dbh = DBI-&gt;connect("dbi:SQLite:mydb.db","","") or die "Could not connect";
+helper db =&gt; sub { $dbh };
+
+#get '/' =&gt; { text =&gt; q{
+#       &lt;form method="POST"&gt;&lt;input name="q"&gt;&lt;input type="submit" value="query"&gt;&lt;/form&gt;
+#}};
+#my $query=param(q);
+
+#how to pass 'John Doe' as a variable from the user input
+helper select =&gt; sub {
+  my $self = shift;
+  my $sth = eval { $self-&gt;db-&gt;prepare('SELECT * FROM contacts where name like '%John AND Doe%'') } || return undef;
+  $sth-&gt;execute;
+  return $sth-&gt;fetchall_arrayref;
+};
+app-&gt;select;
+
+# setup route, such that search query gets appended to root in the output, e.g., /John Doe for 'John Doe' search query. How to connect 'param(q)' and ':query'?
+get '/:query' =&gt;
+	sub {
+		my $self = shift;
+		my $query=param(q);
+		my $rows = $self-&gt;select;
+		$self-&gt;stash( rows =&gt; $rows );
+		$self-&gt;render('index');
+};
+app-&gt;start;
+
+__DATA__
+
+@@ index.html.ep
+
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;Emp&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+&lt;form method="POST"&gt;&lt;input name="q"&gt;&lt;input type="submit" value="John Doe"&gt;&lt;/form&gt;
+  &lt;br&gt;&lt;br&gt;
+  &lt;table border="1"&gt;
+    &lt;tr&gt;
+      &lt;th&gt;id&lt;/th&gt;
+      &lt;th&gt;name&lt;/th&gt;
+      &lt;th&gt;department&lt;/th&gt;
+    &lt;/tr&gt;
+    % foreach my $row (@$rows) {
+      &lt;tr&gt;
+        % foreach my $text (@$row) {
+          &lt;td&gt;&lt;%= $text %&gt;&lt;/td&gt;
+        % }
+      &lt;/tr&gt;
+    % }
+  &lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+
+&lt;/code&gt;
+</doctext>
+<thread id="11112802">
+<node id="11112820"><node id="11113325"><node id="11113340"/>
+</node>
+</node>
+</thread></node>

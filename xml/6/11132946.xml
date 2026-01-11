@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11132946" title="CGI.pm not good practice, so what is good, modern, practice for reading CGI paramters?" created="2021-05-24 04:32:36" updated="2021-05-24 04:32:36" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1164259">leszekdubiel</author>
+<doctext field_name="doctext">&lt;p&gt;
+My CGI script gets data from html forms. Forms that deliver data are encoded in many different ways:  
+&lt;/p&gt;
+
+&lt;ul&gt; 
+&lt;li&gt;GET&lt;/li&gt; 
+&lt;li&gt;POST, application/x-www-form-urlencoded&lt;/li&gt;
+&lt;li&gt;POST, multipart/form-data&lt;/li&gt;
+&lt;li&gt;POST, text-plain&lt;/li&gt;
+&lt;/ul&gt; 
+
+&lt;p&gt;I need to read all parameters from &lt;code&gt;&lt;input type="text" ... &lt;/code&gt;. Current solution is: &lt;/p&gt; 
+
+&lt;code&gt; 
+#!/usr/bin/perl 
+
+use CGI;
+
+my $q = CGI-&gt;new;
+my %params = map { $_ =&gt; $q-&gt;param($_) } $q-&gt;param(); 
+
+...
+&lt;/code&gt; 
+
+&lt;p&gt;If CGI.pm is deprecated, then what is better solution that is &lt;b&gt;as simple as CGI.pm?&lt;/b&gt; I don't want to put much boilerplate, or make huge application -- just read parameters in the most simple way. &lt;/p&gt; 
+
+&lt;p&gt;Here is a CGI script for testing:   &lt;a href="https://www.lustra.pl/cgitest.pl"&gt;lustra.pl/cgitest.pl&lt;/a&gt;, and this is source code of that script: &lt;/p&gt; 
+
+&lt;code&gt; 
+
+
+#!/usr/bin/perl 
+
+use CGI;
+use JSON; 
+
+my $q = CGI-&gt;new;
+my %headers = map { $_ =&gt; $q-&gt;http($_) } $q-&gt;http();
+my %params = map { $_ =&gt; $q-&gt;param($_) } $q-&gt;param(); 
+
+my %environ = 
+	map { ($_, $ENV{$_}) } 
+	grep { ! /ROOT|PATH|REMOTE|FILENAME|SERVER|SSL/ } 
+	keys %ENV; 
+
+
+print &lt;&lt;HTML;
+Content-Type: text/html; charset=utf-8
+
+&lt;!DOCTYPE HTML&gt;
+&lt;html&gt;
+&lt;body&gt; 
+
+&lt;pre&gt;
+@{[ JSON-&gt;new-&gt;pretty-&gt;canonical-&gt;encode({ 
+	headers =&gt; \%headers, 
+	params =&gt; \%params, 
+	environ =&gt; \%environ, 
+}) ]}
+&lt;/pre&gt;
+
+&lt;form method="get"&gt; 
+	&lt;input type="submit"&gt;
+	&lt;input name="about" value="method get"&gt;
+	&lt;input name="myname" value="Alfa"&gt;
+	&lt;input name="myage" value="32"&gt;
+	&lt;input name="unicode-test" value="&amp;#260;&amp;#262;&amp;#280;&amp;#321;&amp;#323;Ó&amp;#346;&amp;#377;&amp;#377;&amp;#379;-&amp;#261;&amp;#263;&amp;#281;&amp;#322;&amp;#324;ó&amp;#347;&amp;#378;&amp;#380;-&amp;#960;œ©ß&amp;#8592;&amp;#8595;&amp;#8594;&amp;#601;&amp;#331;æð„”µ&amp;#8804;&amp;#8805;»«§½€¢³²&amp;#8800;"&gt;
+&lt;/form&gt;
+
+&lt;form method="post"&gt; 
+	&lt;input type="submit"&gt;
+	&lt;input name="about" value="method post"&gt;
+	&lt;input name="myname" value="Beta"&gt;
+	&lt;input name="myage" value="44"&gt;
+	&lt;input name="unicode-test" value="&amp;#260;&amp;#262;&amp;#280;&amp;#321;&amp;#323;Ó&amp;#346;&amp;#377;&amp;#377;&amp;#379;-&amp;#261;&amp;#263;&amp;#281;&amp;#322;&amp;#324;ó&amp;#347;&amp;#378;&amp;#380;-&amp;#960;œ©ß&amp;#8592;&amp;#8595;&amp;#8594;&amp;#601;&amp;#331;æð„”µ&amp;#8804;&amp;#8805;»«§½€¢³²&amp;#8800;"&gt;
+&lt;/form&gt;
+
+&lt;form method="post" enctype="application/x-www-form-urlencoded"&gt; 
+	&lt;input type="submit"&gt;
+	&lt;input name="about" value="method post, x-www-form-urlencoded"&gt;
+	&lt;input name="myname" value="Gamma"&gt;
+	&lt;input name="myage" value="12"&gt;
+	&lt;input name="unicode-test" value="&amp;#260;&amp;#262;&amp;#280;&amp;#321;&amp;#323;Ó&amp;#346;&amp;#377;&amp;#377;&amp;#379;-&amp;#261;&amp;#263;&amp;#281;&amp;#322;&amp;#324;ó&amp;#347;&amp;#378;&amp;#380;-&amp;#960;œ©ß&amp;#8592;&amp;#8595;&amp;#8594;&amp;#601;&amp;#331;æð„”µ&amp;#8804;&amp;#8805;»«§½€¢³²&amp;#8800;"&gt;
+&lt;/form&gt;
+
+&lt;form method="post" enctype="multipart/form-data"&gt; 
+	&lt;input type="submit"&gt;
+	&lt;input name="about" value="method post, multipart/form-data"&gt;
+	&lt;input name="myname" value="Teta"&gt;
+	&lt;input name="myage" value="66"&gt;
+	&lt;input name="unicode-test" value="&amp;#260;&amp;#262;&amp;#280;&amp;#321;&amp;#323;Ó&amp;#346;&amp;#377;&amp;#377;&amp;#379;-&amp;#261;&amp;#263;&amp;#281;&amp;#322;&amp;#324;ó&amp;#347;&amp;#378;&amp;#380;-&amp;#960;œ©ß&amp;#8592;&amp;#8595;&amp;#8594;&amp;#601;&amp;#331;æð„”µ&amp;#8804;&amp;#8805;»«§½€¢³²&amp;#8800;"&gt;
+&lt;/form&gt;
+
+&lt;form method="post" enctype="text-plain"&gt; 
+	&lt;input type="submit"&gt;
+	&lt;input name="about" value="method post, text-plain"&gt;
+	&lt;input name="myname" value="Omega"&gt;
+	&lt;input name="myage" value="45"&gt;
+	&lt;input name="unicode-test" value="&amp;#260;&amp;#262;&amp;#280;&amp;#321;&amp;#323;Ó&amp;#346;&amp;#377;&amp;#377;&amp;#379;-&amp;#261;&amp;#263;&amp;#281;&amp;#322;&amp;#324;ó&amp;#347;&amp;#378;&amp;#380;-&amp;#960;œ©ß&amp;#8592;&amp;#8595;&amp;#8594;&amp;#601;&amp;#331;æð„”µ&amp;#8804;&amp;#8805;»«§½€¢³²&amp;#8800;"&gt;
+&lt;/form&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+
+HTML
+
+&lt;/code&gt; 
+</doctext>
+<thread id="11132946">
+<node id="11132947"><node id="11132948"/>
+</node>
+<node id="11132949"><node id="11132950"><node id="11132954"><node id="11132990"><node id="11135726"/>
+</node>
+</node>
+</node>
+<node id="11133190"/>
+</node>
+<node id="11132959"><node id="11132972"><node id="11132988"><node id="11133007"><node id="11133407"><node id="11133412"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11133016"><node id="11133043"/>
+</node>
+</thread></node>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11120287" title="Problems using Mail::Sendmail to include an attachment" created="2020-08-04 13:58:18" updated="2020-08-04 13:58:18" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="745860">desertrat</author>
+<doctext field_name="doctext">I have what I thought would be a simple requirement. An online requests needs to generate an email message with a specifically formated .csv file attached.  I am having trouble getting it to work though.
+
+If I run this I see that the base64 encoded string is created, but on the recieving end it's gone.
+
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use MIME::Base64;
+use MIME::QUotedPrint;
+use Mail::Sendmail;
+
+my $s=&lt;&lt;eos;
+foo, bar, baz, name, email, important note
+TRUE,FALSE,TRUE, JoeUser, joeuser1\@there.com, This is the bosses kid
+eos
+
+my $req=encode_qp("I need to make a request for this important person!");
+my $cn = "Joe User";
+
+my $estr=encode_base64($s);
+
+print $req."\n";
+print $estr;
+
+my %msg =(from =&gt; 'valid email address',to=&gt;'valid email address',subject =&gt;'test of attachment');
+
+my $boundary= "==========".time()."==========";
+
+$msg{'content-type'} = "multipart/mixed; boundary=\"$boundary\"";
+$msg{'body'}=&lt;&lt;eob;
+--$boundary
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
+$req
+--$boundary
+Content-Type: text/csv
+Content-Tranfer-Encoding: base64
+Content-Disposition: attachment; filename="account request for $cn.csv"
+$estr
+--$boundary--
+eob
+
+sendmail(%msg) or die "Sending failed Error: $Mail::Sendmail::error";
+
+exit;
+
+&lt;/code&gt; 
+
+On the recieving end the message is empty with an attachment icon with the filename (zero bytes long), and in the message source the body of the message looks like:
+
+&lt;code&gt;
+
+MIME-Version: 1.0
+
+--==========1596563290==========
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
+
+
+--==========1596563290==========
+Content-Type: text/csv
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="account request for Joe User.csv"
+
+
+--==========1596563290==========--
+
+
+&lt;/code&gt;
+
+Looking at everything I've found for this, it should work...what am I missing. (note if I just do this:
+
+&lt;code&gt;
+#sending a plain text message, maybe sendmail is messed up??
+my %msg2 =(from =&gt; 'avalidemailaddress',to=&gt;'avalidemailaddress',subject =&gt;'plain email', body=&gt;"just a quick note!");
+sendmail(%msg2) or die "Sending failed Error: $Mail::Sendmail::error";
+&lt;/code&gt;
+
+It works as expected...
+</doctext>
+<thread id="11120287">
+<node id="11120289"><node id="11120299"/>
+</node>
+<node id="11120355"/>
+</thread></node>

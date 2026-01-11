@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1204794" title="Re^3: Simplify HoH code" created="2017-12-03 06:51:01" updated="2017-12-03 06:51:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Do I understand correctly that the variables named &lt;c&gt;*_L1_*&lt;/c&gt; are lower limits and &lt;c&gt;*_U1_*&lt;/c&gt; are upper limits? Although [pme] has [id://1204787|shown code] very similar to what I was thinking, the key thing to note is that you can restructure your &lt;c&gt;$FEB_L1_W1&lt;/c&gt; variables into a hash, and then see the similarity in the data structures ([doc://Data::Dumper] or [mod://Data::Dump] can also be helpful here).&lt;/p&gt;
+&lt;c&gt;
+my %months = (
+	FEB =&gt; { W1 =&gt; 11.14,
+	         W2 =&gt; 11.22, },
+	MAR =&gt; { W1 =&gt; 33.17,
+	         W2 =&gt; 44.44, },
+	APR =&gt; { W1 =&gt; 55.00,
+	         W2 =&gt; 66.66, },
+);
+my %limits = (
+	FEB =&gt; { W1 =&gt; { L1 =&gt;  11,    U1 =&gt;  12.05 },
+	         W2 =&gt; { L1 =&gt;  13.06, U1 =&gt;  13.06 }, },
+	APR =&gt; { W1 =&gt; { L1 =&gt;   1,    U1 =&gt;  20    },
+	         W2 =&gt; { L1 =&gt;  33,    U1 =&gt;  13.02 }, },
+	MAR =&gt; { W1 =&gt; { L1 =&gt; -12.05, U1 =&gt; -14.0  },
+	         W2 =&gt; { L1 =&gt;  22.0,  U1 =&gt; -13.02 }, },
+);
+&lt;/c&gt;
+&lt;p&gt;And then notice you can create loops to loop over both at the same time, like in the following. Note I've made a few assumptions, like that limits for a certain month may not exist, but when they do, both the keys &lt;c&gt;U1&lt;/c&gt; and &lt;c&gt;L1&lt;/c&gt; are defined. If your input data varies, you may have to adjust this.&lt;/p&gt;
+&lt;c&gt;
+for my $mon ( sort keys %months ) {
+	for my $week ( sort keys %{ $months{$mon} } ) {
+		if ( exists $limits{$mon} &amp;&amp; exists $limits{$mon}{$week} ) {
+			my $value = $months{$mon}{$week};
+			my $upper = $limits{$mon}{$week}{U1};
+			my $lower = $limits{$mon}{$week}{L1};
+			printf "%6.2f &lt;= %6.2f &lt;= %6.2f - ",
+			        $lower,  $value,  $upper;
+			if ( $value &gt;= $lower &amp;&amp; $value &lt;= $upper ) {
+				print "OK\n";
+			}
+			else {
+				print "NOT ok\n";
+			}
+		}
+		else { warn "No limits for month $mon / week $week\n" }
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;Which gives the following output. Note I tweaked the input slightly to give at least one "OK" output.&lt;/p&gt;
+&lt;c&gt;
+  1.00 &lt;=  55.00 &lt;=  20.00 - NOT ok
+ 33.00 &lt;=  66.66 &lt;=  13.02 - NOT ok
+ 11.00 &lt;=  11.14 &lt;=  12.05 - OK
+ 13.06 &lt;=  11.22 &lt;=  13.06 - NOT ok
+-12.05 &lt;=  33.17 &lt;= -14.00 - NOT ok
+ 22.00 &lt;=  44.44 &lt;= -13.02 - NOT ok
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1204780</root_node>
+<parent_node field_name="parent_node">1204789</parent_node>
+<thread id="1204780">
+<node id="1204782"><node id="1204789"><node id="1204794"><node id="1204796"/>
+</node>
+</node>
+</node>
+<node id="1204787"><node id="1204795"/>
+</node>
+<node id="1204808"><node id="1204810"><node id="1204874"><node id="1204881"/>
+</node>
+</node>
+</node>
+</thread></node>

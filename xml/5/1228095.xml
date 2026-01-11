@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228095" title="Re: Try::Tiny complaining catch must be block or sub {} (not reference constructor) (updated)" created="2019-01-06 03:49:57" updated="2019-01-06 03:49:57" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I agree with [AnomalousMonk] that we'd need to see a short piece of example code that reproduces the issue, &lt;strike&gt;because I haven't been able to reproduce it myself,&lt;/strike&gt; and I think it's a slightly strange issue.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; See [id://1228097].&lt;/p&gt;
+&lt;strike&gt;
+&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;must be block or sub {} (not reference constructor)&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That &lt;i&gt;sounds&lt;/i&gt; like this (from [doc://map]), although as I said I'm not sure what's triggering it in this case:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;c&gt;{&lt;/c&gt; starts both hash references and blocks, so &lt;c&gt;map { ...&lt;/c&gt; could be either the start of map BLOCK LIST or map EXPR, LIST. Because Perl doesn't look ahead for the closing &lt;c&gt;}&lt;/c&gt; it has to take a guess at which it's dealing with based on what it finds just after the &lt;c&gt;{&lt;/c&gt;. Usually it gets it right, but if it doesn't it won't realize something is wrong until it gets to the &lt;c&gt;}&lt;/c&gt; and encounters the missing (or unexpected) comma. The syntax error will be reported close to the &lt;c&gt;}&lt;/c&gt;, but you'll need to change something near the &lt;c&gt;{&lt;/c&gt; such as using a unary &lt;c&gt;+&lt;/c&gt; or semicolon to give Perl some help:
+&lt;c&gt;
+my %hash = map {  "\L$_" =&gt; 1  } @array # perl guesses EXPR. wrong
+my %hash = map { +"\L$_" =&gt; 1  } @array # perl guesses BLOCK. right
+my %hash = map {; "\L$_" =&gt; 1  } @array # this also works
+my %hash = map { ("\L$_" =&gt; 1) } @array # as does this
+my %hash = map {  lc($_) =&gt; 1  } @array # and this.
+&lt;/c&gt;
+&lt;/blockquote&gt;
+&lt;/strike&gt;
+</doctext>
+<root_node field_name="root_node">1228092</root_node>
+<parent_node field_name="parent_node">1228092</parent_node>
+<thread id="1228092">
+<node id="1228093"/>
+<node id="1228095"/>
+<node id="1228097"><node id="1228121"><node id="1228145"><node id="1228155"/>
+</node>
+</node>
+</node>
+</thread></node>

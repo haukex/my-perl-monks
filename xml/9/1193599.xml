@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193599" title="Delay in Writing the data to Text file" created="2017-06-26 12:25:44" updated="2017-06-26 12:25:44" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1193596">Preetham</author>
+<doctext field_name="doctext">&lt;p&gt;Hi i have a below program to compare two file and log the result in new file. Its taking more than 10 min to log the data to AuditNew.txt file. br.1 file have around 3 lakh lines and MSMLogs.txt will have around 7,000 line. &lt;/p&gt;
+&lt;p&gt;Is there is any way to get the result logged faster in AuditNew.txt. &lt;/p&gt;
+
+&lt;p&gt;Note : Below print is displayed in console every 1 seconds for each line. it means the processing is faster but writing the data to text file is getting delayed. &lt;/p&gt;
+&lt;c&gt;
+print("\nnumber of occurance is $count\n");
+
+#!/usr/bin/perl
+
+use 5.010;
+use strict;
+use warnings;
+
+#Open MSM Log in read Mode
+open(my $MSMLog, '&lt;','MSMLogs.txt');
+
+#Create Audit txt file in write mode
+open(my $Audit, '&gt;','br.1');
+
+print("Task Started.........\n");
+#iterate each word to identify the logs
+while (my $row = &lt;$MSMLog&gt;) {
+  chomp $row;
+  getCount($row);
+}
+
+sub getCount {
+  #Open MobileService.log file in read mode
+  open(my $MobileServiceLog, '&lt;','one.txt');
+  my @StaticLog = @_;
+  my $count = 0;
+  #print ("\nvalue in MSM Static is ------ $StaticLog[0]\n");
+  
+  while (my $row = &lt;$MobileServiceLog&gt;) {
+
+    my @actualWord = split /;/, $row;
+    my $MobileService = $actualWord[7];
+    #print ("value in MobileService is ------  $MobileService\n");
+    if ($MobileService =~ /$StaticLog[0]/) {
+        $count += 1;
+      }
+  }
+  $_=1
+  print ($Audit "\n$StaticLog[0] occurance is ------- \t$count\n");
+  
+  print("\nnumber of occurance is $count\n");
+  close $MobileServiceLog;
+}
+print ($Audit "Task Completed");
+print ("Task Completed");
+close $MSMLog;
+close $Audit;
+&lt;/c&gt;
+</doctext>
+<thread id="1193599">
+<node id="1193601"/>
+<node id="1193603"/>
+<node id="1193605"/>
+<node id="1193607"/>
+<node id="1193638"/>
+</thread></node>

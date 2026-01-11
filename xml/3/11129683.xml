@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129683" title="Re: Can't get \n or other character/translation escapes to interpolate if originally read from a data file" created="2021-03-15 13:23:12" updated="2021-03-15 13:23:12" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1158292">pryrt</author>
+<doctext field_name="doctext">++[AnomalousMonk] explained the "why". &lt;P&gt;
+
+Here's something you can do to get the string in the format I think you want: the [METAMOD://String::Interpolate] module allows you to pass a string with character escapes and get back the string that I believe you desire.&lt;P&gt;
+
+&lt;c&gt;
+C:\usr\local\share&gt;perl
+use strict;
+use warnings;
+use v5.10;
+use String::Interpolate qw/interpolate/;
+
+my @lines = &lt;DATA&gt;;
+
+for my $line ( @lines ) {
+   chomp $line;
+   say "data line is *$line*";
+   my $real = interpolate($line);
+   say "real line is *$real*";
+}
+
+__DATA__
+hello\ngoodbye
+good\nevil
+yes\nno
+&lt;/c&gt;
+yields
+&lt;c&gt;
+data line is *hello\ngoodbye*
+real line is *hello
+goodbye*
+data line is *good\nevil*
+real line is *good
+evil*
+data line is *yes\nno*
+real line is *yes
+no*
+&lt;/c&gt;&lt;P&gt;
+
+note: I've never used it before today; I found it via a quick search, and its description and above behavior seemed right.  &lt;P&gt;
+
+Also, I don't have the Programming Perl to check page numbers, but "translation escapes" sound like escapes that are only available to the [doc://perlre|regex substitution engine] and not to normal strings, so those will likely not be available even in [METAMOD://String::Interpolate] (unchecked).&lt;!-- Wiki2Monks {"version":1.16} --&gt;</doctext>
+<root_node field_name="root_node">11129681</root_node>
+<parent_node field_name="parent_node">11129681</parent_node>
+<thread id="11129681">
+<node id="11129682"/>
+<node id="11129683"><node id="11129686"><node id="11129712"><node id="11129715"/>
+</node>
+</node>
+<node id="11129693"><node id="11129711"/>
+</node>
+</node>
+<node id="11129687"/>
+<node id="11129692"/>
+<node id="11129720"><node id="11129733"><node id="11129736"/>
+</node>
+</node>
+<node id="11129735"><node id="11129755"><node id="11129759"/>
+<node id="11129796"/>
+</node>
+</node>
+<node id="11129784"/>
+<node id="11129798"><node id="11129799"/>
+</node>
+</thread></node>

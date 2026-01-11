@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227699" title="Perl program to search files" created="2018-12-25 20:18:58" updated="2018-12-25 20:18:58" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1166559">harangzsolt33</author>
+<doctext field_name="doctext">I have created a little perl script that searches documents for a kind of binary string and lists the files that contain that exact string. Can you make suggestions on how I could improve this program or what I could have done to make this better? Also, if you see some obvious bugs in my program, would you please tell me? Thank you! Here is my script:
+
+&lt;P&gt;Edit: Okay, as requested, I am inserting the code here instead of just a link. And thank you for your ideas and advice. I will read through them more carefully tomorrow and try to implement them! Thank you!
+
+&lt;P&gt;&lt;p&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+
+#!/usr/bin/perl
+
+#
+# This Perl program looks for a certain binary string
+# in a file and lists the files found and the total number
+# of files found. I tested this script in TinyPerl 5.8.
+#
+#################################################################
+
+use strict;
+use warnings;
+
+my $FIND            = ".\nThis is";
+my $CASE_SENSITIVE  = 0;
+my $FOLDER          = 'H:\\HOME';
+my $RECURSIVE       = 1;
+my @INCLUDE         = qw( *.txt *.doc *.xls *.ppt *.log *.htm *.html *.xml *. *.eml *.pdf *.rtf *.bas *.c *.h *.pl *.cgi *.bak *.reg *.ini *.inf *.ion *.1st *.lst *.pas *.py *.cpp *.php *.xfm *.js *.asm *.rt *.old );
+my $VERBOSE         = 0;
+my $PAGE_BREAK      = 0;
+
+################################################################# Main
+###
+###    PROGRAM STARTS HERE:
+##
+#
+
+my $TOTAL = 0;
+my $BUFF_SIZE = 4000000;
+my $LINUX = (index(uc($^O), 'WIN') &lt; 0) ? 1 : 0;
+$CASE_SENSITIVE or $FIND = uc($FIND);
+CheckDIR($FOLDER);
+print "\n", '-' x 72;
+print "\n $TOTAL file(s) found with matching string\n";
+exit;
+
+################################################################# SearchFile
+#
+# This function is automatically called by CheckDIR() every time
+# a file is found. This function gets the path &amp; name of the file.
+#
+#   Usage: SearchFile(PATH, NAME) &lt;-- Called by CheckDIR()
+#
+sub SearchFile
+{
+  my $PATH = $_[0];
+  my $NAME = $_[1];
+  my $FULLNAME = "$PATH$NAME";
+
+  (-f $FULLNAME) or return;  # not a plain file?
+  my $L = -s $FULLNAME;      # Get file size
+  $L or return;              # file size == 0?
+
+  # Is the search string longer than
+  # the file we're searching?
+  $L &gt;= length($FIND) or return;
+
+  my $F;
+  my $START = 0;
+  my $FOUND = 0;
+  my $BUFFER;
+  open $F, "&lt;$FULLNAME" or return;
+  binmode $F;
+  while ($START &lt; $L)
+  {
+    if ($START &gt; $L) { last; }
+    read $F, $BUFFER, $BUFF_SIZE, $START;
+    if (defined $BUFFER)
+    {
+      if (!$CASE_SENSITIVE) { $BUFFER = uc($BUFFER); }
+      if (index($BUFFER, $FIND) &gt;= 0)
+      { $FOUND++; last; }
+    }
+    else
+    { last; }
+    if (length($BUFFER) &lt; $BUFF_SIZE) { last; }
+    $START += $BUFF_SIZE - length($FIND);
+  }
+  close $F;
+  if ($FOUND)
+  {
+    $TOTAL++;
+    if ($PAGE_BREAK)
+    {
+      if ($TOTAL % $PAGE_BREAK == 0)
+      { print "\nPress ENTER to continue..."; &lt;STDIN&gt;; }
+    }
+    PRINT("FOUND: $FULLNAME");
+  }
+}
+################################################################# CheckDIR
+#
+# This function reads the contents of a folder and calls
+# SearchFile() for each file that was found.
+#
+#   Usage: CheckDIR(PATH)
+#
+sub CheckDIR
+{
+  @_ or return;
+  my $FULLNAME;
+  my $PATH = shift;
+  defined $PATH or return;
+  length($PATH) or return;
+
+  if ($VERBOSE) { PRINT("SEARCHING: ", FormatPath($PATH)); }
+  $PATH = AddSeparator($PATH);
+  opendir(my $DIR, $PATH) or return;
+  while (my $NAME = readdir $DIR)
+  {
+    $FULLNAME = "$PATH$NAME";
+    if (-d($FULLNAME))
+    {
+      # Check into subdirectory if RECURSIVE == 1
+      # Skip directory if its name starts with "."
+      if ($RECURSIVE)
+      { CheckDIR($FULLNAME) unless (vec($NAME, 0, 8) == 46); }
+      next;
+    }
+
+    # Scan file contents only if the file name
+    # matches a certain pattern.
+    foreach my $W (@INCLUDE)
+    {
+      if (isMatch($NAME, $W))
+      { SearchFile($PATH, $NAME); }
+    }
+  }
+  closedir $DIR;
+}
+################################################################# isMatch
+#
+# This function returns 1 if a filename matches a certain
+# wildcard pattern. There may be several question marks in
+# the search pattern, but only one asterisk is allowed!
+# The asterisk may be at the beginning, the end, or in the
+# middle of the pattern. A question mark matches any
+# character. An asterisk matches zero or more characters.
+# The matching is NOT case sensitive!
+#
+#   Usage: INTEGER = isMatch(FILENAME, WILDCARD)
+#
+# Example: isMatch("New_Document.txt", "n*.txt") ---&gt; 1
+#
+sub isMatch
+{
+  @_ &gt; 1 or return 0;
+  my $F = shift; defined $F or return 0; length($F) or return 0;
+  my $W = shift; defined $W or return 0; length($W) or return 0;
+  $F = uc($F);
+  $W = uc($W);
+
+  # If there aren't any wildcards at all...
+  if (CountChars($W, '*?') == 0) { return ($F eq $W) ? 1 : 0; }
+
+  # Match what's before the asterisk...
+  return 0 unless (_isMatch($F, $W, 1));
+
+  # Match what comes after the asterisk...
+  return _isMatch($F, $W, -1);
+}
+################################################################# _isMatch
+#
+# This private function is called by isMatch()
+# This function compares two strings and returns 1 if
+# both strings match until the first asterisk.
+# This function can start comparing strings starting
+# from the beginning or starting from the end!
+# DIRECTION must be either 1 or -1.
+#
+#   Usage: INTEGER = _isMatch(FILENAME, WILDCARD, DIRECTION)
+#
+sub _isMatch
+{
+  my $F = shift; my $f; my $LF = length($F)-1;
+  my $W = shift; my $w; my $LW = length($W)-1;
+  my $DIR = shift;
+  my $STOP = $LW; my $START = 0; my $FSTART = 0;
+  if ($DIR &lt; 0) { $STOP = 0; $START = $LW; $FSTART = $LF; }
+  while ($START != $STOP)
+  {
+    $w = vec($W, $START, 8);  # Grab byte from wildcard pattern
+    $f = vec($F, $FSTART, 8); # Grab byte from filename
+    $START += $DIR;
+    $FSTART += $DIR;
+    if ($w == 42)   # ASTERISK?
+    { return 1; }
+    else
+    {
+      # If the character is "?" then skip, but if
+      # it's not "?", then the characters must match.
+      if ($w != 63) { ($f == $w) or return 0; }
+    }
+  }
+  return 1;
+}
+################################################################# PRINT
+#
+# This function prints the total number of matches found
+# so far followed by some text and a new line character.
+#
+#   Usage: PRINT(STRING)
+#
+sub PRINT { print ' ', RSPACE(8, $TOTAL), @_, "\n"; }
+################################################################# FormatPath
+#
+# This function replaces the \\ or / characters in a path
+# to match the current OS's separator character.
+#
+#   Usage: PATH = FormatPath(PATH)
+#
+sub FormatPath
+{
+  @_ or return '';
+  my $PATH = $_[0];
+  length($PATH) or return '';
+  if ($LINUX)
+  { $PATH =~ tr|\\|/|; }
+  else
+  { $PATH =~ tr|/|\\|; }
+  return $PATH;
+}
+################################################################# AddSeparator
+#
+# This function makes sure that the given path ends with
+# a / or \ depending on the current OS.
+#
+#   Usage: PATH = AddSeparator(PATH)
+#
+sub AddSeparator
+{
+  @_ or return '';
+  my $PATH = $_[0];
+  length($PATH) or return '';
+  my $c = vec($PATH, length($PATH)-1, 8);
+  return FormatPath($PATH . (($c == 47 || $c == 92) ? '' : '/') );
+}
+################################################################# RSPACE
+#
+# This function adds spaces to the end of a string list to
+# make sure it's exactly N characters long. If the string
+# is longer than N, then just returns the string itself.
+#
+#   Usage: STRING = RSPACE(N, STRING, [STRINGS...])
+#
+sub RSPACE
+{
+  @_ &gt; 1 or return '';
+  my $LEN = shift;
+  my $S = join('', @_);
+  my $L = length($S);
+  $L &lt; $LEN or return $S;
+  return $S . (' ' x ($LEN - $L));
+}
+################################################################# CountChars
+#
+# This function counts how many times STRING contains
+# any of the characters of SUBSTR.
+#
+#   Usage: INTEGER = CountChars(STRING, SUBSTR)
+#
+sub CountChars
+{
+  @_ &gt; 1 or return 0;
+  my $S = shift; defined $S or return 0; length($S) or return 0;
+  my $L = shift; defined $L or return 0; length($L) or return 0;
+  my $P;
+  my $c;
+  my $i = length($L);
+  my $N = 0;
+  while ($i-- &gt; 0)
+  {
+    $P = 0;
+    $c = substr($L, $i, 1);
+    while (($P = 1+index($S, $c, $P)) &gt; 0)
+    { $N++; }
+  }
+  return $N;
+}
+#################################################################
+
+&lt;/code&gt;
+&lt;/readmore&gt;
+&lt;/p&gt;
+
+&lt;P&gt;Btw I tested the program, and it seems to work fine.</doctext>
+<thread id="1227699">
+<node id="1227700"><node id="1227783"/>
+<node id="1227784"><node id="1227798"/>
+</node>
+</node>
+<node id="1227704"><node id="1227708"><node id="1227709"/>
+</node>
+</node>
+<node id="1227788"/>
+</thread></node>

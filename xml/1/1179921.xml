@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1179921" title="Re^2: [RFC] Building Regex Alternations Dynamically (updated x2)" created="2017-01-19 10:18:08" updated="2017-01-19 10:18:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [kcott|Ken],&lt;/p&gt;
+&lt;p&gt;Thank you very much for your thoughtful reply!&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;With any sort of tutorial, those reading it — to learn about the subject, rather than for reviewing, proof-reading, etc. — probably start with limited knowledge. Accordingly, any terms used should be unambiguous; unfortunately, you've used &lt;c&gt;$regex&lt;/c&gt; to mean two different things&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Excellent point. I've renamed the variables to disambiguate (I kept the names shorter though), and I've added a link to [doc://perlretut].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;In points (4) &amp;amp; (5), in the first list, you show grouping. To resolve the same issue in both, you use explicit capture grouping in (4), and implicit non-capture grouping in (5).&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Another excellent point, I've switched to using the non-capturing groups in all the examples.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I'd suggest adding explicit non-capturing grouping to &lt;c&gt;$regex_base_str&lt;/c&gt; (or whatever you call it) as part of the normal technique.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That is a very good point, but I haven't made the change yet because I need to think on it a bit more. On the one hand, I think that adding an extra &lt;c&gt;(?:...)&lt;/c&gt; makes the generated regex look a little more complex than it needs to be (&lt;c&gt;qr/(?:a|b)/ eq "(?^:(?:a|b))"&lt;/c&gt; and on older Perls &lt;c&gt;qr/(?:a|b)/ eq "(?-xism:(?:a|b))"&lt;/c&gt;), and also it makes the code to generate the string less elegant (&lt;c&gt;my $regex_str = '(?:'.join('|', map ... ).')'&lt;/c&gt;). But those are just stylistic concerns and you're right that it would eliminate the pitfall that I have to discuss at length in points 4 and 5.&lt;/p&gt;
+&lt;p&gt;The other potential solution, which I'm currently leaning towards, is to skip the intermediate string variable, like in [Haarg]'s [id://1179893|post here]: &lt;c&gt;my ($regex) = map {qr/$_/} join '|', map ...&lt;/c&gt;. I like this latter approach better because it's more robust (no string for the user to potentially misuse), but it does add one more "trick" that has to be explained to the beginner. Currently I feel that the advantages of that outweigh the disadvantages...&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2&lt;/b&gt;, 2017-05-14: This node used to contain a draft, which I've now incorporated into the root node. I wanted to preserve the original text here:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+my @values = qw/ a ab. d ef def g|h /;
+my $regex_str = join '|',             # 4.
+    map {quotemeta}                   # 3.
+    sort { length $b &lt;=&gt; length $a }  # 2.
+    @values;                          # 1.
+my $regex = qr/$regex_str/;           # 5.
+print "$regex\n";                     # 6.
+&lt;/c&gt;
+&lt;ol start="4"&gt;
+&lt;li&gt;Then, we [doc://join] the strings into one long string using the regex alternation operator &lt;c&gt;|&lt;/c&gt;. If you want to use this string without the &lt;c&gt;qr//&lt;/c&gt; of step 5, note this potential pitfall: For example, if your input is &lt;c&gt;qw/a b c/&lt;/c&gt;, then at this point your string will look like &lt;c&gt;$regex_str="a|b|c"&lt;/c&gt;. Then, saying &lt;c&gt;/^$regex_str$/&lt;/c&gt; will be interpolated to &lt;c&gt;/^a|b|c$/&lt;/c&gt;, which means "match &lt;c&gt;a&lt;/c&gt; only at the beginning of the string, or &lt;c&gt;b&lt;/c&gt; anywhere in the string, or &lt;c&gt;c&lt;/c&gt; only at the end of the string", which is probably not what you meant, you probably meant &lt;c&gt;/^(?:a|b|c)$/&lt;/c&gt;, that is &lt;c&gt;/^(?:$regex_str)$/&lt;/c&gt;!&lt;/li&gt;
+&lt;li&gt;Finally, we compile the regular expression using [doc://perlretut#Compiling-and-saving-regular-expressions|&lt;c&gt;qr//&lt;/c&gt;]. This is not strictly necessary, you could just interpolate the string you've just created into a regex, but I prefer to turn them into regex objects explicitly. It also has the advantages that you can apply modifiers such as &lt;c&gt;/i&lt;/c&gt; to the regex in a (IMO) more natural way, and that &lt;c&gt;qr//&lt;/c&gt; implicitly adds a non-capturing group &lt;c&gt;(?:...)&lt;/c&gt; around the regex, which takes care of the problem described in step 4 above.&lt;/li&gt;
+&lt;li&gt;When we print the regular expression, we see that it has become this:
+&lt;c&gt;
+(?^:ab\.|def|g\|h|ef|a|d)
+&lt;/c&gt;
+You can now use this precompiled regular expression anywhere, as explained in [doc://perlretut#Compiling-and-saving-regular-expressions] and [doc://perlop#qr/_STRING_/msixpodualn|perlop], such as &lt;c&gt;if ($input=~$regex) { ... }&lt;/c&gt; or &lt;c&gt;while ($input=~/$regex/g) { ... }&lt;/c&gt;.
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Thanks,&lt;br&gt;-- Hauke D&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1179840</root_node>
+<parent_node field_name="parent_node">1179901</parent_node>
+<thread id="1179840">
+<node id="1179850"><node id="1179851"><node id="1179853"/>
+</node>
+<node id="1180085"><node id="1180087"/>
+</node>
+</node>
+<node id="1179864"><node id="1179870"/>
+</node>
+<node id="1179898"/>
+<node id="1179901"><node id="1179921"><node id="1179940"/>
+</node>
+</node>
+<node id="1179929"><node id="1190259"><node id="1190349"/>
+</node>
+</node>
+<node id="11116849"><node id="11116850"/>
+</node>
+<node id="11118145"/>
+</thread></node>

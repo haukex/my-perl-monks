@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11166594" title="Re: Oneliner replace in-place adds extra spaces at the end of the file" created="2025-10-26 17:13:41" updated="2025-10-26 17:13:41" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;What you're seeing is the effect of the &lt;c&gt;-l&lt;/c&gt; switch combined with the &lt;c&gt;-0&lt;/c&gt; switch - the order of these two switches matters! Here are some select quotes from [doc://perlrun] to explain:&lt;/p&gt;
+&lt;blockquote&gt;
+	&lt;p&gt;&lt;b&gt;-l&amp;#91;octnum&amp;#93;&lt;/b&gt;&lt;/p&gt;
+	&lt;p&gt;enables automatic line-ending processing. It has two separate effects. First, it automatically chomps $/ (the input record separator) when used with "-n" or "-p". Second, it assigns $\ (the output record separator) to have the value of octnum so that any print statements will have that separator added back on. If octnum is omitted, sets $\ to the current value of $/. ... Note that the assignment $\ = $/ is done when the switch is processed, so the input record separator can be different than the output record separator if the -l switch is followed by a -0 switch:&lt;/p&gt;
+	&lt;c&gt;gnufind / -print0 | perl -ln0e 'print "found $_" if -p'&lt;/c&gt;
+	&lt;p&gt;This sets $\ to newline and then sets $/ to the null character.&lt;/p&gt;
+	&lt;p&gt;&lt;b&gt;-0&amp;#91;octal/hexadecimal&amp;#93;&lt;/b&gt;&lt;/p&gt;
+	&lt;p&gt;specifies the input record separator ($/) as an octal or hexadecimal number. If there are no digits, the null character is the separator. ... The special value 00 will cause Perl to slurp files in paragraph mode. Any value 0400 or above will cause Perl to slurp files whole, but by convention the value 0777 is the one normally used for this purpose.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;You can see this effect with [doc://B::Deparse]:&lt;/p&gt;
+&lt;c&gt;
+$ perl -MO=Deparse -0lpe 's/2/4/gs'
+BEGIN { $/ = "\000"; $\ = "\000"; }
+...
+$ perl -MO=Deparse -l0pe 's/2/4/gs'
+BEGIN { $/ = "\n"; $\ = "\000"; }
+...
+$ perl -MO=Deparse -lp0e 's/2/4/gs'
+BEGIN { $/ = "\000"; $\ = "\n"; }
+...
+$ perl -MO=Deparse -l1p0e 's/2/4/gs'
+BEGIN { $/ = "\000"; $\ = "\001"; }
+...
+&lt;/c&gt;
+&lt;p&gt;I noticed that over in your [id://11166585|last question], [hippo] suggested the &lt;c&gt;-0&lt;/c&gt; switch, however, note how this sets the record separator(s) to the NUL character, which may not be what you mean (I was even considering nitpicking this when I saw it but the site was really slow again &lt;c&gt;:-(&lt;/c&gt;&amp;nbsp;). Personally, I use the suggested &lt;c&gt;-0777&lt;/c&gt; when I really want slurp mode, and I use it before the &lt;c&gt;-l&lt;/c&gt; switch, e.g.:&lt;/p&gt;
+&lt;c&gt;
+$ perl -MO=Deparse -0777 -lpe 's/2/4/gs'
+BEGIN { $/ = undef; $\ = ""; }
+...
+&lt;/c&gt;
+&lt;p&gt;And if you do that, you'll notice that Perl won't mess with any of the newlines, since it just slurps the entire file into &lt;c&gt;$_&lt;/c&gt; and doesn't add any newlines on output. (Note that if you're on Windows, you &lt;i&gt;may&lt;/i&gt; additionally have the &lt;c&gt;:crlf&lt;/c&gt; [doc://PerlIO] layer to contend with depending on which of the variants above you use.)&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Updated the example above to show the difference between &lt;c&gt;-l0p&lt;/c&gt; (&lt;c&gt;-l&lt;/c&gt; with octnum=0) and &lt;c&gt;-lp0&lt;/c&gt; (&lt;c&gt;-l&lt;/c&gt; with no octnum plus &lt;c&gt;-0&lt;/c&gt;).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11166593</root_node>
+<parent_node field_name="parent_node">11166593</parent_node>
+<thread id="11166593">
+<node id="11166594"><node id="11166595"><node id="11166596"/>
+<node id="11166598"><node id="11166600"/>
+</node>
+</node>
+<node id="11166597"><node id="11166618"><node id="11166628"/>
+</node>
+</node>
+</node>
+</thread></node>

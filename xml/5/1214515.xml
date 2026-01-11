@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1214515" title="Re: replace multiple newline characters" created="2018-05-14 23:43:44" updated="2018-05-14 23:43:44" _doctext_mode="lenient"><type id="11">note</type>
+<author id="634253">AnomalousMonk</author>
+<doctext field_name="doctext">&lt;p&gt;
+Since you're already reading the entire input at once, read it all into a scalar with something like &lt;br&gt;
+&lt;c&gt;    my $input = do { local $/;  &lt;FILE&gt;; };&lt;/c&gt; &lt;br&gt; 
+and then
+&lt;c&gt;
+c:\@Work\Perl\monks&gt;perl -wMstrict -le
+"my $input = qq{line1\nline2\n\nline4\n\n\nline7\nline8\n};
+ print qq{[[$input]]};
+ ;;
+ $input =~ s{ ^ \s* \n }{}xmsg;
+ print qq{&lt;&lt;$input&gt;&gt;};
+"
+[[line1
+line2
+
+line4
+
+
+line7
+line8
+]]
+&lt;&lt;line1
+line2
+line4
+line7
+line8
+&gt;&gt;
+&lt;/C&gt;
+&lt;/P&gt;
+
+&lt;p&gt;
+&lt;b&gt;Update 1:&lt;/B&gt; Or, if you need to read all the lines of the file as separate lines and keep them that way, try &lt;br&gt;
+&lt;c&gt;    my @lines = grep !m{ \A \s* \Z }xms, &lt;FILE&gt;;&lt;/c&gt; &lt;br&gt; 
+&lt;c&gt;
+c:\@Work\Perl\monks&gt;perl -wMstrict -le
+"my @lines = (
+   qq{line1\n}, qq{line2\n}, qq{\n}, qq{line4\n}, qq{ \t\n},
+   qq{\t \t \n}, qq{line7\n}, qq{line8\n},
+   );
+ print qq{[[@lines]]};
+ ;;
+ @lines = grep !m{ \A \s* \Z }xms, @lines;
+ print qq{&lt;&lt;@lines&gt;&gt;};
+"
+[[line1
+ line2
+
+ line4
+
+
+ line7
+ line8
+]]
+&lt;&lt;line1
+ line2
+ line4
+ line7
+ line8
+&gt;&gt;
+&lt;/C&gt;
+&lt;/P&gt;
+
+&lt;p&gt;
+&lt;b&gt;Update 2:&lt;/B&gt; Slight formatting fix to code in Update 1; no functional change.
+&lt;/P&gt;
+
+&lt;p&gt;
+&lt;b&gt;Update 3:&lt;/B&gt; Rather than using &lt;br&gt;
+&lt;c&gt;    !m{ \A \s* \Z }xms&lt;/c&gt; &lt;br&gt; 
+to [doc://grep] lines in the code in Update 1, I think I'd prefer &lt;br&gt;
+&lt;c&gt;    m{ \S }xms&lt;/c&gt; &lt;br&gt; 
+as used by [Marshall] [id://1214516|here]; don't know why I didn't use it in the first place. Note that no logical negation is needed.
+&lt;/P&gt;
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-634253"&gt;
+&lt;hr&gt;&lt;p&gt;Give a man a fish&lt;b&gt;:&lt;/B&gt; &lt;c&gt; &lt;%-{-{-{-&lt;&lt;/C&gt;&lt;/P&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1214514</root_node>
+<parent_node field_name="parent_node">1214514</parent_node>
+<thread id="1214514">
+<node id="1214515"/>
+<node id="1214516"/>
+<node id="1214517"/>
+<node id="1214525"><node id="1214527"><node id="1214530"><node id="1214531"><node id="1214532"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1214529"/>
+</thread></node>

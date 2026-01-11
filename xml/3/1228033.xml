@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228033" title="Re: Comparing string hex / korean (updated)" created="2019-01-04 09:38:27" updated="2019-01-04 09:38:27" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Assuming the hex string &lt;del&gt;is&lt;/del&gt;&lt;ins&gt;represents&lt;/ins&gt; UTF-8, you could do this:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use open qw/:std :utf8/;
+use HTML::Entities qw/decode_entities/;
+
+my $x = '&amp;#47532;&amp;#51089;';
+my $xd = decode_entities($x);
+
+my $y = '\\xeb\\xa6\\xac\\xec\\x9e\\x91';
+(my $yd = $y) =~ s/\\x([0-9a-f]{2})/chr hex $1/eig;
+utf8::decode($yd);
+
+print "$x =&gt;$xd&lt;=\n";
+print "$y =&gt;$yd&lt;=\n";
+
+if ( $xd eq $yd ) { print "Match!\n" }
+else { die "Mismatch!\n" }
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;pre&gt;
+&amp;amp;#47532;&amp;amp;#51089; =&amp;gt;&amp;#47532;&amp;#51089;&amp;lt;=
+\xeb\xa6\xac\xec\x9e\x91 =&amp;gt;&amp;#47532;&amp;#51089;&amp;lt;=
+Match!
+&lt;/pre&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; I realized it's unclear to me whether your original string was &lt;tt&gt;player=&amp;#47532;&amp;#51089;&lt;/tt&gt; or &lt;tt&gt;player=&amp;amp;#47532;&amp;amp;#51089;&lt;/tt&gt; - the latter happens on PerlMonks when you put Unicode characters into &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags. You'd have to use &lt;c&gt;&lt;pre&gt;&lt;/c&gt; or &lt;c&gt;&lt;tt&gt;&lt;/c&gt; tags instead, but then characters that have special meanings (either as HTML or by the PerlMonks engine) have to be escaped, such as &lt;c&gt;&lt;&lt;/c&gt;=&lt;c&gt;&amp;gt;&lt;/c&gt;, &lt;c&gt;&amp;&lt;/c&gt;=&lt;c&gt;&amp;amp;&lt;/c&gt;, &lt;c&gt;[&lt;/c&gt;=&lt;c&gt;&amp;#91;&lt;/c&gt;, etc. If your original string was &lt;tt&gt;player=&amp;#47532;&amp;#51089;&lt;/tt&gt;, then you don't need the &lt;c&gt;decode_entities&lt;/c&gt; step - but it &lt;i&gt;is&lt;/i&gt; necessary for the input string in &lt;c&gt;$cfg{'default.player'}&lt;/c&gt; to have been properly decoded first though (you can check this e.g. with [doc://Devel::Peek], [id://1227736|see also]).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1228028</root_node>
+<parent_node field_name="parent_node">1228028</parent_node>
+<thread id="1228028">
+<node id="1228032"/>
+<node id="1228033"/>
+<node id="1228035"/>
+<node id="1228036"/>
+</thread></node>

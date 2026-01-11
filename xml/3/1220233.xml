@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1220233" title="Re^2: More accurate way to calculate Date difference" created="2018-08-11 04:18:09" updated="2018-08-11 04:18:09" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Unfortunately, one has to be careful with [mod://DateTime::Duration] objects' accessors: &lt;c&gt;-&gt;month&lt;/c&gt; only returns the "months" &lt;i&gt;component&lt;/i&gt; of the difference. You usually want &lt;c&gt;-&gt;in_units&lt;/c&gt; instead, but note the limitations of conversion - for example, you can't convert a number of months to a number of days without knowing which months we're talking about (and that information is no longer available if we only have a duration), so you have to get both the months &lt;i&gt;and&lt;/i&gt; days, and &lt;c&gt;in_units&lt;/c&gt; will do the conversion from years to months for you.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime;
+
+my $dt1 = DateTime-&gt;new(year =&gt; 2013, month =&gt; 10, day =&gt;  1);
+my $dt2 = DateTime-&gt;new(year =&gt; 2018, month =&gt;  3, day =&gt; 31);
+
+my $dur1 = $dt2-&gt;subtract_datetime($dt1);
+print $dt1-&gt;ymd, " to ", $dt2-&gt;ymd, ": ",
+	$dur1-&gt;months, " months - oops!\n";
+
+my ($days,$months) = $dur1-&gt;in_units('days','months');
+print $dt1-&gt;ymd, " to ", $dt2-&gt;ymd, ": ",
+	"$months months, $days days", "\n";
+
+__END__
+
+2013-10-01 to 2018-03-31: 5 months - oops!
+2013-10-01 to 2018-03-31: 53 months, 30 days
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1220223</root_node>
+<parent_node field_name="parent_node">1220228</parent_node>
+<thread id="1220223">
+<node id="1220228"><node id="1220229"/>
+<node id="1220233"/>
+</node>
+<node id="1220230"/>
+<node id="1220231"/>
+<node id="1220235"/>
+</thread></node>

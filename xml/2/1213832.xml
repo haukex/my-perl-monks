@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1213832" title="Perl panicking XML::LibXML::Reader copyCurrentNode" created="2018-04-30 08:54:58" updated="2018-04-30 08:54:58" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1189588">IB2017</author>
+<doctext field_name="doctext">&lt;p&gt;Dear Monks&lt;/p&gt;
+&lt;p&gt;I am parsing an XML file using and the following (stripped down) code:&lt;/p&gt;
+&lt;code&gt;
+use strict;
+use warnings;
+use XML::LibXML::Reader;
+	
+my $XMLfile = 'myfile.xml';
+
+print "Parsing...\n";
+	
+	my $reader = 'XML::LibXML::Reader'-&gt;new(location =&gt; $XMLfile) or die print "Error";
+	my $entry_pattern = 'XML::LibXML::Pattern'-&gt;new('/martif/text/body/termEntry');
+	
+	my $counter=5000;
+	my $signalprint=0;
+	while ($reader-&gt;nextPatternMatch($entry_pattern)) {
+		my $ID;
+		my $value="";
+		my $info="";
+		
+		my $termEntry = $reader-&gt;copyCurrentNode(1);
+		for my $subject ($termEntry-&gt;findnodes('descripGrp')) {
+			$info = $subject-&gt;findvalue('./descrip');
+		}
+		for my $lang_set ($termEntry-&gt;findnodes('langSet')) {
+			my $ID = $lang_set-&gt;getAttribute('xml:lang');
+			for my $term_grp ($lang_set-&gt;findnodes('./tig')){
+				$value = $term_grp-&gt;findvalue('./term');
+			}
+		}
+		
+		$counter--;
+		
+		#committing to database every $counter executions
+		if ($counter eq 0){
+			$counter=5000;
+			$signalprint = $signalprint + $counter;
+			print "Done $signalprint\n";
+		}
+	}
+
+print "Finished!\n";
+&lt;/code&gt;
+&lt;p&gt;When the script reaches the end, perl crashes after printing Finished! I do not get any error message. It seems data were processed correctly. The problem must reside in this line &lt;code&gt;my $termEntry = $reader-&gt;copyCurrentNode(1);&lt;/code&gt;, as I get the same error further stripping down the code:&lt;/p&gt;
+&lt;code&gt;
+use strict;
+use warnings;
+use XML::LibXML::Reader;
+	
+my $XMLfile = 'myfile.xml';
+
+print "Parsing...\n";
+	
+	my $reader = 'XML::LibXML::Reader'-&gt;new(location =&gt; $XMLfile) or die print "Error";
+	my $entry_pattern = 'XML::LibXML::Pattern'-&gt;new('/martif/text/body/termEntry');
+	
+	while ($reader-&gt;nextPatternMatch($entry_pattern)) {
+		my $termEntry = $reader-&gt;copyCurrentNode(1);
+	}
+
+print "Finished!\n";
+&lt;/code&gt;
+&lt;p&gt;In this case the script goes through the whole XML till printing "Finished!" and crashes. Note that deleting the line &lt;code&gt;my $termEntry = $reader-&gt;copyCurrentNode(1);&lt;/code&gt; perl does not crash anymore. &lt;/p&gt;
+&lt;p&gt;Any idea?&lt;/p&gt;
+&lt;p&gt;I am on Windows 10 using perl 5.16&lt;/p&gt;
+&lt;p&gt;=================&lt;/p&gt;
+&lt;code&gt;
+ &lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE martif SYSTEM "TBXcoreStructV02.dtd"&gt;
+&lt;martif type="TBX-Default" xml:lang="en"&gt;
+  &lt;martifHeader&gt;
+    &lt;fileDesc&gt;
+      &lt;sourceDesc&gt;
+      &lt;/sourceDesc&gt;
+    &lt;/fileDesc&gt;
+    &lt;encodingDesc&gt;
+      &lt;p type="XCSURI"&gt;TBXXCS.xcs&lt;/p&gt;
+    &lt;/encodingDesc&gt;
+  &lt;/martifHeader&gt;
+  &lt;text&gt;
+  &lt;body&gt;
+      &lt;termEntry id="28836"&gt;
+        &lt;descripGrp&gt;
+          &lt;descrip type="subjectField"&gt;04&lt;/descrip&gt;
+          &lt;note&gt;economics,&lt;/note&gt;
+        &lt;/descripGrp&gt;
+        &lt;langSet xml:lang="en"&gt;
+          &lt;tig&gt;
+            &lt;term&gt;employment policy&lt;/term&gt;
+            &lt;termNote type="termType"&gt;fullForm&lt;/termNote&gt;
+            &lt;descrip type="reliabilityCode"&gt;3&lt;/descrip&gt;
+          &lt;/tig&gt;
+        &lt;/langSet&gt;
+        &lt;langSet xml:lang="nl"&gt;
+          &lt;tig&gt;
+            &lt;term&gt;werkgelegenheidsbeleid&lt;/term&gt;
+            &lt;termNote type="termType"&gt;fullForm&lt;/termNote&gt;
+            &lt;descrip type="reliabilityCode"&gt;3&lt;/descrip&gt;
+          &lt;/tig&gt;
+        &lt;/langSet&gt;
+      &lt;/termEntry&gt;
+    &lt;/body&gt;
+  &lt;/text&gt;
+&lt;/martif&gt;
+&lt;/code&gt;</doctext>
+<thread id="1213832">
+<node id="1213833"/>
+<node id="1213834"><node id="1213837"><node id="1213838"/>
+<node id="1213839"><node id="1213840"/>
+</node>
+</node>
+</node>
+</thread></node>

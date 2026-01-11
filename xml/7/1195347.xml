@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1195347" title="Making use of a hash of an array..." created="2017-07-18 11:46:56" updated="2017-07-18 11:46:56" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1189649">Peter Keystrokes</author>
+<doctext field_name="doctext">&lt;b&gt;&lt;p&gt;...which is populated through a loop and if statements&lt;/p&gt;&lt;/b&gt;
+
+So I have some data:
+&lt;code&gt; 
+&gt;hsa_circ_0075116|chr5:175956288-175956388-|NM_014901|RNF44  FORWARD
+-4.6      12 ..      35   xxxxGTGTGTGGTCT          GC TTCAGTGACTTCGAGGCGCG GC           AGCTGCTCCGAGTCC
+-5.5      11 ..      36   xxxxxGTGTGTGGTC         TGC TTCAGTGACTTCGAGGCGCG GCA          GCTGCTCCGAGTCCT
+-7.8      10 ..      37   xxxxxxGTGTGTGGT        CTGC TTCAGTGACTTCGAGGCGCG GCAG         CTGCTCCGAGTCCTC
+-4.3       9 ..      38   xxxxxxxGTGTGTGG       TCTGC TTCAGTGACTTCGAGGCGCG GCAGC        TGCTCCGAGTCCTCC
+-4.6      31 ..      41   CAGTGACTTCGAGGC                 GCGG CAG CTGC                 TCCGAGTCCTCCCCT
+-5.7      28 ..      44   CTTCAGTGACTTCGA              GGCGCGG CAG CTGCTCC              GAGTCCTCCCCTGCA
+-5.1      20 ..      49   GTGGTCTGCTTCAGT       GACTT CGAGGCGCGGCAGCTGCTCC GAGTC        CTCCCCTGCAACCAT
+-4.3      27 ..      56   GCTTCAGTGACTTCG       AGGCG CGGCAGCTGCTCCGAGTCCT CCCCT        GCAACCATGAGTTCC
+-5.6      31 ..      58   CAGTGACTTCGAGGC        GCGG CAGCTGCTCCGAGTCCTCCC CTGC         AACCATGAGTTCCAC
+-5.4      72 ..      82   GCAACCATGAGTTCC                 ACAC CAA GTGT                 GTTGACAAGTGGTTG
+-7.7      71 ..      83   TGCAACCATGAGTTC                CACAC CAA GTGTG                TTGACAAGTGGTTGA
+-4.2      70 ..      84   CTGCAACCATGAGTT               CCACAC CAA GTGTGT               TGACAAGTGGTTGAA
+&gt;hsa_circ_0014931|chr1:160293220-160293320-|NM_001098398|COPA  FORWARD
+-5.5      11 ..      36   xxxxxGGTCACGATC         GTG GAGTAAACTGGGCTGCCTTC CAC          CCCACTATGCCCCTT
+-4.5      22 ..      40   GATCGTGGAGTAAAC             TGGGCTG CCTTC CACCCCA             CTATGCCCCTTATTG
+-4.1      11 ..      41   xxxxxGGTCACGATC      GTGGAG TAAACTGGGCTGCCTTCCAC C-CCAC       TATGCCCCTTATTGT
+&lt;/code&gt;
+&lt;p&gt;And I want to create a hash which has the name of the sequence &lt;b&gt;'hsa_circ...'&lt;/b&gt; as the key and the hash itself will be an array, containing a series of 'starts' and 'ends' which are chosen after going through some conditional if statements.&lt;/p&gt;
+
+&lt;p&gt;For example with respect to &lt;b&gt;hsa_circ_0075116|chr5:175956288-175956388-|NM_014901|RNF44  FORWARD&lt;/b&gt; I want to capture this as the hash key. But then as I read the file in line by line I want to ask if statements regarding the start and end position values and then push them into the array of their respective hash.&lt;/p&gt;
+&lt;p&gt;So my problem is twofold:&lt;/p&gt;
+&lt;p&gt;(1) I want to be able to create a hash of arrays that is added to as the file is read&lt;/p&gt;
+&lt;p&gt;(2) I want to be able to read in line by line asking if statements of whether the start value and end value is within a positional vicinity of 6 such that it is essentially 1 hairpin and in which case I push into my array the start and end values which have the greatest range.&lt;/p&gt;
+For example in: 
+&lt;code&gt;
+-4.6      &lt;b&gt;12 ..      35&lt;/b&gt;   xxxxGTGTGTGGTCT          GC TTCAGTGACTTCGAGGCGCG GC           AGCTGCTCCGAGTCC
+-5.5      &lt;b&gt;11 ..      36&lt;/b&gt;   xxxxxGTGTGTGGTC         TGC TTCAGTGACTTCGAGGCGCG GCA          GCTGCTCCGAGTCCT
+-7.8      &lt;b&gt;10 ..      37&lt;/b&gt;   xxxxxxGTGTGTGGT        CTGC TTCAGTGACTTCGAGGCGCG GCAG         CTGCTCCGAGTCCTC
+-4.3       &lt;b&gt;9 ..      38&lt;/b&gt;   xxxxxxxGTGTGTGG       TCTGC TTCAGTGACTTCGAGGCGCG GCAGC        TGCTCCGAGTCCTCC
+-4.6      31 ..      41   CAGTGACTTCGAGGC                 GCGG CAG CTGC                 TCCGAGTCCTCCCCT
+&lt;/code&gt;
+The start positions and end positions surrounded by bold tags are essentially the same hairpin, so all except &lt;b&gt;9&lt;/b&gt; and &lt;b&gt;38&lt;/b&gt; will be ignored since it is this one that captures the hairpin best.
+&lt;p&gt;I am struggling to programmatically articulate these if statements though. Essentially I am trying to read each line capturing the values and assessing whether the next line bears values which are $start-1 and $end+1 and if they are, then they become the $start and $end and this is repeated until -/+6 of the orginal $start and $end value is reached &lt;/p&gt; 
+Trying to populate the hash of arrays:
+&lt;code&gt;
+#!/usr/bin/perl 
+use strict;
+use warnings;
+
+open my $hairpin_file, '&lt;', "test.hairpin", or die $!;
+
+my %HoA_sequences;
+
+while (my $line = &lt;$hairpin_file&gt;){
+	if ($line =~ /^&gt;hsa/){
+		$HoA_sequences{$line} = 
+## Do I provide the key for the hash as soon as I read in the line bearing the sequence name?
+## And can I create a hash with a key but no hash? I'm guessing not. :/
+	}
+
+}
+&lt;/code&gt;
+
+Trying to develop the if statements:
+&lt;code&gt;
+
+
+if ($line =~ /$RE{num}{real}\s+($RE{num}{real})\s..+($RE{num}{real})+/){
+	my $start = $1 &amp;&amp; my $end = $2;
+## Once captured how do I continue to the next line to query if the 
+## value is - or + of the start and end values
+}
+&lt;/code&gt;
+</doctext>
+<thread id="1195347">
+<node id="1195348"><node id="1195389"><node id="1195446"><node id="1195522"><node id="1195837"/>
+</node>
+</node>
+</node>
+<node id="1195514"><node id="1195521"><node id="1195523"/>
+</node>
+</node>
+</node>
+<node id="1195349"/>
+<node id="1195355"><node id="1195359"/>
+</node>
+</thread></node>

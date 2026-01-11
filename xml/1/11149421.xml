@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11149421" title="AUTOLOAD vs. DESTROY..." created="2023-01-07 16:40:07" updated="2023-01-07 16:40:07" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11149419">coreybrenner</author>
+<doctext field_name="doctext">Hi Monks,
+
+I'm looking to effect kind of a transparent nested active config system that stacks together as a configured object.
+
+Basically:
+&lt;code&gt;
+my $config = config(
+    bool   =&gt; true,
+    token =&gt; 'a single string',
+    value =&gt; [ 'a', 'list', 'of', 'strings' ],
+    blah   =&gt; store(   # This function leaves a "constructor" in the config, that generates a new object when traversed.
+        key =&gt; val, ...  # Object typed and configured by these arguments...
+    ),
+    ...
+);
+...
+my $object = Type-&gt;new($config);  # As Type builds an object, it references $config-&gt;value(), $config-&gt;token()...
+...
+my $widget = $config-&gt;{path/to/some/nested/doohickey};  # This is actually a nested tree traversal underneath...
+my $thingy = $widget-&gt;evaluate($with_this_context);
+&lt;/code&gt;
+I'd like to make this configuration overlay as transparent as possible, allowing AUTOLOAD to catch calls to dereference names in this config.
+The problem is, because I have this set up as a tied hash, I have a few methods that get caught before AUTOLOAD can inspect the argument list and determine how to proceed, like:
+&lt;code&gt;
+sub FETCH {
+    my $self = shift;
+    if (! @_) {
+        return $self-&gt;[0]-&gt;{FETCH};
+    }
+    ...
+}
+&lt;/code&gt;
+For methods like -&gt;FETCH, some loophole in the context can be figured out, and I can do the right thing.  I can later figure out a way to do:
+&lt;code&gt;
+$config-&gt;{FETCH} = SomeWidget-&gt;new(...);
+my $response = $config-&gt;FETCH-&gt;(
+    term =&gt; [ 'range', 'of', 'values' ], ...
+);
+&lt;/code&gt;
+But, this doesn't work for FIRSTKEY, DESTROY, etc.
+
+Is there any hole in the syntax that would allow me to detect a call to -&gt;DESTROY that should release resources, versus a call which should search for a value in a hash and return it?
+
+Maybe a feature in the interpreter that would allow me to say:
+&lt;code&gt;
+sub FIRSTKEY {
+    my $self = shift;
+    if (! @_) {
+        return $self-&gt;[0]-&gt;{FIRSTKEY};
+    }
+    # ... walk the tree to gather nested keys
+    $self-&gt;[1]-&gt;{iter} = \@list;
+    # $_[0] is an empty array provided by the machinery that calls -&gt;FIRSTKEY underneath.
+    my $name = shift(@list);
+    push(@{$_[0]}, $name); # Either way works...
+    return $name;
+}
+&lt;/code&gt;
+And so on?
+
+This would allow me to basically trap the corner cases and provide the proper action to my constructed objects, no matter what key is being fetched via AUTOLOAD.
+
+Ultimately, the goal is an active configuration object able to formulate answers to questions (like $config-&gt;CFLAGS) on the fly, for a simple build system prototype.  I'd just like to be able to not have to say:
+&lt;code&gt;
+# XXX: When dereferencing config keys, don't say -&gt;FIRSTKEY, -&gt;DESTROY, ...
+&lt;/code&gt;
+</doctext>
+<thread id="11149421">
+<node id="11149422"/>
+<node id="11149429"/>
+</thread></node>

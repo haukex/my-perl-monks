@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228944" title="Perl version dependent code" created="2019-01-24 15:09:37" updated="2019-01-24 15:09:37" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="625150">Wyrdweaver</author>
+<doctext field_name="doctext">I'm attempting to use case folding, when available, as the "more correct" version of case-insensitive string comparisons. However, it's only available for versions of Perl from v5.16 onwards, and I'd like to maintain backward compatibility (back to v5.8.8). So, I have a small section of version dependent code. My current solution uses stringy eval to protect it from compilation error in earlier Perl versions:
+
+&lt;code&gt;
+use strict;
+use warnings;
+use utf8;
+use 5.008008;   # minimum perl version ## v5.8.8 ~ required for decent basic Unicode support
+
+my @list = qw/ Foo bAR baZ /;
+
+if ( $] ge '5.016' ) {
+    ## no critic ( ProhibitStringyEval RequireCheckingReturnValueOfEval )
+    eval q/@list = sort { ( CORE::fc $a ) cmp ( CORE::fc $b ) } @list;/
+    }
+else { @list = sort { ( lc $a ) cmp ( lc $b ) } @list; }
+
+print qq/[ @list ]/,"\n";
+&lt;/code&gt;
+
+&lt;p&gt;It works but seems a bit crufty to me. I'd love to hear opinions or about any alternative formulations.&lt;/p&gt;
+
+&lt;p&gt;Thanks.&lt;/p&gt;</doctext>
+<thread id="1228944">
+<node id="1228945"><node id="1228948"><node id="1228968"/>
+</node>
+<node id="1229322"><node id="1229337"><node id="1229389"/>
+</node>
+</node>
+</node>
+<node id="1228949"><node id="1228961"/>
+</node>
+<node id="1228987"/>
+</thread></node>

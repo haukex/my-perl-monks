@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200430" title="Re: How to tie a lexical filehandle." created="2017-09-30 13:57:39" updated="2017-09-30 13:57:39" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I know this is an older post, but I thought you might be interested that I just released version 0.06 of [mod://Tie::Handle::Base] (&lt;strike&gt;it's part of [dist://File-Replace], but&lt;/strike&gt; it don't require any non-core modules &lt;strike&gt;except for testing&lt;/strike&gt; &lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; as of 0.16, it's now in its own distribution, and it doesn't require any non-core modules). In particular, I thought the "Debugging" example might help you with your &lt;c&gt;MyTie&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+{
+	package MyTie;
+	use parent 'Tie::Handle::Base';
+	use Class::Method::Modifiers qw/before around/;
+	use Data::Dump;
+	for my $method (@Tie::Handle::Base::ALL_METHODS) {
+		before $method =&gt; sub { dd $method, @_[1..$#_] };
+	}
+	around 'READLINE' =&gt; sub {
+		my $orig = shift;
+		my @a = wantarray ? ($orig-&gt;(@_)) : (scalar $orig-&gt;(@_));
+		main::mySub(@a);
+		return  wantarray ? @a : $a[0];
+	};
+}
+
+use Data::Dump;
+sub mySub {
+	dd "mySub", @_;
+}
+
+#open my $fh = MyTie-&gt;new, '&lt;', 'mydata' or die $!;
+my $fh = MyTie-&gt;new(*DATA);
+my $line = &lt;$fh&gt;;
+print "Scalar: $line";
+$line = &lt;$fh&gt;;
+print "Scalar: $line";
+my @array = &lt;$fh&gt;;
+print "Array: ", @array;
+close $fh;
+
+__DATA__
+Foo
+Bar
+Quz
+Baz
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+("TIEHANDLE", *main::DATA)
+"READLINE"
+("mySub", "Foo\n")
+Scalar: Foo
+"READLINE"
+("mySub", "Bar\n")
+Scalar: Bar
+"READLINE"
+("mySub", "Quz\n", "Baz\n")
+Array: Quz
+Baz
+"CLOSE"
+"DESTROY"
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1193170</root_node>
+<parent_node field_name="parent_node">1193170</parent_node>
+<thread id="1193170">
+<node id="1193172"><node id="1193185"/>
+</node>
+<node id="1200430"/>
+</thread></node>

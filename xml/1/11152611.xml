@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11152611" title="Re: perlre inverse check for several patterns" created="2023-06-02 10:35:50" updated="2023-06-02 10:35:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;b&gt;[id://11116478|Do not use regular expressions to parse HTML/XML.]&lt;/b&gt; Assuming your input is indeed HTML, here's a possible solution using [mod://Mojo::DOM], based on my code [id://11135754|here].&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+print html_filter(&lt;&lt;'END_HTML', qw/pre strong i/), "\n";
+aaa&lt;pre&gt;bbb&lt;/pre&gt;ccc&lt;www&gt;&lt;i&gt;ddd&lt;/i&gt;&lt;strong&gt;eee&lt;/strong&gt;fff&lt;/www&gt;ggg
+END_HTML
+
+use Mojo::DOM;
+sub html_filter {
+	my $html = shift;
+	my %allowed = map {$_=&gt;1} @_;
+	my $walk; $walk = sub {
+		my ($in, $out) = @_;
+		for my $n ( @{ $in-&gt;child_nodes } ) {
+			if ( $n-&gt;type eq 'cdata' || $n-&gt;type eq 'text' )
+				{ $out-&gt;append_content($n-&gt;content) }
+			elsif ( $n-&gt;type eq 'tag' ) {
+				if ($allowed{$n-&gt;tag}) {
+					my $t = $out-&gt;new_tag( $n-&gt;tag, %{$n-&gt;attr} )
+						-&gt;child_nodes-&gt;first;
+					$walk-&gt;($n, $t);
+					$out-&gt;append_content($t);
+				} else { $walk-&gt;($n, $out) }
+			} # ignore other node types for now
+		}
+		return $out;
+	};
+	return $walk-&gt;(Mojo::DOM-&gt;new($html), Mojo::DOM-&gt;new)-&gt;to_string;
+}
+
+__END__
+
+aaa&lt;pre&gt;bbb&lt;/pre&gt;ccc&lt;i&gt;ddd&lt;/i&gt;&lt;strong&gt;eee&lt;/strong&gt;fffggg
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11152608</root_node>
+<parent_node field_name="parent_node">11152608</parent_node>
+<thread id="11152608">
+<node id="11152610"><node id="11152612"><node id="11152626"><node id="11152635"><node id="11152641"/>
+</node>
+</node>
+<node id="11152651"/>
+</node>
+</node>
+<node id="11152611"/>
+<node id="11152613"/>
+<node id="11152615"/>
+<node id="11152636"/>
+</thread></node>

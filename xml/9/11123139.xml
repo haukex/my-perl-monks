@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11123139" title="Re: Applying regex to each line in a record." created="2020-10-24 18:26:20" updated="2020-10-24 18:26:20" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Even after multiple attempts, I am at a total loss of how the "m" and "s" works for regex.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;ul&gt;
+	&lt;li&gt;&lt;b&gt;&lt;c&gt;/m&lt;/c&gt;&lt;/b&gt; changes the meaning of &lt;c&gt;^&lt;/c&gt; and &lt;c&gt;$&lt;/c&gt;:
+	&lt;ul&gt;
+		&lt;li&gt;Without &lt;c&gt;/m&lt;/c&gt;,
+		&lt;ul&gt;
+			&lt;li&gt;&lt;c&gt;^&lt;/c&gt; matches only at the very beginning of the string. (This is the same as &lt;c&gt;\A&lt;/c&gt;, except that &lt;c&gt;\A&lt;/c&gt; is not affected by &lt;c&gt;/m&lt;/c&gt;.)&lt;/li&gt;
+			&lt;li&gt;&lt;c&gt;$&lt;/c&gt; matches at the very end of the string, but if the string ends with &lt;c&gt;\n&lt;/c&gt;, it will match just before and just after this &lt;c&gt;\n&lt;/c&gt;. (This is the same as &lt;c&gt;\Z&lt;/c&gt;, except that &lt;c&gt;\Z&lt;/c&gt; is not affected by &lt;c&gt;/m&lt;/c&gt;.)&lt;/li&gt;
+		&lt;/ul&gt;
+		&lt;/li&gt;
+		&lt;li&gt;With &lt;c&gt;/m&lt;/c&gt;,
+		&lt;ul&gt;
+			&lt;li&gt;&lt;c&gt;^&lt;/c&gt; matches at the very beginning of the string, and just after any &lt;c&gt;\n&lt;/c&gt;, except if the &lt;c&gt;\n&lt;/c&gt; is the last character in the string. In other words, it matches at the beginning of each line within the string.&lt;/li&gt;
+			&lt;li&gt;&lt;c&gt;$&lt;/c&gt; matches just before each &lt;c&gt;\n&lt;/c&gt;, in other words before the end of every line within the string, and at the very end of the string.&lt;/li&gt;
+		&lt;/ul&gt;
+		&lt;/li&gt;
+	&lt;/ul&gt;
+	&lt;/li&gt;
+	&lt;li&gt;&lt;b&gt;&lt;c&gt;/s&lt;/c&gt;&lt;/b&gt; changes the meaning of &lt;c&gt;.&lt;/c&gt;:
+	&lt;ul&gt;
+		&lt;li&gt;Without &lt;c&gt;/s&lt;/c&gt;, &lt;c&gt;.&lt;/c&gt; matches anything except the newline, i.e. &lt;c&gt;[^\n]&lt;/c&gt;. In other words, a regex of &lt;c&gt;/.+/g&lt;/c&gt; is limited to matching one line within the string at a time.&lt;/li&gt;
+		&lt;li&gt;With &lt;c&gt;/s&lt;/c&gt;, &lt;c&gt;.&lt;/c&gt; matches absolutely any character, including &lt;c&gt;\n&lt;/c&gt;.&lt;/li&gt;
+	&lt;/ul&gt;
+	&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Note that &lt;c&gt;/m&lt;/c&gt; and &lt;c&gt;/s&lt;/c&gt; are completely independent of one another. Keep in mind that &lt;c&gt;^&lt;/c&gt; and &lt;c&gt;$&lt;/c&gt; are zero-width matches - for example, this means that with &lt;c&gt;$_ = "a\nb"&lt;/c&gt;, a regex of &lt;c&gt;/$/gm&lt;/c&gt; will match and leave the regex engine's position at &lt;i&gt;before&lt;/i&gt; the &lt;c&gt;\n&lt;/c&gt;*, and a following regex of &lt;c&gt;/./gs&lt;/c&gt; would then match that &lt;c&gt;\n&lt;/c&gt;. Here is some code to play around with (try changing the lists of &lt;c&gt;$str&lt;/c&gt;ings and &lt;c&gt;$regex&lt;/c&gt;es). As you can see, &lt;c&gt;/m&lt;/c&gt; really only becomes important if there are multiple &lt;c&gt;\n&lt;/c&gt;'s in the string. And of course there's the [https://webperl.zero-g.net/regex.html#flags=gm&amp;regex=%24&amp;samp1=a%0Ab%0Ac%0A|WebPerl Regex Tester] that visualizes this as well (modern browser required).&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use open qw/:std :utf8/;
+use Term::ANSIColor qw/colored/;
+
+for my $str ( "a","a\n","a\nb","a\n\nb","a\nb\nc\n","a\nb\nc\nd") {
+	for my $regex ( '/^/g','/^/gm','/$/g','/$/gm','/./g','/./gs' ) {
+		my $o = join( '', map { sprintf "%2s",
+			chr( $_&lt;0x21 ? 0x2400+$_ : $_==0x7F ? 0x2421 : $_ ) }
+				map ord, split //, $str )." ";
+		my @matches;
+		eval qq{ push \@matches, [[\@-],[\@+]] while \$str=~$regex ;1}
+			or die $@;
+		my ($matchcnt,%matches) = (1);
+		for my $match (@matches) {
+			my @pos = $match-&gt;[0][0]==$match-&gt;[1][0]
+				? ( $match-&gt;[0][0] * 2 )
+				: map { $_*2+1 } $match-&gt;[0][0]..$match-&gt;[1][0]-1;
+			for my $p (@pos) {
+				die "overlapping matches not supported"
+					if exists $matches{$p};
+				$matches{$p} = $matchcnt;
+			}
+		} continue { $matchcnt++ }
+		substr($o, $_, 1) = colored(['underline'], substr($o, $_, 1))
+			#"&lt;u&gt;".substr($o, $_, 1)."&lt;/u&gt;" # alternative for HTML
+			for sort { $b&lt;=&gt;$a } keys %matches;
+		printf "%6s: %s\n", $regex, $o;
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;pre&gt;
+  /^/g: &lt;u&gt; &lt;/u&gt;a 
+ /^/gm: &lt;u&gt; &lt;/u&gt;a 
+  /$/g:  a&lt;u&gt; &lt;/u&gt;
+ /$/gm:  a&lt;u&gt; &lt;/u&gt;
+  /./g:  &lt;u&gt;a&lt;/u&gt; 
+ /./gs:  &lt;u&gt;a&lt;/u&gt; 
+  /^/g: &lt;u&gt; &lt;/u&gt;a &amp;#9226; 
+ /^/gm: &lt;u&gt; &lt;/u&gt;a &amp;#9226; 
+  /$/g:  a&lt;u&gt; &lt;/u&gt;&amp;#9226;&lt;u&gt; &lt;/u&gt;
+ /$/gm:  a&lt;u&gt; &lt;/u&gt;&amp;#9226;&lt;u&gt; &lt;/u&gt;
+  /./g:  &lt;u&gt;a&lt;/u&gt; &amp;#9226; 
+ /./gs:  &lt;u&gt;a&lt;/u&gt; &lt;u&gt;&amp;#9226;&lt;/u&gt; 
+  /^/g: &lt;u&gt; &lt;/u&gt;a &amp;#9226; b 
+ /^/gm: &lt;u&gt; &lt;/u&gt;a &amp;#9226;&lt;u&gt; &lt;/u&gt;b 
+  /$/g:  a &amp;#9226; b&lt;u&gt; &lt;/u&gt;
+ /$/gm:  a&lt;u&gt; &lt;/u&gt;&amp;#9226; b&lt;u&gt; &lt;/u&gt;
+  /./g:  &lt;u&gt;a&lt;/u&gt; &amp;#9226; &lt;u&gt;b&lt;/u&gt; 
+ /./gs:  &lt;u&gt;a&lt;/u&gt; &lt;u&gt;&amp;#9226;&lt;/u&gt; &lt;u&gt;b&lt;/u&gt; 
+  /^/g: &lt;u&gt; &lt;/u&gt;a &amp;#9226; &amp;#9226; b 
+ /^/gm: &lt;u&gt; &lt;/u&gt;a &amp;#9226;&lt;u&gt; &lt;/u&gt;&amp;#9226;&lt;u&gt; &lt;/u&gt;b 
+  /$/g:  a &amp;#9226; &amp;#9226; b&lt;u&gt; &lt;/u&gt;
+ /$/gm:  a&lt;u&gt; &lt;/u&gt;&amp;#9226;&lt;u&gt; &lt;/u&gt;&amp;#9226; b&lt;u&gt; &lt;/u&gt;
+  /./g:  &lt;u&gt;a&lt;/u&gt; &amp;#9226; &amp;#9226; &lt;u&gt;b&lt;/u&gt; 
+ /./gs:  &lt;u&gt;a&lt;/u&gt; &lt;u&gt;&amp;#9226;&lt;/u&gt; &lt;u&gt;&amp;#9226;&lt;/u&gt; &lt;u&gt;b&lt;/u&gt; 
+  /^/g: &lt;u&gt; &lt;/u&gt;a &amp;#9226; b &amp;#9226; c &amp;#9226; 
+ /^/gm: &lt;u&gt; &lt;/u&gt;a &amp;#9226;&lt;u&gt; &lt;/u&gt;b &amp;#9226;&lt;u&gt; &lt;/u&gt;c &amp;#9226; 
+  /$/g:  a &amp;#9226; b &amp;#9226; c&lt;u&gt; &lt;/u&gt;&amp;#9226;&lt;u&gt; &lt;/u&gt;
+ /$/gm:  a&lt;u&gt; &lt;/u&gt;&amp;#9226; b&lt;u&gt; &lt;/u&gt;&amp;#9226; c&lt;u&gt; &lt;/u&gt;&amp;#9226;&lt;u&gt; &lt;/u&gt;
+  /./g:  &lt;u&gt;a&lt;/u&gt; &amp;#9226; &lt;u&gt;b&lt;/u&gt; &amp;#9226; &lt;u&gt;c&lt;/u&gt; &amp;#9226; 
+ /./gs:  &lt;u&gt;a&lt;/u&gt; &lt;u&gt;&amp;#9226;&lt;/u&gt; &lt;u&gt;b&lt;/u&gt; &lt;u&gt;&amp;#9226;&lt;/u&gt; &lt;u&gt;c&lt;/u&gt; &lt;u&gt;&amp;#9226;&lt;/u&gt; 
+  /^/g: &lt;u&gt; &lt;/u&gt;a &amp;#9226; b &amp;#9226; c &amp;#9226; d 
+ /^/gm: &lt;u&gt; &lt;/u&gt;a &amp;#9226;&lt;u&gt; &lt;/u&gt;b &amp;#9226;&lt;u&gt; &lt;/u&gt;c &amp;#9226;&lt;u&gt; &lt;/u&gt;d 
+  /$/g:  a &amp;#9226; b &amp;#9226; c &amp;#9226; d&lt;u&gt; &lt;/u&gt;
+ /$/gm:  a&lt;u&gt; &lt;/u&gt;&amp;#9226; b&lt;u&gt; &lt;/u&gt;&amp;#9226; c&lt;u&gt; &lt;/u&gt;&amp;#9226; d&lt;u&gt; &lt;/u&gt;
+  /./g:  &lt;u&gt;a&lt;/u&gt; &amp;#9226; &lt;u&gt;b&lt;/u&gt; &amp;#9226; &lt;u&gt;c&lt;/u&gt; &amp;#9226; &lt;u&gt;d&lt;/u&gt; 
+ /./gs:  &lt;u&gt;a&lt;/u&gt; &lt;u&gt;&amp;#9226;&lt;/u&gt; &lt;u&gt;b&lt;/u&gt; &lt;u&gt;&amp;#9226;&lt;/u&gt; &lt;u&gt;c&lt;/u&gt; &lt;u&gt;&amp;#9226;&lt;/u&gt; &lt;u&gt;d&lt;/u&gt; 
+&lt;/pre&gt;
+&lt;p&gt;* &lt;i&gt;Update:&lt;/i&gt; Note that [doc://perlre#Repeated-Patterns-Matching-a-Zero-length-Substring] is relevant here ([id://11128777|example]).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11123126</root_node>
+<parent_node field_name="parent_node">11123126</parent_node>
+<thread id="11123126">
+<node id="11123129"/>
+<node id="11123130"/>
+<node id="11123133"><node id="11123136"/>
+</node>
+<node id="11123134"/>
+<node id="11123135"><node id="11123138"><node id="11123150"/>
+</node>
+</node>
+<node id="11123137"/>
+<node id="11123139"><node id="11123154"/>
+</node>
+<node id="11123145"><node id="11123153"/>
+</node>
+<node id="11123165"/>
+</thread></node>

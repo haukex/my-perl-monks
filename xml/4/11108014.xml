@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108014" title="forked process silently dies without coredump. No clue what's going on" created="2019-10-27 08:18:36" updated="2019-10-27 08:18:36" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="566140">marcelser</author>
+<doctext field_name="doctext">Hi,
+
+I have a script that forks itself into background and after some other work it checks system load with Linux::loadavg. At first I also tried Sys::Statistics::Linux::LoadAVG. Whatever I try when the system load is higher and loop which check it kicks in after 2-3 iterations the process just silently dies. At first I tried wrapping it in an eval block. Then I enabled core dumps on my machine and at least I tried to use Debug::FaultAutoBT to check why the process is just dying.
+
+Here's the sub which checks for systemload which just dies after 2-3 iterations in the loop
+&lt;code&gt;
+# config
+my $avg1_limit = '4.0';
+my $avg5_limit = '2.0';
+
+sub check_load {
+  DEBUG("Enabling Auto Backtrace with output directory: '" . $tmp_dir . "'");
+  Debug::FaultAutoBT-&gt;new(dir =&gt; "$tmp_dir")-&gt;ready;
+  my $current_dir = getcwd;
+  DEBUG("check load is running from directory: '" . $current_dir . "'");
+  my @avgs = loadavg();
+  my $load = { avg_1 =&gt; $avgs[LOADAVG_1MIN], avg_5 =&gt; $avgs[LOADAVG_5MIN], avg_15 =&gt; $avgs[LOADAVG_15MIN] };
+  my $dumper = Data::Dumper-&gt;new([$load],[qw($load)]);
+
+  DEBUG("current system load is: " . $dumper-&gt;Dump());
+
+  INFO("waiting for loads to drop below '1 min=$avg1_limit, 5 min=$avg5_limit'");
+  eval {
+          while ($load-&gt;{'avg_1'} &gt; $avg1_limit or $load-&gt;{'avg_5'} &gt; $avg5_limit) {
+            sleep(5);
+            DEBUG('about to call "loadavg"');
+            @avgs = loadavg();
+            $load = { avg_1 =&gt; $avgs[LOADAVG_1MIN], avg_5 =&gt; $avgs[LOADAVG_5MIN], avg_15 =&gt; $avgs[LOADAVG_15MIN] };
+            DEBUG("... re-ckeck system load: " . $dumper-&gt;Dump());
+          }
+  };
+  if ($@) {
+    ERROR "failed checking load, error: $@";
+  }
+  else {
+    DEBUG "while loop ended nicely";
+  }
+  INFO("finished waiting, system load is now: " . Data::Dumper-&gt;Dump([$load],[qw($load)]));
+}
+&lt;/code&gt;
+
+Maybe also interesting is that I use Log4Perl to print DEBUG messages to logfile. Here's what it looks like when it stops in the middle of nowhere.
+&lt;code&gt;
+2019/10/24 04:56:21 DEBUG [29280] Enabling Auto Backtrace with output directory: '/tmp/cores'
+2019/10/24 04:56:21 DEBUG [29280] check load is running from directory: '/'
+2019/10/24 04:56:21 DEBUG [29280] current system load is: $load = {
+          'avg_5' =&gt; '2.34',
+          'avg_1' =&gt; '2.31',
+          'avg_15' =&gt; '2.28'
+        };
+2019/10/24 04:56:21 INFO [29280] waiting for loads to drop below '1 min=4.0, 5 min=2.0'
+2019/10/24 04:56:26 DEBUG [29280] about to call "loadavg"
+2019/10/24 04:56:26 DEBUG [29280] ... re-ckeck system load: $load = $load;
+2019/10/24 04:56:31 DEBUG [29280] about to call "loadavg"
+2019/10/24 04:56:31 DEBUG [29280] ... re-ckeck system load: $load = $load;
+&lt;/code&gt;
+
+What's puzzling me here actuall is the 2nd and following print of the Dumper so the lines starting with "... re-check system load" which pints just $load = $load instead of $load = { .... } but even without this message the script just stops here dead in its tracks without triggerint Debug::FaultAutoBT or producing a coredump.
+
+I'm trying to figure why this isn't working since weeks now and I'm really out of ideas. Maybe it has to do with the fact that it's forked background process or that it repeatedly calls loadavg but I think it must be something else.
+
+Any help is greatly appreciated cause I'm really starting to question perl here greatly. I've actually 10+ year of pressional perl experience but I never encountered a think like this...
+
+</doctext>
+<thread id="11108014">
+<node id="11108015"/>
+<node id="11108016"><node id="11108167"><node id="11108170"/>
+</node>
+</node>
+<node id="11108027"><node id="11108166"><node id="11108209"/>
+</node>
+</node>
+</thread></node>

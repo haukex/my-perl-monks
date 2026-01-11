@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1164686" title="Sort mechanics problems with objects and potentially contradicting comparisons (would cause infinite loop)" created="2016-06-01 11:29:57" updated="2016-06-01 11:29:57" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="468275">anonymized user 468275</author>
+<doctext field_name="doctext">I am running 64 bit active perl v5.22.1 on a windows 10 dual AMD box.
+
+I am writing a generic database load routine that reads a CSV per table and generates and executes SQL into Postgres.
+
+The CSV's have table declarations first followed by a token __COLUMNS__ followed by the data to insert in the table.
+
+One of the table declarations I configure takes the form:
+
+"FK", local column, foreign table name, foreign PK.
+
+So I have to sort the CSVs so that wherever such a declaration exists, the foreign table is created before the table in which the FK declaration is made.
+
+For simplicity, I load all the CSVs first into a hash of array of array, table name is hash key with value being the CSV data for that table.
+
+Some issues and points of interest arise from this.
+&lt;p&gt;
+1) Given the basics of the sorting (structure is in $cvsQ):
+&lt;code&gt;
+$obj-&gt;_getset('csvQ', $csvQ);
+for my $csvq ( sort _DBsort4create keys %$csvQ ) {
+    $obj-&gt;_getset('ar', $csvq);
+    $obj-&gt;_arr2db; # create and populate table
+}
+&lt;/code&gt;
+
+...the table names appear in pairs $a and $b and the sort routine needs access to $obj to compare the CSV data for the two tables. When I tried passing parameters to the sort routine or putting $obj-&gt; in front of the sort routine call, I got a syntax error. But when I removed the $obj-&gt; from the call, this corrected the syntax error. But strangely, the code below which shifts the first parameter magically DWIMmed by getting the right object...
+&lt;code&gt;
+sub _DBsort4create {
+    my $obj = shift;
+    my $csvref = $obj-&gt;_getset('csvQ');
+    die Dumper( $csvref-&gt;{$a} );
+    # next steps: 1) check for comparison already done
+    #             2) if so just return old result
+    #             3) get FK declaration, store implied
+    #                comparison unless contradicts history
+    #                if contradiction, give message that
+                     database design cannot be physically implemented
+}
+&lt;/code&gt;
+the above code therefore displayed a dump of the AoA for the first key about to be sorted in the HoAoA. So how did it acquire $obj as a parameter given that the sort routine is called bare? There is a CPAN module that provides a sort routine for objects but that isn't the same thing at all. I could pass the structure via a package variable but then I haved two evils to choose from: global variables versus undocumented features.
+&lt;p&gt;
+2) If $a does not reference $b or vice versa, I can return 0 otherwise I can optimise by retrieving a previous comparison of the same pair before delving into the structure if already compared. But the problem is that there could be circular references that cannot be pairwise detected which one would expect to cause sort to go into an infinite loop. So the second issue is: given the list of established pairwise comparisons, how to test for an implied contradiction with the current iteration of sort e.g. M &gt; N and N &gt; P but one of the current pair declares P &gt; M and so would cause an infinite loop if the sort routine were allowed to continue. And of course this suggests I need to do something other than pairwise sort in the first place.&lt;p&gt;
+The best idea I have is to build the history of comparisons as a list of groups (hashes) of comparisons instead of a list of comparisons, so that elements not explicitly sorted are left unsorted in each hash and the criteria for predicting an infinite loop becomes an attempt to put the same table in more than one group. Or perhaps someone has a less esoteric way to perform the test?
+&lt;p&gt;
+Many thanks!
+&lt;p&gt;
+Simon
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-468275"&gt;
+&lt;p&gt;&lt;i&gt;One world, one people&lt;/i&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1164686">
+<node id="1164688"><node id="1164691"><node id="1164693"/>
+<node id="1164694"><node id="1164696"><node id="1164697"/>
+</node>
+</node>
+<node id="1164703"/>
+</node>
+</node>
+<node id="1164689"><node id="1164692"><node id="1164705"/>
+</node>
+</node>
+<node id="1164690"><node id="1164704"><node id="1164709"><node id="1164735"><node id="1164739"/>
+<node id="1164744"><node id="1164747"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1164701"><node id="1164742"><node id="1164771"><node id="1164991"><node id="1165149"/>
+</node>
+</node>
+</node>
+<node id="1164777"/>
+</node>
+<node id="1164702"/>
+<node id="1164710"><node id="1164751"><node id="1164790"/>
+</node>
+<node id="1165724"/>
+</node>
+<node id="1164743"/>
+<node id="1164748"><node id="1164750"><node id="1164781"><node id="1165722"/>
+</node>
+</node>
+</node>
+</thread></node>

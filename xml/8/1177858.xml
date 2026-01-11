@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1177858" title="Re^4: Running Perl in an Expect loop" created="2016-12-15 11:43:11" updated="2016-12-15 11:43:11" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1177813">StoneLeopard</author>
+<doctext field_name="doctext">The issue is that the file syntax is *not* Perl, i.e. there can be things like this:
+
+&lt;code&gt;
+CHAIN&lt;%=$chain_num%&gt;_EN [&lt;%=$lsb%&gt;:&lt;%=$lsb++%&gt;] = 1'h0;
+&lt;/code&gt;
+
+&lt;p&gt;Even the format spec document suggests this approach "wrap all non-Perl chunks with prints, leaving the code snippets as is, and let Perl evaluate the whole thing".&lt;/p&gt;
+
+&lt;p&gt;The reason a simple eval() doesn't work is because there is Perl variable state that needs to be honored across the entire file (e.g. $lsb in the example above is set to 0 at the start and incremented a number of times through the file. Hence, we will need a full Perl process to evaluate the whole file.&lt;/p&gt;
+
+&lt;p&gt;In any case, after understanding the REPL issue, I broke up the processing into 2 sections:&lt;/p&gt;
+&lt;p&gt; * send the entire file to the Perl child process, and close the child's input filehandle&lt;/p&gt;
+&lt;p&gt; * then read back the generated output in a while loop&lt;/p&gt;
+&lt;p&gt; * if we encounter an "include" statement, then recursively restart the process with the new file.&lt;/p&gt;
+
+This works perfectly. Thanks for all the suggestions.
+&lt;p&gt;Pankaj&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1177816</root_node>
+<parent_node field_name="parent_node">1177840</parent_node>
+<thread id="1177816">
+<node id="1177824"><node id="1177839"><node id="1177840"><node id="1177858"><node id="1177887"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1177825"/>
+<node id="1177826"/>
+<node id="1177862"/>
+<node id="1177899"/>
+</thread></node>

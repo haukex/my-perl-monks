@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112736" title="Re^4: glob a folder of images, and open text doc, find the matches and move the images." created="2020-02-10 12:44:30" updated="2020-02-10 12:44:30" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1091372">flieckster</author>
+<doctext field_name="doctext">This is the full code image using. i added print for yours to see what it was doing, since it doesn't seem to find a match. 
+
+&lt;code&gt;
+#!/usr/bin/env perl -w
+use File::Find;
+use File::Copy;
+use File::Basename;
+use File::Basename;
+use File::Slurp;
+
+use POSIX qw(strftime);
+
+my $date = strftime("%m-%d-%y",localtime);
+my $time = strftime("%I:%M:%S",localtime);
+
+
+my $findme = "/Volumes/photorepos/Perl/SLAperlDropback/";
+my $file_loc = $findme. '2SLAday';
+my $filenames_to_putback = '/Volumes/photorepos/Perl/SLAperlDropback/dropback.txt';
+
+
+chdir($file_loc) or warn  "$!";
+@filesforeach = glob "*.*";
+my $filecount = @filesforeach;
+print "$filecount\n";
+chomp @filesforeach;
+foreach $file (@filesforeach){
+print "$file\n";
+
+
+
+open(my $fh, "&lt;", "$filenames_to_putback") or warn "$!\n";
+while (my $row = &lt;$fh&gt;) {
+  chomp $row;
+  print "$row\n";
+  
+my @line = $file;
+  for (@line) {
+    if ($_ =~ /$row/) {
+    chomp $_;
+  push @output, "found $_ that matched redo $file $row &lt;br&gt;";
+  move($_,$row) or warn "shit went wrong yo! $!\n";
+}
+}
+}
+}
+print "@output\n";
+&lt;/code&gt;
+
+i added an else statment to your code with a print out. 
+
+&lt;code&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use File::Copy 'move';
+
+my $findme = '/Volumes/photorepos/Perl/SLAperlDropback/';
+
+chdir($findme.'2SLAday') or die "chdir: $!";
+
+foreach my $file (glob "*.*") {
+	open my $fh, '&lt;', $findme.'dropback.txt' or die "open: $!";
+	while ( my $row = &lt;$fh&gt; ) {
+		chomp $row;
+		if ( $file =~ /$row/ ) {
+		print "$file\n";
+		print "$row\n";
+			move( $file, $row ) or die "move: $!";
+		}
+		else
+		{
+		print "$file has no match $!\n";
+		}
+	}
+}
+&lt;/code&gt;
+
+
+output had not match 
+
+&lt;code&gt;
+010011510005801_0669_main.psd has no match 
+010011510005801_0964_main.psd has no match 
+010011520006618_0964_main.psd has no match 
+010011520006618_5030_main.psd has no match 
+010011520006812_0670_main.psd has no match 
+010011520006812_0990_main.psd has no match 
+010011520006816_3034_main.psd has no match 
+010011520007257_0126_main.psd has no match 
+010011520007259_5031_main.psd has no match 
+010013000007469_4036_alternate1.psd has no match 
+010013000007469_4036_main.psd has no match 
+010013000007471_0990_alternate1.psd has no match 
+010013000007471_0990_main.psd has no match 
+080080520009970_0155_main.psd has no match 
+080081510009702_0001_alternate1.psd has no match 
+&lt;/code&gt;
+
+i'm guessing that there is no movement because it won't find a match due to the paths are being interpreted as regex when it comes to the filenames in each row. </doctext>
+<root_node field_name="root_node">11112693</root_node>
+<parent_node field_name="parent_node">11112727</parent_node>
+<thread id="11112693">
+<node id="11112698"><node id="11112710"><node id="11112727"><node id="11112736"><node id="11112737"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11112701"><node id="11112711"/>
+</node>
+<node id="11112738"/>
+</thread></node>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1161692" title="Re: comparing 2 arrays of hashes (updated)" created="2016-04-27 16:39:33" updated="2016-04-27 16:39:33" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [pearlgirl],&lt;/p&gt;
+&lt;p&gt;One trick you can use to compare the keysets of two hashes is to [doc://delete] a [doc://perldata#Slices|hash slice]:&lt;/p&gt;
+&lt;c&gt;
+my %hash1 = (a=&gt;4,b=&gt;5,c=&gt;6,d=&gt;7);
+my %hash2 = (a=&gt;4,b=&gt;5,c=&gt;6,e=&gt;7);
+
+# make a temp. copy of the keys of %hash1
+my %h1k = map {$_=&gt;1} keys %hash1;
+# delete from it all the keys present in %hash2
+delete @h1k{keys %hash2};
+# you're left with the keys that are only in %hash1
+print "hash1 only: $_\n" for keys %h1k;
+
+# and vice versa for %hash2:
+my %h2k = map {$_=&gt;1} keys %hash2;
+delete @h2k{keys %hash1};
+print "hash2 only: $_\n" for keys %h2k;
+
+__END__
+
+hash1 only: d
+hash2 only: e
+&lt;/c&gt;
+&lt;p&gt;If the hashes are small, the copying of the keysets should not be a problem. (see also update below)&lt;/p&gt;
+&lt;p&gt;There's also another trick, [doc://perlsub#Localized-deletion-of-elements-of-composite-types|delete local] (I haven't used this in production so I can't say if there might be caveats):&lt;/p&gt;
+&lt;c&gt;
+my %hash1 = (a=&gt;4,b=&gt;5,c=&gt;6,d=&gt;7);
+my %hash2 = (a=&gt;4,b=&gt;5,c=&gt;6,e=&gt;7);
+{
+    delete local @hash1{keys %hash2};
+    print "hash1 only: $_\n" for keys %hash1;
+}
+{
+    delete local @hash2{keys %hash1};
+    print "hash2 only: $_\n" for keys %hash2;
+}
+# %hash1 and %hash2 are unchanged here
+
+__END__
+
+hash1 only: d
+hash2 only: e
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; I find the first approach is particularly useful in situations where you don't need the hashes anymore afterwards, since then you don't need to make the temporary hash copies, you can just clobber the hashes directly and you only need one temporary copy of the keys:&lt;/p&gt;
+&lt;c&gt;
+my %hash1 = (a=&gt;4,b=&gt;5,c=&gt;6,d=&gt;7);
+my %hash2 = (a=&gt;4,b=&gt;5,c=&gt;6,e=&gt;7);
+
+# make a temp. copy of the keys of %hash1
+my @h1k = keys %hash1;
+# delete from %hash1 all the keys in %hash2
+delete @hash1{keys %hash2};
+# hash1 only has keys left that are unique to it
+print "hash1 only: $_\n" for keys %hash1;
+
+# delete from %hash2 all the keys from %hash1
+delete @hash2{@h1k};
+# you're left with the keys that are only in %hash2
+print "hash2 only: $_\n" for keys %hash2;
+
+__END__
+
+hash1 only: d
+hash2 only: e
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1161687</root_node>
+<parent_node field_name="parent_node">1161687</parent_node>
+<thread id="1161687">
+<node id="1161690"/>
+<node id="1161692"/>
+<node id="1161693"/>
+</thread></node>

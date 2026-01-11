@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1170561" title="Rename Windows files with Unicode chars" created="2016-08-26 21:32:41" updated="2016-08-26 21:32:41" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="445506">mnooning</author>
+<doctext field_name="doctext">&lt;p&gt;I get files in Windows 7 that have wide chars.  I need to rename them after stripping the non-ascii characters from them.  Opendir and then readdir (in a while clause) does not work because readdir does bytes!&lt;/p&gt;
+&lt;p&gt;Below is code that I also tried.&lt;/p&gt;
+&lt;br&gt;
+&lt;code&gt;
+# File name = a1.pl
+# Script to get rid of wide chars and non-ascii chars
+# in a Windows 7 file name.
+# This does not work.
+# In the Windows 7 file explorer, the file name shows as
+#             "z &amp;#8206;ay&amp;#8206;  &amp;#8206;Pow&amp;#8206;.mp4"
+# Note: There is at least one embedded wide char in the above
+#       pasted file name.
+#       The Windows 7 command promt shows the file name
+#       as
+#             "z ?ay?  ?Pow?.mp4".
+
+use 5.14.2;
+
+# From: how to read unicode filename
+# http://www.perlmonks.org/?node_id=536223
+open fList, '-|:encoding(UTF-16LE)', 'cmd /U /C dir /W';
+
+# Note: I tried to opendir and readdir.  I got the shortened
+#        8.3 character file name whenever a wide character
+#        was in the file name.  I could not rename.
+
+foreach (&lt;fList&gt;) {
+    utf8::encode($_);
+    my $orig_name = $_;
+    my $new_name = $_;
+    if ($new_name =~ m/.mp4/i) {
+	print " 1 orig_name is \"$orig_name\"\n";
+
+	$new_name =~ s![^[:ascii:]]!!ig;
+        print " 2 new name  is \"$new_name\"\n";
+	rename "$orig_name", "$new_name"; # Does not work
+    }
+    
+}
+
+__END__
+In the results below, note that the end double quotes are not
+at the end of the file name line!  That should not be!
+
+&gt;a1.pl
+ 1 orig_name is "z &amp;#915;ÇÄay&amp;#915;ÇÄ  &amp;#915;ÇÄPow&amp;#915;ÇÄ.mp4
+"
+ 2 new name  is "z ay  Pow.mp4
+"
+
+&lt;/code&gt;</doctext>
+<thread id="1170561">
+<node id="1170562"><node id="1170565"><node id="1170566"><node id="1170595"/>
+</node>
+</node>
+<node id="1170991"><node id="1171036"/>
+</node>
+<node id="1179804"><node id="1179805"/>
+<node id="1179807"/>
+</node>
+</node>
+</thread></node>

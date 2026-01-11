@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="663416" title="Re: Perl Cannot Be Parsed: A Formal Proof (meh)" created="2008-01-21 14:02:17" updated="2008-01-21 09:02:17" _doctext_mode="lenient"><type id="11">note</type>
+<author id="22609">tye</author>
+<doctext field_name="doctext">&lt;p&gt;
+Sorry, I don't buy this proof.  In the last code block:
+&lt;/p&gt;&lt;c&gt;
+sub halts {
+    my $machine = shift;
+    my $input = shift;
+    is_whatever_nullary(
+       qq{
+          run_turing_equivalent("\Q$machine\E", "\Q$input\E");
+          sub whatever() {};
+       }
+    )
+}
+&lt;/c&gt;&lt;p&gt;
+is_whatever_nullary() can certainly easily return a true value without having to execute run_turing_equivalent().  The whatever prototype is a compile-time property and the run-time impact of whatever run_turing_equivalent() does will not change the fact that whatever() is "nullary" at compile time.
+&lt;/p&gt;&lt;p&gt;
+But it is quite obvious that Perl code can't be reliably parsed without running Perl code by the simple example of:
+&lt;/p&gt;&lt;c&gt;
+BEGIN {
+    if(  0.5 &lt; rand()  ) {
+        eval "sub whatever() { }; 1" or die $@;
+    } else {
+        eval "sub whatever { }; 1" or die $@;
+    }
+}
+whatever  / 25 ; # / ; die "this dies!";
+&lt;/c&gt;&lt;p&gt;
+You can, of course, replace the above conditional with some high-falutin' comp sci construct of your choosing.  But I find that such just detracts from the obviousness.  You have to run "&lt;c&gt;0.5 &lt; rand()&lt;/c&gt;" in order to parse the last line of the above Perl code (which perl can parse differently each time that it is run, as shown below).
+&lt;/p&gt;&lt;c&gt;
+ &gt; perl -MO=Deparse above.pl
+# ...
+whatever / 25;
+- syntax OK
+
+ &gt; perl -MO=Deparse above.pl
+# ...
+whatever(/ 25 ; # /);
+die 'this dies!';
+- syntax OK
+&lt;/c&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-22609"&gt;&lt;p align="right"&gt;
+- [tye]&lt;tt&gt; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;&lt;/tt&gt;
+&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">663393</root_node>
+<parent_node field_name="parent_node">663393</parent_node>
+<thread id="663393">
+<node id="663406"><node id="663408"/>
+<node id="663409"><node id="663465"><node id="788601"/>
+</node>
+</node>
+<node id="663415"><node id="1212838"/>
+</node>
+</node>
+<node id="663416"><node id="663417"/>
+<node id="663422"><node id="663423"/>
+</node>
+<node id="663480"><node id="663485"/>
+<node id="663504"><node id="663542"/>
+</node>
+</node>
+</node>
+<node id="663419"/>
+<node id="663435"><node id="663459"><node id="663566"><node id="667960"/>
+</node>
+<node id="663570"/>
+</node>
+</node>
+<node id="663489"/>
+<node id="663651"><node id="663662"/>
+<node id="790977"/>
+</node>
+<node id="664070"><node id="664375"/>
+<node id="664604"><node id="664611"/>
+<node id="664621"><node id="664631"/>
+</node>
+</node>
+</node>
+<node id="665231"><node id="788424"/>
+</node>
+<node id="691380"><node id="691584"><node id="770827"><node id="774095"/>
+<node id="788435"/>
+</node>
+</node>
+</node>
+<node id="788460"><node id="788492"/>
+<node id="788801"/>
+</node>
+<node id="838889"><node id="838894"/>
+</node>
+<node id="840133"/>
+</thread></node>

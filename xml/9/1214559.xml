@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1214559" title="Re: Importing a variable into a package (updated)" created="2018-05-15 10:18:05" updated="2018-05-15 10:18:05" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The trick is that &lt;c&gt;*T::y = \"b";&lt;/c&gt; needs to happen at compile time. Try adding a &lt;c&gt;BEGIN&lt;/c&gt; to your first block and your code works. Remember that [doc://use|&lt;tt&gt;use Module &lt;i&gt;LIST&lt;/i&gt;;&lt;/tt&gt;] is equivalent to &lt;tt&gt;BEGIN { require Module; Module-&amp;gt;import( &lt;i&gt;LIST&lt;/i&gt; ); }&lt;/tt&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; I'm not completely sure how you're connecting this question to [id://1214051] - could you make that clearer? Without digging into the [mod://Text::Template] source code, I suspect that something &lt;i&gt;slightly&lt;/i&gt; different is going on there. First, note that fully qualified variable names (&lt;c&gt;$T::x&lt;/c&gt;) are exempt from [doc://strict] &lt;c&gt;vars&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Second, the above statement can be generalized to: Perl needs to know about the variable name before compiling a piece of code. That's why in your example, you need to move the "predeclaration" of &lt;c&gt;$T::y&lt;/c&gt; to the compile time before the runtime of the main script by placing it in a &lt;c&gt;BEGIN&lt;/c&gt; block (note you could also use the [doc://vars] pragma, which just hides the same thing behind a nicer syntax).&lt;/p&gt;
+&lt;p&gt;But if during the runtime of your main script, you compile and run another piece of code via [doc://require], [doc://do], or [doc://eval], then that code's compile time is later, during the runtime of your script (confused yet? &lt;c&gt;;-)&lt;/c&gt; see [doc://perlmod#BEGIN,-UNITCHECK,-CHECK,-INIT-and-END]). That means the following:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+eval ' package T; print "A: $x\n"; 1 ' or warn "A: $@";
+# =&gt; Global symbol "$x" requires explicit package name
+
+{ no warnings 'once'; *T::x = \"foo"; } # runtime of main!
+
+eval ' package T; print "B: $x\n"; 1 ' or warn "B: $@";
+# =&gt; now works
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1214558</root_node>
+<parent_node field_name="parent_node">1214558</parent_node>
+<thread id="1214558">
+<node id="1214559"><node id="1214621"><node id="1214717"/>
+</node>
+</node>
+</thread></node>

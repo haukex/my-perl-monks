@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117789" title="Re: Logic Help - Output to csv" created="2020-06-07 15:58:01" updated="2020-06-07 15:58:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Assuming that you need to figure out the columns dynamically, here's one way to do it:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+use Text::CSV;
+
+my $dom = XML::LibXML-&gt;load_xml(location =&gt; 'example.xml');
+
+my %items;
+for my $product ($dom-&gt;findnodes('/products/product')) {
+	my $sku = $product-&gt;findvalue('sku');
+	for my $downloads ($product-&gt;findnodes('downloads')) {
+		for my $group ($downloads-&gt;findnodes('group')) {
+			for my $group_items ($group-&gt;findnodes('group_items')) {
+				for my $item ($group_items-&gt;findnodes('item')) {
+					my $name = $item-&gt;findvalue('name');
+					my $url = $item-&gt;findvalue('url');
+					$items{$sku}{$name} = $url;
+				}
+			}
+		}
+	}
+}
+my @columns = sort keys %{{map {$_=&gt;1} map {keys %$_} values %items}};
+
+my $csv = Text::CSV-&gt;new({binary=&gt;1, auto_diag=&gt;2, eol=&gt;$/,
+	always_quote=&gt;1 });
+$csv-&gt;print(select, ["sku", @columns]);
+for my $sku (sort keys %items) {
+	$csv-&gt;print(select, [ $sku, map { $items{$sku}{$_} } @columns ]);
+}
+&lt;/c&gt;
+&lt;p&gt;Note that this does assume that SKUs and the item names per SKU are unique (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; in other words, that later &lt;c&gt;&lt;item&gt;&lt;/c&gt;s don't overwrite earlier ones in the &lt;c&gt;%items&lt;/c&gt; hash). Also, note that unless you need to separate out the &lt;c&gt;&lt;downloads&gt;&lt;/c&gt;, &lt;c&gt;&lt;group&gt;&lt;/c&gt;, or &lt;c&gt;&lt;group_items&gt;&lt;/c&gt; elements, you don't need all those nested loops, this produces the same output:&lt;/p&gt;
+&lt;c&gt;
+for my $product ($dom-&gt;findnodes('/products/product')) {
+	my $sku = $product-&gt;findvalue('sku');
+	for my $item ( $product-&gt;findnodes(
+			'downloads/group/group_items/item') ) {
+		my $name = $item-&gt;findvalue('name');
+		my $url = $item-&gt;findvalue('url');
+		$items{$sku}{$name} = $url;
+	}
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11117783</root_node>
+<parent_node field_name="parent_node">11117783</parent_node>
+<thread id="11117783">
+<node id="11117785"><node id="11117788"/>
+</node>
+<node id="11117789"/>
+<node id="11117793"><node id="11117794"><node id="11117806"/>
+<node id="11117831"/>
+</node>
+</node>
+<node id="11117800"><node id="11117814"/>
+</node>
+</thread></node>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="44722" title="On Parsing Perl" created="2000-12-03 23:21:44" updated="2005-08-15 07:45:00" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="9073">merlyn</author>
+<doctext field_name="doctext">{from an &lt;a href="news:alt.perl"&gt;alt.perl&lt;/a&gt; post I just made, reposted here to solicit feedback from fellow monks...}
+&lt;p&gt;
+&lt;blockquote&gt;
+&lt;code&gt;
+&gt;&gt;&gt;&gt;&gt; "Makhno" == Makhno  &lt;mak@imakhno.freeserve.co.uk&gt; writes:
+Makhno&gt; I'm thinking of writing a GUI Perl-syntax-aware editor, and
+Makhno&gt; wondering what's the best way to parse perl?  Highlighting
+Makhno&gt; reserved words is easy (using, eg, index()) but indentifying
+Makhno&gt; things like comments is a bit more difficult.
+
+Makhno&gt; A regex like /#.*\n/ will catch comments when they are used
+Makhno&gt; simply, ie:
+
+Makhno&gt; print "hello\n";  #print hello
+
+Makhno&gt; but will get it wrong when the '#' is used as part of a regex
+Makhno&gt; (or in a string)
+
+Makhno&gt; s#hello#goodbye#;
+Makhno&gt; print "will behave like a #comment";
+
+Makhno&gt; Does anybody have any ideas on how I go about parsing perl
+Makhno&gt; syntax in such a way, before I go to a lot of potentially
+Makhno&gt; unnecessary work?
+&lt;/code&gt;
+&lt;/blockquote&gt;
+Perl is extremely difficult to parse.  In fact, some would say
+impossible.
+&lt;p&gt;
+One thing that makes it difficult is the dual nature of a half dozen
+characters like "/".  If that / is being used in a place that's
+expecting an operator, it's divide.  If it's being used in a place
+that's expecting an operand, it's the beginning of a regular
+expression.  So you have to keep track at all times of whether
+you're looking for an operator or an operand.
+&lt;p&gt;
+"No problem", you say?  Quick... for the following, play
+the game of "regex or divide?"
+&lt;code&gt;
+        sin / ...
+        time / ...
+        localtime / ...
+        caller / ...
+        eof / ...
+&lt;/code&gt;
+Got those right?  How about these?
+&lt;code&gt;
+        use constant FOO =&gt; 35;
+        FOO / ...
+
+        use Fcntl qw(LOCK_SH);
+        LOCK_SH / ...
+&lt;/code&gt;
+OK, and now some of your own:
+&lt;code&gt;
+        sub no_args ();
+        sub one_arg ($);
+        sub normal (@);
+
+        no_args / ...
+        one_arg / ...
+        normal / ...
+&lt;/code&gt;
+Got those too?  How about these (same problem, different file):
+&lt;code&gt;
+        use Random::Module qw(aaa bbb ccc);
+        aaa / ...
+        bbb / ...
+        ccc / ...
+&lt;/code&gt;
+A little harder, eh?  So now you have to parse OUTSIDE the file to get
+your answer.  And as if that wasn't enough, let's get weird:
+&lt;code&gt;
+        BEGIN {
+          eval (time % 2 ? 'sub zany ();' : 'sub zany (@);');
+        }
+        zany / ...
+&lt;/code&gt;
+Quick, was &lt;!-- merlyn was here --&gt; that last one a divide or a regex start?
+&lt;p&gt;
+Why does it matter?  Look at this:
+&lt;code&gt;
+        sin  / 25 ; # / ; die "this dies!";
+        time / 25 ; # / ; die "this doesn't die";
+&lt;/code&gt;
+The first one is computing the &lt;tt&gt;sin&lt;/tt&gt; of the true/false value gotten by
+matching &lt;code&gt;" 25 ; # "&lt;/code&gt; against $_.  Then it dies.  The second one is
+computing the time of day divided by 25, then ignoring the comment.
+&lt;p&gt;
+Starting to see the trouble?
+&lt;p&gt;
+This leads people to say "the only thing which can parse Perl (the
+language) is perl (the binary)".  Maybe not for Perl6.  But for the
+Perl we know and can use today, certainly so.
+&lt;p&gt;-- &lt;a href="http://www.stonehenge.com/merlyn/"&gt;Randal L. Schwartz, Perl hacker&lt;/a&gt;&lt;/p&gt;</doctext>
+<thread id="44722">
+<node id="44723"><node id="44725"/>
+<node id="685865"/>
+<node id="777756"/>
+</node>
+<node id="44724"><node id="482844"/>
+</node>
+<node id="44737"/>
+<node id="44773"/>
+<node id="44814"><node id="44816"/>
+</node>
+<node id="736045"/>
+<node id="809400"/>
+<node id="11145418"><node id="11145419"/>
+<node id="11145420"><node id="11145421"><node id="11145426"/>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11136468" title="Parsing XML data and injecting it into new file" created="2021-09-05 11:46:26" updated="2021-09-05 11:46:26" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11136466">hosselausso</author>
+<doctext field_name="doctext">I have several xml files from where I want to read data and put it together in a single xml file.
+
+The origin files look all like this like this:
+
+&lt;code&gt;
+&lt;testsuites&gt;
+  &lt;testsuite name="test_suite_name" ...&gt;
+    &lt;testcase name="test1" .../&gt;
+    &lt;testcase name="test2" .../&gt;
+  &lt;testsuite name="some_name" ...&gt;
+&lt;/testsuites&gt;
+&lt;/code&gt;
+
+So, basically a single node "testsuite" which contains several "testcases" in each file.
+
+So I basically want to extract the "testsuite" node from each file and put it into a new file.
+I also would like to modify the attribute "name" of each testsuite.
+
+So far I have:
+
+&lt;code&gt;
+my $dom  = XML::LibXML::Document-&gt;new('1.0', 'utf-8');
+my $xml1 = XML::LibXML-&gt;load_xml(location =&gt; 'file1.xml');
+my $xml2 = XML::LibXML-&gt;load_xml(location =&gt; 'file2.xml');
+
+my $root = $dom-&gt;createElement('testsuites');
+$dom-&gt;setDocumentElement($root);
+
+my $testsuite1 = $xml1-&gt;findnodes('//testsuite');
+my $testsuite2 = $xml2-&gt;findnodes('//testsuite');
+
+my $child = $dom-&gt;createElement($testsuite1); # &lt;-- fails
+$root-&gt;appendChild($child);
+
+open XML, "&gt;result.xml";
+print XML $dom-&gt;toString();
+close XML;
+&lt;/code&gt;
+
+
+&lt;code&gt;$testsuite1&lt;/code&gt; is a &lt;code&gt;XML::LibXML::NodeList&lt;/code&gt; object type.
+Is there a way to use that object to inject it in some way to $doc?
+
+</doctext>
+<thread id="11136468">
+<node id="11136470"><node id="11136471"/>
+</node>
+</thread></node>

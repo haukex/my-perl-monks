@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1194601" title="Re: Is foreach split Optimized?" created="2017-07-09 07:56:29" updated="2017-07-09 07:56:29" _doctext_mode="lenient"><type id="11">note</type>
+<author id="992570">Laurent_R</author>
+<doctext field_name="doctext">Hi [haukex],
+&lt;p&gt;
+You might want to also try using a file handle opened on a reference to your string:
+&lt;c&gt;
+    filehandle =&gt; sub {
+        my @lines;
+        open my $str_fh, "&lt;", \$str or die "cannot open fh $!";
+        while (&lt;$str_fh&gt;) {
+            chomp;
+            s/o/i/g;
+            push @lines, $_;            
+        }
+    },
+&lt;/c&gt;
+This appears to be faster than your other subs, including the one with &lt;c&gt;split&lt;/c&gt; (note that I had to change the count value for the result to be meaningful):
+&lt;c&gt;
+$ perl bench_split.pl
+           s/iter      regex      index      split filehandle
+regex        3.44         --        -9%       -36%       -48%
+index        3.13        10%         --       -29%       -43%
+split        2.21        56%        42%         --       -19%
+filehandle   1.78        93%        76%        24%         --
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1194593</root_node>
+<parent_node field_name="parent_node">1194593</parent_node>
+<thread id="1194593">
+<node id="1194597"><node id="1194598"><node id="1194602"><node id="1194606"><node id="1194609"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1194601"><node id="1194605"><node id="1194614"/>
+<node id="1194620"><node id="1194804"/>
+</node>
+</node>
+</node>
+<node id="1194616"><node id="1194626"/>
+<node id="1194627"/>
+<node id="1194924"/>
+</node>
+<node id="1194625"><node id="1194802"/>
+</node>
+<node id="1194635"><node id="1194799"/>
+</node>
+</thread></node>

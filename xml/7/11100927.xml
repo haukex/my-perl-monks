@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100927" title="DBIx::Class::ResultSet having attr not working as documented" created="2019-06-03 19:07:00" updated="2019-06-03 19:07:00" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1219525">marlencrabapple</author>
+<doctext field_name="doctext">&lt;p&gt;I'm following the tutorial for &lt;a href="https://metacpan.org/pod/DBIx::Class::Migration::Tutorial" target="_blank"&gt;DBIx::Class::Migration&lt;/a&gt; and got to a &lt;a href="https://metacpan.org/pod/distribution/DBIx-Class-Migration/lib/DBIx/Class/Migration/Tutorial/Testing.pod" target="_blank"&gt;step&lt;/a&gt; where &lt;a href="https://metacpan.org/pod/DBIx::Class::ResultSet#having" target="_blank"&gt;DBIx::Class::ResultSet&lt;/a&gt;'s having attribute had two different syntaxes being used &lt;a href="https://metacpan.org/pod/distribution/DBIx-Class-Migration/lib/DBIx/Class/Migration/Tutorial/Setup.pod#Create-a-basic-Project-Skeleton" target="_blank"&gt;interchangeably&lt;/a&gt; (crtl+f ResultSet::Artist since its a little farther down from the linked section). The first/commented out one does not work (zero rows returned), but is documented as I've written it, and the second does (1 row returned). Am I overlooking something or is this a bug?&lt;/p&gt;
+
+&lt;code&gt;
+package MusicBase::Schema::ResultSet::Artist;
+
+use strict;
+use warnings;
+
+use base 'DBIx::Class::ResultSet';
+
+sub has_more_than_one_cds {
+  my $me = (my $self = shift)-&gt;current_source_alias;
+
+  my $rs = $self-&gt;search(
+    undef,
+    {
+      join =&gt; [ 'cd_rs' ],
+      '+select'=&gt; [ { count =&gt; 'cd_rs.cd_id', -as =&gt; 'cd_count' } ],
+      '+as'=&gt; [ 'cd_count' ],
+      group_by =&gt; [ "$me.artist_id" ],
+
+      # having =&gt; { cd_count =&gt; { '&gt;', 1 } } # This does not work
+      having =&gt; { cd_count =&gt; \'&gt; 1' } # This does despite being
+                                       # undocumented
+    }
+  );
+
+  return $rs
+}
+ 
+1
+&lt;/code&gt;</doctext>
+<thread id="11100927">
+<node id="11100976"/>
+</thread></node>

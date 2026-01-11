@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11119439" title="On Backwards Compatibility and Bareword Filehandles" created="2020-07-17 00:33:47" updated="2020-07-17 00:33:47" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="1149436">jcb</author>
+<doctext field_name="doctext">&lt;p&gt;While participating in some of the recent discussions about plans for Perl 7 and the longer-term future of Perl, I found a solution that I wish to offer here.&lt;/p&gt;
+
+&lt;h4&gt;A Ground Rule&lt;/h4&gt;
+
+&lt;p&gt;First, I want to get what should be obvious as a ground rule:  &lt;i&gt;removing features from Perl requires significant justification, and style is &lt;b&gt;never&lt;/b&gt; enough to remove a feature&lt;/i&gt;.  The rationale for this rule is simple:  Perl has long held to TIMTOWTDI and style varies.  If we allow the precedent of removing features from the language because the pumpking thinks they are ugly, the next pumpking will have different tastes, and the next-next different tastes still &amp;mdash; the result will be a disaster reminiscent of &lt;i&gt;Fahrenheit 451&lt;/i&gt;.  &lt;small&gt;(In that story, banning all books grew out of lots of little bits of censorship.)&lt;/small&gt;&lt;/p&gt;
+
+&lt;p&gt;"There are some things you should learn to live without, even in Perl 5 land." is &lt;b&gt;not&lt;/b&gt; an appropriate attitude to take, and that quote is from the [https://www.perl.com/article/announcing-perl-7/|Perl 7 announcement].&lt;/p&gt;
+
+&lt;h5&gt;What is significant justification?&lt;/h5&gt;
+
+&lt;p&gt;This is a good question.  I believe that reasonable people can agree that style is not enough, particularly with a language that touts TIMTOWTDI as Perl does, but what &lt;b&gt;is&lt;/b&gt; good enough?&lt;/p&gt;
+
+&lt;p&gt;I will argue that significant improvements to the interpreter can justify at least some changes.  Significant improvements in compatibility can justify broader use of UTF-8 (as long as there is some pragma for treating strings as uninterpreted octet strings; handling binary data is one of Perl's strengths).  Rolling pragmas like &lt;c&gt;use strict;&lt;/c&gt; into defaults is reasonable, as long &lt;c&gt;no strict&lt;/c&gt; continues to exist.  (At least some useful metaprogramming requires &lt;c&gt;no strict 'refs';&lt;/c&gt; to install &lt;c&gt;sub&lt;/c&gt;s from templates.)&lt;/p&gt;
+
+&lt;h4&gt;Indirect Object syntax and Bareword Filehandles&lt;/h4&gt;
+
+&lt;p&gt;The proposal to remove these has caused much rancor, with justifications that only support removing either presented for removing both and flames producing far more heat than light.&lt;/p&gt;
+
+&lt;p&gt;The indirect object (IO) syntax seems to be a generalization of an older Input/Output (I/O) syntax that allowed &lt;c&gt;print FILEHANDLE EXPR&lt;/c&gt; instead of requiring the use of [doc://select] to change the default output handle.  This was generalized with the introduction of [module://IO::Handle] and can also be used to write code (particularly object constructors) that reads much like English:  &lt;c&gt;new Foo::Object (ARGS)&lt;/c&gt;; &lt;c&gt;kill $object with =&gt; 'fire'&lt;/c&gt;.&lt;/p&gt;
+
+&lt;p&gt;The IO syntax is not without its problems, however.  The historical similarity to the I/O syntax creates some parse conflicts and it is not possible to call a constructor named &lt;c&gt;open&lt;/c&gt; in IO syntax because of these parse conflicts, but I offer a solution in three parts:&lt;/p&gt;
+
+&lt;h5&gt;Regularized I/O&lt;/h5&gt;
+
+&lt;p&gt;The solution starts by regularizing all I/O handles into &lt;c&gt;=IO&lt;/c&gt; objects and eliminating the &lt;c&gt;*foo{IO}&lt;/c&gt; &lt;c&gt;GV&lt;/c&gt; slot.  This is entirely reasonable in a major release and can be done while breaking relatively little code.  This allows resolving the &lt;tt&gt;IO|I/O&lt;/tt&gt; parse conflict at last &amp;mdash; it is always an IO method call, with a small amount of new magic for &lt;c&gt;open&lt;/c&gt;:&lt;/p&gt;
+
+&lt;h5&gt;Lexical Bareword Filehandles&lt;/h5&gt;
+
+&lt;p&gt;Perl 5 allows &lt;c&gt;open my $foo, ...&lt;/c&gt; (lexical) and &lt;c&gt;open FOO, ...&lt;/c&gt; (traditional) for opening files.  Notably, &lt;i&gt;neither&lt;/i&gt; of these uses the IO syntax; they parse as &lt;c&gt;open( my $foo, ...)&lt;/c&gt; and &lt;c&gt;open( FOO, ...)&lt;/c&gt;.  I propose generalizing this to also allow &lt;c&gt;open our $foo, ...&lt;/c&gt; (to explicitly open a global filehandle; remember TIMTOWTDI) and &lt;c&gt;open state $foo, ...&lt;/c&gt; (a conditional open iff the lexical state variable $foo is currently &lt;c&gt;undef&lt;/c&gt; or a closed handle).  &lt;ins&gt;&lt;small&gt;&lt;b&gt;Update:&lt;/b&gt; As [haukex] [11119441|points out], this generalization was so obvious that it has already been done.&lt;/small&gt;&lt;/ins&gt;&lt;/p&gt;
+
+&lt;p&gt;The parser has enough information to take one step farther, as the title of this section suggests, and &lt;i&gt;make bareword filehandles lexical variables&lt;/i&gt;.  The &lt;c&gt;open&lt;/c&gt; keyword (when parsed as the builtin; distinguishable by the absence of "&lt;tt&gt;::&lt;/tt&gt;" in the bareword and the presence of a comma following the bareword) functions as a lexical filehandle declaration.  The parser raises an error if the new I/O variable would shadow any other bareword known to the parser, so these filehandles cannot conflict with &lt;c&gt;sub&lt;/c&gt; names or package names.  The new I/O variable carries an invisible sigil, so:&lt;/p&gt;
+&lt;code&gt;
+open FILE, '&lt;', $file or die "...";
+while (&lt;FILE&gt;) {
+  print if m/interesting/;
+  handle(FILE, 'that') if m/that/;
+}
+close FILE;
+&lt;/code&gt;
+&lt;p&gt;parses as if:  (with the invisible I/O sigil represented as &lt;c&gt;{I/O}&lt;/c&gt;)&lt;/p&gt;
+&lt;code&gt;
+open my {I/O}FILE, '&lt;', $file or die "...";
+while (&lt;{I/O}FILE&gt;) {
+  print if m/interesting/;
+  handle({I/O}FILE, 'that') if m/that/;
+}
+close {I/O}FILE;
+&lt;/code&gt;
+&lt;p&gt;which in turn is equivalent to:&lt;/p&gt;
+&lt;code&gt;
+open my {I/O}FILE, '&lt;', $file or die "...";
+while (defined($_ = {I/O}FILE-&gt;readline)) {
+  print $_ if $_ =~ m/interesting/;
+  handle({I/O}FILE, 'that') if $_ =~ m/that/;
+}
+{I/O}FILE-&gt;close;
+&lt;/code&gt;
+&lt;p&gt;with &lt;c&gt;sub handle&lt;/c&gt; like:&lt;/p&gt;
+&lt;code&gt;
+sub handle {
+  my $fh = shift;
+  my $what = shift;
+
+  ...
+}
+&lt;/code&gt;
+
+&lt;p&gt;As you can see, this provides an elegant solution for passing filehandles to subroutines while also bringing the typo protection afforded by declaring variables to bareword filehandles and solving most of the other problems.  The &lt;c&gt;{I/O}FILE&lt;/c&gt; variable only exists within the block where it was declared, so there is no risk of action at a distance and programs that relied on that action will fail to compile.  The &lt;c&gt;{I/O}FILE&lt;/c&gt; variable actually simply contains an &lt;c&gt;=IO&lt;/c&gt; object like any other, but the interpreter may be able to optimize with the knowledge that it will &lt;i&gt;always&lt;/i&gt; contain an &lt;c&gt;=IO&lt;/c&gt; object; there is no way to assign to an I/O variable other than [doc://open].&lt;/p&gt;
+
+&lt;h5&gt;One more small cleanup&lt;/h5&gt;
+
+&lt;p&gt;All this leaves an edge case that can finally be fixed:  using &lt;c&gt;open&lt;/c&gt; as a class method.  The parser can recognize barewords containing "&lt;c&gt;::&lt;/c&gt;" as &lt;tt&gt;PACKAGE&lt;/tt&gt; tokens; a &lt;tt&gt;PACKAGE&lt;/tt&gt; token in the slot for a named operator or &lt;c&gt;sub&lt;/c&gt; name is interpreted as a fully qualified &lt;c&gt;sub&lt;/c&gt; name, but &lt;tt&gt;BAREWORD PACKAGE EXPR&lt;/tt&gt; is a class method call on &lt;tt&gt;PACKAGE&lt;/tt&gt;.  Always; even if &lt;tt&gt;BAREWORD&lt;/tt&gt; is "&lt;c&gt;open&lt;/c&gt;".&lt;/p&gt;
+
+&lt;h4&gt;Thanks and Discussion&lt;/h4&gt;
+
+&lt;p&gt;I would like to thank my fellow monks with whom I have had much discussion on related topics, particularly [haukex], [LanX], [chromatic], and [WaywardCode], along with any others I have forgotten to mention here.  Lastly, I would like to thank &lt;i&gt;you&lt;/i&gt; for reading this and invite you to discuss below.&lt;/p&gt;</doctext>
+<thread id="11119439">
+<node id="11119441"><node id="11119471"><node id="11119472"><node id="11119474"><node id="11119476"/>
+</node>
+</node>
+<node id="11119481"><node id="11119493"><node id="11119502"><node id="11119509"/>
+</node>
+<node id="11119505"/>
+</node>
+<node id="11119508"/>
+</node>
+</node>
+</node>
+<node id="11119444"><node id="11119475"/>
+</node>
+<node id="11119461"><node id="11119470"><node id="11119501"><node id="11119511"><node id="11119515"><node id="11119531"><node id="11119532"><node id="11119533"><node id="11119534"><node id="11119617"/>
+</node>
+</node>
+</node>
+<node id="11119575"/>
+</node>
+</node>
+</node>
+<node id="11119514"/>
+</node>
+<node id="11119516"><node id="11119518"/>
+<node id="11119530"><node id="11119574"><node id="11119625"><node id="11119627"/>
+</node>
+</node>
+<node id="11119576"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11119462"><node id="11119473"><node id="11119500"><node id="11119510"/>
+</node>
+</node>
+</node>
+</thread></node>

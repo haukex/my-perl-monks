@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227935" title="Re: Contextual find and replace large config file" created="2019-01-02 12:27:11" updated="2019-01-02 12:27:11" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;It works fine (as long as the format does not change too much), however the more complex things that I want to do these kind of snippets tend to become very complex and difficult to maintain. ... I am looking for a very simple approach (search and replace, not reading the entire data file to memory)&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It depends a lot on how much you can trust how strict the configuration file format is. For example, if you can be absolutely certain that, like in your example, the opening and closing braces are always on a line by themselves, then it'd be possible to implement a fairly simple line-by-line parser that keeps the names of the current sections on a stack, so that you can differentiate between different nested sections that happen to have the same name - I'm thinking something like the following:&lt;/p&gt;
+&lt;readmore title="Example code"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+# $sep needs to be some char guaranteed not to be in the section name
+# (not the most elegant solution, but this isn't meant to be)
+my $sep = "\n";
+my $target_sec = "ObjectType1${sep}NestedObject";
+my $target_param = "Param1";
+my $replace_val = "Hello";
+
+my ($secname,@sec_stack,$cur_sec);
+while (&lt;DATA&gt;) {
+	next if /^\s*#/ || !/\S/;
+	if ( /^ (\s*) (.+?) \s* = \s* (.+?) \s* $/x ) {
+		die "section name without a following block"
+			if defined $secname;
+		my ($indent,$param,$val) = ($1,$2,$3);
+		if ($cur_sec eq $target_sec &amp;&amp; $param eq $target_param)
+			{ $_ = $indent.$param.' = '.$replace_val."\n" }
+	}
+	elsif ( /^ \s* (\w+) \s* $/x ) {
+		die "two section names following one another"
+			if defined $secname;
+		$secname = $1;
+	}
+	elsif ( /^ \s* \{ \s* $/x ) {
+		die "'{' without name" unless defined $secname;
+		push @sec_stack, $secname;
+		$cur_sec = join $sep, @sec_stack;
+		$secname = undef;
+	}
+	elsif ( /^ \s* \} \s* $/x ) {
+		die "section name without a following block"
+			if defined $secname;
+		die "'}' without '{'" unless @sec_stack;
+		pop @sec_stack;
+		$cur_sec = join $sep, @sec_stack;
+	}
+	else { die "Failed to parse '$_'" }
+	print $_;
+}
+
+__DATA__
+# comment
+ObjectType1
+{
+	Param1 = Foo
+	NestedObject
+	{
+		Param1 = Bar
+	}
+	# just another comment
+}
+
+ObjectType2
+{
+	Param1 = Quz
+	NestedObject
+	{
+		Param1 = Baz
+	}
+}
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;But once things start getting more complex, I'd recommend a "real" parser instead. You can check the [cpan://Config::] namespace to see if there happen to be any modules that match your config format. 500k lines isn't all too much to read into memory at once, IMO, unless you're running on some really memory-restricted machine. In the worst case, you can write a parser yourself, e.g. using the &lt;c&gt;m/\G.../gc&lt;/c&gt; technique (there's one example in the Perl docs in [doc://perlop#\G-_assertion_|perlop under "&lt;c&gt;\G&lt;/c&gt; assertion"]), or using a full grammar ([mod://Parse::RecDescent], [mod://Regexp::Grammars], [mod://Marpa::R2], ...).&lt;/p&gt;
+&lt;p&gt;Here's a solution using &lt;c&gt;m/\G.../gc&lt;/c&gt;, followed by a [mod://Regexp::Grammars] example (the latter only parses, it doesn't do the replacement). In both, I've made some assumptions about the file format, such as that a &lt;c&gt;Name = Value&lt;/c&gt; pair must appear on a single line by itself, that the section names may or may not contain whitespace, and so on (I've chosen slightly different rules in both). What I like about these kind of solutions is that they're "just" regular expressions, and as long as one can deal with those, it should hopefully be understandable.&lt;/p&gt;
+&lt;readmore title="Example code"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Compare qw/Compare/;
+
+my @target_block = ('Object Type1','NestedObject');
+my $target_param = 'Param 1';
+my $new_val = 'Hello!';
+my $data = do { local $/; &lt;DATA&gt; };
+
+my @stack;
+pos($data)=0;
+while ( pos($data)&lt;length($data) ) {
+	use re '/msx';
+	my $repl;
+	if ( $data=~m{\G ^ \h* \# [^\n]* (?:\z|\n) }gc )
+		{} # comment, nothing to do
+	elsif ( $data=~m{\G \s* ( \w(?:[\w\h]*\w)? ) \s* \{ \h*\n* }gc )
+		{ push @stack, $1 }
+	elsif ( $data=~m{\G (?&lt;pre&gt; ^\h* ) (?&lt;name&gt; [^\n=]+?)
+			(?&lt;mid&gt; \h*=\h* ) (?&lt;value&gt; [^\n]+? )
+			(?&lt;post&gt; \h*(?:\z|\n) ) }gc ) {
+		if ( Compare(\@stack,\@target_block)
+				&amp;&amp; $+{name} eq $target_param ) {
+			$repl = $+{pre}.$+{name}.$+{mid}.$new_val.$+{post};
+		}
+	}
+	elsif ( $data=~m{\G \s* \} \h*\n* }gc ) {
+		die "'}' with no opening '{'?" unless @stack;
+		pop @stack;
+	}
+	else { die "Failed to parse at: \""
+		.substr($data, pos $data, 50)."...\"" }
+	print $repl//substr($data, $-[0], $+[0]-$-[0]);
+}
+
+__DATA__
+# comment
+Object Type1 {
+	Param1 = Foo
+	NestedObject {
+		Param 1 = Bar   
+	}
+	# just another comment
+}
+
+# comment
+ObjectType2 {
+	Param1 = Quz = z
+	NestedObject {
+		Param1 = Baz
+} }
+&lt;/c&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Regexp::Grammars;
+
+my @blockstack;
+my $grammar = do { use Regexp::Grammars; qr{
+	\A (?: &lt;.comment&gt; | &lt;[confblock]&gt; )* \z
+	&lt;rule: confblock&gt;
+		^ &lt;blockname=([^\s\{\}=]+)&gt; \{
+		(?: &lt;[param]&gt; | &lt;[confblock]&gt; | &lt;.comment&gt; )*
+		\} &lt;.ws&gt;
+	&lt;rule: param&gt;
+		^ &lt;name=([^\n=]+?)&gt; = &lt;value=([^\n]+?)&gt; (?:\n|\z)
+	&lt;token: comment&gt;
+		^ \h* \# [^\n]* (?:\n|\z)
+}xms };
+
+my $data = do { local $/; &lt;DATA&gt; };
+$data =~ $grammar or die "failed to parse";
+my %conf = %/; #/
+
+use Data::Dump;
+dd \%conf;
+
+__DATA__
+# comment
+ObjectType1 {
+	Param1 = Foo
+	NestedObject {
+		Param1 = Bar   
+	}
+	# just another comment
+}
+
+# comment
+ObjectType2 {
+	Param1 = Quz
+	NestedObject {
+		Param1 = Baz
+} }
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1227916</root_node>
+<parent_node field_name="parent_node">1227916</parent_node>
+<thread id="1227916">
+<node id="1227935"><node id="1227960"><node id="1227979"/>
+</node>
+</node>
+<node id="1227939"><node id="1227990"><node id="1227992"><node id="1228031"/>
+</node>
+</node>
+<node id="1228002"/>
+</node>
+<node id="1227941"/>
+<node id="1227942"><node id="1227963"><node id="1227986"/>
+</node>
+</node>
+<node id="1227987"/>
+<node id="1228072"/>
+<node id="1228229"/>
+</thread></node>

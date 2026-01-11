@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198462" title="Re^3: Recursive data structure munging - arrayrefs to hashrefs (updated x2)" created="2017-08-31 16:30:28" updated="2017-08-31 16:30:28" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Your code works for $foo, but unfortunately not for the more complex structure&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, as I said, easily fixed with an &lt;c&gt;if&lt;/c&gt;. More representative sample input data gets you better answers ;-) The following should work on AoH and HoH, but not yet on AoA,  and the root must be a hash. Extending this further is left as an exercise to the reader...&lt;/p&gt;
+&lt;c&gt;
+sub rekey {
+	my $h = shift;
+	KEY: for my $k (keys %$h) {
+		if (ref $$h{$k} eq 'ARRAY') {
+			rekey($_) for @{$$h{$k}};
+			my %n;
+			for my $e (@{$$h{$k}}) {
+				next KEY unless exists $$e{name};
+				die "duplicate key '$$e{name}'"
+					if exists $n{$$e{name}};
+				$n{$$e{name}} = $e;
+			}
+			$$h{$k} = \%n;
+		}
+		elsif (ref $$h{$k} eq 'HASH')
+			{ rekey($$h{$k}) }
+	}
+}
+rekey( $foo );
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; I realized based on the sample data that you posted [id://1198464|here] that not all of your hashes in the AoHs have "name" keys. So I modified the above to skip transforming such AoHs with &lt;c&gt;next KEY unless exists $$e{name};&lt;/c&gt;. Other approaches are of course possible too, if you can identify a useful key. &lt;b&gt;Update 2:&lt;/b&gt; I applied that change a little too hastily, it wasn't correct as it wasn't recursing into the full data structure anymore. Fixed.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1198452</root_node>
+<parent_node field_name="parent_node">1198457</parent_node>
+<thread id="1198452">
+<node id="1198454"><node id="1198457"><node id="1198462"/>
+</node>
+</node>
+<node id="1198455"><node id="1198459"><node id="1198460"><node id="1198464"><node id="1198467"><node id="1198468"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1213606" title="Re^3: Modifying pos() from within (?{...})" created="2018-04-26 09:50:58" updated="2018-04-26 09:50:58" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I assume then, should the data I'm parsing with the regex be well formatted, then &lt;c&gt;pos()&lt;/c&gt; will never be reset and so the &lt;c&gt;/c&lt;/c&gt; modifier is not needed?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note that the condition on the &lt;c&gt;while&lt;/c&gt; loop is the regex, so the loop will run while the match is true, so the last match executed will always be a failed one. The question then is &lt;i&gt;why&lt;/i&gt; it failed, because it reached the end of string (= successful overall parse) or it did not, which is why I compare [doc://pos] to [doc://length] - but for [doc://pos] to be available there, I need &lt;c&gt;/c&lt;/c&gt;.&lt;/p&gt;
+&lt;readmore title="demo code"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $string = " foo bar quz ";
+print "String: '$string' length: ",length($string),"\n";
+
+print "### Successful match with /c:\n";
+pos($string)=undef;
+print "&lt;$1&gt;\n" while $string =~ / \G \s* (foo|bar|quz) \s* /xgc;
+print "pos: ",pos($string)//'undef',"\n";
+
+print "### Failed match with /c:\n";
+pos($string)=undef;
+print "&lt;$1&gt;\n" while $string =~ / \G \s* (foo|bar) \s* /xgc;
+print "pos: ",pos($string)//'undef',"\n";
+
+print "### Successful match without /c:\n";
+pos($string)=undef;
+print "&lt;$1&gt;\n" while $string =~ / \G \s* (foo|bar|quz) \s* /xg;
+print "pos: ",pos($string)//'undef',"\n";
+
+print "### Failed match without /c:\n";
+pos($string)=undef;
+print "&lt;$1&gt;\n" while $string =~ / \G \s* (foo|bar) \s* /xg;
+print "pos: ",pos($string)//'undef',"\n";
+
+__END__
+
+String: ' foo bar quz ' length: 13
+### Successful match with /c:
+&lt;foo&gt;
+&lt;bar&gt;
+&lt;quz&gt;
+pos: 13
+### Failed match with /c:
+&lt;foo&gt;
+&lt;bar&gt;
+pos: 9
+### Successful match without /c:
+&lt;foo&gt;
+&lt;bar&gt;
+&lt;quz&gt;
+pos: undef
+### Failed match without /c:
+&lt;foo&gt;
+&lt;bar&gt;
+pos: undef
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Another use for &lt;c&gt;/c&lt;/c&gt; is described in [doc://perlop#\G-_assertion_|"&lt;c&gt;\G&lt;/c&gt; assertion" in perlop] (under "Regexp Quote-Like Operators"): basically, attempting to apply multiple different regexes at the same point in a string until you find one that matches.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1213595</root_node>
+<parent_node field_name="parent_node">1213604</parent_node>
+<thread id="1213595">
+<node id="1213598"><node id="1213604"><node id="1213606"/>
+</node>
+</node>
+<node id="1213599"><node id="1213602"/>
+</node>
+<node id="1213605"><node id="1213607"/>
+<node id="1213611"><node id="1213685"><node id="1213692"/>
+</node>
+</node>
+</node>
+</thread></node>

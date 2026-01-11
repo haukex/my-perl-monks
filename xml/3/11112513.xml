@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112513" title="Re: Iterating over an hash while removing keys" created="2020-02-06 13:35:55" updated="2020-02-06 13:35:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;let's pretend there's an awful lot of them, or the hash is tied, and it's harder to find an existing key than fetch a value&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, a pretty foolproof method is to build an array of keys to delete, and delete them later. But by what you said I am guessing this list might grow very long, so that might not be feasible?&lt;/p&gt;
+&lt;p&gt;[LanX] [id://11112506|has a point] that resetting the iterator on each loop might result in an endless loop if one is not careful. But I think that resetting the iterator only when keys are actually [doc://delete]d might be an option, e.g.:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump qw/ dd pp /;
+
+my %h = (
+	1 =&gt; [2..7],
+	8 =&gt; [ 9 ],
+	9 =&gt; [ 8 ],
+	(map { $_ =&gt; [ 1 ] } 2..7),
+);
+dd \%h;
+while ( my ($k,$v) = each %h ) {
+	print "Loop from ",pp($k)," -&gt; ",pp($v),"\n";
+	rec_delete( \%h, $k );
+}
+dd \%h;
+
+sub rec_delete {
+	my ($hash, $key) = @_;
+	return unless exists $hash-&gt;{$key};
+	my $value = delete $hash-&gt;{$key};
+	keys %$hash;
+	return unless $value;
+	print "Recursing ",pp($key)," -&gt; ",pp($value),"\n";
+	rec_delete( $hash, $_ ) for @$value;
+}
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11112496</root_node>
+<parent_node field_name="parent_node">11112496</parent_node>
+<thread id="11112496">
+<node id="11112495"><node id="11112502"><node id="11112503"><node id="11112504"><node id="11112506"><node id="11112507"><node id="11112557"><node id="11112564"><node id="11112566"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11112500"><node id="11112501"/>
+</node>
+<node id="11112513"><node id="11112517"/>
+<node id="11112548"/>
+</node>
+</thread></node>

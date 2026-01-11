@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1210806" title="Re: IPAddress check (updated)" created="2018-03-13 07:46:55" updated="2018-03-13 07:46:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;i&gt;"is not working"&lt;/i&gt; is not really an adequate problem description. Please see [id://510718]&lt;/p&gt;
+&lt;p&gt;But take a look at your regular expression: &lt;c&gt;\d{1,3}&lt;/c&gt; vs. &lt;c&gt;\d{1-3}&lt;/c&gt; - why the difference? One is right, the other is wrong. See [doc://perlrequick] and [doc://perlretut].&lt;/p&gt;
+&lt;p&gt;Note that even if you fix that, the regular expression will still match invalid IP's like &lt;c&gt;999.999.999.999&lt;/c&gt;. Instead of reinventing the wheel, I'd recommend [mod://Regexp::Common::net]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Regexp::Common qw/net/;
+
+my $output = "ae4.5784     up    down inet     182.75.123.121/30";
+
+if ( $output =~ /\b$RE{net}{IPv4}\b/ ) {
+	print "There IS an IPAddress in the output string\n";
+}
+else {
+	print "There is NO IPAddress in the output string\n";
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Added the word boundary &lt;c&gt;\b&lt;/c&gt; to the above regex, because otherwise it would have matched something like &lt;c&gt;1111.1.1.1&lt;/c&gt; (because &lt;c&gt;111.1.1.1&lt;/c&gt; is a valid IP) or &lt;c&gt;256.255.255.256&lt;/c&gt; (because &lt;c&gt;56.255.255.25&lt;/c&gt; matches).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1210803</root_node>
+<parent_node field_name="parent_node">1210803</parent_node>
+<thread id="1210803">
+<node id="1210806"/>
+<node id="1210808"><node id="1210821"><node id="1210826"/>
+</node>
+</node>
+</thread></node>

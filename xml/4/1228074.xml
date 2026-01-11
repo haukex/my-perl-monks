@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228074" title="Re^3: Validating an XML file with multiple schemas" created="2019-01-05 06:43:04" updated="2019-01-05 06:43:04" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;It's unclear to me whether by &lt;i&gt;"multiple schemas"&lt;/i&gt; you mean validating one XML file against multiple different schemas, or whether it's one Schema file that includes other Schema files. Could you show a short, &lt;i&gt;complete&lt;/i&gt; example, with simple XSD files that represent what you're trying to do? Please see [id://1177642].&lt;/p&gt;
+&lt;p&gt;The following works for me.&lt;/p&gt;
+&lt;readmore&gt;
+
+&lt;p&gt;&lt;b&gt;&lt;c&gt;schema.xsd&lt;/c&gt;:&lt;/b&gt;&lt;/p&gt;
+&lt;c&gt;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;schema xmlns="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://www.example.com"
+	xmlns:foo="http://www.example.com" elementFormDefault="qualified"&gt;
+
+&lt;include schemaLocation="included.xsd" /&gt;
+
+&lt;element name="hello"&gt;
+	&lt;complexType&gt;
+		&lt;sequence&gt;
+			&lt;element name="world" type="foo:worldType" /&gt;
+		&lt;/sequence&gt;
+	&lt;/complexType&gt;
+&lt;/element&gt;
+
+&lt;/schema&gt;
+&lt;/c&gt;
+
+&lt;p&gt;&lt;b&gt;&lt;c&gt;included.xsd&lt;/c&gt;:&lt;/b&gt;&lt;/p&gt;
+&lt;c&gt;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;schema xmlns="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://www.example.com"
+	xmlns:xhtml="http://www.w3.org/1999/xhtml"
+	xmlns:foo="http://www.example.com" elementFormDefault="qualified"&gt;
+
+&lt;import namespace="http://www.w3.org/1999/xhtml"
+	schemaLocation=
+		"http://www.w3.org/2002/08/xhtml/xhtml1-transitional.xsd" /&gt;
+
+&lt;complexType name="worldType"&gt;
+	&lt;complexContent&gt;
+		&lt;extension base="xhtml:Flow"&gt;
+			&lt;attribute name="foo" type="string" use="required" /&gt;
+		&lt;/extension&gt;
+	&lt;/complexContent&gt;
+&lt;/complexType&gt;
+
+&lt;/schema&gt;
+&lt;/c&gt;
+
+&lt;p&gt;&lt;b&gt;Code&lt;/b&gt; - Note it was necessary to use &lt;c&gt;XML::LibXML::externalEntityLoader()&lt;/c&gt; instead of &lt;c&gt;$parser-&gt;input_callbacks()&lt;/c&gt;, because I didn't see another way for the callbacks to affect [mod://XML::LibXML::Schema].&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use utf8;
+use XML::LibXML;
+
+use URI;
+use HTTP::Tiny;
+my $http = HTTP::Tiny-&gt;new;
+my %cache;
+XML::LibXML::externalEntityLoader(sub {
+	my ($url, $id) = @_;
+	die "Can't handle ID '$id'" if length $id;
+	my $uri = URI-&gt;new($url);
+	my $file;
+	if (!$uri-&gt;scheme) { $file = $url }
+	elsif ($uri-&gt;scheme eq 'file') { $file = $uri-&gt;path }
+	if (defined $file) {
+		warn "'$uri' =&gt; Loading '$file' from disk\n"; #Debug
+		open my $fh, '&lt;', $file or die "$file: $!";
+		my $data = do { local $/; &lt;$fh&gt; };
+		close $fh;
+		return $data;
+	} # else
+	die "Can't handle URL scheme: ".$uri-&gt;scheme
+		unless $uri-&gt;scheme=~/\Ahttps?\z/i;
+	if (!defined $cache{$uri}) {
+		warn "'$uri' =&gt; Fetching...\n"; #Debug
+		my $resp = $http-&gt;get($uri);
+		die "$uri: $resp-&gt;{status} $resp-&gt;{reason}\n"
+			unless $resp-&gt;{success};
+		$cache{$uri} = $resp-&gt;{content};
+	}
+	else { warn "'$uri' =&gt; Cached\n"; } #Debug
+	return $cache{$uri};
+});
+
+print "Loading schema...\n";
+my $xsd = XML::LibXML::Schema-&gt;new( location =&gt; 'schema.xsd' );
+
+my @xmls = (&lt;&lt;'END_XML_ONE',&lt;&lt;'END_XML_TWO',&lt;&lt;'END_XML_THREE');
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;hello xmlns="http://www.example.com"&gt;
+	&lt;world foo="bar"&gt;
+		&lt;p xmlns="http://www.w3.org/1999/xhtml"&gt;
+			&lt;i&gt;x&lt;/i&gt;
+		&lt;/p&gt;
+	&lt;/world&gt;
+&lt;/hello&gt;
+
+END_XML_ONE
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;hello xmlns="http://www.example.com"&gt;
+	&lt;world&gt;
+		&lt;p xmlns="http://www.w3.org/1999/xhtml"&gt;
+			&lt;i&gt;x&lt;/i&gt;
+		&lt;/p&gt;
+	&lt;/world&gt;
+&lt;/hello&gt;
+
+END_XML_TWO
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;hello xmlns="http://www.example.com"&gt;
+	&lt;world foo="bar"&gt;
+		&lt;p xmlns="http://www.w3.org/1999/xhtml"&gt;
+			&lt;foo&gt;x&lt;/foo&gt;
+		&lt;/p&gt;
+	&lt;/world&gt;
+&lt;/hello&gt;
+END_XML_THREE
+
+my $i = 1;
+for my $xml (@xmls) {
+	print "Validating XML #$i...\n";
+	my $doc = XML::LibXML-&gt;load_xml( string =&gt; $xml );
+	if ( eval { $xsd-&gt;validate($doc); 1 } )
+		{ print "=&gt; Valid!\n" }
+	else { print "=&gt; Invalid! $@" }
+} continue { $i++ }
+&lt;/c&gt;
+
+&lt;p&gt;&lt;b&gt;Output:&lt;/b&gt;&lt;/p&gt;
+&lt;c&gt;
+Loading schema...
+'schema.xsd' =&gt; Loading 'schema.xsd' from disk
+'included.xsd' =&gt; Loading 'included.xsd' from disk
+'http://www.w3.org/2002/08/xhtml/xhtml1-transitional.xsd' =&gt; Fetching...
+'http://www.w3.org/2001/xml.xsd' =&gt; Fetching...
+Validating XML #1...
+=&gt; Valid!
+Validating XML #2...
+=&gt; Invalid! unknown-137e570:0: Schemas validity error : Element '{http://www.example.com}world': The attribute 'foo' is required but missing.
+Validating XML #3...
+=&gt; Invalid! unknown-137e570:0: Schemas validity error : Element '{http://www.w3.org/1999/xhtml}foo': This element is not expected. Expected is one of ( {http://www.w3.org/1999/xhtml}a, {http://www.w3.org/1999/xhtml}br, {http://www.w3.org/1999/xhtml}span, {http://www.w3.org/1999/xhtml}bdo, {http://www.w3.org/1999/xhtml}object, {http://www.w3.org/1999/xhtml}applet, {http://www.w3.org/1999/xhtml}img, {http://www.w3.org/1999/xhtml}map, {http://www.w3.org/1999/xhtml}iframe, {http://www.w3.org/1999/xhtml}tt ).
+&lt;/c&gt;
+
+&lt;p&gt;And just for the sake of completeness, here's the original code I posted on StackOverflow that uses an &lt;c&gt;XML::LibXML::InputCallback&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+use HTTP::Tiny;
+use URI;
+
+my $parser = XML::LibXML-&gt;new;
+my $cb = XML::LibXML::InputCallback-&gt;new;
+my $http = HTTP::Tiny-&gt;new;
+my %cache;
+$cb-&gt;register_callbacks([
+    sub { 1 }, # match (URI), returns Bool
+    sub { # open (URI), returns Handle
+        my $uri = URI-&gt;new($_[0]);
+        my $file;
+        #warn "Handling &lt;&lt;$uri&gt;&gt;\n"; #Debug
+        if (!$uri-&gt;scheme) { $file = $_[0] }
+        elsif ($uri-&gt;scheme eq 'file') { $file = $uri-&gt;path }
+        elsif ($uri-&gt;scheme=~/\Ahttps?\z/i) {
+            if (!defined $cache{$uri}) {
+                my $resp = $http-&gt;get($uri);
+                die "$uri: $resp-&gt;{status} $resp-&gt;{reason}\n"
+                    unless $resp-&gt;{success};
+                $cache{$uri} = $resp-&gt;{content};
+            }
+            $file = \$cache{$uri};
+        }
+        else { die "unsupported URL scheme: ".$uri-&gt;scheme }
+        open my $fh, '&lt;', $file or die "$file: $!";
+        return $fh;
+    },
+    sub { # read (Handle,Length), returns Data
+        my ($fh,$len) = @_;
+        read($fh, my $buf, $len);
+        return $buf;
+    },
+    sub { close shift } # close (Handle)
+]);
+$parser-&gt;input_callbacks($cb);
+
+my $doc = $parser-&gt;load_xml( IO =&gt; \*DATA );
+print "Is valid: ", $doc-&gt;is_valid ? "yes" : "no", "\n";
+
+__DATA__
+&lt;?xml version="1.0" encoding="UTF-8" standalone="no"?&gt;
+&lt;!DOCTYPE LinkSet PUBLIC "-//NLM//DTD LinkOut 1.0//EN" "https://www.ncbi.nlm.nih.gov/projects/linkout/doc/LinkOut.dtd" [
+&lt;!ENTITY base.url "https://some.domain.com"&gt;
+&lt;!ENTITY icon.url "https://some.domain.com/logo.png"&gt;
+]&gt;
+&lt;LinkSet&gt;
+  &lt;Link&gt;
+    &lt;LinkId&gt;1&lt;/LinkId&gt;
+    &lt;ProviderId&gt;XXXX&lt;/ProviderId&gt;
+    &lt;IconUrl&gt;&amp;icon.url;&lt;/IconUrl&gt;
+    &lt;ObjectSelector&gt;
+      &lt;Database&gt;PubMed&lt;/Database&gt;
+      &lt;ObjectList&gt;
+        &lt;ObjId&gt;1234567890&lt;/ObjId&gt;
+      &lt;/ObjectList&gt;
+    &lt;/ObjectSelector&gt;
+    &lt;ObjectUrl&gt;
+      &lt;Base&gt;&amp;base.url;&lt;/Base&gt;
+      &lt;Rule&gt;/1/&lt;/Rule&gt;
+    &lt;/ObjectUrl&gt;
+  &lt;/Link&gt;
+&lt;/LinkSet&gt;
+&lt;/c&gt;
+&lt;p&gt;And finally, here's a variation of the caching code that uses an on-disk cache (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; It's not &lt;i&gt;perfect&lt;/i&gt;, because there's a tiny chance of filename collisions if &lt;c&gt;clean_fragment&lt;/c&gt; happens to map two URLs to the same filename, but this is meant to be more of a proof-of-concept; there are plenty of other caching mechanisms available. Just one example, note how I used [doc://Memoize::Storable] to cache the return values of the &lt;c&gt;get_deps&lt;/c&gt; function [https://github.com/haukex/webperl/blob/fe8e030cdc361e4e40ce764528e44c6ef991d259/experiments/depend.pl|here].):&lt;/p&gt;
+&lt;c&gt;
+my $CACHE_DIR = '/tmp/xmlcache';
+use File::Path qw/make_path/;
+make_path($CACHE_DIR, {verbose=&gt;1});
+
+use URI;
+use HTTP::Tiny;
+use Text::CleanFragment qw/clean_fragment/;
+use File::Spec::Functions qw/catfile/;
+my $http = HTTP::Tiny-&gt;new;
+XML::LibXML::externalEntityLoader(sub {
+	my ($url, $id) = @_;
+	die "Can't handle ID '$id'" if length $id;
+	my $uri = URI-&gt;new($url);
+	my $file;
+	if (!$uri-&gt;scheme) { $file = $url }
+	elsif ($uri-&gt;scheme eq 'file') { $file = $uri-&gt;path }
+	elsif ($uri-&gt;scheme=~/\Ahttps?\z/i) {
+		# Note there is a (tiny) chance of filename collisions here!
+		$file = catfile($CACHE_DIR, clean_fragment("$uri"));
+		if (!-e $file) {
+			warn "'$uri' =&gt; Mirroring to '$file'...\n"; #Debug
+			my $resp = $http-&gt;mirror($uri, "$file");
+			die "$uri: $resp-&gt;{status} $resp-&gt;{reason}\n"
+				unless $resp-&gt;{success};
+		}
+	}
+	else { die "Can't handle URL scheme: ".$uri-&gt;scheme }
+	warn "'$uri' =&gt; Loading '$file' from disk\n"; #Debug
+	open my $fh, '&lt;', $file or die "$file: $!";
+	my $data = do { local $/; &lt;$fh&gt; };
+	close $fh;
+	return $data;
+});
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1228005</root_node>
+<parent_node field_name="parent_node">1228052</parent_node>
+<thread id="1228005">
+<node id="1228010"><node id="1228052"><node id="1228074"><node id="1228123"/>
+<node id="1228219"><node id="1228224"><node id="1228294"><node id="1228304"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1228330"/>
+</thread></node>

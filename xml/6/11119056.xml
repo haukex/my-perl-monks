@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11119056" title="Perl::Critic says don't modify $_ in list functions and other things" created="2020-07-08 21:29:20" updated="2020-07-08 21:29:20" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="161890">Lady_Aleena</author>
+<doctext field_name="doctext">&lt;p&gt;Hello all. I have been playing around with Per::Critic on the command line and found to my dismay that some of my modules do not pass gentle. I realize that I can ignore the recommendations of Perl critic, but I would love for my modules to pass "gentle" before I begin ignoring things.&lt;/p&gt;
+&lt;p&gt;The most common issue is that I modify &lt;c&gt;$_&lt;/c&gt; in list functions. The following is a convenient and short one liner to put the lines of files into a list. I thought doing it this way was nice and slim.&lt;/p&gt;
+&lt;code&gt;
+  my @list       = map { chomp($_); $_ } &lt;$fh&gt;;
+  my @uc_list    = map { chomp $_; [uc $_] } &lt;$lc_fh&gt;; # used only once
+  my @split_list = map { chomp $_; [ split(/\|/, $_) ] } &lt;$piped_fh&gt;; # used only once
+&lt;/code&gt;
+&lt;p&gt;In one subroutine, I have this three times.&lt;/p&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+  my @array = map {
+    $_ =~ s/^[\*\+-] (.+)/$1/;
+    some_sub($_, $opt);
+  } @another_array;
+&lt;/code&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Also, my &lt;c&gt;idify&lt;/c&gt; subroutine is just modifying &lt;c&gt;$_&lt;/c&gt;.&lt;/p&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+  my @ids = map {
+    $_ =~ s/&lt;.+?&gt;//g;
+    $_ =~ s/^(\d+([stnrdh]{2}|))/NUMWORDS($1)/e;
+    $_ =~ s/(.)\.\w{2,5}?$/$1/;
+    $_ =~ s/&amp;amp/and/g;
+    $_ =~ s/&amp;/and/g;
+    $_ =~ s/Æ/Ae/g;
+    $_ =~ s/Ç/C/g;
+    $_ =~ s/Ü/U/g;
+    $_ =~ s/(è|é|ê)/e/g;
+    $_ =~ s/#/No/g;
+    $_ =~ s/ /_/g;
+    $_ =~ s/[^\w:.\-]//g;
+    $_;
+  } grep {defined($_)} @base;
+&lt;/code&gt;
+&lt;/readmore&gt;
+&lt;p&gt;And my Fancy::Map modifies &lt;c&gt;$_&lt;/c&gt; too.&lt;/p&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+sub fancy_map {
+  my ($opt, $list) = @_;
+  map {
+    if (ref($_)) {
+      fancy_map($opt, $_);
+    }
+    else {
+      my $before = $opt-&gt;{'before'} ? $opt-&gt;{'before'}.' ' : '';
+      my $after  = $opt-&gt;{'after'}  ? ' '.$opt-&gt;{'after'}  : '';
+      $_ = $before.$_.$after;
+    }
+  } @{$list};
+}
+&lt;/code&gt;
+&lt;/readmore&gt;
+&lt;p&gt;If this is something ignored usually, I will ignore it, but I would like to know how to make it better. Should I just assign &lt;c&gt;$_&lt;/c&gt; to a variable and then use the variable?&lt;/p&gt;
+&lt;p&gt;Another thing that I am confused by is why the expression form of &lt;c&gt;eval&lt;/c&gt; is discouraged?&lt;/p&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+  if ($raw_value =~ /\*/) {    # multiplication
+    $total_value = eval($raw_value);
+    ($amount, $base_value) = split(/\*/,$raw_value);
+  }
+  elsif ($raw_value =~ /\//) { # division
+    $base_value = eval($raw_value);
+    ($total_value, $amount) = split(/\//, $raw_value);
+  }
+&lt;/code&gt;
+&lt;/readmore&gt;
+&lt;p&gt;The rest of the gentle issues are me being lazy with conditionals. While writing I was thinking &lt;c&gt;my $var = "foo" if 'some condition'&lt;/c&gt;, but Perl critic does not like it, but it is fixed easily.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; Please see [id://11119106|my update]. Most are fixed, but the &lt;c&gt;eval&lt;/c&gt; problem remains.&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-161890"&gt;
+&lt;p&gt;&lt;small&gt;My OS is Debian 10 (Buster); my perl versions are 5.28.1 local and 5.8.8 on web host.&lt;/small&gt;&lt;/p&gt;
+&lt;div&gt;&lt;strong&gt;No matter how hysterical I get, my problems are &lt;em&gt;not&lt;/em&gt; time sensitive. So, relax, have a [id://1026423|cookie], and a very nice day!&lt;/strong&gt;&lt;/div&gt;
+&lt;div&gt;&lt;em&gt;Lady Aleena&lt;/em&gt;&lt;/div&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="11119056">
+<node id="11119058"/>
+<node id="11119060"><node id="11119076"><node id="11119089"/>
+<node id="11119216"/>
+</node>
+</node>
+<node id="11119062"/>
+<node id="11119065"><node id="11119073"><node id="11123833"><node id="11123836"><node id="11123839"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11119066"><node id="11119074"><node id="11119075"/>
+</node>
+<node id="11119088"><node id="11119219"/>
+</node>
+<node id="11119094"/>
+</node>
+<node id="11119106"><node id="11119109"><node id="11119110"><node id="11119127"/>
+</node>
+</node>
+</node>
+<node id="11119108"><node id="11119157"><node id="11119168"><node id="11119174"><node id="11119195"><node id="11119199"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11119147"><node id="11119149"/>
+</node>
+<node id="11119176"><node id="11119177"/>
+</node>
+</thread></node>

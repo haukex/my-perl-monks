@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11135658" title="Re^11: Recalcitrant placeholders (updated x2)" created="2021-08-06 13:20:42" updated="2021-08-06 13:20:42" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Sorry for the delay haukex&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I hope we can stop apologizing to each other, sometimes good things take time ;-D&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; Sorry, I should have also said: Thanks for taking the time to work out the SSCCE, I can now reproduce the issue reliably! &lt;b&gt;/Update2&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;I've made a bit of progress: The issue exists in Perl 5.16, but not in any Perl version after that (same versions of MySQL, [mod://DBI], and [mod://DBD::mysql]).&lt;/p&gt;
+&lt;p&gt;Unfortunately, [mod://DBI] and [mod://DBD::mysql] contain a bunch of XS code. I can only guess that there was some bug in regards to XS code and taint mode in Perl itself or in the interaction between the driver's XS and Perl - whatever it is, it appears to have been fixed in 5.18.&lt;/p&gt;
+&lt;p&gt;Perl 5.16.3 is now over 8 years old and no longer supported. You may want to ask your webhost to upgrade their Perl. Or, perhaps they already have a newer Perl installed, under a different name such as &lt;tt&gt;perl5.&lt;i&gt;XX&lt;/i&gt;&lt;/tt&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; I ran a [id://11110663|bisect], and it points to [https://github.com/Perl/perl5/commit/4bac9ae47b5ad7845a24e26b0e95609805de688a|&lt;c&gt;4bac9ae&lt;/c&gt; Magic flags harmonization.] However, since this is very internals-heavy, I have no idea if this is a red herring or not. Unfortunately, this is as far as I can go at the moment - my suggestion to get a newer Perl stands.&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+$ ./Porting/bisect.pl --expect-fail --with-module=DBI,DBD::mysql --no-module-tests --start=v5.16.3 --end=v5.18.4 -- ./perl -Ilib -T /tmp/test.pl 'foo@bar.com'
+# good: [fd04d42d38f4751b981eb6e9213ee1ab8ef11ea6] final changes for release as 5.16.3
+# bad: [51202371ba68f3f52f13124a3ea1bc3c171e0ee2] add v5.18.4 to perlhist
+# good: [559550aea97a776e8aa784032f554f5a717ac19b] include some more data in new-perldelta output
+# bad: [624a1c42c1b67cb5d676986900a9d4acab64883c] clean up vmem.h, remove unused instrumentation hooks
+# good: [12f98b43fb8a44e8dfde5d99489b6a599bb91908] anonsub.t: Improve test for [perl #71154]
+# bad: [a3d517785b3dcac4f3f7aa5c85386a1a8074f46d] perldelta for Unicode property performance gains
+# bad: [7c70caa5333de92b09e138154bed7f78f783be3b] Forbid braces as format delimiters
+# bad: [42409c4069deb2417b838a49810ecbce306a72b9] Stop truncate(word) from falling back to file name
+# bad: [7ca04d94dfa99b3a611a70d3d9a08aa0ccc1fb04] update Module::CoreList for 5.17.2
+# good: [ac7af3f615eb56bda50bf123662b15779da26826] fix RT#114068 optimizer handles MEOL in middle of pattern improperly
+# bad: [a3314d5f77f945cb8f418a3f4f09bf8f69bb4c3e] mark blead-only modifications of Compress::Raw::{Bzip2,Zlib} with version bump
+# good: [5d8673bca0104a9e3975238e86672281f7f71c03] pp_hot.c: Mention that pp_grepstart calls pp_pushmark
+# good: [c55d2e076a02daf604c28e6725a61c1495171552] perly.y: Remove use of latefree from package foo {}
+# good: [6e22b38560ae8c2f1293a7f9bc2709541ea4d528] dump.c: Dump op-&gt;op_s(labbed|avefree)
+# bad: [4bac9ae47b5ad7845a24e26b0e95609805de688a] Magic flags harmonization.
+# good: [b8a55fe78ae4ecc0a81a2d98dba9fead6df06efb] perldelta updates
+# first bad commit: [4bac9ae47b5ad7845a24e26b0e95609805de688a] Magic flags harmonization.
+&lt;/c&gt;
+&lt;p&gt;Note: Due to the quirks of git bisect in combination with &lt;c&gt;bisect.pl&lt;/c&gt;, the terms "&lt;c&gt;good&lt;/c&gt;" and "&lt;c&gt;bad&lt;/c&gt;" are actually confusing, as they mean: &lt;c&gt;good&lt;/c&gt;=the issue is present; &lt;c&gt;bad&lt;/c&gt;=the issue is not present. The test script was the following, with the database being set up as in my example [id://11135108|above] and the table being &lt;c&gt;CREATE TABLE Person ( idPerson INT, email VARCHAR(256) ); INSERT INTO Person (idPerson, email) VALUES (42, 'foo@bar.com');&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl -T
+use warnings;
+use strict;
+use feature 'say';
+use Scalar::Util qw/tainted/;
+use DBI;
+
+my $email = shift;
+my %data = ( email =&gt; $email );
+die unless tainted($data{email});
+
+my ($db_user,$db_pass) = ($ENV{USER}, 'barfoo');
+my $dbh = DBI-&gt;connect(
+	"DBI:mysql:database=testing;host=127.0.0.1", $db_user,
+	$db_pass, { RaiseError=&gt;1, AutoCommit=&gt;1, TaintIn=&gt;0 });
+
+my ($test) = $dbh-&gt;selectrow_array(
+	"SELECT idPerson FROM Person WHERE email = ?",
+		undef, $data{email});
+die "&lt;$test&gt;" unless $test==42;
+say "OK!";
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">11134633</root_node>
+<parent_node field_name="parent_node">11135622</parent_node>
+<thread id="11134633">
+<node id="11134634"><node id="11134638"><node id="11134686"><node id="11134687"><node id="11134733"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11134635"><node id="11134640"><node id="11134643"/>
+<node id="11134644"/>
+</node>
+</node>
+<node id="11134636"><node id="11134639"/>
+</node>
+<node id="11134637"><node id="11134641"/>
+</node>
+<node id="11134645"/>
+<node id="11134654"><node id="11134681"><node id="11134748"><node id="11134858"><node id="11134866"><node id="11134899"><node id="11135108"><node id="11135379"><node id="11135426"><node id="11135565"/>
+<node id="11135622"><node id="11135633"><node id="11135636"><node id="11135637"><node id="11135652"/>
+<node id="11135704"/>
+</node>
+</node>
+</node>
+<node id="11135658"><node id="11135707"><node id="11135708"><node id="11135709"><node id="11135714"><node id="11135716"><node id="11135729"><node id="11135737"><node id="11135742"><node id="11135744"/>
+<node id="11135745"/>
+</node>
+</node>
+<node id="11135738"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11134867"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11134678"><node id="11134682"><node id="11134729"/>
+</node>
+<node id="11134726"/>
+</node>
+</thread></node>

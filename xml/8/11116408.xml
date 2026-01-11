@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116408" title="Re^7: Error binmode() on unopened filehandle" created="2020-05-03 17:17:03" updated="2020-05-03 17:17:03" _doctext_mode="lenient"><type id="11">note</type>
+<author id="732669">Marshall</author>
+<doctext field_name="doctext">That is interesting.&lt;p&gt;
+
+I also would use read() for reading a binary file.&lt;p&gt;
+
+&lt;i&gt;binmode turns off the CRLF to LF conversion, so if you're not seeing CRLF line endings (not sure how you determined that?) then that means the source file has only LF instead of CRLF line endings.&lt;/i&gt;&lt;br&gt;
+
+the Perl source file is written on Windows machine with CRLF line endings.&lt;br&gt;
+n_bytes is 13, which is 2 short.&lt;br&gt;
+I am a bit perplexed about that.&lt;br&gt;
+This:
+&lt;C&gt;
+my $data = &lt;&lt;EOF;
+first
+second
+EOF
+&lt;/C&gt;
+evidently deletes the &lt;CR&gt; characters.&lt;p&gt;
+
+Update: &lt;br&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+
+open (my $out, '&gt;', "test_endings.txt") or die "$!";
+print $out "first\n";
+print $out "second\n";
+close $out;
+
+open (my $in, '&lt;', "test_endings.txt") or die "$!";
+binmode $in;
+my $num_bytes = read ($in, my $buf, 20000);
+print "bytes read = $num_bytes\n";
+
+## prints 15  The &lt;CR&gt;'s are there in bin mode
+&lt;/c&gt;
+
+
+
+
+
+</doctext>
+<root_node field_name="root_node">11116367</root_node>
+<parent_node field_name="parent_node">11116394</parent_node>
+<thread id="11116367">
+<node id="11116368"/>
+<node id="11116370"/>
+<node id="11116376"><node id="11116380"><node id="11116383"><node id="11116385"><node id="11116387"><node id="11116389"/>
+<node id="11116416"/>
+</node>
+<node id="11116390"><node id="11116392"/>
+<node id="11116394"><node id="11116408"><node id="11116412"><node id="11116528"/>
+</node>
+<node id="11116414"><node id="11116527"/>
+</node>
+</node>
+</node>
+<node id="11116418"><node id="11116525"><node id="11116555"><node id="11116595"><node id="11116600"><node id="11116657"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11116393"><node id="11116411"/>
+</node>
+<node id="11116417"/>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="676238" title="How do you Map &amp; Disconnect Network Drives (in Windows)?" created="2008-03-25 16:52:36" updated="2008-03-25 12:52:36" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="630876">perlofwisdom</author>
+<doctext field_name="doctext">I have a need to connect to the C$ and D$ shares on various windows servers.  I want to loop through the servers one at a time, and re-use the same local drive letter for the share.  I'm having trouble getting the disconnect subroutine to delete the share before it tries to connect to the next server.  
+&lt;p&gt;I am using the following command to make the connection (this works OK):&lt;/p&gt;
+&lt;code&gt;   system("net use ${drive} \\\\${server}\\${remote_drv_ltr}\$ ${passwd} /USER:${domain}\\${login}");&lt;/code&gt;
+&lt;p&gt;
+I cobbled together an 'unmount' routine to disconnect the share before going on to the next server.  Retrying the delete command every 2 seconds for up to 30 seconds before giving up (this doesn't work reliably).  
+&lt;code&gt;
+  while ( system("net use $drive /DELETE") ) {
+    : (I can provide the details if necessary)
+  }
+&lt;/code&gt;
+&lt;p&gt;I've fumbled around with Win32::NetResource but can't find a good example of how to get it to map a drive, and later release it.  Here's what I've got (which doesn't work at all):
+&lt;code&gt;
+  use Win32::NetResource qw(:DEFAULT GetSharedResources GetError AddConnection CancelConnection);
+  my $Domain        = 'aaaaaaaa';
+  my $Account       = 'bbbbbbbb';
+  my $Password      = 'cccccccc';
+  my $Server        = 'dddddddd';
+  my $LocalDrive    = 'X:';
+  my $UserName      = '${Domain}\\${Account}';
+  my $Connection    = 0;
+
+  my $ShareInfo     = {
+     'path'         =&gt; "C:\\temp",
+     'netname'      =&gt; "MyShare",
+     'remark'       =&gt; "It is good to share",
+     'passwd'       =&gt; "",
+     'current-users'=&gt; 0,
+     'permissions'  =&gt; 0,
+     'maxusers'     =&gt; -1,
+     'type'         =&gt; 0,
+     };
+
+  my %NETRESOURCE   = (
+     'Scope'        =&gt;  'RESOURCE_REMEMBERED',
+     'Type'         =&gt;  'RESOURCETYPE_DISK',
+     'DisplayType'  =&gt;  'RESOURCEDISPLAYTYPE_SHARE',
+     'Usage'        =&gt;  'RESOURCEUSAGE_CONTAINER',
+     'LocalName'    =&gt;  "$LocalDrive",
+     'RemoteName'   =&gt;  "\\\\$Server\\D\$",
+     'Provider'     =&gt;  "$Server"
+     );
+
+    AddConnection(\%NETRESOURCE,$Password,$UserName,$Connection);
+#    CancelConnection($Name,$Connection,$Force);
+&lt;/code&gt;
+&lt;p&gt;I'm sure I'm way off (as evidenced by my lack of results).  Do any of you have any constructive suggestions, alternate solutions, or (preferably) some sample code to help me get Win32::NetResource's "AddConnection" and "CancelConnection" to do what I need?
+</doctext>
+<thread id="676238">
+<node id="676241"><node id="676489"/>
+</node>
+<node id="676314"><node id="676396"><node id="676397"/>
+</node>
+</node>
+<node id="676315"><node id="676419"><node id="676557"/>
+</node>
+</node>
+</thread></node>

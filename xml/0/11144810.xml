@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11144810" title="Re: Cannot write to, or read from, the SerialPort" created="2022-06-16 16:56:56" updated="2022-06-16 16:56:56" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11144745">macdev</author>
+<doctext field_name="doctext">01. Simply put - Thank you haukex and Marshall.&lt;br&gt;&lt;br&gt;
+
+02. Yes, adding a 'sleep()' Command below each '$port-&gt;write*()' solved my Dilemma. However, I used 'Time::HiRes' - usec() Function for delays less than 1 Second.&lt;br&gt;&lt;br&gt;
+
+I also see the usefulness of the ''IO::Termios' Module' Functions.&lt;br&gt;&lt;br&gt;
+
+Below is a complete Code Example:&lt;br&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+#use strict;
+#use warnings;
+
+use Device::SerialPort;
+use Time::HiRes qw(usleep);
+
+sub Handle_FTdx1200{
+ my $delayValue=100000;
+ 
+ my $port = Device::SerialPort-&gt;new("/dev/cu.usbserial");
+ $port-&gt;databits(8);
+ $port-&gt;baudrate(4800);
+ $port-&gt;handshake("rts");
+ $port-&gt;parity("none");
+ $port-&gt;stopbits(1);
+ $port-&gt;write_settings || undef $port;
+ 
+ $port-&gt;write("FA;");
+ usleep($delayValue);
+ my $VFOA=$port-&gt;read(11);
+ 
+ $port-&gt;write("MD0;");
+ usleep($delayValue);
+ my $Mode=$port-&gt;read(5);
+ 
+ $port-&gt;write("PC;");
+ usleep($delayValue);
+ my $Pwr=$port-&gt;read(6);
+ 
+ $port-&gt;close();
+ 
+ $VFOA=substr($VFOA, 2, 8);
+ $Mode=substr($Mode, 3, 1);
+ 
+ $Pwr=substr($Pwr, 2, 3);
+ $Pwr=int($Pwr);
+ $Pwr="$Pwr";
+ 
+ return($VFOA, $Mode, $Pwr);
+}
+
+my ($tFreq, $tMode, $tPower)=Handle_FTdx1200();
+
+print($tFreq);
+print("\n");
+
+print($tMode);
+print("\n");
+
+print($tPower);
+print("\n");
+&lt;/code&gt;
+
+03. Apparently, in my initial Perl Code, I did not try the 'sleep()' Function.&lt;br&gt;
+It is in AppleScript that a delay Function, after any 'serialport Function, is required.&lt;br&gt;&lt;br&gt;
+Below is AppleScript Code to set the Keyer Speed to 38 Words per Minute.&lt;br&gt;
+
+&lt;code&gt;
+set desiredPort to "/dev/cu.usbserial"
+
+set tSpeed to "38"
+
+try
+	set tPort to serialport open desiredPort bps rate 4800 data bits 8 parity 0 stop bits 1 handshake 3
+	delay 0.1
+	
+	serialport write ("KS;") to tPort
+	delay 0.1
+	
+	set originalSpeed to serialport read tPort
+	delay 0.1
+	set originalSpeed to (get (characters 4 through 5 of originalSpeed) as string) as integer
+	
+	serialport write ("KS0" &amp; tSpeed &amp; ";") to tPort
+	delay 0.1
+	
+	serialport write ("KS;") to tPort
+	delay 0.1
+	
+	set currentSpeed to serialport read tPort
+	delay 0.1
+	set currentSpeed to (get (characters 4 through 5 of currentSpeed) as string) as integer
+	
+	display dialog "Original Speed: " &amp; originalSpeed &amp; return &amp; "Current Speed: " &amp; currentSpeed giving up after 5 buttons ("OK") default button "OK"
+	
+	serialport close tPort
+on error
+	serialport close tPort
+end try
+&lt;/code&gt;
+
+In conclusion - again, thank you - to the both of you.
+</doctext>
+<root_node field_name="root_node">11144747</root_node>
+<parent_node field_name="parent_node">11144747</parent_node>
+<thread id="11144747">
+<node id="11144760"><node id="11144804"/>
+</node>
+<node id="11144776"><node id="11144805"/>
+</node>
+<node id="11144810"><node id="11144841"/>
+<node id="11144884"/>
+</node>
+</thread></node>

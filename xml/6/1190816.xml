@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1190816" title="Re^3: Experimental push on scalar now forbidden" created="2017-05-21 16:46:15" updated="2017-05-21 16:46:15" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I did a bit of digging in the archives. I believe the original proposal for autoderef is this: [https://rt.perl.org/Public/Bug/Display.html?id=78656|perl #78656: Allow push/pop/keys/etc to act on references] (this already contains a long discussion). The feature was [doc://perl5140delta#Array-and-hash-container-functions-accept-references|introduced in v5.14] (documented as experimental, but standardized warnings for experimental features weren't added until later, &lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; [doc://perl5200delta#New-Warnings|in v5.20]).&lt;/p&gt;
+&lt;p&gt;This P5P thread appears to be one of the discussions about the problems with the feature: [http://www.nntp.perl.org/group/perl.perl5.porters/2011/08/msg175513.html|Bug in auto-dereferencing in 5.14?] My understanding is that there were lots of small problems with it, some philosophical but several practical, that added up to this being a contentious feature. Just to pick out two examples, again just based on my understanding from skimming the discussions: First, given that [doc://each], [doc://keys], and [doc://values] can operate on both hashes and arrays ([doc://perl5120delta#each,-keys,-values-are-now-more-flexible|since v5.12]), what does &lt;c&gt;$x&lt;/c&gt; autovivify to in &lt;c&gt;my $x; keys $x;&lt;/c&gt;? Second, what about [doc://bless]ed references that [doc://overload] their dereferencing operations?&lt;/p&gt;
+&lt;p&gt;Since part of the reasoning behind introducing autoderef was to make some expressions simpler (&lt;c&gt;push @{$foo{bar}{quz}}, $x;&lt;/c&gt; became &lt;c&gt;push $foo{bar}{quz}, $x;&lt;/c&gt;), i.e. getting rid of the need for circumfix &lt;c&gt;@{}&lt;/c&gt; and &lt;c&gt;%{}&lt;/c&gt; dereferencing, the [doc://perlref#Postfix-Dereference-Syntax] that was [doc://perl5200delta#Experimental-Postfix-Dereferencing|first introduced in v5.20] took care of that particular point (&lt;c&gt;push @{$foo{bar}{quz}}, $x;&lt;/c&gt; became &lt;c&gt;push $foo{bar}{quz}-&gt;@*, $x;&lt;/c&gt;). It seems to me that the discussion then generally moved in the direction that the problematic autoderef could be removed in favor of postfix deref (e.g. [https://rt.perl.org/Public/Bug/Display.html?id=119437|perl #119437: autoderef, the implicit deref in push REF and others], [http://www.nntp.perl.org/group/perl.perl5.porters/2013/11/msg209170.html|the future of auto-deref]), until that then [doc://perl5240delta#The-autoderef-feature-has-been-removed|happened in v5.24] together with postfix deref being taken out of experimental status as a replacement.&lt;/p&gt;
+&lt;p&gt;(&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; See also [doc://perlexperiment].)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1190788</root_node>
+<parent_node field_name="parent_node">1190809</parent_node>
+<thread id="1190788">
+<node id="1190789"><node id="1190810"/>
+</node>
+<node id="1190790"><node id="1190809"><node id="1190811"><node id="1190812"><node id="1190815"><node id="1190818"/>
+<node id="1190820"/>
+</node>
+</node>
+</node>
+<node id="1190816"><node id="1190817"/>
+<node id="1190819"/>
+</node>
+</node>
+</node>
+<node id="1190872"><node id="1190874"><node id="1190934"/>
+</node>
+</node>
+</thread></node>

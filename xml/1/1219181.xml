@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1219181" title="Re: XML namespaces" created="2018-07-24 12:33:13" updated="2018-07-24 12:33:13" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I tried to use registerNs but no luck :(&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;When you use [mod://XML::LibXML::XPathContext], remember to call &lt;c&gt;findnodes&lt;/c&gt; &lt;i&gt;on that object&lt;/i&gt; for the namespaces to take effect. The following works fine for me (output "&lt;c&gt;&lt;node1&gt;TEXT 1"&lt;/node1&gt;&lt;/c&gt;") for your example file. Note how I'm passing the context of the second &lt;c&gt;findnodes&lt;/c&gt; call as the second argument, and I adjusted your XPath expressions to use the namespace, since it applies to all nodes in the document.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+
+my $doc = XML::LibXML-&gt;load_xml( location =&gt; '/tmp/foo.xml' );
+my $xpc = XML::LibXML::XPathContext-&gt;new($doc);
+$xpc-&gt;registerNs('foo', 'urn:foo:names:tc:doc:document:1.2');
+
+foreach my $tu ($xpc-&gt;findnodes('/foo:doc/foo:body/foo:node')) {
+	for my $node ($xpc-&gt;findnodes('foo:node1', $tu)) {
+		print "$node\n";
+	}
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1219176</root_node>
+<parent_node field_name="parent_node">1219176</parent_node>
+<thread id="1219176">
+<node id="1219178"/>
+<node id="1219181"/>
+</thread></node>

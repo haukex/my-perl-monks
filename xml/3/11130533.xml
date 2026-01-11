@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11130533" title="Re: Getting all subpaths from a path" created="2021-03-28 17:48:42" updated="2021-03-28 17:48:42" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I'm confused about the path you're taking here (pun intended). Are you still working on [id://11130389] from a few days ago? If so, then I have to say I think you're creating yourself an [XY Problem]. I've already pointed you to:&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;[man://rsync] as a potential solution,&lt;/li&gt;
+	&lt;li&gt;[doc://File::Spec]'s &lt;c&gt;splitdir&lt;/c&gt;, instead you're doing &lt;c&gt;split("/", $current_path)&lt;/c&gt; and other manual filename operations, plus it contains other helpful functions, and it's a core module,&lt;/li&gt;
+	&lt;li&gt;[doc://Cwd]'s &lt;c&gt;abs_path&lt;/c&gt;, also a core module,&lt;/li&gt;
+	&lt;li&gt;[mod://Path::Class] as very nice wrapper around [doc://File::Spec] and other utility functions, and&lt;/li&gt;
+	&lt;li&gt;my script [https://bitbucket.org/haukex/htools/src/master/relink|relink], which implements an algorithm to walk a chain of symlinks in its [https://bitbucket.org/haukex/htools/src/a500e09fa0bd/relink#lines-598|&lt;c&gt;resolvesymlink&lt;/c&gt;] function.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Also, I'm not sure what you're testing with &lt;c&gt;(index($link,"/") == -1)&lt;/c&gt;? Note links to directories don't need to &lt;del&gt;end on&lt;/del&gt;&lt;ins&gt;contain&lt;/ins&gt; a slash; you won't know what the link is pointing to until you check the filesystem. (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; Looking at your code again, I see a couple more ways in which certain symlinks would break it.)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;But what if the link is relative (for example ../../abc)?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You're discovering one of the many intricacies of resolving symlinks. As explained in the documentation of [doc://File::Spec]'s &lt;c&gt;canonpath&lt;/c&gt;: "If &lt;c&gt;/foo&lt;/c&gt; on your system is a symlink to &lt;c&gt;/bar/baz&lt;/c&gt;, then &lt;c&gt;/foo/../quux&lt;/c&gt; is actually &lt;c&gt;/bar/quux&lt;/c&gt;, not &lt;c&gt;/quux&lt;/c&gt; as a naive &lt;c&gt;../&lt;/c&gt;-removal would give you."&lt;/p&gt;
+&lt;p&gt;Sorry, but based on my interpretation of everything above, I would strongly suggest that you first learn more about symlinks and handling filenames before trying to implement this. Even though I did a lot of research and testing when I wrote the &lt;c&gt;relink&lt;/c&gt; script, and I trust my own code, I'm still not sure I've fully understood every little detail and edge case that could happen. It's not an easy topic.&lt;/p&gt;
+&lt;p&gt;But anyway, I suggest that even before that, maybe you could explain why the above solutions are not acceptable to you, and why you need to reinvent this particular wheel? I'm sure we could come up with a better solution for your actual problem.&lt;/p&gt;
+&lt;p&gt;If you're still working on [id://11130389], i.e. you're just trying to replicate a directory structure, then could you explain why a solution such as [man://rsync], or simply copying over the links, is not sufficient? (You do know you can get most *NIX tools to not follow symlinks, right?)&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor edits.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt; </doctext>
+<root_node field_name="root_node">11130527</root_node>
+<parent_node field_name="parent_node">11130527</parent_node>
+<thread id="11130527">
+<node id="11130528"/>
+<node id="11130533"><node id="11130546"><node id="11130632"><node id="11130634"><node id="11130635"/>
+</node>
+<node id="11130636"><node id="11130638"/>
+</node>
+<node id="11130637"><node id="11130639"/>
+</node>
+</node>
+<node id="11130714"><node id="11130725"><node id="11130730"><node id="11130731"><node id="11130760"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11130736"/>
+</thread></node>

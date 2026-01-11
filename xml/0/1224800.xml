@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224800" title="Re^8: Selecting Ranges of 2-Dimensional Data" created="2018-10-28 12:16:36" updated="2018-10-28 12:16:36" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Yes but ref aliasing doesn't allow slicing a subset out of it.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, this is true. But earlier you said you would abstract it out into a function anyway, so it doesn't really matter how it's implemented ;-)&lt;/p&gt;
+&lt;p&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt; [id://1224807|See also] &lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+sub arr_alias_1 {
+	my ($arr,@i) = @_;
+	return sub {\@_}-&gt;(@$arr[@i]);
+}
+
+use Data::Alias 'alias';
+sub arr_alias_2 {
+	my ($arr,@i) = @_;
+	alias my @x = @$arr[@i];
+	return \@x;
+}
+
+sub arr_alias_3 {
+	my ($arr,@i) = @_;
+	use 5.022;  # for refaliasing
+	use experimental 'refaliasing';
+	my @x;
+	#(\@x) = \(@$arr[@i]);  # Assigned value is not an ARRAY reference
+	#\@x[0..$#i] = \(@$arr[@i]);  # @x is just undefs?
+	\$x[@x] = \$$arr[$_] for @i;  # works
+	return \@x;
+}
+
+sub hash_alias_1 {
+	my ($hash,@k) = @_;
+	... # not possible in pure Perl?
+}
+
+use Data::Alias 'alias';
+sub hash_alias_2 {
+	my ($hash,@k) = @_;
+	use 5.020; # for Key/Value Hash Slices
+	alias my %x = %$hash{@k};
+	return \%x;
+}
+
+sub hash_alias_3 {
+	my ($hash,@k) = @_;
+	use 5.022;  # for refaliasing
+	use experimental 'refaliasing';
+	my %x;
+	#\(@x{@k}) = \(@$hash{@k});    # values of %x are undefs?
+	\$x{$_} = \$$hash{$_} for @k;  # works
+	return \%x;
+}
+
+# arr_alias_4 and hash_alias_4 could be implemented with "tie"...
+
+use Test::More tests=&gt;10;
+
+for my $aa (\&amp;arr_alias_1,\&amp;arr_alias_2,\&amp;arr_alias_3) {
+	my @arr = ('a'..'z');
+	my $subset = $aa-&gt;(\@arr, 5..10);
+	is_deeply $subset, ['f'..'k'] or diag explain $subset;
+	$subset-&gt;[3] = 9;
+	is_deeply \@arr, ['a'..'h',9,'j'..'z'];
+}
+
+for my $ha (\&amp;hash_alias_2,\&amp;hash_alias_3) {
+	my %hash = map {$_=&gt;uc} 'a'..'z';
+	my $subset = $ha-&gt;(\%hash, 'f'..'k');
+	is_deeply $subset, { map {$_=&gt;uc} 'f'..'k' }
+		or diag explain $subset;
+	$subset-&gt;{i} = 9;
+	is_deeply \%hash, { i=&gt;9, map {$_=&gt;uc} 'a'..'h','j'..'z' };
+}
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1224734</root_node>
+<parent_node field_name="parent_node">1224792</parent_node>
+<thread id="1224734">
+<node id="1224735"><node id="1224737"/>
+</node>
+<node id="1224738"><node id="1224740"><node id="1224741"><node id="1224809"><node id="1224815"/>
+</node>
+</node>
+</node>
+<node id="1224808"/>
+</node>
+<node id="1224744"/>
+<node id="1224746"><node id="1224758"><node id="1224760"/>
+</node>
+</node>
+<node id="1224755"><node id="1224759"><node id="1224765"><node id="1224787"><node id="1224789"><node id="1224790"><node id="1224792"><node id="1224800"/>
+<node id="1224807"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1224943"><node id="1224959"><node id="1225075"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

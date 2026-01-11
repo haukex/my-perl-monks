@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1182939" title="Re^5: Switch.pm Failure ( CGI::Switch? )" created="2017-02-27 03:12:21" updated="2017-02-27 03:12:21" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;so &lt;c&gt;Switch {}&lt;/c&gt; is trying to invoke method Switch with an argument (without parens) that is the result of a block, but the block "never ends?" due to the return. Is that it?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Interesting theory, and I did forget about [doc://perlobj#Indirect-Object-Syntax]. It's easy to test, but as it turns out it's unlikely this is what's going on here, due to the &lt;c&gt;return&lt;/c&gt;s used everywhere in [id://1182819|that code]. We still need more information from OP.&lt;/p&gt;
+&lt;c&gt;
+sub Foo::new { bless {}, shift }
+sub Foo::Switch { print "Switch @_\n" }
+
+Main();
+sub Main {
+	Switch { "Foo" };
+	Switch { new Foo };
+	Switch { return }; # just returns
+}
+Switch {  }; # this dies
+
+__END__
+
+Switch Foo
+Switch Foo=HASH(0x24a5338)
+Can't call method "Switch" without a package or object reference at ...
+&lt;/c&gt;
+
+
+</doctext>
+<root_node field_name="root_node">1182691</root_node>
+<parent_node field_name="parent_node">1182850</parent_node>
+<thread id="1182691">
+<node id="1182693"><node id="1182697"><node id="1182699"><node id="1182819"><node id="1182824"/>
+<node id="1182827"><node id="1182831"><node id="1182846"/>
+</node>
+</node>
+<node id="1182833"/>
+</node>
+</node>
+</node>
+<node id="1182818"/>
+</node>
+<node id="1182695"><node id="1182834"><node id="1182836"/>
+<node id="1182837"><node id="1182850"><node id="1182864"><node id="1182866"/>
+</node>
+<node id="1182939"><node id="1188877"/>
+</node>
+</node>
+<node id="1182858"/>
+</node>
+</node>
+</node>
+<node id="1182706"/>
+</thread></node>

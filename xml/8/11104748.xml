@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11104748" title="Re: CUPS Printing - Using a Variable as a Filename" created="2019-08-20 12:54:17" updated="2019-08-20 12:54:17" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1231801">Wayne</author>
+<doctext field_name="doctext">&lt;p&gt;Thank you for the prompt and informative replies! I knew that there way a way to do it. Perl rocks!&lt;br&gt;&lt;br&gt;
+I have posted the updated code snippit which is now working, below. &lt;br&gt;&lt;br&gt;Thanks again!&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl -t
+
+use strict;
+use warnings;
+use Net::CUPS::Destination;
+
+use File::Temp qw/tempfile/;
+
+my ($filehandle,$filename) = tempfile(UNLINK=&gt;1);
+
+# Define Printer
+my $cups = Net::CUPS-&gt;new() or die $!;
+my $printer = $cups-&gt;getDestination("CITIZEN-CT-S801") or die $!;
+
+open($filehandle, '&gt;', $filename) or die "Cannot open file for writing: $!\n";
+
+print $filehandle "Some data 1\n";
+print $filehandle "Some data 2\n";
+print $filehandle "Some data 3\n";
+
+close($filehandle);
+
+# Print Data
+open($filehandle, '&lt;', $filename) or die "Cannot open file for reading: $!\n";
+
+if ($printer-&gt;printFile($filename, 'jobx')) { print 'Success';} 
+
+else
+{
+	my $error = $printer-&gt;getError();
+	if ($error) { print "Printer Error: " . $error . "\n"; }
+}
+close($filehandle);
+
+exit;
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">11104741</root_node>
+<parent_node field_name="parent_node">11104741</parent_node>
+<thread id="11104741">
+<node id="11104743"/>
+<node id="11104744"><node id="11104746"/>
+</node>
+<node id="11104745"/>
+<node id="11104747"/>
+<node id="11104748"><node id="11104758"/>
+</node>
+</thread></node>

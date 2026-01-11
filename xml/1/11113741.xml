@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11113741" title="Re^3: system() call mis-directs?" created="2020-03-03 16:35:52" updated="2020-03-03 16:35:52" _doctext_mode="lenient"><type id="11">note</type>
+<author id="747201">afoken</author>
+<doctext field_name="doctext">&lt;blockquote&gt;[mod://ShellQuote::Any]&lt;/blockquote&gt;
+&lt;p&gt;The code currently looks like this:&lt;/p&gt;
+&lt;c&gt;
+package ShellQuote::Any;
+use strict;
+use warnings;
+
+our $VERSION = '0.04';
+
+sub import {
+    my $caller = caller;
+
+    no strict 'refs'; ## no critic
+    *{"${caller}::shell_quote"} = \&amp;shell_quote;
+}
+
+sub shell_quote {
+    my ($cmd, $os) = @_;
+
+    if ($os) {
+        _require($os);
+        return _is_win32($os) ? _win32_quote($cmd) : _bourne_quote($cmd);
+    }
+    else {
+        _q()-&gt;($cmd);
+    }
+}
+
+my $Q;
+sub _q {
+    return $Q if $Q;
+
+    _require($^O);
+
+    if ( _is_win32($^O) ) {
+        $Q = \&amp;_win32_quote;
+    }
+    else {
+        $Q = \&amp;_bourne_quote;
+    }
+
+    return $Q;
+}
+
+my %K;
+sub _require {
+    my ($os) = @_;
+
+    return $K{$os} if $K{$os};
+
+    my $klass = _is_win32($os) ? 'Win32/ShellQuote.pm' : 'String/ShellQuote.pm';
+    $K{$os} = $klass;
+
+    require "$klass"; ## no critic
+}
+
+sub _win32_quote {
+    my ($cmd) = @_;
+    Win32::ShellQuote::cmd_escape(join ' ', @$cmd);
+}
+
+sub _bourne_quote {
+    my ($cmd) = @_;
+    String::ShellQuote::shell_quote(@$cmd);
+}
+
+sub _is_win32 {
+    my ($os) = @_;
+
+    return $os =~ m!^(?:MS)?Win(?:32)?$!i ? 1 : 0;
+}
+
+1;
+&lt;/c&gt;
+&lt;p&gt;Just from looking at the names of the functions, it has only two modes of operation: Either Windows, or Bourne Shell. No code for handling cygwin, OS/2 or DOS, so those three will be treated as Bourne Shell, which is plain wrong.&lt;/p&gt;
+&lt;p&gt;On Windows, you simply [id://1199235|can not win the quoting game]. Any code pretending to be able to do so is broken.&lt;/p&gt;
+&lt;p&gt;Assuming that all other systems use a bourne-compatible shell as default shell is at least optimistic. Severals systems have a korn shell as default, others even use a csh. See [https://www.in-ulm.de/~mascheck/various/shells/|Various system shells].&lt;/p&gt;
+&lt;p&gt;Looking at the documentation of [mod://String::ShellQuote], handling the non-Windows part, the problem is obvious without even reading the source:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;b&gt;BUGS&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;Only Bourne shell quoting is supported. I'd like to add other shells (particularly cmd.exe), but I'm not familiar with them. It would be a big help if somebody supplied the details.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;It seems nobody cared during the last 10 years, and the author either had no time to RTFM, or had no idea where to search for shell man pages.&lt;/p&gt;
+&lt;p&gt;So, with ShellQuote::Any, you are essentially lost if the current default shell is no bourne shell. I did not bother to read the quoting code in String::ShellQuote. As is, it is broken anyway, and with it ShellQuote::Any. Yes, it may work on many systems in their default configuration, but it won't do its job on all systems. It does not even prevent stupid things from happening on unknown systems.&lt;/p&gt;
+&lt;p&gt;Alexander&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-747201"&gt;
+--&lt;br&gt;
+Today I will gladly share my knowledge and experience, for there are no sweeter words than "I told you so". ;-)
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11113664</root_node>
+<parent_node field_name="parent_node">11113689</parent_node>
+<thread id="11113664">
+<node id="11113673"/>
+<node id="11113678"><node id="11113681"><node id="11113683"><node id="11113690"/>
+</node>
+<node id="11113685"/>
+</node>
+<node id="11113689"><node id="11113741"/>
+<node id="11113745"/>
+</node>
+<node id="11113799"><node id="11113811"/>
+<node id="11113889"/>
+</node>
+</node>
+<node id="11113688"/>
+</thread></node>

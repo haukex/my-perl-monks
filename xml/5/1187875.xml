@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1187875" title="Re^3: determine the variable causing the error: Use of uninitialized value" created="2017-04-13 15:52:57" updated="2024-01-30 10:07:39" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I'm usually don't even want to supress the error (this usually means the input data is wrong and I need to deal with it)&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If it's &lt;c&gt;undef&lt;/c&gt;s in a Perl data structure that you seek...&lt;/p&gt;
+&lt;c&gt;
+sub seek_undef {
+	my ($ref,$path) = (@_,"");
+	if (ref $ref eq 'HASH')
+		{ seek_undef($ref-&gt;{$_}, $path."{$_}") for keys %$ref }
+	elsif (ref $ref eq 'ARRAY')
+		{ seek_undef($ref-&gt;[$_], $path."[$_]") for 0..$#$ref }
+	else { defined $ref or warn "undef at $path\n" }
+}
+
+seek_undef( {
+	foo =&gt; { quz=&gt;{ abc=&gt;"def", ghi=&gt;undef } },
+	bar =&gt; { baz=&gt;[ "jkl", undef, { ooo=&gt;undef } ],
+		blah=&gt;undef },  uuu =&gt; undef,
+} );
+
+__END__
+
+undef at {foo}{quz}{ghi}
+undef at {bar}{baz}[1]
+undef at {bar}{baz}[2]{ooo}
+undef at {bar}{blah}
+undef at {uuu}
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1187864</root_node>
+<parent_node field_name="parent_node">1187871</parent_node>
+<thread id="1187864">
+<node id="1187865"><node id="1187867"><node id="1187869"><node id="1187872"><node id="1187989"/>
+<node id="1188037"><node id="1188045"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1187866"><node id="1187871"><node id="1187875"/>
+<node id="1187877"><node id="1187881"/>
+</node>
+<node id="1187893"><node id="1187904"><node id="1187908"/>
+<node id="1187932"/>
+</node>
+</node>
+<node id="1187938"/>
+</node>
+</node>
+<node id="1187873"/>
+<node id="1187906"><node id="1187909"><node id="1187910"><node id="1187914"/>
+<node id="1187926"/>
+</node>
+</node>
+</node>
+<node id="1187920"/>
+<node id="1187930"/>
+<node id="1187935"/>
+<node id="1188671"/>
+</thread></node>

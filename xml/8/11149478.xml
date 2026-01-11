@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11149478" title="Re: How to know that a regexp matched, and get its capture groups? (updated)" created="2023-01-10 05:08:01" updated="2023-01-10 05:08:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The others have already given you some ideas for better parsing. However, you're mistaken on the premise of the question:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;It then occurred to me that the code won't run if the regexp has no capture groups! ... I need the captures.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The code will still run - a regex in list context without &lt;c&gt;/g&lt;/c&gt; and without capture groups will return the list &lt;c&gt;(1)&lt;/c&gt; if it matched, so the assignment will evaluate to true. [id://1215373|See also].&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+my @syntax = ( [qr/cd/, sub { dd "callback", \@_ }] );
+my $line = "abcdef";
+
+for my $syn (@syntax) {
+	my ($re, $cb) = @$syn;
+	if (my (@matches) = ($line =~ $re)) {
+		$cb-&gt;(@matches);
+		last;
+	}
+}
+
+__END__
+
+("callback", [1])
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; And [doc://@+|&lt;c&gt;$#+&lt;/c&gt;] will give you the number of capture groups present in the last successful match ([id://1221528|see also]).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11149467</root_node>
+<parent_node field_name="parent_node">11149467</parent_node>
+<thread id="11149467">
+<node id="11149468"/>
+<node id="11149469"><node id="11149480"><node id="11149481"><node id="11149483"><node id="11149484"><node id="11149485"/>
+</node>
+</node>
+<node id="11149491"><node id="11149515"><node id="11149516"/>
+<node id="11149522"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11149472"><node id="11149496"><node id="11149499"><node id="11149506"/>
+</node>
+</node>
+</node>
+<node id="11149473"/>
+<node id="11149474"/>
+<node id="11149478"/>
+<node id="11149487"/>
+</thread></node>

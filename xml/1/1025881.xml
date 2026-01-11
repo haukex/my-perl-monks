@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1025881" title="Windows Net Use" created="2013-03-28 03:37:00" updated="2013-03-28 03:37:00" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;
+Hi Monks.
+&lt;/p&gt;
+&lt;p&gt;
+I need to check connection to a particular Windows Share using the windows Net Use command.The output of Net use command is as follows:
+&lt;/p&gt;
+&lt;code&gt;
+New connections will be remembered.
+
+
+Status       Local     Remote                    Network
+
+-------------------------------------------------------------------------------
+OK                    \\10.81.253.70\G$          Microsoft Windows Network
+Disconnected           \\10.81.253.140\IPC$      Microsoft Windows Network
+The command completed successfully.
+
+&lt;/code&gt;
+&lt;p&gt;Now to check connection for IP \\10.81.253.70\G$ , I wrote the following code&lt;/p&gt;
+&lt;code&gt;
+$inputDirectory="\\\\10.81.253.70\\G\$";
+my $c = `net use`;
+my $unc = 0;
+my $h;
+my @a=split(' ',$c);
+foreach $h (@a)
+{
+	if ($h eq 'OK' || $h eq 'Disconnected')
+	{
+		$status =$h;
+		$temp=1;
+	}
+	elsif($temp == 1)
+	{
+		my $remote=$h;
+		if($status eq 'OK' &amp;&amp; $remote eq $inputDirectory)
+		{
+		$unc=1;
+		}
+		$temp = 0;
+	}
+}
+if ($unc == 1)
+{
+	print "UNC is Connected";
+}	
+else
+{
+	print "UNC is Disconnected";
+}
+&lt;/code&gt;
+&lt;p&gt;
+This works fine BUT if the share name is "\\10.81.253.70\file data\query files" than is fails because i am splitting the output of net use command on every space encountered so if the given share name contains spaces in its name than it breakes the share name on spaces , thus defeating my purpose. Please provide some help or tell how can i check connectivity to shares in windows through perl?
+&lt;/p&gt;</doctext>
+<reputation field_name="reputation">16</reputation>
+<thread id="1025881">
+<node id="1025883"/>
+<node id="1025887"><node id="1025911"><node id="1025916"/>
+<node id="1025917"><node id="1025922"><node id="1025932"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1025924"><node id="1025943"><node id="1025944"/>
+<node id="1025998"/>
+</node>
+</node>
+<node id="1026036"><node id="1026090"><node id="1026148"><node id="1026420"/>
+</node>
+</node>
+</node>
+<node id="1102658"/>
+</thread></node>

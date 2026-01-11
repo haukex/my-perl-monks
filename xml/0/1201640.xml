@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201640" title="Using negative lookahead" created="2017-10-18 21:14:07" updated="2017-10-18 21:14:07" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="750012">ibm1620</author>
+<doctext field_name="doctext">I want to create a regex that will identify a string surrounded by quotes, and remove the quotes. If the quote symbol appears within the string, the match should fail.
+
+The quotes can be either ' or ". Eventually they might be multi-character strings (e.g. '').
+
+I'm not concerned at this point about recognizing escaped embedded quotes.
+
+This is slightly contrived .. I mostly want to understand why a negative lookahead isn't working the way I thought it would.
+&lt;p&gt;
+I sure would appreciate being shown what I'm misunderstanding.
+
+&lt;code&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+my @cases = (
+    q{'abc"def'},
+    q{'abc'},
+    q{"abc"},
+    q{''},
+    q{'abc'def'},               # Want this to fail matching
+    q{'This shouldn't match'},  # Want this to fail matching
+    q{"This isn't a problem"},
+    q{"abc},
+    q{abc"},
+    q{abc},
+    q{'abc"},
+    q{'ab''},  # Want this to fail matching
+);
+
+strip_quotes($_) for @cases;
+
+# If we can remove a matching pair of single or double quotes from 
+# a string, without the quote symbol also appearing within the string,
+# do so. Otherwise don't change the string.
+
+sub strip_quotes {
+    my $line = shift;
+    print "\n$line\n";
+
+    # NO NEGATIVE LOOKAHEAD
+    # This works except it allows an embedded delimiter
+    if ( $line =~ m{^         # anchor
+                    (         # capture delimiter in pos 1
+                        ["']  # delim is single or double quote
+                    )
+                    (.*)      # anything
+                    \g1$}x    # finally, the delim
+                ) {
+        print " 1- Got a match: delimiter was {$1}, body was {$2}\n";
+    }
+    else {
+        print " 1- No match.\n";
+    }
+
+    # ATTEMPTING NEGATIVE LOOKAHEAD
+    # This should fail if the delimiter is found in non-terminal pos.
+    if ( $line =~ m{^         # anchor
+                    (         # capture delimiter in pos 1
+                        ["']  # delim is single or double quote
+                    )
+                    (.*(?!\g1))  # neg lookahead for delim
+                    \g1$}x    # finally, the delim
+                ) {
+        print " 2- Got a match: delimiter was {$1}, body was {$2}\n";
+    }
+    else {
+        print " 2- No match.\n";
+    }
+
+}
+&lt;/code&gt;
+Result:
+&lt;code&gt;
+'abc"def'
+ 1- Got a match: delimiter was {'}, body was {abc"def}
+ 2- No match.
+
+'abc'
+ 1- Got a match: delimiter was {'}, body was {abc}
+ 2- No match.
+
+"abc"
+ 1- Got a match: delimiter was {"}, body was {abc}
+ 2- No match.
+
+''
+ 1- Got a match: delimiter was {'}, body was {}
+ 2- No match.
+
+'abc'def'
+ 1- Got a match: delimiter was {'}, body was {abc'def}
+ 2- No match.
+
+'This shouldn't match'
+ 1- Got a match: delimiter was {'}, body was {This shouldn't match}
+ 2- No match.
+
+"This isn't a problem"
+ 1- Got a match: delimiter was {"}, body was {This isn't a problem}
+ 2- No match.
+
+"abc
+ 1- No match.
+ 2- No match.
+
+abc"
+ 1- No match.
+ 2- No match.
+
+abc
+ 1- No match.
+ 2- No match.
+
+'abc"
+ 1- No match.
+ 2- No match.
+
+'ab''
+ 1- Got a match: delimiter was {'}, body was {ab'}
+ 2- No match.
+
+&lt;/code&gt;</doctext>
+<thread id="1201640">
+<node id="1201642"><node id="1201710"/>
+</node>
+<node id="1201643"><node id="1201712"><node id="1201718"><node id="1201754"/>
+</node>
+</node>
+</node>
+<node id="1201660"><node id="1201713"/>
+</node>
+<node id="1201690"><node id="1201714"/>
+<node id="1201751"><node id="1201752"/>
+</node>
+</node>
+<node id="1201763"/>
+</thread></node>

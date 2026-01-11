@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117850" title="How to interpret characters in Devel::Peek CUR" created="2020-06-09 00:38:43" updated="2020-06-09 00:38:43" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="437266">ait</author>
+<doctext field_name="doctext">&lt;p&gt;
+Pardon my ignorance on some of these internals, but I am going crazy transferring data through 3 different databases in different charsets through different layers (ssh, file transfers, direct SQL), etc. &lt;br/&gt;
+Context: Trying to figure out why PHP::Serialization reports 30 as the string length of the 26 char string. When I serialize to the PHP Array I get this:
+&lt;/p&gt;
+&lt;pre&gt;
+s:30:"Triple “S” Industrial Corp"
+&lt;/pre&gt;
+&lt;p&gt;
+So I am trying to figure out if the bug is in the PHP::Serialization or somewhere else in this crazy 3 system interface. The PHP on the target server is 7.2.10 so I am assuming it supports these UTF chars w/o issue. But what seems strange to me is that both Perl and PHP would both internally represent 30 in character length? So before I dive into that module's code to try to understand what it's doing, I want to first understand how Perl stores this internally.. 
+&lt;/p&gt;
+&lt;p&gt;
+So given this string: &lt;b&gt;Triple “S” Industrial Corp&lt;/b&gt; (note funky quotes), this is the Dump:
+&lt;/p&gt;
+&lt;pre&gt;
+SV = PV(0x5584829062e0) at 0x558482ad2ee0
+REFCNT = 1
+FLAGS = (POK,IsCOW,pPOK)
+PV = 0x558482b75b30 "Triple \342\200\234S\342\200\235 Industrial Corp"\0
+CUR = 30
+LEN = 56
+COW_REFCNT = 0
+&lt;/pre&gt;
+&lt;p&gt;
+What are the characters \342\200\234 (the left funky quote)? &lt;br&gt;
+How would I manually decode them if I wanted to ? (i.e. is this a utf8 sequence? how do I know what they mean?)&lt;br/&gt;
+Is this is why CUR reports 30 "perl characters" instead of 26 actual characters? 
+&lt;/p&gt;
+
+
+</doctext>
+<thread id="11117850">
+<node id="11117851"><node id="11117854"><node id="11117863"/>
+</node>
+<node id="11117949"/>
+<node id="11118138"/>
+</node>
+<node id="11117853"><node id="11117930"><node id="11117936"/>
+<node id="11117941"><node id="11118139"/>
+</node>
+</node>
+</node>
+<node id="11117875"><node id="11118140"/>
+</node>
+</thread></node>

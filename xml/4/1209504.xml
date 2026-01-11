@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1209504" title="Date::Parse - how to correctly parse dates between 1901 and 1969" created="2018-02-19 14:29:21" updated="2018-02-19 14:29:21" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1022843">eniad</author>
+<doctext field_name="doctext">&lt;p&gt;I am parsing dates and datetimes input by users who aren't too careful with their formatting. Date::Parse seems great because it handles most cases I need to handle.&lt;/p&gt;
+&lt;p&gt;Except datetimes between 1901-01-01 00:00:00 and 1968-12-31 23:59:59, as I found out today. For those datetimes, Date::Parse str2time adds an extra 100 years when it parses the datetime to epoch time.&lt;/p&gt;
+
+&lt;p&gt;Here is the code I am using to parse the datetimes:&lt;/p&gt;
+&lt;code&gt;#!/usr/bin/perl
+#---------------------------------------------------------------------
+# format_date.pl
+#
+# format variable date inputs
+#---------------------------------------------------------------------
+
+use strict;
+use warnings;
+
+use Date::Parse;
+use DateTime;
+
+my $DEFAULT_TIME_ZONE = "GMT";
+
+my @dates = (
+    "1899-06-24 09:44:00",
+    "1900-12-31 23:59:59",
+    "1901-01-01 00:00:00",
+    "1960-12-31 23:59:59",
+    "1966-06-24 09:44:00",
+    "1968-12-31 23:59:59",
+    "1969-01-01 00:00:00",
+    "1969-12-31 23:59:59",
+    "1970-01-01 00:00:01",
+    "2000-01-01 00:00:00",
+    "2017-06-24 23:59:59",
+    "2018-06-24 09:44:00",
+    "2238-06-24 09:44:00"
+
+);
+
+foreach my $string (@dates) {
+
+    # format datetime field from any valid datetime input
+    # default time zone is used if timezone is not included in string
+    my $epoch = str2time( $string, $DEFAULT_TIME_ZONE );
+
+    # error if date is not correctly parsed
+    if ( !$epoch ) {
+        die("ERROR ====&gt; invalid datetime ($string), "
+        . "datetime format should be YYYY-MM-DD HH:MM:SS");
+    }
+
+    my $date = DateTime-&gt;from_epoch( epoch =&gt; $epoch );
+
+    printf( "formatting datetime: value = %20s, epoch = %20u, "
+            . "date = %20s\n", $string, $epoch, $date );
+
+}
+
+exit 0;&lt;/code&gt;
+&lt;p&gt;Side note: I need to improve my error handling because the valid date 1970-01-01 00:00:00 will throw an error.&lt;/p&gt;
+&lt;p&gt;The additional 100 years for dates between 1901 and 1969 can be seen in the output:&lt;/p&gt;
+&lt;code&gt;formatting datetime: value =  1899-06-24 09:44:00, epoch = 18446744071484095456, date =  1899-06-24T09:44:00
+formatting datetime: value =  1900-12-31 23:59:59, epoch = 18446744071532098815, date =  1900-12-31T23:59:59
+formatting datetime: value =  1901-01-01 00:00:00, epoch =            978307200, date =  2001-01-01T00:00:00
+formatting datetime: value =  1960-12-31 23:59:59, epoch =           2871763199, date =  2060-12-31T23:59:59
+formatting datetime: value =  1966-06-24 09:44:00, epoch =           3044598240, date =  2066-06-24T09:44:00
+formatting datetime: value =  1968-12-31 23:59:59, epoch =           3124223999, date =  2068-12-31T23:59:59
+formatting datetime: value =  1969-01-01 00:00:00, epoch = 18446744073678015616, date =  1969-01-01T00:00:00
+formatting datetime: value =  1969-12-31 23:59:59, epoch = 18446744073709551615, date =  1969-12-31T23:59:59
+formatting datetime: value =  1970-01-01 00:00:01, epoch =                    1, date =  1970-01-01T00:00:01
+formatting datetime: value =  2000-01-01 00:00:00, epoch =            946684800, date =  2000-01-01T00:00:00
+formatting datetime: value =  2017-06-24 23:59:59, epoch =           1498348799, date =  2017-06-24T23:59:59
+formatting datetime: value =  2018-06-24 09:44:00, epoch =           1529833440, date =  2018-06-24T09:44:00
+formatting datetime: value =  2238-06-24 09:44:00, epoch =           8472332640, date =  2238-06-24T09:44:00&lt;/code&gt;
+&lt;p&gt;The [mod://Date::Parse] documentation suggests it can handle dates at least as old at 1901-01-01. The [mod://Time::Local] documentation suggest it should be able handle dates even older.&lt;/p&gt;
+&lt;p&gt;How should I handle this oddity? Is there a better way to parse variable input formats?&lt;/p&gt;</doctext>
+<thread id="1209504">
+<node id="1209506"><node id="1209508"/>
+</node>
+<node id="1209507"><node id="1209509"><node id="1209510"><node id="1209511"/>
+</node>
+</node>
+</node>
+<node id="1209514"><node id="1209518"/>
+</node>
+<node id="1209517"><node id="1209519"><node id="1209579"/>
+</node>
+</node>
+<node id="1209520"><node id="1209526"><node id="1209589"><node id="1209608"/>
+<node id="1209613"/>
+</node>
+</node>
+</node>
+<node id="1209580"><node id="1209590"><node id="1209596"><node id="1209598"/>
+<node id="1209611"/>
+</node>
+</node>
+</node>
+</thread></node>

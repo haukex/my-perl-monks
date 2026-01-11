@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1180208" title="Re: Web monitoring with Perl" created="2017-01-24 06:09:52" updated="2017-01-24 06:09:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [predrag],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;How it is about Perl installation and version? I expect Perl 5.10.1&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;While that Perl version may be "good enough", it's a little over 7 years old, so you should definitely look into installing a newer version.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Is 1 or 2GB RAM enough for this my application?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Of course that'll depend on the software you use, but just as a guess I'd say that it's probably enough for a start. Just in case, it would be good if your cloud provider offers you an easy way to increase that later if necessary.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;2. The opposite: To create a small web server with PICs on the remote place, with MySQL base, so the website server should have to connect to it and read data two times a day.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;While possible, I would say that it's probably better for the sensors to push their data to a central location (web server). That way, if you later have several sensor systems, the web server doesn't have to reach out to multiple remote locations to fetch the data.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I know about modules DBI and DBD:: mysql. Any recommendations for these or something other?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;For your application I'd say MySQL is a good database, and those two modules are "the" modules for accessing databases. There are nowadays also more advanced modules, such as [mod://DBIx::Class], but I've found those are worth the effort when saving complex object-oriented data structures, whereas it sounds like your data will be mostly row-based with probably only one table or two. In that case [mod://DBI] will be fine. Note: Make sure to use [https://metacpan.org/pod/DBI#Placeholders-and-Bind-Values|placeholders]!&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;a cron job calling that Perl script that generates the charts twice a day and saves them as image files. ... But if I would like to do monitoring during the whole year, I have to find a solutions for that.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Generating static images and HTML pages is of course somewhat limited, but it's not all too difficult to write a CGI script* that allows the user to query and display certain ranges of data in a table dynamically. This could be done in the "traditional" way of having an HTML form, which is submitted to a CGI script which then fetches the data from the database and generates the HTML to send back to the browser. That's probably easiest for a first version, but later you could implement a more modern dynamic webpage where the JavaScript code (with something like [https://jquery.com/|jQuery]) fetches the data in a format such as JSON and renders it in the browser dynamically.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I wonder if there is anything between Perl and PICs? ... Instead I could have a computer there, accept data to the serial port (?) and write Perl scripts that read data and present in a form of graphs and tables on HTML pages.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I would nowadays strongly suggest a small, single-board computer such as the [https://www.raspberrypi.org/|Raspberry Pi], instead of a microcontroller like the PIC. I'm a little biased since I've been working with them for several months now to develop a data logging system (and I've [https://bitbucket.org/haukex/hgpstools|released] my software under the GPL), but there are also lots of other similar single-board systems. I think the advantage of such systems is that they feature full OSes, and most of the Linux software that runs on your PC will also run on an RPi, including Perl. Just a note, since RPis use SD cards to store data, backups of the data are important since SD cards are known to fail from time to time, especially when written to often.&lt;/p&gt;
+&lt;p&gt;You asked about the serial port, but in my experience it's easiest to use USB. Of course there are USB-to-Serial adapters which work fine with the RPi, so when selecting your sensors I'd recommend looking for ones that feature either USB interfaces out of the box, or at least RS-232/RS-485 so you can use an adapter. Many of these sensors will appear on the Linux system as a virtual serial port, so reading from them is just like reading from a regular serial port, but some require special drivers, this is also something to look out for when selecting sensors.&lt;/p&gt;
+&lt;p&gt;So here's an idea for the system architecture, based partially on my experience with the data logging system I'm currently working on. This is, of course, only One Way To Do It, there are lots of alternative ways to design the system. As mentioned, the sensors (USB, or RS-232/RS-485) would be connected to the RPi, where they can be read in one of two ways. First, for very low data rates (like twice a day, or hourly), probably a [man://cron] job that calls a Perl script which reads one sensor value and posts it to the web server is enough. Second, for higher data rates, it's probably better to stay connected to the sensor, continually reading from the serial port and then processing the data as needed: writing it to a text file, a database, etc. (this is what my code does) and then sending averages or summaries to be displayed on the web server. But since you said that for now, updates to the data will be infrequent, and because a cron job is easier to set up than a daemon, I'll assume the first solution.&lt;/p&gt;
+&lt;p&gt;So on the RPi, the script would have the tasks of connecting to the serial port (e.g. [mod://Device::SerialPort]), if necessary requesting a value from the sensor, reading that value out, and if necessary parsing it into a usable format. Then, it would need to submit that data to the web server, for example with the standard module [mod://LWP::UserAgent], most likely with a &lt;c&gt;POST&lt;/c&gt; request. A common data exchange format is [mod://JSON::MaybeXS|JSON].&lt;/p&gt;
+&lt;p&gt;On the web server side, you'd have one CGI script* that accepts these data values - it should be protected with some kind of authentication mechanism to make sure only the RPis can submit data. This script could then enter the sensor values into the database. Second, there'd need to be another script that reads values from the database and generates the charts, tables, etc. How this script gets triggered depends on how real-time you want your data updates to be, but with data updates only twice a day, I think a [man://cron] job timed to run a little while after the RPis would have submitted their data is probably enough for a first version. For example, the RPis could be configured to submit their data at 11:45 UTC, and then web pages are generated at 12:00 UTC - note all systems should use NTP. A more advanced later version might have the updates to the database trigger the re-generation of the web pages. But the fairly simple set-up with [man://cron] would already allow your users to view "near-real-time" data using the static images and HTML files. A next step might then be a more dynamic web interface, as already described above.&lt;/p&gt;
+&lt;p&gt;* Note that when I say "CGI script", I don't mean specifically the [mod://CGI] module, for new projects it's better to use one of the more modern web frameworks I mentioned in my [id://1179915|previous post], such as [mod://Mojolicious].&lt;/p&gt;
+&lt;p&gt;Much of my suggestions describe a fairly simple mechanism because you said that this would be your first web based project, plus your data updates would be relatively infrequent. In several places I mentioned some future improvements, that might become necessary if you have data updates faster than roughly every half hour or so, or a larger number of sensor systems submitting data - maybe more than 10 sensor systems, but that's only an order of magnitude estimate. But hopefully this is one good place to start.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1180180</root_node>
+<parent_node field_name="parent_node">1180180</parent_node>
+<thread id="1180180">
+<node id="1180188"><node id="1180224"><node id="1180225"><node id="1180228"/>
+</node>
+</node>
+</node>
+<node id="1180203"><node id="1180226"/>
+</node>
+<node id="1180204"><node id="1180230"><node id="1180280"><node id="1180303"><node id="1180304"><node id="1180314"><node id="1180326"><node id="1180330"><node id="1180334"/>
+<node id="1180383"><node id="1180463"><node id="1180466"><node id="1180472"><node id="1180473"><node id="1180474"><node id="1180475"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1180208"><node id="1180222"/>
+<node id="1180245"/>
+</node>
+<node id="1180241"><node id="1180247"/>
+</node>
+<node id="1180324"><node id="1180332"/>
+</node>
+<node id="1180522"><node id="1180537"><node id="1180592"><node id="1180616"/>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1195348" title="Re: Making use of a hash of an array..." created="2017-07-18 12:26:04" updated="2017-07-18 12:26:04" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I'm not sure I understand your specification as to what the conditions are for &lt;i&gt;"captures the hairpin best"&lt;/i&gt;, but as I understand it, it has something to do with how the ranges overlap? In that case, here are some threads that might be of interest: [id://1060347], [id://841368], or [id://1169432] (in the latter I mention [wp://Interval tree]s, which might be useful here). If your input data is large, that might mean you need a different data structure for efficient lookups.&lt;/p&gt;
+&lt;p&gt;As for reading the file into a data structure, that's probably easiest with a simple state machine type approach, in this example I'm keeping the state (the current key) as &lt;c&gt;$curkey&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+my %hash;
+my $curkey;
+while (&lt;DATA&gt;) {
+	chomp;
+	if (/^&gt;(\w+)$/) {
+		$curkey = $1;
+	}
+	elsif ( my ($data,$low,$high) =
+		/^\s*(\w+)\s+(\d+)\s*\.\.\s*(\d+)\s*$/ ) {
+			die "value seen before header: '$_'"
+				unless defined $curkey;
+			push @{ $hash{$curkey} },
+				{ data=&gt;$data, low=&gt;$low, high=&gt;$high };
+	}
+	else { die "don't know how to parse: '$_'" }
+}
+dd \%hash;
+
+__DATA__
+&gt;key1
+Foo  10 .. 20
+Bar  11 .. 21
+&gt;key2
+Quz  30 .. 40
+Baz  37 .. 45
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Minor tweaks to regex and text.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1195347</root_node>
+<parent_node field_name="parent_node">1195347</parent_node>
+<thread id="1195347">
+<node id="1195348"><node id="1195389"><node id="1195446"><node id="1195522"><node id="1195837"/>
+</node>
+</node>
+</node>
+<node id="1195514"><node id="1195521"><node id="1195523"/>
+</node>
+</node>
+</node>
+<node id="1195349"/>
+<node id="1195355"><node id="1195359"/>
+</node>
+</thread></node>

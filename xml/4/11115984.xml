@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11115984" title="Re: Matching terms in text" created="2020-04-23 17:25:18" updated="2020-04-23 17:25:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Please see [id://1179840].&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Text::CSV;
+
+my %terms;
+
+my $csv = Text::CSV-&gt;new({ binary=&gt;1, auto_diag=&gt;2, sep_char=&gt;"|" });
+my $fh = *DATA; # normally you'd open() a file here
+while ( my $row = $csv-&gt;getline($fh) ) {
+	my $id = shift @$row;
+	@terms{@$row} = ($id) x @$row;
+}
+$csv-&gt;eof or $csv-&gt;error_diag;
+
+my ($regex) = map {qr/$_/} join '|', map {quotemeta}
+	sort { length $b &lt;=&gt; length $a or $a cmp $b } keys %terms;
+
+my $input = q{2020 Ford F 250 is great but I prefer Tesla Model-V};
+
+(my $output = $input) =~ s/($regex)/&lt;$terms{$1}&gt;&lt;$1&gt;/g;
+
+use Test::More tests=&gt;1;
+is $output,
+	q{&lt;2&gt;&lt;2020 Ford F 250&gt; is great but I prefer &lt;1&gt;&lt;Tesla Model-V&gt;};
+
+__DATA__
+1|Tesla S|Tesla model V|Tesla model|Tesla|Tesla Model-V
+2|Ford RAM truck|2020 Ford Mustand|Ford ranger|Ranger|ford|2020 Ford F-250|2020 Ford F 250|Ford F 250
+3|GM Chevrolet|GM Chevy|GM Chevrolet 2020|Chevrolet|Chevy|Chevrolet 2020|GM Chevrolet volt|Chevrolet Captiva Sport|General motors|GM
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11115981</root_node>
+<parent_node field_name="parent_node">11115981</parent_node>
+<thread id="11115981">
+<node id="11115982"/>
+<node id="11115984"/>
+<node id="11115995"/>
+</thread></node>

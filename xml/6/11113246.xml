@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11113246" title="Re^7: IO::Socket tutorial (updated x2!)" created="2020-02-20 09:02:51" updated="2020-02-20 09:02:51" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;b&gt;&lt;c&gt;&lt;update2&gt;&lt;/c&gt;&lt;/b&gt; Please disregard the following code example, I was pointed to [mod://Mojo::IOLoop::Stream::Role::LineBuffer] which makes the implementation &lt;i&gt;much&lt;/i&gt; nicer - many thanks to the fine people on &lt;c&gt;#mojo&lt;/c&gt; on freenode! &lt;b&gt;[id://11113259|See this example instead.]&lt;/b&gt; &lt;b&gt;&lt;c&gt;&lt;/update2&gt;&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/b&gt; Note that this uses the slightly lower-level API instead of the higher-level one shown at the top of [mod://Mojo::IOLoop]. However, I don't yet see a easy way to use one of the existing &lt;c&gt;readline&lt;/c&gt; modules with that interface  ([mod://Mojo::IOLoop::LineReader] or [mod://MojoX::LineStream], the latter has a bug and doesn't support changing the input record separator). I may have another update in a little while, we'll see. &lt;b&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;POE.. it seems awfully complicated for something as simple as what I need {basically *nothing* more than an unblocking read} Is there a less complicated package that provides the simple functionality I need?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, I agree [mod://POE] has an "interesting" interface, although once you get into it, it works well. As I mentioned, [mod://Mojolicious] includes an event loop whose interface I find nicer. There's also [mod://Mojo::IOLoop::LineReader] that handles the buffering and splitting of &lt;c&gt;read&lt;/c&gt; events into lines:&lt;/p&gt;
+&lt;h3&gt;&lt;c&gt;mojo_serv.pl&lt;/c&gt;:&lt;/h3&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump qw/dd pp/;
+use Mojo::IOLoop::Server;
+use Mojo::IOLoop::LineReader;
+
+my $server = Mojo::IOLoop::Server-&gt;new;
+$server-&gt;on(accept =&gt; sub {
+	my ($serv, $handle) = @_;
+	my $peer = $handle-&gt;peerhost.":".$handle-&gt;peerport;
+	print $peer,": Connect\n";
+	my $stream = Mojo::IOLoop::LineReader-&gt;new($handle);
+	$stream-&gt;timeout(30);
+	$stream-&gt;on(readln =&gt; sub {
+		my ($strm, $line) = @_;
+		print $peer,": Got line ",pp($line),"\n";
+	});
+	$stream-&gt;on(close =&gt; sub {
+		print $peer,": Closed\n";
+		$stream-&gt;stop;
+		$stream = undef; # free reference
+	});
+	$stream-&gt;on(error =&gt; sub {
+		my ($strm, $err) = @_;
+		warn "$peer: Error: $err";
+	});
+	$stream-&gt;start;
+	$stream-&gt;write("Hello, client from $peer.\n");
+});
+$server-&gt;listen(address =&gt; '127.0.0.1', port =&gt; 3000, reuse =&gt; 1);
+$server-&gt;start;
+
+$server-&gt;reactor-&gt;start unless $server-&gt;reactor-&gt;is_running;
+&lt;/c&gt;
+&lt;h3&gt;&lt;c&gt;mojo_cli.pl&lt;/c&gt;:&lt;/h3&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump qw/dd pp/;
+use Mojo::IOLoop::Client;
+use Mojo::IOLoop::LineReader;
+
+my $client = Mojo::IOLoop::Client-&gt;new;
+$client-&gt;on(connect =&gt; sub {
+	my ($cli, $handle) = @_;
+	print "Connect\n";
+	my $stream = Mojo::IOLoop::LineReader-&gt;new($handle);
+	$stream-&gt;timeout(10);
+	$stream-&gt;on(readln =&gt; sub {
+		my ($strm, $line) = @_;
+		print "Got line ",pp($line),"\n";
+	});
+	$stream-&gt;on(close =&gt; sub {
+		print "Closed\n";
+		$stream-&gt;stop;
+		$stream = undef; # free reference
+	});
+	$stream-&gt;on(error =&gt; sub {
+		my ($strm, $err) = @_;
+		warn "Error: $err";
+	});
+	$stream-&gt;start;
+	$stream-&gt;write("Hello, server, I am a client.\n");
+});
+$client-&gt;on(error =&gt; sub {
+	my ($cli, $err) = @_;
+	warn "Error: $err";
+});
+$client-&gt;connect(address =&gt; '127.0.0.1', port =&gt; 3000);
+ 
+$client-&gt;reactor-&gt;start unless $client-&gt;reactor-&gt;is_running;
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11113052</root_node>
+<parent_node field_name="parent_node">11113237</parent_node>
+<thread id="11113052">
+<node id="11113054"><node id="11113151"><node id="11113160"><node id="11113183"><node id="11113211"><node id="11113237"><node id="11113246"/>
+<node id="11113247"><node id="11113277"><node id="11113282"><node id="11113364"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11113259"/>
+</thread></node>

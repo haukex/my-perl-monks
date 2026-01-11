@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1233487" title="Re: Running command with backslash not working as expected" created="2019-05-09 04:08:43" updated="2019-05-09 04:08:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Backticks interpolate backslash escapes just like double quotes (the only exception being &lt;c&gt;qx'...'&lt;/c&gt; ), while single quotes do not ([doc://perlop#Quote-and-Quote-like-Operators]).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;`$_vim_cmd  . ' -c "normal \r" -c wq ~/vimwiki/testing.md'`;&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;What's being passed to the external command* is a literal carriage return byte (despite all the extra quotes around it - Perl doesn't care about quotes within quotes).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;my $value = ' -c "normal \r" -c wq ~/vimwiki/testing.md'; `$_vim_cmd  $value`;&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Here, you're setting up a Perl string to contain the two-byte string &lt;c&gt;\&lt;/c&gt; plus &lt;c&gt;r&lt;/c&gt;, and passing that to backticks, so that two-byte string then becomes part of the argument list*.&lt;/p&gt;
+&lt;p&gt;(* &lt;i&gt;Update:&lt;/i&gt; To clarify, what I mean is that this is Perl's interpretation of the string - what the external command &lt;i&gt;actually&lt;/i&gt; receives in its &lt;c&gt;argv&lt;/c&gt; after the string is optionally passed through the shell is a different matter, as the following explains.)&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+my $perl = "$^X -wMstrict -MData::Dump -e 'dd\\\@ARGV' -- ";
+
+dd qq{'"normal \r"'};         # prints "'\"normal \r\"'"
+print `$perl '"normal \r"'`;  # =&gt; @ARGV is ("\"normal \r\"")
+
+my $value = '"normal \r"';
+dd qq{$value};                # prints "\"normal \\r\""
+print `$perl $value`;         # =&gt; @ARGV is ("normal \\r")
+
+# "strace -s256 -fe trace=execve" (abbreviated by me) shows:
+# execve("/bin/sh", ["sh", "-c", "perl ... --  '\"normal \r\"'"], ...
+# execve("/bin/sh", ["sh", "-c", "perl ... --  \"normal \\r\""], ...
+&lt;/c&gt;
+&lt;p&gt;Since you don't say what your desired result is, it's unclear to me what you mean by "works" and "doesn't work", but IMO this is another great reason to [id://1180578|avoid the shell] - as you can see above, Perl is calling the shell, and since it's [id://1205217|unclear] what this "default shell" is, this code is not going to be portable. It'd be better if you use something like &lt;c&gt;capturex&lt;/c&gt; from [mod://IPC::System::Simple] and then use Perl's normal quoting mechanisms to set up the exact strings that you want to get passed to the external process.&lt;/p&gt;
+&lt;c&gt;
+use IPC::System::Simple qw/capturex/;
+print capturex($^X, qw/ -wMstrict -MData::Dump -e dd@ARGV -- /,
+	"\r", "\\r");
+# =&gt; prints ("\r", "\\r")
+&lt;/c&gt;
+&lt;p&gt;Plus, all the other advice from my node [id://1180578|here] applies as well, e.g. you should check [doc://$?] for errors. Also, using backticks in void context doesn't make much sense, maybe you want [doc://system] instead? That supports avoiding the shell without having to pull in an extra module.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1233483</root_node>
+<parent_node field_name="parent_node">1233483</parent_node>
+<thread id="1233483">
+<node id="1233486"><node id="1233500"/>
+<node id="1233507"/>
+</node>
+<node id="1233487"><node id="1233501"><node id="1233506"><node id="1233518"/>
+</node>
+</node>
+</node>
+<node id="1233488"/>
+<node id="1233489"/>
+</thread></node>

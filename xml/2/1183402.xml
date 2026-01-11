@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1183402" title="the sub-process wont exit until the parent does" created="2017-03-02 07:04:08" updated="2017-03-02 07:04:08" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1183398">sleepy_11</author>
+<doctext field_name="doctext">&lt;p&gt;Perl 5.10.1 on CentOS 6.8&lt;/p&gt;
+
+&lt;p&gt;First official project on Perl and get a issue with Perl fork. The parent process is a daemon and it folks child process and end it after the task is done. But the reality is the child process won't quit. &lt;/p&gt;
+
+&lt;p&gt;Since with Moose, totally 3 pieces of code. The expected result is the Kitty object will quit right after the PapaCat process calls the close to kill it.&lt;/p&gt;
+Below is the demo code:&lt;/p&gt;
+
+
+&lt;p&gt;pipe_test.pl&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+#use warnings;
+#use strict;
+
+use PapaCat;
+use Data::Dumper;
+
+my $obj = new PapaCat();
+
+$obj-&gt;pipe_test();
+&lt;/code&gt;
+&lt;p&gt;PapaCat.pm&lt;/p&gt;
+&lt;code&gt;
+package PapaCat;
+use strict;
+use warnings FATAL =&gt; 'all';
+
+use Moose;
+use Kitty;
+use FileHandle;
+use Data::Dumper;
+
+sub pipe_test {
+        my $self = shift;
+
+        pipe(my $fh_from, my $fh_to);
+        $fh_to-&gt;autoflush(1);
+
+        my $pid;
+        my $obj = Kitty-&gt;new(fh_to=&gt;$fh_to);
+
+        if (!($pid = fork())) {
+                $obj-&gt;meow();
+                exit();
+        } elsif (!defined($pid)){
+                #fork failed
+                print "fail:fork retuns with error.\n";
+                return;
+        }
+
+        $obj-&gt;pid($pid);
+        my $result = readline($fh_from);
+        print $result;
+
+        $obj-&gt;close();
+        close $fh_to;
+
+        sleep(1000);  # make sure the parent won't quit first
+}
+
+1;
+&lt;/code&gt;
+&lt;p&gt;Kitty.pm&lt;/p&gt;
+&lt;code&gt;
+package Kitty;
+use strict;
+use warnings FATAL =&gt; 'all';
+
+use Moose;
+use Data::Dumper;
+
+sub meow {
+        my $self = shift;
+
+        my $mm = $self-&gt;_fh_to;
+        print $mm ("Meow!\n");
+}
+
+sub close {
+        my $self = shift;
+
+        print "bb:".Dumper($self). "\n";
+        if (kill(0, $self-&gt;pid)) {
+                kill(15, $self-&gt;pid);
+        }
+
+        CORE::close($self-&gt;_fh_to);
+        delete $self-&gt;{pid};
+        print "  closed";
+}
+
+has '_fh_to' =&gt; (
+        is         =&gt; 'rw',
+        init_arg   =&gt; 'fh_to',
+);
+
+has 'pid' =&gt; (
+        is =&gt; 'rw',
+);
+
+1;
+&lt;/code&gt;</doctext>
+<thread id="1183402">
+<node id="1183404"/>
+<node id="1183406"/>
+<node id="1183455"><node id="1183494"/>
+</node>
+</thread></node>

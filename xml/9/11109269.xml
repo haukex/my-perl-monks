@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109269" title="PayPal IPN Script End of script output before headers:" created="2019-11-26 10:46:37" updated="2019-11-26 10:46:37" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1034744">*alexandre*</author>
+<doctext field_name="doctext">Hi,
+
+I'm trying to integrate a paypal ipn and I got the Following error while PayPal is Calling my script here is the code
+
+&lt;code&gt;
+
+#!/usr/bin/perl
+
+use strict;
+use MyDB;
+use warnings;
+use Email::Sender::Simple qw(sendmail);
+use Email::Sender::Transport::SMTPS ();
+use Email::Simple ();
+use Email::Simple::Creator ();
+
+my $smtpserver = 'smtp.gmail.com';
+my $smtpport = '587';
+my $smtpuser   = 'xxxxx@gmail.com';
+my $smtppassword = 'yyyyyyyccccc';
+
+my $transport = Email::Sender::Transport::SMTPS-&gt;new({
+  host =&gt; $smtpserver,
+  port =&gt; $smtpport,
+  ssl =&gt; "starttls",
+  sasl_username =&gt; $smtpuser,
+  sasl_password =&gt; $smtppassword,
+});
+#my $Just_Exit = 0; # if you need it
+
+# Lots of servers will not resolve the IP to a host name
+# So variable $ENV{'REMOTE_HOST'} will not have a value.
+# If you want any security check if it is a PayPal IP.
+#die('Does not match PayPal at IP:'.$ENV{'REMOTE_ADDR'})
+# if ($ENV{'REMOTE_ADDR'} ne '173.0.82.66');
+
+# comment the one your not using
+my $PP_server = 'ipnpb.sandbox.paypal.com'; # sandbox IP:173.0.82.66
+#my $PP_server = 'ipnpb.paypal.com'; # production IP:173.0.88.40
+
+# It is highly recommended that you use version 6 upwards of
+# the UserAgent module since it provides for tighter server
+# certificate validation
+use LWP::UserAgent 6;
+
+# read post from PayPal system and add 'cmd'
+use CGI qw(:standard);
+my $cgi = CGI-&gt;new();
+my $db = MyDB-&gt;new();
+my $query = 'cmd=_notify-validate&amp;';
+$query .= join('&amp;', map { $_.'='.$cgi-&gt;param($_) } $cgi-&gt;param());
+
+# post back to PayPal system to validate
+my $ua = LWP::UserAgent-&gt;new(ssl_opts =&gt; { keep_alive =&gt; 1, verify_hostname =&gt; 1,SSL_version =&gt; 'SSLv23:!TLSv12' });
+my $req = HTTP::Request-&gt;new('POST', 'https://'.$PP_server.'/cgi-bin/webscr');
+$req-&gt;content_type('application/x-www-form-urlencoded');
+$req-&gt;header(Host =&gt; $PP_server);
+$req-&gt;content($query);
+my $res = $ua-&gt;request($req);
+
+# make the variable hash
+my %variable =
+ map { split(m'='x, $_, 2) }
+ grep { m'='x }
+ split(m'&amp;'x, $query);
+
+# assign posted variables to local variables
+my $item_name = $variable{'item_name'};
+my $item_number = $variable{'item_number'};
+my $payment_status = $variable{'payment_status'};
+my $payment_amount = $variable{'mc_gross'};
+my $payment_currency = $variable{'mc_currency'};
+my $txn_id = $variable{'txn_id'};
+my $receiver_email = $variable{'receiver_email'};
+my $payer_email = $variable{'payer_email'};
+
+if ($res-&gt;is_error) {
+ # HTTP error
+}
+elsif ($res-&gt;content eq 'VERIFIED') {
+ # check the $variable{'payment_status'}=Completed
+ if ($payment_status eq 'Completed') {
+   my  ($tx)=$db-&gt;sqlSelect("tx", "article", "id_article = $item_number");            	
+   if (!$tx eq $txn_id) {                          
+    if ($receiver_email eq 'alexjaquet@gmmail.com') {
+     print "Success";
+     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime();
+     my  $date = sprintf "%4d-%02d-%02d",$year+1900,$mon+3,$mday;	
+     my  $time = sprintf("%4d:%02d:%02d",$hour,$min,$sec);              
+     $db-&gt;sqlUpdate("article","id_article = $item_number",(
+                     tx  =&gt; "$txn_id",
+                     pub =&gt; "1".
+                     pub_date_end  =&gt; "$date $time$item_number"
+                    ));
+    my $email = Email::Simple-&gt;create(
+               header =&gt; [
+                     To      =&gt; 'alexjaquet@gmail.com',
+                     From    =&gt; 'robot@avant-garde.info',
+                     Subject =&gt; 'Vous avez reçu le payement',
+                ],
+               body =&gt; 'Vous avez reçu le payement',);             
+               sendmail($email, { transport =&gt; $transport });      
+             }
+        }        
+  }
+}
+elsif ($res-&gt;content eq 'INVALID') {
+ # log for manual investigation
+        print "Content-Type: text/html\n\n"; 
+        print "Erreur dans le payemeent d\'une publicité";
+        my $email = Email::Simple-&gt;create(
+                    header =&gt; [
+                    To      =&gt; 'alexjaquet@gmail.com',
+                    From    =&gt; 'robot@avant-garde.info',
+                    Subject =&gt; 'Erreur dans le payement' ],
+                    body =&gt; 'Erreur dans le payement d\'une publicite : $id_article',);
+       sendmail($email, { transport =&gt; $transport });              
+}
+else {
+ # error
+# log for manual investigation
+        print "Content-Type: text/html\n\n"; 
+        print "Erreur dans le payemeenté";}
+
+&lt;/code&gt;
+
+
+The log file show me [Tue Nov 26 17:31:58.528979 2019] [cgi:error] [pid 2202] [client 173.0.82.126:36191] End of script output before headers: ipn.pl
+
+Hope you can help</doctext>
+<thread id="11109269">
+<node id="11109276"/>
+<node id="11109283"><node id="11109307"><node id="11109308"><node id="11109360"><node id="11109361"><node id="11109363"/>
+</node>
+<node id="11109384"/>
+</node>
+</node>
+<node id="11109309"/>
+<node id="11109312"/>
+</node>
+</node>
+</thread></node>

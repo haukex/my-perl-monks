@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1220217" title="Re^3: counting words in string" created="2018-08-10 17:44:08" updated="2018-08-10 17:44:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;pos($str)=undef;&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note: This may seem like overkill in the simple example I showed, but it might become important if the code is copy and pasted into a larger script, where it's possible that a previous regex operation on &lt;c&gt;$str&lt;/c&gt; left its [doc://pos] set (but we want to start matching at the beginning of the string).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Where is the /c modifier documented in the perldoc ?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Hm, you're right that the doc seems a little hard to find. There's a pretty good explanation in [doc://perlretut#Global-matching|perlretut's "Global Matching"], and a more complex example of the usage of &lt;c&gt;m/\G.../gc&lt;/c&gt; in [doc://perlop#\G-_assertion_|perlop under "&lt;c&gt;\G&lt;/c&gt; assertion"].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;How comes that I have to remember pos $str in the second loop ?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That would be the effect of the &lt;c&gt;/c&lt;/c&gt; modifier: your second loop ends when the regex fails to match. The regex failing to match also resets [doc://pos], &lt;i&gt;except&lt;/i&gt; when &lt;c&gt;/c&lt;/c&gt; is used.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Are the two loops equivalent or will the second one failed in some situation ?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The way you've written it, no, because &lt;c&gt;\w+&lt;/c&gt; is not the same as &lt;c&gt;\S+&lt;/c&gt;: the latter will match any non-word characters too, anything except &lt;c&gt;\s&lt;/c&gt; characters.&lt;/p&gt;
+&lt;p&gt;If I change your loop's regex to &lt;c&gt;/(\S+)/g&lt;/c&gt;, you can get the "&lt;c&gt;failed to parse $str&lt;/c&gt;" error, namely when there's whitespace at the end of &lt;c&gt;$str&lt;/c&gt;. This is because the last match doesn't reach all the way to the end of the string, while the regex I showed does, because it includes a &lt;c&gt;\s+&lt;/c&gt; after the &lt;c&gt;\S&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;The &lt;c&gt;pos==length&lt;/c&gt; check makes sense if you want to make sure your loop went all the way to the end of the string and there's no garbage left at the end that we didn't match, but in this case, the only thing that could possibly be left after matching &lt;c&gt;\S+&lt;/c&gt; is whitespace, which we're not interested in.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;searching a simpler loop&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I showed the &lt;c&gt;m/\G.../gc&lt;/c&gt; technique because I wanted to demonstrate it - it's a great tool for certain types of parsing (one example in the first paragraph of [id://1181540|this post], or [id://1207521|this]), but as long as the OP just wants to split on whitespace, it's admittedly overkill. If you wanted to simplify the loop, you could say this (others have shown variations of this):&lt;/p&gt;
+&lt;c&gt;
+my %names;
+while ($str=~/(\S+)/g) {
+	$names{$1}++;
+}
+&lt;/c&gt;
+&lt;p&gt;But as soon as the matching rule isn't as simple as &lt;c&gt;\S+&lt;/c&gt;, things can get tricky. For example, if the rule is &lt;c&gt;\w+&lt;/c&gt;, and the input string is &lt;c&gt;" foo bar *"&lt;/c&gt;, anything that looks for &lt;c&gt;\w+&lt;/c&gt; &lt;i&gt;only&lt;/i&gt; will miss the junk at the end of the string.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1219990</root_node>
+<parent_node field_name="parent_node">1220110</parent_node>
+<thread id="1219990">
+<node id="1219992"/>
+<node id="1219994"/>
+<node id="1219999"><node id="1220027"/>
+</node>
+<node id="1220004"><node id="1220110"><node id="1220217"/>
+</node>
+</node>
+<node id="1220030"/>
+<node id="1220061"/>
+</thread></node>

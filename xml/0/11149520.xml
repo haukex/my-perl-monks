@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11149520" title="Re^2: Using perl to script an upload page" created="2023-01-11 06:05:39" updated="2023-01-11 06:05:39" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;i&gt;Well, CGI.pm is indeed pretty ancient (see also for modern alternatives), but its documentation does show that as an example of how to handle the upload. BTW, your code example appears to be missing strict and warnings, proper open usage, and a binmode (or '&gt;:raw' layer in the open) on the filehandle.
+
+
+&lt;/i&gt;
+
+
+
+&lt;p&gt;Thx, [haukex], I finally got some results after digesting forum comments properly. I didn't mean for the CGI code for more than a motivating counterexample of what not to do:&lt;/p&gt;
+
+&lt;c&gt;
+use strict;
+use warnings;
+ 
+use CGI;
+ 
+    # create a CGI object (query) for use
+my $q = CGI-&gt;new;
+ 
+
+my $fh      = $q-&gt;upload('file_field');
+&lt;/c&gt;
+&lt;p&gt;This would be syntactic perl for backwards compatibility, but perl malpractice in 2023 for a variety of reasons. I think this tells an interesting story: [mod://CGI::Alternatives]. Let's consider alternatives:&lt;/p&gt;
+&lt;p&gt;What about something like [mod://CGI::Carp]? Is this not in the contemporary core?&lt;/p&gt;
+&lt;p&gt;I'd like to work up examples with  [mod://Dancer2] and either of Miyagawa's [mod://PSGI ] or [mod://Plack], if anyone has anything to share from these mods.&lt;/p&gt;
+
+&lt;i&gt;
+
+
+
+Personally, I prefer Mojolicious. Its tutorial includes an example, and on my scratchpad I have linked quite a few of my Mojo examples.&lt;/i&gt;
+
+&lt;p&gt;I've gone with Mojo before, but I consider it the full buffet and more than I want, since I won't be using 99% of it, and deployment size and simplicity is relevant. I don't need a lot of software here. I need a few lines from the right software, and I'd like to judge by side by side comparison.&lt;/p&gt;
+
+&lt;p&gt;&lt;/p&gt;
+
+
+
+
+
+&lt;i&gt;
+
+
+If your ssh -T git@gitlab.com works on the same machine, then that's really strange and would indicate a problem with your network configuration or some other strange thing is going on. Though this is definitely worth debugging, I just wanted to take this oppertunity to say that I usually recommend the https protocol for all git remotes, as my experience has been it's easier to set up, especially in combination with e.g. git-credential-cache.&lt;/i&gt;
+
+
+&lt;p&gt;Yes, so I broke through on the gitlab front at long last. (See below)&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;i&gt;
+
+Though I personally take a different route, probably the easiest way is to create a new project on the website, leave the option "Initialize repository with a README" or similar enabled, and then do a git clone to get that repository onto the local machine, and then start working in this new directory, pushing changes up to the server as desired
+
+&lt;/i&gt;
+
+&lt;p&gt;Ok, I'll consider that approach. I'm gonna post some output, but I won't have a ginormous source post, because I have it hosted by gitlab, so I don't have to shove it code tags: yay!&lt;/p&gt;
+
+&lt;pre&gt;
+./5.getopt.pl --infile /home/fritz/Desktop/1.hauke.txt --outfile /home/fritz/Desktop/1.hauke_trans.txt --lang DE
+/home/fritz/Desktop/1.hauke.txt, /home/fritz/Desktop/1.hauke_trans.txt, DE, 0
+
+Thank you for the comments and helpful source. I felt like a ship lost at sea without a host because I had unmoored myself from American tech giants. I tried to sign up for gitlab and showed up instead at the server that [haukex]'s employer uses, because I'm there so often to get the details on configuring an rpi. I was refused entrance, and I thought, "gosh, I've never been refused entrance to anything in Berlin ever. Is this a new balkanization of the net?" No. It's me showing up in the wrong place, disoriented by Charybdis, blinded by Scylla....
+Ich danke Ihnen für die Kommentare und die hilfreiche Quelle. Ich fühlte mich wie ein Schiff, das ohne Host auf See verloren gegangen ist, weil ich mich von den amerikanischen Tech-Giganten losgesagt hatte. Ich habe versucht, mich bei Gitlab anzumelden und bin stattdessen auf dem Server aufgetaucht, den [haukex]'s Arbeitgeber benutzt, weil ich so oft dort bin, um die Details zur Konfiguration einer rpi zu erfahren. Mir wurde der Zutritt verweigert, und ich dachte: "Meine Güte, mir wurde in Berlin noch nie der Zutritt zu irgendetwas verweigert. Ist das eine neue Balkanisierung des Netzes?" Nein. Ich bin nur am falschen Ort aufgetaucht, verwirrt von Charybdis, geblendet von Scylla....
+...
+So lot's of changes with hosting situations, and I found it much better to use Getopt::Long and the command line to input the data rather than have it instantiated in a sub. I'm super rusty with the module building parts that I just couldn't even start with that. Now that I have a place to host source code again, maybe this is the type of thing I should work up again.
+So viele Änderungen mit Hosting-Situationen, und ich fand es viel besser, Getopt::Long und die Befehlszeile zu verwenden, um die Daten einzugeben, anstatt es in einem Sub instanziiert haben. Ich bin super rostig mit dem Modul Gebäude Teile, die ich einfach nicht einmal mit, dass beginnen konnte. Jetzt, wo ich wieder einen Ort habe, an dem ich den Quellcode hosten kann, ist das vielleicht die Art von Sache, an der ich wieder arbeiten sollte.
+...
+It was a comedy of many errors to migrate from github to gitlab, but I think I'm finally getting in there with a secure ssh connection. So many hosting situations have changed this year in particular. I hope no one owns stock in Twitter right now. Wouldn't it be nice if the word "tweet" were returned to the birds?
+Es war eine Komödie mit vielen Fehlern, von github zu gitlab zu migrieren, aber ich glaube, ich komme endlich mit einer sicheren ssh-Verbindung hinein. Vor allem in diesem Jahr haben sich so viele Hosting-Situationen geändert. Ich hoffe, dass im Moment niemand Aktien von Twitter besitzt. Wäre es nicht schön, wenn das Wort "tweet" zu den Vögeln zurückkehren würde?
+
+./5.getopt.pl : done, success.
+fritz@laptop:~/Documents/repo1$ 
+
+&lt;/pre&gt;
+
+
+&lt;p&gt;Source is [https://gitlab.com/perlmonks/trans/-/blob/main/5.getopt.pl|trans script]. I also have [https://gitlab.com/perlmonks/trans/-/blob/main/1.example.config.txt|example.config], which shows the proper form for the config (with appropriate redaction this time): &lt;/p&gt;
+
+&lt;c&gt;[deepl]
+url=https://api-free.deepl.com/v2/translate
+key=redacted&lt;/c&gt;
+&lt;p&gt;So, yay, progress with hosting but fishing for CGI alternative code.&lt;/p&gt;
+&lt;p&gt;Gruss aus Amiland,&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11149277</root_node>
+<parent_node field_name="parent_node">11149278</parent_node>
+<thread id="11149277">
+<node id="11149278"><node id="11149520"><node id="11149524"><node id="11150173"><node id="11150181"/>
+</node>
+</node>
+</node>
+<node id="11150086"><node id="11150163"/>
+</node>
+</node>
+<node id="11149283"/>
+<node id="11149525"/>
+</thread></node>

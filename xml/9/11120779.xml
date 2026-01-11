@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11120779" title="Re^6: Call function no more than every 0.1 seconds" created="2020-08-15 08:09:34" updated="2020-08-15 08:09:34" _doctext_mode="lenient"><type id="11">note</type>
+<author id="747201">afoken</author>
+<doctext field_name="doctext">&lt;blockquote&gt;The Vent project was based on the Arduino Nano &amp;#91;...&amp;#93;&lt;/blockquote&gt;
+&lt;p&gt;That's an ATmega328, 5 V, 16 MHz, 32 KByte Flash ROM, 2 KByte RAM, 8 bit AVR core. It's a nice microcontroller, and it once was impressive.&lt;/p&gt;
+&lt;p&gt;Compare to the Arduino Zero:&lt;/p&gt;
+&lt;p&gt;ATSAMD21G18, 3.3 V, up to 48 MHz, 256 KByte Flash ROM, 32 KByte RAM, 32 bit ARM Cortex M0+.&lt;/p&gt;
+&lt;p&gt;It easily runs circles around the AVR at less power, and you really don't have to worry about memory or CPU speed as much as you have to do with AVR processors.&lt;/p&gt;
+&lt;p&gt;Note: This microcontroller was &lt;b&gt;not&lt;/b&gt; designed to be fast. It was designed to be cheap and low-power, for battery-powered gadgets, probably running directly from a lithium primary cell (CR2032 or similar). And still, it runs circles around the AVRs. Of course, if you let it run at 48 MHz with no strict power management, it will drain a CR2032 quite fast. But as long as you have a battery pack or mains power, you don't have to worry about power management. It won't get warm or even hot. Your peripherals will most likely need much more power than the SAMD21.&lt;/p&gt;
+&lt;p&gt;One obvious problem when migrating projects are the voltage levels: AVRs on Arduino usually run at 5 V. They could run on 3.3 V and even lower, but the AVR core can't run at full speed with lower supply voltages. Or at least, that's what the datasheet said. Maybe it will run at full speed at 3.3 V, but that is out of spec. The SAM needs 3.3 V I/O voltage, the core runs on a much lower voltage (using an integrated LDO regulator). Interfacing CMOS components (any of the 4000 and 4500 series) is usually a no-brainer, they just work as well on 3.3V. The same is true for many I²C and SPI components (EEPROMs, ADCs, DACs, port multiplier). When driving bipolar transistors, you may need to reduce the base resistor a little bit. Driving MOSFETS is again often a no-brainer, they are voltage-driven, not current-driven. But you may have to check if the MOSFET actually switches with a gate voltage of only 3.3 V. Some don't.&lt;/p&gt;
+&lt;p&gt;Another, closely related problem is the current sink and source capability of the microcontroller. The AVRs can sink or source 40 mA, depending on the Model. The SAMD21 can sink or source only 2 mA, switchable to 7 mA. So if you drive "high" current components directly from AVR pins, you will need some kind of amplification - a transistor, a logic buffer, or (for analog pins) a voltage follower. If you drive an LED directly from a pin, you need to change the series resistor and perhaps have to change the LED for a low-current, high efficency one.&lt;/p&gt;
+&lt;p&gt;The SAMD21 does not have an integrated EEPROM. There are some few models that can transparently emulate an EEPROM using a part of the internal flash, but none of them can be found on an Arduino board. But it should be possible to use the self-programming capability of the SAMD21 to manually emulate an EEPROM in the internal flash.&lt;/p&gt;
+&lt;p&gt;Comparing the prices:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;[https://store.arduino.cc/arduino-nano] demands €20.00 plus taxes for an Arduino Nano&lt;/li&gt;
+&lt;li&gt;[https://store.arduino.cc/arduino-zero] demands €40.00 plus taxes for an Arduino Zero&lt;/li&gt;
+&lt;li&gt;[https://www.sparkfun.com/products/13672] demands US$25.95 for a really nice Zero-clone, adding a LiPo charger, but omitted the EDBG embedded debugger, and no pin headers supplied.&lt;/li&gt;
+&lt;li&gt;[https://www.sparkfun.com/products/13664] demands US$20.95 for a stripped-down board, more in the Nano range than in the Zero range. Same controller, but no LoPo charger, no EDBG, no pin headers supplied.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;At work, we really like the SAMD21, it has retired the ATmega series within weeks. No new project uses ATmegas any more. The SAMD21 needs less power, is faster, has more resources, more peripherals build-in, more I/Os, has up to six highly flexible SERCOMs offering I²C, SPI, and USART in a single peripheral, and is cheap. Less than €3.00 for the top-model SAMD21J18A, less than €1.50 for smaller ones.&lt;/p&gt;
+&lt;p&gt;Plus, the big Sparkfun breakout board linked above is a really cheap way to prototype a new device, as almost all controller pins are available on pin headers. At less than €30.00 delivered, we even don't care if we kill one of those boards during development. (So far, we have not managed to kill one.) Yes, it lacks the EDBG. But we have plenty of ICE programmers available, so not having an EDBG blocking pins is actually an advantage for us. The smaller Sparkfun board does not bring out all processor pins. Not a big deal for most projects, but sometimes you really want all pins. So we prefer the larger board.&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;See also:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;[id://11110383]&lt;/li&gt;
+&lt;li&gt;[id://1195129]&lt;/li&gt;
+&lt;li&gt;[id://1176363] (start at [id://1176076] for some context)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Alexander&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-747201"&gt;
+--&lt;br&gt;
+Today I will gladly share my knowledge and experience, for there are no sweeter words than "I told you so". ;-)
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11120630</root_node>
+<parent_node field_name="parent_node">11120695</parent_node>
+<thread id="11120630">
+<node id="11120631"><node id="11120636"><node id="11120639"/>
+</node>
+</node>
+<node id="11120634"><node id="11120665"><node id="11120672"><node id="11120674"><node id="11120695"><node id="11120699"><node id="11120742"/>
+</node>
+<node id="11120779"><node id="11120785"/>
+<node id="11120793"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11120637"><node id="11120638"><node id="11120670"/>
+</node>
+</node>
+<node id="11120640"/>
+<node id="11120644"/>
+<node id="11120647"/>
+<node id="11120664"/>
+<node id="11120667"/>
+</thread></node>

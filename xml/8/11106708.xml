@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11106708" title="Re^10: How do I display only matches" created="2019-09-25 20:52:13" updated="2019-09-25 20:52:13" _doctext_mode="lenient"><type id="11">note</type>
+<author id="732669">Marshall</author>
+<doctext field_name="doctext">Ok.  &lt;br&gt;
+On Windows, when you print "\n", there will be 2 characters, 0x0D 0x0A.&lt;br&gt;
+Verified using a binary editor.&lt;br&gt;
+When reading said text file under Windows, with standard text file I/O, Perl will remove the 0x0D (&lt;CR&gt;) character. That happens as part of the I/O layer and is invisible to the Perl user program.&lt;br&gt;
+I had thought that "\n" and "\n" had the same meaning whether write or read.  It turns out that is NOT true.&lt;p&gt;
+
+Some Windows test code:
+&lt;c&gt;
+use warnings;
+use strict;
+
+open (my $file, '&gt;', "testendings")
+   or die "unable to open testendings for write! $!";
+    
+print $file "test\n"; 
+close $file;
+print "Binary file created: 74 65 73 74 0D 0A\n";
+
+open (my $infile, '&lt;', "testendings")
+   or die "unable to open testendings for read! $!";   
+   
+my $in =&lt;$infile&gt;;
+close $infile;
+
+print "input as read by normal string IO: $in";
+print "Length in bytes of input var as read is: ".length($in)," bytes\n";
+
+$in =~ s/(.)/sprintf("%02X ",ord($1))/seg;
+print "$in\n";
+print "note: when using Perl text read, the 0x0D was deleted!\n";
+
+__END__
+Binary file created: 74 65 73 74 0D 0A  # 0D=&gt;CR 0A=&gt;LF
+input as read by normal string IO: test
+Length in bytes of input var as read is: 5 bytes
+74 65 73 74 0A 
+note: when using text read, the 0x0D was deleted!
+&lt;/c&gt;
+
+My explanation of why "\r\n" doesn't work is functionally correct, but incorrect in the dirty details of Why?. On Windows this will print &lt;CR&gt;&lt;CR&gt;&lt;LF&gt;.  When read back via text mode, only one &lt;CR&gt; will be deleted. The regex fails because there is still another &lt;CR&gt; there and "$" is looking for a 0x0A.  Correct?&lt;br&gt;
+</doctext>
+<root_node field_name="root_node">11106612</root_node>
+<parent_node field_name="parent_node">11106706</parent_node>
+<thread id="11106612">
+<node id="11106613"><node id="11106614"><node id="11106617"><node id="11106623"/>
+</node>
+</node>
+</node>
+<node id="11106615"><node id="11106616"><node id="11106620"><node id="11106624"><node id="11106693"><node id="11106698"><node id="11106700"><node id="11106705"><node id="11106706"><node id="11106708"><node id="11106719"><node id="11106805"><node id="11106813"><node id="11106815"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11106704"><node id="11106709"><node id="11106718"/>
+</node>
+<node id="11106716"><node id="11106717"><node id="11106809"><node id="11106811"/>
+</node>
+</node>
+<node id="11106773"><node id="11106803"><node id="11106810"><node id="11106814"><node id="11106823"><node id="11106826"><node id="11106858"/>
+<node id="11106934"><node id="11106939"><node id="11106981"><node id="11106993"><node id="11107025"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11106854"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11106655"><node id="11106702"><node id="11106754"><node id="11106806"><node id="11106812"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11106622"><node id="11106626"/>
+</node>
+</node>
+</node>
+<node id="11106619"/>
+</thread></node>

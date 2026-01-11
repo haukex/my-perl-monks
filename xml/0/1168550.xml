@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1168550" title="Re: print all files is soo slow! Why?" created="2016-07-26 06:35:16" updated="2016-07-26 06:35:16" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [harangzsolt33],&lt;/p&gt;
+&lt;p&gt;The problem you're experiencing does sound strange to me, especially with the behavior you describe [id://1168528|here], but it's been a while since I worked with Perl on the command line in Windows - the explanations by the AM ([id://1168521|here]) seem plausible if you're trying to print lots of binary data.&lt;/p&gt;
+&lt;p&gt;I just wanted to point out that Perl has an operator that tries to tell "text" from "binary" files based on a heuristic: [doc://-X|-T] (the heuristic is described in the documentation).&lt;/p&gt;
+&lt;p&gt;Also, while walking a directory tree yourself is certainly a useful exercise, there are modules to help you, here's one example with [mod://Path::Class]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use Path::Class qw/file dir/;
+
+my $PATH = dir('.');
+
+$PATH-&gt;recurse( callback =&gt; sub {
+		my $file = shift;
+		return if $file-&gt;is_dir || -B $file;
+		my $fh = $file-&gt;open('&lt;:raw') or return;
+		read $fh, my $content, 2000 or return;
+		close $fh;
+		print $content;
+	} );
+&lt;/c&gt;
+&lt;p&gt;Just a small note, in your current code you have a few variables that could have better scoping. &lt;c&gt;$CONTENT&lt;/c&gt; could be defined right before its use in [doc://read], then you don't have to clear it every time. And the &lt;c&gt;$SUB&lt;/c&gt; you define at the beginning of &lt;c&gt;explore&lt;/c&gt; is actually never used because it is shadowed by the second &lt;c&gt;$SUB&lt;/c&gt; in the &lt;c&gt;while&lt;/c&gt; loop.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1168519</root_node>
+<parent_node field_name="parent_node">1168519</parent_node>
+<thread id="1168519">
+<node id="1168521"><node id="1168528"/>
+</node>
+<node id="1168550"/>
+<node id="1168615"/>
+<node id="1168638"/>
+</thread></node>

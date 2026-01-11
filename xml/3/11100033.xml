@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100033" title="Re^4: Parsing Problems" created="2019-05-15 13:47:37" updated="2019-05-15 13:47:37" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1233665">ftherese</author>
+<doctext field_name="doctext">&lt;p&gt;Thank you for your reply.  This is helpful as I've traced the error to how Perl is handling the modules, @INC, and referencing subroutines.&lt;/p&gt;
+&lt;p&gt;What my code is supposed to do is apply different sets of transformations to a text file based on options specified from the command-line:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt; modes.pl [rawtext] [style] [mode](one, two, etc.) [1st variation](a, a_prime, b, etc.) [2nd variation]&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;"style" is one of several directories containing nine .pm files. Each .pm file has at least the subroutines "first" and "flex."  The other subroutines are variations.&lt;/p&gt;
+&lt;p&gt;Here is the code that I'm using to load the modules:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;
+package modes;
+my $lP;
+my $modCount = 0;
+BEGIN{
+ $lP = "$ARGV[1]";
+}
+use lib $lP;
+if(opendir(LIB, $lP)){
+ foreach my $l (readdir(LIB)){
+  unless ($l !~ /^(.*)\.pm$/){
+   eval qq~require ~ . $ARGV[1] . qq~::~ . $1 . qq~;~;
+   print $@;
+  }
+ }
+}
+&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;The error that code produces (given: ./modes.pl "filename" english three a b) in Perl 5.26.1 (error does not occur in 5.18.2) is the following:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;
+Can't locate english/eight.pm in @INC (you may need to install the english::eight module) (@INC contains: english /home/******/perl5/lib/perl5/5.26.1/x86_64-linux-gnu-thread-multi /home/*********/perl5/lib/perl5/5.26.1 /home/***/perl5/lib/perl5/x86_64-linux-gnu-thread-multi /home/******/perl5/lib/perl5 /etc/perl /usr/local/lib/x86_64-linux-gnu/perl/5.26.1 /usr/local/share/perl/5.26.1 /usr/lib/x86_64-linux-gnu/perl5/5.26 /usr/share/perl5 /usr/lib/x86_64-linux-gnu/perl/5.26 /usr/share/perl/5.26 /home/****/perl5/lib/perl5/5.26.0 /home/*****/perl5/lib/perl5/5.26.0/x86_64-linux-gnu-thread-multi /usr/local/lib/site_perl /usr/lib/x86_64-linux-gnu/perl-base) at (eval 5) line 1.&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;Setting $lP to the fully qualified PWD (or simply "." since the "english" directory is located here) fixes that error, but the subroutines are still undefined:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Undefined subroutine &amp;modes::three::flex&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;I'm not sure why this is.  I will change my code based on your recommendations, but I don't understand it well enough myself to do so yet. I borrowed the module loading code from another programmer years ago simply because it did what I needed - I never fully understood it.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1233707</root_node>
+<parent_node field_name="parent_node">1233764</parent_node>
+<thread id="1233707">
+<node id="1233708"><node id="1233711"><node id="1233714"/>
+</node>
+</node>
+<node id="1233709"><node id="1233719"><node id="1233720"><node id="1233723"/>
+</node>
+<node id="1233721"/>
+<node id="1233764"><node id="11100033"><node id="11100044"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

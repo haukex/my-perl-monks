@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11114415" title="Re: Mojolicious refresh" created="2020-03-18 03:45:09" updated="2020-03-18 03:45:09" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;small&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt; [Your Mother] [id://11114414|beat me to it] by seconds &lt;c&gt;:-) &lt;/update&gt;&lt;/c&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;IMHO, the best way nowadays is JavaScript:&lt;/p&gt;
+&lt;c&gt;#!/usr/bin/env perl
+use Mojolicious::Lite -signatures;
+
+get '/' =&gt; sub ($c) {
+	$c-&gt;render(template =&gt; 'index');
+} =&gt; 'index';
+
+get '/dynupd' =&gt; sub ($c) {
+	$c-&gt;render(json =&gt; { time =&gt; time });
+} =&gt; 'dynupd';
+
+app-&gt;start;
+
+__DATA__
+
+@@ layouts/main.html.ep
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+%= content
+&lt;/body&gt;
+&lt;/html&gt;
+
+@@ index.html.ep
+% layout 'main', title =&gt; 'Hello, World!';
+&lt;div&gt;Hello, World!&lt;/div&gt;
+&lt;div id="dyn_upd"&gt;Fetching, please wait...&lt;/div&gt;
+&lt;script src="https://code.jquery.com/jquery-3.4.1.min.js"
+	integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+	crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script&gt;
+function updateDynamic() {
+	$.ajax({ url: '&lt;%= url_for('dynupd') %&gt;', timeout: 1000 })
+		.done( function( data ) {
+			$('#dyn_upd').text(data.time);
+		})
+		.fail( function( jqXHR, textStatus, errorThrown ) {
+			$('#dyn_upd').text("Update Failed: "+textStatus
+				+" / "+jqXHR.status+" "+errorThrown);
+		});
+}
+$(function () {
+	updateDynamic();
+	setInterval(updateDynamic, 2000);
+});
+&lt;/script&gt;
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11114408</root_node>
+<parent_node field_name="parent_node">11114408</parent_node>
+<thread id="11114408">
+<node id="11114409"><node id="11114445"><node id="11114447"><node id="11114452"><node id="11114454"><node id="11114457"><node id="11114524"/>
+</node>
+</node>
+<node id="11114458"><node id="11114459"><node id="11114464"><node id="11114468"><node id="11114469"><node id="11114470"><node id="11114471"><node id="11114472"/>
+<node id="11114478"><node id="11114479"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11114411"/>
+<node id="11114413"><node id="11114414"/>
+</node>
+<node id="11114415"><node id="11114416"/>
+</node>
+</thread></node>

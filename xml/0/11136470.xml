@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11136470" title="Re: Parsing XML data and injecting it into new file" created="2021-09-05 11:59:33" updated="2021-09-05 11:59:33" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Note the input data you've shown isn't valid XML, and you haven't shown the expected output, so I have to guess at what you want. See [id://174051] and [id://1177642].&lt;/p&gt;
+&lt;p&gt;As [mod://XML::LibXML::Node#findnodes|documented], &lt;c&gt;-&gt;findnodes&lt;/c&gt; in scalar context returns an [mod://XML::LibXML::NodeList] object, which you can't pass to [mod://XML::LibXML::Document#createElement|&lt;c&gt;-&gt;createElement&lt;/c&gt;]. Here's one approach:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+
+my @files = ("file1.xml", "file2.xml", "file3.xml");
+my $outfile = "result.xml";
+
+my $newdom = XML::LibXML::Document-&gt;new('1.0', 'UTF-8');
+my $root = $newdom-&gt;createElement('testsuites');
+$newdom-&gt;setDocumentElement($root);
+
+for my $file (@files) {
+	my $dom = XML::LibXML-&gt;load_xml(location =&gt; $file);
+	for my $node ( $dom-&gt;findnodes('//testsuite') ) {
+		$node-&gt;{name} =~ s/test_suite_name_/tsname_/;
+		$root-&gt;appendChild($node);
+	}
+}
+
+$newdom-&gt;toFile($outfile, 1);
+&lt;/c&gt;
+&lt;p&gt;With input files that look like this:&lt;/p&gt;
+&lt;c&gt;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;testsuites&gt;
+  &lt;testsuite name="test_suite_name_one"&gt;
+    &lt;testcase name="test1" /&gt;
+    &lt;testcase name="test2" /&gt;
+  &lt;/testsuite&gt;
+&lt;/testsuites&gt;
+&lt;/c&gt;
+&lt;p&gt;It produces output like this:&lt;/p&gt;
+&lt;c&gt;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;testsuites&gt;
+  &lt;testsuite name="tsname_one"&gt;
+    &lt;testcase name="test1"/&gt;
+    &lt;testcase name="test2"/&gt;
+  &lt;/testsuite&gt;
+  &lt;testsuite name="tsname_two"&gt;
+    &lt;testcase name="test3"/&gt;
+    &lt;testcase name="test4"/&gt;
+  &lt;/testsuite&gt;
+  &lt;testsuite name="tsname_three"&gt;
+    &lt;testcase name="test5"/&gt;
+    &lt;testcase name="test6"/&gt;
+  &lt;/testsuite&gt;
+&lt;/testsuites&gt;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11136468</root_node>
+<parent_node field_name="parent_node">11136468</parent_node>
+<thread id="11136468">
+<node id="11136470"><node id="11136471"/>
+</node>
+</thread></node>

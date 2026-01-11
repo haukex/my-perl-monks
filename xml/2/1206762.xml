@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1206762" title="Creating arrays with glob patterns without metacharacters" created="2018-01-05 10:51:08" updated="2018-01-05 10:51:08" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="922586">Lotus1</author>
+<doctext field_name="doctext">&lt;p&gt;A new teammate demonstrated something like the following at the beginning of a script.&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+
+our @arr = &lt;ABC DEF GHI&gt;;
+&lt;/c&gt;
+&lt;p&gt;I'm going to go over when to use &lt;c&gt;our&lt;/c&gt; but I'm struggling with what to say about using glob like this. It works as long as there isn't a metacharacter other than curly braces. He has been told already about the use of &lt;c&gt;qw()&lt;/c&gt; to create an array like this but I suspect he copied this from somewhere. In the perldocs for [doc://glob] I found this:
+&lt;/p&gt;
+&lt;p&gt;
+&lt;blockquote&gt;If non-empty braces are the only wildcard characters used in the glob, no filenames are matched, but potentially many strings are returned. For example, this produces nine strings, one for each pairing of fruits and colors:
+&lt;c&gt;
+1.    my @many = glob "{apple,tomato,cherry}={green,yellow,red}";&lt;/c&gt;
+&lt;/blockquote&gt;
+
+&lt;/p&gt;
+&lt;p&gt;I created the following to try to show why it's a bad idea.&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+use Data::Dumper;
+
+my @arr1 = &lt;     abc def ghi f* &gt;;
+my @arr2 = qw(   abc def ghi f* );
+my @arr3 = glob('abc def ghi z*');
+
+print Dumper(\@arr1);
+print Dumper(\@arr2);
+print Dumper(\@arr3);
+
+__DATA__
+$VAR1 = [
+          'abc',
+          'def',
+          'ghi',
+          'file1.txt',
+          'file2.txt'
+        ];
+$VAR1 = [
+          'abc',
+          'def',
+          'ghi',
+          'f*'
+        ];
+$VAR1 = [
+          'abc',
+          'def',
+          'ghi'
+        ];
+&lt;/c&gt;
+&lt;p&gt;&lt;c&gt;perl -MO=Deparse glob_to_array.pl&lt;/c&gt; produces the following.&lt;/p&gt;
+&lt;c&gt;
+use Data::Dumper;
+use File::Glob ();
+use warnings;
+use strict 'refs';
+my(@arr1) = glob('     abc def ghi f* ');
+my(@arr2) = ('abc', 'def', 'ghi', 'f*');
+my(@arr3) = glob('abc def ghi z*');
+print Dumper(\@arr1);
+print Dumper(\@arr2);
+print Dumper(\@arr3);
+glob_to_array.pl syntax OK
+
+&lt;/c&gt;
+&lt;p&gt;Deparse shows that &lt;c&gt;qw()&lt;/c&gt; does the job without calling glob and risking something unexpected if the text happens to contain a metacharacter (other than curly braces). The best thing I can come up with is for a program that the team will need to support this is a bad idea since it could cause unintended and confusing side effects. Suggestions for better demonstrations or documentation would be appreciated. Maybe I'm being too critical and should lower my critic setting.&lt;/p&gt;
+
+&lt;p&gt;Note: I changed the title&lt;/p&gt;</doctext>
+<thread id="1206762">
+<node id="1206763"><node id="1206764"><node id="1206765"/>
+</node>
+</node>
+<node id="1206766"><node id="1206771"/>
+</node>
+</thread></node>

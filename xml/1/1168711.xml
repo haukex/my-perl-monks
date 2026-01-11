@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1168711" title="Re: Trying to understand Perl :-)" created="2016-07-28 03:48:31" updated="2016-07-28 03:48:31" _doctext_mode="lenient"><type id="11">note</type>
+<author id="5348">Corion</author>
+<doctext field_name="doctext">&lt;p&gt;You ask a lot of questions.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;code&gt;
+sub UNIQUE::print{print 'Hello World!'}
+UNIQUE-&gt;print(333);
+
+sub UNIQUE::print{ print "\nMuhahaha! @_ \n"; }
+UNIQUE-&gt;print(65.65.65.65);   # Okay this is weird.
+&lt;/code&gt;
+&lt;/blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;First of all, how does 65 become letter 'A' without using chr(65) ?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;You're creating a "version string" (see [mod://version]). Version strings convert the numbers to characters.&lt;/p&gt;
+&lt;blockquote&gt;
+Secondly, Perl allows me to redefine my UNIQUE::print and now
+this second definition overwrites the first one.
+What happened to the first one???
+&lt;/blockquote&gt;
+&lt;p&gt;Perl executes your code in two phases. First it compiles your code. This is when your second declaration of &lt;c&gt;UNIQUE::print&lt;/c&gt; overwrites your first declaration. This phase is commonly called the "compile" phase. Then, Perl runs the code. This is when all calls go to the (second) &lt;c&gt;UNIQUE::print&lt;/c&gt; function and produce output.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;What on earth is this?&lt;/p&gt;
+&lt;c&gt;
+sub {5};
+&lt;/c&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;It's an anonymous subroutine, that is, a subroutine that you cannot call by name. You usually store it in a variable so that you can access it in other places of your program:&lt;/p&gt;
+&lt;c&gt;
+my $five = sub { 5 };
+print $five-&gt;();
+&lt;/c&gt;
+&lt;p&gt;Anonymous subroutines are what makes [doc://map] and [doc://grep] useful. Also see [http://hop.perl.plover.com/|Higher Order Perl] for a good introduction where anonymous subroutines come in handy.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;c&gt;
+sub Red
+{
+  sub LittleRed{'red'};  # sub within a sub
+  LittleRed;             # returns 'red'
+}
+print "\nPerl is getting confused here..." . Red;
+print "\n\n";
+
+print LittleRed;
+&lt;/c&gt;
+Wait. This is not supposed to work!
+If I declare a sub within a sub, then the inner sub should
+not be accessible from the outside. Is this right???
+I mean what's the point of declaring a sub within a sub
+if it's the same as declaring it outside the sub?
+&lt;/blockquote&gt;
+&lt;p&gt;Declaring named subroutines within other named subroutines usually is an error. The visibility of subroutine names is global (except for lexical named subroutines, but these are experimental). Declaring nested named subroutines often leads to interesting problems which most often are shown by [mod://warnings] as &lt;c&gt;Variable %s will not stay shared&lt;/c&gt;.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;c&gt;
+sub Y{
+    my$i=0;
+    $i while($i++&lt;10);
+}
+print"\nYES&gt;".Y;
+&lt;/c&gt;
+Now, why is this not printing 10??
+When the while loop ends, $i equals 10, so if I just
+say "$i" then it should use that as a return value for
+the sub. No?
+&lt;/blockquote&gt;
+&lt;p&gt;No. &lt;c&gt;$i&lt;/c&gt; is not the expression returned from the last statement. A subroutine evaluates to the value of its last statement.&lt;/p&gt;
+&lt;blockquote&gt;
+Is there a way to
+access previous return values?
+Example:
+&lt;c&gt;
+sub DDD { 0; 1; 2; 3; 4; 5; }
+
+print DDD;
+&lt;/c&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Yes. Use a comma instead of a semicolon (that is, return a list):&lt;/p&gt;
+&lt;c&gt;
+sub DDD { 0, 1, 2, 3, 4, 5, }
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1168704</root_node>
+<parent_node field_name="parent_node">1168704</parent_node>
+<thread id="1168704">
+<node id="1168709"/>
+<node id="1168711"><node id="1168727"><node id="1168728"/>
+<node id="1168733"/>
+</node>
+</node>
+<node id="1168718"/>
+<node id="1168722"/>
+</thread></node>

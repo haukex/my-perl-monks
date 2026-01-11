@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11102774" title="Re: perl script to compare two directories" created="2019-07-13 02:13:55" updated="2019-07-13 02:13:55" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1166559">harangzsolt33</author>
+<doctext field_name="doctext">Okay, here is what I have done so far:
+
+&lt;P&gt;
+&lt;code&gt;
+
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+
+#
+# This perl script compares two directories and prints
+# the differences. Actually, it compares DIR2 against DIR1
+# and displays which files or directories do not exist
+# in DIR2...
+#
+#################################################################
+
+my $DIR1 = 'C:\\BIN';
+my $DIR2 = 'D:\\BIN';
+my $RECURSIVE = 1;
+my $SHORTEN_LONG_PATH_NAMES = 1;
+
+#################################################################
+
+my $CURRENT_DIRECTORY = GetPath($0);
+
+my $NUMBER_OF_MISSING_DIRS = 0;
+my $NUMBER_OF_MISSING_FILES = 0;
+my $NUMBER_OF_SIZE_DIFFERENCES = 0;
+
+print "\nDirectory Compare Script\nWritten by Zsolt in July 12, 2019. &lt;zsnp\@juno.com&gt;\n";
+
+$DIR1 = JoinPath( (isAbsPath($DIR1) ? '' : $CURRENT_DIRECTORY), $DIR1);
+$DIR2 = JoinPath( (isAbsPath($DIR2) ? '' : $CURRENT_DIRECTORY), $DIR2);
+
+$DIR1 = toNicePath($DIR1);
+$DIR2 = toNicePath($DIR2);
+
+print "\nDIR1: $DIR1\nDIR2: $DIR2\n";
+
+CheckDIR($DIR1);
+
+print "\nNumber of size differences : $NUMBER_OF_SIZE_DIFFERENCES\nNumber of missing files    : $NUMBER_OF_MISSING_FILES\nNumber of missing dirs     : $NUMBER_OF_MISSING_DIRS\nRECURSIVE = $RECURSIVE\n";
+
+exit;
+
+################################################################# CatchFile
+#
+# This function is automatically called by CheckDIR() every time
+# a file is found. This function gets the full name of the file.
+#
+#   Usage: CatchFile(FULLNAME) &lt;-- Called by CheckDIR()
+#
+sub CatchFile
+{
+  my $FILE1 = shift;
+  my $FILE2 = GetFile2($FILE1);
+
+  unless (-e $FILE2)		# File exists?
+  {
+    $NUMBER_OF_MISSING_FILES++;
+    print 'XXXXX ' . Shorten($FILE2) . " file does not exist!\n";
+    return;
+  }
+
+  return if (-d $FILE1);	# Directory? -Ignore it.
+
+  if (-s $FILE1 != -s $FILE2)	# Same size?
+  {
+    $NUMBER_OF_SIZE_DIFFERENCES++;
+    print '&lt;&lt;&lt;&lt;&lt; ' . Shorten((-s $FILE1 &lt; -s $FILE2) ? $FILE1 : $FILE2) . " is smaller!\n"
+  }
+
+#  if (-M $FILE1 != -M $FILE2)	# Same date?
+#  {
+#    print '::::: ' . Shorten((-M $FILE1 &gt; -M $FILE2) ? $FILE1 : $FILE2) . " is older!\n"
+#  }
+
+}
+
+################################################################# CheckDIR
+#
+# This function reads the contents of a folder and calls
+# CatchFile() for each file that was found.
+# Returns 0 on success.
+# Returns a negative value if an error occurred.
+#
+#   Usage: CheckDIR(PATH)
+#
+sub CheckDIR
+{
+  @_ or return;
+  my $PATH = shift;
+  defined $PATH or return;
+  length($PATH) or return;
+
+  print '      Reading directory: ' . Shorten($PATH) . "\n";
+  $PATH = toNicePath(AddSuffix($PATH, '\\'));
+  my $FULLNAME;
+  opendir(my $DIR, $PATH) or return;
+  while (my $NAME = readdir $DIR)
+  {
+    $FULLNAME = "$PATH$NAME";
+    if (-d($FULLNAME))
+    {
+      unless (-d(GetFile2($FULLNAME)))
+      {
+        $NUMBER_OF_MISSING_DIRS++;
+        print "!!!!! " . Shorten(GetFile2($FULLNAME)) . " dir doesn't exist!\n";
+      }
+
+      # Check into subdirectory if RECURSIVE == 1
+      # Skip directory if its name starts with "."
+      if ($RECURSIVE)
+      { CheckDIR($FULLNAME) unless (vec($NAME, 0, 8) == 46); }
+      next;
+    }
+    CatchFile($FULLNAME);
+  }
+  closedir $DIR;
+}
+
+################################################################# Shorten
+#
+# This function shortens a string if it's too long by
+# cutting out the middle part and substituting "**"
+# in its place.
+#
+# Usage: STRING = Shorten(STRING, [MAXLEN])
+#
+sub Shorten
+{
+  @_ or return '';
+  my $S = shift;
+  defined $S or return '';
+  my $L = length($S);
+  $L or return '';
+
+  $SHORTEN_LONG_PATH_NAMES or return $S;
+
+  my $M = @_ ? shift : 50;
+  my $H = $M &gt;&gt; 1;
+
+  $L &gt; $M or return $S;
+  return substr($S, 0, $H) . '**' . substr($S, $L - $H, $H);
+}
+
+################################################################# GetFile2
+#
+# This function takes File1 and returns File2.
+# File1 is the full path of the file or directory in $DIR1
+# File2 is the full path of the file or directory in $DIR2
+#
+sub GetFile2
+{
+  my $FILE1 = shift;
+  my $FILE = substr($FILE1, length($DIR1), length($FILE1));
+  my $FILE2 = $DIR2 . $FILE;
+  return $FILE2;
+}
+
+################################################################# isAbsPath
+#
+# v2019.7.12  INTEGER = isAbsPath(PATH)
+# Returns 1 if PATH starts with a drive letter
+# or // or \\ otherwise returns zero.
+sub isAbsPath
+{
+  @_ or return 0;
+  my $P = shift;
+  defined $P or return 0;
+  length($P) or return 0;
+  $P = uc(substr(Trim($P), 0, 3));
+  my $c = vec($P, 0, 8);
+  return 1 if ($c == 47 || $c == 92);
+  return 0 if ($c &lt; 65 || $c &gt; 90);
+  return 0 if (vec($P, 1, 8) != 58);
+  $c = vec($P, 2, 8);
+  return 1 if ($c == 47 || $c == 92);
+  return 0;
+}
+
+################################################################# Trim
+#
+# v2019.6.15  STRING = Trim(STRING)
+# Removes whitespace before and after STRING.
+# Treats tabs, esc, null, vertical tab,
+# and new lines as whitespace.
+#
+sub Trim
+{
+  @_ or return '';
+  my $S = shift;
+  defined $S or return '';
+  my $L = length($S);
+  $L or return '';
+  my $START = 0;
+  my $LAST = 0;
+  while ($L--)
+  {
+    if (vec($S, $L, 8) &gt; 32)
+    {
+      $START = $L;
+      $LAST or $LAST = $L + 1;
+    }
+  }
+  return substr($S, $START, $LAST - $START);
+}
+
+################################################################# GetPath
+#
+# This function returns the path portion of a full file name
+# without the trailing / or \ character.
+#
+#   Usage: PATH = GetPath(FULL_FILE_NAME)
+#
+#   Example: GetPath($0)  --&gt; returns this perl script's path
+#
+sub GetPath
+{
+  my $F = shift;
+  $F =~ tr#\\#/#;
+  my $P = rindex($F, '/');
+  $P or return substr($F, 0, 1);
+  return ($P &gt; 0) ? substr($F, 0, $P) : '.';
+}
+
+################################################################# toNicePath
+#
+# Returns a PATH string that is separated by either \\ or /
+# depending on the current OS (either Linux or Windows).
+#
+# Usage: STRING = toNicePath(STRING)
+#
+sub toNicePath
+{
+  @_ or return '';
+  my $P = shift;
+  defined $P or return '';
+  length($P) or return '';
+
+  if (index(uc($^O), 'MSWIN') &lt; 0)
+  { $P =~ tr#\\#/#; }
+  else
+  { $P =~ tr#/#\\#; }
+
+  return $P;
+}
+
+################################################################# JoinPath
+#
+# v2019.6.16  STRING = JoinPath(STRING, [STRING], [STRING])
+# This function joins two names into a single path by
+# adding / in between the names. It also simplifies the
+# resulting path by removing repeated \\ // characters,
+# and tries to resolve the "." and ".." in a path name
+# to literal names only.
+#
+sub JoinPath
+{
+  @_ or return '';
+  my $P = join('/', CollapseArray(@_));
+  defined $P or return '';
+  length($P) or return '';
+
+  $P = Trim($P);
+  $P =~ tr#\\#/#;
+  if (uc(substr($P, 0, 8)) eq 'FILE:///')
+  { $P = substr($P, 8, length($P)); }
+  $P =~ s|///|/|g;
+  $P =~ s|//|/|g;
+  my $DRIVE = (vec($P, 1, 8) == 58) ? vec($P, 0, 8) &amp; 223 : 0;
+  if ($DRIVE) { $P = substr($P, 2, length($P)); }
+  my $SLASH = (vec($P, 0, 8) == 47) ? 47 : 0;
+  if ($SLASH) { $P = substr($P, 1, length($P)); }
+  my @A = split('/', $P);
+  for (my $i = 0; $i &lt; @A; $i++)
+  {
+    if ($A[$i] eq '.')
+    { splice(@A, $i--, 1); }
+    if ($A[$i] eq '..')
+    {
+      if ($i &gt; 0)
+      { splice(@A, --$i, 2); $i--; }
+      else
+      { splice(@A, $i, 1); $i--; }
+    }
+  }
+  return ($DRIVE ? chr($DRIVE) . ':' : '') . ($SLASH ? '/' : '') . join('/', @A);
+}
+
+################################################################# CollapseArray
+#
+# v2019.6.15  NEW_ARRAY = CollapseArray(ARRAY)
+# This function removes blank lines from an array.
+#
+sub CollapseArray
+{
+  my $i = @_;
+  while ($i--)
+  {
+    splice(@_, $i, 1) unless (length($_[$i]));
+  }
+  return @_;
+}
+
+################################################################# AddSuffix
+#
+# This function makes sure that STRING ends with SUFFIX.
+#
+#   Usage: STRING = AddSuffix(STRING, SUFFIX)
+#
+#   Example: AddSuffix('Abcdef', 'def')  ---&gt; 'Abcdef'
+#            AddSuffix('Abcdef', 'DEF')  ---&gt; 'AbcdefDEF'
+#
+sub AddSuffix
+{
+  @_ or return ''; my $S = shift; defined $S or return ''; my $LS = length($S); $LS or return '';
+  @_ or return $S; my $X = shift; defined $X or return $S; my $LX = length($X); $LX or return $S;
+  if ($LS &gt;= $LX) { if (substr($S, $LS - $LX, $LX) eq $X) { return $S; } }
+  return $S . $X;
+}
+
+#################################################################
+
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">11102680</root_node>
+<parent_node field_name="parent_node">11102680</parent_node>
+<thread id="11102680">
+<node id="11102683"/>
+<node id="11102690"><node id="11102714"><node id="11102716"/>
+</node>
+</node>
+<node id="11102704"><node id="11102711"><node id="11102712"/>
+<node id="11102713"/>
+</node>
+</node>
+<node id="11102719"><node id="11102720"/>
+</node>
+<node id="11102721"/>
+<node id="11102723"/>
+<node id="11102774"><node id="11102779"><node id="11102788"/>
+</node>
+<node id="11102783"><node id="11102812"/>
+</node>
+</node>
+</thread></node>

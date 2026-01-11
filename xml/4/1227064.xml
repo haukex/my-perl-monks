@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227064" title="Re^4: File::Temp survival and scope created by &quot;do&quot;" created="2018-12-10 15:42:09" updated="2018-12-10 15:42:09" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Interesting, thanks for looking into it further!&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I'm not sure what you mean about being able to return a value&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I mean that in e.g. &lt;c&gt;my $x = do { my $y = "foo" }&lt;/c&gt;, &lt;c&gt;$x&lt;/c&gt; is assigned the return value of the assignment (&lt;c&gt;"foo"&lt;/c&gt;) - you can't do things like for example &lt;c&gt;my $x = do { if (/x/) { "X" } else { "_" } }&lt;/c&gt; with a bare &lt;c&gt;{ BLOCK }&lt;/c&gt;.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;This looks like an optimization issue, when do contains only a single statement, I guess it is optimized as a single statement executed in the containing scope&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You may be onto something, there are some differences in the following two, although I don't know enough about the internals to say if the differences are relevant to the issue. I do think &lt;c&gt;do { EXPR }&lt;/c&gt; &lt;i&gt;shouldn't&lt;/i&gt; be optimized to just &lt;c&gt;EXPR&lt;/c&gt;...&lt;/p&gt;
+&lt;c&gt;
+$ perl -MO=Concise -e 'sub DESTROY{print "Foo"} do{1;my $x=bless{}}; print "Bar"'
+f  &lt;@&gt; leave[1 ref] vKP/REFC -&gt;(end)
+1     &lt;0&gt; enter -&gt;2
+2     &lt;;&gt; nextstate(main 3 -e:1) v:{ -&gt;3
+-     &lt;1&gt; null vK*/1 -&gt;b
+a        &lt;@&gt; leave vKP -&gt;b
+3           &lt;0&gt; enter v -&gt;4
+-           &lt;;&gt; ex-nextstate(main 4 -e:1) v -&gt;-
+-           &lt;0&gt; ex-const v -&gt;4
+4           &lt;;&gt; nextstate(main 4 -e:1) v -&gt;5
+9           &lt;2&gt; sassign vKS/2 -&gt;a
+7              &lt;@&gt; bless sK/1 -&gt;8
+-                 &lt;0&gt; ex-pushmark s -&gt;5
+6                 &lt;@&gt; anonhash sK* -&gt;7
+5                    &lt;0&gt; pushmark s -&gt;6
+8              &lt;0&gt; padsv[$x:4,5] sRM*/LVINTRO -&gt;9
+b     &lt;;&gt; nextstate(main 6 -e:1) v:{ -&gt;c
+e     &lt;@&gt; print vK -&gt;f
+c        &lt;0&gt; pushmark s -&gt;d
+d        &lt;$&gt; const(PV "Bar") s -&gt;e
+
+$ perl -MO=Concise -e 'sub DESTROY{print "Foo"} do{  my $x=bless{}}; print "Bar"'
+c  &lt;@&gt; leave[1 ref] vKP/REFC -&gt;(end)
+1     &lt;0&gt; enter -&gt;2
+2     &lt;;&gt; nextstate(main 3 -e:1) v:{ -&gt;3
+-     &lt;1&gt; null vK*/1 -&gt;8
+-        &lt;@&gt; scope vK -&gt;-
+-           &lt;;&gt; ex-nextstate(main 4 -e:1) v -&gt;-
+7           &lt;2&gt; sassign vKS/2 -&gt;8
+5              &lt;@&gt; bless sK/1 -&gt;6
+-                 &lt;0&gt; ex-pushmark s -&gt;3
+4                 &lt;@&gt; anonhash sK* -&gt;5
+3                    &lt;0&gt; pushmark s -&gt;4
+6              &lt;0&gt; padsv[$x:4,5] sRM*/LVINTRO -&gt;7
+8     &lt;;&gt; nextstate(main 6 -e:1) v:{ -&gt;9
+b     &lt;@&gt; print vK -&gt;c
+9        &lt;0&gt; pushmark s -&gt;a
+a        &lt;$&gt; const(PV "Bar") s -&gt;b
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;The fact that it works properly when the do contains more than one statement means there isn't a real problem though&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It's still pretty inconsistent behavior IMO. [https://rt.perl.org/Ticket/Display.html?id=133720|Bug #133720 reported.]&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Minor edits to wording.&lt;/small&gt;&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1227033</root_node>
+<parent_node field_name="parent_node">1227047</parent_node>
+<thread id="1227033">
+<node id="1227041"><node id="1227043"><node id="1227047"><node id="1227064"><node id="1227065"><node id="1227073"><node id="1227078"/>
+</node>
+</node>
+<node id="1227070"><node id="1227081"/>
+<node id="1227091"/>
+<node id="1227095"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

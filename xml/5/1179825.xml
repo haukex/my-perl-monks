@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1179825" title="Last service name comes up empty in NMAP Parser" created="2017-01-18 05:53:56" updated="2017-01-18 05:53:56" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1174130">Noosrep</author>
+<doctext field_name="doctext">Hi,
+
+&lt;p&gt;I have an XML file that is generated as follows:&lt;/p&gt;
+&lt;code&gt;
+&lt;port protocol="tcp" portid="139"&gt;&lt;state state="open" reason="syn-ack" reason_ttl="64"/&gt;&lt;service name="netbios-ssn" method="table" conf="3"/&gt;&lt;/port&gt;
+&lt;port protocol="tcp" portid="445"&gt;&lt;state state="open" reason="syn-ack" reason_ttl="64"/&gt;&lt;service name="microsoft-ds" method="table" conf="3"/&gt;&lt;/port&gt;
+&lt;port protocol="tcp" portid="1984"&gt;&lt;state state="open" reason="syn-ack" reason_ttl="64"/&gt;&lt;service name="bigbrother" method="table" conf="3"/&gt;&lt;/port&gt;
+&lt;/code&gt;
+
+&lt;p&gt;With following code, I parse it:&lt;/p&gt;
+&lt;code&gt;
+my $fct_openPort = (join ',',$fct_host_obj-&gt;tcp_ports('open'))."\n" ;
+my @fct_ports = split ',', $fct_openPort;
+
+for my $fct_port (@fct_ports) {
+  my $fct_svc = $fct_host_obj-&gt;tcp_service($fct_port);				
+  my $fct_service = $fct_svc-&gt;name() ;
+  print "\nservice        : $fct_service \n" ;
+  print "port             : $fct_port \n" ;
+  print "service and port = $fct_port:$fct_service \n" ;
+}
+&lt;/code&gt;
+
+&lt;p&gt;However, the last open port has no service!&lt;/p&gt;
+&lt;code&gt;
+service          : netbios-ssn 
+port             : 139 
+service and port = 139:netbios-ssn 
+
+service          : microsoft-ds 
+port             : 445 
+service and port = 445:microsoft-ds 
+
+service          :  
+port             : 1984
+ 
+service and port = 1984
+: 
+&lt;/code&gt;
+
+&lt;p&gt;Does anybody have any why the last service isn't resolved? 
+When I change &lt;/p&gt;
+&lt;code&gt;my $fct_svc = $fct_host_obj-&gt;tcp_service($fct_port); &lt;/code&gt;
+&lt;p&gt;to&lt;/p&gt; 
+&lt;code&gt;my $fct_svc = $fct_host_obj-&gt;tcp_service("1984"); &lt;/code&gt;
+&lt;p&gt;it does work&lt;/p&gt;</doctext>
+<thread id="1179825">
+<node id="1179828"><node id="1179831"/>
+</node>
+<node id="1179830"><node id="1179832"/>
+</node>
+</thread></node>

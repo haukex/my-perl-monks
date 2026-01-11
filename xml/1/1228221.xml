@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228221" title="Re^5: 'finally' block in Perl?" created="2019-01-08 11:46:01" updated="2019-01-08 11:46:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;die $@ if $@&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Be careful with that, see [id://1153468] - the better pattern is &lt;c&gt;eval { ...; 1 } or do { handle_error() };&lt;/c&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Hypothetically, the "early return" case can be handled by wrapping early-returnable logic in a separate function, though I can see that this may be cumbersome in some contexts.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;There are several different ways to handle a kind of "return early but perform cleanup" in Perl, which one is most applicable depends on the situation (e.g. simple control flow, as you said using a separate function, the code shown in this thread, &lt;c&gt;finally&lt;/c&gt; from a module like [mod://Try::Tiny], [mod://End], ...). If I were to use the bare block with [doc://last] method, personally I'd prefer to label the block to make it absolutely clear where the &lt;c&gt;last&lt;/c&gt; will jump to, and make it immune to accidentally adding in another bare block:&lt;/p&gt;
+&lt;c&gt;
+{
+    print "A\n";
+    FOO: {
+        print "B\n";
+        {
+            last FOO;
+            print "C\n";
+        }
+        print "D\n";
+    }  # last jumps here
+    print "E\n";
+}
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">98736</root_node>
+<parent_node field_name="parent_node">1228216</parent_node>
+<thread id="98736">
+<node id="98745"/>
+<node id="98746"><node id="98749"/>
+<node id="1228106"><node id="1228109"><node id="1228216"><node id="1228221"/>
+</node>
+</node>
+</node>
+</node>
+<node id="98789"><node id="98790"/>
+</node>
+</thread></node>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1115829" title="Re: Search hex string in vary large binary file" created="2015-02-07 00:03:00" updated="2015-02-07 00:03:00" _doctext_mode="lenient"><type id="11">note</type>
+<author id="171588">BrowserUk</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Try this (I was bored:):
+&lt;code&gt;
+#! perl -slw
+use strict;
+
+our $BUFN //= 1024; $BUFN *= 4096;
+
+our $SIG  //= '68 64 76 64 00 00 00 11 64 61 74 61 00 00 00 15 00 00 00 00 02 00 00 00';
+
+$SIG =~ tr[ ][]d;
+$SIG = pack 'H*', $SIG;
+
+open my $in, '&lt;:raw', $ARGV[0] or die $!;
+my( $offset, $buffer ) = ( 0, '' );
+
+while( sysread( $in, $buffer, $BUFN, length $buffer ) ) {
+    my $pos = 1+index( $buffer, $SIG );
+
+    if( $pos ) {
+        print "Found signature at offset: ", $offset + $pos - 1;
+        exit;
+    }
+    $offset += length( $buffer ) - length( $SIG );
+    $buffer = substr $buffer, - length $SIG;
+}
+close $in;
+
+print "Signature not found";
+
+__END__
+02/02/2015  15:42    10,737,418,241 big.csv
+
+C:\test&gt;junk71 -BUFN=4096 -SIG="52 5f d7 58 22 0d 0a 61 68 73 68 77 65 2c 38 30 33 37 31 37 38 35 2c 46" big.csv
+Found signature at offset: 1073741817
+&lt;/code&gt;
+
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-171588"&gt;
+&lt;hr /&gt;
+&lt;font size=1 &gt;
+&lt;div&gt;With the rise and rise of 'Social' network sites: 'Computers are making people easier to use everyday'&lt;/div&gt;
+&lt;div&gt;Examine what is said, not who speaks -- Silence betokens consent -- Love the truth but pardon error.&lt;/div&gt;
+&lt;div&gt;"Science is about questioning the status quo. Questioning authority". 
+[http://www.theregister.co.uk/2015/01/19/got_bugs_got_anger_just_get_them_out_says_linus_torvalds/|I'm with torvalds on this]
+&lt;/div&gt;
+&lt;div&gt;In the absence of evidence, opinion is indistinguishable from prejudice. [http://vimeo.com/110554082|Agile (and TDD) debunked]
+&lt;/div&gt;
+&lt;/font&gt;
+
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1115815</root_node>
+<parent_node field_name="parent_node">1115815</parent_node>
+<thread id="1115815">
+<node id="1115816"/>
+<node id="1115817"/>
+<node id="1115829"/>
+<node id="1115837"/>
+<node id="1115853"><node id="1115854"><node id="1115856"><node id="1115858"><node id="1115874"><node id="1115878"><node id="1115882"><node id="1115887"><node id="1115908"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1185750" title="Re: Joining multiple lines together while parsing" created="2017-03-24 06:24:06" updated="2017-03-24 06:24:06" _doctext_mode="lenient"><type id="11">note</type>
+<author id="5348">Corion</author>
+<doctext field_name="doctext">&lt;p&gt;I think your regular expression here:&lt;/p&gt;
+&lt;c&gt;
+my %row = m/\s*(\w+)\S*\s+(\S.*)/g;
+&lt;/c&gt;
+&lt;p&gt;... doesn't extract everything because it's in "dot-does-not-match-newline" mode.&lt;/p&gt;
+&lt;p&gt;The &lt;c&gt;/s&lt;/c&gt; switch makes "." match newlines ("treat variable as 's'ingle line") and thus could fix your problem:&lt;/p&gt;
+&lt;c&gt;
+$_ = &lt;&lt;DATA;
+    Detail:              Some really nice infos these are 
+    Info:              This is a problem
+                       but there is a solution
+DATA
+my %row = m/\s*(\w+):\s+(\S[^:]+)/gs;
+&lt;/c&gt;
+&lt;p&gt;But then, that means that &lt;c&gt;Info&lt;/c&gt; gets gobbled up again into the description part.&lt;/p&gt;
+&lt;p&gt;Personally, I would do manual line-by-line parsing instead of using one regular expression to capture everything:&lt;/p&gt;
+&lt;c&gt;
+$_ = &lt;&lt;DATA;
+    Detail:              Some really nice infos these are 
+    Info:              This is a problem
+                       but there is a solution
+DATA
+my %row;
+
+my $curr;
+for (split /\n/) {
+    if( /^\s*(\w+):\s+(.*)/ ) {
+        $curr = $1;
+        $row{ $curr } = $2;
+    } elsif( $curr and /^\s*(.*)/ ) {
+        $row{ $curr } .= ' ' . $1;
+    } else {
+        die "Unknown input data [$_]";
+    };
+};
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1185742</root_node>
+<parent_node field_name="parent_node">1185742</parent_node>
+<thread id="1185742">
+<node id="1185745"><node id="1185747"/>
+</node>
+<node id="1185748"><node id="1185752"><node id="1185754"><node id="1185757"><node id="1185761"/>
+</node>
+<node id="1185763"><node id="1185764"/>
+<node id="1185765"/>
+</node>
+<node id="1185766"/>
+</node>
+</node>
+</node>
+<node id="1185750"/>
+<node id="1185807"/>
+<node id="1185843"/>
+</thread></node>

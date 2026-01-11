@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1183529" title="Platform Dependence observed in Perl - Hash keys have different format" created="2017-03-03 03:57:37" updated="2017-03-03 03:57:37" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1163929">rkabhi</author>
+<doctext field_name="doctext">&lt;p&gt;Hi PerlMonks !!&lt;/p&gt;
+&lt;p&gt; After 2 days of debug of a tool developed by me using Perl 5.10.1, I finally arrive here.&lt;/p&gt;
+&lt;p&gt;The issue:&lt;/p&gt;
+ &lt;p&gt;In my perl code, I use several hash variables to store different info. The code misbehaved when I tested it on a different machine (but with same configuration as mine). The hash keys (when printed using Data::Dumper) were displayed within double quotes when the code was ran on different machine. On my machine, the hash keys appear without double quotes.&lt;/p&gt;
+ &lt;p&gt;Because of the different hash keys format, I added deliberately double quotes ("") before accessing the hash using code as shown below:&lt;/p&gt;
+&lt;code&gt;key = "\"$key\"";&lt;/code&gt;
+
+&lt;p&gt; With above line added, the issue was resolved. So, this confirms the issue was due to hash keys having different form on different systems. However, the overall code still does not yield correct results on different machines and I am afraid it may take huge time to zero in to all such differences in the code. To the best of my understanding, I have not used anything apart from hashes, arrays (which are part of core perl) in the code. So I was expecting the code to be platform independent. I have listed below the modules used in my code below&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+use Getopt::Long;
+use Cwd qw(abs_path);
+use Data::Dumper qw(Dumper);
+BEGIN {
+	my @script_path_dirs = split('/',abs_path($0));
+	pop(@script_path_dirs);
+	my $script_path = join('/',@script_path_dirs);
+	# use lib $script_path;
+	unshift @INC, $script_path;
+}
+use Voltrace;
+&lt;/code&gt;
+
+In code portion shown above (copied from the beginning of the main code), Voltrace is my custom module which has some common subroutines. The Begin statement is only used to add the path of my custom module Voltrace.pm in @INC.
+
+&lt;p&gt;As the overall code is quite large, I will share it only if it is required to through more insight on what is happening. Any suggestion to resolve different perl behavior on different platform would be helpful.&lt;/p&gt;
+
+&lt;p&gt;
+I have also listed below few key points about platform/environment used:
+&lt;/p&gt;
+
+&lt;p&gt;
+Perl version and env used for development: 5.10.1 on RHEL 6.7 x86_64.
+Incremental testing and debug was done while development. The code works fine on my machine.
+
+Perl version and env used for testing on another machine: 5.10.1 on RHEL 6.7 x86_64   and 5.8.8 on RHEL 5.7 x86_64
+&lt;/p&gt;
+
+&lt;p&gt;
+As a workaround to avoid platform dependence, I have also tried copying the perl modules in the tool package and forcing tool to use the copied modules. This raises module incompatibility issues with other perl version as expected. This could have worked somehow if I could supply perl binary package along with my tool to the user to ensure complete independence from platform/environment. However, I am not sure if we can really achieve this or not (because my /usr/bin includes several other linux tools other than perl and so the perl binary linkage is not clear). Also, I am not sure if supplying perl binary is best way to get rid of platform dependence. Any insight would help. Thanks in advance !
+&lt;/p&gt;
+
+&lt;p&gt;Adding the subroutine which actually defines hash %pinList with which issue was observed&lt;/p&gt;
+
+&lt;code&gt;
+my %pinList = ();
+my $pinValFile = "Pin_Values.txt";
+sub readPinValFile{
+	open(READ_PINVALS, $pinValFile) or die "[ERROR] Could not read Pin Val file, $!";
+	print WRITE_RUN_LOG "[INFO] Reading Pin Values file for pin info file-&gt;$pinValFile\n";
+	my @pinNames = ();
+	my @pinMaxSDVs = ();
+	my @pinMinSDVs = ();
+	my $lineno=0;
+	my $i=0;
+	while(&lt;READ_PINVALS&gt;){
+		$i++;
+		if($i &gt; 1){
+			my $line = $_;
+			$line =~ s/^\s*|\s*$//g;	#To remove all leading and trailing blanks
+			if($line ne ""){
+				my @pinWords = ();
+				if($line =~ m/.*?,.*?,.*/){
+					@pinWords = split(',',$line);
+				}
+				elsif($line =~ m/.*?;.*?;.*/){
+					@pinWords = split(';',$line);	
+				}
+				else{
+					$runLogErrCount++;
+					print WRITE_RUN_LOG "\t\t[ERROR] Could not read pin info for $line at line $i\n";
+					next;
+				}
+				my $pin = $pinWords[0];
+				my $pinMaxSDV = $pinWords[1];
+				my $pinMinSDV = $pinWords[2];
+				$pin =~ s/^\s*|\s*$//g;	#To remove all leading and trailing blanks
+				$pinMaxSDV =~ s/^\s*|\s*$//g;	#To remove all leading and trailing blanks
+				$pinMinSDV =~ s/^\s*|\s*$//g;	#To remove all leading and trailing blanks
+				if($pin ne ""){
+					if($pinMaxSDV eq "nil"){
+						$pinMaxSDV = "";
+					}
+					if($pinMinSDV eq "nil"){
+						$pinMinSDV = "";
+					}
+					$pinList{$pin} = [$pinMaxSDV,$pinMinSDV];
+				}
+				else{
+					$runLogErrCount++;
+					print WRITE_RUN_LOG "\t\t[ERROR] Could not read pin info for $line at line $i, incorrect pin name\n";
+					next;
+				}
+			}
+		}
+	}
+}
+&lt;/code&gt;
+</doctext>
+<thread id="1183529">
+<node id="1183530"><node id="1183535"><node id="1183536"><node id="1184157"><node id="1184168"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1183542"/>
+<node id="1183606"/>
+<node id="1183636"><node id="1183651"><node id="1183656"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116343" title="Shrink Images and PDFs" created="2020-05-02 04:53:00" updated="2020-05-02 04:53:00" _doctext_mode="strict"><type id="1042">CUFP</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Here's a script I use all the time via the right-click menu in my file manager (Nautilus), it will shrink PDFs and images so they work better as email attachments (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; to be a little more specific: files that are several MB or more are usually due to high-resolution images, so this script runs commands to reduce their resolution). It does require [mod://Path::Class], ImageMagick's [man://convert], GhostScript's [man://gs], and my modules [mod://IPC::Run3::Shell] and [mod://Shell::Tools].&lt;/p&gt;
+&lt;readmore title="script"&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use Shell::Tools::Extra  Shell =&gt; [qw/ :FATAL convert gs /];
+use autodie ':all';
+use File::stat;
+
+=head1 SYNOPSIS
+
+ shrink FILENAMEs...
+
+=head1 DESCRIPTION
+
+Shrinks images and PDFs using ImageMagick resp. Ghostscript.
+Output files will have the same name but with F&lt;_sm&gt; appended, for
+example F&lt;foo.jpg&gt; becomes F&lt;foo_sm.jpg&gt;. This script will not
+overwrite existing files.
+
+Place this script in C&lt;&lt; ~/.local/share/nautilus/scripts/ &gt;&gt; for it to
+show up in the Nautilus right-click menu.
+
+=cut
+
+getopts('', \my %opts) or pod2usage;
+warn "no filenames specified\n" unless @ARGV;
+
+for my $f (@ARGV) {
+	if (not -e -f $f) {
+		warn "doesn't exist or isn't a file, skipping: $f\n";
+		next }
+	my ($bn,undef,$ext) = fileparse $f, qr/\.[^\.]+$/;
+	my ($mode,$of);
+	if ( $ext=~/^\.(?:jpe?g|png|gif)$/i ) {
+		$mode = 'img';
+		$of = file($f)-&gt;dir-&gt;file($bn."_sm.jpg");
+	}
+	elsif ( $ext=~/^\.pdf$/ ) {
+		$mode = 'pdf';
+		$of = file($f)-&gt;dir-&gt;file($bn."_sm".$ext);
+	}
+	else {
+		warn "I don't handle the extension $ext, skipping: $f\n";
+		next }
+	if (-e $of) {
+		warn "output already exists, skipping: $of\n";
+		next }
+	if ( $bn=~/_sm$/ ) {
+		warn "appears to already be shrunk, skipping: $f\n";
+		next }
+	if ($mode eq 'img')
+		{ convert "$f", qw{ -auto-orient -resize 1000x1000&gt; -strip -quality 95 }, "$of" }
+	elsif ($mode eq 'pdf')
+		{ gs qw{ -q -dBATCH -dNOPAUSE -dSAFER -sDEVICE=pdfwrite -dPDFSETTINGS=/ebook -dAutoRotatePages=/None },
+			"-sOutputFile=$of", "$f" }
+	else { die "internal error '$mode'" }
+	chmod stat($f)-&gt;mode, $of;
+}
+
+=head1 AUTHOR, COPYRIGHT, AND LICENSE
+
+Copyright (c) 2017 Hauke Daempfling (haukex@zero-g.net)
+at the Leibniz Institute of Freshwater Ecology and Inland Fisheries (IGB),
+Berlin, Germany, L&lt;http://www.igb-berlin.de/&gt;
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see L&lt;http://www.gnu.org/licenses/&gt;.
+
+=cut
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;(Also, not Perl related, but I use this pretty much every day: setting up a keyboard combination such as &lt;c&gt;Ctrl+Shift+F&lt;/c&gt; for the shell command &lt;c&gt;xsel -b | xsel -ib&lt;/c&gt;, which causes the current clipboard buffer to be converted to text-only, which has been incredibly useful when copying formatted text that I don't want to keep the formatting of. The shell command may need to be placed into a simple script file depending on whether you can configure keyboard shortcuts to run a shell command, or if they can only run a single executable.)&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;My 3000th node! &lt;c&gt;:-O&lt;/c&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<thread id="11116343">
+<node id="11116351"><node id="11116353"><node id="11116358"><node id="11116361"/>
+</node>
+</node>
+</node>
+<node id="11116709"><node id="11116721"/>
+</node>
+<node id="11118010"><node id="11118022"><node id="11118024"><node id="11118027"><node id="11118029"><node id="11118038"/>
+</node>
+<node id="11118030"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

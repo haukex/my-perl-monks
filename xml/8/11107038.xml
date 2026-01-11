@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11107038" title="Combinations of lists to a hash" created="2019-10-04 07:47:28" updated="2019-10-04 07:47:28" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="716732">tel2</author>
+<doctext field_name="doctext">Beloved Monks,
+&lt;p&gt;
+After hours of messing around with various attempts at this (which I'd rather not bore you with), I seek your help a script which takes input like this:
+&lt;pre&gt;
+Prefix1=A,B:c,d value1
+Prefix2=A:b,c:1,2 value2
+&lt;/pre&gt;
+(That's a space before each value).&lt;br&gt;
+And outputs all combinations of the comma separated items within the colon separated groups, and puts the result in a hash like this:
+&lt;pre&gt;
+%hash =
+{
+  'Prefix1=A:c' =&gt; 'value1',
+  'Prefix1=A:d' =&gt; 'value1',
+  'Prefix1=B:c' =&gt; 'value1',
+  'Prefix1=B:d' =&gt; 'value1',
+  'Prefix2=A:b:1' =&gt; 'value2',
+  'Prefix2=A:b:2' =&gt; 'value2',
+  'Prefix2=A:c:1' =&gt; 'value2',
+  'Prefix2=A:c:2' =&gt; 'value2'
+};
+&lt;/pre&gt;
+There could be any number of colon separated groups and comma separated items within each group, so I expect a recursive function would be apt, (at least that's what I was trying to do).  I'm not wanting the overhead of a module, please.
+&lt;p&gt;
+I've been using a solution which I coded ages ago, but that only handles 2 groups (using a for loop within a for loop), but now I want something which will handle any number of groups.&lt;br&gt;
+&lt;p&gt;
+&lt;b&gt;UPDATE:&lt;/b&gt;&lt;br&gt;
+Thank you all for your answers, many of which I have voted for.&lt;br&gt;
+Some things which I failed to mention (sorry!) when I posted the original are:
+&lt;p&gt;
+#1. Any group can be an '*', e.g.:
+&lt;pre&gt;
+Prefix3=A:*:1,2 value3
+&lt;/pre&gt;
+I notice that this poses problems for the 'glob' solutions, and I think some have suggested solutions to that. &amp;nbsp;If you have a simple fix, please update your solution with it, otherwise I'll see what I can come up with. &amp;nbsp;I found that escaping the * like \* in the input is one option, but not ideal for me.&lt;br&gt;
+&lt;p&gt;
+#2. The value (on the right) can be a '|' separated list, e.g.:
+&lt;pre&gt;
+Prefix4=A:*:1,2 value4a=10|value4b=20
+&lt;/pre&gt;
+The above should result in %hash entries like this:
+&lt;pre&gt;
+{
+  'Prefix4=A:*:1' =&gt; {
+                   'value4a' =&gt; '10',
+                   'value4b' =&gt; '20'
+                     },
+  'Prefix4=A:*:2' =&gt; {
+                   'value4a' =&gt; '10',
+                   'value4b' =&gt; '20'
+                     },
+}
+&lt;/pre&gt;
+In fact, &lt;u&gt;all&lt;/u&gt; input, whether it has '*' or not, and whether it has single or multiple values, is meant to create a hash of hashes like the above example.
+&lt;p&gt;
+#3. Some day I might want to include the prefixes in the things which can contain lists, e.g.:
+&lt;pre&gt;
+Prefix5,Prefix6=A:*:1 value5=10
+&lt;/pre&gt;
+The result would be:
+&lt;pre&gt;
+{
+  'Prefix5=A:*:1' =&gt; {
+                   'value5' =&gt; '10',
+                     },
+  'Prefix6=A:*:1' =&gt; {
+                   'value5' =&gt; '10',
+                     },
+}
+&lt;/pre&gt;
+I'm not worried if no one wants to handle that possibility, but if you're willing then great! &amp;nbsp;(It looks as if AnomalousMonk was already heading that way. (Update: And tybalt89 has now done it.))
+&lt;p&gt;
+#4. I'm just realising now that I think I'm able to simply the requirements by doing away with the '=' and using ':' in place of it, so that should make the code easier.  For eample:
+&lt;pre&gt;
+Prefix7:A:*:1 value7=10
+&lt;/pre&gt;
+&lt;p&gt;
+Sorry I didn't mention any of this originally. The hash of hashes item slipped my mind until I'd posted, then it was 1 AM so I went to bed, and I was hoping I could manage the adjustment to any solutions myself, but at this stage I'm struggling to understand your solutions enough to do so, though I love their concise elegance!&lt;br&gt;
+&lt;p&gt;
+This is for a web application that I've been working on for years, and it is invoked during each page submission, so speed is important.
+&lt;br&gt;
+Thanks again.&lt;br&gt;
+Tel2&lt;br&gt;</doctext>
+<thread id="11107038">
+<node id="11107039"><node id="11107116"><node id="11107123"><node id="11107156"/>
+</node>
+</node>
+</node>
+<node id="11107040"><node id="11107050"><node id="11107077"><node id="11107111"><node id="11107113"/>
+<node id="11107114"/>
+</node>
+</node>
+</node>
+<node id="11107055"><node id="11107056"><node id="11107061"/>
+</node>
+<node id="11107058"><node id="11107060"><node id="11107068"><node id="11107070"/>
+</node>
+</node>
+</node>
+<node id="11107059"/>
+</node>
+</node>
+<node id="11107045"><node id="11107117"/>
+</node>
+<node id="11107048"/>
+<node id="11107064"><node id="11107075"><node id="11107076"><node id="11107079"><node id="11107086"><node id="11107118"><node id="11107119"><node id="11107162"><node id="11107169"><node id="11107172"/>
+</node>
+<node id="11107176"><node id="11107185"><node id="11107187"><node id="11107189"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11107120"><node id="11107136"><node id="11107144"><node id="11107150"/>
+</node>
+</node>
+<node id="11107165"><node id="11107218"><node id="11107222"><node id="11107224"><node id="11107225"/>
+</node>
+</node>
+</node>
+<node id="11107219"><node id="11107221"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11107066"/>
+<node id="11107071"><node id="11107072"><node id="11107073"><node id="11107074"><node id="11107078"><node id="11107080"><node id="11107081"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

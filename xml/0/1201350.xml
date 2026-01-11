@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201350" title="Almost certainly a module documentation issue" created="2017-10-13 17:37:35" updated="2017-10-13 17:37:35" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="320851">dd-b</author>
+<doctext field_name="doctext">&lt;p&gt;The Email::Sender::Transport::Print module has &lt;i&gt;very&lt;/i&gt; sparse documentation. It does say you can pass a file-handle object in as the attribute "fh". Looking at other Email::Sender::Transport implementations, it appears to me that passing a hash to new with the attributes as name/value pairs is the way it's done (there's a rather startlingly complete shortage of examples of Email::Sender::Transport::Print usage on the web).&lt;/p&gt;
+
+&lt;p&gt;The code is:&lt;/p&gt;
+
+&lt;code&gt;
+	open (my $sm, '&gt;&gt; :encoding(UTF-8)', 'out.txt') or
+	  die "Failed to open out.txt: $!";
+	$transport = Email::Sender::Transport::Print-&gt;new({
+	    fh =&gt; $sm,
+	});
+&lt;/code&gt;
+
+&lt;p&gt;($transport is declared outside the bit quoted, but it is declared.)&lt;/p&gt;
+
+&lt;p&gt;When I do that, I get the error "isa check for "fh" failed: GLOB(0x806897840) is not blessed".  This seems to imply that it noticed that I was in fact passing something as attribute fh, at least!&lt;/p&gt;
+
+&lt;p&gt;In the debugger, it seems to me that $sm, the thing passed in as the value of attribute fh, is in fact blessed.&lt;/p&gt;
+
+&lt;code&gt;  DB&lt;3&gt; x $sm
+0  GLOB(0x806897840)
+   -&gt; *main::$sm
+         FileHandle({*main::$sm}) =&gt; fileno(7)
+  DB&lt;4&gt; n
+isa check for "fh" failed: GLOB(0x806897840) is not blessed at (eval 78)[/home/ddb/perl5/lib/perl5/Sub/Quote.pm:3] line 59, &lt;$if&gt; line 2.
+	eval {...} called at (eval 78)[/home/ddb/perl5/lib/perl5/Sub/Quote.pm:3] line 58
+	Email::Sender::Transport::Print::new("Email::Sender::Transport::Print", HASH(0x80213c8e8)) called at /home/ddb/smbshare/Documents/Fandom/Minicon/Mc53/mc53_pr1_001.pl line 178M&lt;/code&gt;
+
+&lt;p&gt;I am now wondering WTF.  A preliminary attempt to look at the source code of the module foundered; it appears there is none, it's generated on-the-fly using moo or something?  Which I'm not familiar with, and while in theory I could study it up and then figure out for sure what's expected, that's starting to look like a large amount of work. &lt;/p&gt;
+
+&lt;p&gt;Ideas?&lt;/p&gt;
+</doctext>
+<thread id="1201350">
+<node id="1201354"><node id="1201380"/>
+</node>
+<node id="1201360"><node id="1201366"/>
+</node>
+<node id="1201365"><node id="1201381"><node id="1201398"/>
+</node>
+</node>
+</thread></node>

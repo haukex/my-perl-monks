@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11122245" title="Re: Net::OpenSSH reconnect master if conn. closed" created="2020-09-26 15:02:05" updated="2020-09-26 15:02:05" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I'm not sure at the moment if there's a built-in way to do this. But here is a stripped-down version of a script I've had in active use for about a year now to maintain a connection to an SSH server:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Net::OpenSSH;
+
+my $connect_interval_s = 60;
+my $command_interval_s = 60;
+
+my $run=1;
+local $SIG{INT}  = sub { $run=0 };
+local $SIG{TERM} = sub { $run=0 };
+OUTER: while ($run) {
+	my $ssh;
+	eval {
+		$ssh = Net::OpenSSH-&gt;new( 'hostname', user =&gt; 'username',
+				timeout =&gt; 10, kill_ssh_on_timeout =&gt; 1,
+			) or die "Failed to set up SSH";
+		die "SSH failed to connect: ".$ssh-&gt;error if $ssh-&gt;error;
+	;1} or do {
+		warn "Connect failed, will retry: $@";
+		sleep $connect_interval_s if $run;
+		redo OUTER;
+	};
+	# connection is up
+	INNER: while ($run) {
+		eval {
+			my $rv = $ssh-&gt;capture('echo some command');
+			die "Remote command failed: ".$ssh-&gt;error if $ssh-&gt;error;
+			# ... do something with $rv here ...
+		;1} or do {
+			warn "Command failed, will attempt to reconnect: $@";
+			last INNER;
+		};
+		sleep $command_interval_s if $run;
+	}
+	sleep $connect_interval_s if $run;
+}
+&lt;/c&gt;
+&lt;p&gt;In addition, I've got this in my &lt;c&gt;~/.ssh/config&lt;/c&gt; for that hostname:&lt;/p&gt;
+&lt;c&gt;
+Host hostname
+	User username
+	IdentityFile ~/.ssh/filename
+	ConnectTimeout 10
+	ServerAliveInterval 10
+	ServerAliveCountMax 3
+	ExitOnForwardFailure yes
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11122240</root_node>
+<parent_node field_name="parent_node">11122240</parent_node>
+<thread id="11122240">
+<node id="11122245"><node id="11122263"><node id="11122297"><node id="11122304"/>
+</node>
+</node>
+</node>
+<node id="11122279"/>
+</thread></node>

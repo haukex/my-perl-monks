@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111576" title="Re: command line perl command to get between lines with non greedy match" created="2020-01-18 12:54:13" updated="2020-01-18 12:54:13" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Note this is extremely large file and can't put the whole file into a string.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;How large is the section you want to read, does that fit into memory? One possible approach is to buffer the lines in an array, as several monks have shown. Just for fun, I thought about what a script like this might do if you didn't want to read the whole file &lt;i&gt;nor&lt;/i&gt; the section being searched for into memory; in that case you could scan the file and remember the byte offsets of the strings you're looking for. In the following, I'm [doc://read]ing that data in, but that's not required, you could do something else with those byte offsets. Note that the code below only works with bytes, not Unicode characters.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $file = 'in.txt';
+my ($start,$end);
+open my $fh, '&lt;:raw', $file or die "$file: $!";
+my $offset = 0;
+while (&lt;$fh&gt;) {
+	$start = $offset if /PATTERN1/;
+	$offset = tell $fh or die "tell: $!";
+	$end = $offset if /PATTERN3/;
+}
+die "Failed to find second pattern after first pattern"
+	unless defined $start &amp;&amp; defined $end &amp;&amp; $end &gt; $start;
+seek $fh, $start, 0 or die "seek: $!";
+my $bytes = $end-$start;
+read($fh, my $data, $bytes)==$bytes
+	or die "failed to read $bytes bytes";
+close $fh;
+print $data;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11111545</root_node>
+<parent_node field_name="parent_node">11111545</parent_node>
+<thread id="11111545">
+<node id="11111550"/>
+<node id="11111551"/>
+<node id="11111552"/>
+<node id="11111553"/>
+<node id="11111554"/>
+<node id="11111557"><node id="11111558"/>
+</node>
+<node id="11111559"><node id="11111567"/>
+</node>
+<node id="11111572"/>
+<node id="11111576"/>
+<node id="11111583"/>
+<node id="11111586"/>
+</thread></node>

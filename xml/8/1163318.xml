@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1163318" title="Re: Optionally / safely disabling a warning category for a complete package" created="2016-05-18 05:59:41" updated="2016-05-18 05:59:41" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [Corion],&lt;/p&gt;
+&lt;p&gt;It also seems to be possible that you add the following to [mod://Filter::signatures]'s &lt;c&gt;import&lt;/c&gt;: &lt;c&gt;warnings-&gt;unimport('experimental::signatures') if $] &gt;= 5.020;&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;Test code:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;p&gt;bar.pl:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+use Foo;
+use feature 'signatures';
+
+foo(9,10);
+
+sub foo($x,$y) {
+	print $x+$y,"\n";
+}
+&lt;/c&gt;
+&lt;p&gt;Foo.pm:&lt;/p&gt;
+&lt;c&gt;
+#!perl
+package Foo;
+use warnings;
+use strict;
+
+sub import {
+	warnings-&gt;unimport('experimental::signatures')
+		if $] &gt;= 5.020;
+}
+
+1;
+&lt;/c&gt;
+&lt;p&gt;Foo.pm with [doc://Exporter]:&lt;/p&gt;
+&lt;c&gt;
+#!perl
+package Foo;
+use warnings;
+use strict;
+
+use parent 'Exporter';
+
+sub import {
+	warnings-&gt;unimport('experimental::signatures')
+		if $] &gt;= 5.020;
+	__PACKAGE__-&gt;export_to_level(1, @_);
+}
+
+1;
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1163300</root_node>
+<parent_node field_name="parent_node">1163300</parent_node>
+<thread id="1163300">
+<node id="1163305"/>
+<node id="1163318"/>
+<node id="1163344"><node id="1163370"/>
+<node id="1163371"><node id="1163376"/>
+</node>
+</node>
+<node id="1163518"/>
+</thread></node>

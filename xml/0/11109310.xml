@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109310" title="Re^2: The most precise second (timer)" created="2019-11-27 08:57:12" updated="2019-11-27 08:57:12" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11103499">tukusejssirs</author>
+<doctext field_name="doctext">&lt;p&gt;haukex, you’re the closest to understanding my problem and possibly to give me a solution!&lt;/p&gt;
+
+&lt;p&gt;Well, on the &lt;code&gt;chronyd&lt;/code&gt; stuff: I am running &lt;code&gt;chronyd&lt;/code&gt; service, but not running &lt;code&gt;ntpd&lt;/code&gt; (which is not even installed on particular system), see bellow.&lt;/p&gt;
+
+&lt;code&gt;$ systemctl status chronyd
+&amp;#9679; chronyd.service - NTP client/server
+   Loaded: loaded (/usr/lib/systemd/system/chronyd.service; enabled; vendor preset: enabled)
+   Active: active (running) since Wed 2019-10-23 13:38:15 CEST; 1 months 4 days ago
+     Docs: man:chronyd(8)
+           man:chrony.conf(5)
+ Main PID: 8102 (chronyd)
+   CGroup: /system.slice/chronyd.service
+           &amp;#9492;&amp;#9472;8102 /usr/sbin/chronyd
+
+Warning: Journal has been rotated since unit was started. Log output is incomplete or unavailable.
+
+$ systemctl status ntpd
+Unit ntpd.service could not be found.&lt;/code&gt;
+
+&lt;p&gt;I still need to delve into the &lt;code&gt;chronyd&lt;/code&gt; docs.&lt;/p&gt;
+
+&lt;blockquote&gt;Is this interpretation of your problem correct?&lt;/blockquote&gt;
+
+&lt;p&gt;Well, kind of. We’d like to monitor some stuff each and every second. In the perfect world, this would mean that each and every &lt;i&gt;real&lt;/i&gt; second a script would run, get data and insert in into the DB. As we don’t want/need to use atomic clock (etc), therefore by the &lt;i&gt;real&lt;/i&gt; second we mean a second as &lt;strike&gt;precice&lt;/strike&gt; accurate as possible. … In the end, you are probably right about the interpretation. ;)&lt;/p&gt;
+
+&lt;p&gt;So if &lt;code&gt;sleep&lt;/code&gt; is not the right tool for the job, what would it be? And why does the &lt;code&gt;EV&lt;/code&gt; (&lt;code&gt;my $w2 = EV::periodic( 0, 1, 0, sub { print Math::BigFloat-&gt;new( sprintf("%d.%06d",gettimeofday) ), "\n";} );&lt;/code&gt;) seconds diff is greater than the original code (below is simplified version of the original code; on my computer it has diff bellow 0.0004, sometimes the avg is 0.0002)?&lt;/p&gt;
+
+&lt;code&gt;use strict;
+use warnings;
+use Time::HiRes qw/time sleep/;
+
+sub negative_timer {
+    my $max = $_[0];
+    my @time_test;
+    my $start = time();
+    for (my $i = 0; $i &lt; $max; $i++) {
+        $start += 1;
+        sleep $start - time();
+        $time_test[$i] = time();
+    }
+    return @time_test;
+}&lt;/code&gt;</doctext>
+<root_node field_name="root_node">11109264</root_node>
+<parent_node field_name="parent_node">11109306</parent_node>
+<thread id="11109264">
+<node id="11109266"><node id="11109268"/>
+</node>
+<node id="11109272"><node id="11109275"><node id="11109301"><node id="11109305"><node id="11109374"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11109278"><node id="11109279"><node id="11109287"><node id="11109291"><node id="11109299"/>
+<node id="11109304"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11109280"/>
+<node id="11109293"><node id="11109313"/>
+</node>
+<node id="11109295"><node id="11109300"/>
+</node>
+<node id="11109306"><node id="11109310"><node id="11109314"><node id="11109331"><node id="11109343"><node id="11109358"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11109341"/>
+<node id="11109487"><node id="11109489"><node id="11109554"><node id="11109574"><node id="11109655"><node id="11109673"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11109577"/>
+<node id="11109665"/>
+</thread></node>

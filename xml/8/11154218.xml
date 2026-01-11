@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11154218" title="Filehandles and CSV_XS" created="2023-09-01 06:34:14" updated="2023-09-01 06:34:14" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="66612">Melly</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Monks&lt;/p&gt;
+
+&lt;p&gt;I'm trying to understand the different behaviour of file-handles and similar (e.g. '&lt;DATA&gt;').&lt;/p&gt;
+
+&lt;p&gt;I don't think I'd ever really thought about them - they just worked - but I ran into a problem with CSV_XS and getline. Basically, why does a FH variable work (e.g. $IN), but &lt;IN&gt; and &lt;DATA&gt; don't.&lt;/p&gt;
+
+&lt;p&gt;The following code is non-functional without commenting out stuff, but should illustrate what I mean.&lt;/p&gt;
+
+&lt;code&gt;
+use Text::CSV_XS;
+
+my $csv = Text::CSV_XS-&gt;new();
+
+open(my $IN, '&lt;', 'test.csv'); # ok
+open(IN, '&lt;', 'test.csv');     # nope
+
+my $row = $csv-&gt;getline(&lt;DATA&gt;); # nope - Usage: Text::CSV_XS::getline(self, io) at test_02.pl line 11, &lt;IN&gt; line 2.
+my $row = $csv-&gt;getline(&lt;IN&gt;);   # nope - Usage: Text::CSV_XS::getline(self, io) at test_02.pl line 11, &lt;IN&gt; line 2.
+my $row = $csv-&gt;getline($IN);    # ok
+
+print ${$row}[0];
+
+__DATA__
+a,b,c
+d,e,f
+&lt;/code&gt;
+
+&lt;p&gt;
+So, what is the difference between "open(IN..." and "open($IN..."? (and is there a way to alias &lt;DATA&gt; to, e.g., $DATA?)
+&lt;/p&gt;
+
+&lt;h1&gt;UPDATE&lt;/h1&gt;
+&lt;p&gt;Ah - \*DATA or \*IN - err, what does '\*' imply?&lt;/p&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-66612"&gt;
+&lt;code&gt;
+map{$a=1-$_/10;map{$d=$a;$e=$b=$_/20-2;map{($d,$e)=(2*$d*$e+$a,$e**2
+-$d**2+$b);$c=$d**2+$e**2&gt;4?$d=8:_}1..50;print$c}0..59;print$/}0..20
+&lt;/code&gt;
+Tom Melly, pm (at) cursingmaggot (stop) co (stop) uk
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="11154218">
+<node id="11154219"><node id="11154220"><node id="11154221"/>
+<node id="11154224"/>
+</node>
+</node>
+<node id="11154222"/>
+</thread></node>

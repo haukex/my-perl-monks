@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1219002" title="Re: XML::Twig - '#CDATA' attribute in hashref disappears after first call to XML::Twig::Elt-&gt;new()" created="2018-07-21 08:51:59" updated="2018-07-21 08:51:59" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Is this supposed to happen?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, it appears to be intentional, [https://metacpan.org/source/MIROD/XML-Twig-3.52/Twig.pm|the code] includes:&lt;/p&gt;
+&lt;c&gt;
+$CDATA     = '#CDATA';
+...
+package XML::Twig::Elt;
+...
+sub new 
+...
+    if( $atts &amp;&amp; defined $atts-&gt;{$CDATA})
+      { delete $atts-&gt;{$CDATA};
+        my $cdata= $class-&gt;new( $CDATA =&gt; @_);
+        return $class-&gt;new( $gi, $atts, $cdata);
+      }
+&lt;/c&gt;
+&lt;p&gt;So &lt;c&gt;new&lt;/c&gt; assumes that it's ok to modify the hashref. Whether this is good design is debatable, but if you want to just work with the module as is, the workaround provided by the AM [id://1218989|here] creates a shallow copy of the hash, so that &lt;c&gt;new&lt;/c&gt; is free to delete keys. Alternatively, you could do what the above code is doing, that is, wrap the data in a &lt;c&gt;CDATA&lt;/c&gt; yourself.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1218967</root_node>
+<parent_node field_name="parent_node">1218967</parent_node>
+<thread id="1218967">
+<node id="1218981"><node id="1218989"/>
+</node>
+<node id="1219002"/>
+</thread></node>

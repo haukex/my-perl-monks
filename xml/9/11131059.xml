@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11131059" title="Re: Formatting Regex for File::Find::Rule" created="2021-04-09 11:11:31" updated="2021-04-09 11:11:31" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;$rule-&gt;new-&gt;directory-&gt;name( @dirExclusionsQR )-&gt;prune-&gt;discard&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;&lt;c&gt;-&gt;prune&lt;/c&gt; means not to descend into that directory. Your fist match is &lt;c&gt;.&lt;/c&gt;, so [mod://File::Find::Rule] isn't even descending past the base directory. Second, note that &lt;c&gt;-&gt;name&lt;/c&gt; matches on the basename only, so the extra slashes you've got in there won't match. This works for me, hopefully it's what you're looking for:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use File::Find::Rule;
+
+my $tagLocation = '...';
+my @dirExclusions = qw/ LOG cache AVCHD /;
+
+my $rule = File::Find::Rule-&gt;new;
+$rule-&gt;or(
+	$rule-&gt;new-&gt;directory-&gt;name( @dirExclusions )-&gt;prune-&gt;discard,
+	$rule-&gt;new-&gt;directory );
+my @fileList = $rule-&gt;in($tagLocation);
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11131056</root_node>
+<parent_node field_name="parent_node">11131056</parent_node>
+<thread id="11131056">
+<node id="11131059"><node id="11131060"><node id="11131061"><node id="11131063"><node id="11131066"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

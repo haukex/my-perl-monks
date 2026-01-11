@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11148256" title="Re: null output on program" created="2022-11-19 08:51:58" updated="2022-11-19 08:51:58" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+print "Content-type: text/html\n\n";
+print "&lt;HTML&gt; &lt;HEAD&gt;\n";
+open("runmain","$commands{$PROGRAM} $TARGET_HOST |");
+&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I pray that &lt;c&gt;$commands{$PROGRAM}&lt;/c&gt; and &lt;c&gt;$TARGET_HOST&lt;/c&gt; aren't based on user input, because otherwise you've built yourself a &lt;b&gt;massive security hole&lt;/b&gt;, which I discuss [id://1180578|here], including solutions.&lt;/p&gt;
+&lt;p&gt;The &lt;c&gt;2&gt;&amp;1&lt;/c&gt; workaround &lt;i&gt;requires&lt;/i&gt; the shell to work and therefore I would definitely not recommend it. Perl does give it a bit of [https://github.com/Perl/perl5/blob/5b3c3c/doio.c#L2515|special treatment] to avoid the shell &lt;i&gt;sometimes&lt;/i&gt;, but that only works e.g. as long as there aren't other shell metacharacters in the command string, and I would consider it an optimization rather than some kind of security feature.&lt;/p&gt;
+&lt;p&gt;In this case, if you don't mind waiting for the external command to finish before getting its results, I might suggest [mod://IPC::Run3]. If you need the "live" output of the command, [mod://IPC::Run] can provide this. Both of these modules support capturing &lt;c&gt;STDERR&lt;/c&gt; as well. As I write in the first link above, [mod://IPC::Run] doesn't explicitly say that it avoids the shell in the documentation, but looking at the code shows that it does. If you want to play it really safe, use one of the modules that explicitly state they avoid the shell, like [mod://IPC::Run3].&lt;/p&gt;
+&lt;p&gt;(As for perhaps wanting "live" output of the command showing up in the browser, which I am guessing you might want to do based on the &lt;c&gt;traceroute&lt;/c&gt; example, writing that out to the browser with autoflush turned on is a pretty old-school way to do it, and it may not work at all e.g. in the presence of proxies. For a modern approach, see e.g. the code I posted [id://11142798|here].)&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Added a few small clarifications.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11148249</root_node>
+<parent_node field_name="parent_node">11148249</parent_node>
+<thread id="11148249">
+<node id="11148250"><node id="11148264"/>
+</node>
+<node id="11148251"/>
+<node id="11148252"><node id="11148265"/>
+</node>
+<node id="11148256"><node id="11148266"/>
+</node>
+</thread></node>

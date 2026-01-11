@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100730" title="Re^7: What does $_ = qq~&quot;$_&quot;~ do?" created="2019-05-30 11:05:04" updated="2019-05-30 11:05:04" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I rewrote the code to find even more matches, here it is, enjoy &lt;c&gt;:-)&lt;/c&gt;&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use 5.014; # mostly for /r
+
+my %words = map {chomp; $_=&gt;1} grep {!/'s$/}
+	do { open my $fh, '&lt;', '/usr/share/dict/words' or die $!; &lt;$fh&gt; };
+
+my %search;
+for my $word (sort keys %words) {
+	next unless $word=~ m{ \A
+			(?&lt;pre&gt; s )?
+			(?&lt;sep&gt; [a-zA-Z0-9] )
+				(?&lt;search&gt; (?: (?!\g{sep}) . )+ )
+			\g{sep}
+				(?! \g{search} \g{sep} )
+				(?&lt;repl&gt; (?: (?!\g{sep}) . )* )
+			\g{sep}
+				(?&lt;flags&gt; [msixpongr]* )
+		\z }msx;
+	push @{ $search{$+{search}} }, { word=&gt;$word, %+ };
+}
+my @search = sort { length $b &lt;=&gt; length $a or $a cmp $b }
+	keys %search;
+my ($re) = map {qr/$_/} join '|', map {quotemeta} @search;
+for my $word (sort keys %words) {
+	next unless length $word &gt; 1 &amp;&amp; $word=~/($re)/;
+	for my $s (@search) {
+		next unless $word=~/\Q$s/;
+		for my $r (@{$search{$s}}) {
+			my $test = eval '$word=~s/\Q$s/$$r{repl}/r'.$$r{flags};
+			defined $test or die $@;
+			next unless length $test &gt; 1 &amp;&amp; exists $words{$test}
+				&amp;&amp; $test ne $word;
+			my ($pre,$pat) = ($$r{pre}//'s',$$r{word});
+			( $pat = $$r{word} ) =~ s/\A\Q$$r{pre}// if $$r{pre};
+			my $code = "\$word =~$pre $pat$$r{flags}r";
+			eval($code) eq $test or die "$code - $test - $@";
+			say "$word =~$pre $pat  =&gt; $test";
+		}
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;But seriously, to respond to [Fletch]'s comments, of course this is just for fun &lt;c&gt;;-)&lt;/c&gt; When I wrote it I was thinking I might try my hand at some Perl poetry some time, unfortunately I don't think I'm creative enough in that way... at least here's some code if anyone else wants to give it a spin &lt;c&gt;;-)&lt;/c&gt;&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11100593</root_node>
+<parent_node field_name="parent_node">11100672</parent_node>
+<thread id="11100593">
+<node id="11100594"><node id="11100619"><node id="11100758"/>
+</node>
+</node>
+<node id="11100595"><node id="11100599"/>
+<node id="11100603"/>
+<node id="11100618"><node id="11100623"><node id="11100640"><node id="11100665"><node id="11100672"><node id="11100730"/>
+</node>
+<node id="11100675"><node id="11100677"/>
+<node id="11100737"><node id="11100738"><node id="11100739"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

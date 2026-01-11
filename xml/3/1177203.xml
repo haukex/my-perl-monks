@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1177203" title="Re: Pattern matching and deriving the data between the &quot;(double quotes) in HTML tag" created="2016-12-05 04:22:19" updated="2016-12-05 04:22:19" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [sp4rperl],&lt;/p&gt;
+&lt;p&gt;[http://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags/1732454#1732454|Don't parse HTML with regexes.] (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; Ok, to put it a different way, the set of XML/HTML data where it might be appropriate to use a regex instead of a module is pretty small. To justify using a regex, you'd have to be absolutely certain of &lt;i&gt;all&lt;/i&gt; of your input data. Also, your input data would have to be fairly large to justify an argument that using a regex is faster than a full parser. Unless that's the case here, if you're unsure about how to get a regex to work, then &lt;i&gt;why not&lt;/i&gt; let a module take that off your hands. Also, in case this is a worry, [id://693828].)&lt;/p&gt;
+&lt;p&gt;The following are all legal variations on that same exact tag (the last example depends on whether this is XML, which I'm guessing because AFAIK &lt;c&gt;timeLimit&lt;/c&gt; is not an HTML tag). Mix and match these as you please, but your parser would have to handle all of them:&lt;/p&gt;
+&lt;c&gt;
+&lt;timeLimit endTime="2016-12-28T23:59:59" startTime="2016-09-30T00:00:00"&gt;&lt;/timeLimit&gt;
+&lt;!-- order --&gt;
+&lt;timeLimit startTime="2016-09-30T00:00:00" endTime="2016-12-28T23:59:59"&gt;&lt;/timeLimit&gt;
+&lt;!-- quotes --&gt;
+&lt;timeLimit endTime='2016-12-28T23:59:59' startTime='2016-09-30T00:00:00'&gt;&lt;/timeLimit&gt;
+&lt;!-- mixed quotes --&gt;
+&lt;timeLimit endTime="2016-12-28T23:59:59" startTime='2016-09-30T00:00:00'&gt;&lt;/timeLimit&gt;
+&lt;!-- whitespace --&gt;
+&lt;timeLimit  endTime = "2016-12-28T23:59:59"  startTime  =  "2016-09-30T00:00:00" &gt;&lt;/timeLimit  &gt;
+&lt;!-- newlines --&gt;
+&lt;timeLimit
+endTime="2016-12-28T23:59:59"
+startTime="2016-09-30T00:00:00"&gt;
+&lt;/timeLimit&gt;
+&lt;!-- even more whitespace --&gt;
+&lt;timeLimit  
+  endTime  
+  =  
+  "2016-12-28T23:59:59"  
+  startTime  
+  =  
+  "2016-09-30T00:00:00"  
+  &gt;&lt;/timeLimit  
+  &gt;
+&lt;!-- empty element tag --&gt;
+&lt;timeLimit endTime="2016-12-28T23:59:59" startTime="2016-09-30T00:00:00"/&gt;
+&lt;/c&gt;
+&lt;p&gt;Now you might say that you assume your input isn't going to change. But can you really guarantee that in every case? What if who/whatever is generating this HTML/XML changes the output even a little bit? Also, since the appropriate modules are fairly easy to use, &lt;i&gt;why not&lt;/i&gt; just use a module that can handle all of the above cases?&lt;/p&gt;
+&lt;p&gt;That's why using an XML/HTML parser is better than regexes. For example, what [davido] [id://1177196|showed] works on all of these examples. Here are two more examples, the first assuming this is HTML ([mod://HTML::Parser]), the second using a different XML module, [mod://XML::LibXML].&lt;/p&gt;
+&lt;c&gt;
+use HTML::Parser;
+my $p = HTML::Parser-&gt;new(
+	api_version =&gt; 3,
+	start_h =&gt; [\&amp;start_tag, "tagname, attr"],
+	case_sensitive =&gt; 1,
+);
+sub start_tag {
+	my ($tag,$attr) = @_;
+	if ($tag eq 'timeLimit') {
+		print "start=$$attr{startTime} end=$$attr{endTime}\n";
+	}
+}
+$p-&gt;parse($data);
+$p-&gt;eof;
+
+use XML::LibXML;
+my $dom = XML::LibXML-&gt;load_xml(string =&gt; $data);
+for my $node ($dom-&gt;findnodes('//timeLimit')) {
+	my $start = $node-&gt;getAttribute('startTime');
+	my $end = $node-&gt;getAttribute('endTime');
+	print "s=$start e=$end\n";
+}
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1177192</root_node>
+<parent_node field_name="parent_node">1177192</parent_node>
+<thread id="1177192">
+<node id="1177193"/>
+<node id="1177194"/>
+<node id="1177195"><node id="1177289"><node id="1177311"/>
+</node>
+</node>
+<node id="1177196"/>
+<node id="1177197"/>
+<node id="1177203"/>
+</thread></node>

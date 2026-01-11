@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193606" title="Re^3: LibXML setNodeName error (updated)" created="2017-06-26 13:10:46" updated="2017-06-26 13:10:46" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I remember doing battle with [mod://XML::LibXML] in a similar situation a few years ago. IIRC, what I found back then is that the problem is namespaces - note how the document originally has only one namespace (&lt;c&gt;http://www.w3.org/1999/XSL/Transform&lt;/c&gt;) with only one namespace prefix (&lt;c&gt;xsl&lt;/c&gt;). What you're asking to do is move the node into a completely different namespace, specifically in this case the default one. I remember not being able to find the appropriate combinations of API calls to achieve this so that the resulting XML looked clean, and playing around by adding &lt;c&gt;$element-&gt;setNamespace(...);&lt;/c&gt; to [choroba]'s code seems to confirm this, the best I can do so far is &lt;c&gt;&lt;foo xmlns="..."&gt;&lt;/c&gt;. It seemed that once a node has been created in a namespace, &lt;strike&gt;it's stuck there&lt;/strike&gt; you can't get it back into the default namespace cleanly. Back then I ended up writing a routine to create a new node in the new namespace. Now since this was a while ago, it's possible I missed the appropriate API function, but even now going through the [mod://XML::LibXML] docs and Googling a bit I still don't see an obvious way.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;&lt;c&gt;&lt;update2&gt;&lt;/c&gt; Caveat:&lt;/b&gt; The below will completely ignore any other attributes in the element being replaced, so for example if you've got &lt;c&gt;&lt;xsl:element namespace=...&lt;/c&gt; or &lt;c&gt;use-attribute-sets&lt;/c&gt;, that will be ignored and lost! &lt;b&gt;&lt;c&gt;&lt;/update2&gt;&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;Here's what my workaround would look like (based in part on [choroba]'s code):&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+
+my $xml = &lt;&lt;'END_XML';
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
+&lt;xsl:element name="foo"&gt;
+&lt;xsl:value-of select="bar"/&gt;
+&lt;/xsl:element&gt;
+&lt;/xsl:stylesheet&gt;
+END_XML
+
+my $doc = XML::LibXML-&gt;load_xml(string =&gt; $xml) or die;
+my $xpc = XML::LibXML::XPathContext-&gt;new($doc);
+for my $el ($xpc-&gt;findnodes('//xsl:element')) {
+	my $newel = $doc-&gt;createElement($el-&gt;getAttribute('name'));
+	$newel-&gt;appendChild($_) for $el-&gt;childNodes;
+	$el-&gt;replaceNode($newel);
+}
+print $doc;
+
+__END__
+
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"&gt;
+&lt;foo&gt;
+&lt;xsl:value-of select="bar"/&gt;
+&lt;/foo&gt;
+&lt;/xsl:stylesheet&gt;
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Made description more accurate.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1193581</root_node>
+<parent_node field_name="parent_node">1193602</parent_node>
+<thread id="1193581">
+<node id="1193600"><node id="1193602"><node id="1193606"><node id="1193613"/>
+<node id="1193620"><node id="1193623"><node id="1193626"><node id="1193627"><node id="1193703"><node id="1193704"><node id="1193705"><node id="1193706"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1193712"/>
+</node>
+</node>
+</node>
+</thread></node>

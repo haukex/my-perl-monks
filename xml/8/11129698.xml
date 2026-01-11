@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129698" title="can't read the 2nd input file" created="2021-03-15 14:15:12" updated="2021-03-15 14:15:12" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1150168">perl_boy</author>
+<doctext field_name="doctext">Hi, I'm failling to read the 2nd input file in citrix-enum-apps-xml-PORT-STATE-SERVICE+IP-disk.pl in the while loop line 11
+&lt;code&gt;
+die "perl citrix-enum-apps-xml-PORT-STATE-SERVICE+IP-disk.pl &lt;INPUT_FILE_ports&gt; &lt;INPUT_FILE_IP&gt; &lt;OUTPUT_FILE&gt; " if $#ARGV &lt; 2;
+
+open(F0, $ARGV[0]); open(F1, $ARGV[1]); open(F2, "&gt;&gt;$ARGV[2]");
+$line_no=$line_stop=0;
+
+while (&lt;F0&gt;) {
+	s/\r\n//;
+	/^[0-9]+/;
+	$line=$';
+	$line_no=$&amp;;
+	while (&lt;F1&gt; &amp;&amp; $line_stop++ &lt; $line_no) { s/\r\n//; }
+
+	print F2 $_, "\t$line\n" if /[0-9]+\//; 
+
+}
+close F0; close F1; close F2;
+
+&lt;/code&gt;
+I have tried to replace that line 11 with
+&lt;code&gt;
+while (&lt;F1&gt; &amp;&amp; $line_stop++ &lt; $line_no) { s/\r\n//;print $_; }
+&lt;/code&gt;
+but nothing comes out
+
+what's wrong ?
+
+Remember I have already one input file openned F0
+
+the idea of the script is to replace the line number (3 and 5 here) in port.txt input file
+&lt;code&gt;
+3		PORT	state	protocol
+3		80/tcp   closed http
+3		443/tcp  closed https
+3		8080/tcp open   http-proxy
+5		80/tcp   open     http
+5		443/tcp  filtered https
+5		8080/tcp filtered http-proxy
+&lt;/code&gt;
+
+and get the IP corresponding to the nth ($line_stop) (3 and 5 here) IP by 1.0.131.74 and 1.0.138.154
+&lt;code&gt;
+1.0.129.197
+1.0.131.49
+1.0.131.74
+1.0.138.143
+1.0.138.154
+1.0.139.72
+&lt;/code&gt;
+
+to produce
+
+&lt;code&gt;
+1.0.131.74		80/tcp   closed http
+1.0.131.74		443/tcp  closed https
+1.0.131.74		8080/tcp open   http-proxy
+1.0.138.154		80/tcp   open     http
+1.0.138.154		443/tcp  filtered https
+1.0.138.154		8080/tcp filtered http-proxy
+&lt;/code&gt;
+
+any ideas ?
+
+thank's
+</doctext>
+<thread id="11129698">
+<node id="11129703"/>
+<node id="11129719"><node id="11141107"/>
+</node>
+<node id="11141028"/>
+<node id="11142674"/>
+<node id="11142731"/>
+<node id="11142795"/>
+<node id="11143640"/>
+<node id="11143654"/>
+<node id="11144481"/>
+</thread></node>

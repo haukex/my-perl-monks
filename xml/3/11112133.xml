@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112133" title="Using Cartons to automate module installs" created="2020-01-30 15:17:31" updated="2020-01-30 15:17:31" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Monks,&lt;/p&gt;
+&lt;p&gt;I've presented lately with these awful "trying to do anything on windows" threads, and my results were so dismal for [id://11111025], I redoubled my efforts to get an ubuntu platform to develop on instead. Well, by golly, I figured out a way to make my laptop dual-boot. It took me over a hundred failures, but then I failed to fail.&lt;/p&gt;
+&lt;p&gt;Now I have a fresh debian install, and I wanted to address some ideas that have come up in other threads lately. (I've been lurking, which requires little effort. As an intermediate with  more to learn than I already know, I also need to do write-ups, else stop evolving with perl.) &lt;/p&gt;
+
+&lt;p&gt;I will put the details of how to get a dual boot on this particular $169 laptop between readmore tags, so that that we can just move on.&lt;/p&gt;
+&lt;readmore&gt;
+
+&lt;p&gt;
+I believe this manufacturer partners with windows so that it will have windows on it when you buy it. This is what it looks like from windows' perspective:&lt;/p&gt;
+
+&lt;c&gt;
+
+C:\Users\tblaz\Documents\evelyn&gt;systeminfo
+
+Host Name:                 redacted
+OS Name:                   Microsoft Windows 10 Home
+OS Version:                10.0.17763 N/A Build 17763
+OS Manufacturer:           Microsoft Corporation
+OS Configuration:          Standalone Workstation
+OS Build Type:             Multiprocessor Free
+Registered Owner:          redacted
+Registered Organization:
+Product ID:                redacted
+Original Install Date:     8/6/2019, 1:15:23 AM
+System Boot Time:          1/5/2020, 7:50:07 PM
+System Manufacturer:       LENOVO
+System Model:              81MV
+System Type:               x64-based PC
+Processor(s):              1 Processor(s) Installed.
+                           [01]: Intel64 Family 6 Model 142 Stepping 11 GenuineIntel ~2304 Mhz
+BIOS Version:              LENOVO ASCN29WW, 3/26/2019
+Windows Directory:         C:\Windows
+System Directory:          C:\Windows\system32
+Boot Device:               \Device\HarddiskVolume1
+System Locale:             en-us;English (United States)
+Input Locale:              en-us;English (United States)
+Time Zone:                 (UTC-08:00) Pacific Time (US &amp; Canada)
+Total Physical Memory:     3,976 MB
+Available Physical Memory: 989 MB
+Virtual Memory: Max Size:  9,208 MB
+Virtual Memory: Available: 3,709 MB
+Virtual Memory: In Use:    5,499 MB
+Page File Location(s):     C:\pagefile.sys
+Domain:                    WORKGROUP
+Logon Server:              redacted
+Hotfix(s):                 11 Hotfix(s) Installed.
+...
+Network Card(s):           2 NIC(s) Installed.
+                           [01]: Realtek 8821CE Wireless LAN 802.11ac PCI-E NIC
+                                 Connection Name: Wi-Fi
+                                 DHCP Enabled:    Yes
+                                 DHCP Server:     10.0.0.1
+                                 IP address(es)
+...
+                           [02]: Bluetooth Device (Personal Area Network)
+                                 Connection Name: Bluetooth Network Connection
+                                 Status:          Media disconnected
+Hyper-V Requirements:      VM Monitor Mode Extensions: Yes
+                           Virtualization Enabled In Firmware: Yes
+                           Second Level Address Translation: Yes
+                           Data Execution Prevention Available: Yes
+
+C:\Users\tblaz\Documents\evelyn&gt;
+&lt;/c&gt;
+
+&lt;p&gt;The central drama is trying to get the bios to recognize the usb stick, and our friends in Redmond are always trying to make that more difficult, which I can understand from a security standpoint. As a consumer, I like to be free to install an operating system that I can develop on. It hardly feels like the same machine. Details on how to adjust window's settings [http://merrillpjensen.com/perlmonks/1.s1458.html|here.] &lt;/p&gt;
+
+
+&lt;/readmore&gt;
+
+&lt;p&gt;First, I would like to turn to [haukex]'s response in [id://11110831]. As I do the basics of a perl install and installing my html template, I find myself installing the same modules over and over again. I would like to apply the virtue of laziness to this. For example, every time I boil up a perl install, I would like to install these:&lt;/p&gt;
+
+&lt;c&gt;
+CPAN
+Log::Log4perl
+Perl::Tidy
+YAML
+&lt;/c&gt;
+
+
+Q1) How do I create and roll out a [Carton] of these? (I have another machine with a new ubuntu install to test on.) Is a Carton the right tool?
+
+&lt;p&gt;As I look at this output during a basic install, I wonder if I want to increase the above list?&lt;/p&gt;
+
+&lt;c&gt;# === Test Suggests ===
+# 
+#     Module                    Want     Have
+#     ------------------------ ----- --------
+#     CPAN::Meta::Check        0.011  missing
+#     CPAN::Meta::Requirements   any    2.140
+#     PadWalker                  any  missing
+#     Test::Tester             0.108 1.302073
+# 
+...
+# 
+# === Other Modules ===
+# 
+#     Module                Have
+#     --------------- ----------
+...
+#     Module::Runtime    missing
+&lt;/c&gt;
+
+&lt;p&gt;I used a couple new tools that I found on [https://www.cyberciti.biz/faq/list-installed-perl-modules-unix-linux-appleosx-bsd/|this source] to show me what I have:&lt;/p&gt;
+&lt;c&gt;$ ./1.mod.pl 
+CPAN
+Capture::Tiny
+Config::Tiny
+Email::Find
+HTML::FromText
+Log::Log4perl
+Module::ScanDeps
+Net::SFTP::Foreign
+Path::Tiny
+Perl
+Perl::Tidy
+Spiffy
+Test::Base
+Test::Deep
+Test::FailWarnings
+Test::Fatal
+Test::MockRandom
+Test::More::UTF8
+Test::Pod
+Test::Requires
+Test::WarningsExtUtils::Installed
+Test::YAML
+Text::Diff
+Text::Template
+Unicode::UTF8
+YAML
+$ cat 1.mod.pl 
+#!/usr/bin/perl -w
+use ExtUtils::Installed;
+my $inst    = ExtUtils::Installed-&gt;new();
+my @modules = $inst-&gt;modules();
+ foreach $module (@modules){
+      print $module . "\n";
+}
+__END__ 
+$ 
+&lt;/c&gt;
+&lt;p&gt;Q2) How do I know whether I have all the core modules? How do I not leave it to chance?&lt;/p&gt;
+
+&lt;p&gt;I also want a [Carton], or equivalent bundling, for my html templating system. I used the [Module::ScanDeps] functionality on its primary pm's:&lt;/p&gt;
+
+
+
+&lt;c&gt;$ ./scandeps.pl html7.pm
+'Config::Tiny'                   =&gt; '2.24',
+'Email::Find::addrspec'          =&gt; '0.09',
+'HTML::Entities'                 =&gt; '3.69',
+'HTML::FromText'                 =&gt; '2.07',
+'HTML::Parser'                   =&gt; '3.72',
+'Net::SFTP::Foreign'             =&gt; '1.90',
+'Net::SFTP::Foreign::Attributes' =&gt; '1.68_05',
+'Net::SFTP::Foreign::Buffer'     =&gt; '1.68_05',
+'Net::SFTP::Foreign::Common'     =&gt; '1.76_02',
+'Net::SFTP::Foreign::Constants'  =&gt; '1.63_05',
+'Net::SFTP::Foreign::Helpers'    =&gt; '1.74_06',
+'Net::SFTP::Foreign::Local'      =&gt; '1.57',
+'Path::Tiny'                     =&gt; '0.110',
+'Text::Template'                 =&gt; '1.58',
+'Unicode::UTF8'                  =&gt; '0.62',
+'trans1'                         =&gt; 'undef',
+'utils1'                         =&gt; 'undef',
+$ ./scandeps.pl trans1.pm
+'Config::Tiny'                   =&gt; '2.24',
+'Net::SFTP::Foreign'             =&gt; '1.90',
+'Net::SFTP::Foreign::Attributes' =&gt; '1.68_05',
+'Net::SFTP::Foreign::Buffer'     =&gt; '1.68_05',
+'Net::SFTP::Foreign::Common'     =&gt; '1.76_02',
+'Net::SFTP::Foreign::Constants'  =&gt; '1.63_05',
+'Net::SFTP::Foreign::Helpers'    =&gt; '1.74_06',
+'Net::SFTP::Foreign::Local'      =&gt; '1.57',
+'Path::Tiny'                     =&gt; '0.110',
+'Unicode::UTF8'                  =&gt; '0.62',
+$ 
+&lt;/c&gt;
+
+&lt;p&gt;Q3) How do I take this output and instruct another machine to install this?&lt;/p&gt;
+
+
+
+&lt;p&gt;
+Finally, I have been developing new bash aliases with help from
+[https://www.cyberciti.biz/tips/bash-aliases-mac-centos-linux-unix.html|handy bash aliases.] Some of these are perl related, some not. I haven't used them all yet, and I've added '| more' to verbose ones:
+&lt;/p&gt;
+&lt;c&gt;
+alias ..='cd ..'
+alias ...='cd ../../../'
+alias ....='cd ../../../../'
+alias .....='cd ../../../../'
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] &amp;&amp; echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&amp;|]\s*alert$//'\'')"'
+alias cx='chmod +x '
+alias dir='dir --color=auto'
+alias egrep='egrep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias grep='grep --color=auto'
+alias halt='sudo /sbin/halt'
+alias l='ls -CF'
+alias l.='ls -d .* --color=auto'
+alias la='ls -A'
+alias ll='ls -alF'
+alias ls='ls --color=auto'
+alias meminfo='free -m -l -t'
+alias music='mplayer --shuffle *'
+alias nplaymp3='for i in /nas/multimedia/mp3/*.mp3; do mplayer "$i"; done'
+alias nplayogg='for i in /nas/multimedia/ogg/*.ogg; do mplayer "$i"; done'
+alias nplaywave='for i in /nas/multimedia/wave/*.wav; do mplayer "$i"; done'
+alias playavi='mplayer *.avi'
+alias playmp3='for i in *.mp3; do mplayer "$i"; done'
+alias playmp4='for i in *.mp4; do mplayer "$i"; done'
+alias playogg='for i in *.ogg; do mplayer "$i"; done'
+alias playwave='for i in *.wav; do mplayer "$i"; done'
+alias poweroff='sudo /sbin/poweroff'
+alias pscpu='ps auxf | sort -nr -k 3 | more'
+alias pscpu10='ps auxf | sort -nr -k 3 | head -10'
+alias psmem='ps auxf | sort -nr -k 4 | more'
+alias psmem10='ps auxf | sort -nr -k 4 | head -10 | more'
+alias pt='perltidy -i=2 -b -utf8 '
+alias reboot='sudo /sbin/reboot'
+alias sc='sudo cpan'
+alias shutdown='sudo /sbin/shutdown'
+alias update='sudo apt-get update &amp;&amp; sudo apt-get upgrade'
+alias vlc='vlc *.avi'
+
+
+&lt;/c&gt;
+
+&lt;p&gt;&lt;c&gt;alias sc='sudo cpan'&lt;/c&gt; is already chugging away as keystroke-saver. Q4) What perl aliases do you use? What aliases in general?&lt;/p&gt;
+&lt;p&gt;I'm always humbled by the quality of responses I get if I can manage to post a succinct question. Thank you for your response.&lt;/p&gt;</doctext>
+<thread id="11112133">
+<node id="11112136"/>
+<node id="11112172"><node id="11112193"><node id="11112377"><node id="11112381"/>
+<node id="11112398"/>
+</node>
+</node>
+</node>
+</thread></node>

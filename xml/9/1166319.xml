@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1166319" title="Re: Multiline regex (Updated!)" created="2016-06-22 18:26:15" updated="2016-06-22 18:26:15" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [adrya407],&lt;/p&gt;
+&lt;p&gt;Personally I like to implement this kind of thing using a state machine type approach. Although it certainly takes more lines of code than a single regex, it doesn't require you to read the entire file into memory, and personally I find the conditions (especially complex ones) are more easily expressed in Perl conditionals than in regexes, and because of that I think it's more easily extensible - it looks like you've got some variant of INI file there, so I hope it's not too wild a thought that you may need to get more than just "my_variable" from the file in the future. Or maybe you later find you need to add support for skipping comment lines, etc. Anyway, this is just One Way To Do It. In this example I'm using the definedness of &lt;c&gt;$myvar&lt;/c&gt; to keep state, in a more complex situation I'd use a separate state variable. &lt;strike&gt;The repeated code (printing &lt;c&gt;$myvar&lt;/c&gt;) could be refactored into an (anonymous) &lt;c&gt;sub&lt;/c&gt;.&lt;/strike&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; The previous version of the code didn't do anything when it encountered a "&amp;#91;...&amp;#93;" line, so "my_variable" would continue to accumulate afterwards. I've updated the code to now cause "&amp;#91;...&amp;#93;" to end a "my_variable" definition and also refactored the code that handles a completed &lt;c&gt;$myvar&lt;/c&gt; into an anonymous sub.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $myvar;
+my $take = sub {
+	return unless defined $myvar;
+	chomp($myvar);
+	print "&lt;&lt;$myvar&gt;&gt;\n";
+	undef $myvar;
+};
+while (&lt;DATA&gt;) {
+	if (my ($k,$v) = /^(\w+)=(.*)$/s) {
+		$take-&gt;();
+		$myvar = $v if $k eq 'my_variable';
+	}
+	elsif (/^\[.+\]$/) {
+		$take-&gt;();
+	}
+	else {
+		$myvar .= $_ if defined $myvar;
+	}
+}
+$take-&gt;();
+
+__DATA__
+unwanted_line1=blabla
+unwanted_line2=blabla
+my_variable=important_content_section1
+important_content_section2
+important_content_section3
+unwanted_line3=blabla
+unwanted_line4=blabla
+unwanted_line5=blabla
+my_variable=important_content_section4
+important_content_section5
+important_content_section6
+[stepxyz#xxxx]
+unwanted_content1
+unwanted_line6=blabla
+my_variable=important_content_section7
+unwanted_line7=blabla
+my_variable=important_content_section8
+my_variable=important_content_section9
+unwanted_line8=blabla
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+&lt;&lt;important_content_section1
+important_content_section2
+important_content_section3&gt;&gt;
+&lt;&lt;important_content_section4
+important_content_section5
+important_content_section6&gt;&gt;
+&lt;&lt;important_content_section7&gt;&gt;
+&lt;&lt;important_content_section8&gt;&gt;
+&lt;&lt;important_content_section9&gt;&gt;
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1166246</root_node>
+<parent_node field_name="parent_node">1166246</parent_node>
+<thread id="1166246">
+<node id="1166248"><node id="1166250"/>
+<node id="1166252"><node id="1166256"><node id="1166258"/>
+</node>
+</node>
+<node id="1166254"/>
+<node id="1166260"/>
+</node>
+<node id="1166249"/>
+<node id="1166253"><node id="1166255"><node id="1166265"><node id="1166275"/>
+</node>
+</node>
+</node>
+<node id="1166319"/>
+<node id="1166569"/>
+</thread></node>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229979" title="Function::Parameters, Types::Standard, and Perl::Critic" created="2019-02-15 18:36:46" updated="2019-02-15 18:36:46" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="832495">choroba</author>
+<doctext field_name="doctext">After switching to [metamod://Function::Parameters], I noticed [metamod://Perl::Critic] no longer worked. For example, for the old fashioned
+&lt;c&gt;
+sub foo { $_[0] + 1 }
+&lt;/c&gt;
+&lt;c&gt;perlcritic -1&lt;/c&gt; outputs
+&lt;c&gt;
+Always unpack @_ first at line 22, column 1.  See page 178 of PBP.  (Severity: 4)
+Subroutine "foo" does not end with "return" at line 22, column 1.  See page 197 of PBP.  (Severity: 4)
+&lt;/c&gt;&lt;P&gt;
+
+but for the equivalent
+&lt;c&gt;
+use Function::Parameters;
+fun foo ($x) {
+    $x + 1
+}
+&lt;/c&gt;
+it doesn't say anything.&lt;P&gt;
+
+I've found a partial workaround: running perlcritic on the output of [metamod://B::Deparse] instead of the source itself. It reports lots of sins committed by [METAMOD://Function::Parameters] themselves (e.g. &lt;i&gt;Magic variable "$^H" should be assigned as "local" at line 14, column 44.  See pages 81,82 of PBP.&lt;/i&gt;) but seems to work.&lt;P&gt;
+
+Unfortunately, it gets more complex when [metamod://Types::Standard] are added to the mix.
+&lt;c&gt;
+use Function::Parameters;
+use Types::Standard qw( Num );
+
+fun foo (Num $x) {
+    $x + 1
+}
+&lt;/c&gt;
+The code doesn't look much more complicated, but running
+&lt;c&gt;perl -MO=Deparse&lt;/c&gt; on it just hangs. Output of [man://strace] ends with endlessly repeating lines:
+&lt;c&gt;
+mmap(NULL, 192512, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fe772fdf000
+mremap(0x7fe771772000, 532480, 536576, MREMAP_MAYMOVE) = 0x7fe771772000
+brk(0x49ac000)                          = 0x49ac000
+brk(0x49cd000)                          = 0x49cd000
+mremap(0x7fe771772000, 536576, 540672, MREMAP_MAYMOVE) = 0x7fe771772000
+brk(0x49ee000)                          = 0x49ee000
+brk(0x49ed000)                          = 0x49ed000
+brk(0x4a0e000)                          = 0x4a0e000
+brk(0x4a2f000)                          = 0x4a2f000
+mremap(0x7fe771772000, 540672, 544768, MREMAP_MAYMOVE) = 0x7fe771772000
+...
+&lt;/c&gt;
+The perl process seems to grow in memory very slowly at the same time.&lt;P&gt;
+
+
+Has anyone succeeded in linting a code that uses the above mentioned modules? Tips, tricks, suggestions welcome.&lt;P&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-832495"&gt;
+&lt;c&gt;map{substr$_-&gt;[0],$_-&gt;[1]||0,1}[\*||{},3],[[]],[ref qr-1,-,-1],[{}],[sub{}^*ARGV,3]&lt;/c&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.142} --&gt;</doctext>
+<thread id="1229979">
+<node id="1229987"/>
+<node id="1230011"><node id="1230039"/>
+</node>
+</thread></node>

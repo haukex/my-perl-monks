@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118092" title="first steps with Mojolicious::Lite" created="2020-06-15 09:59:36" updated="2020-06-15 09:59:36" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="174111">Discipulus</author>
+<doctext field_name="doctext">hello nuns and monks,&lt;P&gt;
+
+
+I want to develop for a bunch of friends (no more than 30) a little webservice consumed by a client I provide them and I want to take
+the occasion to try mojolicious as it was several times suggested to me (thanks ;).&lt;P&gt;
+
+Security will be not a big concern as nothing critical will pass on, but I want to be sure my service will be used only if I can control
+the genuinity of the client.&lt;P&gt;
+
+Basically I will provide two pieces of text: TEXT_A and TEXT_B.&lt;P&gt;
+
+The client will be a simple perl script using [METAMOD://LWP::UserAgent] (see below for the code used as test) but I suppose to know how to deal with this 
+(well I have to reuse the cookie set by the server. I only have to tell it to initialize a jar? &lt;C&gt;LWP::UserAgent-&gt;new(cookie_jar =&gt; {})&lt;/C&gt; no?).&lt;P&gt;
+
+The client-server interaction will be something like this:&lt;P&gt;
+
+&lt;!--nowiki--&gt;
+&lt;OL&gt;
+&lt;LI&gt;the client send a request using basic authentication (user and password sent in the requested URL)&lt;/LI&gt;
+&lt;LI&gt;the server check if username and password sent by the client are valid&lt;/LI&gt;
+&lt;LI&gt;the server check if the remote IP is allowed and, if so and authentication was done, set up a cookie with a session and send back as only response TEXT_A.&lt;/LI&gt;
+&lt;LI&gt;the client receive TEXT_A and show it.&lt;/LI&gt;
+&lt;LI&gt;the client, after other short activities, ask to the server for TEXT_B &lt;/LI&gt; 
+&lt;LI&gt;the server check if there is a valid session and, if so, send TEXT_B&lt;/LI&gt;
+&lt;LI&gt;the server close the session.
+&lt;/OL&gt;
+&lt;!--/nowiki--&gt;&lt;P&gt;
+
+After some reading and some unwise cut and paste, I imagined something like the following but
+I'd very like to ear from you where I'm wrong and how things can be done in a better way.&lt;P&gt;
+
+&lt;readmore&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+
+use Mojolicious::Lite;
+ 
+plugin 'ClientIP';
+plugin 'basic_auth_plus';
+
+# sample data for authentication
+my %accepted_IPs = ( '8.8.8.8' =&gt; 1 );
+my %users = ( usr1 =&gt; 'pwd1', usr2 =&gt; 'pwd2');
+
+# sample data to send back to client
+my $text_a = 'Né più mai toccherò le sacre sponde';
+my $text_b = 'ove il mio corpo fanciulletto giacque,';
+
+# I expect all non specified routes to answer 404, right?
+
+# get text_a. Steps 2) and 3) of the above description
+get '/get_first' =&gt; sub {
+    my $self = shift;
+	my $remote_IP = $self-&gt;client_ip;
+        # check username and password
+    my ($href, $auth_ok) = $self-&gt;basic_auth(
+        realm =&gt; sub { 
+				# @_ contains username and password
+				if ( exists $users{$_[0]} and  $users{$_[0]} eq $_[1]){
+					# log the correct login
+					$self-&gt;log-&gt;info( "$_[0] from $remote_IP login OK" );
+					return 1;
+				}
+		}
+    );
+	# reject unwanted remote IP
+	unless ( exists $accepted_IPs{ $remote_IP } ){
+		# log unwanted IP 
+		$self-&gt;log-&gt;warn( "$href-&gt;{username} logged from unwanted IP: $remote_IP" );
+		# reject the request
+		return $self-&gt;render(
+				status =&gt; 401,
+				text   =&gt; 'unauthorized',
+			) 
+	}
+	# process the request..
+    if ( $auth_ok ) {
+		# set the session cookie valid for 2 minutes
+		$self-&gt;session( expiration =&gt; 120, is_my_user_authenticated =&gt; 1 );
+		# log the action
+		$self-&gt;log-&gt;info( "sent TEXT_A to $remote_IP" );
+		# render TEXT_A
+        return $self-&gt;render(
+            status =&gt; 200,
+            text   =&gt; $text_a,
+        );
+    }
+	# .. or reject it
+    else {
+		# log a failed attempt
+		$self-&gt;log-&gt;warn( "bad login attempt from  valid IP $remote_IP using user $href-&gt;{username}" );
+		# reject
+        return $self-&gt;render(
+            status =&gt; 401,
+            text   =&gt; 'unauthorized',
+        );
+    }
+};
+
+# get text_b. Steps 6) and 7) of the above description
+get '/get_second' =&gt; sub {
+    my $self = shift;
+	my $remote_IP = $self-&gt;client_ip;
+	# check the previously set cookie session
+    if ( $self-&gt;session( 'is_my_user_authenticated') == 1 ) {
+		# expire the session cookie
+		$self-&gt;session( expires =&gt; 1, is_my_user_authenticated =&gt; 0 );
+		# log the action
+		$self-&gt;log-&gt;info( "sent TEXT_B to $remote_IP" );
+		# render TEXT_B
+        return $self-&gt;render(
+            status =&gt; 200,
+            text   =&gt; $text_b,
+        );
+    }
+    else {
+		# log the action
+		$self-&gt;log-&gt;warn( "unexpected request of TEXT_B from $remote_IP: rejected ".
+							"authenticated: $self-&gt;session( 'is_my_user_authenticated') ".
+							"expiration: $self-&gt;session( 'expiration')");
+		# reject
+        return $self-&gt;render(
+            status =&gt; 401,
+            text   =&gt; 'unauthorized',
+        );
+    }
+};
+ 
+app-&gt;start;
+
+
+&lt;/c&gt;
+&lt;/readmore&gt;&lt;P&gt;
+
+
+
+Here the client I used as test ( server: 10.0.0.1 client: 8.8.8.8 ):&lt;P&gt;
+
+
+&lt;readmore&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+
+use LWP::UserAgent;
+use HTTP::Request::Common;
+ 
+my $ua = LWP::UserAgent-&gt;new();
+$ua-&gt;cookie_jar( {} );
+
+print "FIRST REQUEST\n\n";
+my $request = GET 'http://10.0.0.1/get_first';
+$request-&gt;authorization_basic('usr1', 'pwd1');
+my $response = $ua-&gt;request($request);
+print $response-&gt;as_string();
+
+sleep 3;
+
+print "SECOND REQUEST\n\n";
+my $request2 = GET 'http://10.0.0.1/get_second';
+my $response2 = $ua-&gt;request($request2);
+print $response2-&gt;as_string();
+
+sleep 3;
+
+print "\nATTENTION: next should fail..\n\n";
+my $request3 = GET 'http://10.0.0.1/get_second';
+my $response3 = $ua-&gt;request($request3);
+print $response3-&gt;as_string();
+
+&lt;/c&gt;
+&lt;/readmore&gt;&lt;P&gt;
+
+
+with this output (dont mind the encoding of the ouput.. ;):&lt;P&gt;
+
+
+&lt;readmore&gt;
+&lt;c&gt;
+FIRST REQUEST
+
+HTTP/1.0 200 OK
+Date: Mon, 15 Jun 2020 11:26:18 GMT
+Date: Mon, 15 Jun 2020 11:26:18 GMT
+Server: HTTP::Server::PSGI
+Content-Length: 38
+Content-Type: text/html;charset=UTF-8
+Client-Date: Mon, 15 Jun 2020 11:26:20 GMT
+Client-Peer: 10.0.0.1:80
+Client-Response-Num: 1
+Set-Cookie: mojolicious=eyJleHBpcmF0aW9uIjoxMjAsImV4cGlyZXMiOjE1OTIyMjA0OTgsImlzX215X3VzZXJfYXV0aGVudGljYXRlZCI6MX0---d9029065f9456259d6cfdb50c3adee1d4a2f3b65; expires=Mon, 15 Jun 2020 11:28:18 GMT; path=/; HttpOnly; SameSite=Lax
+
+N&amp;#9500;® pi&amp;#9500;&amp;#9571; mai toccher&amp;#9500;&amp;#9619; le sacre sponde
+SECOND REQUEST
+
+HTTP/1.0 200 OK
+Date: Mon, 15 Jun 2020 11:26:21 GMT
+Date: Mon, 15 Jun 2020 11:26:21 GMT
+Server: HTTP::Server::PSGI
+Content-Length: 38
+Content-Type: text/html;charset=UTF-8
+Client-Date: Mon, 15 Jun 2020 11:26:24 GMT
+Client-Peer: 10.0.0.1:80
+Client-Response-Num: 1
+Set-Cookie: mojolicious=eyJleHBpcmF0aW9uIjoxMjAsImV4cGlyZXMiOjEsImlzX215X3VzZXJfYXV0aGVudGljYXRlZCI6MH0---2f2a402a06de6b37f1eac53b7cbb79d5e08f04e7; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/; HttpOnly; SameSite=Lax
+
+ove il mio corpo fanciulletto giacque,
+
+ATTENTION: next should fail..
+
+HTTP/1.0 401 Unauthorized
+Date: Mon, 15 Jun 2020 11:26:24 GMT
+Date: Mon, 15 Jun 2020 11:26:24 GMT
+Server: HTTP::Server::PSGI
+Content-Length: 12
+Content-Type: text/html;charset=UTF-8
+Client-Date: Mon, 15 Jun 2020 11:26:27 GMT
+Client-Peer: 10.0.0.1:80
+Client-Response-Num: 1
+Client-Warning: Missing Authenticate header
+
+unauthorized
+&lt;/c&gt;
+&lt;/readmore&gt;&lt;P&gt;
+
+and these log lines (newlines added for readability): &lt;P&gt;
+
+&lt;readmore&gt;
+&lt;c&gt;
+HTTP::Server::PSGI: Accepting connections at http://0:80/
+
+[2020-06-15 13:26:18.41707] [29291] [debug] [MfmL-Zeg] GET "/get_first"
+[2020-06-15 13:26:18.41765] [29291] [debug] [MfmL-Zeg] Routing to a callback
+[2020-06-15 13:26:18.41810] [29291] [info] [MfmL-Zeg] usr1 from 8.8.8.8 login OK
+[2020-06-15 13:26:18.41820] [29291] [debug] Your secret passphrase needs to be changed
+[2020-06-15 13:26:18.41832] [29291] [info] [MfmL-Zeg] sent TEXT_A to 8.8.8.8
+[2020-06-15 13:26:18.41865] [29291] [debug] [MfmL-Zeg] 200 OK (0.001575s, 634.921/s)
+8.8.8.8 - - [15/Jun/2020:13:26:18 +0200] "GET /get_first HTTP/1.1" 200 - "-" "libwww-perl/6.26"
+
+[2020-06-15 13:26:21.60148] [29291] [debug] [cC2TWI3Q] GET "/get_second"
+[2020-06-15 13:26:21.60208] [29291] [debug] [cC2TWI3Q] Routing to a callback
+[2020-06-15 13:26:21.60249] [29291] [info] [cC2TWI3Q] sent TEXT_B to 8.8.8.8
+[2020-06-15 13:26:21.60272] [29291] [debug] [cC2TWI3Q] 200 OK (0.001234s, 810.373/s)
+8.8.8.8 - - [15/Jun/2020:13:26:21 +0200] "GET /get_second HTTP/1.1" 200 - "-" "libwww-perl/6.26"
+
+[2020-06-15 13:26:24.68206] [29291] [debug] [jscLU00Y] GET "/get_second"
+[2020-06-15 13:26:24.68244] [29291] [debug] [jscLU00Y] Routing to a callback
+Use of uninitialized value in numeric eq (==) at /root/srv01/srv01.pl line 74, &lt;DATA&gt; line 755.
+[2020-06-15 13:26:24.68275] [29291] [warn] [jscLU00Y] unexpected request of TEXT_B from 8.8.8.8: rejected authenticated: Mojolicious::Controller=HASH(0x316b0a0)-&gt;session( 'is_my_user_authenticated') expiration: Mojolicious::Controller=HASH(0x316b0a0)-&gt;session( 'expiration')
+[2020-06-15 13:26:24.68341] [29291] [debug] [jscLU00Y] 401 Unauthorized (0.001321s, 757.002/s)
+8.8.8.8 - - [15/Jun/2020:13:26:24 +0200] "GET /get_second HTTP/1.1" 401 - "-" "libwww-perl/6.26"
+&lt;/c&gt;
+&lt;/readmore&gt;&lt;P&gt;
+
+
+
+I'd really like to know: is the above sketch correct, in its logic and syntax?
+The basic authentication and the session management is appropriate (expiration, is_my_user_authenticated and the expires parameters in the cookie)?
+The logging is done in the right way?
+I missed something important?
+How to deploy? I used plackup for testing purpose. I see &lt;C&gt;debug&lt;/C&gt; infos in logs: why they are there (happy to see them atm..)? 
+What strings like &lt;C&gt;[MfmL-Zeg]&lt;/C&gt; means in loglines?&lt;P&gt;
+
+Thanks for reading&lt;P&gt;
+
+
+L*&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-174111"&gt;
+There are no rules, there are no thumbs..&lt;BR&gt;
+Reinvent the wheel, then learn The Wheel; may be one day you reinvent one of THE WHEELS.
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.16} --&gt;</doctext>
+<thread id="11118092">
+<node id="11118099"><node id="11118100"><node id="11118101"><node id="11118129"><node id="11118132"/>
+<node id="11118133"/>
+</node>
+</node>
+<node id="11118114"><node id="11118126"/>
+</node>
+</node>
+</node>
+<node id="11118108"/>
+<node id="11118110"/>
+<node id="11118125"/>
+<node id="11118161"><node id="11118178"><node id="11118180"/>
+</node>
+</node>
+<node id="11118211"/>
+</thread></node>

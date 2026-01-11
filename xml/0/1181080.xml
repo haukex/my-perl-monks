@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1181080" title="no New method in Lemonldap::NG::Portal::SharedConf module" created="2017-02-04 07:20:36" updated="2017-02-04 07:20:36" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1181078">song</author>
+<doctext field_name="doctext">&lt;p&gt; hi all, I am doing some configuration to deploy Lemonldap&amp;#65306;&amp;#65306;NG,but there is some question confused me. &lt;/p&gt;
+
+
+&lt;code&gt;
+## @file
+# Main portal for Lemonldap::NG portal
+
+## @class
+# Main portal for Lemonldap::NG portal
+package Lemonldap::NG::Portal::SharedConf;
+
+use strict;
+use Lemonldap::NG::Portal::Simple qw(:all);
+use Lemonldap::NG::Common::Conf;            #link protected lmConf Configuration
+use Lemonldap::NG::Common::Conf::Constants; #inherits
+use Regexp::Assemble;
+use URI::Split qw(uri_split);
+
+*EXPORT_OK   = *Lemonldap::NG::Portal::Simple::EXPORT_OK;
+*EXPORT_TAGS = *Lemonldap::NG::Portal::Simple::EXPORT_TAGS;
+*EXPORT      = *Lemonldap::NG::Portal::Simple::EXPORT;
+
+our $VERSION = '1.9.1';
+use base qw(Lemonldap::NG::Portal::Simple);
+our $confCached;
+
+BEGIN {
+    eval {
+        require threads::shared;
+        threads::shared::share($confCached);
+    };
+}
+
+##################
+# OVERLOADED SUB #
+##################
+
+## @method protected boolean getConf(hashRef args)
+# Copy all parameters returned by the Lemonldap::NG::Common::Conf object in $self.
+# @param args hash
+# @return True
+sub getConf {
+    my $self = shift;
+    my %args;
+    if ( ref( $_[0] ) ) {
+        %args = %{ $_[0] };
+    }
+    else {
+        %args = @_;
+    }
+
+    if ( defined( $args{configStorage} ) ) {
+        $self-&gt;{configStorage} = $args{configStorage};
+    }
+
+    my $num;
+    my $lConf;
+
+    # If useLocalConf is set, just verify that current conf has the same number
+    # than local cache one
+    if ( $confCached and $confCached-&gt;{useLocalConf} ) {
+        $lConf = $self-&gt;__lmConf-&gt;getLocalConf(PORTALSECTION);
+        eval { $num = $lConf-&gt;{cfgNum} };
+    }
+    else {
+        $num = $self-&gt;__lmConf-&gt;lastCfg();
+    }
+
+    # Reload configuration
+    unless ( $confCached and $confCached-&gt;{cfgNum} == $num ) {
+        $lConf ||= $self-&gt;__lmConf-&gt;getLocalConf(PORTALSECTION);
+        my $prm = { cfgNum =&gt; $num };
+        if ( $args{useLocalConf} or $lConf-&gt;{useLocalConf} ) {
+            $prm-&gt;{local} = 1;
+            $self-&gt;lmLog( 'useLocalConf set to true', 'debug' );
+        }
+        my $gConf = $self-&gt;__lmConf-&gt;getConf($prm);
+        unless ( ref($gConf) and ref($lConf) ) {
+            $self-&gt;abort( "Cannot get configuration",
+                $Lemonldap::NG::Common::Conf::msg );
+        }
+        $self-&gt;lmLog(
+            "Cached configuration too old, get configuration $num "
+              . "($Lemonldap::NG::Common::Conf::msg)",
+            'debug'
+        );
+        %$confCached = ( %$gConf, %$lConf );
+
+        my $re = Regexp::Assemble-&gt;new();
+        foreach my $vhost ( keys %{ $confCached-&gt;{locationRules} } ) {
+            my $quotedVhost = quotemeta($vhost);
+            $self-&gt;lmLog( "Vhost $vhost added in reVHosts", 'debug' );
+            $re-&gt;add($quotedVhost);
+
+            # Add aliases
+            if ( $confCached-&gt;{vhostOptions}-&gt;{$vhost}-&gt;{vhostAliases} ) {
+                foreach my $alias ( split /\s+/,
+                    $confCached-&gt;{vhostOptions}-&gt;{$vhost}-&gt;{vhostAliases} )
+                {
+                    $self-&gt;lmLog( "Alias $alias added in reVHosts", 'debug' );
+                    $re-&gt;add( quotemeta($alias) );
+                }
+            }
+        }
+
+        # Add portal vhost
+        my ( $portal_scheme, $portal_auth ) =
+          uri_split( $confCached-&gt;{portal} );
+        $re-&gt;add($portal_auth);
+        $self-&gt;lmLog( "Portal vhost $portal_auth added in reVHosts", 'debug' );
+
+        $confCached-&gt;{reVHosts} = $re-&gt;as_string;
+    }
+
+    %$self = ( %$self, %$confCached, %args, );
+
+    $self-&gt;lmLog( "Now using configuration: " . $confCached-&gt;{cfgNum},
+        'debug' );
+
+    1;
+}
+
+sub __lmConf {
+    my $self = shift;
+    return $self-&gt;{lmConf} if ( $self-&gt;{lmConf} );
+    my $r = Lemonldap::NG::Common::Conf-&gt;new( $self-&gt;{configStorage} );
+    $self-&gt;abort(
+        "Cannot create configuration object",
+        $Lemonldap::NG::Common::Conf::msg
+    ) unless ( ref($r) );
+    $self-&gt;{lmConf} = $r;
+}
+&lt;/code&gt;
+&lt;p&gt;
+its SYNOPSIS like below, but I can't find the new method in the code, is that inherits from the parent ? thanks a lot. here is the source code repo:https://forge.ow2.org/project/download.php?group_id=274&amp;file_id=21538
+&lt;/p&gt;
+&lt;code&gt;
+  use Lemonldap::NG::Portal::SharedConf;
+  my $portal = new Lemonldap::NG::Portal::SharedConf( {
+         configStorage =&gt; {
+             type        =&gt; 'DBI',
+             dbiChain    =&gt; "dbi:mysql:...",
+             dbiUser     =&gt; "lemonldap",
+             dbiPassword =&gt; "password",
+             dbiTable    =&gt; "lmConfig",
+         },
+         # Activate SOAP service
+         Soap           =&gt; 1
+    } );
+&lt;/code&gt;
+</doctext>
+<thread id="1181080">
+<node id="1181082"><node id="1181090"/>
+</node>
+</thread></node>

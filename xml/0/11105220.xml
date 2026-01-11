@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11105220" title="Re: Popping from method that returns a list in one line" created="2019-08-29 03:08:25" updated="2019-08-29 03:08:25" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;$f-&gt;get_files&lt;/c&gt; returns a list.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;To get into the details of what's going on: There is a difference between &lt;c&gt;return ("foo","bar")&lt;/c&gt; (list) and &lt;c&gt;return @quz&lt;/c&gt; (array) in scalar context. The context of the call is basically passed through to the &lt;c&gt;return&lt;/c&gt;, so it's like &lt;c&gt;$x = ("foo","bar")&lt;/c&gt;, where the comma operator in scalar context throws away the item on the left and returns the item on the right, and &lt;c&gt;$x = @quz&lt;/c&gt; gets the number of elements in the array. So I suspect your method is probably returning an array instead of a list. That's also why neither of the forms you showed work, as &lt;c&gt;@{...}&lt;/c&gt; provides scalar context, and you're getting the error because you can only give an actual array directly to [doc://pop] (it currently has a prototype of &lt;c&gt;(;\@)&lt;/c&gt;, which means it accepts only things that start with an &lt;c&gt;@&lt;/c&gt;). Two approaches might be &lt;c&gt;($fp-&gt;get_files)[-1]&lt;/c&gt;, as others have already mentioned, or to actually return an array reference from the method, and dereference that with &lt;c&gt;@{...}&lt;/c&gt;, but that'll change your API.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11105192</root_node>
+<parent_node field_name="parent_node">11105192</parent_node>
+<thread id="11105192">
+<node id="11105194"><node id="11105206"/>
+</node>
+<node id="11105200"><node id="11105202"><node id="11105204"/>
+<node id="11105208"/>
+</node>
+<node id="11105251"/>
+</node>
+<node id="11105201"/>
+<node id="11105220"/>
+</thread></node>

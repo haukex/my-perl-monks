@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117607" title="Parsing a large html with perl" created="2020-06-02 16:07:20" updated="2020-06-02 16:07:20" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11117604">zesys</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Perl monks, first time asking a question. My apologies in advance if my post is not meeting house rules.&lt;/p&gt;
+&lt;p&gt;So, I am trying to extract information from a large html file.&lt;/p&gt;
+
+
+Example blocks in the html:
+
+&lt;code&gt;
+---
+&lt;tr&gt;
+&lt;td class="confluenceTd"&gt;AL2H &lt;/td&gt;
+&lt;td class="confluenceTd"&gt;NANOMETRICSTITANSMA000357 &lt;/td&gt;
+&lt;td class="confluenceTd"&gt;2017-03-09T00:00:00.000Z &lt;/td&gt;
+&lt;td class="confluenceTd"&gt;2017-05-25T12:00:00.000Z &lt;/td&gt;
+&lt;td class="confluenceTd"&gt;&lt;p&gt;&lt;span class="image-wrap" style=""&gt;&lt;img src="/download/attachments/49449087/true.png?versio$
+&lt;td class="confluenceTd"&gt;48.38981 &lt;/td&gt;
+&lt;td class="confluenceTd"&gt;-123.48739 &lt;/td&gt;
+&lt;td class="confluenceTd"&gt;-29.0 &lt;/td&gt;
+&lt;td class="confluenceTd"&gt;&amp;nbsp;&lt;/td&gt;
+&lt;/tr&gt;
+
+---
+
+&lt;tr&gt;
+&lt;td class="confluenceTd"&gt;BACAX &lt;/td&gt;
+&lt;td class="confluenceTd"&gt;RDIADCP600WH9339 &lt;/td&gt;
+&lt;td class="confluenceTd"&gt;2011-07-15T18:42:25.000Z &lt;/td&gt;
+&lt;td class="confluenceTd"&gt;2012-05-30T01:12:03.000Z &lt;/td&gt;
+&lt;td class="confluenceTd"&gt;&lt;p&gt;&lt;span class="image-wrap" style=""&gt;&lt;img src="/download/attachments/49449087/true.png?versio$
+&lt;td class="confluenceTd"&gt;48.316762 &lt;/td&gt;
+&lt;td class="confluenceTd"&gt;-126.050163 &lt;/td&gt;
+&lt;td class="confluenceTd"&gt;985.0 &lt;/td&gt;
+&lt;td class="confluenceTd"&gt;221.0 &lt;/td&gt;
+&lt;/tr&gt;
+---
+&lt;/code&gt;
+
+
+&lt;p&gt; What my code does at the moment: Copy the first 4 lines of the first html block above, and print them with their meanings. &lt;/p&gt;
+
+&lt;code&gt;
+locationCode: AL2H
+deviceCode: NANOMETRICSTITANSMA000357
+dateFrom: 2017-03-09T00:00:00.000Z
+dateTo: 2017-05-25T12:00:00.000Z
+&lt;/code&gt;
+
+ &lt;p&gt;What I would like to achieve: &lt;/p&gt;
+  &lt;p&gt; 1. Do the same thing as above by looping through similar blocks. &lt;/p&gt;
+  &lt;p&gt; 2. Extract only blocks that have a sub-string "RDI" in their second line (eg., RDIADCP600WH9339 in the second block shown above).&lt;/p&gt;
+  &lt;p&gt;  I can try 2 if I can get help with 1. &lt;/p&gt; &lt;p&gt;Thank you.&lt;/p&gt;
+
+&lt;p&gt; My semi-working code is below.  As you can see, I am storing the html page in a variable, $scrappy.&lt;/p&gt;
+
+&lt;code&gt; 
+#!/usr/bin/perl
+use strict;
+use warnings;
+use utf8;
+use Term::ANSIColor qw(:constants);
+
+my $scrappy =
+`curl -s 'https://wiki.oceannetworks.ca/display/O2A/Available+Deployments' 2&gt;&amp;1`;
+
+my $lineX;
+
+my $count = 0;
+
+foreach $lineX ( split /\n/, $scrappy ) {
+
+    if ( $lineX =~ /^\s*$/ ) {    # Skip white spaces or comment line
+        next;
+    }
+    my @F = split( " ", $lineX );
+    my $mylen = length $lineX;
+
+    if ( $mylen ge 2 ) {
+
+        if (    ( $F[0] eq '&lt;td' )
+            and ( $F[-1] eq '&lt;/td&gt;' )
+            and ( $F[-1] ne '&lt;/p&gt;&lt;/td&gt;' ) )
+        {
+
+            my @f = split /&gt;/, $F[1];
+
+            $count++;
+
+            if ( $count == 1 ) {
+                print "locationCode: $f[1]\n";
+            }
+            elsif ( $count == 2 ) {
+                print "deviceCode: $f[1]\n";
+
+            }
+            elsif ( $count == 3 ) {
+                print "dateFrom: $f[1]\n";
+            }
+            elsif ( $count == 4 ) {
+                print "dateTo: $f[1]\n";
+            }
+
+        }
+    }
+}
+&lt;/code&gt;
+
+</doctext>
+<thread id="11117607">
+<node id="11117609"/>
+<node id="11117612"><node id="11117624"><node id="11117629"/>
+<node id="11117684"><node id="11117752"/>
+</node>
+</node>
+<node id="11117681"><node id="11117687"/>
+</node>
+</node>
+<node id="11117646"><node id="11117654"><node id="11117726"><node id="11119338"><node id="11119349"><node id="11119367"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

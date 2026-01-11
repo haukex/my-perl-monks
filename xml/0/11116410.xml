@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116410" title="Re: getting text from HTML" created="2020-05-03 17:42:04" updated="2020-05-03 17:42:04" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I believe what you're seeing is the concept of the [wp://Document Object Model], where basically "text nodes" are anything that's not an element, including everything between &lt;c&gt;&lt;script&gt;&lt;/c&gt; tags etc. One easy workaround is to clobber all the tags you don't want:&lt;/p&gt;
+&lt;c&gt;
+use Mojo::Base -strict;
+use open qw/:std :utf8/;
+use Mojo::UserAgent;
+
+my $ua = Mojo::UserAgent-&gt;new( max_redirects =&gt; 3 );
+my $res = $ua-&gt;get('http://www.spacex.com/webcast')-&gt;result;
+die $res-&gt;message unless $res-&gt;is_success;
+
+my $dom = $res-&gt;dom;
+$dom-&gt;find('script, style')-&gt;map('remove');
+my $text = $dom-&gt;at('body')-&gt;all_text;
+1 while $text =~ s/\s{2,}/ /g;
+say $text;
+
+__END__
+
+ Jump to navigation Falcon 9
+Falcon Heavy
+Dragon
+Starship
+Updates
+About SpaceX
+Careers
+Shop You are hereHome STARLINK MISSION On Wednesday, April 22 at 3:30 p.m. EDT, or 19:30 p.m. UTC, SpaceX launched its seventh Starlink mission. Falcon 9 lifted off from Launch Complex 39A (LC-39A) at NASA’s Kennedy Space Center in Florida.Falcon 9’s first stage previously supported Crew Dragon’s first flight to the International Space Station, launch of the RADARSAT Constellation Mission, and the fourth Starlink mission. Following stage separation, SpaceX landed Falcon 9’s first stage on the “Of Course I Still Love You” droneship, which was stationed in the Atlantic Ocean. Falcon 9’s fairing previously supported the AMOS-17 mission. You can watch a replay of the launch below and learn more about the mission here. | Twitter YouTube Flickr Instagram Privacy © 2020 Space Exploration Technologies Corp. 
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11116409</root_node>
+<parent_node field_name="parent_node">11116409</parent_node>
+<thread id="11116409">
+<node id="11116410"><node id="11116413"/>
+<node id="11116428"><node id="11116429"/>
+</node>
+</node>
+<node id="11116440"><node id="11116708"/>
+<node id="11116723"/>
+</node>
+<node id="11116693"/>
+</thread></node>

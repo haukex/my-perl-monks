@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11114542" title="RFC / Audit: Mojo Login Example" created="2020-03-22 05:51:11" updated="2020-03-22 05:51:11" _doctext_mode="strict"><type id="115">perlquestion</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi everyone,&lt;/p&gt;
+&lt;p&gt;Over at [id://11114043] I posted an example of some login code with [mod://Mojolicious]. I've now expanded that code to add a brute force attack deterrent. I would greatly appreciate a set of critical eyes - are there any gaps in the protection, and is there something else I'm missing to improve the security even more? (I've thought about hashing the password on the client side, but I'd prefer not to make it dependent on JavaScript - HTTPS will have to do for now.) For example, I could add a delay for each remote IP with failed login attempts, or I could grow the delay time exponentially.&lt;/p&gt;
+&lt;readmore title="the code"&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use 5.028;
+use Mojolicious::Lite -signatures;
+use Mojo::SQLite;
+use File::Spec::Functions qw/catfile tmpdir/;
+use PBKDF2::Tiny qw/derive_hex verify_hex/;
+use Crypt::Random::Source qw/get_strong/;
+
+# Run me via:
+# morbo --listen=http://127.0.0.1:3000 --listen=https://127.0.0.1:4430 mojo_login_example.pl
+
+#app-&gt;secrets(['A Login Example - TODO: set this string!']);
+app-&gt;sessions-&gt;secure(1);
+
+# disable template cache in development mode (e.g. under morbo):
+app-&gt;renderer-&gt;cache-&gt;max_keys(0) if app-&gt;mode eq 'development';
+
+helper sql =&gt; sub { state $sql = Mojo::SQLite-&gt;new('sqlite:'
+	. catfile(tmpdir, 'test.db') ) };
+
+app-&gt;sql-&gt;migrations-&gt;from_string(&lt;&lt;'END_MIGRATIONS')-&gt;migrate;
+-- 1 up
+CREATE TABLE Users ( Username TEXT NOT NULL PRIMARY KEY,
+	Salt TEXT NOT NULL, Password TEXT NOT NULL,
+	AuthAttempts INTEGER NOT NULL DEFAULT 0, DelayExpires INTEGER );
+-- 1 down
+DROP TABLE IF EXISTS Users;
+END_MIGRATIONS
+{ my $db = app-&gt;sql-&gt;db; # for testing, insert sample users:
+if ( not $db-&gt;query('SELECT COUNT(*) FROM Users')-&gt;arrays-&gt;[0][0] ) {
+	my $salt1 = unpack 'H*', get_strong(64);
+	$db-&gt;insert('Users', { Username =&gt; 'Foo', Salt =&gt; $salt1,
+		Password =&gt; derive_hex('SHA-512', 'Bar', $salt1, 5000) } );
+	my $salt2 = unpack 'H*', get_strong(64);
+	$db-&gt;insert('Users', { Username =&gt; 'Quz', Salt =&gt; $salt2,
+		Password =&gt; derive_hex('SHA-512', 'Baz', $salt2, 5000) } );
+} }
+
+helper do_login =&gt; sub ($c) {
+	my $promise = Mojo::Promise-&gt;new;
+	my ($user,$pass) = ($c-&gt;param('username'), $c-&gt;param('password'));
+	my $db = $c-&gt;sql-&gt;db;
+	my $user_rec = eval {
+		my $tx = $db-&gt;begin('exclusive');
+		my $u = $db-&gt;select( Users =&gt; [qw/ Salt Password AuthAttempts
+			DelayExpires /], { Username =&gt; $user } )-&gt;hashes;
+		die "Username not found" unless @$u;
+		$db-&gt;query('UPDATE Users SET AuthAttempts=AuthAttempts+1,'
+			.'DelayExpires=? WHERE Username=?', time+60*60, $user );
+		$tx-&gt;commit;
+	$u-&gt;[0] } or do {
+		Mojo::IOLoop-&gt;timer( 2 =&gt; sub { $promise-&gt;reject } );
+		return $promise };
+	Mojo::IOLoop-&gt;timer( 2 * $user_rec-&gt;{AuthAttempts} =&gt; sub {
+		utf8::encode( $pass ); # needed for verify_hex
+		utf8::encode( my $salt = $user_rec-&gt;{Salt} );
+		if ( verify_hex( $user_rec-&gt;{Password}, 'SHA-512', $pass,
+				$salt, 5000 ) ) {
+			$db-&gt;query('UPDATE Users SET AuthAttempts=0,DelayExpires='
+				.'NULL WHERE Username=? OR ?&gt;DelayExpires',
+				$user, time );
+			$promise-&gt;resolve($user);
+		}
+		else { Mojo::IOLoop-&gt;timer( 2 =&gt; sub { $promise-&gt;reject } ) }
+	});
+	return $promise;
+};
+
+helper logged_in =&gt; sub ($c) {
+	length( $c-&gt;session('username') ) ? $c-&gt;session : undef };
+
+any '/' =&gt; sub ($c) { $c-&gt;render('index') } =&gt; 'index';
+
+group { # everything in this group requires HTTPS b/c of this "under":
+	under sub ($c) {
+		return 1 if $c-&gt;req-&gt;is_secure;
+		$c-&gt;redirect_to( $c-&gt;url_for-&gt;to_abs-&gt;scheme('https')
+			-&gt;port(4430) ); # this port is just for this demo
+		return undef;
+	};
+	
+	get '/login' =&gt; sub ($c) { $c-&gt;render('login') } =&gt; 'login';
+	post '/login' =&gt; sub ($c) { # form handler
+		return $c-&gt;render(text =&gt; 'Bad CSRF token!', status =&gt; 403)
+			if $c-&gt;validation-&gt;csrf_protect-&gt;has_error('csrf_token');
+		$c-&gt;render_later;
+		$c-&gt;do_login-&gt;then(sub ($user) {
+				$c-&gt;session( expiration =&gt; 60*60 );
+				$c-&gt;session( username =&gt; $user );
+				$c-&gt;redirect_to('secure');
+			})-&gt;catch(sub {
+				$c-&gt;flash(login_error =&gt; 'Bad username or password');
+				$c-&gt;redirect_to('login');
+			});
+	} =&gt; 'login';
+	any '/logout' =&gt; sub ($c) {
+		delete $c-&gt;session-&gt;{username};
+		$c-&gt;redirect_to('index');
+	} =&gt; 'logout';
+	
+	group { # everything in this group requires login
+		under sub ($c) {
+			return 1 if $c-&gt;logged_in;
+			$c-&gt;redirect_to('login');
+			return undef;
+		};
+		
+		any '/secure' =&gt; sub ($c) { $c-&gt;render('secure') } =&gt;'secure';
+	};
+};
+
+app-&gt;start;
+
+__DATA__
+
+@@ layouts/main.html.ep
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;
+	&lt;style&gt;
+		table { border-collapse: collapse; }
+		table, th, td { border: 1px solid black; }
+	&lt;/style&gt;
+&lt;/head&gt;&lt;body&gt;
+&lt;nav style="margin-bottom:1em;"&gt;&lt;small&gt;
+[ &lt;%= link_to Main =&gt; 'index' %&gt; | &lt;%= link_to Secure =&gt; 'secure' %&gt; ]
+% if ( my $s = logged_in ) {
+	[ Logged in as &lt;%= $s-&gt;{username} %&gt; | &lt;%= link_to Logout =&gt; 'logout' %&gt; ]
+% } else {
+	[ &lt;%= link_to Login =&gt; 'login' %&gt; ]
+% }
+&lt;/small&gt;&lt;/nav&gt;
+&lt;main&gt;
+&lt;div style="margin-bottom:1em;"&gt;&lt;table style="font-size:0.75em;"&gt;
+	&lt;tr&gt; &lt;th colspan="3"&gt;Debug Info&lt;/th&gt; &lt;/tr&gt;
+	&lt;tr&gt; &lt;th&gt;User&lt;/th&gt; &lt;th&gt;Attemps&lt;/th&gt; &lt;th&gt;Expires&lt;/th&gt; &lt;/tr&gt;
+% my $res = sql-&gt;db-&gt;select('Users', [qw/ Username AuthAttempts DelayExpires /]);
+% while ( my $row = $res-&gt;array ) {
+	&lt;tr&gt; &lt;% for my $f (@$row) { %&gt; &lt;td&gt;&lt;%= $f %&gt;&lt;/td&gt; &lt;% } %&gt; &lt;/tr&gt;
+&lt;% } %&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;%= content %&gt;
+&lt;/main&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+
+@@ index.html.ep
+% layout 'main', title =&gt; 'Hello, World!';
+&lt;div&gt;Hello, World!&lt;/div&gt;
+
+@@ login.html.ep
+% layout 'main', title =&gt; 'Login';
+% if ( flash 'login_error' ) {
+	&lt;div style="margin-bottom:1em;"&gt;&lt;strong&gt;&lt;%= flash 'login_error' %&gt;&lt;/strong&gt;&lt;/div&gt;
+% }
+&lt;div&gt;
+%= form_for login =&gt; ( method =&gt; 'post' ) =&gt; begin
+%= csrf_field
+%= label_for username =&gt; 'Username'
+%= text_field username =&gt; ( placeholder=&gt;"Username", required=&gt;'required' )
+%= label_for password =&gt; 'Password'
+%= password_field password =&gt; ( placeholder=&gt;"Password", required=&gt;'required' )
+%= submit_button 'Login'
+%= end
+&lt;/div&gt;
+
+@@ secure.html.ep
+% layout 'main', title =&gt; 'Top Secret';
+&lt;div&gt;Welcome &lt;b&gt;&lt;%= session-&gt;{username} %&gt;&lt;/b&gt;,
+	you've accessed the &lt;b&gt;top secret&lt;/b&gt; area!&lt;/div&gt;
+&lt;/c&gt;</doctext>
+<thread id="11114542">
+<node id="11114545"><node id="11114562"/>
+</node>
+<node id="11114567"/>
+<node id="11114573"><node id="11114583"><node id="11114605"><node id="11114606"><node id="11114618"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11114580"><node id="11114628"/>
+</node>
+</thread></node>

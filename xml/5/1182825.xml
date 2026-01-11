@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1182825" title="Re^3: What's going on with either constants folding or B::Deparse output in this case?" created="2017-02-25 12:13:41" updated="2017-02-25 12:13:41" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I don't understand why constant folding doesn't work as expected.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm not an expert on the Perl internals, for now I'm just drawing my conclusions from the documentation and the debug output. All I can offer at the moment is the output of [doc://B::Concise], I have trimmed it down to only the relevant differences between the two:&lt;/p&gt;
+&lt;c&gt;
+$ perl -MO=Concise -we 'sub parse{${$_[0]}=~/\Gfoo/gc or die} parse \(""."foo") for 1..2'
+...
+a   &lt;1&gt; srefgen sKM/1 -&gt;b
+-      &lt;1&gt; ex-list lKRM -&gt;a
+9         &lt;$&gt; const(PV "foo") sPRM/FOLD -&gt;a
+...
+$ perl -MO=Concise -we 'sub parse{${$_[0]}=~/\Gfoo/gc or die} parse \("foo") for 1..2'
+...
+9   &lt;$&gt; const(IV \"foo") sM/FOLD -&gt;a
+...
+&lt;/c&gt;
+&lt;p&gt;The way I interpret that is that in the first case, the constant &lt;c&gt;""."foo"&lt;/c&gt; is apparently folded down to &lt;c&gt;"foo"&lt;/c&gt;, however what apparently isn't folded is taking a reference to that string. [doc://perlop#Constant-Folding|"Constant Folding" in perlop] only talks about the constant folding of strings and numeric values, so I'm sorry I don't have a very solid explanation of why the two examples are different (other than my above interpretation of the concat op, which no longer seems to &lt;strike&gt;fully&lt;/strike&gt; accurately explain the situation).&lt;/p&gt;
+&lt;p&gt;In general, I would try to find a solution that doesn't depend on internals like whether certain optimizations were performed or certain internal flags like Readonly are set.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Can I count on this 'fix' (e.g. prepending an empty string) to parse a hard-coded string several times&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If the problem is that you want to reset &lt;c&gt;m/\G.../gc&lt;/c&gt; matches, then what you &lt;i&gt;can&lt;/i&gt; do reliably is &lt;c&gt;pos($string)=undef;&lt;/c&gt; to reset that particular state, I posted an example [id://1181540|here].&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1182813</root_node>
+<parent_node field_name="parent_node">1182816</parent_node>
+<thread id="1182813">
+<node id="1182815"><node id="1182816"><node id="1182825"/>
+</node>
+</node>
+<node id="1182859"/>
+</thread></node>

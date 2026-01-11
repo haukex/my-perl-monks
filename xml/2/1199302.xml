@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1199302" title="Passing array to a subroutine" created="2017-09-13 09:42:46" updated="2017-09-13 09:42:46" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt; I have a subroutine defined &lt;/p&gt;
+
+&lt;code&gt;
+
+sub sadk_flap_mx_ifd_laser {
+    my $r = shift;
+    my $sub = sub_name;
+    return $r-&gt;error_handler('S', "$sub: MX-VC does not support laser off/on") if (exists $r-&gt;{MX_VC_CHASSIS} &amp;&amp; $r-&gt;{MX_VC_CHASSIS});
+    my $args = get_args(["FLAP", "IFD"],@_);
+    return $r-&gt;error_handler('S',"$sub: FAIL. Missing mandatory argument 'IFD' in API call") unless (defined $args-&gt;{IFD});
+    $args-&gt;{IFD} = [$args-&gt;{IFD}] unless (ref $args-&gt;{IFD} ne "ARRAY");
+    return $r-&gt;error_handler('S', "$sub: Empty list in argument 'IFD'") if (@{$args-&gt;{IFD}} == 0);
+    $args-&gt;{FLAP} = 1 unless (defined $args-&gt;{FLAP});
+    my ($i,$ifd, $fpc);
+    foreach $ifd (@{$args-&gt;{IFD}}) {
+        ($fpc) = $ifd =~ /\w+-(\d+)\/\d+\/\d+/;
+        $r-&gt;mode_shell;
+        put_log("\n\n");
+        $r-&gt;put_log("Turn off/on laser on interface $ifd $args-&gt;{FLAP} times");
+        foreach $i (1..$args-&gt;{FLAP}) {
+            $r-&gt;shell(cmd =&gt; "cprod -A fpc$fpc -c \"test ifdev $ifd laser off\"");
+            sleep 20;
+            $r-&gt;shell(cmd =&gt; "cprod -A fpc$fpc -c \"test ifdev $ifd laser on\"");
+            sleep 20;
+        }
+    }
+    put_log("\n\n");
+    $r-&gt;mode_cli;
+    return 1;
+}
+&lt;/code&gt;
+
+&lt;p&gt; I am trying to call this subroutine from a different file &lt;/p&gt;
+
+&lt;code&gt;
+ $t-&gt;sadk_flap_mx_ifd_laser(ifd=&gt;@child_interfaces, flap=&gt;$flaps);
+&lt;/code&gt;
+
+&lt;p&gt; While executing the code, I see there are errors. I doubt am not passing the correct value . @childinterfaces have the valures, et-14/1/1, et-5/1/0..like that till 10 interfaces. &lt;/p&gt;
+
+&lt;p&gt;
+
+Sep 13 06:27:05 JT.pm:2879 [ERROR] JT::get_args: Argument "ET-5/1/0" is invalid
+        JT::error_handler HARD at /volume/labtools/lib/JT.pm line 2739.
+        JT::get_args('ARRAY(0x11ce6c00)', 'ifd', 'et-14/1/1', 'et-5/1/0', 'et-1/0/0', 'flap', 10) called at /volume/labtools/lib/Testsuites/PDT/lib/SADK.pm line 1032
+        Testsuites::PDT::lib::SADK::sadk_flap_mx_ifd_laser('JT::Test=HASH(0xdde63d0)', 'ifd', 'et-14/1/1', 'et-5/1/0', 'et-1/0/0', 'flap', 10) called at UC705_FT_testcases.pm line 267
+        UC705_FT_testcases::ae_child_link_flap_remote_lasers called at (eval 704) line 1
+&lt;/p&gt;
+
+&lt;p&gt; canu help here &lt;/p&gt;</doctext>
+<reputation field_name="reputation">11</reputation>
+<thread id="1199302">
+<node id="1199303"/>
+<node id="1199305"/>
+<node id="1199316"/>
+</thread></node>

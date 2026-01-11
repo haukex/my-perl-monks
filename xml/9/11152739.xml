@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11152739" title="How to Rename files in multiple directories with a Perl script using an array of hashes." created="2023-06-10 16:33:12" updated="2023-06-10 16:33:12" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11152736">ObiPanda</author>
+<doctext field_name="doctext">&lt;p&gt;
+Question:&lt;br&gt;
+ Can someone please direct me to the correct module to use and at least hints in the right direction to rename files in multiple directories using an array of hashes?&lt;/p&gt;
+
+&lt;p&gt;I'm new-ish to Perl, and haven't used Linux much.
+I made a script which runs on a VM (running Ubuntu) on a Windows OS.
+The script downloads a number of podcast subscriptions and deposits them in their respective directories.&lt;br&gt;
+I want to add some house-keeping functionality to it, specifically I want to have the script rename files in the downloaded folder according to regex patterns. I figured this would be easy, but I can't seem to get it to work right. Glob is not my friend.&lt;/p&gt;
+
+&lt;p&gt;I may later add deleting older files, but I want to do one part at a time. eg., I'm not sure how a perl function running on Linux will interpret the date stamp of NTFS files and so I want to get to this later.&lt;/p&gt;
+
+&lt;p&gt;Can someone please direct me to the correct module to use and at least hints in the right direction?&lt;/p&gt;
+
+&lt;p&gt; UPDATE. I have updated this test code. The following code works for simple files, at least in the same directory, but it utterly fails for the real subscription folder files, probably because of their length and possibly some restricted characters in the file names with Glob. The code here obviously replaces _ with spaces in the file name, but I hope to include more general modifications via regex at a later date.&lt;/p&gt;
+
+Thank you&lt;br&gt;
+
+&lt;c&gt;
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use autodie;
+use File::Find;
+use File::Rename;
+use Data::Dumper;
+
+# VARIABLES
+# Subscriptions Library &amp; Archive Path variables for clarity
+my $Subscriptions_Path = "/mnt/hgfs";
+
+
+# Subscription DATA sets
+
+my @Subscription = ( 
+     {
+     Sub_Name               =&gt; "T 1",
+     Lib_Sub_Path           =&gt; "VM-Share",
+	 Keep_Duration          =&gt;  0,
+     },
+     {
+     Sub_Name               =&gt; "T 2",
+     Lib_Sub_Path           =&gt; "VM-Share/xtr",
+	 Keep_Duration          =&gt;  0,
+     },
+     {
+     Sub_Name               =&gt; "T 3",
+     Lib_Sub_Path           =&gt; "VM-Share/xtr 2",
+	 Keep_Duration          =&gt;  0,
+     }
+);
+
+for (@Subscription) {
+     print "Beginning Subscription Service for $_-&gt;{Sub_Name} \n";
+
+     print "The absolute library path is: $Subscriptions_Path/$_-&gt;{Lib_Sub_Path}\n";
+	 my @path = glob("'$Subscriptions_Path/$_-&gt;{Lib_Sub_Path}/*'");
+	 print Dumper(\@path); 
+	 print "\n";
+     if (@path) {
+	 File::Rename::rename(\@path,{
+		 _code     =&gt; sub { s/_/ / },
+		 verbose   =&gt; 1,
+		 no_action =&gt; 1,
+	 }
+     ); };
+     print "Completing Subscription Service for $_-&gt;{Sub_Name} \n\n";
+}
+&lt;/c&gt;
+
+</doctext>
+<thread id="11152739">
+<node id="11152753"><node id="11152780"><node id="11152793"/>
+</node>
+<node id="11152783"><node id="11152786"><node id="11152789"/>
+</node>
+<node id="11152788"/>
+</node>
+</node>
+<node id="11152760"><node id="11152781"/>
+</node>
+<node id="11152761"/>
+<node id="11152782"/>
+<node id="11152799"/>
+<node id="11152860"/>
+</thread></node>

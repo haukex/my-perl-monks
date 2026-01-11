@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1206620" title="Re: Grep logs by start date and end date in different directories (updated)" created="2018-01-03 14:04:07" updated="2018-01-03 14:04:07" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;ul&gt;
+&lt;li&gt;The code you posted does not compile as is, which makes it harder for those trying to help. In this case, I'm guessing that you may have edited out too much for posting - you could have instead replaced the user input with simple variable assignments, e.g. &lt;c&gt;my $sdate = '...';&lt;/c&gt;. Please see [id://1177642|SSCCE].&lt;/li&gt;
+&lt;li&gt;You should in general try to call external programs as little as possible, and I wrote about some of the issues with doing so [id://1180578|here]. In general, Perl can do anything that &lt;c&gt;sed&lt;/c&gt; and &lt;c&gt;awk&lt;/c&gt; can, and a &lt;c&gt;grep&lt;/c&gt; can be written in Perl as:
+&lt;c&gt;
+open my $fh, '&lt;', $filename or die "$filename: $!";
+while (&lt;$fh&gt;) {
+        if (/pattern/) {
+                # do something ...
+                print $_;
+        }
+}
+close $fh;
+&lt;/c&gt;
+See [doc://perlintro#Files-and-I/O], [doc://perlop#I/O-Operators], [doc://perlrequick], and [doc://perlretut].
+&lt;/li&gt;
+&lt;li&gt;The dots in an IP address will be interpreted as a special character in a regular expression: the dot matches anything, so if the user enters "12.34", that'll also match e.g. "12534". To avoid that, use [doc://quotemeta] or &lt;c&gt;\Q...\E&lt;/c&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime;
+use DateTime::Format::Strptime;
+use Path::Class qw/dir/;
+
+my $LOGPATH = '.';
+my $STARTD = '2017-12-08';
+my $NUMDAYS = 3;
+my $PATTERN = '1.2.3.4';
+
+my $strp = DateTime::Format::Strptime-&gt;new(on_error=&gt;'croak',
+        pattern =&gt; '%Y-%m-%d', time_zone=&gt;'local');
+my $dt = $strp-&gt;parse_datetime($STARTD);
+
+my @files;
+for (1..$NUMDAYS) {
+        my $date = $dt-&gt;strftime('%Y-%m-%d');
+        push @files, sort grep { $_-&gt;basename=~/\.log\z/i }
+                dir($LOGPATH,$date)-&gt;children;
+        $dt-&gt;add(days=&gt;1);
+}
+
+{ # in a new block for "local"
+	local *ARGV; @ARGV = @files;
+	while (&lt;&gt;) {
+	        chomp;
+	        if (/\Q$PATTERN\E/) {
+	                print "$ARGV:$.: $_\n";
+	        }
+	} continue { close ARGV if eof }
+}
+&lt;/c&gt;
+&lt;ul&gt;
+&lt;li&gt;It's very good you're using a module like [doc://Time::Piece] for your date handling. Personally I like [mod://DateTime] because it does a whole lot more, along with [mod://DateTime::Format::Strptime] for parsing, which is why I used those above.&lt;/li&gt;
+&lt;li&gt;I'm using [mod://Path::Class] for getting filenames, where &lt;c&gt;$_-&gt;basename=~/\.log\z/i&lt;/c&gt; matches those files whose names end in &lt;c&gt;.log&lt;/c&gt; (case-insensitively).&lt;/li&gt;
+&lt;li&gt;I used a trick and assigned the list of files to the special [doc://@ARGV] variable, which normally holds the command line arguments, so that I can make use of Perl's special &lt;c&gt;while (&lt;&gt;)&lt;/c&gt; loop, described in [doc://perlop#I/O-Operators]. Inside that loop, the current filename is stored in [doc://$ARGV], and the line number in [doc://$.] - but see the documentation on [doc://eof] as for why I need the snippet of code &lt;c&gt;close ARGV if eof&lt;/c&gt;. (If all that is too much magic for now, you can also wrap the grepping code I showed at the top in a &lt;c&gt;for my $filename (@files) { ... }&lt;/c&gt; loop.)&lt;/li&gt;
+&lt;li&gt;As opposed to your description, I have taken the "number of days" to &lt;i&gt;include&lt;/i&gt; the start day, since that makes more sense to me.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Fixed [http://blogs.perl.org/users/book/2018/07/a-widespread-and-broken-perl-idiom.html|this potential issue] in the above example code.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1206578</root_node>
+<parent_node field_name="parent_node">1206578</parent_node>
+<thread id="1206578">
+<node id="1206586"/>
+<node id="1206592"/>
+<node id="1206593"><node id="1206729"><node id="1206731"><node id="1206739"><node id="1206874"><node id="1207020"/>
+</node>
+</node>
+<node id="1206749"><node id="1206873"/>
+<node id="1206877"/>
+<node id="1206880"/>
+<node id="1206887"><node id="1206896"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1206620"/>
+</thread></node>

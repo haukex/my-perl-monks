@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193108" title="Re: error variables after IPC::Run" created="2017-06-19 15:02:25" updated="2017-06-19 15:02:25" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The [mod://IPC::Run] docs say this:&lt;/p&gt;
+&lt;blockquote&gt;run() and finish() return TRUE when all subcommands exit with a 0 result code. ... All routines raise exceptions (via die()) when error conditions are recognized. A non-zero command result is not treated as an error condition, since some commands are tests whose results are reported in their exit codes.&lt;/blockquote&gt;
+&lt;p&gt;Which tells me that the only thing you need to check is [doc://$?], and &lt;i&gt;maybe&lt;/i&gt; [doc://${^CHILD_ERROR_NATIVE}] if you need to, or use the [mod://IPC::Run] methods &lt;c&gt;-&gt;result&lt;/c&gt; or &lt;c&gt;-&gt;full_result&lt;/c&gt;. Since none of &lt;c&gt;harness()&lt;/c&gt;, &lt;c&gt;start()&lt;/c&gt;, &lt;c&gt;run()&lt;/c&gt;, or &lt;c&gt;finish()&lt;/c&gt; are documented to set any of [doc://$!], [doc://$^E], or [doc://$@] then checking them is likely to give you false positives - as other monks have said, a successful function call does &lt;i&gt;not&lt;/i&gt; clear any of these variables, so the content of those variables may refer to some other operation preformed previously in the script (the exception being [doc://$?] &lt;small&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/small&gt;&amp;nbsp;by which I mean it gets set to zero after a successful [doc://system] or equivalent, where the external command also returns an exit code of zero to indicate success.&amp;nbsp;&lt;small&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/small&gt;). As a general rule, the [doc://perlvar#Error-Variables] should only be considered to be valid immediately after the failed function call that is documented to set them - note how one writes &lt;c&gt;open(...) or die "Error: $!"&lt;/c&gt;, i.e. [doc://$!] is &lt;i&gt;only&lt;/i&gt; valid when [doc://open] returns false. Note how the value of [doc://$!] is useless after the second (successful) [doc://open]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+open my $fh1, '&lt;', '/thisfiledoesntexist'; warn $!;
+open my $fh2, '&lt;', '/etc/passwd'; warn $!;
+my @lines = &lt;$fh2&gt;;
+print "Read ",0+@lines," lines\n";
+
+__END__
+
+No such file or directory at - line 3.
+Inappropriate ioctl for device at - line 4.
+Read 45 lines
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1193101</root_node>
+<parent_node field_name="parent_node">1193101</parent_node>
+<thread id="1193101">
+<node id="1193104"/>
+<node id="1193105"/>
+<node id="1193106"/>
+<node id="1193108"/>
+</thread></node>

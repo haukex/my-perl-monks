@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117234" title="Re: How to substitute all tabs only in a specific field" created="2020-05-25 10:29:03" updated="2020-05-25 10:29:03" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;In other words, I want to substitute all &lt;tabs/space&gt; in the field that starts and ends with &lt;double quotes&gt; by &lt;commas&gt;.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This sounds like something you might want to do with [mod://Text::CSV], but if your input file format is always as simple as you showed, it's possible with [mod://Regexp::Common] as well.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;And I want to do this (if possible) on a unix command line ie : perl -pe 's/.../g' &amp;lt; input_file &amp;gt; output_file.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If you must...&lt;/p&gt;
+&lt;c&gt;
+$ cat in.txt 
+a b « x1 x2 »
+c d «	x2	»
+e	f « x3 x4	x5 »
+g h « x1 \« x2 \» x3 »
+
+$ perl -wMstrict -MRegexp::Common=delimited -CSD -ple \
+  's{$RE{delimited}{-keep}{-delim=&gt;qq{\N{U+AB}}}{-cdelim
+    =&gt;qq{\N{U+BB}}}}{ my ($x,$y,$z)=($2,$3,$4);
+    $y=~s/(?&lt;!^)\s+(?!$)/,/g; $x.$y.$z }eg' in.txt
+a b « x1,x2 »
+c d «	x2	»
+e	f « x3,x4,x5 »
+g h « x1,\«,x2,\»,x3 »
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11117231</root_node>
+<parent_node field_name="parent_node">11117231</parent_node>
+<thread id="11117231">
+<node id="11117232"/>
+<node id="11117233"/>
+<node id="11117234"/>
+<node id="11117257"/>
+<node id="11117266"><node id="11117269"/>
+<node id="11117271"/>
+</node>
+<node id="11117275"/>
+</thread></node>

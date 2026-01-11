@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203669" title="Re: Can I have a hard stop on a match" created="2017-11-17 09:16:07" updated="2017-11-17 09:16:07" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The general problem with the regex is that &lt;c&gt;.&lt;/c&gt; matches &lt;i&gt;any&lt;/i&gt; character (because you've used &lt;c&gt;/s&lt;/c&gt;), and that &lt;c&gt;.+&lt;/c&gt; is by default greedy, that is, it will match as many times as possible. Have a look at [doc://perlretut] (pay attention to mentions of "greed").&lt;/p&gt;
+&lt;p&gt;One way to solve this is to change the dot &lt;c&gt;.&lt;/c&gt; to an expression that says "match anything &lt;i&gt;except&lt;/i&gt; this". For single characters, one could use a negated character class, as in &lt;c&gt;[^a-z]*&lt;/c&gt; which will match any characters &lt;i&gt;except&lt;/i&gt; lowercase ASCII letters. For longer strings, one way to do it is with a negative [doc://perlre#Lookaround-Assertions|lookahead]: &lt;c&gt;(?:(?!not|these|strings).)*&lt;/c&gt; will give you the "hard stop" you want.&lt;/p&gt;
+&lt;p&gt;You've only provided one example string, but when developing regular expressions, the more test cases the better. I showed one way to write tests for regexes here: [id://1201201]. For now I've guessed a few test cases, but you should fill that out. This also works on your long string:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More;
+
+my $regex = qr{
+		\b INSERT \b
+		(?:  # the next thing may not be one of these:
+			(?! \b SELECT \b | \( | \; ) .
+		)+   # match one or more times
+		\b doc \b  # target string
+	}imsx;
+
+  like "INSERT doc (",          $regex;
+  like "INSERT INTO doc bar (", $regex;
+unlike "INSERT foo ( doc",      $regex;
+unlike "INSERT foo SELECT doc", $regex;
+unlike "INSERT foo ; doc",      $regex;
+
+done_testing;
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update before posting:&lt;/i&gt; [Eily] already posted something very similar [id://1203668|here], I'll post this anyway. &lt;i&gt;Update:&lt;/i&gt; Adding &lt;c&gt;\b&lt;/c&gt; is a good point. &lt;i&gt;Update 2:&lt;/i&gt; Minor edits for clarity.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203661</root_node>
+<parent_node field_name="parent_node">1203661</parent_node>
+<thread id="1203661">
+<node id="1203665"/>
+<node id="1203666"/>
+<node id="1203667"><node id="1203670"/>
+</node>
+<node id="1203668"/>
+<node id="1203669"/>
+<node id="1203678"/>
+</thread></node>

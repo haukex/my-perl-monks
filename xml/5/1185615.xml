@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1185615" title="Any reason NV is not marked as POK when accessed as string?" created="2017-03-23 07:22:09" updated="2017-03-23 07:22:09" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1020196">vr</author>
+<doctext field_name="doctext">&lt;p&gt;Just curious, not a 'problem' which requires solution. Maybe developers thought real numbers stringification is usually approximate, that's why? Or simply nobody cares?&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;c&gt;
+C:\&gt;perl -MDevel::Peek -e "$x = 0.5; qq/$x/; Dump $x"
+SV = PVNV(0x38bb4) at 0xd217cc
+  REFCNT = 1
+  FLAGS = (NOK,pNOK)
+  IV = 0
+  NV = 0.5
+  PV = 0xd16014 "0.5"\0
+  CUR = 3
+  LEN = 28
+
+C:\&gt;perl -MDevel::Peek -e "$x = 0; qq/$x/; Dump $x"
+SV = PVIV(0xd200c4) at 0xd2685c
+  REFCNT = 1
+  FLAGS = (IOK,POK,pIOK,pPOK)
+  IV = 0
+  PV = 0xd16274 "0"\0
+  CUR = 1
+  LEN = 10
+&lt;/c&gt;
+&lt;p&gt;Hence, 'double' is converted to string any time it is required. E.g.:&lt;/p&gt;
+&lt;c&gt;
+use Benchmark qw/ cmpthese /;
+$x = 42.0;
+%h = ();
+cmpthese( -1, {
+    F =&gt; sub { $h{ pack 'F', $x } = 1 },
+    s =&gt; sub { $h{ $x }           = 1 },
+});
+&lt;/c&gt;
+&lt;c&gt;
+       Rate    s    F
+s  344025/s   -- -86%
+F 2490475/s 624%   --
+&lt;/c&gt;
+&lt;p&gt;I found that one my little application, which maintains kind of 'seen' hash, gets nice boost if hash keys are packed as above, instead of 'just used as they are'. Actually, keys are pixels coordinates, they became real numbers because library I use returns them so. Pixels are usually aplenty and hash is accessed a lot, therefore speed gain was significant. But of course it would be even faster if PV was added on first access and POK was set, i.e. without packing.&lt;/p&gt;
+</doctext>
+<thread id="1185615">
+<node id="1185618"><node id="1185627"/>
+<node id="1185666"><node id="1185694"><node id="1185695"/>
+</node>
+</node>
+</node>
+<node id="1185620"><node id="1185629"/>
+</node>
+</thread></node>

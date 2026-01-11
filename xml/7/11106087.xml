@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11106087" title="$File::Fetch::WARN = 0; not working?" created="2019-09-12 14:24:18" updated="2019-09-12 14:24:18" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1183663">jamroll</author>
+<doctext field_name="doctext">i have tried for hours now, and i am very upset, cause this should be super simple.  File::Fetch::WARN, as I have read, when set to 0 will stop things from being carp'd (which outputs to STDOUT, no?). but, my code emits an error message when $PARAMS{url} does not exist when i need it to just shutup and let me handle the error. so i do this in my code:
+
+&lt;code&gt;
+use strict;
+use warnings;
+use CGI::Carp qw(fatalsToBrowser);
+use File::Copy;
+use File::Path qw(remove_tree rmtree);
+use File::Fetch;
+$File::Fetch::WARN = 0;
+use Fcntl;
+use URI::Escape;
+
+use English;
+
+my $ff = 0;
+eval { $ff = File::Fetch-&gt;new(uri =&gt; $PARAMS{url}); };
+
+if (not $ff) {
+  if ($DEBUG_OP_ADD_COVER_PHOTO) {
+    $output .= "failed to retrieve image: " . $ff-&gt;error . "&lt;br&gt;\n";
+  } else {
+    print error_redir(redirrer($OP_QUERY, $OP_FILE_MANAGER, $FOLDER_QUERY, $FOLDER), "Failed to Retrieve Image: " . $ff-&gt;error);
+    exit 1;
+  }
+}
+&lt;/code&gt;
+
+the &lt;code&gt;eval&lt;/code&gt; was added in as a suggestion to suppress the warning, but that doesn't work.  $File::Fetch::WARN = 0 has no affect!
+
+&lt;p&gt;the fetching process emits a completely different error message, and it's printed (i presume to STDOUT) before i get to print anything to STDOUT!  which causes "internal server error", and i can't get the thing to stop printing that damn junk out, it 'breaks' things!&lt;/p&gt;
+
+Note: whilst $DEBUG_OP_ADD_COVER_PHOTO = 1, the error message emitted is: &lt;code&gt;could not retrieve file: Command failed:&lt;/code&gt;.  Nowhere in my code have I asked for that to be printed out.&lt;p&gt;
+
+Edit: Added "use" statements which may affect your answer.  the code in this post is only a very small part of a much larger program.
+&lt;/p&gt;&lt;p&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1183663"&gt;
+I was pondering why the ball was getting bigger, and then...it hit me!
+&lt;/div&gt;&lt;/div&gt;&lt;/p&gt;</doctext>
+<thread id="11106087">
+<node id="11106090"><node id="11106094"/>
+</node>
+</thread></node>

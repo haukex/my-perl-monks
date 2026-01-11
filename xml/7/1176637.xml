@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1176637" title="Re: Redirect Shell Launch to perl script" created="2016-11-27 03:58:36" updated="2016-11-27 03:58:36" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [delpi],&lt;/p&gt;
+&lt;p&gt;Without knowing anything about the server, it's a little difficult to give a good answer, also you don't tell us how you know your Perl script isn't working - e.g. you could have it write debug output to a separate logfile.&lt;/p&gt;
+&lt;p&gt;Anyway, I have two ideas. First, if you can get the server to write its output to a log file which you can then view live with [man://tail], you can do the same with Perl, with the module [mod://File::Tail]. That has the advantage of decoupling the two processes, at the expense of a small bit of performance.&lt;/p&gt;
+&lt;p&gt;Second, you could try invoking the server with something like [mod://IPC::Run], which can communicate with the subprocess interactively. The disadvantage is that now the server is a subprocess of the Perl script, which might not work if, for example, the server tries to detach itself and go into the background (daemonize). Anyway, a simple example:&lt;/p&gt;
+&lt;c&gt;
+use IPC::Run qw/run/;
+run ['/path/to/server'], \undef, sub {
+	my $in = shift;
+	chomp($in);
+	print "&lt;&lt;$in&gt;&gt;\n";
+};
+&lt;/c&gt;
+&lt;p&gt;However, depending on how the server is implemented, this solution may still [http://perl.plover.com/FAQs/Buffering.html|suffer from buffering].&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1176632</root_node>
+<parent_node field_name="parent_node">1176632</parent_node>
+<thread id="1176632">
+<node id="1176633"><node id="1176659"/>
+</node>
+<node id="1176634"/>
+<node id="1176637"><node id="1176660"/>
+</node>
+<node id="1176638"><node id="1176658"/>
+</node>
+<node id="1176654"><node id="1176662"/>
+</node>
+<node id="1176657"><node id="1176672"/>
+</node>
+</thread></node>

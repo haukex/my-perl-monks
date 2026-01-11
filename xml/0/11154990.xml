@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11154990" title="Best practice validating numerics with regex?" created="2023-10-16 14:14:41" updated="2023-10-16 14:14:41" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1208445">perlboy_emeritus</author>
+<doctext field_name="doctext">&lt;p&gt;Greetings Monks&lt;/p&gt;
+&lt;p&gt;Recently I upgraded my Perl from 5.18 to 5.36, and especially because of the changes at 5.20 (no longer a performance bias against general use of $&amp;) I've been revisiting a host of my extensive experience with regex, to see whether there are better ways to do what I'd been doing. I even contacted O'Reilly to see whether Friedl was working on a 4th edition of &lt;i&gt;Mastering Regular Expressions&lt;/i&gt; (sadly, he's not). O'Reilly's answer was a long list of books re regex none of which are more advanced than Friedl. I replied I want to move beyond Friedl, not start over from the beginning :-( So, the only solution I see is to pose questions to you Monks in the hope of stimulating rigorous discussion, to wit, my next:&lt;/p&gt;
+&lt;p&gt;Background: Friedl poses a number of interesting numeric problems that he addresses with alternation sub-expressions (detecting and validating passwords (enforcing minimums of certain char types), dates and floats come to mind), and interestingly, most only work when the candidate bits are first extracted when they are embedded in strings so that ^ and $ anchors can bound the characters to be matched. This results in a typical two-regex pattern that consistently fails without the first regex, to isolate the bits to be checked (See my included example). Instead of (...|...|...) I've been successful using positive and negative look-ahead patterns to eliminate outliers, but that first extraction pattern seems to be essential. Without it my otherwise working regex fails. My question is, can this pattern be reliably and efficiently achieved without first isolating the sub-expression to be checked? In other words, one efficient regex rather than two?&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/env -S perl -w
+##!/usr/bin/env -S perl -wd
+
+use v5.30.0;
+use strict;
+#use re 'debug';
+#ues Regexp::Debugger;
+use Test::More tests =&gt; 16;
+
+my @strings = (
+    "today's date 10.13.2023",
+    "The frequency is 10346.87Hz",
+);
+
+#
+# This is such an improvement over Friedl pg 194-195...
+#
+my $lookAhead = qr/ (?! (?: .*\.){2,}) /x;
+my $regex = qr/ ^ $lookAhead [+-]? [\d.]+ $/x;
+ 
+#
+# See: https://stackoverflow.com/questions/22652393/regex-1-variable-reset
+#   From: Brian Foy
+#
+# Never, never, never use $&amp; without first testing for TRUE...
+# See PP pg 781, the use of the word 'successful' :-(
+# Also see my REinsights.pl for lengthy discussion from Brian Foy re
+# when and whether $n, $`, $&amp; and $' will be reset after unsuccessful
+# matches.
+#
+for my $str (@strings) {
+    say "\$str =&gt; $str";
+    if ($str =~ / [+-]?[\d.]+ /x) {  # Pattern fails without this step; why???
+        if ($&amp; =~ $regex) {
+	        say "matched";
+	        say "\$&amp; =&gt; $&amp;" if $&amp;;
+	    } else {
+	        say "unmatched";
+	    }
+    } else {
+        say "unmatched";
+    }
+}
+
+sub isFloat {
+    my $case = $_[0];
+#   say $case-&gt;[0], " ", $case-&gt;[1];
+    if ($case-&gt;[0] =~ / [+-]?[\d.]+ /x) {       # MUST test here to use $&amp;
+        my $try = $&amp;;
+        if ($case-&gt;[1] eq 'valid') {
+            like $try, $regex,
+                "trying ${\(sprintf(\"%-27s: \$&amp; =&gt; %-13s\", \"\'$case-&gt;[0]\'\", $try))} \'$case-&gt;[1]\'";
+        } else {
+            unlike $try, $regex,
+                "trying ${\(sprintf(\"%-27s: \$&amp; =&gt; %-13s\", \"\'$case-&gt;[0]\'\", $try))} \'$case-&gt;[1]\'";
+        }
+    } else {
+        say "$case-&gt;[0] unmatched";
+    }
+}
+ 
+my @floats = (
+    [ '0.',                         'valid' ],
+    [ '0.007',                      'valid' ],
+    [ '.757',                       'valid' ],
+    [ '125.89',                     'valid' ],
+    [ '+10789.24',                  'valid' ],
+    [ '+107894',                    'valid' ],
+    [ '-0.0008',                    'valid' ],
+    [ 'The temperature is 28.79C',  'valid' ],
+    [ 'Frequency: 10877.45Hz',      'valid' ],
+    [ '255.0.0.0',                'invalid' ],
+    [ '255.aa',                     'valid' ],
+    [ "10.13.2023, today's date", 'invalid' ],
+    [ '0.119.255.255' ,           'invalid' ],
+    [ 'Date: 10.13.2023 BC',      'invalid' ],
+    [ '-42',                        'valid' ],
+    [ '2004.04.12 Friedl nomatch','invalid, Friedl pg 195' ],
+);
+
+say "\nRunning tests...";
+say "  with: $regex\n";
+
+say "Testing mixed (valid and invalid) naked and embedded float strings...";
+for my $case (@floats) {
+    isFloat($case);
+};
+
+exit(0);
+__END__
+
+
+&lt;/code&gt;
+&lt;p&gt;O U T P U T
+&lt;/p&gt;
+&lt;pre&gt;
+1..16
+$str =&gt; today's date 10.13.2023
+unmatched
+$str =&gt; The frequency is 10346.87Hz
+matched
+$&amp; =&gt; 10346.87
+
+Running tests...
+  with: (?^ux: ^ (?^ux: (?! (?: .*\.){2,}) ) [+-]? [\d.]+ $)
+
+Testing mixed (valid and invalid) naked and embedded float strings...
+ok 1 - trying '0.'                       : $&amp; =&gt; 0.            'valid'
+ok 2 - trying '0.007'                    : $&amp; =&gt; 0.007         'valid'
+ok 3 - trying '.757'                     : $&amp; =&gt; .757          'valid'
+ok 4 - trying '125.89'                   : $&amp; =&gt; 125.89        'valid'
+ok 5 - trying '+10789.24'                : $&amp; =&gt; +10789.24     'valid'
+ok 6 - trying '+107894'                  : $&amp; =&gt; +107894       'valid'
+ok 7 - trying '-0.0008'                  : $&amp; =&gt; -0.0008       'valid'
+ok 8 - trying 'The temperature is 28.79C': $&amp; =&gt; 28.79         'valid'
+ok 9 - trying 'Frequency: 10877.45Hz'    : $&amp; =&gt; 10877.45      'valid'
+ok 10 - trying '255.0.0.0'                : $&amp; =&gt; 255.0.0.0     'invalid'
+ok 11 - trying '255.aa'                   : $&amp; =&gt; 255.          'valid'
+ok 12 - trying '10.13.2023, today's date' : $&amp; =&gt; 10.13.2023    'invalid'
+ok 13 - trying '0.119.255.255'            : $&amp; =&gt; 0.119.255.255 'invalid'
+ok 14 - trying 'Date: 10.13.2023 BC'      : $&amp; =&gt; 10.13.2023    'invalid'
+ok 15 - trying '-42'                      : $&amp; =&gt; -42           'valid'
+ok 16 - trying '2004.04.12 Friedl nomatch': $&amp; =&gt; 2004.04.12    'invalid, Friedl pg 195'
+&lt;/pre&gt;
+&lt;p&gt;Thanks in advance to all who choose to comment. ( I can pretty much predict those Monks who will respond since they always do if I ask a good question :-) ) Also, has anyone published a better book than Friedl, 3rd?&lt;/p&gt;</doctext>
+<thread id="11154990">
+<node id="11154994"><node id="11154997"><node id="11154999"><node id="11155010"/>
+</node>
+<node id="11155000"/>
+<node id="11155003"/>
+</node>
+</node>
+<node id="11155007"><node id="11155013"><node id="11155014"/>
+<node id="11155130"><node id="11155133"/>
+</node>
+</node>
+</node>
+<node id="11155016"/>
+</thread></node>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117980" title="non-blocking IO from open(&quot;-|&quot;)ing an external program with fcntl" created="2020-06-12 09:23:02" updated="2020-06-12 09:23:02" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1165397">bliako</author>
+<doctext field_name="doctext">&lt;p&gt;I was looking for a way to read the output of an external command piping its output to a script
+in a non-blocking way. I read that using [doc://Fcntl]'s &lt;c&gt;fcntl()&lt;/c&gt; can be used
+to add the &lt;c&gt;O_NONBLOCK&lt;/c&gt; flag to the file handle and wonder whether that is a safe practice
+when that filehandle came from opening an external command and reading its output using: &lt;c&gt;open(my $fh, '-|', 'ls -al');&lt;/c&gt;
+This is an example:&lt;/p&gt;
+
+&lt;c&gt;use Fcntl qw(F_GETFL F_SETFL O_NONBLOCK);    
+
+my $pid = open my $fh, '-|', 'sleep 3; echo aaaa' // die $!; 
+
+my $flags = fcntl($fh, F_GETFL, 0) or die "failed to get flags, $!";      
+fcntl($fh, F_SETFL, $flags | O_NONBLOCK) or die "Couldn't set file flags: $!\n";
+my $output = &lt;$fh&gt;;
+if( defined $output ){
+        print "got output: '$output'\n"    
+} else { print "no output right now.\n" }
+
+print "now waiting to end ...\n";
+#waitpid $pid, 0;
+close($fh); 
+#kill 'TERM', $pid;
+print "end.\n"; 
+&lt;/c&gt;
+
+&lt;p&gt;I wanted to turn the above into a CUFP but I am not sure what are the caveats wrt Perl and OS. Anyone knows if any?&lt;/p&gt;
+
+&lt;p&gt;bw, bliako&lt;/p&gt;</doctext>
+<thread id="11117980">
+<node id="11117982"><node id="11117984"/>
+</node>
+<node id="11117990"><node id="11118019"/>
+</node>
+<node id="11118002"><node id="11118017"/>
+</node>
+<node id="11118004"><node id="11118018"/>
+</node>
+</thread></node>

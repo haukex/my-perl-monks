@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11142767" title="Can I have a Perl script, initiated from a browser, fork itself, and not wait for the child to end?" created="2022-04-06 23:30:33" updated="2022-04-06 23:30:33" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11142765">bartender1382</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;b&gt;This question is also posted on StackOverflow&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;I have this very simple Perl script on my linux server.&lt;/p&gt;
+&lt;p&gt;What I would like to be able to do is to call the script from a browser on a separate machine&lt;br&gt;
+Have the script initiate a fork -&gt;&lt;br&gt;
+Have the parent send an httpResponse -&gt; (freeing up the browser)&lt;br&gt;
+Immediately end the parent -&gt;&lt;br&gt;
+Allow the child to do its job, heavy complex database work, which could take a minute or two -&gt;&lt;br&gt;
+Have the child end itself with no output whatsoever&lt;/p&gt;
+&lt;p&gt;When I call this script from a browser, the browser does not receive the sent response till the child is complete.&lt;/p&gt;
+&lt;p&gt;Yes, it works when called from the command line.&lt;/p&gt;
+&lt;p&gt;Is what I want to do possible?&lt;br&gt;
+p.s. I even tried it with Proc::Simple-&gt;start, but I get the same hangin up.&lt;/p&gt;
+
+
+
+
+
+&lt;code&gt;
+#!/usr/bin/perl
+local $SIG{CHLD} = "IGNORE";
+use lib '/var/www/cgi-bin';
+use CGI;
+
+my $q = new CGI;
+
+if(!defined($pid = fork())) {
+   die "Cannot fork a child: $!";
+} elsif ($pid == 0) {
+   print $q-&gt;header();
+   print "i am the child\n";
+   sleep(10);
+   print "child is done\n";
+   exit;
+} else {
+	print $q-&gt;header();
+	print "I am the parent\n";
+   	print "parent is done\n";
+   exit 0;
+}
+exit 0;&lt;/code&gt;</doctext>
+<thread id="11142767">
+<node id="11142768"><node id="11142772"><node id="11142776"/>
+<node id="11142784"/>
+</node>
+</node>
+<node id="11142787"/>
+<node id="11142788"/>
+<node id="11142794"><node id="11142813"/>
+</node>
+<node id="11142798"><node id="11142899"><node id="11142909"/>
+</node>
+</node>
+<node id="11142802"/>
+<node id="11143006"/>
+</thread></node>

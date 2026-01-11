@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217663" title="Re: Any downsides to this slurp idiom? (updated)" created="2018-06-30 15:34:25" updated="2018-06-30 15:34:25" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Thanks everyone for your replies! :-) For completeness, here are some slurping examples, incorporating various suggestions:&lt;/p&gt;
+&lt;ul&gt;
+
+&lt;li&gt;The basic version (with the improved error message first suggested by [haj]):
+&lt;c&gt;
+my $data = do { open my $fh, '&lt;', $file or die "$file: $!";
+	local $/; &lt;$fh&gt; };
+&lt;/c&gt;
+&lt;/li&gt;
+
+&lt;li&gt;Opening a file with an encoding (in this case UTF-8):
+&lt;c&gt;
+my $data = do { open my $fh, '&lt;:raw:encoding(UTF-8)', $file
+	or die "$file: $!"; local $/; &lt;$fh&gt; };
+&lt;/c&gt;
+&lt;/li&gt;
+
+&lt;li&gt;A version that should use less memory, suggested by [BrowserUk] (see [id://1217204|this discussion] - Copy-On-Write, available in newer Perls, may take care of this):
+&lt;c&gt;
+my $data; { open my $fh, '&lt;', $file or die "$file: $!";
+	local $/; $data = &lt;$fh&gt; };
+&lt;/c&gt;
+&lt;/li&gt;
+
+&lt;li&gt; This short version, first suggested by [tybalt89], &lt;b&gt;however, note&lt;/b&gt; that as opposed to the above examples, this does not die but only emits a warning if the file could not be opened (unless &lt;c&gt;FATAL&lt;/c&gt; [doc://warnings] are in effect, the minimum needed is &lt;c&gt;use warnings FATAL=&gt;'inplace';&lt;/c&gt;; &lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; fixed as per [choroba]'s reply, thanks!):
+&lt;c&gt;
+my $data = do { local (*ARGV,$/); @ARGV=$file; &lt;&gt; };
+&lt;/c&gt;
+&lt;/li&gt;
+
+&lt;/ul&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor edits for clarity.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; Actually, I made a mistake in the last example when I first fixed it, it is now tested and correct.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1217182</root_node>
+<parent_node field_name="parent_node">1217182</parent_node>
+<thread id="1217182">
+<node id="1217185"><node id="1217196"/>
+<node id="1217226"/>
+</node>
+<node id="1217186"/>
+<node id="1217187"/>
+<node id="1217194"/>
+<node id="1217198"/>
+<node id="1217200"/>
+<node id="1217204"><node id="1217237"><node id="1217244"><node id="1217245"/>
+</node>
+<node id="1217259"><node id="1217263"><node id="1217267"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1217221"><node id="1217222"><node id="1217231"><node id="1217257"><node id="1224423"/>
+</node>
+</node>
+</node>
+<node id="1217233"/>
+</node>
+<node id="1217272"/>
+<node id="1217321"/>
+<node id="1217663"><node id="1218173"/>
+</node>
+</thread></node>

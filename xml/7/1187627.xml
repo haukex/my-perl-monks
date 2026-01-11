@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1187627" title="Re: Code ref inside around modifier (updated)" created="2017-04-11 05:26:37" updated="2017-04-11 05:26:37" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Instead of &lt;c&gt;around ['do_something','do_otherthing'] =&gt; sub { ... }&lt;/c&gt;, try this, as suggested by [mod://Moose::Manual::MethodModifiers]:&lt;/p&gt;
+&lt;c&gt;
+for my $method ('do_something','do_otherthing') {
+	around $method =&gt; sub {
+		my $orig = shift;
+		my $self = shift;
+		print "around $method\n";
+		if ($method eq 'do_something') { ... }
+		$self-&gt;$orig(@_);
+	};
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; &lt;i&gt;$orig and \&amp;amp;do_something are giving different code refs ... Could someone explain me why this happens?&lt;/i&gt;&lt;/p&gt;
+&lt;p&gt;By the time the piece of code "&lt;c&gt;\&amp;do_something&lt;/c&gt;" is executed, &lt;c&gt;do_something&lt;/c&gt; is already pointing to the &lt;i&gt;wrapped&lt;/i&gt; &lt;c&gt;sub do_something&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+{
+	package Bar;
+	use Moose;
+	sub do_something { print "did something\n" }
+	my $before = \&amp;do_something;
+	around 'do_something' =&gt; sub {
+		my $orig = shift;
+		my $self = shift;
+		print "around do_something\n";
+		print "\t\$orig=$orig\n";
+		print "\t\$before=$before\n";
+		print "\t\\&amp;do_something=".\&amp;do_something."\n";
+	};
+}
+my $bar = Bar-&gt;new;
+$bar-&gt;do_something;
+print "can=", $bar-&gt;can('do_something'), "\n";
+__END__
+around do_something
+	$orig=CODE(0x223d5e8)
+	$before=CODE(0x223d5e8)
+	\&amp;do_something=CODE(0x228ae92)
+can=CODE(0x228ae92)
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update 3:&lt;/i&gt; A bit more explanation:&lt;/small&gt; Notice how &lt;c&gt;$before&lt;/c&gt; holds the reference to the original &lt;c&gt;sub do_something&lt;/c&gt; before it's wrapped by &lt;c&gt;around&lt;/c&gt;, and &lt;c&gt;-&gt;can('do_something')&lt;/c&gt; reports the coderef of the final, wrapped method. Compare these two to &lt;c&gt;$orig&lt;/c&gt; and &lt;c&gt;\&amp;do_something&lt;/c&gt;. Remember that the anonymous &lt;c&gt;sub&lt;/c&gt; given to &lt;c&gt;around&lt;/c&gt; doesn't get executed until the method is called, by which time it's already been wrapped, at which time &lt;c&gt;\&amp;do_something&lt;/c&gt; points to the wrapped method.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update 1:&lt;/i&gt; In my very first code example, added an example of checking which method is being wrapped.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1187626</root_node>
+<parent_node field_name="parent_node">1187626</parent_node>
+<thread id="1187626">
+<node id="1187627"><node id="1187633"/>
+</node>
+<node id="1187628"/>
+</thread></node>

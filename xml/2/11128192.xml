@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11128192" title="Re: regex gotcha moving from 5.8.8 to 5.30.0?" created="2021-02-10 13:20:52" updated="2021-02-10 13:20:52" _doctext_mode="lenient"><type id="11">note</type>
+<author id="128060">mordibity</author>
+<doctext field_name="doctext">&lt;p&gt;Thank you all for your thoughts!&lt;/p&gt;
+
+&lt;p&gt;I guess being coy isn't really helpful, I was just trying to avoid distractions. This is (really) part of a parser I've written for structural Verilog netlists in an IC design environment. The whole parser does much more work and handles many more nuances of the input format, but I've been happy enough (for years) with the performance without trying to speed it up further (eg sw1's whitespace handling tips).  For example, a typical report on a typical netlist input file (200+Mb) would run in ~10 seconds.  But then CAD upgraded our central Perl (from 5.8.8 to 5.30) and the same code, on the same input took &lt;em&gt;1 hour 38 minutes!&lt;/em&gt; (With the same output results, so it's purely a performance issue, not a correctness issue.) So then I set about cutting it down to a very small testcase with the 5 sec to 105 sec delta.&lt;/p&gt;
+
+&lt;p&gt;AnomalousMonk: it's just plain ascii text; I tried throwing "aa" on it (for 5.30) and didn't change things.&lt;/p&gt;
+
+&lt;p&gt;kschwab: below I've put a better fake-data generator to get a consistent 2.5x slowdown (still not as bad as the 10x on the real data, but hopefully more representative of the problem. The majority of the names would be unique strings, etc, etc).  And also here's the un-foo-ified cut-down parser, too.&lt;/p&gt;
+
+&lt;p&gt;SBECK: thank you! I guess I'll start looking at 5.20-related deltas. But I don't know that I'll be able to infer anything on my own; suggestions welcome from all on how to proceed (file a github issue, etc?)&lt;/p&gt;
+
+&lt;p&gt;faker &amp; parser are used like this:&lt;/p&gt;
+&lt;code&gt;
+$ ./makev.pl 10000 &gt; test.10k.v
+$ time perl_5.8.8 -w testv.pl test.10k.v
+LAST MODULE (Perl 5.008008): je0dhj
+perl_5.8.8 -w testv.pl test.10k.v  0.01s user 0.01s system 0% cpu 11.352 total
+$ time perl_5.30 -w testv.pl test.10k.v
+LAST MODULE (Perl 5.030000): je0dhj
+perl_5.30 -w testv.pl test.10k.v  0.01s user 0.02s system 0% cpu 26.291 total
+&lt;/code&gt;
+
+&lt;p&gt;makev.pl:&lt;/p&gt;
+&lt;code&gt;
+!/usr/bin/perl -w
+use Text::Wrap;
+use strict;
+
+my $num = shift or die "num?\n";
+
+my @chars = ( "a" .. "z", 0 .. 9 );
+
+for my $i (0 .. $num) {
+
+    my $name = join("", @chars[ map { rand @chars } ( 1 .. 2+int(rand(8)) )]);
+    my @io   = map { "p${name}${_}" } (0..int(rand(100)));
+    my @hier = map { "m${name}${_}" } (0..int(rand(20)));
+    my @leaf = map { "s${name}${_}" } (0..int(rand(200)));
+
+    print "module ${name} ( ", wrap('', '  ', join(", ", @io)), "\n);\n";
+    print "  inout  $_;\n" foreach @io;
+    print "  wire   $_;\n" foreach @io;
+
+    for my $leaf (@leaf) {
+        my @conn = map { ".P${name}${_} (n${name}${_})" } (0..int(rand(5)));
+        print "$leaf u_$leaf ( ", wrap('', '  ', join(", ", @conn)), "\n);\n";
+    }
+
+    for my $hier (@hier) {
+        my @conn = map { ".p${name}${_} (n${name}${_})" } (0..int(rand(100)));
+        print "$hier u_$hier ( ", wrap('', '  ', join(", ", @conn)), "\n);\n";
+    }
+    print "endmodule\n\n";
+}
+&lt;/code&gt;
+
+&lt;p&gt;testv.pl:&lt;/p&gt;
+&lt;code&gt;
+use strict;
+use File::Slurp;
+
+my $file = shift or die "file?\n";
+my $text = read_file($file);
+
+parse_v($text);
+
+sub parse_v {
+    my $text = shift;
+    my $name;
+    {
+        last if $text =~ /\G \s* \Z/gcmsx;
+
+        if     ($text =~ /\G \s* ^ \s* module \s+ (\S+?) \s* \( \s* (.*?) \s* \) \s* ;/gcmsx) { $name = $1 }
+        elsif  ($text =~ /\G \s* ^ \s* endmodule        /gcmsx) { }
+        elsif  ($text =~ /\G \s* ^ \s* \S+ \s+ .*? \s* ;/gcmsx) { }
+        else { die "ERROR: unknown syntax\n" }
+
+        redo;
+    }
+    print "LAST MODULE (Perl $]): $name\n";
+}
+&lt;/code&gt;
+</doctext>
+<root_node field_name="root_node">11128141</root_node>
+<parent_node field_name="parent_node">11128141</parent_node>
+<thread id="11128141">
+<node id="11128145"><node id="11128154"><node id="11128157"><node id="11128160"/>
+</node>
+</node>
+</node>
+<node id="11128162"><node id="11128164"><node id="11128165"><node id="11128166"><node id="11128172"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11128169"/>
+<node id="11128173"/>
+<node id="11128181"><node id="11128198"/>
+</node>
+<node id="11128187"/>
+<node id="11128188"/>
+<node id="11128192"><node id="11128195"/>
+<node id="11128221"><node id="11128271"><node id="11128279"/>
+<node id="11128286"/>
+</node>
+</node>
+<node id="11128229"><node id="11128273"><node id="11128277"/>
+<node id="11128301"><node id="11128308"><node id="11128309"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11128287"/>
+</node>
+<node id="11128219"/>
+<node id="11128233"/>
+</thread></node>

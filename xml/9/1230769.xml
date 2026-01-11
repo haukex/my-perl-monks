@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230769" title="Re^4: rectangularizing input to become array" created="2019-03-02 18:12:00" updated="2019-03-02 18:12:00" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;p&gt;Again I'm gonna try to keep my response short vertically by putting the bulk of it in readmore tags. If you like this tack, hey, throw a hermit an upvote.&lt;/p&gt;
+
+&lt;readmore&gt;
+&lt;p&gt;It takes me a while to work through one of [haukex]'s categorical responses, and I always try to run the source that is posted as comments.&lt;/p&gt;
+&lt;i&gt;use FindBin;
+use File::Spec::Functions qw/catdir/;
+use lib catdir($FindBin::Bin, 'lib');&lt;/i&gt;
+&lt;p&gt;This did substitute for &lt;c&gt;use lib "lib";&lt;/c&gt; , but I leave it out because it doesn't seem necessary for this super simple thing, also, I don't completely understand how and why people use it. I already use [Path::Tiny] to figure out where I am if necessary.&lt;/p&gt;
+&lt;i&gt;    
+    You can put your input data in e.g. /home/user/mydata, cd to that directory, and run your script with e.g. perl ../myscript/script.pl input.txt, and it should generate its output in the current directory.&lt;/i&gt;
+
+
+&lt;p&gt;I split the difference here. I did create a mydata/ directory at the sibling level of lib/, and copied the input there. I can see cd'ing to that directory as one way to ensure that output and input end up in the same place. Again, I use [Path::Tiny] for this, even though it meant hard-coding both paths.&lt;/p&gt;
+
+&lt;i&gt;    If it's a script you use a lot, and you don't want to type out its path all the time, you could add it to your PATH. For example, on a couple of my boxes, I have lines like this in my ~/.profile: test -d "$HOME/myscript" &amp;&amp; PATH="$HOME/myscript:$PATH" (the script needs to be chmod u+x for this to work).
+&lt;/i&gt;
+
+&lt;p&gt;Again, I seem to be missing the point. I did all this, but what has it availed me?&lt;/p&gt;
+
+&lt;c&gt;$ echo $PATH
+/home/bob/perl5/bin:/home/bob/2.scripts/pages/9.cw/template_stuff/crosswords/sscce:/home/bob/bin:/home/bob/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+$ pwd
+/home/bob
+$ ./5.sscce.pl
+bash: ./5.sscce.pl: No such file or directory
+$ 
+&lt;/c&gt;
+
+&lt;i&gt;
+getsubset expects an array of arrays, but $out is just an array of strings.&lt;/i&gt;
+&lt;p&gt;I made the first change and realize that the second, which is more organic, can't occur until I cross over into the next version of the .pm for crossword. I don't want to go so far with any changes that I have to come back and make a bunch of cascading updates. As it is, this sscce on git has become a handful of files, 2 directories, and almost 5k in size. I don't want to have to come back and update that, so I'll try to keep it status quo.&lt;/p&gt;
+
+
+&lt;c&gt;$ ls -R
+.:
+1.sscce.pl  5.sscce.pl  lib  mydata
+
+./lib:
+1.txt  crossword2.pm
+
+./mydata:
+1.out.txt  1.txt
+$ &lt;/c&gt;
+
+&lt;p&gt;Here is the script 5.sscce.pl, run via ./5.sscce.pl. I present output, then source.
+&lt;/p&gt;
+&lt;c&gt;$ ./5.sscce.pl 
+1..16
+before conversion
+["abcdef", "abcdef", "abcde ", " bcdef"]
+after conversion
+[
+  ["a" .. "f"],
+  ["a" .. "f"],
+  ["a" .. "e", " "],
+  [" ", "b" .. "f"],
+]
+ok 1
+ok 2
+ok 3
+ok 4
+ok 5
+ok 6
+ok 7
+ok 8
+ok 9
+char is &amp;#9608;
+inside first anonymous block
+ok 10
+exiting first anonymous block
+----------
+[
+  ["a" .. "f"],
+  ["a" .. "f"],
+  ["a" .. "e", " "],
+  [" ", "b" .. "f"],
+]
+----------
+[["a"], ["a"], ["a"], [" "]]
+ok 11
+[["a"], ["a"], ["a"], ["\x{2588}"]]
+exit 2nd
+----------
+[
+  ["a" .. "f"],
+  ["a" .. "f"],
+  ["a" .. "e", " "],
+  ["\x{2588}", "b" .. "f"],
+]
+----------
+ok 12
+----------
+ok 13
+----------
+ok 14
+[
+  ["a" .. "f"],
+  ["a", "q", "c" .. "f"],
+  ["a" .. "e", " "],
+  ["\x{2588}", "b" .. "f"],
+]
+----------
+let's blacken the space in the last column
+[["f"], ["f"], [" "], ["f"]]
+ok 15
+[["f"], ["f"], ["\x{2588}"], ["f"]]
+----------
+let's see if it shows in row 3
+ok 16
+[["a" .. "e", "\x{2588}"]]
+----------
+abcdef
+aqcdef
+abcde&amp;#9608;
+&amp;#9608;bcdef
+----------
+abcdef
+aqcdef
+abcde&amp;#9608;
+&amp;#9608;bcdef
+(97 .. 102, 10)
+(97, 113, 99 .. 102, 10)
+(97 .. 101, 9608, 10)
+(9608, 98 .. 102, 10)
+
+
+
+&lt;/c&gt;
+&lt;p&gt;Caller:&lt;/p&gt;
+&lt;c&gt;#!/usr/bin/perl -w
+use 5.011;
+use Path::Tiny;
+use lib "lib";
+use Data::Dump;
+binmode STDOUT, 'utf8';
+use crossword2;    #available on github 
+
+my $path_to_file   = path( "mydata", "1.txt" );
+my $path_to_output = path( "mydata", "1.out.txt" );
+
+# moving forward with slurp method
+my $input = $path_to_file-&gt;slurp;
+$input =~ s/\t/ /g;
+my @lines = split /\n/, $input;
+my $out = make_rectangular( \@lines, 4, 6 );
+say "before conversion";
+dd $out;
+$out = [ map { [ split // ] } @$out ];    #convert reference
+say "after conversion";
+dd $out;
+## tests
+use Test::More tests =&gt; 16;
+
+# unchanged from haukex's tests
+is_deeply rangeparse("R1"), [ 1,  1,  1,  -1 ];
+is_deeply rangeparse("C1"), [ 1,  1,  -1, 1 ];
+is_deeply rangeparse("Rn"), [ -1, 1,  -1, -1 ];
+is_deeply rangeparse("Cn"), [ 1,  -1, -1, -1 ];
+
+# new values
+is_deeply rangeparse("C1:C3"),     [ 1, 1, -1, 3 ];
+is_deeply rangeparse("R2:Rn"),     [ 2, 1, -1, -1 ];
+is_deeply rangeparse("C3:Cn"),     [ 1, 3, -1, -1 ];
+is_deeply rangeparse("R1C3:R1C5"), [ 1, 3, 1,  5 ];
+is_deeply rangeparse("R4C1:R4C3"), [ 4, 1, 4,  3 ];
+
+# initialize full block character
+my $char = "\N{FULL BLOCK}";
+say "char is $char";
+
+{
+  say "inside first anonymous block";
+  my $subset = getsubset( $out, "R1" );
+  is_deeply $subset, [ [ 'a' .. 'f' ] ];
+  say "exiting first anonymous block";
+}
+say "----------";
+dd $out;
+say "----------";
+{
+  my $subset = getsubset( $out, "C1" );
+  dd $subset;
+  is_deeply $subset, [ ['a'], ['a'], ['a'], [' '] ];
+  $subset-&gt;[3][0] = $char;
+  dd $subset;
+  say "exit 2nd";
+}
+say "----------";
+dd $out;
+say "----------";
+
+is_deeply $out,
+  [
+  [ "a" .. "f" ],
+  [ "a" .. "f" ],
+  [ "a" .. "e", " " ],
+  [ "\x{2588}", "b" .. "f" ],
+  ];
+say "----------";
+{
+  my $subset = getsubset( $out, "R2C2" );
+  is_deeply $subset, [ ['b'] ];
+  $subset-&gt;[0][0] = 'q';
+}
+say "----------";
+is_deeply $out,
+  [
+  [ "a" .. "f" ],
+  [ "a",        "q", "c" .. "f" ],
+  [ "a" .. "e", " " ],
+  [ "\x{2588}", "b" .. "f" ],
+  ];
+
+dd $out;
+say "----------";
+say "let's blacken the space in the last column";
+{
+  my $subset = getsubset( $out, "Cn" );
+  dd $subset;
+  is_deeply $subset, [ ['f'], ['f'], [' '], ['f'] ];
+  $subset-&gt;[2][0] = $char;
+  dd $subset;
+
+}
+say "----------";
+say "let's see if it shows in row 3";
+{
+
+  my $subset = getsubset( $out, "R3" );
+  is_deeply $subset, [ [ 'a' .. 'e', $char ] ];
+  dd $subset;
+}
+say "----------";
+print_aoa($out);
+say "----------";
+print_aoa_utf8($out);
+done_testing();
+# output
+my $file_handle = $path_to_output-&gt;openw_utf8();
+
+for my $row (@$out) {
+  my $line = join( "", @{$row}, "\n" );
+  dd unpack 'C*', $line;
+  $file_handle-&gt;print($line);
+}
+
+__END__ &lt;/c&gt;&lt;/readmore&gt;
+
+&lt;p&gt;This indicates a lot of successes, including my subroutines for printing 2-d arrays being vindicated as not being broken. On github here: [https://github.com/TBlazer66/SSCCE|sscce] &lt;/p&gt;&lt;p&gt;I think this is an elegant solution. Thank you for your generous comments.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1230600</root_node>
+<parent_node field_name="parent_node">1230700</parent_node>
+<thread id="1230600">
+<node id="1230601"><node id="1230699"><node id="1230700"><node id="1230703"/>
+<node id="1230769"><node id="1230781"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1230602"><node id="1230684"/>
+</node>
+<node id="1230610"><node id="1230701"><node id="1230707"/>
+<node id="1230710"/>
+</node>
+</node>
+</thread></node>

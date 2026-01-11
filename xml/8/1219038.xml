@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1219038" title="Re: option control in script" created="2018-07-22 03:16:41" updated="2018-07-22 03:16:41" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Yes, almost every option on the command line translates to Perl code that you can use in your script. This is covered almost entirely in [doc://perlrun] (see [id://1216313|this] for the &lt;c&gt;-i&lt;/c&gt; switch). [Corion] [id://1219036|showed] how to use [doc://B::Deparse], but note that the code it shows is often a little longer than it needs to be. For example, &lt;c&gt;perl -lane 'print $F[2]'&lt;/c&gt; can be written like the following. I've added [doc://warnings] and [doc://strict], and used &lt;c&gt;my @F&lt;/c&gt; instead of &lt;c&gt;our @F&lt;/c&gt; and &lt;c&gt;local $\&lt;/c&gt; to limit their scope.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+local $\ = "\n";    # -l
+while (&lt;&gt;) {        # -n
+    chomp;          # -l
+    my @F = split;  # -a
+    print $F[2];    # -e
+}
+&lt;/c&gt;
+&lt;p&gt;Also note that Perl parses command-line options on the shebang line. So for example, to get the effect of &lt;c&gt;-s&lt;/c&gt; (rudimentary command-line switches) without having to specify it on the command line:&lt;/p&gt;
+&lt;c&gt;
+$ cat s.pl 
+#!/usr/bin/perl -s
+use warnings;
+use strict;
+
+our $x;
+print "&lt;$x&gt;\n";
+
+$ ./s.pl -x=foo
+&lt;foo&gt;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1219033</root_node>
+<parent_node field_name="parent_node">1219033</parent_node>
+<thread id="1219033">
+<node id="1219036"/>
+<node id="1219038"><node id="1219056"><node id="1219057"/>
+</node>
+</node>
+<node id="1219045"/>
+</thread></node>

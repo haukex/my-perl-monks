@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11128764" title="Re: Sending file as &quot;TEXT&quot; or &quot;BLOB&quot;" created="2021-02-24 21:29:12" updated="2021-02-24 21:29:12" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1149436">jcb</author>
+<doctext field_name="doctext">&lt;p&gt;The correct solution here is to use the HTTP status code.  This is &lt;i&gt;why&lt;/i&gt; HTTP responses include a status code.&lt;/p&gt;
+
+&lt;p&gt;If the file exists, the server returns &lt;tt&gt;200 OK&lt;/tt&gt; and the file as &lt;tt&gt;application/zip&lt;/tt&gt;.  If the file does not exist, the server returns &lt;tt&gt;404 Not Found&lt;/tt&gt;.  The client then distinguishes based on &lt;tt&gt;this.status&lt;/tt&gt;:  200 for a BLOB is included and 404 for an error.&lt;/p&gt;
+
+&lt;p&gt;Here are the relevant bits of the revised JavaScript:  (obviously untested)&lt;/p&gt;
+&lt;code&gt;
+xhttp.onreadystatechange = function() {
+  if (this.readystate == 4) {
+    if (this.status == 200) {
+      if (xhttp.responseType == 'blob') {
+        // existing goofy file download code here
+      } else {
+        // report internal error
+      }
+    } else if (this.status = 404) {
+      // report error here
+    }
+  }
+}
+&lt;/code&gt;
+
+&lt;p&gt;As for the Perl code on the server side, you did not provide a [id://1177642|SSCCE], so I can give only a broad outline of how the server processing should work:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&amp;#91;whatever initial setup is needed&amp;#93;&lt;/li&gt;
+&lt;li&gt;Read the form data from the client.&lt;/li&gt;
+&lt;li&gt;Determine if the requirements to download a file have been met, and if so, which file is to be downloaded.&lt;/li&gt;
+&lt;li&gt;Produce a reply, with either a &lt;tt&gt;200 OK&lt;/tt&gt; status if presenting a file, or &lt;tt&gt;404 Not Found&lt;/tt&gt; otherwise.&lt;/li&gt;
+&lt;/ol&gt;</doctext>
+<root_node field_name="root_node">11128741</root_node>
+<parent_node field_name="parent_node">11128741</parent_node>
+<thread id="11128741">
+<node id="11128742"/>
+<node id="11128756"/>
+<node id="11128760"><node id="11128769"/>
+</node>
+<node id="11128764"><node id="11128768"/>
+</node>
+</thread></node>

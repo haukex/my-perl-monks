@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1175003" title="Re: how to declare a local *subname=sub{}?" created="2016-10-31 05:39:30" updated="2016-10-31 05:39:30" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [perl-diddler],&lt;/p&gt;
+&lt;p&gt;Although [LanX] has already explained several things in various posts, one keyword that has not been named in this thread is &lt;i&gt;dynamic scope&lt;/i&gt;, personally I find this easiest to remember. [doc://local] only affects things in the current dynamic scope - as explained in [doc://perlsub#Temporary-Values-via-local()], it changes the value of a global at runtime, which will also affect any functions called at runtime in the scope where [doc://local] is in effect, but at the end of the scope, the previous value of the variable is restored. An example:&lt;/p&gt;
+&lt;c&gt;
+our $foo = "foo";
+{
+	local $foo = "bar";
+	sub quz {
+		print "\$foo = $foo\n";
+	}
+}
+quz();  # prints "$foo = foo"
+&lt;/c&gt;
+&lt;p&gt;Once you realize what [doc://local] is doing, you'll see that the above code is basically equivalent to this:&lt;/p&gt;
+&lt;c&gt;
+our $foo = "foo";
+{
+	$foo = "bar";
+	sub quz {
+		print "\$foo = $foo\n";
+	}
+	$foo = "foo";
+}
+quz();  # prints "$foo = foo"
+&lt;/c&gt;
+&lt;p&gt;Note how &lt;c&gt;quz&lt;/c&gt; is called &lt;i&gt;after&lt;/i&gt; after the original value of &lt;c&gt;$foo&lt;/c&gt; is restored. So I hope that explains why your &lt;c&gt;local *asub = sub ...&lt;/c&gt; would cease to have any effect once Perl has completed executing your block &lt;c&gt;{ package Do::Stuff; ... }&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Your use of &lt;c&gt;*bsub&lt;/c&gt; warrants some closer inspection though. In your code example, if you call &lt;c&gt;$p-&gt;stuff&lt;/c&gt; &lt;i&gt;after&lt;/i&gt; &lt;c&gt;$p-&gt;do_internal_sub&lt;/c&gt;, suddenly the call the &lt;c&gt;bsub&lt;/c&gt; works! It's a bit complicated, but if you keep in mind the distinction as to when which line is &lt;i&gt;executed&lt;/i&gt;, it makes sense. I'll explain using this example:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+sub foo { print "orig foo\n" }
+sub bar { print "orig bar\n" }
+{
+	local *foo = sub { print "local foo\n"; };
+	local *bar;
+	sub quz {
+		foo();
+		eval { bar(); 1 } or warn "calling bar failed: $@";
+	}
+	sub baz {
+		*bar = sub { print "local bar\n"; };
+	}
+	quz();  # first call to quz
+	baz();  # first call to baz
+	quz();  # second call to quz
+}
+quz();  # third call to quz
+baz();  # second call to baz
+quz();  # fourth call to quz
+
+__END__
+
+Subroutine main::foo redefined at local_ex.pl line 8.
+local foo
+calling bar failed: Undefined subroutine &amp;main::bar called at local_ex.pl line 12.
+local foo
+local bar
+orig foo
+orig bar
+Subroutine main::bar redefined at local_ex.pl line 15.
+orig foo
+local bar
+&lt;/c&gt;
+&lt;ol&gt;
+&lt;li&gt;When &lt;c&gt;local *bar;&lt;/c&gt; is executed, its value is cleared (&lt;i&gt;Update:&lt;/i&gt; this is the intended effect of [doc://local], although the documentation is admittedly a little hard to find). Thus, the first call of &lt;c&gt;quz();&lt;/c&gt;, while the &lt;c&gt;local *bar;&lt;/c&gt; is still in effect and &lt;c&gt;baz&lt;/c&gt; has not been executed, will not have a &lt;c&gt;sub bar&lt;/c&gt; to execute.&lt;/li&gt;
+&lt;li&gt;Then, we call &lt;c&gt;baz();&lt;/c&gt;, which assigns a value to the currently still [doc://local]ized &lt;c&gt;bar&lt;/c&gt;, so the second call of &lt;c&gt;quz();&lt;/c&gt; prints the two &lt;c&gt;"local ..."&lt;/c&gt; strings.&lt;/li&gt;
+&lt;li&gt;Once the block is exited, the effect of [doc://local] ends and the original definitions of &lt;c&gt;foo&lt;/c&gt; and &lt;c&gt;bar&lt;/c&gt; are restored, so the third call to &lt;c&gt;quz();&lt;/c&gt; prints the two &lt;c&gt;"orig ..."&lt;/c&gt; strings.&lt;/li&gt;
+&lt;li&gt;Then we call &lt;c&gt;baz();&lt;/c&gt; a second time, which redefines &lt;c&gt;bar&lt;/c&gt;. Now what's important to remember here is that the effect of the &lt;c&gt;local *bar;&lt;/c&gt; happened at runtime, so its effect &lt;i&gt;is already over!&lt;/i&gt; Which means that now, &lt;c&gt;baz&lt;/c&gt; &lt;i&gt;globally&lt;/i&gt; redefines &lt;c&gt;bar&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;The final call to &lt;c&gt;quz();&lt;/c&gt; now still sees the original &lt;c&gt;foo&lt;/c&gt;, but &lt;c&gt;bar&lt;/c&gt; has been redefined globally.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Having said all that, I think &lt;c&gt;local *foo = sub {}&lt;/c&gt; is one of those things that should only be used very rarely (one of those "use only if you know what you're doing and why" things).
+Aside from the plain wackyness of the above example code, one of the main arguments is that, as always, fiddling with global definitions can cause unintended consequences in other places in the code: if you redefine &lt;c&gt;foo&lt;/c&gt; and then call another function, who's to say whether someone down the call tree is depending on the original definition of &lt;c&gt;foo&lt;/c&gt;?&lt;/p&gt;
+&lt;p&gt;The two much better and "more modern" solutions IMO are simply passing around references to (anonymous) subs, or an OO design with classes where methods can be overridden in subclasses; based on what you've written, I suspect the latter might be appropriate in your case, but you'd have to explain a bit more the bigger picture of what you're trying to do.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Yet another reason not to use &lt;c&gt;local *bar;&lt;/c&gt; - it localizes &lt;i&gt;everything&lt;/i&gt; named &lt;c&gt;bar&lt;/c&gt;! Example in readmore tags:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+our $bar = "BBB";
+sub foo { print "orig foo (bar=$bar)\n" }
+sub bar { print "orig bar (bar=$bar)\n" }
+{
+	local *foo = sub { print "local foo (bar=$bar)\n"; };
+	local *bar; # this also clears $bar!
+	sub quz {
+		foo();
+		eval { bar(); 1 } or warn "calling bar failed: $@";
+	}
+	sub baz {
+		*bar = sub { print "local bar (bar=$bar)\n"; };
+	}
+	quz();  # first call to quz (OOPS, $bar is undef!)
+	baz();  # first call to baz
+	quz();  # second call to quz (OOPS, $bar is still undef!)
+}
+&lt;/c&gt;
+&lt;p&gt;(This behavior does not happen with to the &lt;c&gt;local *foo = sub { ... };&lt;/c&gt; form.)&lt;/p&gt;
+&lt;/readmore&gt;
+&lt;p&gt;A few more notes on your code:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;"&lt;c&gt;sub stuff() {&lt;/c&gt;" - prototypes are ignored on method calls.&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;&amp;asub("stuff")&lt;/c&gt; - the &lt;c&gt;&amp;foo()&lt;/c&gt; style of calling subs disables prototype checking and changes the behavior of &lt;c&gt;@_&lt;/c&gt; ([doc://perlsub]) - in modern Perl, it has become another one of those "use only if you know what you're doing and why" things.&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;eval {...}; if ($@) ...&lt;/c&gt; is discouraged, use &lt;c&gt;eval {...; 1} or ...&lt;/c&gt; instead, see e.g. [id://1153468] or the "Background" section of [mod://Try::Tiny].&lt;/li&gt;
+&lt;li&gt;When posting code examples, the easier it is to run for everyone, the better. In this code, your [mod://P] appears to be doing the same as [doc://printf], so if you'd just use [doc://printf], people could just download and run your code instead of installing a new module.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Updated wordings in a few places.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1174968</root_node>
+<parent_node field_name="parent_node">1174968</parent_node>
+<thread id="1174968">
+<node id="1174969"/>
+<node id="1174970"/>
+<node id="1174971"><node id="1174973"><node id="1174975"><node id="1175010"><node id="1175016"/>
+</node>
+</node>
+<node id="1174976"><node id="1175011"/>
+</node>
+<node id="1174977"><node id="1174978"><node id="1174980"/>
+</node>
+</node>
+<node id="1174979"/>
+</node>
+</node>
+<node id="1174981"/>
+<node id="1174986"><node id="1174991"><node id="1174993"/>
+</node>
+</node>
+<node id="1175003"/>
+<node id="1175004"><node id="1175287"/>
+</node>
+</thread></node>

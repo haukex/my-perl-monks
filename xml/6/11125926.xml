@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11125926" title="Re: While loop not printing anything after using grep (updated)" created="2020-12-29 06:33:40" updated="2020-12-29 06:33:40" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Welcome to the Monastery, [skjeiu]. Please note the advice in [id://174051]: At the very least, please use &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags to format your code. Also, you posted this question in the incorrect section; I have moved it to [id://479] for you.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;if (grep{/Friday/} $in_file)&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This is unlikely to be the code you're actually running, as this would try to match the pattern against the filehandle stored in the variable, instead of the contents of the file. Instead, I assume your code looks like &lt;c&gt;if (grep{/Friday/} &lt;$in_file&gt;)&lt;/c&gt;, as that would explain the problem you're having: in list context, the &lt;c&gt;&lt;$filehandle&gt;&lt;/c&gt; operator (see [doc://perlop#I/O-Operators|I/O Operators in perlop]) reads all the lines from the file and returns them, this is what [doc://grep] is matching against, but once you've read everything from the file, the second &lt;c&gt;&lt;&gt;&lt;/c&gt; operator won't return anything.&lt;/p&gt;
+&lt;p&gt;There are several possible ways to work around this. For example, if the file will always be small enough to comfortably fit into memory, you could read the contents of the file into an array and then loop over that with [doc://grep] and [doc://perlsyn#Foreach-Loops|foreach] as many times as you like. Another approach would be to integrate everything into one &lt;c&gt;while&lt;/c&gt; loop, i.e. move the &lt;c&gt;/Friday/&lt;/c&gt; match there. If you could explain more about what your input files look like and what you're actually trying to do, I'm sure we could suggest some approaches fitting to your application.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;My ultimate gall here is to search for the string 'Friday' in the file 'input.txt', if 'Friday' is missing, add'Friday' to 'input.txt on line 2. The content of 'input.txt is: Monday Sunday&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sorry, I must have missed this on the first read because of the formatting (unless you edited your node? please [id://17557|mark your updates] when editing). Anyway, please also use &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags for sample input and output. Since you haven't shown your expected output, it's a little hard to guess what you mean - do you want the contents of the second line to be replaced, the string "Friday" to be appended, or do you want a new line to be inserted? And does the length of the input file matter at all?&lt;/p&gt;
+&lt;p&gt;Anyway, your approach is a good start. Assuming your files aren't too long, then one way to do what you want would be to rewind the input file to the beginning with [doc://seek]: insert &lt;c&gt;seek $in_file, 0, 0 or die "seek: $!";&lt;/c&gt; after the &lt;c&gt;grep&lt;/c&gt; and before the &lt;c&gt;while&lt;/c&gt; to start reading the file from the beginning again. You should then be able to use this as the basis to do what you want. (Note that this does have one disadvantage: it doesn't reset the special line counter variable [doc://$.], in case you were planning to use that in your &lt;c&gt;while&lt;/c&gt; loop - it is possible to do this manually via &lt;c&gt;$.=0&lt;/c&gt; right after the &lt;c&gt;seek&lt;/c&gt;.)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11125925</root_node>
+<parent_node field_name="parent_node">11125925</parent_node>
+<thread id="11125925">
+<node id="11125926"/>
+<node id="11125927"><node id="11125940"><node id="11125941"/>
+<node id="11125950"/>
+</node>
+</node>
+<node id="11125954"/>
+<node id="11125958"><node id="11125996"><node id="11126020"/>
+</node>
+</node>
+</thread></node>

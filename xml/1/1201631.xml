@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201631" title="Re: Clearing a hash reference" created="2017-10-18 19:41:59" updated="2017-10-18 19:41:59" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Please try to reduce your code down to the minimum needed to reproduce the issue - see [id://1177642|SSCCE]. Like this:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+{
+	package Foo;
+	use Moose;
+	has 'Fields' =&gt; (is =&gt; 'rw', isa =&gt; 'HashRef');
+}
+my $foo = Foo-&gt;new(Fields=&gt;{});
+$foo-&gt;Fields-&gt;{x}++;
+dd $foo-&gt;Fields;  # prints { x =&gt; 1 }
+
+#$foo-&gt;Fields = 0;  # wrong, fails
+$foo-&gt;Fields({});
+dd $foo-&gt;Fields;  # prints {}
+&lt;/c&gt;
+&lt;p&gt;The problem is that &lt;c&gt;$foo-&gt;Fields&lt;/c&gt; is a method call, to which you cannot assign anything (&lt;c&gt;$foo-&gt;Fields = ...;&lt;/c&gt;) by default; it's as if you had written &lt;c&gt;sin($pi) = 123;&lt;/c&gt;. The normal way to set an object property is to pass its new value as an argument to the method, as I showed above: &lt;c&gt;$foo-&gt;Fields({});&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;There is a way to make methods that you can assign to in Perl, [doc://perlsub#Lvalue-subroutines], but at least in my experience they seem to be pretty uncommon. I suggest you stick to normal setter calls.&lt;/p&gt;
+&lt;p&gt;Also, let me repeat [Mr. Muskrat]'s [id://1201467|suggestion] to look into [mod://DBIx::Class] instead of reinventing that wheel.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1201629</root_node>
+<parent_node field_name="parent_node">1201629</parent_node>
+<thread id="1201629">
+<node id="1201631"/>
+<node id="1201632"/>
+</thread></node>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1185891" title="How to code a complex AoH?" created="2017-03-25 10:43:00" updated="2017-03-25 10:43:00" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1185889">iatros</author>
+<doctext field_name="doctext">&lt;p&gt;Here is a task that's puzzling me for quite a while now: 
+Regularly, we get exam results of our students as a .csv file. The header has some meta data such as ID, gender, date of birth, status, exam room, seat number, exam version, etc. The following lines start with these data and the scores for 60 questions (0.0 0.5 1.0 points if the answer is wrong, half-correct, or correct). There are 6 versions (A - F) of the exam differing only by the order of the 60 questions. The information is stored for statistical evaluation which requires the correct alignment according to the exam master (a .txt file with 7 columns for version A-F and the correct answer in the 7th column). &lt;/p&gt;
+&lt;p&gt;I tried to accommodate the .csv file as an array of hashes to generate a different .csv or tabbed .txt file in which all exam results appear in a unified order for later statistical evaluation. But something went wrong.&lt;/p&gt;
+
+&lt;p&gt;Example: &lt;/p&gt;
+
+&lt;c&gt;
+header --
+ID,gender,birthdate,order,room,seat,version,points,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+277710814533,f,01/02/1993,m,sr_3,A11,A, 1,1,1,1,0,1,1,1,.5,1,1,1,0,1,.5,1,1,1,0,1,.5,1,1,0,1,1,1,1,1,1,1,0,0,1,0,1,.5,1,1,1,1,.5,0,1,1,1,0,1,1,1,1,1,0,1,1,1,.5,1,1,1
+755310765962,f,31/07/1992 00:00,v,aula,C11,C,1,.5,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,.5,1,0,.5,1,0,1,.5,0,.5,0,1,0,0,.5,1,1,0,.5,1,1,.5,.5,1,.5,.5,1,1,1,.5,.5
+394610513538,m,20/10/1992 00:00,m,sr_3,E13,E,1,1,0,.5,1,1,1,1,1,1,1,.5,1,1,.5,.5,1,1,1,.5,.5,1,1,1,1,0,0,.5,1,1,.5,.5,.5,.5,0,1,0,.5,0,0,1,0,1,.5,0,1,0,0,.5,1,0,1,1,0,.5,.5,.5,.5,.5,.5
+&lt;/c&gt;
+
+&lt;p&gt;The code generates anonymous hash keys according to the following scheme: &lt;/p&gt;
+
+&lt;code&gt;    
+    while ( &lt;FH&gt; ) {
+    chomp ;
+    if ( /^\d\d\d/) {
+        ( $id , $gender , $birthday , $status , $room , $seat , $version , @points ) = split ( /,/ , $_ ) ;
+        $student = { 
+            'id'       =&gt; $id ,
+            'gender'   =&gt; $gender , 
+            'birthday' =&gt; $birthday ,
+            'position' =&gt; $position ,
+            'room'     =&gt; $room , 
+            'seat'     =&gt; $seat ,
+            'version'  =&gt; $version ,
+            'points'   =&gt; @points
+        } ;
+        push ( @candidates , $student ) ;
+    }
+    } ;
+    close FH ;
+    print "Number of candidates processed: " . ( $#candidates + 1 ) . "\n" ;
+&lt;/code&gt;
+&lt;p&gt;The compiler throws a warning for each record, e.g. "Odd number of elements in anonymous hash at /Documents//testAoH.pl line 38, line 16." but the script is executed. &lt;p&gt;
+
+&lt;p&gt;The script prints the correct number of processed records, but when I try to retrieve a specific record I only get the scalar values and the @points array yields only one (the first?) result as if it were destroyed. A data dumper output further shows that something must be internally wrong with this code. &lt;/p&gt;
+
+&lt;p&gt;Data Dumper e.g.&lt;/p&gt;
+&lt;code&gt;
+        755310765962 
+    $VAR1 = \{
+            '0' =&gt; '0',
+            'gender' =&gt; 'f',
+            'id' =&gt; '755310765962',
+            'points' =&gt; '1',
+            'room' =&gt; 'aula',
+            '.5' =&gt; undef,
+            '1' =&gt; '.5',
+            'birthday' =&gt; '31/07/1992',
+            'seat' =&gt; 'A11',
+            'version' =&gt; 'A',
+            'status' =&gt; 'v'
+          };
+&lt;/code&gt;
+
+&lt;p&gt;&lt;br&gt;Any clues?&lt;/p&gt;
+
+&lt;p&gt;&lt;br&gt;Thx - Harald -&lt;/p&gt;
+
+</doctext>
+<thread id="1185891">
+<node id="1185893"><node id="1186519"/>
+</node>
+<node id="1185895"><node id="1185906"/>
+<node id="1185941"/>
+<node id="1186520"/>
+</node>
+<node id="1185915"><node id="1186507"/>
+</node>
+</thread></node>

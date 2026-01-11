@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1199892" title="Re: Problem upgrading XML::Fast from 0.11 to 0.17 (updated)" created="2017-09-22 04:58:34" updated="2017-09-22 04:58:34" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I have discovered adding utf8decode =&gt; 1 to the xml2hash makes it work now but I don't really understand why. I am doing anything wrong here? What might have changed in XML::Fast to cause this to happen?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The [http://cpansearch.perl.org/src/MONS/XML-Fast-0.17/Changes|changelog] isn't really verbose, but I suspect it might be [https://rt.cpan.org/Public/Bug/Display.html?id=71532|#71532] which was marked as fixed recently. There is also [https://rt.cpan.org/Public/Bug/Display.html?id=71533|#71533] which is still open, and which indicates that the module might have issues with Unicode data in general. I haven't investigated deeper than that*, but if you have verified with a hex dump that your input file is indeed ISO-8859-1, where "ø" should be represented by 0xF8, and you have verified with [doc://Devel::Peek] that the Perl variable contains the correct data&lt;b&gt;²&lt;/b&gt; ("ø" is Unicode U+00F8), then the error message "&lt;c&gt;[&amp;#65533;ndby IF]&lt;/c&gt;", where &lt;c&gt;&amp;#65533;&lt;/c&gt; is the Unicode character "Replacement Character" (U+FFFD), indicates that there is indeed some strange Unicode stuff going on in the module, since you are opening the file with the correct encoding&lt;b&gt;²&lt;/b&gt;.&lt;/p&gt;
+&lt;p&gt;* &lt;i&gt;Update before posting:&lt;/i&gt; I see [ablanke] has [id://1199889|investigated] the code.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;² Update:&lt;/b&gt; Actually, [ikegami] [id://1199923|is right] that the XML parser should be doing the decoding.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1199814</root_node>
+<parent_node field_name="parent_node">1199814</parent_node>
+<thread id="1199814">
+<node id="1199889"><node id="1199905"/>
+<node id="1199922"><node id="1199924"/>
+</node>
+</node>
+<node id="1199892"><node id="1199906"/>
+</node>
+<node id="1199923"><node id="1199930"><node id="1199947"><node id="1199953"/>
+</node>
+<node id="1200037"/>
+</node>
+<node id="1200036"/>
+</node>
+</thread></node>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11151325" title="Did ChatGPT do a good job?" created="2023-03-29 14:22:41" updated="2023-03-29 14:22:41" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="890813">cavac</author>
+<doctext field_name="doctext">&lt;p&gt;I played around with ChatGPT today and got it to generate me a Perl script that forks children and restarts any that failed. Here's my initial prompt:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;
+Write a Perl program that forks 5 child processes. The main process
+should handle SIGCHILD and restart any child processes that have exited.
+The child processes have a function called "doWork" that have a 
+"Your code here" comment.&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;There was a bit back-and-forth to fix some bugs and to get ChatGPT to "use English". On the plus side, ChatGPT used "use strict; use warnings;" right from the start AND used readable indenting as well(*). Here's what it came up with:&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;Edit: Copied an old version at first, this is now the latest version&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;
+use strict;
+use warnings;
+use English qw( -no_match_vars );
+use POSIX qw( :sys_wait_h );
+
+# Fork 5 child processes
+my $num_processes = 5;
+for (my $i = 0; $i &lt; $num_processes; $i++) {
+    my $pid = fork();
+    if ($pid == 0) {
+        # Child process
+        doWork();
+        exit;
+    } elsif (!defined $pid) {
+        die "Failed to fork: $OS_ERROR";
+    }
+}
+
+# Handle SIGCHILD and restart any child processes that have exited
+$SIG{CHLD} = sub {
+    while ((my $pid = waitpid(-1, WNOHANG())) &gt; 0) {
+        my $exit_code = $CHILD_ERROR &gt;&gt; 8;
+        if ($exit_code == 0) {
+            print "Child process $pid exited successfully\n";
+        } else {
+            print "Child process $pid exited with code $exit_code, restarting\n";
+            my $new_pid = fork();
+            if ($new_pid == 0) {
+                # Child process
+                doWork();
+                exit;
+            } elsif (!defined $new_pid) {
+                die "Failed to fork: $OS_ERROR";
+            }
+        }
+    }
+};
+
+# Main process waits for child processes to exit
+while (1) {
+    sleep(1);
+}
+
+# Function for child processes to do work
+sub doWork {
+    # Your code here
+    print "Child process $$ doing some work\n";
+    sleep(10);
+}&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;It's not perfect. The program doesn't exit when all children have finished and i would probably have to prompt it to add that functionality. But overall, i'd say it looks like a reasonable base framework.&lt;/p&gt;
+
+&lt;p&gt;What do you think? Any other problems i didn't catch?&lt;/p&gt;
+
+&lt;br/&gt;&lt;br/&gt;
+&lt;p&gt;&lt;i&gt;(*) Any chance we could use whatever OpenAI used to train ChatGPT to train our newbies here on how to format code?&lt;/i&gt;&lt;/p&gt;
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+</doctext>
+<thread id="11151325">
+<node id="11151327"><node id="11151331"><node id="11151337"/>
+<node id="11151339"><node id="11151342"/>
+<node id="11151343"><node id="11151344"><node id="11151345"/>
+<node id="11151346"/>
+</node>
+<node id="11151348"/>
+</node>
+</node>
+<node id="11151354"><node id="11151400"/>
+</node>
+</node>
+<node id="11151336"/>
+</node>
+<node id="11151328"/>
+<node id="11151330"/>
+<node id="11151332"><node id="11151335"/>
+</node>
+<node id="11151340"><node id="11151347"><node id="11151349"><node id="11151351"/>
+</node>
+</node>
+</node>
+</thread></node>

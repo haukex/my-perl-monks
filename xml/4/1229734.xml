@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229734" title="Re^5: Help encode_entities doesn't seem to work" created="2019-02-10 14:18:47" updated="2019-02-10 14:18:47" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1184095">haj</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Balawoo,&lt;/p&gt;
+&lt;p&gt;I admit that I'm having some difficulties relating your attempts to my recommendations.&lt;/p&gt;
+&lt;p&gt;If you change the format to XSLX files, then there'll be no more MacRoman encoding: All strings in XLSX files are formatted in UTF-8. Furthermore, you don't need to decode anything, because [mod://Spreadsheet::ParseXSLX] will do that for you.  So, you've found another way to get rid of that problem.&lt;/p&gt;
+&lt;p&gt;Your method to create the text file in UTF-8 (encoding the individual cells and then write with Perl's default encoding) sort of works, but I would really recommend that you open the file for UTF-8 encoding like this:&lt;/p&gt;
+&lt;code&gt;open (TXT, "&gt;:encoding(UTF-8)", $txt) || die("Could not open file! $txt");&lt;/code&gt;
+&lt;p&gt;Of course, you need to &lt;em&gt;read&lt;/em&gt; this file as UTF-8 as well:&lt;/p&gt;
+&lt;code&gt;open (SOURCE, "&lt;:encoding(UTF-8)", $txt) || die ("Could not open file! $txt");&lt;/code&gt;
+&lt;p&gt;You still haven't convinced me that you &lt;em&gt;need&lt;/em&gt; to encode accents like &lt;tt&gt;é&lt;/tt&gt; to &lt;tt&gt;&amp;amp;eacute&lt;/tt&gt;. If you write &lt;tt&gt;&amp;amp;eacute&lt;/tt&gt; to a XML file, you get an &lt;em&gt;invalid&lt;/em&gt; XML file.  If you want to have the string &lt;tt&gt;&amp;amp;eacute&lt;/tt&gt; as literal content of the XML element, then you need to encode &lt;em&gt;twice&lt;/em&gt;: Once to convert &lt;tt&gt;é&lt;/tt&gt; to &lt;tt&gt;&amp;amp;eacute&lt;/tt&gt;, and a second time (use &lt;tt&gt;encode_entities&lt;/tt&gt; without a second parameter for this) to convert the &lt;tt&gt;&amp;amp;&lt;/tt&gt; character to &lt;tt&gt;&amp;amp;amp;&lt;/tt&gt;.  In the XML file you'll then see &lt;tt&gt;&amp;amp;amp;eacute&lt;/tt&gt;, but an XML processor will read it as &lt;tt&gt;&amp;amp;eacute&lt;/tt&gt;.  Note that you still need to get the &lt;tt&gt;use utf8;&lt;/tt&gt; thing right if you want to pass your string literal as a second parameter to &lt;tt&gt;encode_entities&lt;/tt&gt;.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1229686</root_node>
+<parent_node field_name="parent_node">1229725</parent_node>
+<thread id="1229686">
+<node id="1229688"><node id="1229699"><node id="1229703"><node id="1229730"/>
+<node id="1229738"><node id="1229747"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1229690"><node id="1229700"><node id="1229706"><node id="1229725"><node id="1229734"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1229702"><node id="1229712"/>
+</node>
+</thread></node>

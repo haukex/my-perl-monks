@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11113386" title="Converting XLSX to CSV with Perl while maintaining the encoding" created="2020-02-25 02:42:54" updated="2020-02-25 02:42:54" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11113384">AALB</author>
+<doctext field_name="doctext">&lt;p&gt;I'm a BI developer working with perl scripts as my ETL - I receive data over email, take the file, parse it and push it into the DB. Most of the files are CSV, but occasionally I have an XLSX file.&lt;/p&gt;
+&lt;p&gt;I've been using Spreadsheet::XLSX to convert, but I've noticed that the CSV output comes out with the wrong encoding (needs to be UTF8, because accents and foreign languages).&lt;/p&gt;
+&lt;p&gt;That's the sub I'm using ($input_file is an Excel file), but I keep getting the data with the wrong characters.&lt;/p&gt;
+&lt;p&gt;WHAT am I missing?&lt;br&gt;
+
+Thanks a lot all!&lt;/p&gt;
+
+&lt;code&gt;sub convert_to_csv {
+    my $input_file = $_[0];
+    my ( $filename, $extension ) = split( '\.', $input_file );
+    open( format_file, "&gt;:**encoding(utf-8)**", "$filename.csv" ) or die "could not open out file $!\n";
+    my $excel = Spreadsheet::XLSX-&gt;new($input_file);
+    my $line;
+    foreach my $sheet ( @{ $excel-&gt;{Worksheet} } ) {
+
+        #printf( "Sheet: %s\n", $sheet-&gt;{Name} );
+        $sheet-&gt;{MaxRow} ||= $sheet-&gt;{MinRow};
+        foreach my $row ( $sheet-&gt;{MinRow} .. $sheet-&gt;{MaxRow} ) {
+            $sheet-&gt;{MaxCol} ||= $sheet-&gt;{MinCol};
+            foreach my $col ( $sheet-&gt;{MinCol} .. $sheet-&gt;{MaxCol} ) {
+                my $cell = $sheet-&gt;{Cells}[$row][$col];
+                if ($cell) {
+                    my $trimcell;
+                    $trimcell = $cell-&gt;value();
+                    print STDERR "cell: $trimcell\n"; ## Just for the tests so I don't have to open the file to see if it's ok
+                    $trimcell =~ s/^\s+|\s+$//g;  ## Just to make sure I don't have extra spaces
+                    $line .= "\"" . $trimcell  . "\",";
+                }
+            }
+            chomp($line);
+            if ($line =~ /Grand Total/){} ##customized for the files
+            else {
+            print format_file "$line\n";
+            $line = '';
+        }
+        }
+    }
+    close format_file;
+}&lt;/code&gt;</doctext>
+<thread id="11113386">
+<node id="11113387"/>
+<node id="11113391"/>
+<node id="11113402"/>
+</thread></node>

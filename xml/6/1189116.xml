@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1189116" title="Assigning to Hash Values (updated)" created="2017-04-28 12:49:09" updated="2017-04-28 12:49:09" _doctext_mode="strict"><type id="120">perlmeditation</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The thread "[id://1188980]" got me thinking about this one. The [doc://values] doc says:&lt;/p&gt;
+&lt;blockquote&gt;Note that the values are not copied, which means modifying them will modify the contents of the hash.&lt;/blockquote&gt;
+&lt;p&gt;This means that &lt;c&gt;$_++ for values %hash;&lt;/c&gt; will modify the original hash values, and the following (based on [id://1188989|this AM post]) will assign to the values of the hash:&lt;/p&gt;
+&lt;c&gt;
+sub { @_[0..$#_] = qw/r s t/ }-&gt;(values %hash);
+&lt;/c&gt;
+&lt;p&gt;The above work because both the [doc://perlsyn#Foreach-Loops|foreach] loop variable and the elements of [doc://perlsub#DESCRIPTION|@_] are aliases to the original scalars. The slice in the second example is necessary, since &lt;c&gt;@_ = ...&lt;/c&gt; would clobber the array and remove the aliasing, instead of assigning to its elements.&lt;/p&gt;
+&lt;p&gt;However, [doc://values] itself is not lvalue, meaning that &lt;c&gt;values(%hash) = qw/a b c/;&lt;/c&gt; won't work. Neither will &lt;c&gt;(values(%hash))[0] = 'a';&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Here's my "invention", which I present as a curiosity rather than a suggested solution. It makes use of [doc://perlsub#Lvalue-subroutines] and [doc://perlsub#Prototypes]. The parens on the left are necessary for the sub to be called in list context.&lt;/p&gt;
+&lt;c&gt;
+sub lvalues (\%) : lvalue { values %{$_[0]} }
+(lvalues %hash) = qw/i j k/;  # works!
+&lt;/c&gt;
+&lt;p&gt;Since the order of the values returned by [doc://values] is random, this probably isn't particularly useful other than in the context of the [id://1188980|thread] I mentioned above:&lt;/p&gt;
+&lt;c&gt;
+(lvalues %hash) = shuffle values %hash;
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Updates 1&amp;amp;2:&lt;/b&gt; However, note that repeated calls to &lt;c&gt;(lvalues %hash) = values %hash;&lt;/c&gt; will &lt;strike&gt;only "randomize" the values once, and on older Perls the order won't be very "random" at all&lt;/strike&gt; apparently not randomize at all, I would guess because the order of the returned values is not randomized between the calls to [doc://values]. Some interesting reading on the topic: [id://1167906] and [id://1171682]&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor updates for clarification.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<thread id="1189116">
+</thread></node>

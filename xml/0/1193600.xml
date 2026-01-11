@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193600" title="Re: LibXML setNodeName error" created="2017-06-26 12:26:11" updated="2017-06-26 12:26:11" _doctext_mode="lenient"><type id="11">note</type>
+<author id="832495">choroba</author>
+<doctext field_name="doctext">Several issues:
+&lt;ul&gt;
+&lt;li&gt;You can retrieve the name attribute directly, no need to search for the first attribute.
+&lt;li&gt;You need the attribute object in order to be able to remove the attribute, anyway.
+&lt;li&gt;Use the &lt;C&gt;getValue&lt;/C&gt; method to retrieve the value of the attribute.
+&lt;li&gt; Minor: "reader" sounds like a [metamod://XML::LibXML::Reader] instance, not a normal DOM object.
+&lt;/ul&gt;&lt;P&gt;
+
+&lt;c&gt;#!/usr/bin/perl
+use warnings;
+use strict;
+
+use XML::LibXML;
+
+my $xml = '&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
+&lt;xsl:element name="foo"&gt;
+&lt;xsl:value-of select="bar"/&gt;
+&lt;/xsl:element&gt;
+&lt;/xsl:stylesheet&gt;';
+
+my $dom = 'XML::LibXML'-&gt;load_xml(string =&gt; $xml) or die;
+my $xpc = 'XML::LibXML::XPathContext'-&gt;new($dom);
+
+for my $element ($xpc-&gt;findnodes('//xsl:element')) {
+    my ($name_attr) = $xpc-&gt;findnodes('@name', $element);
+    $element-&gt;removeAttribute('name');
+    $element-&gt;setNodeName($name_attr-&gt;getValue);
+}
+print $dom;
+&lt;/c&gt;
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-832495"&gt;
+&lt;c&gt;($q=q:Sq=~/;[c](.)(.)/;chr(-||-|5+lengthSq)`"S|oS2"`map{chr |+ord
+}map{substrSq`S_+|`|}3E|-|`7**2-3:)=~y+S|`+$1,++print+eval$q,q,a,&lt;/c&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.1416} --&gt;</doctext>
+<root_node field_name="root_node">1193581</root_node>
+<parent_node field_name="parent_node">1193581</parent_node>
+<thread id="1193581">
+<node id="1193600"><node id="1193602"><node id="1193606"><node id="1193613"/>
+<node id="1193620"><node id="1193623"><node id="1193626"><node id="1193627"><node id="1193703"><node id="1193704"><node id="1193705"><node id="1193706"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1193712"/>
+</node>
+</node>
+</node>
+</thread></node>

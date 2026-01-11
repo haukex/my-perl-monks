@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1231547" title="JSON::Path and node iteration" created="2019-03-21 10:41:13" updated="2019-03-21 10:41:13" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1091361">frazap</author>
+<doctext field_name="doctext">I have the following json data
+
+&lt;readmore&gt;
+&lt;code&gt;
+{"status":"ok","message-type":"work-list","message-version":"1.0.0","message":{"facets":{},"total-results":1,"items":[{"author":[{"given":"Brahim","family":"Oubaha","sequence":"first","affiliation":[{"name":"Laboratory of Biology and Biotechnology of Microorganisms Faculty of Sciences Semlalia Cadi Ayyad University Marrakech Morocco"},{"name":"Laboratory of Interaction Plant\u2010Microorganisms, Department of Biology University of Fribourg Fribourg Switzerland"}]},{"given":"Ahmed","family":"Nafis","sequence":"additional","affiliation":[{"name":"Laboratory of Biology and Biotechnology of Microorganisms Faculty of Sciences Semlalia Cadi Ayyad University Marrakech Morocco"}]},{"given":"Mohamed","family":"Baz","sequence":"additional","affiliation":[{"name":"Laboratory of Biology and Biotechnology of Microorganisms Faculty of Sciences Semlalia Cadi Ayyad University Marrakech Morocco"}]},{"given":"Felix","family":"Mauch","sequence":"additional","affiliation":[{"name":"Laboratory of Interaction Plant\u2010Microorganisms, Department of Biology University of Fribourg Fribourg Switzerland"}]},{"ORCID":"http:\/\/orcid.org\/0000-0001-7949-5592","authenticated-orcid":false,"given":"Mustapha","family":"Barakate","sequence":"additional","affiliation":[{"name":"Laboratory of Biology and Biotechnology of Microorganisms Faculty of Sciences Semlalia Cadi Ayyad University Marrakech Morocco"},{"name":"Agrobiosciences &amp;amp; Fertilizers Program University Mohammed IV Polytechnic (UM6P) Benguerir Morocco"}]}],"title":["The potential of antagonistic moroccan\n            Streptomyces\n            isolates for the biological control of damping\u2010off disease of pea (\n            Pisum sativum\n            L.) caused by\n            Aphanomyces euteiches"]}],"items-per-page":20,"query":{"start-index":0,"search-terms":null}}}
+&lt;/code&gt;
+&lt;/readmore&gt;
+
+That comes from the CrossRef metadata [https://api.crossref.org/works?select=author,title&amp;filter=has-affiliation:true,doi:10.1111%2Fjph.12775|repository]
+&lt;p&gt;I want to extract the names and affiliations with the format &lt;c&gt;name, firstname; affiliation1 - affiliation2 - ...&lt;/c&gt;&lt;/p&gt;
+I have the following code that works
+&lt;code&gt;
+sub unfoldauthors {
+    my ($data_ar) = @_;
+    return unless ($data_ar);
+    $data_ar = $data_ar-&gt;[0];
+
+    # die Dumper $data_ar;
+    my @paths = qw( $..family $..given $..affiliation );
+    my @selectors;
+    for my $p (@paths) {
+        push @selectors, JSON::Path-&gt;new($p);
+    }
+    my $aff_name = JSON::Path-&gt;new('$..name');
+    my $name;
+
+    my @lines;
+    my @sep = ( ", ", "; ", " " );
+    my $col = 0;
+    for my $s (@selectors) {
+
+        my @text = $s-&gt;values($data_ar);
+        #print $col, " ", Dumper(@text), "\n";
+        my $authors_limit = 50;
+        my $last          = $authors_limit - 1;
+        if ( @text &gt; $authors_limit ) {
+            @text = @text[ 0 .. $last ];
+            $text[$last] .= " ..." if ( $col == 1 );
+        }
+        my $pos = 0;
+        for my $name (@text) {
+            #print "$col $name\n";
+            if ( $col == 2 ) {
+                my @aff = $aff_name-&gt;values( $text[$pos] );
+                #print "aff:", Dumper( @aff ), "\n";
+                $name = join( " - ", @aff );
+                #print "\$name $name\n";
+            }
+            $lines[ $pos++ ] .= $name . $sep[$col];
+        }
+        $col++;
+    }
+    return \@lines;
+}
+&lt;/code&gt;
+&lt;p&gt;I first iterate over the nodes at the "upper level" &lt;c&gt;family, given, affiliation&lt;/c&gt;, and for the affiliation array ref, I extract the &lt;c&gt;name&lt;/c&gt; values.&lt;/p&gt;
+&lt;p&gt;My question: could I have done this more directly in one step ?&lt;/p&gt;
+&lt;p&gt;Thanks&lt;/p&gt;
+&lt;p&gt;François&lt;/p&gt;
+&lt;p&gt;Here is a complete working example&lt;/p&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+use strict;
+use warnings;
+use open qw&lt;:std :encoding(UTF-8) &gt;;
+use Data::Dumper;
+use REST::Client::CrossRef;
+use Log::Any::Adapter( 'File', './log_auth.txt', "log_level" =&gt; "info" );
+use JSON::Path;
+
+my $cr = REST::Client::CrossRef-&gt;new(
+    mailto        =&gt; 'd...h',
+    spit_raw_data =&gt; 0,
+    add_end_flag  =&gt; 1,
+    json_path     =&gt; [ ['$.title'], ['$.author'], ],
+    json_path_callback =&gt; { '$.author' =&gt; \&amp;unfoldauthors },
+);
+
+$cr-&gt;init_cache(
+    {   BasePath =&gt; "C:\\Windows\\Temp\\perl",
+        NoUpdate =&gt; 15 * 60,
+        verbose  =&gt; 0
+    }
+);
+
+sub unfoldauthors {
+    my ($data_ar) = @_;
+    return unless ($data_ar);
+    $data_ar = $data_ar-&gt;[0];
+    my @paths = qw( $..family $..given $..affiliation );
+    my @selectors;
+    for my $p (@paths) {
+        push @selectors, JSON::Path-&gt;new($p);
+    }
+    my $aff_name = JSON::Path-&gt;new('$..name');
+    my $name;
+
+    my @lines;
+    my @sep = ( ", ", "; ", " " );
+    my $col = 0;
+    for my $s (@selectors) {
+        my @text = $s-&gt;values($data_ar);
+        my $authors_limit = 50;
+        my $last          = $authors_limit - 1;
+        if ( @text &gt; $authors_limit ) {
+            @text = @text[ 0 .. $last ];
+            $text[$last] .= " ..." if ( $col == 1 );
+        }
+        my $pos = 0;
+        for my $name (@text) {
+            print "$col $name\n";
+            if ( $col == 2 ) {
+                my @aff = $aff_name-&gt;values( $text[$pos] );
+                $name = join( " - ", @aff );
+            }
+            $lines[ $pos++ ] .= $name . $sep[$col];
+        }
+        $col++;
+    }
+    return \@lines;
+}
+
+$cr-&gt;init_cache(
+    {   BasePath =&gt; "C:\\Windows\\Temp\\perl",
+        NoUpdate =&gt; 15 * 60,
+        verbose  =&gt; 0
+    }
+);
+my $select = "author,title";
+while (&lt;DATA&gt;) {
+    chomp;
+    my $data =
+        $cr-&gt;works_from_doi( $_, { 'has-affiliation' =&gt; 'true' }, $select );
+    next unless ($data);
+    for my $row (@$data) {
+        print "\n" unless ($row);
+        while ( my ( $f, $v ) = each %$row ) {
+            if ( $f eq '$.title' ) {
+                print "***$v\n\n";
+            }
+            else {
+                print "$v \n";
+            }
+
+        }
+    }
+}
+__DATA__
+10.1111/jph.12775
+&lt;/code&gt;
+&lt;/readmore&gt;
+</doctext>
+<thread id="1231547">
+<node id="1231551"><node id="1231552"><node id="1231553"><node id="1231564"><node id="1231572"><node id="1231573"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

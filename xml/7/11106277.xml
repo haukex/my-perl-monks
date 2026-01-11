@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11106277" title="How to Order an Array's Elements to Match Another Array's Element Order" created="2019-09-17 03:13:57" updated="2019-09-17 03:13:57" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="346494">ozboomer</author>
+<doctext field_name="doctext">&lt;p&gt;Folks:&lt;/p&gt;
+
+&lt;p&gt;I'm doing some (what I think is) more unusual things with some arrays.. and I'm looking to see if there's a more 'elegant' method than what I'm currently using...&lt;/p&gt;
+
+&lt;p&gt;I have a 'reference' array that is processed, producing a 'subset' array.  Generally, the elements of the 'subset' array are not in the same order as they appear in the 'reference' array... but that's the order I need to do some more processing.
+&lt;/p&gt;
+
+&lt;p&gt;So, I've cobbled together some code that does the job, viz:-
+&lt;/p&gt;
+&lt;code&gt;
+use Data::Dumper;
+   
+@array = ( "APPLE", "ORANGE", "PEACH",         # Use this for the ORDER
+           "GRAPE", "BANANA", "PINEAPPLE" );   
+   
+@subset = ( "PINEAPPLE", "GRAPE", "APPLE" );   # A required subset but NOT
+                                               # in the required order
+   
+@results = ();                                 # The subset with its elements in the 
+                                               # same order as the 'reference' array
+
+# ---- Method 1: Using arrays directly
+
+@tmp = ();
+foreach my $check (@subset) {
+   my ($index) = grep { $array[$_] eq $check } 0..$#array;
+   push(@tmp, $index);
+}
+
+@index_list = sort {$a &lt;=&gt; $b} @tmp;  # Sort the index values numerically
+@results = @array[@index_list];       # Slice the index items out of '@array'
+
+printf("Method 1:\n");
+print Dumper(@results);
+printf("\n");
+
+# ---- Method 2: Using a sub
+
+Reset_Order(\@subset, \@array, \@results);
+
+printf("Method 2:\n");
+print Dumper(@results);
+printf("\n");
+
+# ========== end mainline ==========
+
+# -------------------------------------
+#  Reset_Order - ...
+#  Uses Globals: 
+# -------------------------------------
+
+sub Reset_Order
+{
+   my ($small_ref, $large_ref, $res_ref) = @_;
+
+   my (@tmp);
+
+
+   @tmp = ();   
+   
+   foreach my $check (@$small_ref) {
+      my ($index) = grep { $$large_ref[$_] eq $check } 0..$#$large_ref;
+      push(@tmp, $index);
+   } 
+
+   my @index_list = sort {$a &lt;=&gt; $b} @tmp;  # Sort the index values numerically
+   @$res_ref = @$large_ref[@index_list];    # Slice the index items out of the large array
+   
+   return(1);
+
+} # end Reset_Order
+&lt;/code&gt;
+&lt;p&gt;...but maybe there's a better way to do it, say, using &lt;b&gt;[doc://grep]&lt;/b&gt; in conjunction with &lt;b&gt;[doc://map]&lt;/b&gt; but I can't vizualize how that might be done -- I'm still not super flash with the 'more clever' ways of using these functions(!)
+&lt;/p&gt;
+
+&lt;p&gt;I would search for something to help me out... but I don't even know how to describe what I'm trying to do(!)&lt;/p&gt;
+
+&lt;p&gt;I'd appreciate any suggestions on where to go next...
+&lt;/p&gt;
+</doctext>
+<thread id="11106277">
+<node id="11106278"/>
+<node id="11106280"><node id="11106283"><node id="11106286"><node id="11106290"/>
+</node>
+</node>
+</node>
+<node id="11106282"/>
+<node id="11106287"/>
+<node id="11106289"/>
+<node id="11106291"/>
+<node id="11106292"><node id="11106325"/>
+</node>
+<node id="11106297"><node id="11106298"/>
+<node id="11106330"/>
+</node>
+<node id="11106329"><node id="11106335"/>
+</node>
+<node id="11106340"/>
+<node id="11106382"><node id="11106399"/>
+</node>
+</thread></node>

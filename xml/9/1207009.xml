@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1207009" title="Re: bullet proof SLURP file" created="2018-01-09 14:47:08" updated="2018-01-09 14:47:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+my $x = &lt;$f&gt;;
+$! and croak "can't read mydata.txt: $!";&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This is incorrect, since Perl does not guarantee that [doc://$!] is cleared on a successful read. You'll have to check for errors by checking the return value of [doc://readline]:&lt;/p&gt;
+&lt;c&gt;
+open my $fh, '&lt;', 'mydata.txt' or die $!;
+defined( my $data = do { local $/; &lt;$fh&gt; } ) or die $!;
+close $fh or die $!;
+&lt;/c&gt;
+&lt;p&gt;But may I ask why you need this level of error checking? Are you reading from some kind of network resource for example? Because if it's just a regular file from a local harddisk, failures on e.g. [doc://close] are pretty rare.&lt;/p&gt;
+&lt;p&gt;If you really do need this level of security, then one possible solution is using [doc://read] and making sure the number of bytes read matches the file size - &lt;b&gt;however,&lt;/b&gt; the following makes sense &lt;i&gt;only&lt;/i&gt; if this is a plain ASCII or binary file, the file is not too huge, and note that the following has a theoretical race condition if someone else happens to be writing to the file at the same time as you're reading from it:&lt;/p&gt;
+&lt;c&gt;
+open my $fh, '&lt;:raw', 'mydata.txt' or die $!;
+my $size = -s $fh;
+read($fh, my $data, $size) == $size or die $!;
+close $fh or die $!;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1207003</root_node>
+<parent_node field_name="parent_node">1207003</parent_node>
+<thread id="1207003">
+<node id="1207009"><node id="1207014"><node id="1207017"/>
+<node id="1207024"/>
+</node>
+</node>
+<node id="1207013"><node id="1207018"/>
+</node>
+<node id="1207016"><node id="1207019"><node id="1207048"/>
+</node>
+</node>
+<node id="1207038"><node id="1207089"/>
+</node>
+</thread></node>

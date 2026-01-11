@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1179847" title="Feature Idea: qr//e (updated with solutions)" created="2017-01-18 08:47:45" updated="2017-01-18 08:47:45" _doctext_mode="strict"><type id="115">perlquestion</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Dear Monks,&lt;/p&gt;
+&lt;p&gt;As I was thinking about [id://1179840|this node] about dynamically building regexes, I had the idle thought that it might be nice if &lt;c&gt;qr//&lt;/c&gt; supported &lt;c&gt;qr//e&lt;/c&gt;, analogous to &lt;c&gt;s///e&lt;/c&gt; it would [doc://eval] the inside of the construct before parsing it as a regex. Now this is really just a &lt;i&gt;very&lt;/i&gt; minor itch, and I don't yet have any idea of how much sense it makes or how difficult it might be to implement, but I still thought I'd bounce it off of you.&lt;/p&gt;
+&lt;p&gt;Thoughts? Maybe the "normal" and/or "hacked" solutions below are good enough, and the effort required to implement &lt;c&gt;qr//e&lt;/c&gt; isn't worth it? Other potential problems I haven't noticed yet?&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2017-01-19:&lt;/b&gt; TIMTOWTDI has already provided plenty of possible solutions, and I just wasn't feeling creative enough at the moment to see them :-) Thank you very much, [LanX], [Haarg], and [vr]! I updated the code with your solutions, and added [doc://Test::More] and &lt;c&gt;sub testre&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Code:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More;
+sub testre;
+
+# The "normal" solution
+my $re = join '|', map {quotemeta} qw/a . | %/;
+testre  qr/$re/i ;
+
+# The "hacked" solution
+testre  qr{@{[ join '|', map {quotemeta} qw/a . | %/ ]}}i ;
+
+# Wouldn't this be a bit nicer?
+#testre  qr{ join '|', map {quotemeta} qw/a . | %/ }ei ;
+
+# ### Update ###
+
+# Thanks to LanX
+sub qre (&amp;;$) {
+    my $re = shift-&gt;();
+    eval 'qr/$re/'.(shift//'') || die $@
+}
+testre  qre{ join '|', map {quotemeta} qw/a . | %/ }'i' ;
+
+# Thanks to Haarg
+testre  map qr/$_/i, join '|', map {quotemeta} qw/a . | %/ ;
+
+# Thanks to vr
+testre  qr{(??{ join '|', map {quotemeta} qw/a . | %/ })}i ;
+
+done_testing;
+
+sub testre {
+    my $re = shift;
+    diag explain $re;
+    is ref $re, 'Regexp';
+    like $_, $re for qw/A . | %/;
+    unlike 'bcd', $re;
+}
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Regards,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update almost 6 months later:&lt;/i&gt; I just happened to stumble across this node: [id://347761] :-)&lt;/p&gt;</doctext>
+<thread id="1179847">
+<node id="1179859"><node id="1179861"><node id="1179869"><node id="1179954"><node id="1179958"><node id="1179960"/>
+<node id="1179995"><node id="1179998"><node id="1179999"><node id="1180008"/>
+</node>
+</node>
+</node>
+<node id="1180054"/>
+<node id="1180075"/>
+</node>
+<node id="1179959"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1179860"/>
+<node id="1179893"><node id="1179895"><node id="1179906"><node id="1179914"><node id="1179916"><node id="1179919"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1179908"/>
+</node>
+<node id="1179900"><node id="1179909"/>
+</node>
+</thread></node>

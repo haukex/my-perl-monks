@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1204791" title="Re^3: Is there an advantage to storing references to objects in an attribute instead of the object itself?" created="2017-12-03 06:22:53" updated="2017-12-03 06:22:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;To reply to your various posts in this thread in one place:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Circular references are one of those concepts I blew off and didn't worry about. It's probably time I started worrying.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It's definitely something to keep in mind when building object trees like you are. I tried out some different ways to locate circular references in [id://1180952|this node], but applying that to your code just shows a bunch of circular references of &lt;c&gt;Class::MOP::*&lt;/c&gt; objects, so I'd guess [mod://Moose] is wrapping everything up and hiding the actual circular references. Applying it to my code above shows them a little more clearly.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I stored a reference to a reader method ... it provides encapsulation&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Personally, I don't think hiding the "big object" in a code ref adds much. Consider that the class for the big object should already provide all the necessary encapsulation, and so I think there's nothing wrong with simply providing a getter on the "little object" class that returns the big object. You might just consider making this field read-only.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;... the &lt;c&gt;weak_ref =&gt; 1&lt;/c&gt; attribute property. However, slapping that in breaks my code.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, I can confirm that in your code putting &lt;c&gt;weak_ref&lt;/c&gt; on either the &lt;c&gt;little_objs&lt;/c&gt; or &lt;c&gt;get_obj_by_id&lt;/c&gt; causes "Can't use an undefined value as a HASH/subroutine reference" errors. Also, if I take your code as shown here, and add a &lt;c&gt;sub DESTROY&lt;/c&gt; to track destruction like I showed above, it shows the memory leak. Since adding a level of indirection with the code ref doesn't seem to break my code above, at the moment I'm guessing that it's the combination of [mod://Moose]'s &lt;c&gt;weak_ref&lt;/c&gt; and the code ref that is causing the problem, but I haven't investigated this further, because I can fix the problem by doing what I said above, just giving the little object a reference to the big object:&lt;/p&gt;
+&lt;readmore title="Working code:"&gt;
+&lt;p&gt;Working code:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use 5.014;
+
+package BigObj {
+	use Moose;
+	has 'little_objs' =&gt; ( is =&gt; 'rw', isa =&gt; 'HashRef',
+		default =&gt; sub { {} } );
+	sub add_little_obj {
+		my ($self, $little_obj) = @_;
+		$little_obj-&gt;big_obj($self);
+		$self-&gt;little_objs-&gt;{$little_obj-&gt;id} = $little_obj;
+	}
+	sub get_little_obj {
+		my ($self, $id) = @_;
+		return $self-&gt;little_objs-&gt;{$id};
+	}
+	sub DESTROY { print "DESTROY ",ref(shift),"\n" }
+}
+
+package LittleObj {
+	use Moose;
+	has 'id' =&gt; (is =&gt; 'rw');
+	has 'big_obj' =&gt; (is =&gt; 'rw', weak_ref=&gt;1);
+	sub alter_another_little_object {
+		my ($self, $id) = @_;
+		$self-&gt;big_obj-&gt;get_little_obj($id)-&gt;do_stuff;
+	}
+	sub do_stuff { print "I'm doing stuff to: ",shift-&gt;id,"\n" }
+	sub DESTROY {
+		my $self = shift;
+		print "DESTROY ",ref($self)," id=",$self-&gt;id,"\n" }
+}
+
+my $big = BigObj-&gt;new();
+my $little1 = LittleObj-&gt;new(id=&gt;'little1');
+my $little2 = LittleObj-&gt;new(id=&gt;'little2');
+$big-&gt;add_little_obj($little1);
+$big-&gt;add_little_obj($little2);
+$little1-&gt;alter_another_little_object('little2');
+
+print "Clearing vars...\n";
+$little1 = undef;
+$little2 = undef;
+$big = undef;
+
+END { print "END\n" }
+
+__END__
+
+I'm doing stuff to: little2
+Clearing vars...
+DESTROY BigObj
+DESTROY LittleObj id=little2
+DESTROY LittleObj id=little1
+END
+&lt;/c&gt;
+&lt;/readmore&gt;
+</doctext>
+<root_node field_name="root_node">1204699</root_node>
+<parent_node field_name="parent_node">1204757</parent_node>
+<thread id="1204699">
+<node id="1204701"/>
+<node id="1204702"/>
+<node id="1204705"/>
+<node id="1204716"><node id="1204757"><node id="1204758"/>
+<node id="1204771"/>
+<node id="1204791"/>
+<node id="1204821"/>
+</node>
+</node>
+<node id="1204744"/>
+</thread></node>

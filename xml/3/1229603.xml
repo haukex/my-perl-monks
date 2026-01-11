@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229603" title="Ampersand changes behavior of subroutine" created="2019-02-08 04:24:29" updated="2019-02-08 04:24:29" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="988900">w8lle</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Monks!&lt;/p&gt;
+
+&lt;p&gt;I've noticed that my subroutine behaves differently depending on if I call it with an "&amp;amp;" character or not. I'm running the script on Ubuntu with Perl v5.26.1.&lt;/p&gt;
+
+&lt;p&gt;I have a list with duplicated entries and a subroutine that returns the unique entries from that list. If I assign the result of my subroutine to another list and then print that list, it doesn't matter if the subroutine is called with a preceding "&amp;amp;" character or not...&lt;/p&gt;
+
+&lt;p&gt;However, if I use the result of the subroutine directly in a for loop, the subroutine works fine if called with an "&amp;amp;" character but doesn't do it's job if it's absent!&lt;/p&gt;
+
+&lt;p&gt;Any thoughts; is this a feature or a fault??&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+my @list = qw (a a b b c c d d);
+
+print "\nAssigning list:\n";
+
+for my $i (0 .. 1) {
+    my @unique    = ($i)? removeDuplicates (@list): &amp;removeDuplicates (@list);
+    my $ampersand = ($i)? "": "&amp;";
+    print $ampersand, $_, "\n" for (sort @unique);
+    print "=\n";
+}
+
+print "\nUsing in for loop:\n";
+
+for my $i (0 .. 1) {
+    if ($i) {
+        for my $character (sort removeDuplicates (@list)) {
+            print $character, "\n";
+        }
+
+    } else {
+        for my $character (sort &amp;removeDuplicates (@list)) {
+            print "&amp;", $character, "\n";
+        }
+    }
+    print "=\n";
+}
+
+sub removeDuplicates {
+    my %hash;
+    @hash{@_} = 1;
+    return keys %hash;
+}
+&lt;/code&gt;
+
+&lt;p&gt;Running the above script gives me the following output:&lt;/p&gt;
+
+&lt;code&gt;
+user@host:~/scripts/test$ ./unique.pl 
+
+Assigning list:
+&amp;a
+&amp;b
+&amp;c
+&amp;d
+=
+a
+b
+c
+d
+=
+
+Using in for loop:
+&amp;a
+&amp;b
+&amp;c
+&amp;d
+=
+a
+a
+b
+b
+c
+c
+d
+d
+=
+user@host:~/scripts/test$
+&lt;/code&gt;
+&lt;p&gt;Many thanks in advance!&lt;/p&gt;</doctext>
+<thread id="1229603">
+<node id="1229604"><node id="1229606"/>
+</node>
+<node id="1229612"/>
+<node id="1229645"/>
+</thread></node>

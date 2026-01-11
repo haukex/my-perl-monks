@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11153450" title="Re: script runs, but doesn't appear to call file" created="2023-07-17 13:26:36" updated="2023-07-17 13:26:36" _doctext_mode="lenient"><type id="11">note</type>
+<author id="5348">Corion</author>
+<doctext field_name="doctext">&lt;p&gt;The script has misleading names (&lt;c&gt;$infile&lt;/c&gt; is the name of an output file), but I think the likely problem stems from a change in the format of the exclusion file:&lt;/p&gt;
+&lt;c&gt;
+open(ROFILE, "&lt;", $mExcludingFile) or die("Can't open $mExcludingFile exception file!");
+while(&lt;ROFILE&gt;) {
+  push(@mArray, $_);
+}
+...
+&lt;/c&gt;
+&lt;p&gt;Here, &lt;c&gt;$_&lt;/c&gt; contains the newline from each line in the file. If the file is formatted with Windows-style newlines (&lt;c&gt;\r\n&lt;/c&gt;), it will contain &lt;c&gt;\r\n&lt;/c&gt; at the end of each line. These lines are collected in the &lt;c&gt;@mArray&lt;/c&gt; array (which would likely have better been named &lt;c&gt;@exclusionList&lt;/c&gt; or something).&lt;/p&gt;
+&lt;c&gt;
+...
+      my $mLineNow = "$email $name\n";
+...
+      foreach $mArrayNow (@mArray) {
+        if ($mLineNow eq $mArrayNow) {
+&lt;/c&gt;
+&lt;p&gt;Here, the &lt;c&gt;$mLineNow&lt;/c&gt; is built up and a Unix-style newline is added. If the exclusion file was formatted with Windows newlines, these lines will never be identical.&lt;/p&gt;
+&lt;p&gt;My approach would be to first check if the difference in whitespace is the reason:&lt;/p&gt;
+&lt;c&gt;xxd excludes/everyone.txt&lt;/c&gt;
+&lt;p&gt;Check for &lt;c&gt;0d 0a&lt;/c&gt; sequences. If these show up, the file has Windows-style newlines.&lt;/p&gt;
+&lt;p&gt;I would then modify the code to strip all whitespace from the lines:&lt;/p&gt;
+&lt;c&gt;
+open(ROFILE, "&lt;", $mExcludingFile) or die("Can't open $mExcludingFile exception file!");
+while(&lt;ROFILE&gt;) {
+  s/\s+$//;
+  push(@mArray, $_);
+}
+&lt;/c&gt;
+...
+&lt;c&gt;
+      my $mLineNow = "$email $name"; # no newline needed here
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11153448</root_node>
+<parent_node field_name="parent_node">11153448</parent_node>
+<thread id="11153448">
+<node id="11153450"/>
+<node id="11153451"/>
+<node id="11153472"/>
+</thread></node>

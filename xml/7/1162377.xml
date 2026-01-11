@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1162377" title="Re^3: Adding hashes to already existing array" created="2016-05-06 15:35:26" updated="2016-05-06 15:35:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [ExReg],&lt;/p&gt;
+&lt;p&gt;I'd recommend you take a look at [doc://perldsc] for a cookbook of different data structures.
+You should also always [id://111088], especially when working with complex data structures -
+and your code contains a typo that prevents it from working properly and that &lt;c&gt;use strict;&lt;/c&gt; would have caught!
+Also, please post code that compiles, you're missing several closing quotes.&lt;/p&gt;
+&lt;p&gt;The syntax "&lt;c&gt;$%{$excerpts[$i]}{fpart}&lt;/c&gt;" is probably not doing what you want - it's populating a hash "&lt;c&gt;%%&lt;/c&gt;"!&lt;/p&gt;
+&lt;p&gt;Here's one way to do what you want. Note that &lt;c&gt;$excerpts[i]{fpart} = ...&lt;/c&gt; would not work, since at that point &lt;c&gt;$excerpts[i]&lt;/c&gt; is a string, not a hash ref, that's why I replace that element of &lt;c&gt;@excerpts&lt;/c&gt; with a new hashref.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use Data::Dumper;
+
+my $fc = 'abcdfoofrobnicatebardefforspambazghi'; 
+my $re2 = qr/(fo.)(.*?)(ba.)/;
+my @excerpts;
+push @excerpts, $1 while $fc =~ /($re2)/g;
+for my $i ( 0 .. $#excerpts ) {
+	$excerpts[$i] =~ /$re2/;
+	$excerpts[$i] = { fpart=&gt;$1, bpart=&gt;$3 };
+}
+
+print Dumper(\@excerpts);
+
+__END__
+
+$VAR1 = [
+          {
+            'bpart' =&gt; 'bar',
+            'fpart' =&gt; 'foo'
+          },
+          {
+            'fpart' =&gt; 'for',
+            'bpart' =&gt; 'baz'
+          }
+        ];
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1162370</root_node>
+<parent_node field_name="parent_node">1162375</parent_node>
+<thread id="1162370">
+<node id="1162371"><node id="1162375"><node id="1162377"><node id="1162384"><node id="1162385"/>
+<node id="1162387"><node id="1162388"><node id="1162389"><node id="1162394"><node id="1162407"/>
+<node id="1162408"><node id="1162418"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1162765"><node id="1162850"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1162381"><node id="1162386"/>
+</node>
+</thread></node>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1220253" title="Re^3: Libxml parser cosuming 100% cpu" created="2018-08-11 09:37:07" updated="2018-08-11 09:37:07" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;But i think if i use XML::Twig then execution time will be more than 2.5min.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;When it comes to optimizations, I'd suggest not "guessing" which might be faster, but measuring and testing!&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;i got it XML::LibXML store the doc in memory but its a small record of 100 Lines around ? do you think XML::Twig reduce the cpu usage and fast the execution.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If I understand correctly that you're splitting your ~1 million line file into chunks of 100 lines and then processing those one at a time, then I would agree with the &lt;i&gt;guess&lt;/i&gt; that [mod://XML::Twig] might not give you a big speed boost (unless you have ridiculously long lines).&lt;/p&gt;
+&lt;p&gt;On the other hand, if your ~1 million line file is one big, well-formed XML file, then you would be able to get rid of your custom "splitting" code and use [mod://XML::Twig] to process the entire file, one "record" at a time. If you need help with that, you'd have to show us some sample input (see [id://174051] and [id://1177642]).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Which findnodes you are talking about.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I was talking about this:&lt;/p&gt;
+&lt;c&gt;
+if ($xml-&gt;findnodes('./Indi/Lost/true') ) {
+}
+if ( $xml-&gt;findnodes('./Indi/Lost/true') || $xml-&gt;findnodes('./Indi/Losgshshsht/false') ) {
+}
+&lt;/c&gt;
+&lt;p&gt;Which is better written like this, to avoid the doubling of the &lt;c&gt;findnodes&lt;/c&gt; call (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; unless of course the first &lt;c&gt;if&lt;/c&gt; block makes modifications to the document that would require the second &lt;c&gt;if&lt;/c&gt; to re-run the &lt;c&gt;findnodes&lt;/c&gt;):&lt;/p&gt;
+&lt;c&gt;
+my $result = $xml-&gt;findnodes('./Indi/Lost/true');
+if ( $result ) {
+}
+if ( $result || $xml-&gt;findnodes('./Indi/Losgshshsht/false') ) {
+}
+&lt;/c&gt;
+&lt;p&gt;And a similar thing with &lt;c&gt;$xml-&gt;findnodes('./nike'))[0]-&gt;firstChild&lt;/c&gt;.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Which one is fast there in each two option&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I don't have the time to test right now, but the go-to module for this kind of comparison is [doc://Benchmark]. But as I said before, measure where your code is spending the most time with [mod://Devel::NYTProf], and then optimize those places, instead of guessing and doing what &lt;i&gt;might&lt;/i&gt; turn out to be an unnecessary micro-optimization.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1220224</root_node>
+<parent_node field_name="parent_node">1220238</parent_node>
+<thread id="1220224">
+<node id="1220225"><node id="1220238"><node id="1220240"/>
+<node id="1220253"/>
+</node>
+</node>
+<node id="1220232"><node id="1220234"/>
+<node id="1220239"><node id="1220242"><node id="1220243"><node id="1220251"><node id="1220252"/>
+</node>
+</node>
+</node>
+<node id="1220256"/>
+</node>
+</node>
+<node id="1220241"><node id="1220244"><node id="1220245"><node id="1220246"><node id="1220247"><node id="1220248"><node id="1220250"/>
+<node id="1220255"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1220268"/>
+</node>
+</node>
+<node id="1220257"/>
+<node id="1220270"/>
+</thread></node>

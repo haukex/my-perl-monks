@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227047" title="Re^3: File::Temp survival and scope created by &quot;do&quot;" created="2018-12-10 11:54:26" updated="2018-12-10 11:54:26" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1039428">Eily</author>
+<doctext field_name="doctext">&lt;p&gt;Well it looks like the variable $x (ie, the name) is only visible inside the do BLOCK, but the associated scalar's life is bound to the containing scope.&lt;/p&gt;
+&lt;p&gt;I'm not sure what you mean about being able to return a value, but having the inverting the order of the statements inside the do BLOCK yields the same result:
+&lt;c&gt;perl -le "sub Foo::DESTROY {print 'BLAM'}; print 'A'; do { 1; my $x = bless {}, 'Foo' }; print 'B' ";
+A
+BLAM
+B&lt;/c&gt; (yup, windows over here). This looks like an optimization issue, when [doc://do] contains only a single statement, I guess it is optimized as a single statement executed in the containing scope, while the visibility of the variable is still limited to the [doc://do] block.&lt;/p&gt;
+&lt;p&gt;The fact that it works properly when the [doc://do] contains more than one statement means there isn't a real problem though, because if there's only one statement, the lexical declaration is technically not needed. (Edit: Or maybe the issue is that perl lets you declare a lexical that you never use, but that's not specific to [doc://do])&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1227033</root_node>
+<parent_node field_name="parent_node">1227043</parent_node>
+<thread id="1227033">
+<node id="1227041"><node id="1227043"><node id="1227047"><node id="1227064"><node id="1227065"><node id="1227073"><node id="1227078"/>
+</node>
+</node>
+<node id="1227070"><node id="1227081"/>
+<node id="1227091"/>
+<node id="1227095"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

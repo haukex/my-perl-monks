@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201633" title="Re^3: Parsing HTML/XML with Regular Expressions (regex)" created="2017-10-18 20:05:55" updated="2017-10-18 20:05:55" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1080444">RonW</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;It was possible to produce a regex that parses all of Perl, why not one for HTML?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;There is a regex to parse XML (so, therefore, XHTML): [http://www.cs.sfu.ca/~cameron/REX.html#AppA|XML Shallow Parsing]&lt;/p&gt;
+&lt;p&gt;That regex produces a list of strings that will need further processing. Shallow parsing is mostly useful for XML-to-XML filtering. Technically, this challenge could be considered filtering, just not to XML. Will need to keep track of &lt;c&gt;&lt;div&gt;&lt;/c&gt; nesting to find the end of the contained text.&lt;/p&gt;
+&lt;c&gt;
+# Not tested and assumes proper nesting of &lt;div&gt; elements (and valid XML syntax)
+# (Warning: Messy hack. Read at your own risk.)
+my $nest = 0;
+my $out = '';
+my @elements = $xml =~ /$XML_SPE/g; # see http://www.cs.sfu.ca/~cameron/REX.html#AppA
+for (@elements)
+{
+    if (/^&lt;div/)
+    {
+        $nest++ if ($nest &gt; 0); # only increment if inside an interesting &lt;div&gt;
+        next unless (/class\h*=\h*['"]data['"]/); # \h is horizontal white space
+        next unless (/id\h*=\h*['"](\w+)['"]/);
+        $out .= ", $1=";
+        $nest = 1 if ($nest == 0); # if this is the outer most interesting &lt;div&gt;
+        next;
+    }
+    $nest--, next if (/^&lt;\/div/);
+    next if (/^[&lt;]/); # skip other mark-up
+    $out .= $_ if ($nest &gt; 0);
+}
+$out =~ s/^, //;
+say "$out\n";
+&lt;/c&gt;
+&lt;p&gt;Update: Changed title to indicate (regex)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1201438</root_node>
+<parent_node field_name="parent_node">1201488</parent_node>
+<thread id="1201438">
+<node id="1201443"><node id="1201454"><node id="1201483"><node id="1201489"/>
+</node>
+</node>
+</node>
+<node id="1201450"><node id="1201457"/>
+</node>
+<node id="1201473"><node id="1201488"><node id="1201493"><node id="1201521"><node id="1201551"/>
+</node>
+</node>
+<node id="1201633"><node id="1201689"><node id="1201709"/>
+<node id="1201716"><node id="1201740"><node id="1201776"/>
+<node id="1201933"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201490"><node id="1201529"><node id="1201612"/>
+</node>
+</node>
+</node>
+<node id="1201497"/>
+<node id="1201514"><node id="1201621"><node id="1201623"><node id="1201624"><node id="1201625"><node id="1201628"><node id="1201663"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201540"><node id="1201622"><node id="1201657"/>
+</node>
+</node>
+<node id="1201544"><node id="1201553"/>
+</node>
+<node id="1201545"><node id="1201554"/>
+</node>
+</thread></node>

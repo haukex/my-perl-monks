@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11154171" title="[Solved] Wrapping code in a sub causes an error I don't understand." created="2023-08-30 17:16:20" updated="2023-08-30 17:16:20" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="436161">davies</author>
+<doctext field_name="doctext">&lt;p&gt;The file below, with two lines commented out, works as I expect.&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+package Sscce;
+
+use Getopt::Long;
+use Pod::Usage;
+
+    my ($opt_help, $opt_man,
+    );
+
+# sub main {
+    GetOptions(
+      'help'      =&gt; \$opt_help,
+      'man'       =&gt; \$opt_man,
+    ) or pod2usage(-verbose =&gt; 1) &amp;&amp; exit;
+
+    pod2usage(-verbose =&gt; 1) &amp;&amp; exit if defined $opt_help;
+    pod2usage(-verbose =&gt; 2) &amp;&amp; exit if defined $opt_man;
+# }
+
+1;
+
+=pod
+
+=head1 NAME
+
+=head1 ARGUMENTS
+
+=head1 OPTIONS
+
+  --help       Brief manual
+  --man        Full manual
+&lt;/c&gt;
+&lt;p&gt;Running the file gives the output below:&lt;/p&gt;
+&lt;c&gt;
+X:\Data\Perl\NoFile&gt;perl Sscce.pm -h
+Arguments:
+Options:
+      --help       Brief manual
+      --man        Full manual
+
+
+X:\Data\Perl\NoFile&gt;perl Sscce.pm -m
+NAME
+ARGUMENTS
+OPTIONS
+      --help       Brief manual
+      --man        Full manual
+&lt;/c&gt;
+&lt;p&gt;But if the two comment lines are uncommented and the calling command changed, I get an error:&lt;/p&gt;
+&lt;c&gt;
+X:\Data\Perl\NoFile&gt;Perl -I. -MSscce -e"Sscce::main @ARGV" -- -h
+Can't open -e: No such file or directory at Sscce.pm line 17.
+&lt;/c&gt;
+&lt;p&gt;I fear that I have no idea how to approach this. Adding diagnostics gives more data:&lt;/p&gt;
+&lt;c&gt;
+X:\Data\Perl\NoFile&gt;Perl -I. -MSscce -e"Sscce::main @ARGV" -- -h
+Can't open -e: No such file or directory at Sscce.pm line 18 (#1)
+    (S inplace) The implicit opening of a file through use of the &lt;&gt;
+    filehandle, either implicitly under the -n or -p command-line
+    switches, or explicitly, failed for the indicated reason.  Usually
+    this is because you don't have read permission for a file which
+    you named on the command line.
+
+    (F) You tried to call perl with the -e switch, but /dev/null (or
+    your operating system's equivalent) could not be opened.
+
+Uncaught exception from user code:
+        Can't open -e: No such file or directory at Sscce.pm line 18.
+        Pod::Simple::parse_file(Pod::Usage=HASH(0x262f6a8), "-e") called at C:/Strawberry/perl/lib/Pod/Text.pm line 737
+        Pod::Text::parse_file(Pod::Usage=HASH(0x262f6a8), "-e") called at C:/Strawberry/perl/site/lib/Pod/Simple.pm line 535
+        Pod::Simple::parse_from_file(Pod::Usage=HASH(0x262f6a8), "-e", GLOB(0x2623f40)) called at C:/Strawberry/perl/lib/Pod/Text.pm line 706
+        Pod::Text::parse_from_file(Pod::Usage=HASH(0x262f6a8), "-e", GLOB(0x2623f40)) called at C:/Strawberry/perl/lib/Pod/Usage.pm line 179
+        Pod::Usage::pod2usage("-verbose", 1) called at Sscce.pm line 18
+        Sscce::main(GLOB(0x2623f40)) called at -e line 1
+&lt;/c&gt;
+&lt;p&gt;Unfortunately, going through the code points listed has left me none the wiser. I'd be grateful for any help.&lt;/p&gt;
+&lt;p&gt;Regards,&lt;/p&gt;
+&lt;p&gt;John Davies&lt;/p&gt;</doctext>
+<thread id="11154171">
+<node id="11154172"><node id="11154189"/>
+</node>
+<node id="11154173"><node id="11154190"><node id="11154194"/>
+</node>
+</node>
+<node id="11154178"/>
+</thread></node>

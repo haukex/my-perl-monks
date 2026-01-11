@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1164698" title="Re: Recover data from a config file to use them with Selenium::Remote::Driver" created="2016-06-01 12:33:02" updated="2016-06-01 12:33:02" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [Chaoui05],&lt;/p&gt;
+&lt;p&gt;It looks like your config file is using array ref constructors &lt;c&gt;[...]&lt;/c&gt; where it should be using hash ref constructors &lt;c&gt;{...}&lt;/c&gt;. If you can change your configuration file, that would be the easiest way to fix up your configuration. Then you can use all the normal methods of accessing complex data structures, see e.g. [doc://perlreftut] and "hash of hashes" in [doc://perldsc].&lt;/p&gt;
+&lt;p&gt;If you can't change the format of the file, then since the array refs appear to contain a list of key/value pairs, you can simply assign them to a hash, for example:&lt;/p&gt;
+&lt;c&gt;
+my %programs = @{ $config-&gt;{programs} };
+for my $prog (values %programs) {
+	my %param = @{ $prog-&gt;{parameters} };
+	print $param{Count_id},"\n";
+}
+&lt;/c&gt;
+&lt;p&gt;Will print the &lt;c&gt;Count_id&lt;/c&gt; value for each "program". One &lt;b&gt;caveat&lt;/b&gt; is that this will silently clobber any "programs" and "parameters" with the same name. Whether that is a problem in your case depends on what the rest of your configuration file looks like.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Updated wording.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1164695</root_node>
+<parent_node field_name="parent_node">1164695</parent_node>
+<thread id="1164695">
+<node id="1164698"><node id="1164746"><node id="1164761"><node id="1164838"/>
+</node>
+</node>
+</node>
+</thread></node>

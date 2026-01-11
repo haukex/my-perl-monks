@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201610" title="Why doesn't this die with &quot;Can't use an undefined value as an ARRAY reference&quot;?&quot;" created="2017-10-18 13:49:54" updated="2017-10-18 13:49:54" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="779500">kikuchiyo</author>
+<doctext field_name="doctext">&lt;p&gt;Consider the following script:&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Test::More;
+use Data::Dumper;
+
+my $hash = {
+	'50' =&gt; [ 1 ]
+};
+print Dumper $hash;
+
+is(keys %{$hash},            1, q/keys %{$hash} is 1/);
+is(scalar @{$hash-&gt;{'50'}},  1, q/$hash-&gt;{'50'} is 1/);
+is(scalar @{$hash-&gt;{'100'}}, 0, q/$hash-&gt;{'100'} is 0/);
+
+print Dumper $hash;
+
+done_testing();
+&lt;/code&gt;
+
+&lt;p&gt;With Perl 5.24.3 it runs to the end and all tests pass, even though I would expect that it dies with an "Can't use an undefined value as an ARRAY reference" error when it tries to dereference $hash-&gt;{'100'} which indeed does not exist.&lt;/p&gt;
+
+&lt;p&gt;Compare with &lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+my $hash = {
+	'50' =&gt; [ 1 ]
+};
+
+print scalar @{$hash-&gt;{'100'}};
+&lt;/code&gt;
+&lt;p&gt;which dies with the expected error.&lt;/p&gt;
+
+&lt;p&gt;Under Perl 5.16 the first program also dies with the expected error. (This is how we initially noticed the problem: a program that was developed on 5.22+ needed to be ported to Centos 7 which has 5.16, and the tests began to fail there.)&lt;/p&gt;
+
+&lt;p&gt;What is going on here?&lt;/p&gt;
+
+&lt;p&gt;(Errata: Now I've ran with more Perl versions (perversions), and it doesn't die under perl 5.22 and above, but dies as expected under perl 5.20 and below)&lt;/p&gt; </doctext>
+<thread id="1201610">
+<node id="1201611"><node id="1201619"><node id="1201627"/>
+</node>
+<node id="1201678"><node id="1201687"/>
+</node>
+</node>
+</thread></node>

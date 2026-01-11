@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117373" title="Re: Identifying CJK Unified Characters" created="2020-05-28 02:37:32" updated="2020-05-28 02:37:32" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You can use [doc://perluniprops] to help identify characters in certain Unicode blocks and with certain properties. For the following to work, the XML file needs to correctly declare its encoding. Also note that the newer the Perl version the better, since later Perl versions have the newer Unicode versions included.&lt;/p&gt;
+&lt;p&gt;&lt;c&gt;in.xml&lt;/c&gt;:&lt;/p&gt;
+&lt;pre&gt;
+&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+&amp;lt;root&amp;gt;
+	&amp;lt;test&amp;gt;Hello &amp;#x7AEF;&amp;#x5B50; World&amp;lt;/test&amp;gt;
+	&amp;lt;test&amp;gt;F&amp;ouml;&amp;ouml; B&amp;auml;r&amp;lt;/test&amp;gt;
+&amp;lt;/root&amp;gt;
+&lt;/pre&gt;
+&lt;p&gt;Code:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use open qw/:std :utf8/;
+use XML::LibXML;
+
+my $dom = XML::LibXML-&gt;load_xml( location =&gt; 'in.xml' );
+for my $node ($dom-&gt;findnodes('//test')) {
+	my $text = $node-&gt;textContent;
+	print "Before: $text\n";
+	$text =~ s/\p{Blk=CJK}//g;
+	print "After: $text\n";
+}
+#$dom-&gt;toFile('out.xml', 1);
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;pre&gt;
+Before: Hello &amp;#31471;&amp;#23376; World
+After: Hello  World
+Before: Föö Bär
+After: Föö Bär
+&lt;/pre&gt;</doctext>
+<root_node field_name="root_node">11117369</root_node>
+<parent_node field_name="parent_node">11117369</parent_node>
+<thread id="11117369">
+<node id="11117373"><node id="11117423"><node id="11117434"/>
+</node>
+</node>
+</thread></node>

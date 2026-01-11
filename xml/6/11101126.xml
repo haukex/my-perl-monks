@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101126" title="Re: call subroutine if scalar is changed" created="2019-06-08 08:26:01" updated="2019-06-08 08:26:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I see [haj] made the same suggestion as I was working on the following code: you can use [doc://tie] to tie a scalar to a class, where you can customize the "fetch" and "store" events. See also [doc://perltie] and [doc://Tie::Scalar]. I tried this with your sample code and it works there as well.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+{
+	package Tie::Scalar::Callbacks;
+	sub TIESCALAR {
+		my $class = shift;
+		my %self;
+		@self{qw/ val store_cb fetch_cb /} = @_;
+		return bless \%self, $class;
+	}
+	sub FETCH {
+		my $self = shift;
+		$self-&gt;{fetch_cb}-&gt;($self-&gt;{val}) if $self-&gt;{fetch_cb};
+		return $self-&gt;{val};
+	}
+	sub STORE {
+		my $self = shift;
+		my $val = shift;
+		$self-&gt;{store_cb}-&gt;($self-&gt;{val}, $val) if $self-&gt;{store_cb};
+		$self-&gt;{val} = $val;
+	};
+	sub DESTROY { %{shift()}=() }
+}
+
+tie my $name, 'Tie::Scalar::Callbacks', "foo",
+	sub { print "storing &lt;$_[1]&gt;, was &lt;$_[0]&gt;\n" };
+print "name is $name\n";
+$name = "bar";
+print "name is $name\n";
+
+__END__
+
+name is foo
+storing &lt;bar&gt;, was &lt;foo&gt;
+name is bar
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor update to constructor.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11101123</root_node>
+<parent_node field_name="parent_node">11101123</parent_node>
+<thread id="11101123">
+<node id="11101124"/>
+<node id="11101125"/>
+<node id="11101126"><node id="11101127"><node id="11101132"/>
+<node id="11101140"/>
+</node>
+</node>
+<node id="11101148"><node id="11101149"/>
+<node id="11103489"><node id="11103546"/>
+</node>
+</node>
+</thread></node>

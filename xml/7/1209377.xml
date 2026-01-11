@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1209377" title="Re: Redirecting Output to shell command from within perl" created="2018-02-17 04:13:23" updated="2018-02-17 04:13:23" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I think it might be the most robust/portable to go through a temporary file using [doc://File::Temp] and [doc://system]:&lt;/p&gt;
+&lt;c&gt;
+use File::Temp qw/tempfile/;
+my ($fh,$fn) = tempfile(UNLINK=&gt;1);
+print $fh $output;
+close $fh;
+system('less',$fn) == 0 or die "system: \$?=$?";
+&lt;/c&gt;
+&lt;p&gt;But the following two also work; [mod://IPC::Run3] also usually works with temporary files internally:&lt;/p&gt;
+&lt;c&gt;
+use IPC::Run3 'run3';
+run3 ['less'], \$output or die $!;
+die "run3: \$?=$?" if $?;
+&lt;/c&gt;
+&lt;p&gt;Or with pure Perl and piped [doc://open], available in Perl 5.8 and up - but see [id://1180578|this node] as well as [id://1205217|this node] for the pitfalls!&lt;/p&gt;
+&lt;c&gt;
+my @cmd = ('less', '-');
+die '@cmd must have more than one element' unless @cmd&gt;1;
+open my $fh, '|-', @cmd or die $!;
+print $fh $output;
+close $fh or die $! ? $! : "pipe: \$?=$?";
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1209360</root_node>
+<parent_node field_name="parent_node">1209360</parent_node>
+<thread id="1209360">
+<node id="1209363"/>
+<node id="1209367"><node id="1209398"><node id="1209399"><node id="1209447"><node id="1209451"><node id="1209464"><node id="1209467"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1209377"/>
+<node id="1209380"/>
+</thread></node>

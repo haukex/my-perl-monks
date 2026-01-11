@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11120773" title="Re^3: Knowing when a code string contains code that will be executed at compile-time/end?" created="2020-08-15 05:46:38" updated="2020-08-15 05:46:38" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;They should show up when applying [doc://B::Deparse]&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Nope, as the OP shows. Plus deparsing requires an [doc://eval] of the string first.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use B::Deparse;
+
+my $code = q{ print "code\n"; s s s END { print "end\n" } see };
+my $coderef = eval qq{ sub { $code } };
+
+my $deparse = B::Deparse-&gt;new();
+$deparse-&gt;ambient_pragmas(strict =&gt; 'all', warnings=&gt;'all');
+print $deparse-&gt;coderef2text($coderef), "\n";
+
+__END__
+
+{
+    print "code\n";
+    s/ /();/ee;
+}
+end
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11120760</root_node>
+<parent_node field_name="parent_node">11120771</parent_node>
+<thread id="11120760">
+<node id="11120764"><node id="11120767"/>
+</node>
+<node id="11120765"><node id="11120771"><node id="11120773"/>
+</node>
+</node>
+<node id="11120770"><node id="11120814"/>
+</node>
+<node id="11120772"><node id="11120780"/>
+</node>
+<node id="11120778"><node id="11120784"/>
+</node>
+<node id="11120783"/>
+</thread></node>

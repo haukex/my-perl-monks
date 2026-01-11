@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11120004" title="Help checking program return values" created="2020-07-29 12:58:30" updated="2020-07-29 12:58:30" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1022667">Special_K</author>
+<doctext field_name="doctext">&lt;p&gt;
+I have the following code that calls an executable and checks the return value (OS is Linux):
+&lt;/p&gt;
+
+&lt;code&gt;
+system($path_to_my_executable);
+
+my $exit_value = $? &gt;&gt; 8;
+my $signal_num = $? &amp; 127;
+my $dumped_core = $? &amp; 128;
+
+# check for segfaults
+if ($signal_num == 11)
+{
+    if (!$dumped_core)
+    {
+        printf("ERROR: executable exited with segmentation fault.\n");
+        exit(-1);
+    }
+    
+    else
+    {
+        printf("ERROR: executable exited with segmentation fault (core dumped).\n");
+    }
+}
+
+elsif ($signal_num != 0)
+{
+    printf("ERROR: executable exited abnormally with signal $signal_num\n");
+    exit(-1);
+}
+
+elsif ($exit_value == 255)
+{
+    printf("ERROR: executable exited abnormally with value -1, exiting...\n");
+    exit(-1);
+}
+&lt;/code&gt;
+
+&lt;p&gt;
+The original intention of the above code was to catch all segmentation faults from myexecutable and exit the script if one was found.  The problem is that my program seg faulted but there was no signal, i.e. $? contained the value 0b1000101100000000.  The upper 8 bits had an exit code of 139, which indicates a seg fault, but the signal for seg fault was not set.  Consequently my code above did not catch the seg fault.  I have two questions:
+&lt;br&gt;
+&lt;br&gt;
+1. Do segmentation faults not require that signal 11 be sent?  Under what circumstances will signal 11 be sent in the event of a segmentation fault?
+&lt;br&gt;
+&lt;br&gt;
+2. Is there a module or library I can use to automatically catch all of the "bad" return values so I don't have to code all of the enumerations of signals and return values myself?
+&lt;/p&gt;
+
+
+</doctext>
+<thread id="11120004">
+<node id="11120005"/>
+<node id="11120006"><node id="11120007"/>
+</node>
+<node id="11120017"/>
+</thread></node>

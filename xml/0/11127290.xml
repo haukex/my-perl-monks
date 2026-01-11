@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11127290" title="Re^6: Question regarding Time::Piece and timezones" created="2021-01-22 11:17:57" updated="2021-01-22 11:17:57" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Daylight Saving.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Hm, yes, true if one reads the question without the context of the rest of the thread. My confusion stem&lt;ins&gt;s&lt;/ins&gt;&lt;del&gt;med&lt;/del&gt; from the fact that the thread includes YMD and time zone names that would normally resolve that ambiguity. &lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; Of course the time zone names used in the following are still ambiguous in other ways, as per my post above. &lt;small&gt;&lt;i&gt;Update 2&amp;amp;3:&lt;/i&gt;&lt;/small&gt; Upon rereading: the &lt;i&gt;"in the US"&lt;/i&gt; bit is still confusing me, since this ambiguity is true of any time zone that observes DST, hence my assumption that this had something to do with AM/PM rather than DST. &lt;small&gt;&lt;i&gt;Other minor reformatting.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime::Format::Strptime;
+
+my $strp = DateTime::Format::Strptime-&gt;new(
+	pattern =&gt; '%F %H:%M %P %Z', on_error =&gt; 'croak',
+	zone_map =&gt; { CST =&gt; '-0600', CDT =&gt; '-0500' } );
+
+for my $str ('2020-03-08 1:23 AM CST','2020-03-08 1:23 AM CDT') {
+	print $str, " = ";
+	my $dt = $strp-&gt;parse_datetime($str);
+	$dt-&gt;set_time_zone('UTC');
+	print $dt-&gt;strftime('%F %T %Z'), " = ";
+	$dt-&gt;set_time_zone('America/Chicago');
+	print $dt-&gt;strftime('%F %T %Z'), "\n";
+}
+
+__END__
+
+2020-03-08 1:23 AM CST = 2020-03-08 07:23:00 UTC = 2020-03-08 01:23:00 CST
+2020-03-08 1:23 AM CDT = 2020-03-08 06:23:00 UTC = 2020-03-08 00:23:00 CST
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11126886</root_node>
+<parent_node field_name="parent_node">11127283</parent_node>
+<thread id="11126886">
+<node id="11126887"/>
+<node id="11126890"><node id="11126891"><node id="11126903"><node id="11126906"/>
+<node id="11126933"/>
+<node id="11126934"/>
+<node id="11126967"><node id="11127485"><node id="11127671"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11126895"><node id="11126952"><node id="11127189"><node id="11127192"><node id="11127277"/>
+<node id="11127321"/>
+</node>
+<node id="11127280"><node id="11127283"><node id="11127290"/>
+</node>
+<node id="11127324"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11126899"><node id="11126935"/>
+<node id="11127322"><node id="11127328"/>
+<node id="11127345"/>
+</node>
+</node>
+</thread></node>

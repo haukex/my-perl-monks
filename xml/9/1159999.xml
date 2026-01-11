@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1159999" title="Re: How to use regex to get brackets surrounding something" created="2016-04-09 09:46:24" updated="2016-04-09 09:46:24" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [lazycoder],&lt;/p&gt;
+&lt;p&gt;In researching this a bit I came across [id://308039], which has lots of answers to a question similar to yours.
+There's also [doc://perlfaq6#Can-I-use-Perl-regular-expressions-to-match-balanced-text?|perlfaq6], [doc://Text::Balanced], and [mod://Regexp::Common::balanced].&lt;/p&gt;
+&lt;p&gt;For fun, I went all-out and parsed the string into a Perl data structure - this is probably overkill for you, but I'll post it anyways in case it's useful to someone.&lt;/p&gt;
+&lt;p&gt;First, the output:&lt;/p&gt;
+&lt;c&gt;
+   $input = '(E,(A,B),(C,(X,Y,Z),D),F)';
+  $parsed = ['E,',['A,B'],',',['C,',['X,Y,Z'],',D'],',F'];
+$filtered = ['E,',',',',F'];
+  $output = '(E,F)';
+&lt;/c&gt;
+&lt;p&gt;And the code:&lt;/P&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use 5.010;
+
+my ($LEFT,$RIGHT) = ('(',')');
+
+use Regexp::Common qw/balanced/;
+sub parseparens {
+	my ($str) = @_;
+	return $str unless index($str,$LEFT)&gt;=0;
+	$str = substr $str,1,-1 if $str=~/^\Q$LEFT\E.*\Q$RIGHT\E$/;
+	return [ map {parseparens($_)}
+		split /$RE{balanced}{-parens=&gt;$LEFT.$RIGHT}/, $str ];
+}
+
+sub buildparens {
+	my ($data) = @_;
+	return $data unless ref $data;
+	return join '', map {buildparens($_)} $LEFT, @$data, $RIGHT;
+}
+
+# $wanted gets the string elements in $_ and can manipulate them,
+# if it returns false the entire arrayref
+# which contains that string is filtered out
+sub filter {
+	my ($data,$wanted) = @_;
+	if (!ref $data) {
+		local $_ = $data;
+		return $wanted-&gt;() ? $_ : ();
+	}
+	my ($keep,@out) = (1);
+	for my $e (@$data) {
+		if (ref $e) {
+			push @out, filter($e,$wanted);
+		}
+		else {
+			local $_ = $e;
+			$keep=0 unless $wanted-&gt;();
+			push @out, $_;
+		}
+	}
+	return $keep ? \@out : ();
+}
+
+use Data::Dumper;
+$Data::Dumper::Terse=1;
+$Data::Dumper::Indent=0;
+
+my $input = '(E,(A,B),(C,(X,Y,Z),D),F)';
+say "   \$input = ", Dumper($input), ";";
+
+my $parsed = parseparens($input);
+say "  \$parsed = ", Dumper($parsed), ";";
+warn "parse-/buildparens round trip failed: ".buildparens($parsed)
+	unless buildparens($parsed) eq $input;
+
+my $filtered = filter($parsed, sub {!/\b(?:A|C)\b/});
+say "\$filtered = ", Dumper($filtered), ";";
+
+my $output = buildparens($filtered);
+$output=~s/,(?=,)//g;
+say "  \$output = ", Dumper($output), ";";
+&lt;/c&gt;
+&lt;p&gt;The &lt;c&gt;filter&lt;/c&gt; function can be implemented differently depending on the requirements. Also, I've kept the functions generic in that they don't care about the contents of the parentheses, which is why I manually squash the repeated commas at the end. (It's possible to make the functions care about commas by adding &lt;c&gt;split /,/, ...&lt;/c&gt; and &lt;c&gt;join ',', ...&lt;/c&gt; on input/output, but I removed that to simplify things.)&lt;/p&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1159985</root_node>
+<parent_node field_name="parent_node">1159985</parent_node>
+<thread id="1159985">
+<node id="1159986"><node id="1159987"/>
+<node id="1159988"/>
+</node>
+<node id="1159989"/>
+<node id="1159997"/>
+<node id="1159999"/>
+</thread></node>

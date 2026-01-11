@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1231556" title="Re^3: Linux::usermod - user name ... already exists" created="2019-03-21 14:58:47" updated="2019-03-21 14:58:47" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1069339">thanos1983</author>
+<doctext field_name="doctext">&lt;p&gt;Hello [id://830549|haukex],&lt;/p&gt;
+&lt;p&gt;I read your post so I guess something like that should be better :).&lt;/p&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use feature 'say';
+use IPC::Run qw( run timeout );
+
+sub rename_account {
+    my ($in, $out, $err);
+    my ( $name , $nname ) = ( @_ );
+    my @usename = ("usermod", "-l", "$nname", "$name");
+    run \@usename, \$in, \$out, \$err, timeout( 10 ) or die "Error: $?";
+    say "OUT: $out" if $out;
+    say "Error: $err" if $err;
+
+    my @changeHomeDir = ("usermod", "-d", "/home/$nname", "-m", "$nname");
+    run \@changeHomeDir, \$in, \$out, \$err, timeout( 10 ) or die "Error: $?";
+    say "OUT: $out" if $out;
+    say "Error: $err" if $err;
+
+    my @homeDir = ("ls", "-la", "/home");
+    run \@homeDir, \$in, \$out, \$err, timeout( 10 ) or die "Error: $?";
+    chomp $out;
+    return $out if $out;
+    return "Error: $err" if $err;
+}
+
+say rename_account("monk", "testUser");
+# say rename_account("testUser", "monk");
+
+__END__
+
+$ sudo perl test.pl
+total 12
+drwxr-xr-x  4 root     root     4096 Mar 21 19:52 .
+drwxr-xr-x 24 root     root     4096 Mar  5 20:59 ..
+drwxr-xr-x  2 testUser testUser 4096 Mar 21 19:16 testUser
+&lt;/code&gt;
+&lt;/readmore&gt;
+
+&lt;p&gt;&lt;strong&gt;Update: &lt;/strong&gt;Adding minor conversion STDOUT to array for better data manipulation.&lt;/p&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+use feature 'say';
+use IPC::Run qw( run timeout );
+
+sub rename_account {
+    my ($in, $out, $err);
+    my ( $name , $nname ) = ( @_ );
+    my @usename = ("usermod", "-l", "$nname", "$name");
+    run \@usename, \$in, \$out, \$err, timeout( 10 ) or die "Error: $?";
+    say "OUT: $out" if $out;
+    say "Error: $err" if $err;
+
+    my @changeHomeDir = ("usermod", "-d", "/home/$nname", "-m", "$nname");
+    run \@changeHomeDir, \$in, \$out, \$err, timeout( 10 ) or die "Error: $?";
+    say "OUT: $out" if $out;
+    say "Error: $err" if $err;
+
+    my @homeDir = ("ls", "-la", "/home");
+    run \@homeDir, \$in, \$out, \$err, timeout( 10 ) or die "Error: $?";
+    my @data = split "\n", $out;
+    return \@data if @data;
+    return "Error: $err" if $err;
+}
+
+# print Dumper rename_account("monk", "testuser");
+print Dumper rename_account("testuser", "monk");
+
+__END__
+
+$ sudo perl test.pl
+$VAR1 = [
+          'total 12',
+          'drwxr-xr-x  4 root   root     4096 Mar 22 10:46 .',
+          'drwxr-xr-x 24 root   root     4096 Mar  7 15:04 ..',
+          'drwxr-xr-x  2 monk   testuser 4096 Mar 22 10:43 monk',
+        ];
+&lt;/code&gt;
+&lt;/readmore&gt;
+
+&lt;p&gt;Thank you for the information. BR / Thanos&lt;/p&gt;
+&lt;code&gt;&lt;/code&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1069339"&gt;
+Seeking for Perl wisdom...on the process of learning...not there...yet!
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1231419</root_node>
+<parent_node field_name="parent_node">1231544</parent_node>
+<thread id="1231419">
+<node id="1231430"><node id="1231431"><node id="1231453"><node id="1231477"/>
+<node id="1231492"><node id="1231495"/>
+<node id="1231543"><node id="1231571"><node id="1231650"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1231544"><node id="1231556"><node id="1231649"/>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11144526" title="Re^3: Simple web server to ingest POST" created="2022-06-08 14:10:10" updated="2022-06-08 14:10:10" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Do you have any recommendations for fleshing it out?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I guess that depends on what else you want to add to it, but I think [mod://Mojolicious::Lite] is fine for scripts that have up to a couple of pages of code. If it starts growing to more than that, you probably want to split it into a multi-file application, see [mod://Mojolicious::Guides::Growing] for that. For most things, e.g. authentication, different response types, etc., a read of [mod://Mojolicious::Guides::Tutorial] is strongly recommended.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I can include a sub to parse the $dom after the app-&gt;start, yeah?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It's a regular Perl script, so you can include the &lt;c&gt;sub&lt;/c&gt; almost anywhere in the script. &lt;c&gt;app-&gt;start&lt;/c&gt; is just the entry point for the main loop. Of course, code modularity best practices should still be followed, so if the code gets too long you might want to split it out into a separate module and so on.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;It would take the contents and push it up into another system's API.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;See [mod://Mojo::UserAgent], or in case it's a database, see [mod://Mojo::Pg] and several similar modules for other databases. The asynchronous nature of these kinds of APIs are very well represented by Mojolicious, so for example, if you want to delay the sending of the response to your clients until your other API has given you a response, you can use e.g. [mod://Mojolicious::Guides::Rendering#Automatic-rendering|&lt;c&gt;render_later&lt;/c&gt;] and then for example send your response from the Mojo::UserAgent callback or promise ([mod://Mojolicious::Controller#render_later|example]; I've also posted a bunch of Mojo examples, several are linked from [id://830550|my scratchpad]). (&lt;i&gt;Update:&lt;/i&gt; I just posted an example of the aforementioned promise handling in [id://11144528|my other reply].)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;What's best practice for running a Mojo server as a service so I can avoid manually starting it?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm not sure about other best practices in that case, but I run my Mojo apps either as &lt;c&gt;systemd&lt;/c&gt; services based on the information in [mod://Mojolicious::Guides::Cookbook#Built-in-web-server|Mojolicious::Guides::Cookbook], or I run [mod://hypnotoad] in a Docker container (in that case with &lt;c&gt;hypnotoad -f /path/to/script.pl&lt;/c&gt;).&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11144520</root_node>
+<parent_node field_name="parent_node">11144525</parent_node>
+<thread id="11144520">
+<node id="11144522"><node id="11144525"><node id="11144526"><node id="11144527"/>
+</node>
+<node id="11144528"/>
+</node>
+</node>
+</thread></node>

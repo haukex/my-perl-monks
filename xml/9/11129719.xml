@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129719" title="Re: can't read the 2nd input file" created="2021-03-15 16:02:15" updated="2021-03-15 16:02:15" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Since you provided your code and sample input and output data, I'll give you some code to get you started:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Data::Dumper; # for debugging
+$Data::Dumper::Useqq=1;
+
+my $DEBUG = 1;
+
+die "Usage: $0 &lt;INPUT_FILE_ports&gt; &lt;INPUT_FILE_IP&gt; &lt;OUTPUT_FILE&gt;"
+	if @ARGV!=3;
+my ($PORTS_FILE, $IPS_FILE, $OUT_FILE) = @ARGV;
+
+open my $ip_fh, '&lt;:crlf', $IPS_FILE or die "$IPS_FILE: $!";
+chomp( my @ips = &lt;$ip_fh&gt; );
+close $ip_fh;
+print Data::Dumper-&gt;Dump([\@ips], ['*ips']) if $DEBUG;
+
+open my $out_fh, '&gt;', $OUT_FILE or die "$OUT_FILE: $!";
+
+open my $port_fh, '&lt;:crlf', $PORTS_FILE or die "$PORTS_FILE: $!";
+my $header = &lt;$port_fh&gt;;
+while ( my $line = &lt;$port_fh&gt; ) {
+	chomp($line);
+	my ($line_nr,$rest) = $line =~ /^(\d+)(\s+.+)$/
+		or die "Failed to parse line: $_";
+	print Data::Dumper-&gt;Dump([$line_nr,$rest], [qw/line_nr rest/])
+		if $DEBUG;
+	die "Invalid line number: $line_nr"
+		if $line_nr &lt; 1 || $line_nr &gt; @ips;
+	my $ip = $ips[ $line_nr - 1 ];
+	print Data::Dumper-&gt;Dump([$ip], ['ip']) if $DEBUG;
+	print {$out_fh} $ip, $rest, "\n";
+}
+close $port_fh;
+
+close $out_fh;
+&lt;/c&gt;
+&lt;p&gt;Note that this makes a few small assumptions:&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;It doesn't validate the list of IP adresses. You could do that with, for example, [mod://Regexp::Common::net].&lt;/li&gt;
+	&lt;li&gt;This code assumes the ports list will always have a header line. If that's not always the case, you could check for the header line inside the &lt;c&gt;while&lt;/c&gt; loop using a regular expression, perhaps in combination with the special variable [doc://$.], and skip the current iteration of the loop with [doc://next].&lt;/li&gt;
+	&lt;li&gt;Because your code includes &lt;c&gt;s/\r\n//&lt;/c&gt;, I am guessing that your input file has CRLF line endings and you're processing it on a *NIX OS. Adding the &lt;c&gt;:crlf&lt;/c&gt; [doc://PerlIO] layer will convert those CRLFs for you, so that's what I've done, and it'll leave a file that already has only LF line endings unchanged. The output file in this code will have LF line endings on *NIX, but you could also add the &lt;c&gt;:crlf&lt;/c&gt; layer in that [doc://open] as well to get CRLF.&lt;/li&gt;
+&lt;/ul&gt;</doctext>
+<root_node field_name="root_node">11129698</root_node>
+<parent_node field_name="parent_node">11129698</parent_node>
+<thread id="11129698">
+<node id="11129703"/>
+<node id="11129719"><node id="11141107"/>
+</node>
+<node id="11141028"/>
+<node id="11142674"/>
+<node id="11142731"/>
+<node id="11142795"/>
+<node id="11143640"/>
+<node id="11143654"/>
+<node id="11144481"/>
+</thread></node>

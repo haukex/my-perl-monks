@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11121046" title="Re: rename file" created="2020-08-24 13:40:00" updated="2020-08-24 13:40:00" _doctext_mode="lenient"><type id="11">note</type>
+<author id="313292">perlfan</author>
+<doctext field_name="doctext">&lt;i&gt;rename only file and leave extension alone&lt;/i&gt;
+&lt;p&gt;The file system doesn't care about extensions. If you wish to retain the extension (or add a different one),
+then you will have to add that explicitly to the new name.
+&lt;p&gt;
+&lt;code&gt;
+use CGI;
+use CGI::Carp qw ( fatalsToBrowser );
+use File::Basename;
+
+my $upload_dir = "upload/";
+
+my $query = new CGI;
+my $filename = $query-&gt;param("file");
+
+my $upload_filehandle = $query-&gt;upload("file");
+
+my $ext = "jpg"; # this can be dynamic based on checking what kind of file it is
+my $newname = "edddd.$ext";
+my $fileto = rename($filename, $newname);
+
+open ( my $UPLOADFILE, "&gt;", $upload_dir/$fileto" ) or die "$!";
+binmode $UPLOADFILE;
+
+while ( &lt;$upload_filehandle&gt; ) {
+  print $UPLOADFILE;
+}
+&lt;/code&gt;
+&lt;p&gt;
+Another note is that &lt;code&gt;rename&lt;/code&gt; is like &lt;code&gt;mv&lt;/code&gt;, which means that you're actually doing a &lt;code&gt;cp&lt;/code&gt; and &lt;code&gt;rm&lt;/code&gt; (of the original file) if crossing file system boundaries. If this is all happening on the same file system, then it's an atomic rename (fully done or not at all). The "copy" scenario introduces possible file corruption, and what I like to do in that case is an explicit &lt;code&gt;copy&lt;/code&gt;, verify the $newname against the &lt;code&gt;$filename&lt;/code&gt;, them [doc://unlink] the &lt;code&gt;$filename&lt;/code&gt;.
+&lt;p&gt;
+Update - added &lt;code&gt;my $&lt;/code&gt; to lexical file handle I added to the script.</doctext>
+<root_node field_name="root_node">11121043</root_node>
+<parent_node field_name="parent_node">11121043</parent_node>
+<thread id="11121043">
+<node id="11121046"><node id="11121047"/>
+<node id="11121050"><node id="11121056"/>
+</node>
+<node id="11121054"><node id="11121055"><node id="11121316"/>
+</node>
+</node>
+<node id="11121315"/>
+<node id="11121330"/>
+</node>
+<node id="11121048"><node id="11121049"/>
+<node id="11121058"/>
+</node>
+<node id="11121076"><node id="11121087"><node id="11121089"/>
+</node>
+</node>
+</thread></node>

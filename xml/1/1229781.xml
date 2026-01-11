@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229781" title="Re^2: Extending a perl program with Scheme, Lua, or JS" created="2019-02-12 04:37:34" updated="2019-02-12 04:37:34" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+Here is my glue code.
+&lt;c&gt;
+use strict;
+package Extension;
+
+sub apply_scalar_function_of_x {
+  my $f = shift; # lisp source code, with x as the input, e.g., "* x 0.1"
+                 # As a convenience feature, if $f is undefined or null string, we return the input unaltered.
+  my $x = shift;
+  if (!defined $f) {return $x}
+  my $lisp = "(display ((lambda (x) ($f)) $x))";
+  my $result = `guile -c '$lisp'`;
+  if ($? == 0) {
+    return $result;
+  }
+  else {
+    print STDERR "Error executing scheme code $lisp using guile.";
+    return undef; # occurs if guile is not installed or the guile code dies with an error
+  }
+  # to do:
+  #   Escape single quotes inside the string.
+}
+
+1;
+&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Unfortunately, [id://1229590|as discussed], this suffers from multiple potential injection and quoting issues. In this case, I would recommend either [mod://IPC::Run3] ([https://packages.debian.org/stretch/libipc-run3-perl|libipc-run3-perl]) or [mod://IPC::System::Simple] ([https://packages.debian.org/stretch/libipc-system-simple-perl|libipc-system-simple-perl]) - the former is probably better if this software is supposed to run on Windows too. If you don't want to install an extra module, then you could use the piped [doc://open] I show near the bottom of my post [id://1180578|here].&lt;/p&gt;
+&lt;c&gt;
+use IPC::System::Simple qw/capturex/;
+sub apply_scalar_function_of_x {
+	my $f = shift;
+	my $x = shift;
+	if (!defined $f) {return $x}
+	my $lisp = "(display ((lambda (x) ($f)) $x))";
+	my $result;
+	if (not eval { $result = capturex('guile','-c',$lisp); 1 }) {
+		print STDERR "Error executing scheme code using guile.\n";
+		return;
+	}
+	return $result;
+}
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;I'm looking into how to sandbox Guile. ... if there's any way to prevent code from accessing the file system and such.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, I would very strongly recommend not leaving an [https://github.com/bcrowell/opengrade|open source grading system] open to attacks &lt;c&gt;;-)&lt;/c&gt;&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1229572</root_node>
+<parent_node field_name="parent_node">1229770</parent_node>
+<thread id="1229572">
+<node id="1229574"><node id="1229576"><node id="1229581"/>
+</node>
+</node>
+<node id="1229580"><node id="1229590"><node id="1229600"/>
+<node id="1229675"><node id="1229709"><node id="1229742"><node id="1229749"/>
+</node>
+</node>
+<node id="1229717"/>
+</node>
+</node>
+<node id="1229682"/>
+<node id="1229891"/>
+</node>
+<node id="1229594"><node id="1229683"><node id="1229685"><node id="1229739"><node id="1229748"><node id="1229769"><node id="1229780"><node id="1229789"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1229722"/>
+<node id="1229770"><node id="1229781"><node id="1229852"/>
+</node>
+<node id="1229786"><node id="1229853"/>
+</node>
+</node>
+<node id="1229859"/>
+<node id="1229882"/>
+</thread></node>

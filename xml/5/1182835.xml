@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1182835" title="Re: one line to check for common list values" created="2017-02-25 14:24:55" updated="2017-02-25 14:24:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Welcome to Perl and the Monastery, [dollar_sign]! Just a small tip on posting: Thank you for using &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags for the code, but please don't add line numbers.&lt;/p&gt;
+&lt;p&gt;Perl has excellent documentation, see [http://perldoc.perl.org|perldoc.perl.org], and the command line tool [doc://perldoc]. For example, typing &lt;c&gt;perldoc -q intersection&lt;/c&gt; at the command line brings up this FAQ: [doc://perlfaq4#How-do-I-compute-the-difference-of-two-arrays?-How-do-I-compute-the-intersection-of-two-arrays?]&lt;/p&gt;
+&lt;p&gt;One of the pieces of Perl philosophy is TIMTOWTDI, There Is More Than One Way To Do It, so if you want to use a regex to find matches, that's ok, but see the performance comparison below. Note that if your input wasn't limited to integers, your regex has one potential problem, see what happens when you set &lt;c&gt;my @input = (1.23)&lt;/c&gt; and &lt;c&gt;my @valuesToMatch = (23)&lt;/c&gt;. I wrote about the generation of regexes [id://1179840|here] &lt;strike&gt;(still a draft at the moment)&lt;/strike&gt;, and I showed what I would consider a "safer" version of your code below.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I would also like to know if using regexps for this is less or more efficient (performance-wise) than just using a for loop.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The go-to module for this is [doc://Benchmark]. Here is a comparison of the performance of using regular expressions, hashes, and [doc://grep]. Note how the hash approach clearly wins!&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use Data::Dumper;
+
+# use fixed values for repeatable tests
+my @input = 1..100;
+my @valuesToMatch = map {$_*14} 1..10;
+my @expectedOutput = (14,28,42,56,70,84,98);
+print Dumper(\@valuesToMatch);
+
+# precompute what can be precomputed
+# for the regex approach
+my $regex_str = join '|', map {quotemeta}
+	sort { length $b &lt;=&gt; length $a } @valuesToMatch;
+my $regex = qr/(?:\A|\0)($regex_str)(?:\z|\0)/;
+# for the hash approach
+my %matchtbl = map {$_=&gt;1} @valuesToMatch;
+
+# the different implementations, in a dispatch table
+my %subs = (
+	hash =&gt; sub {
+		my @matches = grep {$matchtbl{$_}} @input;
+		return @matches;
+	},
+	regex =&gt; sub {
+		my @matches = join("\0", @input) =~ /$regex/g;
+		return @matches;
+	},
+	grep =&gt; sub {
+		my @matches;
+		for my $in (@input) {
+			push @matches, $in
+				if grep {$in==$_} @valuesToMatch;
+		}
+		return @matches;
+	},
+);
+
+# check to make sure our implementations are all working
+use Test::More;
+for my $sub (sort keys %subs) {
+	my @results = $subs{$sub}-&gt;();
+	is_deeply \@results, \@expectedOutput, $sub
+		or diag explain \@results;
+}
+done_testing;
+
+# now benchmark the implementations
+use Benchmark qw/cmpthese/;
+cmpthese(-3, \%subs);
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; Example output (whitespace edited for brevity):&lt;/p&gt;
+&lt;c&gt;
+$VAR1 = [ 14, 28, 42, 56, 70, 84, 98, 112, 126, 140 ];
+ok 1 - grep
+ok 2 - hash
+ok 3 - regex
+1..3
+          Rate  grep regex  hash
+grep   33107/s    --  -49%  -85%
+regex  65160/s   97%    --  -70%
+hash  218506/s  560%  235%    --
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;blockquote&gt;&lt;i&gt;Would it be possible to reduce the amount of code necessary to find the common values between the two arrays to only one line of Perl?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sure, it's possible to jam it all into one line, the AM showed one way to do it for the "regex" approach (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; [tybalt89] [id://1182838|showed] a few more, but benchmark them and you'll see all three of them are less efficient than all of the above). It's also possible in the above "grep" solution using two nested [doc://grep]s, but for the "hash" solution, you'll need multiple statements, even if you jam them all into one line :-)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I had no idea where to look for up to date Perl-specific exercises&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;One might be [https://www.hackerrank.com/|HackerRank], or perhaps [http://rosettacode.org|Rosetta Code].&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1182828</root_node>
+<parent_node field_name="parent_node">1182828</parent_node>
+<thread id="1182828">
+<node id="1182830"/>
+<node id="1182835"><node id="1182861"/>
+</node>
+<node id="1182838"/>
+<node id="1182847"><node id="1182860"/>
+</node>
+<node id="1182848"/>
+<node id="1182910"><node id="1183645"/>
+</node>
+<node id="1183647"><node id="1183657"/>
+</node>
+</thread></node>

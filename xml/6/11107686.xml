@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11107686" title="Re: Force Getopt::Long to Require ONLY Equals Sign Between Option Name and Value" created="2019-10-19 04:50:22" updated="2019-10-19 04:50:22" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I also don't see a way to do that via configuration options at the moment. But &lt;c&gt;@ARGV&lt;/c&gt; is just an array of strings, so you could just do e.g. "&lt;c&gt;s/^-ot\K$/=/ for @ARGV;&lt;/c&gt;" before the &lt;c&gt;GetOptions&lt;/c&gt; call:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Getopt::Long qw/ GetOptionsFromArray /;
+use Test::More tests =&gt; 6;
+
+my @argv1 = qw/ -ot=123 arg1 arg2 /;
+s/^-ot\K$/=/ for @argv1;
+is_deeply \@argv1, ["-ot=123", "arg1", "arg2"];
+GetOptionsFromArray(\@argv1, \my %opts1, "ot:s") or die;
+is_deeply \%opts1, { ot =&gt; 123 };
+is_deeply \@argv1, ["arg1", "arg2"];
+
+my @argv2 = qw/ -ot arg1 arg2 /;
+s/^-ot\K$/=/ for @argv2;
+is_deeply \@argv2, ["-ot=", "arg1", "arg2"];
+GetOptionsFromArray(\@argv2, \my %opts2, "ot:s") or die;
+is_deeply \%opts2, { ot =&gt; "" };
+is_deeply \@argv2, ["arg1", "arg2"];
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Switched from [mod://Data::Dump] to [doc://Test::More].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11107671</root_node>
+<parent_node field_name="parent_node">11107671</parent_node>
+<thread id="11107671">
+<node id="11107672"/>
+<node id="11107679"/>
+<node id="11107686"><node id="11107712"/>
+</node>
+</thread></node>

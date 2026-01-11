@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1182137" title="Re: How to use a different epoch with DateTime" created="2017-02-16 06:29:35" updated="2017-02-16 06:29:35" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [thimes],&lt;/p&gt;
+&lt;p&gt;It depends a bit on what kind of math you want to do and whether you want leap seconds (pointed out by [anita2R], thanks) to be considered. Personally, unless high performance must be considered, I like to throw all of my math at the [mod://DateTime] module. The following shows the different ways you can do the math:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use DateTime;
+
+my $dt_customepoch = DateTime-&gt;new(
+	year=&gt;2000, month=&gt;1, day=&gt;1,
+	hour=&gt;12, minute=&gt;0, second=&gt;0,
+	time_zone=&gt;'UTC' );
+print "dt_customepoch: ",
+	$dt_customepoch-&gt;strftime('%b %e %Y, %T %Z'), "\n";
+my $s_customepoch = $dt_customepoch-&gt;epoch;
+print " s_customepoch: $s_customepoch\n";
+
+### Obtaining DateTime object from a value expressed in
+# seconds since the custom epoch (let's call it "sce")
+
+my $sce_one = 128072700; # Thu Jan 22 19:45:00 2004
+print "   sce_one: $sce_one\n";
+my $dt_one = DateTime-&gt;from_epoch(
+	# Note the addition here
+	epoch =&gt; $s_customepoch + $sce_one,
+	# from_epoch defaults to UTC, but we'll be explicit
+	time_zone=&gt;'UTC' );
+print "    dt_one: ", $dt_one-&gt;strftime('%b %e %Y, %T %Z'),
+	" (epoch=", $dt_one-&gt;epoch, ")\n";
+
+#### Doing math in the "seconds since custom epoch" domain
+
+# Add 3 years, 21 days*, -4 hours, 11 minutes
+# * adjusted +1 for 2004 being leap year
+my $s_offset = 60*60*24*365*3 + 60*60*24*(21+1)
+	- 60*60*4 + 60*11;
+print "  s_offset: $s_offset\n";
+my $sce_two = $sce_one + $s_offset;
+print "   sce_two: $sce_two\n";
+
+my $dt_two = DateTime-&gt;from_epoch( time_zone=&gt;'UTC',
+	epoch =&gt; $s_customepoch + $sce_two );
+print "    dt_two: ", $dt_two-&gt;strftime('%b %e %Y, %T %Z'),
+	" (epoch=", $dt_two-&gt;epoch, ")\n";
+
+### Doing the same math in the DateTime domain
+
+my $dt_three = $dt_one-&gt;clone-&gt;add(
+	# Note how no adjustment for the leap year is needed
+	years=&gt;3, days=&gt;21, hours=&gt;-4, minutes=&gt;11);
+print "  dt_three: ", $dt_three-&gt;strftime('%b %e %Y, %T %Z'),
+	" (epoch=", $dt_three-&gt;epoch, ")\n";
+
+#### Obtaining "seconds from custom epoch"
+# using regular subtraction vs. DateTime math
+
+my $sce_threea = $dt_three-&gt;epoch - $s_customepoch;
+print "sce_threea: $sce_threea\n";
+
+my $sce_threeb = $dt_three
+	-&gt;subtract_datetime_absolute($dt_customepoch)
+	-&gt;in_units('seconds');
+# Leap second (Dec 31, 2005 23:59:60 UTC) is considered! 
+print "sce_threeb: $sce_threeb\n";
+
+__END__
+
+dt_customepoch: Jan  1 2000, 12:00:00 UTC
+ s_customepoch: 946728000
+   sce_one: 128072700
+    dt_one: Jan 22 2004, 19:45:00 UTC (epoch=1074800700)
+  s_offset: 96495060
+   sce_two: 224567760
+    dt_two: Feb 12 2007, 15:56:00 UTC (epoch=1171295760)
+  dt_three: Feb 12 2007, 15:56:00 UTC (epoch=1171295760)
+sce_threea: 224567760
+sce_threeb: 224567761
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1181949</root_node>
+<parent_node field_name="parent_node">1181949</parent_node>
+<thread id="1181949">
+<node id="1181950"/>
+<node id="1181951"><node id="1181952"/>
+</node>
+<node id="1181984"><node id="1181988"/>
+</node>
+<node id="1182007"><node id="1182039"><node id="1182059"><node id="1182130"/>
+</node>
+</node>
+</node>
+<node id="1182137"/>
+</thread></node>

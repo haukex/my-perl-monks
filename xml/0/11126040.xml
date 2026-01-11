@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11126040" title="Re^6: Preparing data for Template" created="2020-12-31 07:41:39" updated="2020-12-31 07:41:39" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11123653">Bod</author>
+<doctext field_name="doctext">&lt;p&gt;Thanks [hippo].&lt;br&gt;
+Based on your code sample and what I already have, I have built a test which shows it is not the way I am using &lt;a href="https://metacpan.org/pod/Template"&gt;Template&lt;/a&gt; that is the issue - it is my &lt;code&gt;display()&lt;/code&gt; function.  In the 'real' code this is abstracted into a &lt;code&gt;Site::HTML&lt;/code&gt; module because I want to hide the site variables away in a separate module with only &lt;code&gt;Site::HTML&lt;/code&gt; and &lt;code&gt;Site::Common&lt;/code&gt; having access to it - perhaps I need to rethink that design.&lt;/p&gt;
+&lt;code&gt;
+use Template;
+use strict;
+
+my $template = Template-&gt;new;
+
+my $vars = {
+	'frames' =&gt; \&amp;get_frames
+};
+
+$template-&gt;process('test.tt', $vars);   # this works
+display('test', $vars);                 # this doesn't
+
+sub get_frames {
+	my @list;
+	foreach my $l( qw/first second/ ) {
+		my $fr = {
+			'one' =&gt; $l,
+			'two' =&gt; $l,
+		};
+		push @list, $fr;
+	}
+	return @list;
+}
+
+sub display {
+#	my $self = shift;
+	my $file = shift;
+	my %vars = @_;
+	$template-&gt;process("$file.tt", \%vars);
+}
+&lt;/code&gt;
+
+&lt;p&gt;&lt;b&gt;update&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;The test Template...&lt;/p&gt;
+&lt;code&gt;
+Start test...
+
+[% FOREACH frame IN frames() %]
+	Frame - [% frame.one %] [% frame.two %]
+[% END %]
+
+End test...
+&lt;/code&gt;
+</doctext>
+<root_node field_name="root_node">11126016</root_node>
+<parent_node field_name="parent_node">11126039</parent_node>
+<thread id="11126016">
+<node id="11126018"><node id="11126021"><node id="11126022"><node id="11126034"><node id="11126039"><node id="11126040"><node id="11126041"><node id="11126042"><node id="11126043"/>
+<node id="11126044"/>
+<node id="11126047"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11126074"><node id="11126078"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11126035"/>
+</node>
+</thread></node>

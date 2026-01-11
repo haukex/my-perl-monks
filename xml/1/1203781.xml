@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203781" title="Re: How to log to different outputs from different packages" created="2017-11-19 09:33:40" updated="2017-11-19 09:33:40" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1130276">1nickt</author>
+<doctext field_name="doctext">&lt;P&gt;
+Hi, you should use tools built for the purpose, for example [metamod://Log::Any] to produce log output, and a [metamod://Log::Any::Adapter] to consume (and display, or not) the log output. Then you can can control the output of your debugging as well as the levels at which information is displayed/saved or whatever.
+&lt;/p&gt;
+&lt;P&gt;
+In the example below I am using [metamod://Log::Dispatch] as an adapter to process the log output, since you indicated that you want output from different packages handled differently. You can use a simple adapter if all your log output should go to one place. I generally use &lt;c&gt;Log::Dispatch&lt;/c&gt; by default, as logging needs typically grow over time.
+&lt;/p&gt;
+&lt;P&gt;
+MyFirst.pm :
+&lt;c&gt;
+package MyFirst; 
+use strict; use warnings; use feature 'say';
+use Log::Any qw/ $log /;
+
+sub do_this {
+    say 'Hello from MyFirst';
+    $log-&gt;debug('This is a debug message');
+}
+
+1;
+&lt;/c&gt;
+MySecond.pm :
+&lt;c&gt;
+package MySecond; 
+use strict; use warnings; use feature 'say';
+use Log::Any qw/ $log /;
+
+sub do_that {
+    say 'Hello from MySecond';
+    $log-&gt;warn('This is a warning!');
+}
+
+1;
+&lt;/c&gt;
+
+1203778.pl (or another package, whatever...) :
+&lt;c&gt;
+use strict; use warnings; use feature 'say';
+
+use lib '.';
+use MyFirst;
+use MySecond;
+
+use Log::Any::Adapter;
+use Log::Any::Adapter::Dispatch;
+
+my $logger = Log::Dispatch-&gt;new( outputs =&gt; [
+    [ 'Screen', min_level =&gt; 'warning' ],
+    [ 'File',   min_level =&gt; 'debug', filename  =&gt; 'logfile', newline =&gt; 1 ],
+]);
+
+Log::Any::Adapter-&gt;set(
+    { category =&gt; qr/^My/ },
+    'Dispatch',
+    dispatcher =&gt; $logger,
+);
+
+MyFirst::do_this();
+MySecond::do_that();
+
+__END__
+&lt;/c&gt;
+Output:
+&lt;c&gt;
+perl 1203778.pl
+
+Hello from MyFirst
+Hello from MySecond
+This is a warning!
+&lt;/c&gt;
+Log file:
+&lt;c&gt;
+$ cat logfile 
+
+This is a debug message
+This is a warning!
+&lt;/c&gt;
+&lt;/P&gt;
+&lt;P&gt;
+You can easily create your own &lt;c&gt;Log::Any::Adapter&lt;/c&gt; class, which you will need to do if you want timestamp, caller info, etc.
+&lt;/p&gt;&lt;P&gt;&lt;a name = 'categories'&gt;
+(Note that with the "category" mechanism (which defaults to the logging packages's package name) you can control which output goes to which destination, including to &lt;c&gt;/dev/null&lt;/c&gt; if you really want to throw it away. I.e. you could forgo the convenience of &lt;c&gt;Log::Dispatch&lt;/c&gt;, create multiple &lt;c&gt;Log::Any::Adapter&lt;/c&gt; objects, and route your log data using the categories. Here I used a regexp to route output from all matching packages to the adapter, and let &lt;c&gt;Log::Dispatch&lt;/c&gt; handle the routing.)
+&lt;/P&gt;
+&lt;P&gt;
+( For a simpler scenario, just import &lt;c&gt;$log&lt;/c&gt; from &lt;c&gt;Log::Any&lt;/c&gt; into your package and use &lt;c&gt;use Log::Any::Adapter qw/ Stderr /;&lt;/c&gt; in your script, and you are done. )
+&lt;/p&gt;&lt;P&gt;
+Hope this helps!
+&lt;/P&gt;
+&lt;BR&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1130276"&gt;
+&lt;i&gt;The way forward always starts with a minimal test.&lt;/i&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1203778</root_node>
+<parent_node field_name="parent_node">1203778</parent_node>
+<thread id="1203778">
+<node id="1203779"><node id="1203786"><node id="1203787"/>
+</node>
+</node>
+<node id="1203780"><node id="1203782"><node id="1203793"/>
+<node id="1203813"/>
+</node>
+</node>
+<node id="1203781"><node id="1203784"/>
+</node>
+<node id="1203783"><node id="1203785"><node id="1203825"/>
+</node>
+</node>
+<node id="1203827"/>
+</thread></node>

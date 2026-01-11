@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112813" title="Re: regex for nested &quot;&lt;&quot;/&quot;&gt;'" created="2020-02-11 15:51:14" updated="2020-02-11 15:51:14" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;In the regex, changing &lt;c&gt;\d*+&lt;/c&gt; to &lt;c&gt;\d++&lt;/c&gt; fixes it, although I have to admit I don't see why yet, it'll take a bit more staring at it to figure that out... Anyway:
+[https://webperl.zero-g.net/regex.html#flags=x&amp;regex=(%3F%26LIST)%0A(%3F(DEFINE)%0A%20%20(%3F%3CLIST%3E%20%3C%20(%3F%26ITEM)%20%20(%3F%3A%20%2C%20(%3F%26ITEM)%20)*%2B%20%3E%20)%0A%20%20(%3F%3CITEM%3E%20%5Cd%2B%2B%20%7C%20(%3F%26LIST)%20)%0A)&amp;samp1=%3C1%3E&amp;samp2=%3C1%2C2%3E&amp;samp3=%3C1%2C2%2C%3C3%2C4%3E%2C5%2C6%3E|WebPerl Regex Tester Link]&lt;/p&gt;
+&lt;p&gt;Personally, I'd use [mod://Regexp::Common] for this kind of task:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Regexp::Common 2013030901 qw/balanced/;
+
+my $re = qr/$RE{balanced}{-parens=&gt;'&lt;&gt;'}/;
+print $re, "\n";
+
+my @cases = ( "&lt;1&gt;" ,"&lt;1,2&gt;" ,"&lt;1,2,&lt;3,4&gt;,5,6&gt;" );
+for my $case (@cases) {
+	print $case, " ",
+		$case =~ $re ? "matches: '$1'\n" : "doesn't match\n";
+}
+
+__END__
+
+(?^:((?:\&lt;(?:(?&gt;[^\&lt;\&gt;]+)|(?-1))*\&gt;)))
+&lt;1&gt; matches: '&lt;1&gt;'
+&lt;1,2&gt; matches: '&lt;1,2&gt;'
+&lt;1,2,&lt;3,4&gt;,5,6&gt; matches: '&lt;1,2,&lt;3,4&gt;,5,6&gt;'
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11112811</root_node>
+<parent_node field_name="parent_node">11112811</parent_node>
+<thread id="11112811">
+<node id="11112813"/>
+<node id="11112818"/>
+<node id="11112852"><node id="11112896"/>
+</node>
+<node id="11112865"/>
+<node id="11112868"><node id="11112889"><node id="11112895"/>
+</node>
+<node id="11112926"/>
+</node>
+</thread></node>

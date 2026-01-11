@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117410" title="Re: Tidy up json from nulls, empty arrays and hashes" created="2020-05-28 09:18:29" updated="2020-05-28 09:18:29" _doctext_mode="lenient"><type id="11">note</type>
+<author id="313292">perlfan</author>
+<doctext field_name="doctext">&gt;&lt;i&gt;Is there more elegant way to handle it?&lt;/i&gt;
+&lt;p&gt;
+The way you have it right now, as a recursive &lt;i&gt;depth first&lt;/i&gt; (looks like) traversal of an abritrarily complex data structure, I am going to say no.
+&lt;code&gt;
+$_[0] = undef if 
+        (ref $r eq "HASH" &amp;&amp; ! %$r) or
+        (ref $r eq "ARRAY" &amp;&amp; ! @$r); 
+&lt;/code&gt;
+The above code is simply the &lt;i&gt;base case&lt;/i&gt; of your recursion, what allows it to unwind the call stack.
+&lt;p&gt;
+What is tripping me up is that I have no immediate idea what &lt;code&gt;$$r{$k}&lt;/code&gt; is doing - is that some sort of generic reference? Double dollar signs are generally a red flag for me, so I can't really recognize when they &lt;i&gt;might&lt;/i&gt; be doing something useful.
+&lt;p&gt;
+Do you have a snippet of JSON to share? I am really curious about your method of traversing the hash. I feel like there is a module on CPAN that allows more idiomatic interactions with your datastructure you call, &lt;code&gt;$json&lt;/code&gt;.
+&lt;p&gt;
+Note: I always think myself later when I don't mix up what is &lt;code&gt;$json&lt;/code&gt; (a string) and what is the deserialized reference:
+&lt;code&gt;my $reference_from_json = JSON-&gt;new-&gt;allow_nonref-&gt;relaxed-&gt;decode(do { local $/; &lt;STDIN&gt;; }); 
+tidyup_json($refrence_from_json); 
+
+print JSON-&gt;new-&gt;pretty-&gt;allow_nonref-&gt;canonical-&gt;encode($reference_from_json); 
+&lt;/code&gt;
+&gt;&lt;i&gt;Beware that "true" and "false" jsonish data are references to blessed hashes.&lt;/i&gt;
+&lt;p&gt;
+Which one, [mod://JSON::PP::Boolean]? In &lt;code&gt;JSON::PP::Boolean::value_to_json&lt;/code&gt;, I see:
+&lt;code&gt;
+        elsif( blessed($value) and  $value-&gt;isa('JSON::PP::Boolean') ){
+            return $$value == 1 ? 'true' : 'false';
+        }
+&lt;/code&gt;
+Indicates to me some implicit recognition of a &lt;code&gt;TO_JSON&lt;/code&gt; method that the family of [mod://JSON] modules support for serializing complex data structures containing blessed references into stringified JSON form.</doctext>
+<root_node field_name="root_node">11117390</root_node>
+<parent_node field_name="parent_node">11117390</parent_node>
+<thread id="11117390">
+<node id="11117410"><node id="11117412"/>
+<node id="11117421"/>
+</node>
+<node id="11117433"><node id="11117502"/>
+</node>
+</thread></node>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1160828" title="[DSL] disabling packages in Perl?" created="2016-04-18 13:10:33" updated="2016-04-18 13:10:33" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">Hi&lt;P&gt;
+
+is there a way to (temporarily) disable packages?&lt;P&gt;
+
+let's say I wanted to create a DSL for SQL, this partial clause would be legal in Perl&lt;P&gt;
+
+&lt;c&gt;  
+sub WHERE(&amp;;$);
+WHERE { a IN [1,2,3] or b LIKE '%abc%' };
+&lt;/c&gt;&lt;P&gt;
+
+and the block would be parsed as indirect method syntax &lt;P&gt;
+
+
+&lt;c&gt;'IN'-&gt;a([1, 2, 3]) or 'LIKE'-&gt;b('%abc%');&lt;/c&gt;&lt;P&gt;
+
+so I'd need to define packages IN and LIKE to simulate binary operators when executing the BLOCK&lt;P&gt;
+
+&lt;c&gt;
+  DB&lt;198&gt; {package LIKE; sub AUTOLOAD { my ($field) = $AUTOLOAD =~ m/\w+::(\w+)/; print "$field @_" }}
+  DB&lt;199&gt; field LIKE '%abc%'
+
+field LIKE %abc%
+&lt;/c&gt;&lt;P&gt;
+
+so far so good ... but is there a possibility to "disable" the package outside of the block's scope?&lt;P&gt;
+
+The best thing I came up was redefining AUTOLOAD dynamically before and after executing the block to provoke a runtime error&lt;P&gt;
+
+deleting the stash entry for the package in &lt;C&gt;%main::&lt;/C&gt; produced strange problems, probably because of some kind of cashing...&lt;P&gt;
+
+
+any ideas?&lt;P&gt;
+
+&lt;H5&gt; EDIT&lt;/H5&gt;&lt;P&gt;
+
+at hindsight &lt;C&gt;%INC&lt;/C&gt; and &lt;C&gt;@INC&lt;/C&gt; might be useful ... (?)&lt;P&gt;
+
+
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language and [http://i.dailymail.co.uk/i/pix/2014/07/14/article-2690897-1F9F6C0E00000578-463_964x629.jpg|&amp;#9734;&amp;#9734;&amp;#9734;&amp;#9734;] :)
+&lt;br&gt; &lt;i&gt;[http://s3.freebeacon.com/up/2015/01/charliehebdo-540x342.png|Je suis Charlie]!&lt;/i&gt;
+&lt;/sub&gt; &lt;P&gt;
+
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.1416} --&gt;</doctext>
+<thread id="1160828">
+<node id="1160830"><node id="1160885"><node id="1161332"/>
+</node>
+<node id="1161117"/>
+</node>
+<node id="1160832"/>
+<node id="1160886"><node id="1160896"><node id="1160934"/>
+</node>
+</node>
+</thread></node>

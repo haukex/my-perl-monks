@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1167949" title="Re: Perl is ignoring fractional part sometimes" created="2016-07-18 05:58:13" updated="2016-07-18 05:58:13" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [jinnicky],&lt;/p&gt;
+&lt;p&gt;Although I'm no [mod://Tk] expert, I investigated the AM's [id://1167934|hint] about dual-valued variables, and there indeed seems to be something buggy going on. I boiled the code down to the following:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Tk;
+use Devel::Peek;
+
+my $scale = '22.5 '; # note the space in the output as well
+my $foo = 0 + $scale; # use in numeric context (set NV and IV)
+Dump($scale);
+
+my $mw = MainWindow-&gt;new;
+$mw-&gt;Entry(-textvariable=&gt;\$scale)-&gt;pack;
+$mw-&gt;bind("&lt;Key-Return&gt;",\&amp;calc);
+calc();
+MainLoop;
+
+sub calc {
+	print "str: &lt;$scale&gt; / num: &lt;".(0+$scale)."&gt; \n";
+}
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+SV = PVNV(0x1e3f350) at 0x1e59a40
+  REFCNT = 2
+  FLAGS = (NOK,POK,IsCOW,pIOK,pNOK,pPOK)
+  IV = 22
+  NV = 22.5
+  PV = 0x1e6f870 "22.5 "\0
+  CUR = 5
+  LEN = 10
+  COW_REFCNT = 1
+str: &lt;22.5 &gt; / num: &lt;22&gt; 
+&lt;/c&gt;
+&lt;p&gt;It appears that binding &lt;c&gt;$scale&lt;/c&gt; to the [mod://Tk::Entry] widget is causing the variable to become dual-valued with the wrong initial values (I guess the PV and IV values?). This only seems to be happening once on init though, when I input something everything seems to work fine.
+I don't know enough about the internals of [mod://Tk] to really suggest a solution (perhaps a bug report is in order), but some workaround(s). You apparently can initialize &lt;c&gt;$scale&lt;/c&gt; with a numeric value to begin with, &lt;c&gt;my $scale = 22.5;&lt;/c&gt; seems to work for me. Or, as you've already discovered, you can stringify &lt;c&gt;$scale&lt;/c&gt; when reading it out.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1167928</root_node>
+<parent_node field_name="parent_node">1167928</parent_node>
+<thread id="1167928">
+<node id="1167930"><node id="1167932"/>
+</node>
+<node id="1167934"><node id="1167938"/>
+</node>
+<node id="1167949"><node id="1167986"><node id="1168065"/>
+</node>
+</node>
+</thread></node>

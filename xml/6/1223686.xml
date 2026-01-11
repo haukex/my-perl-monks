@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1223686" title="Re^4: RT::Client turns occasional binary characters in to wide characters" created="2018-10-08 12:13:01" updated="2018-10-08 12:13:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Given that this string that I am retrieving is actually the contents of a binary file then I should be OK to ignore anything to do with UTF8, given that my source code has no eight-bit or more characters.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It depends on how the data is handed to you. Note how below, both byte sequences are &lt;c&gt;\304\243&lt;/c&gt;, but they're getting different interpretations based on Perl's internal UTF8 flag. If the module is handing you binary data with some encoding/decoding issues or perhaps the UTF8 flag incorrectly enabled, you'll have these kinds of strange issues that may explain the presence of &lt;c&gt;U+FFFD REPLACEMENT CHARACTER&lt;/c&gt; in your original hex dump. Could you show your data with [doc://Devel::Peek]?&lt;/p&gt;
+&lt;pre&gt;
+$ perl -CSD -MDevel::Peek -le 'my $x="\x{123}"; print $x; Dump($x)'
+&amp;#291;
+SV = PV(0x1337d70) at 0x1357518
+  REFCNT = 1
+  FLAGS = (POK,IsCOW,pPOK,UTF8)
+  PV = 0x1359790 "\304\243"\0 &amp;#91;UTF8 "\x{123}"&amp;#93;
+  CUR = 2
+  LEN = 10
+  COW_REFCNT = 1
+$ perl -CSD -MDevel::Peek -le 'my $x="\304\243"; print $x; Dump($x)'
+Ä£
+SV = PV(0x1e28d70) at 0x1e48518
+  REFCNT = 1
+  FLAGS = (POK,IsCOW,pPOK)
+  PV = 0x1e4a790 "\304\243"\0
+  CUR = 2
+  LEN = 10
+  COW_REFCNT = 1
+&lt;/pre&gt;</doctext>
+<root_node field_name="root_node">1223420</root_node>
+<parent_node field_name="parent_node">1223684</parent_node>
+<thread id="1223420">
+<node id="1223431"><node id="1223442"/>
+</node>
+<node id="1223432"><node id="1223451"/>
+</node>
+<node id="1223444"/>
+<node id="1223454"><node id="1223471"><node id="1223497"/>
+</node>
+<node id="1223496"><node id="1223684"><node id="1223686"/>
+</node>
+</node>
+</node>
+<node id="1223510"><node id="1223513"><node id="1223724"/>
+</node>
+</node>
+</thread></node>

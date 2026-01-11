@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129210" title="Re: How to parse not closed HTML tags that don't have any attributes? (updated)" created="2021-03-06 15:07:00" updated="2021-03-06 15:07:00" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The HTML is indeed &lt;del&gt;broken&lt;/del&gt;&lt;ins&gt;inconsistent&lt;/ins&gt;, and you've only shown one sample, so any example code will be correspondingly brittle. Like [marto], I would suggest [mod://Mojo::DOM], as it has an IMHO nice interface, and it is still able to parse that HTML.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Mojo::DOM;
+use Mojo::Util qw/trim/;
+use Data::Dump;
+
+my $dom = Mojo::DOM-&gt;new(&lt;&lt;'HTML');
+        &lt;div class="phone"&gt;
+          &lt;div class="icon"&gt;&lt;/div&gt;
+          &lt;p class="title"&gt;Telephone&lt;/p&gt;
+          &lt;p&gt;0123-4 56 78 90		  
+		  &lt;p class="title"&gt;Telefax&lt;/p&gt;
+          &lt;p&gt;        &lt;/div&gt;
+HTML
+
+my %hash = @{ $dom-&gt;find('p.title')-&gt;map(sub {
+	return ( trim($_-&gt;text), trim($_-&gt;next-&gt;text) ) }) };
+dd \%hash;
+
+__END__
+
+{ Telefax =&gt; "", Telephone =&gt; "0123-4 56 78 90" }
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Assuming you've got a lot of other &lt;c&gt;&lt;div&gt;&lt;/c&gt;s in your HTML, you may want to change the expression in &lt;c&gt;-&gt;find()&lt;/c&gt; to &lt;c&gt;'.phone p.title'&lt;/c&gt;.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11129207</root_node>
+<parent_node field_name="parent_node">11129207</parent_node>
+<thread id="11129207">
+<node id="11129209"/>
+<node id="11129210"><node id="11129269"><node id="11129273"><node id="11129285"><node id="11129287"><node id="11129335"><node id="11129345"><node id="11129373"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11129328"><node id="11129340"/>
+</node>
+</node>
+<node id="11129211"/>
+<node id="11129215"/>
+<node id="11129218"><node id="11129241"/>
+</node>
+<node id="11129220"><node id="11129221"/>
+<node id="11129242"/>
+</node>
+<node id="11129230"/>
+</thread></node>

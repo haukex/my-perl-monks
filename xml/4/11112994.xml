@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112994" title="Match something that does not match" created="2020-02-15 12:42:39" updated="2020-02-15 12:42:39" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1226468">jo37</author>
+<doctext field_name="doctext">Hi,
+
+&lt;p&gt;
+every now and then I stumble upon the question of how to match something that doesn't match something else.
+I.e. some expression in the sense of &lt;c&gt;[^...]*&lt;/c&gt; for a general given regex &lt;c&gt;$match&lt;/c&gt;.
+The best I got so far is:
+&lt;/p&gt;
+&lt;c&gt;
+my $does_not_match = qr{((?:.*?(?=$match))|(?:(?:.(?!$match))*))};
+&lt;/c&gt;
+&lt;p&gt;
+The first branch matches a substring up to the given regex &lt;c&gt;$match&lt;/c&gt; if there is a match and the second branch matches the whole string if there is no match.
+Both fail in the opposite case. (The second branch by missing the last character.)
+&lt;/p&gt;
+
+&lt;p&gt;
+Does anybody know something simpler?
+Or do you see any issues with the given regex?
+&lt;/p&gt;
+
+&lt;p&gt;
+Here is a small example:
+&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl 
+
+use Test2::V0;
+
+sub do_not_match {
+	my $pat = shift;
+	return qr{(?:.*?(?=$pat))|(?:(?:.(?!$pat))*)};
+}
+
+my $re = do_not_match(qr{\b[aeiou][a-z]*ion\b});
+
+is [/($re)/], ['stimulated '], 'matches prefix'
+    for 'stimulated emission of radiation';
+
+is [/($re)/], ['electron transition'],'no match'
+    for 'electron transition';
+
+is [/($re)/], [''], 'matches empty prefix'
+    for 'absorbtion of photons';
+
+is [/($re)/], ['light '], 'matches not greedy'
+    for 'light amplification by stimulated emission of radiation';
+
+is [/($re)\bimpact/], ['electron '], 'gives characters back'
+    for 'electron impact ionization';
+
+done_testing;
+&lt;/c&gt;
+&lt;p&gt;
+I might put this into an extension module for &lt;c&gt;Regexp::Common&lt;/c&gt;, but I'm not sure if this makes sense at all.
+And what would a proper naming be? Maybe something like:
+&lt;/p&gt;
+&lt;c&gt;
+use Regexp::Common 'do_not_match';
+
+my $re = $RE{do_not}{-match =&gt; 'something'}
+&lt;/c&gt;
+&lt;p&gt;Your opinions?&lt;/p&gt;
+&lt;p&gt;-jo&lt;/p&gt;</doctext>
+<thread id="11112994">
+<node id="11113006"><node id="11113008"><node id="11113011"><node id="11113013"/>
+</node>
+</node>
+</node>
+</thread></node>

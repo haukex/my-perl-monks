@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227875" title="Re^3: convert c# to perl code" created="2019-01-01 09:09:27" updated="2019-01-01 09:09:27" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;when i run the code above on the string "7512" i get: cA5YjDeU2fOJwwnVFPCuAw==&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Apparently, [https://docs.microsoft.com/en-us/dotnet/api/system.text.unicodeencoding|UnicodeEncoding] encodes to UTF-16LE - at least that's what your sample seems to show. So in Perl, you'll have to use the [doc://Encode] module for that, and then either use &lt;c&gt;md5_base64&lt;/c&gt; from [doc://Digest::MD5], which removes the padding at the end of the string (&lt;c&gt;==&lt;/c&gt;), or, if you want the padding, you'll have to use [doc://MIME::Base64] separately:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Encode qw/encode/;
+use Digest::MD5 qw/md5/;
+use MIME::Base64 qw/encode_base64/;
+
+my $string = "7512";
+my $md5b64 = encode_base64( md5( encode( 'UTF-16LE', $string,
+	Encode::FB_CROAK|Encode::LEAVE_SRC ) ), "" );
+print "Generated String is: MD5:$md5b64\n";
+
+my $expect = "cA5YjDeU2fOJwwnVFPCuAw==";
+print $md5b64 eq $expect ? "Matches!\n" : "Doesn't match!\n";
+
+__END__
+
+Generated String is: MD5:cA5YjDeU2fOJwwnVFPCuAw==
+Matches!
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1227872</root_node>
+<parent_node field_name="parent_node">1227874</parent_node>
+<thread id="1227872">
+<node id="1227873"><node id="1227874"><node id="1227875"><node id="1227876"/>
+<node id="1227877"/>
+</node>
+</node>
+</node>
+<node id="1227886"/>
+</thread></node>

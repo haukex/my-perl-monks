@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11104478" title="Re^5: Text::CSV encoding parse()" created="2019-08-14 15:55:12" updated="2019-08-14 15:55:12" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I don't see any mention of any encoding in this code, which is not good. And earlier you said: &lt;i&gt;"I'm using the CGI module and have it properly set: &lt;c&gt;print $q-&gt;header(-charset =&gt; 'utf-8');&lt;/c&gt;"&lt;/i&gt; so I doubt this code is representative.&lt;/p&gt;
+&lt;p&gt;You need to:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Use a Perl version &amp;gt;= 5.12 and say &lt;c&gt;use feature 'unicode_strings';&lt;/c&gt; or &lt;c&gt;use 5.012;&lt;/c&gt; (or higher).&lt;/li&gt;
+&lt;li&gt;If you have any non-ASCII characters in your Perl script, save it as UTF-8 and add the &lt;c&gt;use utf8;&lt;/c&gt; directive at the top.&lt;/li&gt;
+&lt;li&gt;Make sure your data is coming from the database properly encoded. As I linked to above, you can check this via [doc://Devel::Peek]. If you need that output to go to the browser, see [id://1182361|this].&lt;/li&gt;
+&lt;li&gt;Make sure you are doing &lt;c&gt;binmode STDOUT, ':encoding(UTF-8)';&lt;/c&gt; or &lt;c&gt;use open qw/:std :utf8/;&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;Make sure you are telling your browser what encoding you are sending it.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;[mod://Text::CSV] is not the problem:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Devel::Peek;
+use Text::CSV;
+
+my $str = "\N{U+20AC}|\N{U+20AC}";
+Dump($str);  # ... UTF8 "\x{20ac}|\x{20ac}" ...
+
+my ($s1,$s2) = split /\|/, $str;
+Dump($s1);   # ... UTF8 "\x{20ac}" ...
+Dump($s2);   # ... UTF8 "\x{20ac}" ...
+
+my $csv = Text::CSV-&gt;new ({ binary =&gt; 1, sep_char =&gt; "|" });
+$csv-&gt;parse($str);
+my ($c1,$c2) = $csv-&gt;fields;
+Dump($c1);   # ... UTF8 "\x{20ac}" ...
+Dump($c2);   # ... UTF8 "\x{20ac}" ...
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11104403</root_node>
+<parent_node field_name="parent_node">11104468</parent_node>
+<thread id="11104403">
+<node id="11104405"><node id="11104407"><node id="11104415"><node id="11104468"><node id="11104476"><node id="11104482"/>
+</node>
+<node id="11104478"><node id="11104489"><node id="11104494"/>
+<node id="11104502"><node id="11104507"/>
+<node id="11104508"/>
+<node id="11104509"><node id="11104512"/>
+</node>
+<node id="11104578"><node id="11104604"><node id="11104749"><node id="11104759"><node id="11104828"><node id="11104832"><node id="11104835"><node id="11104847"><node id="11104867"><node id="11104896"><node id="11104911"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11104764"><node id="11104827"><node id="11104845"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11104428"><node id="11104470"><node id="11104493"/>
+<node id="11104496"><node id="11104527"><node id="11104537"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

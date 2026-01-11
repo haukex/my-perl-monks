@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="128925" title="Matching in huge files" created="2001-12-01 22:13:19" updated="2005-08-15 09:53:10" _doctext_mode="lenient"><type id="1748">sourcecode</type>
+<author id="22308">dws</author>
+<doctext field_name="doctext">&lt;code&gt;
+#!/usr/bin/perl -w
+#
+# Proof-of-concept for using minimal memory to search huge
+# files, using a sliding window, matching within the window,
+# and using on /gc and pos() to restart the search at the
+# correct spot whenever we slide the window.
+#
+# Doesn't correctly handle potential matches that overlap;
+# the first fragment that matches wins.
+#
+
+use strict;
+use constant BLOCKSIZE =&gt; (8 * 1024);
+
+&amp;search("bighuge.log",
+        sub { print $_[0], "\n" },
+        "&lt;img[^&gt;]*&gt;");
+
+sub search {
+    my ($file, $callback, @fragments) = @_;
+
+    local *F;
+    open(F, "&lt;", $file) or die "$file: $!";
+    binmode(F);
+
+    # prime the window with two blocks (if possible)
+    my $nbytes = read(F, my $window, 2 * BLOCKSIZE);
+
+    my $re = "(" . join("|", @fragments) . ")";
+
+    while ( $nbytes &gt; 0 ) {
+
+        # match as many times as we can within the
+        # window, remembering the position of the
+        # final match (if any).
+        while ( $window =~ m/$re/oigcs ) {
+            &amp;$callback($1);
+        }
+        my $pos = pos($window);
+
+        # grab the next block
+        $nbytes = read(F, my $block, BLOCKSIZE);
+        last if $nbytes == 0;
+
+        # slide the window by discarding the initial
+        # block and appending the next. then reset
+        # the starting position for matching.
+        substr($window, 0, BLOCKSIZE) = '';
+        $window .= $block;
+        $pos -= BLOCKSIZE;
+        pos($window) = $pos &gt; 0 ? $pos : 0;
+    }
+
+    close(F);
+}
+&lt;/code&gt;</doctext>
+<codedescription field_name="codedescription">A demonstration of how to grep through huge files using a sliding window (buffer) technique. The code below has rough edges, but works for simple regular express fragments. Treat it as a starting point.
+&lt;p&gt;
+I've seen this done somewhere before, but couldn't find a working example, so I whipped this one up. A pointer to a more authoritative version will be appreciated.
+&lt;p&gt;
+</codedescription>
+<codecategory field_name="codecategory">Text Processing</codecategory>
+<codeauthor field_name="codeauthor">[dws]</codeauthor>
+<thread id="128925">
+<node id="397117"><node id="399055"/>
+</node>
+<node id="413259"><node id="413620"><node id="559615"><node id="559698"/>
+<node id="709362"/>
+</node>
+<node id="716425"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1192965" title="Re^3: Detecting whether DateTime object has a time component or not?" created="2017-06-16 12:34:05" updated="2017-06-16 12:34:05" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Yup, I ended up looking at the original data, which fortunately are also available.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That's good! Here's how I might have done it:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime::Format::Strptime;
+
+my $strp = DateTime::Format::Strptime-&gt;new(on_error=&gt;'croak',
+	pattern=&gt;'%Y%m%dT%H:%M:%S', time_zone=&gt;'UTC');
+
+while (&lt;DATA&gt;) {
+	chomp;
+	my $dt;
+	if ($_ eq 'today')
+		{ $dt = DateTime-&gt;now-&gt;truncate( to =&gt; 'day' )
+			-&gt;set( hour=&gt;23, minute=&gt;59, second=&gt;59 ) }
+	elsif ($_ eq 'now') { $dt = DateTime-&gt;now }
+	else { $_ .= "T23:59:59" if /^\d{8}$/;
+		$dt = $strp-&gt;parse_datetime($_) }
+	print "$_ =&gt; ",$dt-&gt;strftime('%Y-%m-%d %H:%M:%S %Z'),"\n";
+}
+
+__DATA__
+20170616T15:30:53
+20170616
+now
+today
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1192918</root_node>
+<parent_node field_name="parent_node">1192926</parent_node>
+<thread id="1192918">
+<node id="1192919"/>
+<node id="1192920"><node id="1192927"/>
+</node>
+<node id="1192921"><node id="1192926"><node id="1192965"/>
+</node>
+</node>
+<node id="1193103"/>
+<node id="1193116"/>
+</thread></node>

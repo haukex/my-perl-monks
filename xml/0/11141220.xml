@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11141220" title="Re: Is there an official regex for checking module names? (updated x2)" created="2022-02-08 04:01:56" updated="2022-02-08 04:01:56" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Interesting question! It appears that none of [doc://perlmod] and the various documents it references seem to give any such restrictions; there's only [doc://perlvar#The-Syntax-of-Variable-Names] and [doc://perldata#Identifier-parsing], the latter of which gives &lt;c&gt;/ (?[ ( \p{Word} &amp; \p{XID_Start} ) + [_] ]) (?[ ( \p{Word} &amp; \p{XID_Continue} ) ]) * /x&lt;/c&gt; for Unicode and &lt;c&gt;/ (?aa) (?!\d) \w+ /x&lt;/c&gt; for ASCII, and indeed, under &lt;c&gt;use utf8;&lt;/c&gt;, &lt;tt&gt;package &amp;#931;ä&amp;#3297;&amp;#8584;&lt;/tt&gt; is allowed. However, when it comes to &lt;c&gt;.pm&lt;/c&gt; files, the issue arises in the filesystem, and that's a can of worms across different OSes. (&lt;i&gt;Update 2:&lt;/i&gt; On my Linux system, a file named &lt;tt&gt;&amp;#931;ä&amp;#3297;&amp;#8584;.pm&lt;/tt&gt; works fine as a regular module, I can &lt;c&gt;use&lt;/c&gt; it normally.)&lt;/p&gt;
+&lt;p&gt;Over in [id://11114716|this node], I mentioned several different modules that parse &lt;c&gt;.pm&lt;/c&gt; files: [mod://App::cpanminus|&lt;c&gt;cpanm&lt;/c&gt;] uses [mod://Parse::PMFile], which borrows this code from the [https://github.com/andk/pause/blob/857b4d7/lib/PAUSE/package.pm#L236|PAUSE indexer], and they use &lt;c&gt;([\w\:\']+)&lt;/c&gt; to extract package names and the following to check if module names are bad:&lt;/p&gt;
+&lt;c&gt;
+$package !~ /^\w[\w\:\']*\w?\z/
+  || $package !~ /\w\z/
+  || $package =~ /:/ &amp;&amp; $package !~ /::/
+  || $package =~ /\w:\w/
+  || $package =~ /:::/
+&lt;/c&gt;
+&lt;p&gt;[mod://Module::Info]'s &lt;c&gt;version&lt;/c&gt; and [mod://ExtUtils::MM_Unix] share the regex &lt;c&gt;/\w[\w\:\']*/&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;But what is I suspect the "most official" answer comes from [mod://CPAN::Meta::Validator]:&lt;/p&gt;
+&lt;c&gt;
+/^[A-Za-z0-9_]+(::[A-Za-z0-9_]+)*$/
+&lt;/c&gt;
+&lt;p&gt;And indeed, all of the entries in [https://www.cpan.org/modules/02packages.details.txt.gz|02packages.details.txt] match this pattern, the only exceptions currently being &lt;c&gt;WWW::Scripter'_about_protocol&lt;/c&gt; and &lt;c&gt;WWW::Scripter'Location&lt;/c&gt;, and changing &lt;c&gt;::&lt;/c&gt; to &lt;c&gt;(?:'|::)&lt;/c&gt; in the above regex matches those too. Under versions of Perl that support &lt;c&gt;/aa&lt;/c&gt; (5.14+), it can also be written &lt;c&gt;/^\w+(?:(?:'|::)\w+)*$/aa&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;There's an interesting caveat here: This regex allows package names that begin with digits, which is not a valid Perl identifier. Indeed, &lt;c&gt;package 123;&lt;/c&gt; is a syntax error - but &lt;c&gt;package Acme::123;&lt;/c&gt; is not, and the existence of e.g. [mod://Acme::123] and many others on the CPAN confirms that this appears to be allowed. (Side note: [id://11121812|as of 5.18], any non-empty string is allowed on the LHS of &lt;c&gt;-&gt;&lt;/c&gt;.)&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; All packages on the CPAN also match the slightly more restrictive &lt;c&gt;/^(?!\d)\w+(?:(?:'|::)\w+)*$/aa&lt;/c&gt;, which also lines up with the [http://blogs.perl.org/users/michael_g_schwern/2011/10/how-not-to-load-a-module-or-bad-interfaces-make-good-people-do-bad-things.html|blog post] by [schwern] the AM linked to - and your own regex! &lt;small&gt;&lt;i&gt;Additional minor edits.&lt;/i&gt;&lt;/small&gt; &lt;b&gt;Update 2:&lt;/b&gt; And of course [mod://Module::Runtime], as mentioned by the AM, agrees too.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11141213</root_node>
+<parent_node field_name="parent_node">11141213</parent_node>
+<thread id="11141213">
+<node id="11141214"><node id="11141217"/>
+</node>
+<node id="11141215"/>
+<node id="11141220"><node id="11141246"><node id="11141249"><node id="11141253"/>
+</node>
+</node>
+</node>
+<node id="11141235"><node id="11141248"><node id="11141261"><node id="11141264"><node id="11141275"/>
+</node>
+</node>
+</node>
+<node id="11141256"><node id="11141257"><node id="11141258"><node id="11141263"/>
+</node>
+</node>
+<node id="11141262"/>
+</node>
+</node>
+</thread></node>

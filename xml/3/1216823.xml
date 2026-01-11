@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1216823" title="Re: &quot;This site is not secure&quot; warning message" created="2018-06-17 17:52:37" updated="2018-06-17 17:52:37" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I analyzed this issue a bit more.&lt;/p&gt;
+&lt;p&gt;There are 10 DNS names that I know of for PerlMonks: &lt;c&gt;/^( (www\.|css\.)? perlmonks \. (org|com|net) | perlmonks.pairsite.com )$/x&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;Except for &lt;c&gt;perlmonks.pairsite.com&lt;/c&gt;, all of those resolve to the three IP addresses &lt;c&gt;209.197.123.153&lt;/c&gt;, &lt;c&gt;216.92.34.251&lt;/c&gt;, and &lt;c&gt;66.39.54.27&lt;/c&gt;. &lt;c&gt;perlmonks.pairsite.com&lt;/c&gt; resolves to only the first of those, &lt;c&gt;209.197.123.153&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;There are two SSL certificates:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;one for pair Networks, which matches only &lt;c&gt;*.pairsite.com&lt;/c&gt; - this one is &lt;i&gt;always&lt;/i&gt; served by &lt;c&gt;209.197.123.153&lt;/c&gt;, no matter which of the aforementioned 10 DNS names is used!&lt;/li&gt;
+&lt;li&gt;one Let's Encrypt certificate, which matches any of the nine DNS names &lt;c&gt;/^ (www\.|css\.)? perlmonks \. (org|com|net) $/x&lt;/c&gt; - this one is served by &lt;c&gt;216.92.34.251&lt;/c&gt; and &lt;c&gt;66.39.54.27&lt;/c&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The issue is that any time one of the &lt;c&gt;(org|com|net)&lt;/c&gt; addresses resolves to &lt;c&gt;209.197.123.153&lt;/c&gt; ([wp://Round-robin DNS]), the user will get a certificate warning.&lt;/p&gt;
+&lt;p&gt;I checked, and the [https://wiki.apache.org/httpd/NameBasedSSLVHosts|Apache Wiki] says this about Name-Based Virtual Hosts and SSL (emphasis mine):&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;As a rule, it is impossible to host more than one SSL virtual host on the same IP address and port. This is because Apache needs to know the name of the host in order to choose the correct certificate to setup the encryption layer. But the name of the host being requested is contained only in the HTTP request headers, which are part of the encrypted content. It is therefore not available until after the encryption is already negotiated. This means that the correct certificate cannot be selected, and clients will receive certificate mismatch warnings and be vulnerable to man-in-the-middle attacks.&lt;/p&gt;
+&lt;p&gt;In reality, Apache will allow you to configure name-based SSL virtual hosts, but it will always use the configuration from the first-listed virtual host (on the selected IP address and port) to setup the encryption layer. In reality, Apache will allow you to configure name-based SSL virtual hosts, but it will always use the configuration from the first-listed virtual host (on the selected IP address and port) to setup the encryption layer. In certain specific circumstances, it is acceptable to use a single SSL configuration for several virtual hosts. In particular, this will work if the SSL certificate applies to &lt;b&gt;all&lt;/b&gt; the virtual hosts. ...&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;As a quick fix, &lt;c&gt;209.197.123.153&lt;/c&gt; could be taken out of the DNS rotation, as already suggested by others, but this has the disadvantage that one of the servers will get much less of the load. Another possible solution would be to make sure that &lt;c&gt;209.197.123.153&lt;/c&gt; serves up the Let's Encrypt certificate as well, and then set up a redirect from &lt;c&gt;perlmonks.pairsite.com&lt;/c&gt; to &lt;c&gt;perlmonks.org&lt;/c&gt; (both &lt;c&gt;http&lt;/c&gt; and &lt;c&gt;https&lt;/c&gt;), since I'm not sure how much that address is used anyway.&lt;/p&gt;
+&lt;p&gt;In any case, I think this is an important issue!&lt;/p&gt;
+&lt;readmore title="test code"&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; [Corion] has since published this code on GitHub, please consider that the most current version: [https://github.com/Corion/Perlmonks-Maintenance/blob/master/scripts/perlmonks-server-check.pl]&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Data::Dump;
+use Net::DNS;
+use LWP::UserAgent;
+require LWP::Protocol::https; # make sure this is installed
+use Class::Method::Modifiers qw/around/;
+
+my @ADDRS = qw/
+	perlmonks.org www.perlmonks.org css.perlmonks.org
+	perlmonks.com www.perlmonks.com css.perlmonks.com
+	perlmonks.net www.perlmonks.net css.perlmonks.net
+	perlmonks.pairsite.com /;
+
+my $DNS = { # As of 2018-06-17:
+  "css.perlmonks.com"      =&gt; ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
+  "css.perlmonks.net"      =&gt; ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
+  "css.perlmonks.org"      =&gt; ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
+  "perlmonks.com"          =&gt; ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
+  "perlmonks.net"          =&gt; ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
+  "perlmonks.org"          =&gt; ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
+  "perlmonks.pairsite.com" =&gt; ["209.197.123.153"],
+  "www.perlmonks.com"      =&gt; ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
+  "www.perlmonks.net"      =&gt; ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
+  "www.perlmonks.org"      =&gt; ["209.197.123.153", "216.92.34.251", "66.39.54.27"],
+};
+if (0) {
+	$DNS={};
+	my $resolver = new Net::DNS::Resolver(recurse =&gt; 1, debug =&gt; 0);
+	for my $addr (@ADDRS) {
+		# figure out the authoritative server
+		$resolver-&gt;nameservers('8.8.8.8');
+		my $packet = $resolver-&gt;send($addr, 'SOA');
+		my @server = map {$_-&gt;mname} grep {$_-&gt;type eq 'SOA'}
+			$packet-&gt;answer;
+		die "@server" unless @server==1;
+		$packet = $resolver-&gt;send($server[0], 'A');
+		my @nameservers = map {$_-&gt;address} grep {$_-&gt;type eq 'A'}
+			$packet-&gt;answer;
+		die "@server" unless @nameservers;
+		# query the authoritative server
+		$resolver-&gt;nameservers(@nameservers);
+		$packet = $resolver-&gt;send($addr, 'A');
+		my @ips = sort map {$_-&gt;address} grep {$_-&gt;type eq 'A'}
+			$packet-&gt;answer;
+		printf "%23s %-35s %s\n", $addr,
+			"(\@$server[0]/@nameservers)", join ' ', @ips;
+		$DNS-&gt;{$addr} = \@ips;
+	}
+	dd $DNS;
+}
+
+our $force_peeraddr;
+around 'LWP::Protocol::http::_extra_sock_opts' =&gt; sub {
+	my $orig = shift;
+	die unless wantarray;
+	my @rv = $orig-&gt;(@_);
+	push @rv, PeerAddr =&gt; $force_peeraddr if defined $force_peeraddr;
+	return @rv;
+};
+around 'LWP::Protocol::https::_get_sock_info' =&gt; sub {
+	my $orig = shift;
+	my ($self, $res, $sock) = @_;
+	my $cert = $sock-&gt;get_peer_certificate;
+	my @san = $cert-&gt;peer_certificate('subjectAltNames');
+	while (@san) {
+		my ($type_id, $value) = splice @san, 0, 2;
+		$res-&gt;push_header("Client-SSL-Cert-SubjectAltName"
+			=&gt; "$type_id: $value");
+	}
+	$orig-&gt;(@_);
+};
+
+my %certs;
+my $ua = LWP::UserAgent-&gt;new( ssl_opts =&gt; { verify_hostname =&gt; 0 } );
+for my $addr (sort keys %$DNS) {
+	for my $host (sort @{ $DNS-&gt;{$addr} }) {
+		warn "Requesting $addr from $host...\n";
+		local $force_peeraddr = $host;
+		my $res = $ua-&gt;get("https://$addr");
+		die $res-&gt;status_line unless $res-&gt;is_success;
+		my @peer = $res-&gt;header("client-peer");
+		die "@peer" unless @peer==1 &amp;&amp; $peer[0] eq "$host:443";
+		my @issuer = $res-&gt;header("client-ssl-cert-issuer");
+		my @subject = $res-&gt;header("client-ssl-cert-subject");
+		my @san = $res-&gt;header("client-ssl-cert-subjectaltname");
+		my $certstr = "Issuer: @issuer\nSubject: @subject\n"
+			."Subject Alt Names: @san\n";
+		push @{ $certs{$certstr} }, "$host $addr";
+	}
+}
+for my $cert (sort keys %certs) {
+	print "##### Certificate #####\n", $cert, "### Served by:\n";
+	printf "%15s %s\n", @$_ for map {[split]} @{ $certs{$cert} };
+}
+
+__END__
+
+# As of 2018-06-17:
+##### Certificate #####
+Issuer: /C=US/O=Let's Encrypt/CN=Let's Encrypt Authority X3
+Subject: /CN=perlmonks.org
+Subject Alt Names: 2: css.perlmonks.com 2: css.perlmonks.net 2: css.perlmonks.org 2: perlmonks.com 2: perlmonks.net 2: perlmonks.org 2: www.perlmonks.com 2: www.perlmonks.net 2: www.perlmonks.org
+### Served by:
+  216.92.34.251 css.perlmonks.com
+    66.39.54.27 css.perlmonks.com
+  216.92.34.251 css.perlmonks.net
+    66.39.54.27 css.perlmonks.net
+  216.92.34.251 css.perlmonks.org
+    66.39.54.27 css.perlmonks.org
+  216.92.34.251 perlmonks.com
+    66.39.54.27 perlmonks.com
+  216.92.34.251 perlmonks.net
+    66.39.54.27 perlmonks.net
+  216.92.34.251 perlmonks.org
+    66.39.54.27 perlmonks.org
+  216.92.34.251 www.perlmonks.com
+    66.39.54.27 www.perlmonks.com
+  216.92.34.251 www.perlmonks.net
+    66.39.54.27 www.perlmonks.net
+  216.92.34.251 www.perlmonks.org
+    66.39.54.27 www.perlmonks.org
+##### Certificate #####
+Issuer: /C=US/ST=New Jersey/L=Jersey City/O=The USERTRUST Network/CN=USERTrust RSA Organization Validation Secure Server CA
+Subject: /C=US/postalCode=15203/ST=Pennsylvania/L=Pittsburgh/street=Suite 510/street=2403 Sidney Street/O=pair Networks, Inc./OU=Provided by pair Networks/OU=PairWildcardSSL $250,000/CN=*.pairsite.com
+Subject Alt Names: 2: *.pairsite.com 2: pairsite.com
+### Served by:
+209.197.123.153 css.perlmonks.com
+209.197.123.153 css.perlmonks.net
+209.197.123.153 css.perlmonks.org
+209.197.123.153 perlmonks.com
+209.197.123.153 perlmonks.net
+209.197.123.153 perlmonks.org
+209.197.123.153 perlmonks.pairsite.com
+209.197.123.153 www.perlmonks.com
+209.197.123.153 www.perlmonks.net
+209.197.123.153 www.perlmonks.org
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1216381</root_node>
+<parent_node field_name="parent_node">1216381</parent_node>
+<thread id="1216381">
+<node id="1216385"><node id="1216389"><node id="1216416"><node id="1216459"><node id="1216568"/>
+</node>
+</node>
+<node id="1216472"><node id="1216473"><node id="1216474"/>
+<node id="1216810"/>
+</node>
+<node id="1216476"><node id="1216512"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1216414"><node id="1216415"/>
+</node>
+<node id="1216427"><node id="1216460"/>
+<node id="1216553"/>
+</node>
+<node id="1216478"><node id="1216632"/>
+</node>
+<node id="1216556"/>
+<node id="1216693"><node id="1216812"/>
+</node>
+<node id="1216696"/>
+<node id="1216823"><node id="1216885"/>
+</node>
+<node id="1216917"/>
+<node id="1217614"/>
+</thread></node>

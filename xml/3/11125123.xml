@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11125123" title="Re: user input Regular Expression (updated)" created="2020-12-13 12:19:42" updated="2020-12-13 12:19:42" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;If you could provide a [id://1177642] that includes sample input and the expected output for that input, we would be able to help better. I also don't understand your comments like &lt;i&gt;"Need to get count back to main"&lt;/i&gt;, perhaps because of some missing context? In regards to your logic, IMHO you're running the regex too often; in particular, you're incrementing &lt;c&gt;$Count&lt;/c&gt; if you find the pattern in the line, &lt;i&gt;after&lt;/i&gt; having run the &lt;c&gt;s///g&lt;/c&gt;, which means that unless &lt;c&gt;$replacement&lt;/c&gt; happens to match &lt;c&gt;$pattern&lt;/c&gt;, the regex won't match and you won't increment &lt;c&gt;$Count&lt;/c&gt;!&lt;/p&gt;
+&lt;p&gt;You only need to run the regex once, and you can use the [id://1215373|regex's return value] in the single &lt;c&gt;if&lt;/c&gt; statement you need for this code. Another thing to note is that you don't necessarily need to first read the file into memory (&lt;c&gt;@lines&lt;/c&gt;), as this will be inefficient for large files; the typical solution is writing to a temporary file while still reading from the input. This is what Perl's &lt;c&gt;-i&lt;/c&gt; switch does (which [id://1216313|can be done] via [doc://$^I]), and what my module [mod://File::Replace] does while trying to be more robust (more error checking instead of warnings, and atomic file replacement if supported by the OS and filesystem). That's why I'm using the latter in the following code, but you &lt;i&gt;could&lt;/i&gt; continue using your read-to-memory version if your input files will always be small enough to fit into memory. The important thing here is the loop body.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use feature 'say';
+use File::Replace 'replace3';
+
+my ($file, $pat, $replace) = @ARGV;
+
+my $Count = 0;
+my ($infh, $outfh, $rep) = replace3($file);
+while (&lt;$infh&gt;) {
+	chomp;
+	if ( s/$pat/$replace/g )
+		{ $Count++ }
+	say {$outfh} $_;
+}
+$rep-&gt;finish;
+
+say "Count=$Count";
+&lt;/c&gt;
+&lt;p&gt;Of course, if this is all your program is doing, you can do it with a oneliner too, e.g.:&lt;/p&gt;
+&lt;c&gt;
+perl -wMstrict -i -nle 's/PAT/REPL/g and $a++;print}{print $a//0' FILE
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; If you need to account for multiple replacements in the line, you can replace the whole &lt;c&gt;if&lt;/c&gt; in the above script with &lt;c&gt;$Count += s/$pat/$replace/g;&lt;/c&gt;, as &lt;c&gt;s///g&lt;/c&gt; returns the number of replacements made. In the oneliner that'd be &lt;c&gt;'$a+=s/PAT/REPL/g;print}{print$a//0'&lt;/c&gt; (BTW, see "Eskimo greeting" in [mod://perlsecret] in regards to the trick used in the oneliner).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11125108</root_node>
+<parent_node field_name="parent_node">11125108</parent_node>
+<thread id="11125108">
+<node id="11125122"><node id="11125147"/>
+</node>
+<node id="11125123"/>
+<node id="11125135"/>
+<node id="11125137"/>
+<node id="11125145"/>
+</thread></node>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110277" title="Re: Inchworm vs scalar: on boolean false value" created="2019-12-17 09:20:09" updated="2019-12-17 09:20:09" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1039428">Eily</author>
+<doctext field_name="doctext">&lt;p&gt;There are two things at work here. First, the false value of perl is actually neither strictly '' nor 0, it's kinda both (link to the doc when I find it). As demonstrated by
+&lt;c&gt;perl -E "use strict; use warnings; say( '' + 1 ); say( !1 + 1 ); say !1; say '!1 is defined' if defined !1"
+Argument "" isn't numeric in addition (+) at -e line 1.
+1
+1
+
+!1 is defined
+&lt;/c&gt;
+The warning about the non numeric argument happens only once, because !1 is treated as a number in arithmetic context. But printing !1 doesn't show anything because false is the empty string in string context.&lt;/p&gt;
+&lt;p&gt;[doc://perlop#Bitwise-String-Operators|~] however only works in two ways: bitwise not on a number, or bitwise not on a binary string. And the output will be of the same type. This means that ~~ is only equivalent to [doc://scalar] when the operand is a number or a string, but it will force another type (probably string) on any other value (an object, a reference...).&lt;/p&gt;
+&lt;p&gt;Edit: one place where the special value of perl's false is mentioned: [doc://perlop#Relational-Operators].&lt;br /&gt;
+Also, ~~ is not equivalent to [doc://scalar] for some big numbers and negative numbers:
+&lt;c&gt;  DB&lt;1&gt; say ~~ (-1)
+18446744073709551615&lt;/c&gt;So it's better not to use it outside of obfuscated code.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11110273</root_node>
+<parent_node field_name="parent_node">11110273</parent_node>
+<thread id="11110273">
+<node id="11110274"><node id="11110278"><node id="11110291"/>
+</node>
+<node id="11110279"/>
+</node>
+<node id="11110276"/>
+<node id="11110277"><node id="11110304"/>
+</node>
+<node id="11110280"/>
+</thread></node>

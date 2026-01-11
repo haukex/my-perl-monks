@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1182815" title="Re: What's going on with either constants folding or B::Deparse output in this case? (updated)" created="2017-02-25 06:58:09" updated="2017-02-25 06:58:09" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I am not an expert on this, but I do think I have an idea of what's going on: AFAIK the state that &lt;c&gt;m//gc&lt;/c&gt; keeps is attached to each string ([doc://pos]). See the output of the following, just your test cases with debugging added:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Carp;
+use Devel::Peek;
+
+sub parse {
+	Dump $_[0];
+	${$_[0]}=~/\Gfoo/gc or confess;
+}
+
+warn "##### Case 1 #####\n";
+parse \(''.'foo') for 1..2;
+
+warn "##### Case 2 #####\n";
+parse \('foo') for 1..2;
+&lt;/c&gt;
+&lt;p&gt;In "Case 1", the dot operator (concat) appears* to create a &lt;i&gt;new&lt;/i&gt; string on each execution of the loop. In "Case 2", the &lt;i&gt;same&lt;/i&gt; string (same memory address etc.) is passed to the function each time, so &lt;c&gt;m/\G.../gc&lt;/c&gt; keeps its state, and so the second call fails.&lt;/p&gt;
+&lt;p&gt;As for [doc://B::Deparse], from its docs:&lt;/p&gt;
+&lt;blockquote&gt;The output of B::Deparse won't be exactly the same as the original source, since perl doesn't keep track of comments or whitespace, and there isn't a one-to-one correspondence between perl's syntactical constructions and their compiled form, but it will often be close.&lt;/blockquote&gt;
+&lt;p&gt;* &lt;i&gt;Update:&lt;/i&gt; Added the "appears to", since my further investigation [id://1182825|below] has made me uncertain as to what &lt;strike&gt;is going on&lt;/strike&gt; the exact technical explanation is.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1182813</root_node>
+<parent_node field_name="parent_node">1182813</parent_node>
+<thread id="1182813">
+<node id="1182815"><node id="1182816"><node id="1182825"/>
+</node>
+</node>
+<node id="1182859"/>
+</thread></node>

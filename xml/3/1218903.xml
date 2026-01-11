@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1218903" title="Re: Constants lists in array slices" created="2018-07-20 09:04:46" updated="2018-07-20 09:04:46" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I get a warning for FL2 &lt;c&gt;Scalar value @row[FL2] better written as $row[FL2]&lt;/c&gt; (ignoring that its a constant _list_)&lt;/i&gt;&lt;/blockquote&gt;
+&lt;c&gt;
+$ ./Porting/bisect.pl --target=miniperl --start=v5.16.3 --end=v5.26.0 --expect-fail -e 'use warnings FATAL=&gt;"all"; sub X () {2,3}; my @a=("a".."z"); print @a[X]'
+...
+commit 429a25554a608b64c0ee46c1ffe19bab3718a3c8
+Author: Father Chrysostomos &lt;sprout@cpan.org&gt;
+Date:   Sat Sep 14 17:23:11 2013 -0700
+
+    Reduce false positives for @hsh{$s} and @ary[$s] warnings
+    
+    This resolves tickets #28380 and #114024.
+    
+    Commit 95a31aad5 did something similar to this for the new %hash{...}
+    syntax.  This commit extends it to @ slices and combines the two
+    code paths.
+    
+    The heuristics in toke.c can easily produce false positives.  So the
+    op is flagged as being a candidate for the warning.  Then when op.c
+    has the op tree available, it examines it to see whether the heuristic
+    may have been a false positive.
+    
+    This avoids bugs with qw "foo bar baz" and sub calls triggering
+    the warning.
+    
+    The source code is no longer available for the warning, so we recon-
+    struct it from the op tree, skipping the subscript if it is anything
+    other than a const op.
+    
+    This means that @hash{$foo} comes out as @hash{...} and @hash{foo} as
+    @hash{"foo"}.  It also meeans that @hash{"]"} is displayed correctly
+    instead of as @hash{"].
+    
+    Commit 95a31aad5 also modified the heuristic for %hash{...} to exempt
+    qw altogether.  But it did not exempt it if it was preceded by a tab.
+    So this commit rectifies that.
+    
+    This commit also improves the false positive detection by exempting
+    any ops returning lists that can get past toke.c’s heuristic.  I went
+    through the entire list of ops, but I may have missed some.
+    
+    Also, @ slices on the lhs of = are exempt, as they change the context
+    and are hence actually useful.
+
+$ git tag --contains 429a25554a608b6
+... v5.20.0 ...
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;Deparsing the code shows that FL and FL2 are called as functions &lt;c&gt;@a[FL()] = @row[FL2()];&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;c&gt;
+$ ./Porting/bisect.pl --start=v5.16.3 --end=v5.26.0 -e '`$^X -Ilib -MO=Deparse -e "use constant X=&gt;3,4; \@x[X]"`=~/\@x\[3, 4\]/ and die'
+...
+commit f815dc14d7c5540dfb5d02d001e0101c6266f281
+Author: Father Chrysostomos &lt;sprout@cpan.org&gt;
+Date:   Sun Jun 30 00:20:33 2013 -0700
+
+    Inline list constants
+    
+    These are inlined the same way as 1..5.  We have two ops:
+    
+      rv2av
+        |
+        `-- const
+    
+    The const op returns an AV, which is stored in the op tree, and then
+    rv2av flattens it.
+
+$ git tag --contains f815dc14d7c5540d
+... v5.20.0 ...
+
+# *Update:* making sure it's not just the Deparse output that changed...
+$ ./Porting/bisect.pl --start=v5.19.0 --end=v5.21.0 -e '`$^X -Ilib -MO=Concise -e "use constant X=&gt;3,4; \@x[X]"`=~/entersub/ or die'
+...
+commit f815dc14d7c5540dfb5d02d001e0101c6266f281
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1218891</root_node>
+<parent_node field_name="parent_node">1218891</parent_node>
+<thread id="1218891">
+<node id="1218894"/>
+<node id="1218895"><node id="1218897"><node id="1218907"/>
+</node>
+</node>
+<node id="1218901"><node id="1218906"/>
+</node>
+<node id="1218903"><node id="1218908"><node id="1218911"/>
+</node>
+</node>
+</thread></node>

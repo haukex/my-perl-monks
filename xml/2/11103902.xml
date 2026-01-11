@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11103902" title="Re^5: Print the line with the largest number from standard input" created="2019-08-04 22:54:32" updated="2019-08-04 22:54:32" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1143060">mr_ron</author>
+<doctext field_name="doctext">&lt;p&gt; Your refactoring improvement gave me some (2) ideas for command line / one liner style solutions.  In the process of researching, however, I rechecked StackOverflow and noticed [https://stackoverflow.com/a/57146079|choroba's answer] which is elegant and could be easily rewritten as a command line similar to my examples. I am not sure the problem from the OP really needs that much more research, but will give my results here as they may have an idea of interest to somebody and are hopefully short enough that reading them will not take too long. 
+&lt;/p&gt;
+&lt;p&gt;
+My refactored code is included below but, again, given the StackOverflow solution, my second example, which takes a different approach, may be more interesting.
+&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/env sh
+
+perl -Mstrict -MList::Util=max -MRegexp::Common -Mv5.10 -wne '
+    our ($f_max, $f_max_line);
+
+    defined( my $l_max = max /$RE{num}{real}/g ) or next LINE;
+    ($f_max, $f_max_line) = ($l_max, $_)
+        if not defined $f_max or $l_max &gt; $f_max;
+
+    END { print $f_max_line // "No line with number found.\n" }
+'
+&lt;/code&gt;
+&lt;p&gt;
+The &lt;c&gt;sort&lt;/c&gt; command in my second and last example might become a performance concern for large files, but it's almost all off the shelf with very little custom code.
+&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/env sh
+
+perl -Mstrict -MList::Util=max -MRegexp::Common -Mv5.10 \
+    -wne 'print max(/$RE{num}{real}/g) // "NaN", " : ", $_'  |
+    sort -k1nr | head -1 |
+    sed 's/^NaN :.*$/No line with number found./;s/^[0-9-]* : //'
+&lt;/code&gt;
+&lt;p&gt;
+Anyone have a good argument for preferring
+&lt;blockquote&gt;&lt;c&gt;-Mstrict -Mv5.10&lt;/c&gt;&lt;/blockquote&gt; against &lt;blockquote&gt;&lt;c&gt;-Mv5.12&lt;/c&gt;&lt;/blockquote&gt;??
+&lt;/p&gt;
+
+&lt;p&gt;The code was tested on macOS Mojave/perl 5.18 and Crostini Debian Stretch/perl 5.(12|24).  I came up with some shell scripts for testing, and cobbled a Perl sample together with &lt;c&gt;Test::More&lt;/c&gt; and &lt;c&gt;Capture::Tiny&lt;/c&gt;, but could not seem to come up with a &lt;c&gt;Test::&lt;/c&gt; module or other TAP solution that was a good fit for running UNIX script against an input file and comparing the result to a static file with known correct output. I would be interested recomendations if anyone knows something that fits the description.
+&lt;/p&gt;
+&lt;br/&gt;
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1143060"&gt;
+Ron
+&lt;/div&gt;&lt;/div&gt;
+</doctext>
+<root_node field_name="root_node">11103133</root_node>
+<parent_node field_name="parent_node">11103628</parent_node>
+<thread id="11103133">
+<node id="11103135"><node id="11103152"/>
+<node id="11103187"/>
+</node>
+<node id="11103136"><node id="11103220"/>
+</node>
+<node id="11103137"><node id="11103139"><node id="11103140"/>
+<node id="11103141"/>
+</node>
+</node>
+<node id="11103146"/>
+<node id="11103147"/>
+<node id="11103159"/>
+<node id="11103251"><node id="11103393"/>
+</node>
+<node id="11103378"><node id="11103391"><node id="11103624"><node id="11103628"><node id="11103902"><node id="11103918"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

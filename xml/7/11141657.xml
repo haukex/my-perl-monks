@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11141657" title="unexpected behavior on hash passed by reference" created="2022-02-26 13:29:32" updated="2022-02-26 13:29:32" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="313292">perlfan</author>
+<doctext field_name="doctext">Consider:
+
+&lt;code&gt;
+use strict;
+use warnings;
+require Data::Dumper;
+
+my $foo = {  # blessed
+  one =&gt; 1,
+  two =&gt; 2,
+  six =&gt; 6,
+};
+bless $foo, q{Number::3ch};
+
+my $bar = {  # not blessed
+  one =&gt; 1,
+  two =&gt; 2,
+  six =&gt; 6,
+};
+
+sub foo {    # pass by ref
+  my $ref = shift;
+  $ref-&gt;{one} = q{One};
+  $ref = {}; # why won't this replace the underlying hash?
+  return $ref;
+}
+
+# try on blessed reference
+print Data::Dumper::Dumper($foo);
+foo $foo;
+print Data::Dumper::Dumper($foo);
+
+# try on unblessed reference
+print Data::Dumper::Dumper($bar);
+foo $bar;
+print Data::Dumper::Dumper($bar);
+&lt;/code&gt;
+
+I was expecting the underlying anonymous hashes to be replaced, but they are not.
+&lt;p&gt;
+Results:
+
+&lt;code&gt;
+$VAR1 = bless( {
+                 'six' =&gt; 6,
+                 'two' =&gt; 2,
+                 'one' =&gt; 1
+               }, 'Number::3ch' );
+$VAR1 = bless( {
+                 'six' =&gt; 6,
+                 'two' =&gt; 2,
+                 'one' =&gt; 'One'
+               }, 'Number::3ch' );
+$VAR1 = {
+          'six' =&gt; 6,
+          'one' =&gt; 1,
+          'two' =&gt; 2
+        };
+$VAR1 = {
+          'six' =&gt; 6,
+          'one' =&gt; 'One',
+          'two' =&gt; 2
+        };
+&lt;/code&gt;
+
+Questions:
+
+&lt;ol&gt;
+  &lt;li&gt;How do I make this DWIM?
+  &lt;li&gt;Why is this not DWIM?
+&lt;/ol&gt;
+
+thanks!</doctext>
+<thread id="11141657">
+<node id="11141658"><node id="11141659"><node id="11141660"/>
+<node id="11141662"/>
+</node>
+</node>
+<node id="11141663"/>
+</thread></node>

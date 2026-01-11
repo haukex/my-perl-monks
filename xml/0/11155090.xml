@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11155090" title="Re: Telnet responses" created="2023-10-20 04:02:08" updated="2023-10-20 04:02:08" _doctext_mode="lenient"><type id="11">note</type>
+<author id="890813">cavac</author>
+<doctext field_name="doctext">&lt;p&gt;If it's not a telnet server but a plain connection, you might be better off using something like [mod://IO::Socket::IP]&lt;/p&gt;
+
+&lt;p&gt;It's simple enough and there are many examples/explainythings out there already. But basically, you'd do something like this (untested pseudo-code):&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;
+use v5.36;
+...
+# Connect in "blocking" mode
+my $socket = IO::Socket::IP-&gt;new(
+    PeerHost =&gt; '192.168.1.181',
+    PeerPort =&gt; 12345,
+    Proto =&gt; 'tcp',
+);
+
+if(!defined($socket)) {
+    die("Connection failed");
+}
+
+
+# Switch to non-blocking send/receive mode so we can implement timeouts
+$socket-&gt;blocking(0);
+
+$socket-&gt;send("AT\n");
+waitFor($socket, 'AT');
+$socket-&gt;send("AT1122\n");
+my $oid = waitFor($socket, 'AT%23=1234', 1);
+...
+
+
+sub waitFor($socket, $searchstring, $caseinsensitive = 0) {
+    while(1) {
+        my $line = readsocketline($socket, 20);
+        if($casesensitive) {
+            if($line =~ /$searchstring/i) {
+                return $line;
+            }
+        } elsif($line =~ /$searchstring/) {
+            return $line;
+        }
+    }
+}
+
+sub readsocketline($socket, $timeout = 30) {
+
+    if(!defined($timeout) || !$timeout) {
+        $timeout = 30;
+    };
+
+    my $failat = time + $timeout;
+
+    my $line = '';
+    while(1) {
+        my $char = '';
+        $socket-&gt;recv($char, 1);
+        if(time &gt; $failat) {
+            die("Network timeout");
+        }
+        next if(!defined($char) || $char eq '');
+        next if($char eq "\r");
+        last if($char eq "\n");
+        $failat = time + $timeout;
+        $line .= $char;
+    }
+
+    return $line;
+}
+
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;If you need an ecrypted connection, you can use IO::Socket::SSL as a base for your connection. (For more complex protocols/connection that use optional encryption and/or use something like Unix Domain Sockets, you'd connect normally first, then use IO::Socket::SSL-&gt;start_SSL() to upgrade).&lt;/p&gt;
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-890813"&gt;
+PerlMonks XP is useless? Not anymore: [id://11142681]
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11155061</root_node>
+<parent_node field_name="parent_node">11155061</parent_node>
+<thread id="11155061">
+<node id="11155063"><node id="11155070"/>
+</node>
+<node id="11155090"><node id="11155098"><node id="11155101"/>
+</node>
+</node>
+<node id="11155120"><node id="11155122"><node id="11155131"/>
+</node>
+</node>
+</thread></node>

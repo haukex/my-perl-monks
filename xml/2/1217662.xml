@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217662" title="Re^5: Overloading Weirdness" created="2018-06-30 15:07:49" updated="2018-06-30 15:07:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;it is an old legacy app ... we cannot redo all of the many places where we compile strings.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I understand your point - to a degree. What I've got so far is you've got a large codebase where HTML is stitched together via &lt;c&gt;"&lt;html&gt;$str&lt;/html&gt;"&lt;/c&gt; and the like, and you've discovered that &lt;c&gt;$str&lt;/c&gt; sometimes needs to be encoded, and you can't decide whether or not until output (for reasons you haven't explained yet, but ok).&lt;/p&gt;
+&lt;p&gt;But like you showed in the root node, you're going to have to make changes to that code base: 1. you're going to have to change all the places where variables like &lt;c&gt;$str&lt;/c&gt; are created (&lt;c&gt;my $str = str::new('&lt;encode this later&gt;');&lt;/c&gt;), and 2. you're going to have to change the output code at some places (&lt;c&gt;print $html-&gt;encode;&lt;/c&gt;).&lt;/p&gt;
+&lt;p&gt;So what I'm guessing is that the code you &lt;i&gt;don't&lt;/i&gt; want to change is all the code like &lt;c&gt;"&lt;html&gt;$str&lt;/html&gt;"&lt;/c&gt;, probably because there is lots of code like that.&lt;/p&gt;
+&lt;p&gt;But you sometimes have code like the "bad" cases in the root node. You haven't told us how many cases in your code base there are like this, but if it's not too many, perhaps you could weed them out with a warning, like this:&lt;/p&gt;
+&lt;readmore title="example code"&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+{
+	package StringThing;
+	use Scalar::Util qw/blessed/;
+	use Carp;
+	use overload fallback =&gt; 0,
+		'""' =&gt; \&amp;str_warn, '.' =&gt; \&amp;concat, '.=' =&gt; \&amp;concat;
+	sub new {
+		my ($class, $self) = @_;
+		return $self if blessed($self) &amp;&amp; $self-&gt;isa(__PACKAGE__);
+		return bless \"$self", ref($class)||$class;
+	}
+	sub str_warn {
+		carp "unintended stringification";
+		goto &amp;str;
+	}
+	sub str { return ${+shift} }
+	sub concat {
+		my ($self,$other,$swap) = @_;
+		$other=$$other if blessed($other) &amp;&amp; $other-&gt;isa(__PACKAGE__);
+		return $self-&gt;new( $swap ? $other.$$self : $$self.$other );
+	}
+}
+
+my $x = StringThing-&gt;new("foo");
+my $y = StringThing-&gt;new("bar");
+
+my $z = "$x $y";
+print $z-&gt;str, "\n";
+
+my $zz; $zz = "$x $y";  # warns
+print $zz-&gt;str, "\n";   # dies
+
+__END__
+
+foo bar
+unintended stringification at test.pl line 34.
+Can't locate object method "str" via package "foo bar" (perhaps you forgot to load "foo bar"?) at test.pl line 35.
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Another idea might be to inspect the optree of your source code to find stringifications that haven't been optimized away:&lt;/p&gt;
+&lt;c&gt;
+$ perl -MO=Concise,-src test.pl | perl -ne \
+	'/^#\s+\d+\s*:/&amp;&amp;($a=$_);/(?&lt;!ex-)stringify/&amp;&amp;print$a,$_'
+test.pl syntax OK
+# 34: my $zz; $zz = "$x $y";  # warns
+1a    &lt;@&gt; stringify[$zz:257,258] sK/TARGMY,1 -&gt;1b
+&lt;/c&gt;
+&lt;p&gt;Although that feels kind of hackish, and I don't have enough experience with [doc://B::Concise] to say if there are any big downsides.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I could get into the Why ... but it's a long and boring story.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Telling us the background might prompt some other ideas for other solutions :-)&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1217269</root_node>
+<parent_node field_name="parent_node">1217301</parent_node>
+<thread id="1217269">
+<node id="1217270"><node id="1217280"><node id="1217310"><node id="1217313"/>
+</node>
+</node>
+<node id="1217284"><node id="1217304"/>
+<node id="1217312"><node id="1217336"/>
+</node>
+</node>
+</node>
+<node id="1217271"><node id="1217279"><node id="1217290"><node id="1217301"><node id="1217662"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1217306"/>
+</thread></node>

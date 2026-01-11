@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117581" title="Dangers of decode_json? or a hash entry is both defined and undefined. WTF?" created="2020-06-02 00:07:04" updated="2020-06-02 00:07:04" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1048007">varneraa</author>
+<doctext field_name="doctext">This new DB project just isn't being nice to me. Part of a new DB that I am putting together has a normalization table for services that we have organized into pools of machines.&lt;br&gt;
+&lt;br&gt;
+I was attempting to uniquify an array of strings and I noticed that my input array of 30k elements became an output of one undef entry. I figured uniq from List::MoreUtils, must just have a bug and I would just have to move on with something myself, even though it works on 10 other tables I'm uniquifying.&lt;br&gt;
+&lt;br&gt;
+The server names are standard fqdn that are alphanumeric with period separators.
+&lt;code&gt;
+my @output;
+my $pk = "SomeString";
+foreach my $pool ( @pools ) {
+   my @machines = qx/Some command that gets me a list of machines/;
+   #Some code here to check for cmd errors, etc. Convert output to an array of hashes (decode_json is involved);
+   my $machine_aref = decode_json $machines[0];
+   foreach my $row ( @{$machines_aref} ) {
+      push @output, $row-&gt;{$pk};
+   }
+}
+#At this point I can see the full list of machines, with no issues, or empty lines
+@output = uniq @output;
+#At this point @output is empty
+return \@output;
+&lt;/code&gt;
+&lt;br&gt;
+So I decided to just uniquify the list myself, it's only 30k entries, right? So I put together this, I know it's inefficient, but I figured it out later&lt;br&gt;
+&lt;br&gt;
+&lt;code&gt;
+Same loop to generation to generate the arrays. Still seeing all values in the array before this:
+   my @final_output;
+   foreach my $line ( @output ) {
+      next if ( grep m/^$line$/ @final_output );
+      push @final_output, $line;
+   }   
+&lt;\code&gt;
+&lt;br&gt;
+This time I don't see 0 results, the code just hangs. At first I thought, wow, is it really that inefficient? So I decide I can do better.&lt;br&gt;
+&lt;br&gt;
+From a little reading about uniq I find out it essentially just slams the array values into a hash and then pulls the keys. I don't care about ordering, so why not just roll that myself?&lt;br&gt;
+&lt;br&gt;
+&lt;code&gt;
+my %output_hash;
+my $pk = "SomeString";
+foreach my $pool ( @pools ) {
+   my @machines = qx/Some command that gets me a list of machines/;
+   #Some code here to check for cmd errors, etc. Convert output to an array of hashes (decode_json is involved);
+   my $machine_aref = decode_json $machines[0];
+   foreach my $row ( @{$machines_aref} ) {
+      $output_hash{$row-&gt;{$pk}} = 1;
+   }
+}
+
+my @output_array = keys %output_hash;
+
+return \@output_array;
+&lt;/code&gt;
+&lt;br&gt;
+Guess what? It fails. "Use of uninitialized value in concatenation (.) or string at...&lt;The line that assigns the $output_hash{$row-&gt;{$pk}} = 1;&gt;"&lt;br&gt;
+&lt;br&gt;
+Ok, great, there is an undefined value in a row from $machine_aref, right? Yes, but no, but yes?&lt;br&gt;
+&lt;br&gt;
+A little more debug code later and I have this...&lt;br&gt;
+&lt;br&gt;
+&lt;code&gt;
+my %output_hash;
+my $pk = "SomeString";
+foreach my $pool ( @pools ) {
+   my @machines = qx/Some command that gets me a list of machines/;
+   #Some code here to check for cmd errors, etc. Convert output to an array of hashes (decode_json is involved);
+   my $machine_aref = decode_json $machines[0];
+   print "$#{machine_aref} lines returned\n";
+   foreach my $row ( @{$machines_aref} ) {
+            unless ( defined $row-&gt;{$pk} ) {
+               print "'$pk'\n";
+               print Dumper $row;
+               print "$pk, $row\n";
+               print "Bad return: Some command from above\n";
+               print "HERE: " . $row-&gt;{"$pk"} . "\n";
+               die;
+            }
+      $output_hash{$row-&gt;{$pk}} = 1;
+   }
+}
+
+my @output_array = keys %output_hash;
+
+return \@output_array;
+&lt;/code&gt;
+&lt;br&gt;
+Surely we're going to hit the unless block and everything will be undef, right? Yes and no and yes again...&lt;br&gt;
+&lt;br&gt;
+&lt;code&gt;
+&lt;PoolName&gt;: 4737 lines returned.
+'SomeString'
+$VAR1 = {
+          'SomeString' =&gt; '&lt;machinename&gt;.&lt;location&gt;.&lt;something&gt;.com',
+          'Count' =&gt; 6
+        };
+SomeString, HASH(0x106d978)
+Bad command return: &lt;Some command used to get this data&gt;
+Use of uninitialized value in concatenation (.) or string at &lt;script_path&gt; line &lt;Line with print "HERE: " .$row-&gt;{"$pk"} . "\n";&gt;.
+&lt;/code&gt;
+&lt;br&gt;
+So I see that $row-&gt;{$pk} is undefined for this row, but I can dump the row and see that $pk matches exactly, remember this works for every other entry in the array, and then it fails again when I try to print the value. WTF?&lt;br&gt;
+&lt;br&gt;
+After this, I decided it was worth seeing which value(s) caused the problem. Turns out it was the first one, and the second, and wait, I guess all of them... So I switched the output of the command I was using to one that would just give me comma-delimited values and now everything works, including uniq. I still wish I understood what went wrong. If anyone is seeing a similar issue, I'm sorry this is a dead end. If someone with more expertise than me understands what is going on, I'd love you feedback. As always, thanks!&lt;br&gt;
+Some final details: Perl 5.30.2 built using perlbrew on SLES11 - Linux 3.0.101-108.87-default</doctext>
+<thread id="11117581">
+<node id="11117582"/>
+<node id="11117585"/>
+<node id="11117615"/>
+</thread></node>

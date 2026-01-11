@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11135754" title="Re: Creating an abstract (updated)" created="2021-08-09 18:36:10" updated="2021-08-09 18:36:10" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Obligatory Link to [id://11116478]...&lt;/p&gt;
+&lt;p&gt;Based on your function I'm presuming you want to preserve tags - if you didn't, then the task would be easily accomplished with something like [mod://HTML::Strip].&lt;/p&gt;
+&lt;p&gt;You haven't provided any sample input, so I had to make some up, I hope it's representative - but note that it already demonstrates some flaws if I run it through your function: &lt;c&gt;/(.*)&lt;(.*)/&lt;/c&gt; needs an &lt;c&gt;/s&lt;/c&gt; flag, and the &lt;c&gt;&lt;p&gt;&lt;/c&gt; and &lt;c&gt;&lt;i&gt;&lt;/c&gt; tags are not closed properly. I could also easily break it completely with some of the tricks in the above link.&lt;/p&gt;
+&lt;p&gt;Doing the task "right" is unfortunately not exactly trivial even with some of the nice HTML parsers. Here's my attempt, which I haven't fully put through its paces in terms of testing. It was a nice exercise because I actually haven't really used [mod://Mojo::DOM] for DOM creation yet. Note how it counts characters of text only, not including the HTML tags.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+print html_abstract(&lt;&lt;'END_HTML', 200), "\n";
+&lt;p&gt;Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
+tristique purus urna, a lacinia nulla euismod et. Pellentesque tempus
+et justo faucibus. &lt;i&gt;Fusce scelerisque, &lt;b&gt;magna&lt;/b&gt; &lt;a
+href="http://www.example.com"&gt;efficitur congue, leo nibh&lt;/a&gt;
+volutpat nibh, ac mattis dolor ipsum sit amet quam.&lt;/i&gt; Suspendisse
+eleifend id ligula quis placerat. Pellentesque fermentum eu magna sed
+mollis. Quisque placerat efficitur blandit. Vestibulum non.&lt;/p&gt;
+END_HTML
+
+use Mojo::DOM;
+sub html_abstract {
+	my ($html, $remain) = @_;
+	my $walk; $walk = sub {
+		my ($in, $out) = @_;
+		for my $n ( @{ $in-&gt;child_nodes } ) {
+			last unless $remain;
+			if ( $n-&gt;type eq 'cdata' || $n-&gt;type eq 'text' ) {
+				my $txt = $n-&gt;content;
+				if ( length $txt &lt; $remain ) {
+					$out-&gt;append_content($txt);
+					$remain -= length $txt;
+				}
+				else {
+					$txt =~ /^(.{0,$remain}\b)/s;
+					$out-&gt;append_content("$1...");
+					$remain = 0;
+				}
+			}
+			elsif ( $n-&gt;type eq 'tag' ) {
+				my $t = $out-&gt;new_tag( $n-&gt;tag, %{ $n-&gt;attr } )
+					# new_tag gives us a "root", but we want the tag
+					-&gt;child_nodes-&gt;first;
+				$walk-&gt;($n, $t);
+				$out-&gt;append_content($t);
+			} # ignore other node types for now
+		}
+		return $out;
+	};
+	return $walk-&gt;(Mojo::DOM-&gt;new($html), Mojo::DOM-&gt;new)-&gt;to_string;
+}
+
+__END__
+
+&lt;p&gt;Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
+tristique purus urna, a lacinia nulla euismod et. Pellentesque tempus
+et justo faucibus. &lt;i&gt;Fusce scelerisque, &lt;b&gt;magna&lt;/b&gt; &lt;a href="http://www.example.com"&gt;efficitur congue, leo ...&lt;/a&gt;&lt;/i&gt;&lt;/p&gt;
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; The above can also be extended to filter certain tags by adding this before the &lt;c&gt;elsif ( $n-&gt;type eq 'tag' )&lt;/c&gt;, where &lt;c&gt;%filter&lt;/c&gt; is a hash with the keys being names of tags to remove (or the condition can be reversed to keep only those tags):&lt;/p&gt;
+&lt;c&gt;
+			elsif ( $n-&gt;type eq 'tag' &amp;&amp; $filter{$n-&gt;tag} )
+				{ $walk-&gt;($n, $out) }
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11135746</root_node>
+<parent_node field_name="parent_node">11135746</parent_node>
+<thread id="11135746">
+<node id="11135747"/>
+<node id="11135749"><node id="11135750"><node id="11135753"/>
+</node>
+</node>
+<node id="11135754"/>
+<node id="11135759"/>
+</thread></node>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11145345" title="Re^3: Filehandle in subroutine in use VRML.pm" created="2022-07-07 16:10:22" updated="2022-07-07 16:10:22" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;which brings me to my original question: How do I declare $fh in subroutine printout so it recognizes the intended filehandle?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The problem is not in &lt;c&gt;sub printout&lt;/c&gt;, it's here:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+&amp;mystart($LumberFile,LF);
+&amp;buildlumber(\%Fs,LF,$Ppi);
+&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This gives us a little more context as to what's going on. You apparently want to use the "filehandles" &lt;c&gt;LF&lt;/c&gt; and &lt;c&gt;DP&lt;/c&gt; like variables and pass them as arguments to the subs to use. But because of the missing [doc://strict], the &lt;c&gt;LF&lt;/c&gt; is being taken as a bareword, that is, even though it &lt;i&gt;looks&lt;/i&gt; like a filehandle, it's actually the string &lt;c&gt;"LF"&lt;/c&gt; ([doc://B::Deparse] on the sample code from the root node shows this). Then AFAICT this is being used as a symbolic reference by [doc://open] and [doc://print], and this resolves it relative to the current package. When everything is in the &lt;c&gt;main&lt;/c&gt; package, it works, but &lt;c&gt;sub printout&lt;/c&gt; is in a different package, so it fails.&lt;/p&gt;
+&lt;p&gt;Here's one possible solution that requires only very small changes to your code and even works under [doc://strict] once you get around to using that. The &lt;c&gt;do&lt;/c&gt; block basically generates a new filehandle (see also my node [id://1193172|here] for alternatives). This will &lt;i&gt;actually&lt;/i&gt; give you a filehandle stored in a variable that you can pass around.&lt;/p&gt;
+&lt;c&gt;
+my $LF = \do { local *LF; *LF };
+&amp;mystart($LumberFile,$LF);
+&amp;buildlumber(\%Fs,$LF,$Ppi);
+&lt;/c&gt;
+&lt;p&gt;I do still feel compelled to say that this is still just triage, though. The real issue is the missing [doc://strict] compliance.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11145311</root_node>
+<parent_node field_name="parent_node">11145325</parent_node>
+<thread id="11145311">
+<node id="11145313"><node id="11145316"><node id="11145324"/>
+</node>
+</node>
+<node id="11145322"><node id="11145325"><node id="11145345"/>
+<node id="11145428"><node id="11145440"/>
+</node>
+</node>
+</node>
+<node id="11145348"><node id="11145564"><node id="11145573"/>
+<node id="11145605"/>
+</node>
+</node>
+<node id="11145353"><node id="11145380"><node id="11145386"><node id="11145398"><node id="11145399"/>
+</node>
+</node>
+<node id="11145439"/>
+</node>
+</node>
+</thread></node>

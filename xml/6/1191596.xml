@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1191596" title="Re: hash key" created="2017-05-30 10:48:05" updated="2017-05-30 10:48:05" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Just to supplement [Corion]'s explanations, I think that part of the misunderstanding might be that only simple hash subscripts are quoted automatically. From [doc://perldata]:&lt;/p&gt;
+&lt;blockquote&gt;... a simple identifier within such curlies is forced to be a string, and likewise within a hash subscript. Neither need quoting. Our earlier example, &lt;c&gt;$days{'Feb'}&lt;/c&gt; can be written as &lt;c&gt;$days{Feb}&lt;/c&gt; and the quotes will be assumed automatically. But anything more complicated in the subscript will be interpreted as an expression. This means for example that &lt;c&gt;$version{2.0}++&lt;/c&gt; is equivalent to &lt;c&gt;$version{2}++&lt;/c&gt;, not to &lt;c&gt;$version{'2.0'}++&lt;/c&gt;.&lt;/blockquote&gt;
+&lt;p&gt;In your case, neither &lt;c&gt;{"T::c"}&lt;/c&gt; nor &lt;c&gt;{$var}&lt;/c&gt; are such "simple" subscripts (aka "barewords", see [doc://perldata#Identifier-parsing]). So they are not automatically quoted and are instead treated as Perl expressions. So if you say &lt;c&gt;$var = '"T::c"'&lt;/c&gt;, it now holds a string consisting of six characters, the first and last are the quotes, and when you say &lt;c&gt;$my_hash{$var}&lt;/c&gt;, the hash key is that exact six-character string, including the quote characters. But the Perl expression &lt;c&gt;"T::c"&lt;/c&gt; means a string of four characters, not including the quotes, so that is the key that gets accessed when you say &lt;c&gt;$my_hash{"T::c"}&lt;/c&gt; or &lt;c&gt;$var = "T::c"; $my_hash{$var}&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;To illustrate the different possibilities, here I am building a hash where all the values are the same as the keys. Note how only the simplest of identifiers are automatically quoted, and as soon as the thing inside the braces contains characters like &lt;c&gt;-&lt;/c&gt;, &lt;c&gt;.&lt;/c&gt;, &lt;c&gt;()&lt;/c&gt;, &lt;c&gt;"&lt;/c&gt;, etc. it is treated as a Perl expression, &lt;small&gt;&lt;c&gt;&lt;update2&gt;&lt;/c&gt;&lt;/small&gt;&amp;nbsp;even something as seemingly simple as &lt;c&gt;$hash{123abc}&lt;/c&gt; is no longer a simple identifier because it starts with a digit.&amp;nbsp;&lt;small&gt;&lt;c&gt;&lt;/update2&gt;&lt;/c&gt;&lt;/small&gt; This list contains a few very "tricky" examples that might not be easy to immediately understand (like &lt;c&gt;$hash{T-b}&lt;/c&gt;), but don't worry about that yet - the thing to take away from this is that most special characters in hash subscripts cause them to be treated as expressions, and if you don't want that you will need to use strings instead, like &lt;c&gt;$hash{"T-b"}&lt;/c&gt; or &lt;c&gt;my $var = "T-b"; $hash{$var} = ...&lt;/c&gt;. &lt;small&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/small&gt;&amp;nbsp;By the way, I wrote a bit about the [doc://perlop#Comma-Operator|&lt;c&gt;=&gt;&lt;/c&gt; operator] aka "fat comma", which also autoquotes barewords on its left-hand side, [id://1191717|here].&amp;nbsp;&lt;small&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+# a bit of setup for demonstrations
+sub Ta   { return "aaa" }
+sub T_bb { return "bbb" }
+# if called as T() or T(undef), return 120, otherwise
+# if called as T(VALUE), return 123-VALUE
+sub T    { return 123 - (shift//3) }
+sub bb   { return 45    }
+sub d::T { return "ddd" }
+sub T::e { return "eee" }
+sub T::f { return "fff" }
+# same as: use constant J =&gt; 789;
+sub J () { return 789   }
+$_ = "some random string ".rand(9999);
+
+# now build a hash in which each value is the same as its key
+my %hash;
+$hash{Ta}       = 'Ta';     # simple string ("bareword"), autoquoted
+$hash{Ta()}     = 'aaa';    # function call Ta()
+$hash{222}      = '222';    # simple integer (not bareword though!)
+$hash{333.0}    = '333';    # not a bareword, numeric literal
+$hash{0444}     = '292';    # not a bareword, octal literal
+$hash{0x555}    = '1365';   # not a bareword, hex literal
+$hash{T_bb}     = 'T_bb';   # simple string, autoquoted
+$hash{+T_bb}    = 'bbb';    # function call T_bb()
+$hash{"+T_bb"}  = '+T_bb';  # string
+$hash{T.bb}     = '12045';  # Perl expression T().bb(), i.e. "120"."45"
+$hash{T-bb}     = '168';    # tricky: Perl expression T(-bb())
+$hash{J-bb}     = '744';    # parsed as J()-bb() (b/c prototype)
+$hash{J}        = 'J';      # simple string (use J() or +J for func. call)
+$hash{T-b}      = '120';    # tricky: parsed as T(-b $_) (filetest op.)
+$hash{"T-b"}    = 'T-b';    # string
+$hash{  T_c  }  = 'T_c';    # simple string, white space ignored
+$hash{" T_c "}  = ' T_c ';  # string including whitespace
+$hash{  T d  }  = 'ddd';    # parsed as d-&gt;T() ("indirect object syntax")
+$hash{ "T d" }  = 'T d';    # string
+$hash{  T::e  } = 'eee';    # function call T::e()
+$hash{ "T::e" } = 'T::e';   # string
+$hash{'"T::e"'} = '"T::e"'; # double quotes are chars in the string
+$hash{ T'f }    = 'fff';    # T'f is the old way of writing T::f, function call T::f()
+$hash{"T'f"}    = 'T\'f';   # string
+
+my $var1 = 'T::g';          # string
+$hash{$var1}    = 'T::g';   # contents of $var1 is the key
+
+my $var2 = 'T::h';          # string
+$hash{"$var2"}  = 'T::h';   # $var2 is interpolated into string which is then the key
+$hash{'$var2'}  = '$var2';  # single quotes don't interpolate
+$hash{$var1.$var2}          # Perl expression
+                = 'T::gT::h';
+$hash{"abc$var2"."x"}       # interpolating into longer string
+                = 'abcT::hx';
+
+my $var3 = '"T::i"';        # double quotes are chars in the string
+$hash{$var3}    = '"T::i"'; # contents of $var3 is the key
+
+my $var4 = 'T::j';          # string
+$var4 = '"'.$var4.'"';      # adding double quotes around the string
+$hash{"$var4"}  = '"T::j"'; # $var4 is interpolated into string which is then the key
+
+my $var5 = q{T::k$/'"[};    # string with "special" chars (q{} doesn't interpolate)
+$hash{$var5}    = $var5;    # no special characters take effect here
+
+# debug output
+use Data::Dump;  dd \%hash;
+
+# double-check that all values are equal to keys
+use Test::More tests=&gt;32;
+is $_, $hash{$_}, qq{"$_"} for values %hash;
+&lt;/c&gt;
+&lt;p&gt;I hope this explains how you can access your hash keys no matter whether the keys contain quotes or whatever other characters. Now, one last thing, if you have a string that contains double quotes, like &lt;c&gt;'"T::c"'&lt;/c&gt;, and you want to access a hash key without those double quotes, like &lt;c&gt;$hash{"T::c"}&lt;/c&gt;, then I have two suggestions. First, I would look at the source that you are getting this string &lt;c&gt;'"T::c"'&lt;/c&gt; from and see if you can change something there - often it is the result of insufficient parsing, like for example when you have a CSV file whose fields unexpectedly contain quotes, in which case using a proper parser, like [mod://Text::CSV], is the best solution. Otherwise, if this isn't the case for whatever reason, one way to remove the double quotes from the ends of the string is like this:&lt;/p&gt;
+&lt;c&gt;
+use Data::Dump;
+my $var = '"T::c"';
+dd $var;               # $var eq "\"T::c\""
+$var =~ s/^"(.*)"$/$1/;
+dd $var;               # $var eq "T::c"
+&lt;/c&gt;
+
+</doctext>
+<root_node field_name="root_node">1191574</root_node>
+<parent_node field_name="parent_node">1191574</parent_node>
+<thread id="1191574">
+<node id="1191576"><node id="1191577"><node id="1191579"><node id="1191665"><node id="1191672"/>
+<node id="1191717"/>
+</node>
+</node>
+</node>
+<node id="1191580"/>
+</node>
+<node id="1191592"><node id="1191640"/>
+</node>
+<node id="1191596"/>
+<node id="1191607"/>
+</thread></node>

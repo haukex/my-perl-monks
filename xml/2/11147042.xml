@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11147042" title="Recursive subroutines and closures" created="2022-09-20 19:38:14" updated="2022-09-20 19:38:14" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="750012">ibm1620</author>
+<doctext field_name="doctext">When I write a recursive subroutine, I usually have to write two subroutines: A(), which sets things up properly and then calls B(), which is the actual recursive subroutine and is not intended to be called by anyone except itself and A().
+&lt;p&gt;
+I wrote a simple routine &lt;code&gt;make_backup($file)&lt;/code&gt; to make a backup of a file by copying it to $file.bak, first renaming any previous backups by appending another ".bak". In doing so I accidentally located the recursive subroutine &lt;i&gt;inside&lt;/i&gt; the first subroutine (which I didn't know was possible).
+&lt;p&gt;
+&lt;code&gt;
+use v5.36;
+use File::Copy;
+# Copy $path to $path.bak, preserving all earlier backups
+sub make_backup ($path ) {
+    my $path_bak;
+    if (-e $path) {
+        $path_bak = _preserve_previous_backup($path);
+        copy $path_bak, $path;
+    }
+    return $path_bak; # undef if path didn't exist
+
+    sub _preserve_previous_backup ( $path ) {
+        my $path_bak = "${path}.bak";
+        if (-e $path_bak) {
+            _preserve_previous_backup($path_bak );
+        }
+        move $path, $path_bak;
+        return $path_bak;
+    }
+}
+&lt;/code&gt;
+And it worked. I thought this was a nifty way to encapsulate the "non-public" subroutine, until I realized what I'd done was to create a closure, which I'm unfamiliar with at this point. 
+&lt;p&gt;
+I do like the idea of nesting the recursive piece inside the outer sub in this manner, and it does appear to work properly, but from what I've learned so far, this is not what "closures" are meant for. Could I get some enlightened commentary on the most-likely-unwise thing I'm doing?</doctext>
+<thread id="11147042">
+<node id="11147044"><node id="11147060"/>
+</node>
+<node id="11147045"/>
+<node id="11147048"><node id="11147059"/>
+</node>
+<node id="11147049"/>
+<node id="11147054"/>
+</thread></node>

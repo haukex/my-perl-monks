@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108915" title="Re: Note on usage of ours variables and a question" created="2019-11-19 18:01:23" updated="2019-11-19 18:01:23" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I think the best approach depends on the specific application, which you haven't described very much. Of course TIMTOWTDI, but I would suggest that instead of the modules exporting a debug variable or something similar, the main script should instead set the debug flag on the module. So for example, if I write OO classes, I might give the constructor a &lt;c&gt;debug&lt;/c&gt; argument that is set based on a &lt;c&gt;$DEBUG&lt;/c&gt; package variable in the main script. If it's a simple module, it might have its own &lt;c&gt;our $DEBUG&lt;/c&gt; variable in its package, and then the main code could do &lt;c&gt;$Module::Name::DEBUG = $DEBUG&lt;/c&gt;. This will allow you to use the &lt;c&gt;$DEBUG&lt;/c&gt; variable name everywhere, and still keep the possibility of somewhat more fine-grained control, instead of one global debug flag that enables debug messages &lt;i&gt;everywhere&lt;/i&gt;. So like this is how I typically do it:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Getopt::Long;
+
+GetOptions( 'd|debug' =&gt; \(our $DEBUG) ) or die "Bad options\n";
+$Foo::DEBUG = $DEBUG;
+
+print "Debugging main\n" if $DEBUG;
+Foo::foo();
+my $bar = Bar-&gt;new( debug =&gt; $DEBUG );
+$bar-&gt;quz();
+
+{
+	package Foo;
+	our $DEBUG;
+	sub foo {
+		print "Debugging Foo\n" if $DEBUG;
+	}
+}
+
+{
+	package Bar;
+	sub new {
+		my ($class,%args) = @_;
+		my $self = { %args };
+		return bless $self, $class;
+	}
+	sub quz {
+		my $self = shift;
+		print "Debugging $self-&gt;quz()\n" if $self-&gt;{debug};
+	}
+}
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;Also question about 'export" behavior". If I export variable debug from module A does it became "normal variable" in main:: so that I can use it in module B? what will happen if I export it from module b as well ? It should bind it to the same variable, right?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If I understand your question correctly, then no, two different exports will overwrite each other. If you have a module X with &lt;c&gt;our $Z&lt;/c&gt; that gets exported to &lt;c&gt;main&lt;/c&gt;, and then a module Y with &lt;c&gt;our $Z&lt;/c&gt; that also gets exported to &lt;c&gt;main&lt;/c&gt;, the second export will clobber the first. Consider that you've got two variables, one in each package, and so the variable &lt;c&gt;$main::Z&lt;/c&gt; can only be an alias for one or the other.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+BEGIN {
+	package X;
+	use me::inlined; # alternative: $INC{__PACKAGE__.'.pm'}=$0;
+	use Exporter 'import';
+	our @EXPORT = qw/$Z/;
+	our $Z = 'from '.__PACKAGE__;
+}
+
+BEGIN {
+	package Y;
+	use me::inlined; # alternative: $INC{__PACKAGE__.'.pm'}=$0;
+	use Exporter 'import';
+	our @EXPORT = qw/$Z/;
+	our $Z = 'from '.__PACKAGE__;
+}
+
+use X;
+use Y;
+
+print "$Z\n";  # prints "from Y"
+&lt;/c&gt;
+&lt;p&gt;Although I wouldn't recommend it (!), you &lt;i&gt;could&lt;/i&gt; have all your modules reference &lt;c&gt;$main::DEBUG&lt;/c&gt; with the shorthand &lt;c&gt;$::DEBUG&lt;/c&gt;, or even alias the package variables to &lt;c&gt;$main::DEBUG&lt;/c&gt;, then you'd only have one central variable. &lt;i&gt;However,&lt;/i&gt; the problems with this are that you lose the fine-grained control of the debug flag, and also if these modules are loaded into code that doesn't know about their behavior (remember modules are meant to be re-used), things might break when those modules reach outside of their package into variables that aren't really theirs.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Can anybody enlighten me about this behavior?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I would suggest a careful read of the sections "Packages" and "Symbol Tables" in [doc://perlmod] (the rest of the document is also very interesting).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;BTW does Perl have a system variable "debug" that is global and does not need qualification with the package name?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, not that I'm aware of in the core.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Why we can't alias variables in other namespaces? Is not this an artificial restriction?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It's possible - you'd have to show an instance of where it isn't working for you.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11108913</root_node>
+<parent_node field_name="parent_node">11108913</parent_node>
+<thread id="11108913">
+<node id="11108914"><node id="11108926"/>
+<node id="11108951"/>
+</node>
+<node id="11108915"/>
+<node id="11108917"/>
+<node id="11108918"><node id="11108923"><node id="11108925"><node id="11108927"/>
+</node>
+</node>
+<node id="11108924"/>
+</node>
+<node id="11108948"/>
+<node id="11108950"/>
+<node id="11109004"/>
+</thread></node>

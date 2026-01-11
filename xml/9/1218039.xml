@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1218039" title="Re^5: Trouble emailing zip file" created="2018-07-06 07:30:42" updated="2018-07-06 07:30:42" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Unfortunately, there are several issues with that code. As I documented in the comments, my &lt;c&gt;sub uuencode&lt;/c&gt; returns a filename, but you're not using that return value anywhere. Instead, you seem to have just stuck the string "&lt;c&gt;uuencode&lt;/c&gt;" into the command right after "&lt;c&gt;mailx&lt;/c&gt;" and rearranged the command-line arguments - I'm not sure what you're trying to do there, since I'm pretty sure that doesn't work on the command line either. And [Paladin] has already [id://1217917|identified] the issue with your use of [doc://system] (unfortunately [poj]'s comment was misleading on that issue).&lt;/p&gt;
+&lt;p&gt;At this point I have to recommend taking a step back. I know that stuff not working can be frustrating. But on the other hand, guessing at syntax doesn't (always) get you further either. I'd have to suggest taking the time to reread [doc://perlintro] and the documentation on things like [doc://system], as well as [id://1180578|my node] on that topic, as well as [id://693828] and perhaps [id://128077]. Invest some time now into understanding those topics to save yourself time afterwards.&lt;/p&gt;
+&lt;spoiler&gt;
+&lt;p&gt;At the same time, if you're bent on getting this running without external modules, at least do it "right". Here, I've adapted my uuencoding code to write directly to the [man://mailx] command, instead of to a temporary file. Note that the file will be included in the body of the message instead of as an attachment, because that's what you seemed to want to do in the root node.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use File::Basename qw/basename/;
+use Data::Dumper;
+$Data::Dumper::Useqq=1;
+
+my $zipfile = "$ENV{HOME}/file.zip";
+my $subject = 'logs';
+my $recipient = 'haukex@localhost';
+my @emailcmd = ('/usr/bin/mailx','-s',$subject,'--',$recipient);
+
+print Data::Dumper-&gt;Dump(  # Debug
+	[   $zipfile,$subject,$recipient,\@emailcmd],
+	[qw/ zipfile  subject  recipient  *emailcmd/] );
+
+open my $ifh, '&lt;:raw', $zipfile or die "$zipfile: $!";
+open my $ofh, '|-', @emailcmd or die "@emailcmd: $!";
+printf $ofh "begin %03o %s\n",
+	((stat($zipfile))[2] &amp; 0666)||0644, basename($zipfile);
+my $buf;
+print $ofh pack 'u', $buf while read $ifh, $buf, 45;
+print $ofh "`\n", "end\n";
+close $ofh or die $! ? $! : $?;
+close $ifh;
+&lt;/c&gt;
+&lt;/spoiler&gt;</doctext>
+<root_node field_name="root_node">1217814</root_node>
+<parent_node field_name="parent_node">1217900</parent_node>
+<thread id="1217814">
+<node id="1217816"><node id="1217819"><node id="1217820"><node id="1217823"/>
+</node>
+<node id="1217821"><node id="1217830"/>
+</node>
+<node id="1217822"/>
+</node>
+</node>
+<node id="1217818"><node id="1217824"/>
+<node id="1217829"><node id="1217857"/>
+<node id="1217874"><node id="1217900"><node id="1217903"><node id="1217914"><node id="1217915"/>
+</node>
+</node>
+<node id="1217917"/>
+<node id="1218039"/>
+</node>
+</node>
+<node id="1217983"><node id="1217985"><node id="1217989"><node id="1217992"/>
+</node>
+</node>
+<node id="1217991"><node id="1218003"><node id="1218036"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1217977"/>
+</thread></node>

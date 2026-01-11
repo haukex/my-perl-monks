@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1214517" title="Re: replace multiple newline characters" created="2018-05-15 00:30:47" updated="2018-05-15 00:30:47" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The problem with the code you showed is that &lt;c&gt;my @lines = &lt;FILE&gt;;&lt;/c&gt; reads the lines into the array, with each separate line in its own array entry, so the regex never sees more than one &lt;c&gt;\n&lt;/c&gt;. One solution is to do what [AnomalousMonk] has already [id://1214515|shown], by reading the entire file into one string. Here is one more way that reads the entire file into memory, using the "paragraph mode" supported by [doc://$/]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+open my $fh, '&lt;', 'test.txt' or die $!;
+my @lines = do { local $/=''; &lt;$fh&gt; };
+chomp @lines;
+close $fh;
+
+dd @lines;
+
+__END__
+
+("line1\nline2\n", "line4\n", "line7\nline8\n", "line9\n")
+&lt;/c&gt;
+&lt;p&gt;But you don't necessarily need to read the entire file into memory first, you can also do this operation line-by-line, as you're reading the file. For example:&lt;/p&gt;
+&lt;c&gt;
+open my $fh, '&lt;', 'test.txt' or die $!;
+while (my $line = &lt;$fh&gt;) {
+	print $line if length $line &amp;&amp; $line ne $/;
+	# - OR -
+	push @newlines, $line if length $line &amp;&amp; $line ne $/;
+	# - OR -
+	chomp($line);
+	next unless length $line;
+	print $line, "\n";
+	# etc.
+}
+close $fh;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1214514</root_node>
+<parent_node field_name="parent_node">1214514</parent_node>
+<thread id="1214514">
+<node id="1214515"/>
+<node id="1214516"/>
+<node id="1214517"/>
+<node id="1214525"><node id="1214527"><node id="1214530"><node id="1214531"><node id="1214532"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1214529"/>
+</thread></node>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1168519" title="print all files is soo slow! Why?" created="2016-07-25 21:30:27" updated="2016-07-25 21:30:27" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1166559">harangzsolt33</author>
+<doctext field_name="doctext">&lt;P&gt;I want to write a simple perl program that goes through the current folder recursively and looks at each item, if it's a file, print its contents and moves on to the next one.
+
+&lt;P&gt;I am a beginner Perl programmer, and I don't know why this is happening, but this perl program stops responding, and then I have to kill it every time.
+
+&lt;P&gt;I am using TinyPerl 5.8 under Windows 7.
+
+&lt;P&gt;I am testing this program in a folder that has about 50 text files and no folders. When I launch my perl program, it seems to work perfectly fine, but it doesn't go back to command prompt. It just hangs. The cursor stops blinking, and I have to kill the process.
+
+&lt;P&gt;If I only read the first 100 bytes of each file, then there's no issue. I am back to command prompt immediately. If I read the first 2000 bytes, then there's a 3-second delay. And I tried reading the entire file and print the content, but then after executing the script, it stopped responding and I had to kill it.
+
+&lt;code&gt;
+use strict;
+use warnings;
+
+my $PATH = '.';
+my $CONTENT;
+
+explore($PATH);
+
+sub explore
+{
+  my $PATH = shift;
+  my $FILE;
+  my $SUB;
+
+  opendir(my $DIR, $PATH) or return;
+  while (my $SUB = readdir $DIR)
+  {
+    next if $SUB eq '.' or $SUB eq '..';
+    $SUB = "$PATH/$SUB";
+
+    # If it's a folder, explore it.
+    # If it's a file, print it.
+
+    if (-d $SUB)
+    {
+      explore($SUB);
+      next;
+    }
+    if (-f $SUB)
+    {
+      open($FILE, '&lt;:raw', $SUB) or next;
+      read($FILE, $CONTENT, 2000) or next;
+      close($FILE);
+      print $CONTENT;
+      $CONTENT = '';  # don't need this data anymore
+    }
+  }
+  close $DIR;
+}
+&lt;/code&gt;</doctext>
+<thread id="1168519">
+<node id="1168521"><node id="1168528"/>
+</node>
+<node id="1168550"/>
+<node id="1168615"/>
+<node id="1168638"/>
+</thread></node>

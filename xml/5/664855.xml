@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="664855" title="Re: Faulty Control Structures?" created="2008-01-29 01:49:05" updated="2008-01-28 20:49:05" _doctext_mode="lenient"><type id="11">note</type>
+<author id="171588">BrowserUk</author>
+<doctext field_name="doctext">&lt;p&gt;A few ways to optimise this:
+
+&lt;ol&gt;&lt;li&gt;
+&lt;p&gt;You mentioned somewhere that hashes are not useful as there are only 24 keys. You also mentioned about using a hash of arrays, but dismissed it. 
+
+&lt;p&gt;That's premature. If you load your main file into a hash of arrays, then you only need compare each of your annotated records against 1/24th of the main records. And that reduces your overall workload and runtime to 1/24th of what it would be.
+
+&lt;code&gt;
+my %main;
+my $mfile = prompt( "Main file?" );
+
+open MAIN, '&lt;', $mfile  or die "$mfile: $!";
+
+m[^([^\t]+)\t] and push @{ $main{ $1 } }, $_
+    or die "Bad record in $mfile @ $." while &lt;MAIN&gt;;
+
+close MAIN;
+chomp @$_ for values %main;
+&lt;/code&gt;
+
+&lt;/li&gt;&lt;li&gt;There is no reason to load the second file into ram. You can process it one record at a time:
+
+&lt;code&gt;
+my $afile = prompt( "Annotation file?" );
+open ANNOT, '&lt;', $afile or die "$afile: $!";
+
+open OUTPUT, '&gt;', 'output.txt' or die $!;
+&lt;/code&gt;
+
+&lt;p&gt;Now your main loops become:
+
+&lt;code&gt;
+OUTER: while( &lt;ANNOT&gt; ) {
+    chomp;
+    my( $atag, $astart, $aend, $mess ) = split "\t";
+    next unless exists $main{ $atag };
+
+    for my $md ( @{ $main{ $atag } } ) {
+        my( $mtag, $mstart, $mend ) = split "\t", $md;
+
+        if( ?OVERLAPPED? ) {
+            print OUTPUT "$atag\t$mess";
+        }
+    }
+}
+&lt;/code&gt;
+
+&lt;/li&gt;&lt;li&gt;As others have pointed out, your range checking is far too complex and computationally expensive. Although there are many (7?) permutations of relative positioning of the starts and ends of the ranges, there are only 2 that do not overlap:
+
+&lt;ol&gt;&lt;li&gt;Main end less than Annot start:
+&lt;code&gt;
+    Ms------Me
+                        As------Ae
+&lt;/code&gt;
+&lt;/li&gt;&lt;li&gt;Annot end less than Main start:
+&lt;code&gt;
+                        Ms------Me
+    As------Ae
+&lt;/code&gt;
+&lt;/li&gt;&lt;/ol&gt;
+
+&lt;p&gt;Any other position is overlapped.
+
+&lt;p&gt;If both your files are already in sorted order (if they are not, (learn to) use your system sort utility  and sort them ascending by the tag, start, end), then when Main Start moves greater than Annot End, then you need process no further main records for this tag, so we can skip to the next Annot record. (Outer loop)
+
+&lt;p&gt;Equally, whilst Main End is less than Annot Start, you can skip to the next Main record. (Inner loop).
+
+&lt;p&gt;And actually, that covers both (all) conditions when we do not want to print output, so no further range testing is required.
+
+&lt;p&gt;That makes the loops look like this:
+
+&lt;code&gt;
+OUTER: while( &lt;ANNOT&gt; ) {
+    chomp;
+    my( $atag, $astart, $aend, $mess ) = split "\t";
+    next unless exists $main{ $atag };
+
+    for my $md ( @{ $main{ $atag } } ) {
+        my( $mtag, $mstart, $mend ) = split "\t", $md;
+
+        next if $mend &lt; $astart;
+        next OUTER if $mstart &gt; $aend;
+        print OUTPUT "$atag\t$mess";
+    }
+}
+&lt;/code&gt;
+
+&lt;/li&gt;&lt;li&gt;Finally, there is one further optimisation possible. As both files are sorted, when we start processing the second Annot record for a given tag, then we know it cannot be earlier than the last Annot record for this tag.
+
+&lt;p&gt;Therefore, if we rejected and skipped the first N Main records for this tag for the last Annot record, we know we can skip at least that many for this record. This complicates the code a little, but yields a huge saving in processing which make it worth while.
+
+&lt;/li&gt;&lt;/ol&gt;
+
+&lt;p&gt;The final cut of the loops code looks like this:
+
+&lt;code&gt;
+my( $first, $lastTag ) = ( 0, '' );
+OUTER: while( &lt;ANNOT&gt; ) {
+    chomp;
+
+    ## ((simplified for testing)
+    my( $atag, $astart, $aend, $mess ) = split "\t";
+    
+    ## If the tag changed, reset the start position for the Main records
+    ## and remember the new tag
+    $first = 0, $lastTag = $atag if $atag ne $lastTag;
+    
+    ## Skip completely if this Annot tag has no corresponding Main tag
+    next unless exists $main{ $atag };
+
+    ## For each Main record with this tag,
+    ## But skipping those we rejected last time
+    for my $md ( @{ $main{ $atag } }[ $first .. $#{ $main{ $atag } } ] ) {
+        
+        ## (simplified for testing)
+        my( $mtag, $mstart, $mend ) = split "\t", $md;
+
+        ## Increment the skip and goto the next Main record
+        ## If the end of this Main record is less than 
+        ## the start of the Annot record
+        ++$first, next if $mend &lt; $astart;
+        
+        ## Skip the rest of these Main record 
+        ## if the start of this Main record is greater than
+        ## the end of this Annot record
+        next OUTER if $mstart &gt; $aend;
+
+        ## We have an overlap, so output the info
+        print OUTPUT "$atag\t$mess";
+    }
+}
+&lt;/code&gt;
+
+&lt;p&gt;The result is that it now takes less that six minutes to process 300,000 record against 300,000 records, finding 113,000 overlaps:
+
+&lt;code&gt;
+C:\test&gt;664760-gen &gt; 664760.main
+C:\test&gt;wc -l 664760.main
+ 300000 664760.main
+
+C:\test&gt;664760-gen &gt; 664760.annot
+C:\test&gt;wc -l 664760.annot
+ 300000 664760.annot
+
+C:\test&gt;664760-b
+Main file?664760.main
+Annotation file?664760.annot
+Tue Jan 29 06:36:34 2008
+Tue Jan 29 06:42:12 2008
+
+C:\test&gt;wc -l output.txt
+ 112805 output.txt
+&lt;/code&gt;
+
+
+&lt;p&gt;My best guess is this 3 if not 4 orders of magnitude quicker. Let's see anyone come close to that using an RDBMS.
+
+&lt;p&gt;Full test code:&lt;readmore&gt;&lt;code&gt;
+#! perl -slw
+use strict;
+
+my %main;
+
+## Get the filename for and open the main file
+my $mfile = prompt( "Main file?" );
+open MAIN, '&lt;', $mfile  or die "$mfile: $!";
+
+## Build a HoAs keys by the tag (chromosome?)
+## Don't split the records yet to save ram.
+m[^([^\t]+)\t] and push @{ $main{ $1 } }, $_
+    or die "Bad record in $mfile @ $." while &lt;MAIN&gt;;
+
+close MAIN;
+chomp @$_ for values %main; ## Chomp the arrays
+
+## Get the filename for and open the annotations file
+my $afile = prompt( "Annotation file?" );
+open ANNOT, '&lt;', $afile or die "$afile: $!";
+
+## Open the output file
+open OUTPUT, '&gt;', 'output.txt' or die $!;
+
+## Record our start time
+print scalar localtime;
+
+## Variables to remember the llast Annot tag we processed
+## And how many Main records we skipped before we found an overlap
+my( $first, $lastTag ) = ( 0, '' );
+OUTER: while( &lt;ANNOT&gt; ) {
+    chomp;
+
+    ## Read and split the Annot record
+    my( $atag, $astart, $aend, $mess ) = split "\t";
+
+    ## If the tag changed, reset the start porsition for the Main records
+    ## and remeber the new tag
+    $first = 0, $lastTag = $atag if $atag ne $lastTag;
+
+    ## Skip completely if this Annot tag has no corresponding Main tag
+    next unless exists $main{ $atag };
+
+    ## For each Main record with this tag,
+    ## But skipping those we rejected last time
+    for my $md ( @{ $main{ $atag } }[ $first .. $#{ $main{ $atag } } ] ) {
+
+        ## Split the Main record. We do it over and over, but it's not hugely expensive.
+        ## Split when building the HoAs if you have enough memory.
+        my( $mtag, $mstart, $mend ) = split "\t", $md;
+
+        ## Increment the skip and goto the next Main record
+        ## If the end of this Main record is less than
+        ## the start of the Annot record
+        ++$first, next if $mend &lt; $astart;
+
+        ## Skip the rest of these Main record
+        ## if the start of this Main record is greater than
+        ## the end of this Annot record
+        next OUTER if $mstart &gt; $aend;
+
+        ## We have an overlap, so output the info
+        print OUTPUT "$atag\t$mess";
+    }
+}
+
+close ANNOT;
+close OUTPUT;
+
+print scalar localtime;
+
+sub prompt {
+    printf "%s", $_[ 0 ];
+    chomp( my $in = &lt;STDIN&gt; );
+    return $in;
+}
+
+__END__
+C:\test&gt;664760-gen &gt; 664760.main
+
+C:\test&gt;wc -l 664760.main
+ 300000 664760.main
+
+C:\test&gt;664760-gen &gt; 664760.annot
+
+C:\test&gt;wc -l 664760.annot
+ 300000 664760.annot
+
+C:\test&gt;664760-b
+Main file?664760.main
+Annotation file?664760.annot
+Tue Jan 29 06:36:34 2008
+Tue Jan 29 06:42:12 2008
+
+C:\test&gt;wc -l output.txt
+ 112805 output.txt
+
+&lt;/code&gt;&lt;/readmore&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-171588"&gt;
+&lt;hr /&gt;
+&lt;font size=1 &gt;
+&lt;div&gt;Examine what is said, not who speaks -- Silence betokens consent -- Love the truth but pardon error.&lt;/div&gt;
+&lt;div&gt;"Science is about questioning the status quo. Questioning authority". &lt;/div&gt;
+&lt;div&gt;In the absence of evidence, opinion is indistinguishable from prejudice.&lt;/div&gt;
+&lt;div&gt;[http://news.bbc.co.uk/1/hi/education/6202877.stm|"Too many &amp;#91;&amp;#93; have been sedated by an oppressive environment of political correctness and risk aversion."]&lt;/div&gt;
+&lt;/font&gt;
+
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">664760</root_node>
+<parent_node field_name="parent_node">664760</parent_node>
+<thread id="664760">
+<node id="664767"><node id="664773"/>
+</node>
+<node id="664769"><node id="664774"/>
+</node>
+<node id="664775"><node id="664811"><node id="664844"/>
+</node>
+</node>
+<node id="664802"><node id="664813"/>
+</node>
+<node id="664845"/>
+<node id="664855"/>
+</thread></node>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11149013" title="Encoding problem with function in C library" created="2022-12-21 21:24:12" updated="2022-12-21 21:24:12" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="524150">syphilis</author>
+<doctext field_name="doctext">Hi,&lt;br&gt;&lt;br&gt;
+A C library that I'm accessing from perl (via XS) conditionally might attempt to print out &amp;#177 or &amp;#8734.
+&lt;br&gt;The library code attempts to do this by passing the infinity or the plus-or-minus as a string literal to fprintf().
+&lt;br&gt; If the filehandle is stdout, then these symbols are being displayed by my Windows perls as garbage.
+&lt;br&gt;No such problem on Linux ... and no such problem with perls running under Cygwin on the very same Windows 11 box. All works there as intended.
+&lt;br&gt;In fact, it's also fine on the Windows system if the output filehandle is to a file, or if I redirect the output to a file (rather than allowing it to go to the cmd.exe console)
+
+&lt;br&gt;&lt;br&gt;By way of demonstration, I have the following Inline::C script
+&lt;c&gt;
+use strict;
+use warnings;
+use utf8;
+
+use Inline C =&gt; &lt;&lt;'EOC';
+
+void wprint () {
+  printf("+ or -  : ±\n");
+}
+
+void foo () {
+ unsigned char a = '±';
+ printf("%d\n", a);
+}
+
+EOC
+
+wprint();
+foo();
+&lt;/c&gt;
+For me, that outputs:
+&lt;br&gt;&lt;br&gt;+ or -  : &amp;#9618;
+&lt;br&gt;177
+&lt;br&gt;&lt;br&gt;The question is:
+&lt;br&gt;Leaving the C code as it is, how do I get the plus-or-minus symbol to display as intended on Windows (cp437 or cp850) when the display is being sent to stdout ?
+&lt;br&gt;I thought this would easy ... but not for me. Even using Text::Iconv (which I'm sure that I once understood) is doing nothing. So, FAIK, it might not even be possible ?? (Is it something that can only be handled within the C code ?)
+&lt;br&gt;&lt;br&gt;And using stuff that I &lt;b&gt;don't&lt;/b&gt; understand (like &lt;c&gt;use open ':std', ':encoding(cp437)'&lt;/c&gt;) is also having no effect, irrespective of whether I specify cp437, cp850 or cp1252.
+&lt;br&gt;&lt;br&gt;According to &lt;c&gt;chcp&lt;/c&gt;, my Windows 11 codepage is cp437. On my Windows 7, where the same issue arises, the codepage is cp850.
+&lt;br&gt;&lt;br&gt;Any help is much appreciated.
+&lt;br&gt;&lt;br&gt;Cheers,&lt;br&gt;Rob
+</doctext>
+<thread id="11149013">
+<node id="11149017"><node id="11149018"/>
+</node>
+<node id="11149019"/>
+<node id="11149023"><node id="11149032"><node id="11149033"/>
+<node id="11149034"><node id="11149036"><node id="11149037"><node id="11149038"/>
+</node>
+</node>
+</node>
+<node id="11149035"><node id="11149039"><node id="11149043"><node id="11149047"/>
+</node>
+<node id="11149045"><node id="11149046"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11149031"/>
+</thread></node>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112816" title="Re: Sometimes undef is initialized and sometimes not when hash values are fed to grep" created="2020-02-11 16:03:18" updated="2020-02-11 16:03:18" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1164259">leszekdubiel</author>
+<doctext field_name="doctext">&lt;p&gt;@LanX  &lt;i&gt;&lt;blockquote&gt;One workaround would be to surround every value with quotes "$h{bla}" , to enforce a copy.&lt;/blockquote&gt;&lt;/i&gt;   -- thank you. That's good hint.  I have tried also &lt;code&gt;$h{bla} // ""&lt;/code&gt;. &lt;/p&gt;
+
+&lt;p&gt;@haukex   
+&lt;i&gt;
+&lt;blockquote&gt;    I'm pretty sure the answer is the same as in your previous thread that you referenced: map is providing lvalue context to its args, while the other two examples of string concatenation do not, hence the hash value is autovivified. &lt;/blockquote&gt;&lt;/i&gt;
+
+Yess.. this is the same problem. Sorry for coming again with the same... &lt;/p&gt;
+
+&lt;p&gt;
+&lt;code&gt;
+
+    $ perl -wMstrict -MData::Dump -e 'my %h; map{$_} $h{X},"$h{Y}"; dd\%h'
+    Use of uninitialized value $h{"Y"} in string at -e line 1.
+    { X =&gt; undef }
+&lt;/code&gt; 
+Hmmmm... only one warning... It doesn't warn about X. Educative example. 
+&lt;/p&gt; 
+
+    
+&lt;p&gt;&lt;i&gt;&lt;blockquote&gt;I'm curious why you have so many issues with autovivification? Personally, I hardly ever do, because I use exists, or keys when looping over multiple hash keys. &lt;/blockquote&gt;&lt;/i&gt;
+In my company (dubielvitrum.com, manufacturer of mirrors) there is manufacturing system written in perl. And all data is kept in structured files, with strict data types (numbers, identifiers, quoted texts). This data is checked carefully on input and output. When &lt;code&gt;undef&lt;/code&gt; gets somehow into hash then error is thrown. So I have to search how &lt;code&gt;undef&lt;/code&gt; got injected into data structures. Original piece of code that made that error was like this:&lt;/p&gt;
+&lt;p&gt; 
+&lt;code&gt;        $wi{OrderUniqueId} = join " ", grep { $_ ne "" } map { unquote_text($_) }
+                ($ty eq "need" ? "Zamów" : "Posia"), $$it{name}, $$it{para}{Termin}, $$it{para}{Ile}, seq_num(6);
+&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;To build OrderUniqueId I take    (1) word "Zamów" or "Posia"   (2) name of item    (3) parameter "Termin"     (4) parameter "Ile"     (6) some sequence number     -- take all non empty of these, join them with spaces. &lt;/p&gt; 
+&lt;code&gt; 
+$wi{OrderUniqueId} = join " ", grep { $_ ne "" } map { unquote_text($_) }
+                ($ty eq "need" ? "Zamów" : "Posia"), $$it{name}, $$it{para}{Termin} // "", $$it{para}{Ile} // "", seq_num(6);
+&lt;/code&gt; 
+&lt;p&gt;Normally when working with perl I hardly ever got errors from autovivification when aliased with &lt;code&gt;grep&lt;/code&gt; or &lt;code&gt; map&lt;/code&gt;. 
+&lt;/p&gt;
+
+
+
+</doctext>
+<root_node field_name="root_node">11112778</root_node>
+<parent_node field_name="parent_node">11112778</parent_node>
+<thread id="11112778">
+<node id="11112782"><node id="11112786"><node id="11112788"><node id="11112790"/>
+</node>
+</node>
+</node>
+<node id="11112784"><node id="11112787"/>
+</node>
+<node id="11112816"><node id="11112863"/>
+</node>
+</thread></node>

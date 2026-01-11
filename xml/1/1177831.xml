@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1177831" title="Re: List all Users Directory" created="2016-12-15 05:02:23" updated="2016-12-15 05:02:23" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [valerydolce],&lt;/p&gt;
+&lt;p&gt;There are better solutions than the following (e.g. [eyepopslikeamosquito]'s [id://1177768|post]), but since nobody has mentioned it yet, for completeness here are two solutions that actually access the file system and list directories. One of the problems with this is that there may be stray directories present that do not map to users; I've also hardcoded the "DUMMIES" name. In the second solution, I'm also showing something that I would normally recommend against: using a regex on a pathname, in this case it might be justified if you know you'll only be working with *NIX pathnames.&lt;/p&gt;
+&lt;c&gt;
+use Path::Class qw/file dir/;
+my @homes = (
+	grep({$_-&gt;is_dir &amp;&amp; $_-&gt;basename ne 'DUMMIES'} dir('/home')-&gt;children),
+	grep({$_-&gt;is_dir} dir('/home/DUMMIES')-&gt;children) );
+
+use File::Spec::Functions qw/splitdir/; # core module
+my @homes2 = (
+	grep({-d &amp;&amp; (splitdir($_))[-1] ne 'DUMMIES'} glob '/home/*'),
+	#OR: grep({-d &amp;&amp; !m#/DUMMIES$#} glob '/home/*'),
+	grep({-d} glob '/home/DUMMIES/*') );
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1177738</root_node>
+<parent_node field_name="parent_node">1177738</parent_node>
+<thread id="1177738">
+<node id="1177740"><node id="1177742"/>
+</node>
+<node id="1177762"/>
+<node id="1177768"/>
+<node id="1177807"/>
+<node id="1177831"/>
+</thread></node>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11140814" title="Re: Dumping opaque objects" created="2022-01-24 12:43:03" updated="2022-01-24 12:43:03" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Since further down in the thread you seem to say that other modules would be acceptable: I use [mod://Data::Dump::Filtered] for these kind of things. Since in this case [mod://Math::GMP] deals with integers, I think it's probably safe to not worry about escaping the stringified objects, but in theory one could use the &lt;c&gt;pp&lt;/c&gt; function for escaping values as well.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Math::GMP;
+use Data::Dump qw/dd pp/;
+use Data::Dump::Filtered qw/add_dump_filter/;
+
+add_dump_filter( sub {
+	my ($ctx, $objref) = @_;
+	return { dump =&gt; "Math::GMP-&gt;new(\"$objref\")" }
+		if $ctx-&gt;object_isa('Math::GMP');
+	return; # normal dumping
+} );
+
+dd( Math::GMP-&gt;new("123"),
+	Math::GMP-&gt;new("546745634563453111035453452346") );
+
+__END__
+
+(
+  Math::GMP-&gt;new("123"),
+  Math::GMP-&gt;new("546745634563453111035453452346"),
+)
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11140754</root_node>
+<parent_node field_name="parent_node">11140754</parent_node>
+<thread id="11140754">
+<node id="11140757"><node id="11140762"><node id="11140787"><node id="11140804"><node id="11140844"><node id="11140848"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11140814"><node id="11140819"/>
+<node id="11140823"/>
+</node>
+</thread></node>

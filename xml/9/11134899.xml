@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11134899" title="Re^6: Recalcitrant placeholders" created="2021-07-10 09:45:44" updated="2021-07-10 09:45:44" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11123653">Bod</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Also, GrandFather, afoken, and kcott all commented that both the selectrow_array and fetchrow_array documentation state "If called in a scalar context for a statement handle that has more than one column, it is undefined whether the driver will return the value of the first column or the last. So don't do that." really do mean you shouldn't be doing that*. Stated a little differently, you shouldn't be surprised that this undefined behavior is biting you. It may not even be worth trying to debug this and instead just using the API the way the documentation says you should...&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;I addressed this in the original question:&lt;br&gt;
+&lt;b&gt;Things I have tried...Forcing array context &lt;code&gt;my ($crid) = $crm-&gt;db-&gt;selectrow_array&lt;/code&gt; - no change&lt;/b&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;The problem goes away if I turn off taint mode...&lt;br&gt;
+Well that's certainly interesting and might indicate a bug somewhere.&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;I thought it was an isolated incident confined to this piece of code.  But it has broken &lt;code&gt;Bod::CRM&lt;/code&gt; which we discussed in [id://11130640].&lt;br&gt;
+The worrying thing is that it fails silently.  Luckily I picked up the issue with the test instance of our CRM database.&lt;/p&gt;
+
+&lt;p&gt;I *think* it is because the value passed to the placeholder originated from &lt;code&gt;STDIN&lt;/code&gt; via the &lt;code&gt;POST&lt;/code&gt; from a web form (or occasionally from the &lt;code&gt;QUERY_STRING&lt;/code&gt; CGI environment variable).  I suspect Perl considers this to be tainted but doesn't warn about it in any way.  Perhaps this is a bug in &lt;a href="https://metacpan.org/pod/DBI"&gt;DBI&lt;/a&gt;.  Especially as the &lt;a href="https://metacpan.org/pod/DBI#selectrow_array"&gt;documentation for &lt;code&gt;selectrow_array&lt;/code&gt;&lt;/a&gt; says "&lt;i&gt;This utility method combines "prepare", "execute" and "fetchrow_array" into a single call&lt;/i&gt;"&lt;/p&gt;
+
+&lt;p&gt;But this fails:
+&lt;code&gt;
+my ($value) = $dbh-&gt;selectrow_array("SELECT value FROM Test WHERE idTest = ?", undef, $value_from_stdin);
+&lt;/code&gt;
+Yet this, which is supposed to be equivelent, works:
+&lt;code&gt;
+my $query = $dbh-&gt;prepare("SELECT value FROM Test WHERE idTest = ?");
+$query-&gt;execute($value_from_stdin);
+my ($value) = $query-&gt;fetchrow_array;
+&lt;/code&gt;
+As a consequence, I am going through code used under taint mode and changing &lt;code&gt;selectrow_array&lt;/code&gt; for the above modification if there is any chance that the placeholder data might be considered tainted.&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;update&lt;/b&gt;&lt;/p&gt;
+
+&lt;p&gt;Some testing has proved that it is about tainted data being passed to the placeholders and only with &lt;code&gt;selectrow_array&lt;/code&gt;, not &lt;code&gt;execute&lt;/code&gt; and &lt;code&gt;fetchrow_array&lt;/code&gt;.  With taint mode on, if I pass a value to the placeholder that has come from &lt;code&gt;STDIN&lt;/code&gt; then it fails silently.  But if I pass the same value assigned to the variable in my script and pass that to the placeholder, it works.&lt;/p&gt;
+
+&lt;p&gt;This behaviour makes sense but it would also make sense for it to throw an error when I try to do it rather than failing silently.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11134633</root_node>
+<parent_node field_name="parent_node">11134866</parent_node>
+<thread id="11134633">
+<node id="11134634"><node id="11134638"><node id="11134686"><node id="11134687"><node id="11134733"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11134635"><node id="11134640"><node id="11134643"/>
+<node id="11134644"/>
+</node>
+</node>
+<node id="11134636"><node id="11134639"/>
+</node>
+<node id="11134637"><node id="11134641"/>
+</node>
+<node id="11134645"/>
+<node id="11134654"><node id="11134681"><node id="11134748"><node id="11134858"><node id="11134866"><node id="11134899"><node id="11135108"><node id="11135379"><node id="11135426"><node id="11135565"/>
+<node id="11135622"><node id="11135633"><node id="11135636"><node id="11135637"><node id="11135652"/>
+<node id="11135704"/>
+</node>
+</node>
+</node>
+<node id="11135658"><node id="11135707"><node id="11135708"><node id="11135709"><node id="11135714"><node id="11135716"><node id="11135729"><node id="11135737"><node id="11135742"><node id="11135744"/>
+<node id="11135745"/>
+</node>
+</node>
+<node id="11135738"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11134867"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11134678"><node id="11134682"><node id="11134729"/>
+</node>
+<node id="11134726"/>
+</node>
+</thread></node>

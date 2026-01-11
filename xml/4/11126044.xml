@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11126044" title="Re^9: Preparing data for Template" created="2020-12-31 08:27:52" updated="2020-12-31 08:27:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Any thoughts on how to get over this mental block would be appreciated.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Do you have more experience in other languages? For example, has the concept of pointers in C / C++, or the concept of variables holding references to objects in Java "clicked" for you? If so, it's probably possible to transfer that idea to references in Perl. A &lt;u&gt;simplified&lt;/u&gt; view is: there's the variable that represents the "raw memory" that actually stores the data, e.g. &lt;c&gt;$scalar&lt;/c&gt;, &lt;c&gt;@array&lt;/c&gt;, or &lt;c&gt;%hash&lt;/c&gt;, and then there are the references that basically store the memory address to another piece of data in a &lt;c&gt;$scalar&lt;/c&gt; variable.&lt;/p&gt;
+&lt;p&gt;When you say &lt;c&gt;my %origvars = ( frames =&gt; \&amp;get_frames );&lt;/c&gt;, you've got a fresh piece of memory and you're actually storing the key &lt;c&gt;frames&lt;/c&gt; with its value there. When you say &lt;c&gt;my $vars = \%origvars;&lt;/c&gt;, you're asking Perl to store the address of that piece of memory into the variable &lt;c&gt;$vars&lt;/c&gt;, so you're not copying the hash, just saving a &lt;i&gt;reference&lt;/i&gt; to it. &lt;c&gt;my $vars = { frames =&gt; \&amp;get_frames };&lt;/c&gt; simply combines these two things into one step: it allocates a fresh piece of memory somewhere, stores the hash there (it's called an &lt;i&gt;anonymous&lt;/i&gt; hash because you're not giving it a name like &lt;c&gt;%origvars&lt;/c&gt; in the previous example), and then gives you a reference to that piece of memory.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;De&lt;/i&gt;referencing basically allows you to work with a reference as if it were the original data structure. So for example, &lt;c&gt;$vars-&gt;{frames}&lt;/c&gt; &lt;del&gt;does&lt;/del&gt;&lt;ins&gt;can be used&lt;/ins&gt; the same as &lt;c&gt;$origvars{frames}&lt;/c&gt;, &lt;c&gt;my %foo = %$vars;&lt;/c&gt; makes a shallow copy of the hash into &lt;c&gt;%foo&lt;/c&gt; the same way that &lt;c&gt;my %foo = %origvars;&lt;/c&gt; does, and so on.&lt;/p&gt;
+&lt;p&gt;An important concept to remember is that Perl (almost) never implicitly references or dereferences anything, you have to do that through the corresponding operators. So in your example [id://11126040|above], my suspicion would be that you've mixed up &lt;c&gt;my %hash = (...);&lt;/c&gt; and &lt;c&gt;my $hashref = {...};&lt;/c&gt;, or you're expecting a the hashref &lt;c&gt;$vars&lt;/c&gt; to be automatically dereferenced where it won't be.&lt;/p&gt;
+&lt;p&gt;Again, all of this is very much simplified in hopes that it might help make things click. A thorough read of [doc://perlref] will hopefully help.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11126016</root_node>
+<parent_node field_name="parent_node">11126042</parent_node>
+<thread id="11126016">
+<node id="11126018"><node id="11126021"><node id="11126022"><node id="11126034"><node id="11126039"><node id="11126040"><node id="11126041"><node id="11126042"><node id="11126043"/>
+<node id="11126044"/>
+<node id="11126047"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11126074"><node id="11126078"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11126035"/>
+</node>
+</thread></node>

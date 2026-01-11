@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="693828" title="Yes, even you can use CPAN" created="2008-06-24 17:31:50" updated="2008-06-24 13:31:50" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="421114">Tanktalus</author>
+<doctext field_name="doctext">&lt;p&gt;Time and again, we see monks asking for solutions that "don't use CPAN
+modules" due to some artificial restriction placed on them.  This restriction
+may be from their manager, from their IT department (or other development
+support team), from their web host, or even lack of knowledge on how to
+install CPAN modules without having root authority.  This is how I've managed
+to work around all of these.  I put it out here in the hopes that it helps
+other monks work around their restrictions.&lt;/p&gt;
+&lt;h3&gt;&lt;a name="no-root"&gt;No root authority?&lt;/a&gt;&lt;/h3&gt;
+&lt;readmore&gt;
+&lt;p&gt;The first step was learning how to install modules without root.  Though
+I generally have root authority on my boxes, I found it informative and it
+actually has become the basis for some of my other work.  The key has been
+to set PERL5LIB to include the path you're using to install to, e.g.,
+&lt;c&gt;$ENV{PERL5LIB} = "$ENV{HOME}/lib/perl5:$ENV{HOME}/lib"&lt;/c&gt; (I think some of
+the modules install differently when it's ~/lib instead of, say, ~/myperllib,
+so I found I had to add both) and then pass in the correct parameters to
+the .PL script the module comes with, e.g.: &lt;c&gt;$^X -I$ENV{HOME}/lib Build.PL --install_base $ENV{HOME}/lib&lt;/c&gt;
+or &lt;c&gt;$^X -I$ENV{HOME}/lib Makefile.PL LIB=$ENV{HOME}/lib PREFIX=$ENV{HOME}&lt;/c&gt;.
+The -I flag may be optional - but I like being explicit.&lt;/p&gt;
+&lt;p&gt;Once you have everything extracted and then the Makefile or Build files
+created, go ahead as normal, as if you had root.  You just need to ensure
+PERL5LIB stays set, or that your scripts do a &lt;c&gt;use lib ...&lt;/c&gt; properly
+before trying to use or require anything installed privately like this.&lt;/p&gt;
+&lt;/readmore&gt;
+&lt;h3&gt;&lt;a name="web-host"&gt;Web host doesn't want to install new modules&lt;/a&gt;&lt;/h3&gt;
+&lt;readmore&gt;
+&lt;p&gt;Unfortunately, many hosts don't find that they have a vested interest
+in your success.  And, for smaller sites, this may be largely true.  Bigger
+sites may be able to better command the attention of their host, so this
+probably doesn't apply to you (but then again, if you're a monk doing development
+for such a site, you probably don't need my help here).&lt;/p&gt;
+&lt;p&gt;In this case, I've taken everything I learned from non-root, and simply
+applied it here.  If you have ssh or telnet access, this is trivial.  If,
+like me, you don't, well, things can get trickier.  In this case, I've taken
+the [id://666160|above algorithm], put it in code, and then uploaded it
+to my web host.  Then I inserted a cron job to run this once a day to ensure
+that if I upload more CPAN modules, they get extracted and installed properly.  When I add a new CPAN module, I simply adjust the cron job via its web interface to run two minutes from now, and then wait before uploading any of my other code that may rely on it.
+(In the meantime, I'm considering looking for a host that can compete with
+this one on price, but gives me ssh access, aka alternate solution #1.)&lt;/p&gt;
+&lt;/readmore&gt;
+&lt;h3&gt;&lt;a name="manager"&gt;Manager support&lt;/a&gt;&lt;/h3&gt;
+&lt;readmore&gt;
+&lt;p&gt;If the problem you're having is at $work, and that problem happens to
+be the person who signs off on your paychecks, the problem becomes much
+bigger.  It's no longer technical, which is unfortunate because monks are
+generally much better at technical solutions than social ones.&lt;/p&gt;
+&lt;p&gt;Here, I suggest starting simple.  First off, and I need to stress this,
+I cannot recommend working around your manager.  Do not do this.  Your manager's
+responsibilities include managing resources, and you are a resource.  Documenting
+your disagreement is fine, but don't try doing your manager's job for him/her.&lt;/p&gt;
+&lt;p&gt;Working &lt;i&gt;with&lt;/i&gt; your manager instead of against them, find out what
+concerns your manager has about using CPAN modules, and see if you can address
+them without making it sound like you're attacking your manager for having these
+concerns.  Remember: most CPAN modules' licenses are the same as Perl itself,
+so legal concerns should be there for perl as much as the modules.&lt;/p&gt;
+&lt;p&gt;Personally, I found this part really easy.  When I explained to my manager
+how I'd be getting a bunch of working, tested code for free, he was all for
+it.  But my manager was from a technical background (he had my job before me
+though it didn't involve perl until I got here).  You may not be so lucky.
+If you aren't so lucky, just remember to deal with your manager based on his
+or her concerns, not yours.  (This is also called "managing your manager"
+which is covered very extensively [google://managing your manager|elsewhere].)&lt;/p&gt;
+&lt;/readmore&gt;
+&lt;h3&gt;&lt;a name="it-dept"&gt;IT department reluctance&lt;/a&gt;&lt;/h3&gt;
+&lt;readmore&gt;
+&lt;p&gt;This is probably the most blatant problem.  Though I use the term "IT
+department" here, it can apply to any similar scenario where the limitation is
+corporate, but not in your management chain.  There are many ways to address
+this, and they largely re-use ideas from above.  First off, you need your
+manager on your side.  That is, you need to convince him/her that this is a
+problem worth solving.  Try to do so without actually talking about how to
+solve it, but focusing on the why it needs to be solved aspect.  This is
+because sometimes the problem looks intractable, and focusing on the mountain
+you want to cross may miss the road that passes through it.&lt;/p&gt;
+&lt;p&gt;Once your manager is okay with the solution to the problem, you will need
+to decide on how to solve it.  Here there are both social and technical
+solutions, and the one you use may depend on the situation, or even the
+module you need installed.&lt;/p&gt;
+&lt;p&gt;The social solution is much like &lt;a href="#manager"&gt;dealing with one's
+manager&lt;/a&gt; above.  It involves talking to your IT department and determining
+the reason for the policy.  My experience says that they're generally quite
+willing to share - though there are always people in any line of work that
+like to be arses, most policies come about from genuinely wanting to make the
+product better, even if we may think the implementation is misguided.  See if
+you can address their concerns in a way that they will feel comfortable
+addressing your concerns.&lt;/p&gt;
+&lt;p&gt;In my case, when I wanted XML::Twig installed, the infrastructure team
+complained about a lack of resource.  My solution was to trade some work: they
+had an assignment that was going to eat up large chunks of their time that
+not only made more sense for my team to do, but that I could automate easier
+and more reliably than they could anyway (thus I could gain better visibility,
+seem more productive, etc., so I wanted it anyway).  So I suggested that I
+take on that work, if they'd simply install XML::Twig to make it easier for
+me to do.  Though I had been trying to get XML::Twig installed for other
+reasons for years, this attempt took about 10 minutes, because I was addressing
+their concern: resource.  Even though they had to fight a bit with expat on
+some platforms, overall they saved time, which meant they could do the other
+stuff on their plates faster (or at least sooner).&lt;/p&gt;
+&lt;p&gt;The technical solution I settled on for other CPAN modules that did not have
+external dependencies like expat was checking in tarballs from CPAN into
+our version control system, and then running the automated install tool
+(see the "&lt;a href="#web-host"&gt;web host&lt;/a&gt;" section above) to install
+all the tarballs from the CPAN directory into my lib directory.  By adding
+this tool into the regular build's makefiles as a dependency that all my
+other perl programs depended, I could then count on using all my favourite
+modules whenever and wherever required.&lt;/p&gt;
+&lt;/readmore&gt;
+&lt;p&gt;I'm sure this doesn't cover every scenario - just the ones I've encountered
+and gotten past.  Hopefully this is enough for newer monks to use to get past
+their roadblocks so that they can properly abuse, er use, the power that
+perl, with CPAN, gives them.  Instead of re-inventing wheels, we can get on
+to inventing new vehicles that sit on those wheels.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update (Mar13/2009)&lt;/b&gt;: [bellaire] provided more things to think about: [id://750190]&lt;/p&gt;</doctext>
+<thread id="693828">
+<node id="693857"><node id="775486"/>
+<node id="1217884"><node id="1217885"/>
+<node id="1217888"/>
+</node>
+</node>
+<node id="693915"/>
+<node id="694040"/>
+<node id="694303"><node id="694318"/>
+<node id="694320"/>
+<node id="694322"/>
+</node>
+<node id="694327"/>
+<node id="696440"/>
+<node id="697851"><node id="829125"><node id="829134"/>
+</node>
+</node>
+<node id="1029663"><node id="1029667"/>
+</node>
+<node id="1122887"/>
+</thread></node>

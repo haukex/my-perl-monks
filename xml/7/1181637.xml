@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1181637" title="Re: Split string using regex on \n or max line length (updated x3)" created="2017-02-10 03:04:47" updated="2017-02-10 03:04:47" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Anonymous,&lt;/p&gt;
+&lt;p&gt;The &lt;c&gt;/s&lt;/c&gt; [doc://perlre#Modifiers|modifier] means:&lt;/p&gt;
+&lt;blockquote&gt;Treat the string as single line. That is, change &lt;c&gt;"."&lt;/c&gt; to match any character whatsoever, even a newline, which normally it would not match.&lt;/blockquote&gt;
+&lt;p&gt;So if I understand your question correctly, simply removing that modifier should do what you want:&lt;/p&gt;
+&lt;c&gt;
+my $len = 20;
+# 345678901234567890
+my $text = &lt;&lt;'ENDTXT';
+One
+Two Three Four Five Six Seven
+Eight Nine Ten
+Eleven Twelve Thirteen Fourteen
+ENDTXT
+
+my @lines = $text =~ /(.{1,$len}\W)/gm;
+
+# remove leftover whitespace at ends of lines
+s/\s+$// for @lines;
+
+print "&lt;$_&gt;\n" for @lines;
+__END__
+&lt;One&gt;
+&lt;Two Three Four Five&gt;
+&lt;Six Seven&gt;
+&lt;Eight Nine Ten&gt;
+&lt;Eleven Twelve&gt;
+&lt;Thirteen Fourteen&gt;
+&lt;/c&gt;
+&lt;p&gt;Note that there's also the core module [doc://Text::Wrap] that you could take a look at. &lt;b&gt;Update 2:&lt;/b&gt; A an example of [doc://Text::Wrap] that &lt;strike&gt;does the same thing as&lt;/strike&gt; is similar to the above. Uncomment the &lt;c&gt;tr///&lt;/c&gt; operation to reflow the entire text:&lt;/p&gt;
+&lt;c&gt;
+use Text::Wrap;
+$Text::Wrap::columns = 20;
+#$text=~tr/\n/ /;
+print wrap('', '', $text);
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update 1:&lt;/b&gt; The following modification to the regex eliminates the need for the &lt;c&gt;s/\s+$// for @lines;&lt;/c&gt; above (works because &lt;c&gt;\s&lt;/c&gt; includes newline). &lt;b&gt;Update 3:&lt;/b&gt; Actually, the following doesn't behave the same way the original regex does. It's hard to make an alternative suggestion without knowing what your intentions are here: do you definitely want to include one more non-word character at the end of the matched string, even whitespace, or did you perhaps mean a word boundary &lt;c&gt;\b&lt;/c&gt;? If you could provide some sample input and expected output for different cases, and/or explain more about how you want the splitting to occur, that would help in making an alternate suggestion.&lt;/p&gt;
+&lt;strike&gt;&lt;c&gt;
+my @lines = $text =~ /(.{1,$len})\s+/gm;
+&lt;/c&gt;&lt;/strike&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1181636</root_node>
+<parent_node field_name="parent_node">1181636</parent_node>
+<thread id="1181636">
+<node id="1181637"><node id="1181641"><node id="1181655"><node id="1181967"/>
+</node>
+</node>
+<node id="1181678"/>
+<node id="1181953"/>
+</node>
+<node id="1181638"/>
+</thread></node>

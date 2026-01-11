@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1171313" title="Re^3: How to get a reference from an eval() string?" created="2016-09-07 08:43:43" updated="2016-09-07 08:43:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [exilepanda],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Only I thought that would be some build in perl func or syntactical trick can do the job. Seem there should be no simple direct way to do that now.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well sure there is :-)&lt;/p&gt;
+&lt;c&gt;
+my $data = {};
+while (&lt;DATA&gt;) {
+	chomp;
+	my @fields = split /\s*[=\.]\s*/;
+	build( $data, \@fields, pop @fields );
+}
+sub build {
+	my ($ref, $path, $val) = @_;
+	return $val unless @$path;
+	my $el = shift @$path;
+	if ($el=~/^\[(\d+)\]$/)
+		{ $ref-&gt;[$1]  = build( $ref-&gt;[$1],  $path, $val ) }
+	else
+		{ $ref-&gt;{$el} = build( $ref-&gt;{$el}, $path, $val ) }
+	return $ref;
+}
+
+__DATA__
+object.prop.subprop.[0].name = foo
+object.prop.subprop.[1].name = bar
+obj.prop.[0] = blah
+obj.prop.[1] = 1000
+&lt;/c&gt;
+&lt;p&gt;&lt;c&gt;$data&lt;/c&gt; then looks like so:&lt;/p&gt;
+&lt;c&gt;
+{
+  obj =&gt; { prop =&gt; ["blah", 1000] },
+  object =&gt; { prop =&gt; { subprop =&gt; [{ name =&gt; "foo" }, { name =&gt; "bar" }] } },
+}
+&lt;/c&gt;
+&lt;p&gt;And then to walk the data structure:&lt;/p&gt;
+&lt;c&gt;
+sub dive {
+	my ($ref,@path) = @_;
+	return $ref unless @path;
+	my $el = shift @path;
+	if ($el=~/^\[(\d+)\]$/)
+		{ return dive( $ref-&gt;[$1],  @path ) }
+	else
+		{ return dive( $ref-&gt;{$el}, @path ) }
+}
+
+print dive( $data, qw/ obj prop [0] / ), "\n";   # prints "blah"
+print dive( $data, qw/ object prop subprop
+	[1] name / ), "\n";                          # prints "bar"
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1171237</root_node>
+<parent_node field_name="parent_node">1171256</parent_node>
+<thread id="1171237">
+<node id="1171238"><node id="1171239"><node id="1171254"><node id="1171260"/>
+</node>
+</node>
+</node>
+<node id="1171246"><node id="1171256"><node id="1171313"/>
+</node>
+</node>
+<node id="1171262"/>
+</thread></node>

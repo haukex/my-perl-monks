@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1184582" title="Re: Text::CSV - parsing" created="2017-03-14 14:10:25" updated="2017-03-14 14:10:25" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;[Eily] has already [id://1184579|shown] you how to set the options to [mod://Text::CSV] to parse your data. I'd like to show an alternative: Since it's SQL*, use an SQL parser! Here, I'm using [mod://SQL::Statement]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use SQL::Statement;
+use Data::Dump;
+
+my $sql = &lt;&lt;'END_SQL';
+INSERT INTO foo VALUES
+(101, '1997-02-25', 'S1', 31.00, NULL, 0.00, 'this becomes two fields, so no go', 5.11),
+(102, '1998-03-26', 'S1', 31.00, NULL, 0.00, 'this will remain one field', 6.11)
+END_SQL
+
+my $parser = SQL::Parser-&gt;new();
+$parser-&gt;{RaiseError}=1;
+my $stmt = SQL::Statement-&gt;new($sql,$parser);
+dd $stmt-&gt;row_values;
+
+__END__
+
+(
+  [
+    101,
+    "1997-02-25",
+    "S1",
+    "31.00",
+    undef,
+    "0.00",
+    "this becomes two fields, so no go",
+    5.11,
+  ],
+  [
+    102,
+    "1998-03-26",
+    "S1",
+    "31.00",
+    undef,
+    "0.00",
+    "this will remain one field",
+    6.11,
+  ],
+)
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; * Hmm, at least it looks more like SQL than CSV to me, although you did say it's a &lt;i&gt;"MySql CSV/dump"&lt;/i&gt;.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1184575</root_node>
+<parent_node field_name="parent_node">1184575</parent_node>
+<thread id="1184575">
+<node id="1184579"><node id="1184585"><node id="1184588"/>
+</node>
+</node>
+<node id="1184581"/>
+<node id="1184582"/>
+<node id="1184595"/>
+<node id="1184698"/>
+</thread></node>

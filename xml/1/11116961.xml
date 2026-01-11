@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116961" title="Re: Mojo::DOM help" created="2020-05-20 03:01:50" updated="2020-05-20 03:01:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You're using Perl's &lt;c&gt;or&lt;/c&gt;, which is taking the logical combination of those three strings before calling the &lt;c&gt;find&lt;/c&gt; method, and since the first string is a true value, the only thing you're passing to the &lt;c&gt;find&lt;/c&gt; method is the first string. See [mod://Mojo::DOM::CSS]'s selectors: "or" is a comma, and "and" for attributes is &lt;c&gt;[...][...]&lt;/c&gt;. But note that &lt;c&gt;class&lt;/c&gt; gets special treatment, and you can simply use the &lt;c&gt;.class&lt;/c&gt; selector to match classes, stringing them together for an "and". Also note the order of classes in the &lt;c&gt;class&lt;/c&gt; attribute can change, which the following shows, but if you really want exact string matches you can use the &lt;c&gt;[class="value"]&lt;/c&gt; selectors.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use 5.012;
+use Mojo::DOM;
+
+my $dom = Mojo::DOM-&gt;new(&lt;&lt;'HTML');
+&lt;div&gt;
+	&lt;div class="LC20lb DKV0Md"&gt; matches &lt;/div&gt;
+	&lt;div class="DKV0Md"&gt; no match &lt;/div&gt;
+	&lt;div class="DKV0Md LC20lb"&gt; matches &lt;/div&gt;
+	&lt;div class="BNeawe vvjwJb AP7Wnd"&gt; matches &lt;/div&gt;
+	&lt;div class="BNeawe AP7Wnd vvjwJb"&gt; matches &lt;/div&gt;
+	&lt;div class="AP7Wnd vvjwJb BNeawe"&gt; matches &lt;/div&gt;
+	&lt;div class="BNeawe AP7Wnd"&gt; no match &lt;/div&gt;
+	&lt;div class="CVA68e qXLe6d"&gt; matches &lt;/div&gt;
+	&lt;div class="qXLe6d CVA68e"&gt; matches &lt;/div&gt;
+	&lt;div class="qXLe6d"&gt; no match &lt;/div&gt;
+&lt;/div&gt;
+HTML
+
+$dom-&gt;find('.LC20lb.DKV0Md, .BNeawe.vvjwJb.AP7Wnd, .CVA68e.qXLe6d')
+	-&gt;each(sub { say });
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11116959</root_node>
+<parent_node field_name="parent_node">11116959</parent_node>
+<thread id="11116959">
+<node id="11116961"/>
+<node id="11116962"/>
+</thread></node>

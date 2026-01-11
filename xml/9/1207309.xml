@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1207309" title="Perl Variables storage location and scope question." created="2018-01-15 15:42:19" updated="2018-01-15 15:42:19" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="846689">pritesh</author>
+<doctext field_name="doctext">&lt;p&gt;Respected Monks,&lt;/p&gt;
+&lt;p&gt;I wanted to confirm if a variable delcared in a file is accessible and can be modified throughout the file, even inside a function, and that seems to be true.&lt;/p&gt;
+&lt;code&gt;
+pritesh@mintpad ~ $ more test_var_loc.pl 
+use strict;
+use warnings;
+
+my $val = 10;
+print "Outside the functions \$val is $val stored at ", \$val, "\n";
+sub first {
+	$val = 200;
+	print "In the first function \$val is $val stored at ", \$val, "\n";
+
+}
+sub second {
+	$val = 100;
+	print "In the second function \$val is $val stored at ", \$val, "\n";
+}
+first();
+print "After first function, before second function,  \$val is $val stored at ", \$val, "\n";
+second();
+print "After second function,  \$val is $val stored at ", \$val, "\n";
+pritesh@mintpad ~ $ 
+&lt;/code&gt;
+&lt;p&gt;The output is as expected.&lt;/p&gt;
+&lt;code&gt;
+pritesh@mintpad ~ $ perl test_var_loc.pl 
+Outside the functions $val is 10 stored at SCALAR(0x1c307c8)
+In the first function $val is 200 stored at SCALAR(0x1c307c8)
+After first function, before second function,  $val is 200 stored at SCALAR(0x1c307c8)
+In the second function $val is 100 stored at SCALAR(0x1c307c8)
+After second function,  $val is 100 stored at SCALAR(0x1c307c8)
+pritesh@mintpad ~ $ 
+&lt;/code&gt;
+&lt;p&gt; Now, what I don't get is, if within the function, I declare the $val as my $val (lexical scope), no warning message is shown. Nothing like "masking earlier declaration of $val". It just treats it as if it were a different variable.&lt;/p&gt;
+&lt;code&gt;
+pritesh@mintpad ~ $ more test_my_var_loc.pl 
+use strict;
+use warnings;
+
+my $val = 10;
+print "Outside the functions \$val is $val stored at ", \$val, "\n";
+sub first {
+	my $val = 200;
+	print "In the first function \$val is $val stored at ", \$val, "\n";
+
+}
+sub second {
+	my $val = 100;
+	print "In the second function \$val is $val stored at ", \$val, "\n";
+}
+first();
+print "After first function, before second function,  \$val is $val stored at ", \$val, "\n";
+second();
+print "After second function,  \$val is $val stored at ", \$val, "\n";
+&lt;/code&gt;
+&lt;p&gt;The output is:&lt;/p&gt;
+&lt;code&gt;
+pritesh@mintpad ~ $ perl test_my_var_loc.pl 
+Outside the functions $val is 10 stored at SCALAR(0xb2d7c8)
+In the first function $val is 200 stored at SCALAR(0xb2d888)
+After first function, before second function,  $val is 10 stored at SCALAR(0xb2d7c8)
+In the second function $val is 100 stored at SCALAR(0xb2e290)
+After second function,  $val is 10 stored at SCALAR(0xb2d7c8)
+pritesh@mintpad ~ $ 
+&lt;/code&gt;
+
+&lt;p&gt;I am confused. I thought that the second time I would get an error, but then it appears that, each my $var has scope limited to it's function or outside of the function. But if that's the case, I should have gotten an error the first time, stating "the variable requires explicit package name. Did you forget to declare my $var?" or something like that for the $val inside the function(s). I think I am missing something obvious here. Kindly help.&lt;/p&gt;</doctext>
+<thread id="1207309">
+<node id="1207316"/>
+<node id="1207335"/>
+<node id="1207340"/>
+<node id="1207344"/>
+<node id="1207347"/>
+<node id="1207426"/>
+</thread></node>

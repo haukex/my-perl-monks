@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1209087" title="Re^5: How to add quotes to comma separated values in a String (updated)" created="2018-02-13 16:32:26" updated="2018-02-13 16:32:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You're making a lot of assumptions about the data, whereas I assumed that "CAT,DOG,BIRD,COW" was just an example and not the actual input data, so we really don't know what it'll be ("be liberal in what you accept"). Knowing how to do it in plain Perl is of course useful, but personally I'd prefer the first solution people come across to be a robust one - hence the somewhat dogmatic statement, but hopefully for a good reason ;-) I also agree entirely with [Your Mother]'s posts.&lt;/p&gt;
+&lt;p&gt;If all your assumptions hold, then sure, it's fine to use plain Perl, but even then I would have written something like the following - just one more line of code to protect against the input changing unexpectedly:&lt;/p&gt;
+&lt;c&gt;
+my $input = "CAT,DOG,BIRD,COW";
+$input =~ /\A\w*(?:,\w*)*\z/ or die "invalid input format";
+my $str = join ',', map { "'$_'" } split /,/, $input;
+&lt;/c&gt;
+&lt;p&gt;I did assume that the OP, since they are doing work with a database, will have a &lt;c&gt;$dbh&lt;/c&gt; lying around. Note that our two pieces of code really aren't that different - only a couple more characters for extra protection :-) Also note that using the database driver for quoting should take care of possible quoting differences between databases.&lt;/p&gt;
+&lt;c&gt;
+my $str = join ',', map { $dbh-&gt;quote($_,'VARCHAR') } @values;
+my $str = join ',', map { "'$_'"                    } @values;
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1209021</root_node>
+<parent_node field_name="parent_node">1209075</parent_node>
+<thread id="1209021">
+<node id="1209024"><node id="1209027"/>
+<node id="1209032"><node id="1209033"><node id="1209075"><node id="1209079"/>
+<node id="1209087"><node id="1209096"><node id="1209302"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

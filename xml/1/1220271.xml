@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1220271" title="Implementing named infix operators with parser hook?" created="2018-08-12 09:04:59" updated="2018-08-12 09:04:59" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">To those familiar with the Perl guts ...&lt;P&gt;
+
+The following code demonstrates two approaches to "simulate"  a named infix operator in Perl&lt;P&gt;
+
+&lt;c&gt;use strict;
+use warnings;
+
+package mypkg;
+use Carp;
+
+sub BETWEEN {
+    carp "left = ", shift;
+    carp "right = @_";
+};
+
+our $BETWEEN = \&amp;BETWEEN;
+
+2-&gt;$BETWEEN(1,3) ;
+
+BETWEEN 2 =&gt; 1,3;
+
+#2 BETWEEN (1,3) ;
+&lt;/c&gt;&lt;P&gt;
+
+
+But commenting out the last line naturally leads to compile-time parser error:&lt;P&gt;
+
+&lt;c&gt;
+Bareword found where operator expected at d:/Users/lanx/tmp/rewrite_binary.pl line 20, near "2 BETWEEN"
+	(Missing operator before BETWEEN?)
+syntax error at d:/Users/lanx/tmp/rewrite_binary.pl line 20, near "2 BETWEEN "
+Execution of d:/Users/lanx/tmp/rewrite_binary.pl aborted due to compilation errors.
+&lt;/c&gt;&lt;P&gt;
+
+&lt;H5&gt; Question:&lt;/H5&gt;&lt;P&gt;
+
+Is there a clean approach to hook into the parse to catch this error event and to rewrite the code?&lt;P&gt;
+
+Such that &lt;P&gt;
+
+&lt;C&gt;2 BETWEEN (1,3)&lt;/C&gt; &lt;P&gt;
+
+is translated to &lt;P&gt;
+
+&lt;C&gt;2-&gt;$BETWEEN(1,3)&lt;/C&gt; &lt;P&gt;
+
+if &lt;C&gt;ref $BETWEEN eq 'CODE'&lt;/C&gt;  and parsing continues?&lt;P&gt;
+
+No source filters please... :)&lt;P&gt;
+
+
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;small&gt;&lt;strike&gt;Football&lt;/strike&gt;Perl is like chess, only without the dice&lt;/small&gt;
+&lt;/sub&gt; &lt;P&gt;
+
+&lt;/div&gt;&lt;/div&gt;&lt;P&gt;
+
+&lt;H5&gt; update&lt;/H5&gt;&lt;P&gt;
+
+I stumbled over [HTTPs://perldoc.perl.org/perlguts.html#Custom-Operators|perlguts#Custom-Operators] but didn't understand the restrictions. (especially how do I create a "custom peephole optimizer"?)&lt;P&gt;
+
+&lt;H5&gt; update&lt;/H5&gt;&lt;P&gt;
+
+that's it [HTTPs://metacpan.org/pod/optimize], so if I understand correctly, I need to register &lt;C&gt;BETWEEN&lt;/C&gt; as custom operator and use [mod://optimize] to provide a callback?  &lt;!-- Wiki2Monks {"version":1.142} --&gt;</doctext>
+<thread id="1220271">
+<node id="1220272"><node id="1220273"><node id="1220494"><node id="1220496"/>
+</node>
+</node>
+</node>
+<node id="1220476"><node id="1220485"><node id="1220491"/>
+</node>
+</node>
+<node id="1220477"><node id="1220483"><node id="1220489"><node id="1220490"/>
+</node>
+</node>
+</node>
+<node id="1220478"><node id="1220484"><node id="1220495"><node id="1220497"/>
+</node>
+</node>
+</node>
+<node id="1220492"><node id="1220493"/>
+</node>
+</thread></node>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118659" title="Re^3: Pass hard coded param CGI post" created="2020-06-29 11:09:58" updated="2020-06-29 11:09:58" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I am on a shared server which does not allow too much. It comes with CGI enabled and I think installing and using the Mojolicious framework is not possible.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;[id://693828] - [mod://Mojolicious] is pure-Perl, with no non-core dependencies, which makes it especially suitable for installing in situations like these.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I had a look at the framework, and it seems to me that it would need quite an investment in time to set it up and learn it.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, for really simple CGI applications, sure, you &lt;i&gt;could&lt;/i&gt; use e.g. [mod://CGI::Simple]. But I've been using [mod://Mojolicious] more and more recently, and I think it's good even for really simple stuff, and IMHO learning it is definitely worth the investment because you'll get so much more functionality out of a seemingly simple app. To get started, have a look at [mod://Mojolicious::Guides::Tutorial]. I also have several examples on [id://830550|my scratchpad].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;However, I could not find any way to perform in Mojo the same basic things I am doing in CGI, so to say, out of the box.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This is the equivalent to the code you showed:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+use Mojolicious::Lite -signatures;
+
+get '/' =&gt; sub ($c) {
+	$c-&gt;render(template =&gt; 'index');
+} =&gt; 'index';
+
+get '/delete' =&gt; sub ($c) {
+	my $token = $c-&gt;param('token');
+	my $key = $c-&gt;param('key');
+	my $usr = $c-&gt;param('usr');
+	$c-&gt;render( text=&gt;"Token: $token - Key: $key - Usr: $usr" );
+} =&gt; 'delete';
+
+app-&gt;start;
+
+__DATA__
+
+@@ layouts/main.html.ep
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+%= content
+&lt;/body&gt;
+&lt;/html&gt;
+
+@@ index.html.ep
+% layout 'main', title =&gt; 'Hello, World!';
+&lt;div&gt;
+%= form_for delete =&gt; ( method=&gt;'get' ) =&gt; begin
+%= hidden_field key =&gt; 'gfgf'
+%= hidden_field usr =&gt; 'rob'
+&lt;div class="form-group"&gt;
+	%= label_for id =&gt; 'Your token'
+	%= text_field token=&gt;'Default', class=&gt;"form-control", id=&gt;"id", readonly=&gt;undef
+&lt;/div&gt;
+&lt;div class="form-group"&gt;
+	%= submit_button 'Delete', class=&gt;"btn btn-primary"
+&lt;/div&gt;
+%= end
+&lt;/div&gt;
+&lt;/c&gt;
+&lt;p&gt;Though you should probably change &lt;c&gt;get '/delete'&lt;/c&gt; to &lt;c&gt;post '/delete'&lt;/c&gt; and &lt;c&gt;method=&gt;'get'&lt;/c&gt; to &lt;c&gt;method=&gt;'post'&lt;/c&gt;. This script will work both when started via e.g. &lt;c&gt;morbo script.pl&lt;/c&gt;, and as a CGI script automatically.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11118636</root_node>
+<parent_node field_name="parent_node">11118638</parent_node>
+<thread id="11118636">
+<node id="11118637"><node id="11118638"><node id="11118639"/>
+<node id="11118659"/>
+</node>
+<node id="11118640"><node id="11118655"><node id="11118691"/>
+</node>
+</node>
+<node id="11118686"><node id="11118689"><node id="11118694"><node id="11118706"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11118664"><node id="11118675"><node id="11118677"><node id="11118703"><node id="11118719"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11118690"/>
+</thread></node>

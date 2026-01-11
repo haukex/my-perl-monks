@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11140724" title="Re: How to get better exponentiation?" created="2022-01-22 13:10:30" updated="2022-01-22 13:10:30" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1020196">vr</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;to get Perl to act like the calculator app that comes with Windows&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;Perhaps Perl better not do that:&lt;/p&gt;
+&lt;c&gt;
+Calculator 10.2103.8.0
+© 2021 Microsoft. All rights reserved
+
+-1   ^   ( 1   /   2 ) =
+Invalid input
+
+-1   ^   ( 2   /   4 ) =
+1
+
+-1   ^   ( 1   /   3 ) =
+-1
+
+-1   ^   ( 2   /   6 ) =
+1
+
+-32   ^   ( 1   /   5 ) =
+-2
+
+-32   ^   ( 2   /   10 ) =
+2
+
+-32   ^   0.2 =
+2
+
+&lt;/c&gt;
+
+&lt;p&gt;And so on. You see the pattern.&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;[metamod://Math::Prime::Util::GMP]&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;I'm not sure, maybe it's un(der)-documented (about allowed inputs) or buggy/inconsistent w.r.t. functions mentioned:&lt;/p&gt;
+&lt;c&gt;
+perl -MMath::Prime::Util::GMP=:all -le 'print powreal(-4, .5)'
+-2.000000000000000000000000000000000000000
+
+perl -MMath::Prime::Util::GMP=:all -le "print rootreal(-4, 2)"
+# aborted, core dumped
+&lt;/c&gt;
+&lt;p&gt;I think if task is only to ever get real roots, then your "kludge" (and checking for integer parity and a sign of argument, then disallowing obvious combination) looks far-far less "kludgier" than, say, calling &lt;c&gt;Math::Complex::root&lt;/c&gt; and then grepping list for (possibly) zero imaginary part, or something like that.&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;p&gt;If, OTOH, what's required is &lt;c&gt;my_real_pow&lt;/c&gt; with any (+/-) real base and any (positive?) real exponent, &lt;strike&gt;then solution may be to use &lt;c&gt;Math::BigRat::parts&lt;/c&gt; on exponent, and then disallowing "negative base and even exponent denominator", while numerator parity influences sign of result if base is negative. Just an idea to explore (what about &lt;c&gt;Math::BigRat&lt;/c&gt; result of a reciprocal, will round-trip call for our function be consistent?).&lt;/strike&gt; Then real answer for &lt;c&gt;(-8)**(2/3)&lt;/c&gt; would be +4 same as Wolfram Alpha. &lt;b&gt;Edit 23/01: &lt;/b&gt; Apparently, &lt;c&gt;Math::BigRat&lt;/c&gt; just won't help with this approach (I should have checked what it returns for most simple 2/3 argument), if exponent already happens to be floating point approximation. CPAN doesn't seem to have solutions to convert such floats to reasonable rationals. For (non-Perl) point of reference, in J 8-byte doubles, results of division such as 2%3 or (just randomly typed) 73364%294557 are converted to rationals with numerator/denominator exactly as shown.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11140698</root_node>
+<parent_node field_name="parent_node">11140698</parent_node>
+<thread id="11140698">
+<node id="11140700"><node id="11140704"><node id="11140707"/>
+</node>
+</node>
+<node id="11140708"><node id="11140788"><node id="11140789"><node id="11140833"/>
+</node>
+</node>
+</node>
+<node id="11140710"><node id="11140711"/>
+</node>
+<node id="11140717"/>
+<node id="11140724"><node id="11140728"/>
+</node>
+<node id="11140731"/>
+<node id="11140732"/>
+</thread></node>

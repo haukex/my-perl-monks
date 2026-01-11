@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1213547" title="Re: Hash slice from a hashref, into a hashref" created="2018-04-25 13:42:57" updated="2018-04-25 13:42:57" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I just realized the question is useless.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm not sure why you think so, how to take a slice of a hash is a valid question, maybe you could explain what resolution you found for your question?&lt;/p&gt;
+&lt;p&gt;Anyway, there are several ways to make a (shallow) copy of a part of a hash, here are a few:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Using [doc://map]: &lt;c&gt;%slice = map { $_ =&gt; $hash{$_} } @keys;&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;Using [doc://perlsyn#Foreach-Loops] (in this case as a [doc://perlsyn#Statement-Modifiers|statement modifier]): &lt;c&gt;$slice{$_} = $hash{$_} for @keys;&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;Using [doc://perldata#Slices]: &lt;c&gt;@slice{@keys} = @hash{@keys};&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;Using [doc://perldata#Key/Value-Hash-Slices], new in Perl 5.20: &lt;c&gt;%slice = %hash{@keys};&lt;/c&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;blockquote&gt;&lt;i&gt;my %h is really big and I don't have enough RAM to make a copy of it&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This makes the question interesting. It turns out that, at least on my machine with Perl 5.26, from the options above:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;c&gt;map&lt;/c&gt; takes the most memory, about 180% as much as a regular &lt;c&gt;@&lt;/c&gt; slice,&lt;/li&gt;
+&lt;li&gt;a regular &lt;c&gt;@&lt;/c&gt; slice takes about as much memory as a key/value &lt;c&gt;%&lt;/c&gt; slice,&lt;/li&gt;
+&lt;li&gt;a key/value &lt;c&gt;%&lt;/c&gt; slice takes about as much memory as a regular &lt;c&gt;@&lt;/c&gt; slice, and&lt;/li&gt;
+&lt;li&gt;the &lt;c&gt;for&lt;/c&gt; loop variant takes the least amount of memory, taking only about 88% of a regular &lt;c&gt;@&lt;/c&gt; slice.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;readmore title="Code for testing"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use feature qw/say/;
+
+my %bighash;
+{
+	my $sz = 1_000_000;
+	my $v = 'aaaaaaaaaaaaaa';
+	$bighash{$v++} = int(rand($sz))+1 for 1..$sz;
+}
+my @keys = keys %bighash;
+delete $bighash{aaaaaaaaaaaaab};
+my %slice;
+
+say `ps -orss $$`=~s/\s+/ /gr;
+
+#%slice = map { $_ =&gt; $bighash{$_} } @keys;
+#@slice{@keys} = @bighash{@keys};
+#%slice = %bighash{@keys};
+$slice{$_} = $bighash{$_} for @keys;
+
+die if defined $slice{aaaaaaaaaaaaab}; # verify the slice
+die unless $slice{aaaaaaaaaaaaaa}&gt;0
+	&amp;&amp; $slice{aaaaaaaaaaaaaa}==$bighash{aaaaaaaaaaaaaa};
+
+say `ps -orss $$`=~s/\s+/ /gr;
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;blockquote&gt;&lt;i&gt;I want to load the slice directly into a hashref&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;As it turns out, changing &lt;c&gt;my %slice&lt;/c&gt; into &lt;c&gt;my $slice&lt;/c&gt; and changing the syntaxes into the following doesn't really make a big difference:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;c&gt;$slice = { map { $_ =&gt; $hash{$_} } @keys };&lt;/c&gt; - about 6% more memory&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;@{$slice}{@keys} = @hash{@keys};&lt;/c&gt; - about the same amount of memory&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;$slice = {%hash{@keys}};&lt;/c&gt; - about the same amount of memory&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;$slice-&gt;{$_} = $hash{$_} for @keys;&lt;/c&gt; - about the same amount of memory&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;On the other hand, if for example the values in your hash are huge, then perhaps a different approach is needed - for example, in your second hash you could store references to the values of the first hash. Or, you may not even need to create a second hash in the first place, perhaps simply keeping the list of keys around to select values from the first hash is enough.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1213506</root_node>
+<parent_node field_name="parent_node">1213506</parent_node>
+<thread id="1213506">
+<node id="1213510"/>
+<node id="1213513"><node id="1213517"/>
+</node>
+<node id="1213518"/>
+<node id="1213522"><node id="1213526"><node id="1213543"/>
+<node id="1213631"><node id="1213638"/>
+<node id="1213651"/>
+</node>
+</node>
+</node>
+<node id="1213547"/>
+</thread></node>

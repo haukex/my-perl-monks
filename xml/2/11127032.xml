@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11127032" title="Re: Is a here-doc a good way to retrieve data file contents for testing?" created="2021-01-17 05:03:18" updated="2021-01-17 05:03:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;For testing purposes I would like my test function to return exactly what the file contains.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;For tests, I think either of what you showed is ok, plus the variations shown by the others. Here are my comments on various ways to get multiline data, in particular data for tests:&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;&lt;p&gt;[doc://perlop#&lt;&lt;EOF|Here docs] are probably one of the most common ways to get multiline strings. One minor potential caveat is that line endings in here docs are [https://github.com/Perl/perl5/issues/17770|always &lt;c&gt;\n&lt;/c&gt;'s]. If you want to explicitly test different line endings, then I recommend &lt;c&gt;qq&lt;/c&gt; strings instead and explicit backslash escapes (&lt;c&gt;\n&lt;/c&gt;, &lt;c&gt;\r&lt;/c&gt;, etc.) instead of literal line breaks. Also, if indented here docs are desired, properly unindenting them in Perl [doc://perl5260delta#Indented-Here-documents|before 5.26] requires a bit of extra code.&lt;/p&gt;&lt;/li&gt;
+	&lt;li&gt;&lt;p&gt;Multiline strings work, although PBP recommends against them ([mod://Perl::Critic::Policy::ValuesAndExpressions::ProhibitImplicitNewlines|ProhibitImplicitNewlines]).&lt;/p&gt;&lt;/li&gt;
+	&lt;li&gt;&lt;p&gt;[doc://perldata#Special-Literals|&lt;c&gt;__DATA__&lt;/c&gt;] is another alternative, one potential caveat to remember here is that &lt;c&gt;DATA&lt;/c&gt; is the filehandle that is used to read the Perl source file, so for example if you've got &lt;c&gt;use utf8;&lt;/c&gt;, that [id://11116393|remains enabled] when reading from &lt;c&gt;__DATA__&lt;/c&gt; (unless changed with [doc://binmode]). Plus, if you want to get multiple multiline strings from &lt;c&gt;__DATA__&lt;/c&gt;, you'll have to split them yourself or use a module for that (e.g. [mod://Inline::Files], though that's a fairly powerful module).&lt;/p&gt;&lt;/li&gt;
+	&lt;li&gt;&lt;p&gt;Of course, you can always use actual files. Personally I often generate them using functions [https://bitbucket.org/haukex/htools/src/a500e09fa0bd/t/enctool.t#lines-244|like this], and as mentioned above, using &lt;c&gt;qq{}&lt;/c&gt; strings and backslash escapes so that I have full control over what the files will look like.&lt;/p&gt;&lt;/li&gt;
+	&lt;li&gt;&lt;p&gt;Though I wouldn't recommend this for embedded test data, sometimes there may be instances where you want to test something that's part of the POD documentation. For example, as part of my author tests I often test code snippets from my POD [https://github.com/haukex/Util-H2O/blob/6db2a1d4cdf1a/xt/author.t#L84|like this] (I've even written a fairly complex [https://github.com/haukex/IPC-Run3-Shell/blob/fb8f9d8337b6b1/t/Test_Pod_Verbatim_Parser.pm#L8|parsing module], though I now think that's only worth it if there's a lot of code in the POD).&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Also note that if you need filehandles, you can use in-memory [doc://open]s, which are [id://1194601|relatively performant] at splitting strings into lines.&lt;/p&gt;
+&lt;c&gt;
+open my $fh, '&lt;', \&lt;&lt;'EOF' or die $!;
+Hello
+World
+EOF
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11127014</root_node>
+<parent_node field_name="parent_node">11127014</parent_node>
+<thread id="11127014">
+<node id="11127015"><node id="11127049"/>
+</node>
+<node id="11127016"><node id="11127017"><node id="11127018"><node id="11127019"><node id="11127022"><node id="11127030"><node id="11127031"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11127029"/>
+</node>
+<node id="11127032"><node id="11127050"/>
+</node>
+<node id="11127042"><node id="11127048"/>
+</node>
+</thread></node>

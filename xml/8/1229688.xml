@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229688" title="Re: Help encode_entities doesn't seem to work" created="2019-02-09 17:38:47" updated="2019-02-09 17:38:47" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hello and welcome to Perl and the Monastery, [Balawoo].&lt;/p&gt;
+&lt;p&gt;In your first piece of code, you have non-ASCII characters, but have commented out the &lt;c&gt;use utf8;&lt;/c&gt;, why? [doc://utf8] is required to tell Perl that the source code is encoded in UTF-8, which is IMHO the best way to get non-ASCII characters into your Perl source. The following works fine for me when I save the source file as UTF-8:&lt;/p&gt;
+&lt;pre&gt;
+use warnings;
+use strict;
+use utf8;
+use HTML::Entities;
+
+print encode_entities("&amp;lt;br&amp;gt;àéèçûîùô&amp;lt;&amp;gt;"), "\n";
+
+__END__
+
+&amp;amp;lt;br&amp;amp;gt;&amp;amp;agrave;&amp;amp;eacute;&amp;amp;egrave;&amp;amp;ccedil;&amp;amp;ucirc;&amp;amp;icirc;&amp;amp;ugrave;&amp;amp;ocirc;&amp;amp;lt;&amp;amp;gt;
+&lt;/pre&gt;
+&lt;p&gt;As for your second piece of code, &lt;strike&gt;at the moment the formatting is broken, please fix your &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags&lt;/strike&gt;. You've posted quite a long script, without input data. Please try to reduce this down to a [id://1177642], that is, a piece of code that is as short as possible but still reproduces the problem, as well as some short sample input data. For example, it seems that the code is first converting the Excel file to a text file, and then turning that into an XML file - the whole Excel-to-text conversion could probably be removed from the question.&lt;/p&gt;
+&lt;p&gt;Since it's quite difficult to test your code at the moment, I can only guess what might be going wrong in the script you showed. It looks like the code is using [mod://Spreadsheet::ParseExcel] to parse an Excel file and is writing an XML file. I'm going to guess that there is some encoding issue, that is, maybe the strings you're getting from the Excel file are not encoded properly, or something is going wrong when writing to and reading from the intermediate text file.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;However,&lt;/i&gt; instead of trying to fix this, I have to say there are two general issues with the approach in this script: First, XML is not HTML, and XML by default does not know about any entities other than &lt;c&gt;&amp;quot;&lt;/c&gt;, &lt;c&gt;&amp;apos;&lt;/c&gt;, &lt;c&gt;&amp;lt;&lt;/c&gt;, &lt;c&gt;&amp;gt;&lt;/c&gt;, and &lt;c&gt;&amp;amp;&lt;/c&gt;, that's it. If you want to put non-ASCII characters in an XML file, then instead of using entities, IMHO the better way to do it is to make sure the file is written with the correct encoding, such as UTF-8, and make sure this is properly declared in the &lt;c&gt;&lt;?xml?&gt;&lt;/c&gt; processing instruction at the top of the file. Second, I would &lt;b&gt;not&lt;/b&gt; recommend writing the XML file manually like this. If you use a real XML module like [mod://XML::LibXML], it will do all the necessary escaping of special characters for you, and its methods for reading from and writing to files will take care of the encoding issues for you.&lt;/p&gt;
+&lt;p&gt;If you invest the time into looking into how to use [mod://XML::LibXML], then I'm sure you'll be much happier in the long run than if you try to patch together XML like in the script you showed.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+
+my $doc = XML::LibXML::Document-&gt;createDocument('1.0', 'UTF-8');
+my $req = $doc-&gt;createElement('requirements');
+$doc-&gt;setDocumentElement($req);
+my $desc = $doc-&gt;createElement('description');
+my $str = "\N{U+E0}\N{U+E9}\N{U+E8}\N{U+E7}\N{U+FB}\N{U+EE}\N{U+F9}\N{U+F4}";
+$desc-&gt;appendText($str);
+$req-&gt;appendChild($desc);
+$doc-&gt;toFile('out.xml',1);
+&lt;/c&gt;
+&lt;p&gt;Produces this XML file, correctly encoded as UTF-8:&lt;/p&gt;
+&lt;pre&gt;
+&amp;lt;?xml version="1.0" encoding="UTF-8"?&amp;gt;
+&amp;lt;requirements&amp;gt;
+  &amp;lt;description&amp;gt;àéèçûîùô&amp;lt;/description&amp;gt;
+&amp;lt;/requirements&amp;gt;
+&lt;/pre&gt;
+&lt;p&gt;For debugging encoding issues, I usually use two tools: my own script [https://bitbucket.org/haukex/htools/src/HEAD/enctool|enctool] to check what encoding is being used in the input files and the Perl source code, and inside of Perl, &lt;c&gt;Dump&lt;/c&gt; from [doc://Devel::Peek] to see exactly what bytes are being stored and whether Perl's internal &lt;c&gt;UTF8&lt;/c&gt; flag is set. This is information that you should also post here, so that we can also know exactly what data you're dealing with.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1229686</root_node>
+<parent_node field_name="parent_node">1229686</parent_node>
+<thread id="1229686">
+<node id="1229688"><node id="1229699"><node id="1229703"><node id="1229730"/>
+<node id="1229738"><node id="1229747"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1229690"><node id="1229700"><node id="1229706"><node id="1229725"><node id="1229734"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1229702"><node id="1229712"/>
+</node>
+</thread></node>

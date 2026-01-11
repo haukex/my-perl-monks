@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11102239" title="Re^4: Side effect of using undefined variable in regex" created="2019-07-01 10:39:09" updated="2019-07-01 10:39:09" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1039428">Eily</author>
+<doctext field_name="doctext">&lt;p&gt;I've edited my post because putting the (?{ }) block &lt;i&gt;after&lt;/i&gt; trying to match 4.1.2 was the obvious reason why it didn't called again. But I've tried this:
+&lt;c&gt;use v5.20.0;
+
+my @stoppedStandardServices = ( 'OP OPC Client', 'OP Calculation Server', 'OP Data Server', 'OP Configuration Server', 'OP Log Server', 'OP Time Server', 'ONC RPC PortMapper');
+
+my $supported = '4.0.0,4.0.1,4.1.0,4.1.1,4.1.2';
+
+$supported =~ /.(?{say '&gt;&gt;&gt; In the regex'})/ if @ARGV;
+"4.1.2" =~ //;
+
+say "Start Basic Standard Services:";
+startStandardServices( 'Config');
+say "Start Remaining Standard Services:";
+startStandardServices();
+
+say "Installation completed";
+
+sub startStandardServices {
+    my $last = shift;
+    my $name;
+    while (@stoppedStandardServices) {
+        $name = pop @stoppedStandardServices;
+        say '  Starting $name=\'', $name, '\' $last=', defined $last ? "'$last'" : 'undef', ' ($name=~/$last/i)=', ($name =~ /$last/i) ? 1 : 0;
+        last if $name =~ /$last/i;
+    }
+}
+&lt;/c&gt;And with one parameter I get the output:
+&lt;c&gt;&gt;&gt;&gt; In the regex
+&gt;&gt;&gt; In the regex
+Start Basic Standard Services:
+  Starting $name='ONC RPC PortMapper' $last='Config' ($name=~/$last/i)=0
+  Starting $name='OP Time Server' $last='Config' ($name=~/$last/i)=0
+  Starting $name='OP Log Server' $last='Config' ($name=~/$last/i)=0
+  Starting $name='OP Configuration Server' $last='Config' ($name=~/$last/i)=1
+Start Remaining Standard Services:
+'Config'
+  Starting $name='OP Data Server' $last=undef ($name=~/$last/i)=1
+'Config'
+Installation completed&lt;/c&gt; Why doesn't "&gt;&gt;&gt; In the regex" appear again when $last is undef, and how is the string 'Config' printed?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11102215</root_node>
+<parent_node field_name="parent_node">11102237</parent_node>
+<thread id="11102215">
+<node id="11102216"><node id="11102217"><node id="11102237"><node id="11102239"><node id="11102241"><node id="11102244"><node id="11102251"/>
+</node>
+</node>
+</node>
+<node id="11102250"><node id="11102253"/>
+</node>
+</node>
+</node>
+<node id="11102223"/>
+</node>
+<node id="11102231"/>
+<node id="11102285"/>
+</thread></node>

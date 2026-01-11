@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11105668" title="Minor API changes in 10-year-old module" created="2019-09-05 10:40:07" updated="2019-09-05 10:40:07" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="688543">wanna_code_perl</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Monks!&lt;/p&gt;
+
+&lt;p&gt;I'll save you the complicated backstory, but suffice to say I now maintain a small, unpopular CPAN module that hasn't been updated for ten years. I'm not going to name it, so I can talk freely about its shortcomings here. I also have a local version of the module I have been using in-house that pretty much got an accidental rewrite, one line at a time, over the past two years, while all of my RT tickets went unanswered. The in-house version is objectively better, (it actually has unit tests, and a ton of bugs and new features got taken care of), but the API has diverged slightly. So in order to upload a new version, I need to address the API differences.&lt;/p&gt;
+
+&lt;p&gt;Aside from entirely new subroutines, I haven't changed any subroutine names, arguments, or semantics, but I &lt;em&gt;have&lt;/em&gt; changed a few error return values. Previously it was a little inconsistent with throwing exceptions vs. returning failure, so I standardized that. I also changed a few &lt;c&gt;croak&lt;/c&gt; messages to be more descriptive, so if anyone is looking for a specific &lt;c&gt;$@&lt;/c&gt; string (arguably a bad idea anyway), they could have subtle bugs.&lt;/p&gt;
+
+&lt;p&gt;Short version of that: if someone plonked my current version of this module in place in their project as-is, it would mostly work, but the program might &lt;c&gt;die&lt;/c&gt; due to network errors if the calling code wasn't already using &lt;c&gt;eval{...}&lt;/c&gt;. A few edge cases might cause some errors that would be easily caught and fixed during integration testing. As far as I can tell, any potential upgrade errors would be of the "loud and obvious" variety. Still, the API has been stable for a decade, so I'd like to tread a little carefully.&lt;/p&gt;
+
+&lt;p&gt;How would you go about migrating an API such as this? I am in no particular rush to do anything, so doing a lengthy deprecation cycle (with migration documentation) wouldn't be a huge issue, but still a decent amount of extra work (and risk of regressions), with a real possibility that zero people will actually update this module in the next six months. Or maybe you wise monks have an even better idea, which is why I'm here!&lt;/p&gt;
+
+&lt;hr/&gt;
+
+&lt;readmore text="Detailed Description of Changes"&gt;
+
+&lt;h2&gt;Edit: Detailed Description of Changes&lt;/h2&gt;
+
+&lt;p&gt;&lt;em&gt;Copied from one of my replies, below:&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;The API changes I've made are deliberate, and ultimately for the good of the project. As an example of why I made these changes, there was a method that would:&lt;/p&gt;
+
+&lt;ol&gt;&lt;li&gt;&lt;c&gt;return 0;&lt;/c&gt; if certain arguments are invalid, &lt;c&gt;croak()&lt;/c&gt;s if others are invalid,&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;carp "Connection failed"; return 0;&lt;/c&gt; on connection failures. Yes, &lt;c&gt;carp()&lt;/c&gt;, and&lt;/li&gt;
+&lt;li&gt;Not trap upstream exceptions itself, so it would &lt;c&gt;die&lt;/c&gt; for any number of undocumented reasons the author did not anticipate (and no unit tests either!)&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Since returning non-zero had no semantic meaning beyond "nothing broke," and the distinction between &lt;c&gt;return 0;&lt;/c&gt; v. &lt;c&gt;croak()&lt;/c&gt; was already ill-defined, I changed this sub to always &lt;c&gt;croak()&lt;/c&gt; on error, thinking &lt;em&gt;most&lt;/em&gt; implementations would already be &lt;c&gt;eval{...}&lt;/c&gt;-ing that call, or risk premature death.&lt;/p&gt;
+
+&lt;p&gt;That's the biggest change. The other 3-4 examples are similar but simpler (fewer cases).&lt;/p&gt;
+
+&lt;p&gt;The documentation for the methods was generally good, except when it came to error handling. So I'm not really even going against the existing documentation, here, though I'm not using that as an excuse to break people's code. :-)&lt;/p&gt;
+
+&lt;/readmore&gt;</doctext>
+<thread id="11105668">
+<node id="11105669"><node id="11105682"/>
+</node>
+<node id="11105674"><node id="11105680"/>
+</node>
+<node id="11105681"><node id="11105683"><node id="11105684"><node id="11105721"/>
+</node>
+</node>
+</node>
+<node id="11105690"/>
+<node id="11105698"/>
+<node id="11105719"/>
+</thread></node>

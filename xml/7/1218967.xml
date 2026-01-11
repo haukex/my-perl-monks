@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1218967" title="[SOLVED] XML::Twig - '#CDATA' attribute in hashref disappears after first call to XML::Twig::Elt-&gt;new()" created="2018-07-20 17:56:39" updated="2018-07-20 17:56:39" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="749711">ateague</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt;&lt;br&gt;
+This behavior is correct as per the source code.&lt;br&gt;
+(Sure wish there was an explanatory blurb explaining that &lt;c&gt;XML::Twig::Elt-&gt;new()&lt;/c&gt; removes the '#CDATA' key in an attribute hashref. &lt;i&gt;C'est la vie.&lt;/i&gt;)&lt;/p&gt;
+&lt;p&gt;Thank you haukex and Anon Monk for your explanation and workarounds!&lt;/p&gt;
+
+&lt;hr&gt;
+
+&lt;p&gt;Good afternoon!&lt;/p&gt;
+
+&lt;p&gt;I am experiencing a rather unexpected issue creating new elements with XML::Twig's &lt;c&gt;XML::Twig::Elt-&gt;new()&lt;/c&gt; method where the '#CDATA' key in my attribute hashref gets undefined after passing it to &lt;c&gt;new()&lt;/c&gt;.&lt;/p&gt;
+
+&lt;p&gt;e.g.:
+&lt;code&gt;
+my $attributes = $sibling_element-&gt;atts();
+$attributes-&gt;{'#CDATA'} = 1;
+
+# '#CDATA' attribute is defined here
+my $elt1 = XML::Twig::Elt-&gt;new('present', $attributes, 'This is in CDATA');
+
+# '#CDATA' attribute is undefined here
+my $elt2 = XML::Twig::Elt-&gt;new('missing', $attributes, 'This is not in CDATA');
+&lt;/code&gt;
+&lt;/p&gt; 
+
+&lt;p&gt;Is this supposed to happen? I did not see anything mentioning this in the CPAN docs...&lt;/p&gt;
+
+&lt;p&gt;Thank you for your time.&lt;/p&gt;
+
+&lt;p&gt;Perl info:
+&lt;code&gt;perl -v
+
+This is perl 5, version 26, subversion 0 (v5.26.0) built for MSWin32-x64-multi-thread&lt;/code&gt;
+
+XML::Twig info:
+&lt;code&gt;3.52&lt;/code&gt;&lt;/p&gt;
+
+&lt;readmore&gt;&lt;b&gt;Sample code:&lt;/b&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+use 5.026;
+use strict;
+use warnings;
+use XML::Twig;
+
+{
+  open (my $OFILE, '&gt;:utf8', 'file.out.xml') or die "$!\n$^E";
+  
+  my $t = XML::Twig-&gt;new(
+  twig_handlers =&gt; {
+    '/keys/key' =&gt; sub { makeDuplicates(@_, $OFILE); 1; },
+  },
+    output_encoding =&gt; 'utf-8',
+    pretty_print =&gt; 'indented',
+  );
+  
+  $t-&gt;safe_parse(\*DATA);
+  if ( $@ ) {
+    die "Error occured in XML data\n$@";
+  }
+  
+  close $OFILE;
+}
+
+sub makeDuplicates {
+  my ($_twig, $key_element, $OFILE) = @_;
+  
+  my $text       = $key_element-&gt;text();
+  my $attributes = $key_element-&gt;atts();
+  $attributes-&gt;{'#CDATA'} = 1;
+  
+  # '#CDATA' attribute is defined here
+  my $lc_element = XML::Twig::Elt-&gt;new('lc_key', $attributes, lc $text);
+  
+  # '#CDATA' attribute is undefined here
+  my $uc_element = XML::Twig::Elt-&gt;new('uc_key', $attributes, uc $text);
+  
+  $lc_element-&gt;paste(after =&gt; $key_element);
+  $uc_element-&gt;paste(after =&gt; $key_element);
+  
+  $_twig-&gt;flush($OFILE);
+  
+  return;
+}
+__DATA__
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;keys&gt;
+  &lt;key order='01'&gt;&lt;![CDATA[One hen]]&gt;&lt;/key&gt;
+  &lt;key order='02'&gt;&lt;![CDATA[Two ducks]]&gt;&lt;/key&gt;
+  &lt;key order='03'&gt;&lt;![CDATA[Three squawking geese]]&gt;&lt;/key&gt;
+  &lt;key order='04'&gt;&lt;![CDATA[Four limerick oysters]]&gt;&lt;/key&gt;
+  &lt;key order='05'&gt;&lt;![CDATA[Five corpulent porpoises]]&gt;&lt;/key&gt;
+  &lt;key order='06'&gt;&lt;![CDATA[Six pair of Don Alverzo's tweezers]]&gt;&lt;/key&gt;
+  &lt;key order='07'&gt;&lt;![CDATA[Seven thousand Macedonians in full battle array]]&gt;&lt;/key&gt;
+  &lt;key order='08'&gt;&lt;![CDATA[Eight brass monkeys from the ancient sacred crypts of Egypt]]&gt;&lt;/key&gt;
+  &lt;key order='09'&gt;&lt;![CDATA[Nine apathetic, sympathetic, diabetic old men on roller skates, with a marked propensity towards procrastination and sloth]]&gt;&lt;/key&gt;
+  &lt;key order='10'&gt;&lt;![CDATA[Ten lyrical, spherical, diabolical denizens of the deep who stalk about the corners of the cove all at the same time.]]&gt;&lt;/key&gt;
+&lt;/keys&gt;
+&lt;/code&gt;
+
+&lt;hr&gt;
+
+&lt;p&gt;&lt;b&gt;Desired output:&lt;/b&gt;
+&lt;spoiler&gt;&lt;code&gt;
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;keys&gt;
+  &lt;key order="01"&gt;&lt;![CDATA[One hen]]&gt;&lt;/key&gt;
+  &lt;uc_key order="01"&gt;&lt;![CDATA[ONE HEN]]&gt;&lt;/uc_key&gt;
+  &lt;lc_key order="01"&gt;&lt;![CDATA[one hen]]&gt;&lt;/lc_key&gt;
+  &lt;key order="02"&gt;&lt;![CDATA[Two ducks]]&gt;&lt;/key&gt;
+  &lt;uc_key order="02"&gt;&lt;![CDATA[TWO DUCKS]]&gt;&lt;/uc_key&gt;
+  &lt;lc_key order="02"&gt;&lt;![CDATA[two ducks]]&gt;&lt;/lc_key&gt;
+  &lt;key order="03"&gt;&lt;![CDATA[Three squawking geese]]&gt;&lt;/key&gt;
+  &lt;uc_key order="03"&gt;&lt;![CDATA[THREE SQUAWKING GEESE]]&gt;&lt;/uc_key&gt;
+  &lt;lc_key order="03"&gt;&lt;![CDATA[three squawking geese]]&gt;&lt;/lc_key&gt;
+  &lt;key order="04"&gt;&lt;![CDATA[Four limerick oysters]]&gt;&lt;/key&gt;
+  &lt;uc_key order="04"&gt;&lt;![CDATA[FOUR LIMERICK OYSTERS]]&gt;&lt;/uc_key&gt;
+  &lt;lc_key order="04"&gt;&lt;![CDATA[four limerick oysters]]&gt;&lt;/lc_key&gt;
+  &lt;key order="05"&gt;&lt;![CDATA[Five corpulent porpoises]]&gt;&lt;/key&gt;
+  &lt;uc_key order="05"&gt;&lt;![CDATA[FIVE CORPULENT PORPOISES]]&gt;&lt;/uc_key&gt;
+  &lt;lc_key order="05"&gt;&lt;![CDATA[five corpulent porpoises]]&gt;&lt;/lc_key&gt;
+  &lt;key order="06"&gt;&lt;![CDATA[Six pair of Don Alverzo's tweezers]]&gt;&lt;/key&gt;
+  &lt;uc_key order="06"&gt;&lt;![CDATA[SIX PAIR OF DON ALVERZO'S TWEEZERS]]&gt;&lt;/uc_key&gt;
+  &lt;lc_key order="06"&gt;&lt;![CDATA[six pair of don alverzo's tweezers]]&gt;&lt;/lc_key&gt;
+  &lt;key order="07"&gt;&lt;![CDATA[Seven thousand Macedonians in full battle array]]&gt;&lt;/key&gt;
+  &lt;uc_key order="07"&gt;&lt;![CDATA[SEVEN THOUSAND MACEDONIANS IN FULL BATTLE ARRAY]]&gt;&lt;/uc_key&gt;
+  &lt;lc_key order="07"&gt;&lt;![CDATA[seven thousand macedonians in full battle array]]&gt;&lt;/lc_key&gt;
+  &lt;key order="08"&gt;&lt;![CDATA[Eight brass monkeys from the ancient sacred crypts of Egypt]]&gt;&lt;/key&gt;
+  &lt;uc_key order="08"&gt;&lt;![CDATA[EIGHT BRASS MONKEYS FROM THE ANCIENT SACRED CRYPTS OF EGYPT]]&gt;&lt;/uc_key&gt;
+  &lt;lc_key order="08"&gt;&lt;![CDATA[eight brass monkeys from the ancient sacred crypts of egypt]]&gt;&lt;/lc_key&gt;
+  &lt;key order="09"&gt;&lt;![CDATA[Nine apathetic, sympathetic, diabetic old men on roller skates, with a marked propensity towards procrastination and sloth]]&gt;&lt;/key&gt;
+  &lt;uc_key order="09"&gt;&lt;![CDATA[NINE APATHETIC, SYMPATHETIC, DIABETIC OLD MEN ON ROLLER SKATES, WITH A MARKED PROPENSITY TOWARDS PROCRASTINATION AND SLOTH]]&gt;&lt;/uc_key&gt;
+  &lt;lc_key order="09"&gt;&lt;![CDATA[nine apathetic, sympathetic, diabetic old men on roller skates, with a marked propensity towards procrastination and sloth]]&gt;&lt;/lc_key&gt;
+  &lt;key order="10"&gt;&lt;![CDATA[Ten lyrical, spherical, diabolical denizens of the deep who stalk about the corners of the cove all at the same time.]]&gt;&lt;/key&gt;
+  &lt;uc_key order="10"&gt;&lt;![CDATA[TEN LYRICAL, SPHERICAL, DIABOLICAL DENIZENS OF THE DEEP WHO STALK ABOUT THE CORNERS OF THE COVE ALL AT THE SAME TIME.]]&gt;&lt;/uc_key&gt;
+  &lt;lc_key order="10"&gt;&lt;![CDATA[ten lyrical, spherical, diabolical denizens of the deep who stalk about the corners of the cove all at the same time.]]&gt;&lt;/lc_key&gt;
+&lt;/keys&gt;
+&lt;/code&gt;&lt;/spoiler&gt;
+&lt;/p&gt;
+
+&lt;hr&gt;
+
+&lt;p&gt;&lt;b&gt;Actual output:&lt;/b&gt;
+&lt;spoiler&gt;&lt;code&gt;
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;keys&gt;
+  &lt;key order="01"&gt;&lt;![CDATA[One hen]]&gt;&lt;/key&gt;
+  &lt;uc_key order="01"&gt;ONE HEN&lt;/uc_key&gt;
+  &lt;lc_key order="01"&gt;&lt;![CDATA[one hen]]&gt;&lt;/lc_key&gt;
+  &lt;key order="02"&gt;&lt;![CDATA[Two ducks]]&gt;&lt;/key&gt;
+  &lt;uc_key order="02"&gt;TWO DUCKS&lt;/uc_key&gt;
+  &lt;lc_key order="02"&gt;&lt;![CDATA[two ducks]]&gt;&lt;/lc_key&gt;
+  &lt;key order="03"&gt;&lt;![CDATA[Three squawking geese]]&gt;&lt;/key&gt;
+  &lt;uc_key order="03"&gt;THREE SQUAWKING GEESE&lt;/uc_key&gt;
+  &lt;lc_key order="03"&gt;&lt;![CDATA[three squawking geese]]&gt;&lt;/lc_key&gt;
+  &lt;key order="04"&gt;&lt;![CDATA[Four limerick oysters]]&gt;&lt;/key&gt;
+  &lt;uc_key order="04"&gt;FOUR LIMERICK OYSTERS&lt;/uc_key&gt;
+  &lt;lc_key order="04"&gt;&lt;![CDATA[four limerick oysters]]&gt;&lt;/lc_key&gt;
+  &lt;key order="05"&gt;&lt;![CDATA[Five corpulent porpoises]]&gt;&lt;/key&gt;
+  &lt;uc_key order="05"&gt;FIVE CORPULENT PORPOISES&lt;/uc_key&gt;
+  &lt;lc_key order="05"&gt;&lt;![CDATA[five corpulent porpoises]]&gt;&lt;/lc_key&gt;
+  &lt;key order="06"&gt;&lt;![CDATA[Six pair of Don Alverzo's tweezers]]&gt;&lt;/key&gt;
+  &lt;uc_key order="06"&gt;SIX PAIR OF DON ALVERZO'S TWEEZERS&lt;/uc_key&gt;
+  &lt;lc_key order="06"&gt;&lt;![CDATA[six pair of don alverzo's tweezers]]&gt;&lt;/lc_key&gt;
+  &lt;key order="07"&gt;&lt;![CDATA[Seven thousand Macedonians in full battle array]]&gt;&lt;/key&gt;
+  &lt;uc_key order="07"&gt;SEVEN THOUSAND MACEDONIANS IN FULL BATTLE ARRAY&lt;/uc_key&gt;
+  &lt;lc_key order="07"&gt;&lt;![CDATA[seven thousand macedonians in full battle array]]&gt;&lt;/lc_key&gt;
+  &lt;key order="08"&gt;&lt;![CDATA[Eight brass monkeys from the ancient sacred crypts of Egypt]]&gt;&lt;/key&gt;
+  &lt;uc_key order="08"&gt;EIGHT BRASS MONKEYS FROM THE ANCIENT SACRED CRYPTS OF EGYPT&lt;/uc_key&gt;
+  &lt;lc_key order="08"&gt;&lt;![CDATA[eight brass monkeys from the ancient sacred crypts of egypt]]&gt;&lt;/lc_key&gt;
+  &lt;key order="09"&gt;&lt;![CDATA[Nine apathetic, sympathetic, diabetic old men on roller skates, with a marked propensity towards procrastination and sloth]]&gt;&lt;/key&gt;
+  &lt;uc_key order="09"&gt;NINE APATHETIC, SYMPATHETIC, DIABETIC OLD MEN ON ROLLER SKATES, WITH A MARKED PROPENSITY TOWARDS PROCRASTINATION AND SLOTH&lt;/uc_key&gt;
+  &lt;lc_key order="09"&gt;&lt;![CDATA[nine apathetic, sympathetic, diabetic old men on roller skates, with a marked propensity towards procrastination and sloth]]&gt;&lt;/lc_key&gt;
+  &lt;key order="10"&gt;&lt;![CDATA[Ten lyrical, spherical, diabolical denizens of the deep who stalk about the corners of the cove all at the same time.]]&gt;&lt;/key&gt;
+  &lt;uc_key order="10"&gt;TEN LYRICAL, SPHERICAL, DIABOLICAL DENIZENS OF THE DEEP WHO STALK ABOUT THE CORNERS OF THE COVE ALL AT THE SAME TIME.&lt;/uc_key&gt;
+  &lt;lc_key order="10"&gt;&lt;![CDATA[ten lyrical, spherical, diabolical denizens of the deep who stalk about the corners of the cove all at the same time.]]&gt;&lt;/lc_key&gt;
+&lt;/keys&gt;
+&lt;/code&gt;&lt;/spoiler&gt;
+&lt;/p&gt;
+&lt;/readmore&gt;</doctext>
+<thread id="1218967">
+<node id="1218981"><node id="1218989"/>
+</node>
+<node id="1219002"/>
+</thread></node>

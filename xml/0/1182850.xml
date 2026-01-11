@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1182850" title="Re^4: Switch.pm Failure ( CGI::Switch? )" created="2017-02-25 16:34:06" updated="2017-02-25 16:34:06" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1175204">huck</author>
+<doctext field_name="doctext">&lt;p&gt;"Did you upgrade Perl" &lt;/p&gt; 
+
+&lt;p&gt;probably, &lt;i&gt;Further, Switch was removed from the core in Perl 5.14&lt;/i&gt; [http://stackoverflow.com/questions/2630547/why-is-the-switch-module-deprecated-in-perl] &lt;/p&gt; 
+
+&lt;p&gt;so first they got the message &lt;i&gt;Can't locate Switch.pm in @INC (you may need to install the Switch module)&lt;/i&gt;, Searched the tree and found a Switch.Pm under CGI, and added &lt;c&gt;use CGI::Switch; &lt;/c&gt;, which didnt help a bit. &lt;/p&gt; 
+
+&lt;p&gt; ok, so since Switch.pm is no longer core, and i didnt want to install it (being depreciated anyway), i took this [http://cpansearch.perl.org/src/RGARCIA/Switch-2.16/Switch.pm] and put it in its own directory, and then put this into the same directory
+&lt;code&gt;
+#!perl -w
+use strict;use warnings; 
+use Switch; 
+sub Main { 
+Switch {print "hi\n";return;}
+} 
+&lt;/code&gt;
+and glory be got 
+&lt;code&gt;
+hi
+&lt;/code&gt;
+Why, i dunno? 
+&lt;/p&gt;
+&lt;p&gt; ok it wasnt that simple. first i tried
+&lt;code&gt;
+#!perl -w
+use strict;use warnings; 
+use Switch; 
+Switch {my $a=1};
+&lt;/code&gt;
+and got 
+&lt;code&gt;
+Can't locate object method "Switch" via package "1" (perhaps you forgot to load "1"?) at switch.pl line 4.
+&lt;/code&gt;
+Thinking that all those returns were the reason i went to
+&lt;code&gt;
+#!perl -w
+use strict;use warnings; 
+use Switch; 
+Switch {my $a=1;return};
+&lt;/code&gt;
+and got 
+&lt;code&gt;
+Can't return outside a subroutine at switch.pl line 4.
+&lt;/code&gt;
+AHAH, the reason for the &lt;c&gt;sub Main {}&lt;/c&gt; 
+&lt;/p&gt; 
+&lt;p&gt;&lt;strike&gt; so i cant figure out what &lt;c&gt;Switch {}&lt;/c&gt; is doing. there is no &lt;c&gt;sub Switch&lt;/c&gt; in Switch.pm (there is a &lt;c&gt;sub switch&lt;/c&gt; tho). I figure it has something to do with &lt;c&gt;use Filter::Util::Call&lt;/c&gt; and the import and filter subroutines. Can anyone give me a clue? &lt;/strike&gt;&lt;/p&gt; 
+
+&lt;p&gt;edit:fixed case in "Can't locate switch.pm" from a typo/wrong-copy-paste&lt;/p&gt; 
+
+&lt;p&gt;edit2: ok i think i got it &lt;i&gt;if a class is used to invoke the method, that argument will be the name of the class.&lt;/i&gt;[http://docstore.mik.ua/orelly/perl/prog3/ch12_03.htm]. so &lt;c&gt;Switch {}&lt;/c&gt; is trying to invoke method Switch with an argument (without parens) that is the result of a block, but the block "never ends?" due to the return. Is that it? &lt;/p&gt; </doctext>
+<root_node field_name="root_node">1182691</root_node>
+<parent_node field_name="parent_node">1182837</parent_node>
+<thread id="1182691">
+<node id="1182693"><node id="1182697"><node id="1182699"><node id="1182819"><node id="1182824"/>
+<node id="1182827"><node id="1182831"><node id="1182846"/>
+</node>
+</node>
+<node id="1182833"/>
+</node>
+</node>
+</node>
+<node id="1182818"/>
+</node>
+<node id="1182695"><node id="1182834"><node id="1182836"/>
+<node id="1182837"><node id="1182850"><node id="1182864"><node id="1182866"/>
+</node>
+<node id="1182939"><node id="1188877"/>
+</node>
+</node>
+<node id="1182858"/>
+</node>
+</node>
+</node>
+<node id="1182706"/>
+</thread></node>

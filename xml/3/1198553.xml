@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198553" title="[SOLVED] XML::Twig - Parsing XML file with incorrect encoding in declaration" created="2017-09-01 18:31:24" updated="2017-09-01 18:31:24" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="749711">ateague</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;b&gt;UPDATE:&lt;/b&gt;&lt;br/&gt;
+I went ahead and used the brute-force nuclear option and manually edited the declaration before passing it to &lt;code&gt;XML::Twig&lt;/code&gt;.&lt;/p&gt;
+&lt;code&gt;open my $fh, '+&lt;:utf8', 'file.in.xml' or die $!;
+my $line = &lt;$fh&gt;;
+$line=~s/&lt;\?xml.+encoding="\Kutf-16"/utf-8" /
+    or die "didn't match line: '$line'";
+seek $fh,0,0 or die $!;
+print $fh $line;
+close $fh;&lt;/code&gt;
+&lt;p&gt;Thank you haukex for your help!&lt;/p&gt;
+&lt;br&gt;
+&lt;br&gt;
+&lt;br&gt;&lt;p&gt;Good afternoon!&lt;/p&gt;
+
+&lt;p&gt;I am trying to use XML::Twig to strip out comments in a file provided by an upstream process. Unfortunately, the upstream process is incorrectly marking the encoding as "utf-16" when it is &lt;b&gt;not&lt;/b&gt;. This causes XML::Twig (and XML::Parser) to fail with a &lt;code&gt;encoding specified in XML declaration is incorrect at line 1, column 30, byte 30&lt;/code&gt; error&lt;/p&gt;
+
+&lt;p&gt;Is there an option in XML::Twig that can be set to "relax" the parsing to ignore the incorrect encoding specified in the declaration?&lt;/p&gt;
+
+&lt;p&gt;Thank you for your time.&lt;/p&gt;
+
+&lt;p&gt;Perl info:
+&lt;code&gt;perl -v
+
+This is perl 5, version 24, subversion 0 (v5.24.0) built for MSWin32-x64-multi-thread&lt;/code&gt;
+
+XML::Twig info:
+&lt;code&gt;3.52&lt;/code&gt;&lt;/p&gt;
+
+&lt;readmore&gt;Sample code:
+
+&lt;code&gt;#!/usr/bin/perl
+use 5.024;
+use strict;
+use warnings;
+use XML::Twig;
+
+open (my $OFILE, '&gt;:utf8', 'file.out.xml') or die "$!\n$^E";
+
+my $t = XML::Twig-&gt;new(
+  twig_handlers =&gt; {
+    '/keys/key' =&gt; sub { $_[0]-&gt;flush($OFILE); },
+  },
+  
+  output_encoding =&gt; 'utf-8',
+  pretty_print =&gt; 'indented',
+  comments     =&gt; 'drop',  # remove any comments
+);
+
+$t-&gt;safe_parse(\*DATA);
+if ( $@ ) {
+  die "Error occured in XML data\n\n$@";
+}
+
+close $OFILE;
+
+__DATA__
+&lt;?xml version="1.0" encoding="utf-16"?&gt;
+&lt;keys&gt;
+  &lt;!-- One hen --&gt;
+  &lt;key&gt;45646fa8-32e5-494c-93ff-0f00281fc2d6&lt;/key&gt;
+  &lt;!-- Two ducks --&gt;
+  &lt;key&gt;b6bdc46f-3275-4312-bbbd-3e375208d05f&lt;/key&gt;
+  &lt;!-- Three squawking geese --&gt;
+  &lt;key&gt;e5a37cf0-1f69-41a8-899c-23454600894a&lt;/key&gt;
+  &lt;!-- Four limerick oysters --&gt;
+  &lt;key&gt;b6287f3d-f70c-498d-8360-5a2d8e863ab3&lt;/key&gt;
+  &lt;!-- Five corpulent porpoises --&gt;
+  &lt;key&gt;118be380-5e69-47d4-81c6-756c34334936&lt;/key&gt;
+  &lt;!-- Six pair of Don Alverzo's tweezers --&gt;
+  &lt;key&gt;46f9dd5b-d0e9-4f8f-a559-f698bea561fa&lt;/key&gt;
+  &lt;!-- Seven thousand Macedonians in full battle
+  array --&gt;
+  &lt;key&gt;9627058f-29f0-4263-8978-fc77ac2fe0a3&lt;/key&gt;
+  &lt;!-- Eight brass monkeys from the ancient
+  sacred crypts of Egypt --&gt;
+  &lt;key&gt;6038d393-ba81-423e-8429-01406779ff9e&lt;/key&gt;
+  &lt;!-- Nine apathetic, sympathetic, diabetic old
+  men on roller skates, with a marked propensity
+  towards procrastination and sloth --&gt;
+  &lt;key&gt;5a67c3f0-ea6f-427c-bc3a-86fdb31fd117&lt;/key&gt;
+  &lt;!-- Ten lyrical, spherical, diabolical
+  denizens of the deep who stalk about the
+  corners of the cove all at the same time. --&gt;
+  &lt;key&gt;7ac8b1d8-ff60-4b55-8fe0-ea809d9f5b02&lt;/key&gt;
+&lt;/keys&gt;&lt;/code&gt;&lt;/readmore&gt;</doctext>
+<thread id="1198553">
+<node id="1198554"><node id="1198557"><node id="1198561"><node id="1199614"/>
+</node>
+</node>
+</node>
+<node id="1198562"/>
+<node id="1198565"><node id="1199615"/>
+</node>
+</thread></node>

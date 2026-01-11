@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="269035" title="/o is dead, long live qr//!" created="2003-06-25 18:05:56" updated="2005-08-15 13:16:01" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="194920">diotalevi</author>
+<doctext field_name="doctext">&lt;p&gt;The recent discussions about whether or not to use /o and when to use qr// have struck a nerve with me. In fact, I've become so irked with all the poorly justified conclusions that I examined the source in question, traced it with gdb and found out exactly what happens. After reading this document you should understand what happens when you interpolate, use qr//, literals and some other odd things as regular expressions. The purpose to this is so that all the silly "debates" about whether one use of qr// is faster than /o can be put to rest and we can get onto [http://rubberducky.org/cgi-bin/chomsky.pl|other], [http://www.dhs.gov/dhspublic/|sillier] and [http://www.sanrio.com|more important things].&lt;/p&gt;
+&lt;readmore&gt;
+
+&lt;a name="Toc"&gt; &lt;/a&gt;
+&lt;ol&gt;
+  &lt;li&gt;&lt;a href="#RegexpMatching"&gt;Regexp Matching&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href="#RegexpGuts"&gt;Regexp guts&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href="#Examples"&gt;Examples&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href="#Benchmark"&gt;Benchmark&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;a name="RegexpMatching"&gt;&lt;/a&gt;&lt;a href="#Toc"&gt;back&lt;/a&gt;&lt;/p&gt;&lt;h3&gt;Regexp matching&lt;/h3&gt;
+&lt;p&gt;I'm told that /o appeared in perl 4 as a solution so that regular expressions would not need to be repeatedly recompiled when they used variable interpolation. With the advent of perl5 the qr// construct wholely replaces the /o flag. In conversation with [BrowserUK] it occurred to me that /o can be considered like a sort of "Delayed constant expression". So instead of just writing &lt;code&gt;/ ... /&lt;/code&gt; in your source you could write &lt;code&gt;$some_regex = ' ... '; /$some_regex/o&lt;/code&gt; and whatever $some_regex was equal to would become the constant expression. This gives you capability to define your expression elsewhere and re-use it in a matching operation. The key idea here is that because it is a constant, once defined it can never be changed. Ever. (that is, until perl exits and you start a new script)&lt;/p&gt;
+
+&lt;code&gt;$BIG_REGEX = " ... ";
+sub do_something {
+
+    # The expression is "fixed" into place on first use.
+    # !! Its a constant.
+    if ( $sexpert =~ m/$BIG_REGEX/o) {
+        ...
+    }
+}
+
+do_something();  # the expression is compiled and fixed into place
+do_something();  # the compiled expression is directly re-used&lt;/code&gt;
+
+&lt;p&gt;Its worth noting that in perl 5 the expression engine already optimizes by checking to see if the regex has changed from one invocation to the next. So if I wrote &lt;code&gt;$some_regex = ' ... '; do_something while /$some_regex/;&lt;/code&gt; the expression would only be compiled once. The engine tests the previously compiled regex to see if the new string is equal using the `eq' operator. So even without /o, and qr//, perl still avoids recompiling when necessary. You do get the overhead of the string-equality test. Its a small but non-zero price.&lt;/p&gt;
+
+&lt;code&gt;$HUGE_REGEX = " ... ";
+sub do_it {
+
+    # The expression is recompiled whenever $HUGE_REGEX changes
+    if ( $sexpert =~ m/$HUGE_REGEX/) {
+        ...
+    }
+}
+
+do_it(); # the expression is compiled
+do_it(); # the string didn't change so the compiled regex is re-used
+
+$HUGE_REGEX = " !!! ";
+do_it(); # the string changed so the regex is recompiled.
+do_it(); # the new regex re-used.&lt;/code&gt;
+
+&lt;p&gt;The qr// operator (defined in [perldoc://perlop]) allows you to have $HUGE_REGEX be precompiled during the script compilation time (instead of runtime - this might be important for mod_perl users) and potentially greater control over expression changes. By moving to the qr// operator I've just allowed the expression to be changed since now the code will match whatever the current value is. In the previous example if I changed $BIG_REGEX after using it once, the change would not be reflected in the match being tested. I declared the expression using my() so that it couldn't be altered by other code. The replacement code with $qr is alteration-friendly. In general I think that qr// method is the Right Way to solve any problem that might also be handled by /o. Its just more flexible and the intent is easier to deal with. The alternative is code that is easier to break.&lt;/p&gt;
+
+&lt;code&gt;# I need a better way to phrase this. Ideas?
+$BIGGER_REGEX = qr/ ... /; # The contents of qr// are a constant expression so are compiled at compile-time.
+
+sub do_it_again {
+    if ( $sexpert =~ $BIGGER_REGEX ) {
+        ...
+    }
+}
+
+do_it_again(); # the pre-compiled regex is used directly.
+do_it_again(); # ditto
+
+# This qr// was compiled a compile-time. Store a copy in $BIGGER_REGEX. No recompilation
+# occurs now.
+$BIGGER_REGEX = qr/ !!! /; 
+do_it_again(); # Like before, a pre-compiled regex is used directly. Nothing special happens.&lt;/code&gt;
+
+&lt;p&gt;It should be immediately apparent that using /o on a regex with *no* interpolation has zero effect. You could use it on a regex that uses interpolation but then you get delayed runtime effects. In general I'd much prefer all of my compilation to occur at compilation time. As a matter of practice string evals are restricted, this works similarly. If you use qr// expressions then you've shunted the regex compilation and syntax checking off to the normal script compilation time. The alternative is that you discover a syntax error at runtime. Yuck.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href="#Toc" name="RegexpGuts"&gt;back&lt;/a&gt;&lt;/p&gt;&lt;h3&gt;Regexp guts&lt;/h3&gt;
+&lt;p&gt;And now for some of the inside dirt. When you use regular expressions you are typically using one or more of the internal op codes "match"/"subst", "regcomp", "regcreset" and "qr". match and subst are the bare-bones functions underlying m// and s///. The other op codes are in support of them. regcomp is what is responsible for compiling the regex as needed. regcreset indicates whether the expression was interpolated and qr returns a 'Regexp' blessed scalar with a compiled regex in its guts. The key here is to see what triggers when.&lt;/p&gt;
+
+&lt;p&gt;match / substr: Both of these opcodes expect to have been given a compiled regular expression. They execute it and do all the actual work of a =~ s/// or =~ m// match. The operation here is best described by referring back to the manual in [perldoc://perlre] and [perldoc://perlop]. I won't detail what the regexp engine actually does because I don't know that myself!&lt;/p&gt;
+
+&lt;p&gt;regcomp: This is the key operation for most of the controversy here. When given a compiled expression from a qr// object it returns that directly. When given a string and a compiled expression, it checks to see that they are the same. If they are string-equal then it returns the compiled expression. If they are non equal then it invokes the regular expression compiler. This can happen at run-time somewhat like string-eval. All the usual caveats on syntax errors apply here - you won't find out about them until the expression is actually run. Invoking the compiler is an expensive operation and shouldn't be done in time critical sections of code.&lt;/p&gt;&lt;p&gt;Adding the /o flag does a special thing. Once regcomp gets a suitable compiled expression it wires that expression directly into the match / subst operation and then removes itself. So in essense - the perl program re-writes itself to remove the compilation stage on the fly.&lt;/p&gt;
+
+&lt;p&gt;regcreset: This is a dirt cheap operation. It resets the regular expression' notion of whether there was any interpolation at all. This is only used to prevent malicious use of &lt;code&gt;(?{ })&lt;/code&gt; in interpolated expressions. See [cpan://re] 'eval' for more detail on this.&lt;/p&gt;
+
+&lt;p&gt;qr: This takes an already compiled regular expression, constructs a new blessed object and attaches the expression to the object with some magic. This is somewhat equivalent to saying &lt;code&gt;bless \..., 'Regex'&lt;/code&gt;. You'll note that if you didn't use interpolation inside the qr// expression that all the actual regex compilation already happened at script-compilation time. In fact, the rules for when and how a qr// expression is compiled are exactly the same for a m// operation. The idea here is that if you give a qr// compiled expression to a m// or s/// operation then no runtime compilation is required at all.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href="#Toc" name="Examples"&gt;back&lt;/a&gt;&lt;/p&gt;&lt;h3&gt;Examples&lt;/h3&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href="#ConstantExpression1"&gt;Constant Expression 1&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href="#Interpolation1"&gt;Interpolation 1&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href="#ConstantExpression2"&gt;Constant Expression 2&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href="#Interpolation2"&gt;Interpolation 2&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href="#ConcatenatedInterpolation"&gt;Concatenated Interpolation&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href="#PostponedConstantExpressions1"&gt;Postponed Constant Expressions 1&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href="#PostponedConstantExpressions2"&gt;Postponed Constant Expressions 2&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href="#PostponedConstantExpressions3"&gt;Postponed Constant Expressions 3&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;a name="ConstantExpression1"&gt;&lt;/a&gt;&lt;p&gt;&lt;a href="#Examples"&gt;back to Examples&lt;/a&gt;&lt;/p&gt;&lt;h4&gt;Constant Expression 1&lt;/h4&gt;&lt;p&gt;This shows a normal constant expression match. The only operation of interest is match.&lt;/p&gt;&lt;code&gt;$data =~ m/[spectal]{9}/;
+
+# Match against $data
+# match(/"[spectal]{9}"/)&lt;/code&gt;
+
+&lt;a name="Interpolation1"&gt;&lt;/a&gt;&lt;p&gt;&lt;a href="#Examples"&gt;back to Examples&lt;/a&gt;&lt;/p&gt;&lt;h4&gt;Simple Interpolatio 1&lt;/h4&gt;&lt;p&gt;This shows a plain string and then what happens when the string is used to match against $data. No special attempt was made for precompilation or anything. Note that though I wrote the match differently for each case, the same program is generated. regcomp is going to be fully slow because it has to compile the given expression. Once compiled it stores a copy with that match operation. The unfortunate case is that both of these are separate operations so second cannot reuse the compilation of the first.&lt;/p&gt;&lt;code&gt;$re = "[spectal]{9}";
+$data =~ $re;
+# match()
+#    regcomp() # Compile the expression
+#       regcreset
+
+$data =~ m/$re/;
+# match()
+#    regcomp() # Compile the expression
+#       regcreset&lt;/code&gt;
+
+&lt;a name="ConstantExpression2"&gt;&lt;/a&gt;&lt;p&gt;&lt;a href="#Examples"&gt;back to Examples&lt;/a&gt;&lt;/p&gt;&lt;h4&gt;Constant expression 2&lt;/h4&gt;&lt;p&gt;The expression inside qr// was compiled during BEGIN and is merely used in the match. The key difference between this and the previous examples is that regcomp will immediately exit because it was given a qr// precompiled object. So regcomp will be a super fast operation in this case.&lt;/p&gt;&lt;code&gt;$qr = qr/[spectal]{9}/; # This was compiled during BEGIN{} and has no runtime effect.
+
+$data =~ $qr;
+# match()
+#    regcomp() # Re-use the expression
+#       regcreset
+
+$data =~ m/$qr/;
+# match()
+#    regcomp() # Re-use the expression
+#       regcreset&lt;/code&gt;
+
+
+&lt;a name="Interpolation2"&gt;&lt;/a&gt;&lt;p&gt;&lt;a href="#Examples"&gt;back to Examples&lt;/a&gt;&lt;/p&gt;&lt;h4&gt;Interpolation 2&lt;/h4&gt;&lt;p&gt;This shows how qr// can compile an expression at runtime. The later uses of the precomiled qr// object conform to the same rules as described in &lt;a href="#Constant Expression 2"&gt;Constant Expression 2&lt;/a&gt;&lt;/p&gt;&lt;code&gt;$re = '[spectal]{9}';
+$qr = qr/$re/; # Compile the expression
+# qr()
+#   regcomp() # Compile the expression
+#      regcreset 
+
+$data =~ $qr;
+# match()
+#    regcomp() # Re-use the expression
+#       regcreset
+
+$data =~ m/$qr/;
+# match()
+#    regcomp() # Re-use the expression
+#       regcreset&lt;/code&gt;
+
+&lt;a name="ConcatenatedInterpolation"&gt;&lt;/a&gt;&lt;p&gt;&lt;a href="#Examples"&gt;back to Examples&lt;/a&gt;&lt;/p&gt;&lt;h4&gt;Concatenated Interpolation&lt;/h4&gt;&lt;p&gt;In this case I show that just because some portions of an expression were precompiled, those fragments are not reused and for recompilation purposes, the entire expression is examined. So either the entire thing is precompiled or not. The first example has only two fragments both of which are precompiled but this is not different than no precompilation.&lt;/p&gt;&lt;code&gt;$qr_a = qr/\w/; # Pre-compiled during BEGIN {}
+$qr_b = qr/\d/; # Pre-compiled during BEGIN {}
+
+# Stringify both $qr_a and $qr_b then compile new regex. The previous pre-compilation is not used
+$data =~ m/$qr_a$qr_b/;
+# match()
+#    regcomp() # Compile the expression
+#       regcreset
+
+$re_a = "\\w";
+$re_b = "\\d";
+$data =~ m/$re_a$re_b/;
+# match()
+#    regcomp() # Compile the expression
+#       regcreset&lt;/code&gt;
+
+&lt;a name="PostponedConstantExpressions1"&gt;&lt;/a&gt;&lt;p&gt;&lt;a href="#Examples"&gt;back to Examples&lt;/a&gt;&lt;/p&gt;&lt;h4&gt;Postponed Constant Expressions 1&lt;/h4&gt;&lt;p&gt;This example is like &lt;a href="#Interpolation 1"&gt;Interpolation 1&lt;/a&gt; except that with the /o flag the regcomp() flag is removed from the program after execution. I think regcreset remains.&lt;/p&gt;&lt;code&gt;$re = '[spectal]{9}';
+$data =~ m/$re/o;
+# match()
+#    regcomp() # Compile the expression and remove this step
+#       regcreset&lt;/code&gt;
+
+&lt;a name="PostponedConstantExpressions2"&gt;&lt;/a&gt;&lt;p&gt;&lt;a href="#Examples"&gt;back to Examples&lt;/a&gt;&lt;/p&gt;&lt;h4&gt;Simple interpolation -&gt; Literal 2&lt;/h4&gt;&lt;p&gt;This example mirrors &lt;a href="#Interpolation 2"&gt;Interpolation 2&lt;/a&gt; except that the regcomp operation is removed from the qr// line.&lt;/p&gt;&lt;code&gt;$re = '[spectal]{9}';
+$qr = qr/$re/o;
+# qr()
+#   regcomp() # Compile the expression and remove this step
+#      regcreset 
+
+$data =~ m/$re/;
+# qr()
+#   regcomp() # Re-use the expression
+#      regcreset &lt;/code&gt;
+
+&lt;a name="PostponedConstantExpressions3"&gt;&lt;/a&gt;&lt;p&gt;&lt;a href="#Examples"&gt;back to Examples&lt;/a&gt;&lt;/p&gt;&lt;h4&gt;Simple interpolation -&gt; Literal 3&lt;/h4&gt;&lt;p&gt;Stepping off from where &lt;a href="#Postponed Constant Expressions 2"&gt;the preceding example&lt;/a&gt; this goes one step further and removes the already really fast regcomp step from the match operation&lt;/p&gt;&lt;code&gt;$qr = ...
+$data =~ m/$qr/o;
+# match()
+#    regcomp() # Associate the precompiled expression and remove this step
+#       regcreset&lt;/code&gt;
+
+&lt;p&gt;&lt;a href="#Toc" name="Benchmark"&gt;back&lt;/a&gt;&lt;/p&gt;&lt;h3&gt;Benchmark&lt;/h3&gt;
+&lt;p&gt;There's a [BrowserUK|certain monk] who I don't think would let me get away with writing this without some benchmarking information so here you go.&lt;/p&gt;
+
+&lt;code&gt;# This is a convenient source of data to match against. (Plato's _The_Republic_)
+$data = q[I WENT down yesterday to the Piraeus with Glaucon the son of Ariston,
+          that I might offer up my prayers to the goddess; and also because I
+          wanted to see in what manner they would celebrate the festival,
+          which was a new thing.  I was delighted with the procession
+          of the inhabitants; but that of the Thracians was equally,
+          if not more, beautiful.  When we had finished our prayers and
+          viewed the spectacle, we turned in the direction of the city;
+          and at that instant Polemarchus the son of Cephalus chanced
+          to catch sight of us from a distance as we were starting on our
+          way home, and told his servant to run and bid us wait for him.
+          The servant took hold of me by the cloak behind, and said:
+          Polemarchus desires you to wait.];
+
+# Both of these constructs produce the same structure. Any benchmarking
+# differences between these should be attributed to system noise. qr() merely
+# copies the already-compiled expression into the target. Perl has already compiled
+# the regular expression during the initial parsing so this qr[] can be reused
+# and is a very fast assignment.
+
+sub qr_0_a { $qr = qr[[spectal]{9}];  1 }
+sub qr_0_b { $qr = qr[[spectal]{9}]o; 1 }
+cmpthese( 0, { qr_0_a =&gt; \&amp;qr_0_a, qr_0_b =&gt; \&amp;qr_0_b } );
+
+# Benchmark: running qr_0_a, qr_0_b, each for at least 3 CPU seconds...
+#       qr_0_a:  4 wallclock secs ( 3.11 usr +  0.00 sys =  3.11 CPU) @ 14585.21/s (n=45360)
+#       qr_0_b:  4 wallclock secs ( 3.10 usr +  0.00 sys =  3.10 CPU) @ 14631.94/s (n=45359)
+#         Rate qr_0_a qr_0_b
+# qr_0_a 14585/s   --  -0%
+# qr_0_b 14632/s   0%   --
+
+# This demonstrates that in both cases it is a simple assignment. *No* compilation
+# occurs and the /o flag is completely useless here.
+
+sub qr_1_a { $qr = qr[[spectal]{9}];  $data =~ $qr; 1 }
+sub qr_1_b { $qr = qr[[spectal]{9}]o; $data =~ $qr; 1 }
+cmpthese( 0, { qr_1_a =&gt; \&amp;qr_1_a, qr_1_b =&gt; \&amp;qr_1_b } );
+
+# Benchmark: running qr_1_a, qr_1_b, each for at least 3 CPU seconds...
+#     qr_1_a:  3 wallclock secs ( 3.20 usr +  0.00 sys =  3.20 CPU) @ 2692.50/s (n=8616
+#     qr_1_b:  4 wallclock secs ( 3.21 usr +  0.00 sys =  3.21 CPU) @ 2684.11/s (n=8616
+#          Rate qr_1_b qr_1_a
+# qr_1_b 2684/s     --    -0%
+# qr_1_a 2692/s     0%     --
+
+# Again, no difference that is not attributable to system noise.
+
+sub qr_1_c { $qr = qr[[spectal]{9}];  $data =~ m/$qr/o; 1 }
+sub qr_1_d { $qr = qr[[spectal]{9}]o; $data =~ m/$qr/o; 1 }
+cmpthese( 0, { qr_1_a =&gt; \&amp;qr_1_a,
+               qr_1_b =&gt; \&amp;qr_1_b,
+               qr_1_c =&gt; \&amp;qr_1_c,
+               qr_1_d =&gt; \&amp;qr_1_d } );
+
+# Benchmark: running qr_1_a, qr_1_b, qr_1_c, qr_1_d, each for at least 3 CPU seconds...
+#     qr_1_a:  3 wallclock secs ( 3.12 usr +  0.00 sys =  3.12 CPU) @ 2702.56/s (n=8432)
+#     qr_1_b:  2 wallclock secs ( 3.13 usr +  0.00 sys =  3.13 CPU) @ 2693.93/s (n=8432)
+#     qr_1_c:  5 wallclock secs ( 3.21 usr +  0.00 sys =  3.21 CPU) @ 2747.35/s (n=8819)
+#     qr_1_d:  2 wallclock secs ( 3.21 usr +  0.00 sys =  3.21 CPU) @ 2744.55/s (n=8810)
+#          Rate qr_1_b qr_1_a qr_1_d qr_1_c
+# qr_1_b 2694/s     --    -0%    -2%    -2%
+# qr_1_a 2703/s     0%     --    -2%    -2%
+# qr_1_d 2745/s     2%     2%     --    -0%
+# qr_1_c 2747/s     2%     2%     0%     --
+
+# This shows the very slight difference between c/d and a/b. In a/b
+# the regcomp on the match() is a very fast operation. In c/d every match()
+# except the first has no regcomp() operation.
+
+
+# Appending /o on a qr// expression has the same effect as on a m//
+# expression. In the following code the qr// expression only compiles once
+# and all repetitions after the first go-round merely copy the Regex object.
+# So the effect is only relevant if you are interpolating something into your
+# regular expression. As always, compilation only occurs the first time and then
+# /o prevents the compilation from occuring again. Without /o the expression would
+# be properly recompiled each time 'round. The difference is between having $qro
+# reflect the currently interpolated $_ variable and having it permenantly fixed as
+# '9' which is the first value to be used. I don't know of any circumstance when this
+# is the required behaviour so I'd categorize any use of /o with qr// as a bug.
+
+# Count backwards from 9
+for(qw( 9 8 7 6 5 4 3 2 1 0 )) {
+    $qro = qr[[spectal]{$_}]o;
+}
+if ($qro ne "(?-xism:[spectal]{9})") {
+    die;
+}
+
+# $qro is equal to (?-xism:[spectal]{9,9}) which demonstrates that the
+# compilation step was removed after its one-time-only execution.
+
+
+
+# All three of these "variations" produce the same data and follow the same
+# execution path. Any speed differences should be attributed to system noise
+# as in a very real sense - they are 100% identical. Since $qr and $qro contain
+# precompiled regular expressions is is *nearly* as efficient as a plain match like
+# $data =~ /[spectal]{9}/. The overhead is the regcreset() and regcomp() operations.
+# Since $qr and $qro already contain compiled regular expressions regcomp() skips
+# all the compilation and returns very quickly. This is a low-overhead operation.
+
+$qr  = qr[[spectal]{9}];
+$qro = qr[[spectal]{9}]o;
+
+sub qr_2_a { $data =~ $qr    }
+sub qr_2_b { $data =~ $qro   }
+sub qr_2_c { $data =~ /$qr/  }
+sub qr_2_d { $data =~ /$qro/ }
+cmpthese( 0, { qr_2_a =&gt; \&amp;qr_2_a,
+               qr_2_b =&gt; \&amp;qr_2_b,
+               qr_2_c =&gt; \&amp;qr_2_c,
+               qr_2_d =&gt; \&amp;qr_2_d } );
+
+# Benchmark: running qr_2_a, qr_2_b, qr_2_c, qr_2_d, each for at least 3 CPU seconds...
+#     qr_2_a:  4 wallclock secs ( 3.17 usr +  0.00 sys =  3.17 CPU) @ 3850.47/s (n=12206)
+#     qr_2_b:  2 wallclock secs ( 3.07 usr +  0.00 sys =  3.07 CPU) @ 3812.70/s (n=11705)
+#     qr_2_c:  3 wallclock secs ( 3.15 usr +  0.00 sys =  3.15 CPU) @ 3836.51/s (n=12085)
+#     qr_2_d:  3 wallclock secs ( 3.17 usr +  0.00 sys =  3.17 CPU) @ 3812.30/s (n=12085)
+#          Rate qr_2_d qr_2_b qr_2_c qr_2_a
+# qr_2_d 3812/s     --    -0%    -1%    -1%
+# qr_2_b 3813/s     0%     --    -1%    -1%
+# qr_2_c 3837/s     1%     1%     --    -0%
+# qr_2_a 3850/s     1%     1%     0%     --
+
+# A small difference but its just system noise. There is no actual difference here.
+
+# All of these "variations" produce the same data and follow the same
+# execution path. Any speed differences should be attributed to system noise
+# as in a very real sense - they are 100% identical. Since $qr and $qro contain
+# precompiled regular expressions is is *nearly* as efficient as a plain match like
+# $data =~ /[spectal]{9}/. The overhead is the regcreset() and regcomp() operations.
+# Since $qr and $qro already contain compiled regular expressions regcomp() skips
+# all the compilation and returns very quickly. This is a low-overhead operation.
+
+sub qr_2_e { $data =~ /$qr/o }
+sub qr_2_f { $data =~ /$qro/o }
+cmpthese( 0, { qr_2_a =&gt; \&amp;qr_2_a,
+               qr_2_b =&gt; \&amp;qr_2_b,
+               qr_2_c =&gt; \&amp;qr_2_c,
+               qr_2_d =&gt; \&amp;qr_2_d,
+               qr_2_e =&gt; \&amp;qr_2_e,
+               qr_2_f =&gt; \&amp;qr_2_f } );
+
+# Benchmark: running qr_2_a, qr_2_b, qr_2_c, qr_2_d, qr_2_e, qr_2_f, each for at least 3 CPU seconds...
+#     qr_2_a:  4 wallclock secs ( 3.26 usr +  0.00 sys =  3.26 CPU) @ 3864.72/s (n=12599)
+#     qr_2_b:  5 wallclock secs ( 3.05 usr +  0.00 sys =  3.05 CPU) @ 3880.33/s (n=11835)
+#     qr_2_c:  3 wallclock secs ( 3.11 usr +  0.00 sys =  3.11 CPU) @ 3858.52/s (n=12000)
+#     qr_2_d:  3 wallclock secs ( 3.11 usr +  0.00 sys =  3.11 CPU) @ 3858.52/s (n=12000)
+#     qr_2_e:  4 wallclock secs ( 3.09 usr +  0.00 sys =  3.09 CPU) @ 3950.16/s (n=12206)
+#     qr_2_f:  5 wallclock secs ( 3.09 usr +  0.00 sys =  3.09 CPU) @ 3911.00/s (n=12085)
+#          Rate qr_2_d qr_2_c qr_2_a qr_2_b qr_2_f qr_2_e
+# qr_2_d 3859/s     --    -0%    -0%    -1%    -1%    -2%
+# qr_2_c 3859/s     0%     --    -0%    -1%    -1%    -2%
+# qr_2_a 3865/s     0%     0%     --    -0%    -1%    -2%
+# qr_2_b 3880/s     1%     1%     0%     --    -1%    -2%
+# qr_2_f 3911/s     1%     1%     1%     1%     --    -1%
+# qr_2_e 3950/s     2%     2%     2%     2%     1%     --
+
+# e/f are in reality ever so slightly faster than a/b/c/d which are all equivalent.
+# This just shows that the speed gain is small enough to disappear right into
+# system noise.
+
+# If the /o flag is added onto /$qr/ then that expression becomes forever bound to
+# whatever value $qr contained at the time it was first executed. It turns out that /o
+# works by having the regcomp() operation remove itself from the executing program.&lt;/code&gt;</doctext>
+<thread id="269035">
+<node id="269055"><node id="269056"/>
+<node id="269061"><node id="269067"><node id="269073"><node id="269076"/>
+<node id="269097"/>
+</node>
+</node>
+</node>
+</node>
+<node id="269068"/>
+<node id="269204"><node id="269206"/>
+</node>
+</thread></node>

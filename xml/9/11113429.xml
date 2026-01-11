@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11113429" title="Behaviour of parsed XML" created="2020-02-26 06:08:02" updated="2020-02-26 06:08:02" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="612746">dalgetty</author>
+<doctext field_name="doctext">&lt;p&gt;Dear Brethren,&lt;/p&gt;
+
+&lt;p&gt;I know that Perl is not inconsistent, so it must be me.&lt;/p&gt; 
+
+&lt;p&gt;For years I have been using XML::Simple to parse several RSS feeds, and have 1500 lines of code running nicely, except for the rare occasion when there is only one item in the RSS feed.&lt;/p&gt;
+
+&lt;p&gt;In this case the script fails, because $data-&gt;{channel}-&gt;{item}-&gt;[0] does not exist. Since there is only one entry, XML::Simple does not create {item}-&gt;[0], but puts the hash table straight into $data-&gt;{channel}. &lt;/p&gt;
+
+So I adjust the hash table as follows, and I can access the information I need:
+
+&lt;code&gt;
+$mydata=$data-&gt;{channel}-&gt;{item};
+my $data-&gt;{channel}-&gt;{item}-&gt;[0]=$mydata;
+if ($data-&gt;{channel}-&gt;{item}-&gt;[$y]) {
+ while (($data-&gt;{channel}-&gt;{item}-&gt;[$y])&amp;&amp;($y&gt;-1)) {
+  $keyword=$data-&gt;{channel}-&gt;{item}-&gt;[$y]-&gt;{epfl_keywords};
+  ...
+&lt;/code&gt;
+
+The data is then correctly constructed:
+&lt;code&gt;
+$VAR1 = { 'channel' =&gt; { 'item' =&gt; [ { 'epfl_is_internal' =&gt; 'False', 'link' =&gt; 'http://memento.epfl.ch/event/an-account-of-the-world-s-first-cubesat/', 'epfl_organizer' =&gt; 'eSpace ', 'pubDate' =&gt; 'Mon, 16 Mar 2020 14:00:00 +0100', 'description' =&gt; "Incl
+...
+&lt;/code&gt;
+
+However, this code needs to run when there are several items in the RSS feed too, so I only want to apply the above operation in cases of one item. In order to test for this I use the following code:
+
+&lt;code&gt;
+if (exists($data-&gt;{channel}-&gt;{title})) {
+ $mydata=$data-&gt;{channel}-&gt;{item};
+ my $data-&gt;{channel}-&gt;{item}-&gt;[0]=$mydata;
+ print "Only one item is present"; 
+}
+if ($data-&gt;{channel}-&gt;{item}-&gt;[$y]) {
+ while (($data-&gt;{channel}-&gt;{item}-&gt;[$y])&amp;&amp;($y&gt;-1)) {
+  $keyword=$data-&gt;{channel}-&gt;{item}-&gt;[$y]-&gt;{epfl_keywords};
+  ...
+&lt;/code&gt;
+
+&lt;p&gt;"title" is one of many keys that always exists in the RSS feed entries. If it exists directly within "channel" that means that there is only one RSS entry in the feed, and the message prints out "Only one item is present". So far, so good.&lt;/p&gt;
+
+&lt;p&gt;However, I then get an error: "Not an ARRAY reference" for the second "if" statement in line 6, as if the restructuring had not happened.&lt;/p&gt;
+
+&lt;p&gt;This seemed strange to me, since the single entry case had clearly been identified correctly. So I tried the following:&lt;/p&gt;
+
+&lt;code&gt;
+if (1) {
+ $mydata=$data-&gt;{channel}-&gt;{item};
+ my $data-&gt;{channel}-&gt;{item}-&gt;[0]=$mydata;
+}
+if ($data-&gt;{channel}-&gt;{item}-&gt;[$y]) {
+ while (($data-&gt;{channel}-&gt;{item}-&gt;[$y])&amp;&amp;($y&gt;-1)) {
+  $keyword=$data-&gt;{channel}-&gt;{item}-&gt;[$y]-&gt;{epfl_keywords};
+  ...
+&lt;/code&gt;
+
+&lt;p&gt;I fully expected this code to run smoothly, like the first attempt did. Of course, I would never have attempted to make Perl look inconsistent. But I get the "not an array" error again.&lt;/p&gt;
+
+&lt;p&gt; All I am doing is testing for something, not changing anything. But just making an if(1) statement is enough to stop my code working correctly. What is even more confusing is that a Dumper print of the data shows that the data is correctly structured, as in the first statement, whether I apply the if statement or not.&lt;/p&gt;
+
+&lt;p&gt;Can any of you please tell me where my inconsistency lies? Thanks to all&lt;/p&gt;</doctext>
+<thread id="11113429">
+<node id="11113430"/>
+<node id="11113431"><node id="11113435"/>
+<node id="11113436"><node id="11113438"/>
+</node>
+<node id="11113437"/>
+</node>
+<node id="11113439"><node id="11113446"><node id="11113451"><node id="11113541"><node id="11113542"/>
+<node id="11113553"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

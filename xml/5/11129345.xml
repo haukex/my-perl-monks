@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129345" title="Re^7: How to parse not closed HTML tags that don't have any attributes?" created="2021-03-08 11:06:26" updated="2021-03-08 11:06:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;In your code, this is a hash, which gets returned from the subroutine as a pointer to a hash. If I understand correctly, inside the hash are three hashes ("Address", "Company" and "Phone").&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, that's correct, though in Perl we call them "references" instead of "pointers" (one of the differences being they're automatically memory-managed and garbage collected, with the exception of circular references). The full technical description is that &lt;c&gt;sub get_data&lt;/c&gt; returns a reference to the hash &lt;c&gt;%data&lt;/c&gt;, a hash that is newly allocated for each call to the &lt;c&gt;sub&lt;/c&gt;, and whose values are references to other anonymous hashes. This is also called a "hash of hashes" or HoH, though the data structures can get arbitrarily complex.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;learn about arrays, hashes, nested hashes, references to hashes etc.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Further reading: [doc://perldata], the [doc://perldsc|Perl Data Structures Cookbook (perldsc)] and [doc://perlreftut].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Wouldn't it be much quicker to throw data inside the subroutine not into a hash of hashes, but directly into a single, not deep array instead, and return a reference to that array?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sure, that would certainly be an option. Personally I just like retaining as much information from the original data as possible, this usually allows for much easier future enhancements. For example, keeping the structure means you could easily also dump the data to JSON.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;figure out a way to get Text::CSV running, by "unwrapping" the reference to a hash of hashes, getting a reference for each of the three included hashes, turning every of these hashes into an array, combining the arrays into one array, getting a reference to this array, and then calling Text::CSV with this reference.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;One option of several to make the dereferencing a little easier might be [mod://Data::Diver].&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Diver qw/Dive/;
+use Text::CSV;
+
+my @data = ( {
+		Company =&gt; { companyname =&gt; "Randomcompany" },
+		Address =&gt; { city =&gt; "Randomcity",
+			street_and_nr =&gt; "SampleStreet 123", zip =&gt; "45678" },
+		Phone =&gt; { Telephone =&gt; "0123-4 56 78 90" },
+	}, {
+		Company =&gt; { companyname =&gt; "Other Company" },
+		Address =&gt; { address =&gt; "Someplace 42\n12345 City" },
+		Phone =&gt; { Telefax =&gt; "333", Telephone =&gt; "+1 234 567 8900" },
+	} );
+
+my $csv = Text::CSV-&gt;new({binary=&gt;1, auto_diag=&gt;2, eol=&gt;$/ });
+$csv-&gt;print(select, ['Company','Address','Phone','Fax']);
+for my $rec (@data) {
+	my $addr = Dive($rec, 'Address', 'address')
+		|| Dive($rec, 'Address', 'street_and_nr')
+			."\n".Dive($rec, 'Address', 'zip')
+			." ".Dive($rec, 'Address', 'city');
+	$addr =~ s/\n/, /g;
+	my @cols = (
+		scalar Dive($rec, 'Company', 'companyname'),
+		$addr,
+		scalar Dive($rec, 'Phone', 'Telephone'),
+		scalar Dive($rec, 'Phone', 'Telefax'),
+	);
+	$csv-&gt;print(select, \@cols);
+}
+
+__END__
+
+Company,Address,Phone,Fax
+Randomcompany,"SampleStreet 123, 45678 Randomcity","0123-4 56 78 90",
+"Other Company","Someplace 42, 12345 City","+1 234 567 8900",333
+&lt;/c&gt;
+&lt;p&gt;Note the reason I use [doc://scalar] is because &lt;c&gt;Dive&lt;/c&gt; is documented to return an empty list if it doesn't find anything, and the empty list interpolated into an array means that the following elements of the array would shift down accordingly. &lt;c&gt;scalar&lt;/c&gt; forces a single return value, e.g. &lt;c&gt;undef&lt;/c&gt;, so that this doesn't happen. It's not needed for &lt;c&gt;$addr&lt;/c&gt; because that's already a scalar variable.&lt;/p&gt;
+&lt;p&gt;In &lt;c&gt;$csv-&gt;print(select, \@cols)&lt;/c&gt;, [doc://select] gets the current default output handle, usually &lt;c&gt;STDOUT&lt;/c&gt;, but you could just as well pass a filehandle here to write to an output file (see [id://11102684]).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11129207</root_node>
+<parent_node field_name="parent_node">11129335</parent_node>
+<thread id="11129207">
+<node id="11129209"/>
+<node id="11129210"><node id="11129269"><node id="11129273"><node id="11129285"><node id="11129287"><node id="11129335"><node id="11129345"><node id="11129373"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11129328"><node id="11129340"/>
+</node>
+</node>
+<node id="11129211"/>
+<node id="11129215"/>
+<node id="11129218"><node id="11129241"/>
+</node>
+<node id="11129220"><node id="11129221"/>
+<node id="11129242"/>
+</node>
+<node id="11129230"/>
+</thread></node>

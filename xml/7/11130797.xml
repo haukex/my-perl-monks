@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11130797" title="Re: PadWalker's closed_over - but for our variables?" created="2021-04-04 04:55:53" updated="2021-04-04 04:55:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I looked at the current [https://github.com/Perl/perl5/blob/8fa44a4/lib/B/Deparse.pm#L1839|source] of [doc://B::Deparse], and so far I've found two functions that are responsible for looking up variables. Hooking into these is a hackish way to get the variable names &lt;c&gt;:-)&lt;/c&gt; There may be more things that need to be hooked (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; and the final example shows it's not perfect), but perhaps this is a starting point:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use B::Deparse;
+use Data::Dump;
+use Hook::LexWrap;
+
+my $deparse = B::Deparse-&gt;new();
+$deparse-&gt;ambient_pragmas(strict=&gt;'all', warnings=&gt;'all');
+
+wrap 'B::Deparse::stash_variable', post =&gt; sub {
+		my $rv = pop @_;
+		my ($self, $prefix, $name, $cx) = @_;
+		dd 'stash_variable', $prefix, $name, $rv;
+	};
+wrap 'B::Deparse::stash_variable_name', post =&gt; sub {
+		my $rv = pop @_;
+		my ($self, $prefix, $gv) = @_;
+		dd 'stash_variable_name', $prefix, $rv;
+	};
+
+our $foo = "World";
+my $bar = "Hello";
+our @foo = 1..3;
+my @bar = 4..5;
+our %foo = ( abc =&gt; 444 );
+my %bar = ( def =&gt; 222 );
+our $ref = { xyz =&gt; 123 };
+$deparse-&gt;coderef2text(sub {
+		print "$bar, $foo\n";
+		print "@foo @bar\n";
+		print "$foo[1] $bar[1]\n";
+		my %dummy = %foo = %bar;
+		print "$foo{abc} $bar{def}\n";
+		print $ref-&gt;{xyz};
+	});
+
+__END__
+
+("stash_variable", "\$", "foo", ["\$foo"])
+("stash_variable", "\@", "foo", ["\@foo"])
+("stash_variable_name", "\@", ["foo", 0])
+("stash_variable", "%", "foo", "%foo")
+("stash_variable_name", "%", ["foo", 0])
+("stash_variable_name", "%", ["main::ref", 0])
+&lt;/c&gt;
+&lt;p&gt;I showed an example of [mod://PadWalker] [id://11117703|here].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11130774</root_node>
+<parent_node field_name="parent_node">11130774</parent_node>
+<thread id="11130774">
+<node id="11130777"><node id="11130778"><node id="11130779"><node id="11130780"><node id="11130781"><node id="11130782"/>
+</node>
+</node>
+<node id="11130794"><node id="11130846"><node id="11130866"><node id="11130867"><node id="11130868"><node id="11130869"/>
+<node id="11130870"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11130797"><node id="11130798"/>
+</node>
+<node id="11130834"><node id="11130835"><node id="11130838"><node id="11130842"/>
+</node>
+</node>
+</node>
+</thread></node>

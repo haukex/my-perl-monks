@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1121710" title="Can I ask Perl if an object will stringify?" created="2015-03-29 13:16:21" updated="2015-03-29 13:16:21" _doctext_mode="strict"><type id="115">perlquestion</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;
+Hello everyone,
+&lt;/p&gt;
+&lt;p&gt;
+I seek your wisdom on this question:
+Is there a way to ask Perl whether an object supports stringification,
+including via "magic autogeneration"?
+The only way I've found so far was by trying to eval the stringification,
+like in the code below.
+The specific case here is the "ICanStringify" class,
+where &lt;code&gt;overload::Method($s,'""')&lt;/code&gt; is false, but the object still stringifies.
+Did I miss some function somewhere that can tell me whether that class will stringify?
+&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+{   package OnlyAString;
+    use overload fallback=&gt;0, '""'=&gt;sub { ${shift()} }
+}
+{   package ICanStringify;
+    use overload fallback=&gt;undef, '0+'=&gt;sub { ${shift()} }
+}
+{   package OnlyANumber;
+    use overload fallback=&gt;0, '0+'=&gt;sub { ${shift()} }
+}
+
+bless my $s1=\do {my $x=111}, 'OnlyAString';
+bless my $s2=\do {my $x=222}, 'ICanStringify';
+bless my $s3=\do {my $x=333}, 'OnlyANumber';
+can_str($s1);
+can_str($s2);
+can_str($s3);
+
+use overload ();
+sub can_str {
+    my $s = shift;
+    print "Object ", overload::StrVal($s), ":\n";
+    print "    \"\" ", overload::Method($s,'""')
+        ?"IS":"is NOT", " overloaded\n";
+    my $e = eval { "$s" };
+    print "    stringification ", defined($e)
+        ?"WORKED: $e\n":"DIDN'T work: $@\n";
+}
+
+&lt;/code&gt;
+&lt;p&gt;
+Output:
+&lt;/p&gt;
+&lt;code&gt;
+Object OnlyAString=SCALAR(0x3684370):
+    "" IS overloaded
+    stringification WORKED: 111
+Object ICanStringify=SCALAR(0x3664210):
+    "" is NOT overloaded
+    stringification WORKED: 222
+Object OnlyANumber=SCALAR(0x3679682):
+    "" is NOT overloaded
+    stringification DIDN'T work: Operation """": no method found, argument in overloaded package OnlyANumber at test.pl line 28.
+&lt;/code&gt;
+&lt;p&gt;
+The background is that I have a function that accepts only strings.
+Because passing a reference was a mistake I made a few times, I started
+warning if any references were passed to it, including objects.
+But then I realized that some objects stringify and that's useful,
+and that some objects die when you try to stringify them.
+I'd like to loosen the restrictions, and still warn on references
+and objects that don't stringify, but not on objects that stringify.
+&lt;/p&gt;
+&lt;p&gt;
+Any wisdom on this topic would be greatly appreciated!
+&lt;/p&gt;
+</doctext>
+<thread id="1121710">
+<node id="1121712"><node id="1127668"/>
+</node>
+<node id="1121733"><node id="1127669"/>
+</node>
+<node id="1121735"><node id="1127670"/>
+</node>
+<node id="1121736"><node id="1121902"><node id="1121976"/>
+</node>
+<node id="1121911"/>
+<node id="1122107"><node id="1122112"><node id="1122157"><node id="1122159"/>
+</node>
+<node id="1122197"/>
+</node>
+</node>
+<node id="1127671"/>
+</node>
+<node id="1122099"><node id="1122116"/>
+<node id="1127673"/>
+</node>
+<node id="1127667"/>
+</thread></node>

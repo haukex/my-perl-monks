@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11148386" title="Re^7: getting rid of UTF-8" created="2022-11-25 10:08:48" updated="2022-11-25 10:08:48" _doctext_mode="lenient"><type id="11">note</type>
+<author id="648867">BernieC</author>
+<doctext field_name="doctext">I must be doing something stupid.  Here's my little test program:
+&lt;code&gt;
+#!/usr/bin/perl
+
+use v5.10 ;
+use strict;
+use warnings ;
+
+my $BOM  = "\xef\xbb\xbf" ;
+
+die "no args\n" unless @ARGV == 2 ;
+open (my $i, "&lt;", $ARGV[0]) or die "Can't open $ARGV[0]\n" ;
+open (my $o, "&gt;", $ARGV[1]) or die "Can't write to $ARGV[1]\n" ;
+say "marker is" ;
+printhex ($BOM) ;
+say "" ;
+while (my $line = &lt;$i&gt;)
+{   my $newline = $line ;
+    printhex ($newline) ;
+    $newline =~ s/$BOM//g; 
+    die "didn't change" if $newline eq $line ;
+    print $o $newline ; 
+}
+close $i ;
+close $o ;
+exit ;
+
+sub printhex
+{   my $str = $_[0] ;
+    for my $chr (split(//,$str))
+    {   printf("%x ", ord($chr)) ; }
+}
+&lt;/code&gt;
+and when I run it on one of teh BOM'ed files I get:
+&lt;code&gt;
+marker is
+ef bb bf
+didn't change at D:\Desktop\striputf.pl line 19, &lt;$i&gt; line 3.
+ef bb bf 49 6d 70 6f 72 74 61 6e 63 65 2c 46 69 72 73 74 20 4e 61 6d 65 2c 4d 69 64 64 6c 65 20 4e 61 6d 65 2c 4c 61 73 74 20 4e 61 6d 65 2c 46 75 6c 6c 20 4e 61 6d 65 2c 43 6f 6d 70 61 6e 79 2c 44 65 70 61 72 74 6d 65 6e 74 2c 4a 6f 62 20 54 69 74 6c 65 2c 53 74 72 65 65 74 20 28 62 2e 29 2c 43 69 74 79 20 28 62 2e 29 2c 53 74 61 74 65 20 28 62 2e 29 2c 5a 49 50 20 43 6f 64 65 20 28 62 2e 29 2c 43 6f 75 6e 74 72 79 2f 52 65 67 69 6f 6e 20 28 62 2e 29 2c 48 6f 6d 65 20 50 68 6f 6e 65 2c 42 75 73 69 6e 65 73 73 20 50 68 6f 6e 65 2c 4d 6f 62 69 6c 65 20 50 68 6f 6e 65 2c 42 75 73 69 6e 65 73 73 20 50 68 6f 6e 65 20 32 2c 42 75 73 69 6e 65 73 73 20 50 68 6f 6e 65 20 33 2c 42 75 73 69 6e 65 73 73 20 50 68 6f 6e 65 20 34 2c 42 75 73 69 6e 65 73 73 20 46 61 78 2c 42 75 73 69 6e 65 73 73 20 57 65 62 20 50 61 67 65 2c 53 74 72 65 65 74 20 28 68 2e 29 2c 43 69 74 79 20 28 68 2e 29 2c 53 74 61 74 65 20 28 68 2e 29 2c 5a 49 50 20 43 6f 64 65 20 28 68 2e 29 .....
+&lt;/code&gt;
+
+What am I getting wrong/missing?</doctext>
+<root_node field_name="root_node">11148358</root_node>
+<parent_node field_name="parent_node">11148376</parent_node>
+<thread id="11148358">
+<node id="11148361"><node id="11148363"><node id="11148364"><node id="11148368"><node id="11148369"><node id="11148376"><node id="11148386"><node id="11148391"><node id="11148393"/>
+</node>
+<node id="11148392"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11148373"/>
+<node id="11148382"/>
+<node id="11148383"><node id="11148394"><node id="11148407"/>
+</node>
+</node>
+</thread></node>

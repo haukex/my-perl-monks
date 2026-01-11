@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117011" title="Re^2: polishing up a json fetching script for weather data" created="2020-05-21 02:43:24" updated="2020-05-21 02:43:24" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;i&gt;WRT Q2, it's not perl but jq is really handy for pretty printing and manipulating JSON data from the command line. Basically you can think of it like awk but for files where the lines are JSON data rather than unstructured text. You can use curl to pull down a sample file, then interactively pick it apart with jq to figure out what bits you're interested in, and then automate whatever in perl.&lt;/i&gt;
+
+&lt;p&gt;Thanks for this tip, [Fletch], it has really helped me pick apart these things. I folded them into system calls in a script where I built on what worked before:&lt;/p&gt;
+&lt;c&gt;#!/usr/bin/perl 
+
+use strict;
+use warnings;
+use open ':std', OUT =&gt; ':utf8';
+
+#my $file = '1.weather.json';
+#system ("cat $file | jq '[.properties]' | more");
+#system ("cat $file | jq '[.properties.cloudLayers]' &gt;2.txt");
+#system ("cat $file | jq '[.properties.temperature]' &gt;3.txt");
+# these were effective commands
+
+##different json, same host
+my $file = 'json_stuff/1.openapi.json';
+#system ("cat $file | jq '[.]' &gt;5.txt");
+#system ("cat $file | jq '[.paths]' &gt;6.txt");
+system ("cat $file | jq '[.paths.get]' &gt;7.txt");
+                                      
+__END__
+
+&lt;/c&gt;
+
+&lt;i&gt;Additionally: For the warnings, the best way to get rid of them is to not trigger them. Check that you're actually getting values where you expect them before using things (alternately you could still be careless but mute them with no warnings 'undefined' in the smallest possible scope). That being said, they should be going to STDERR so if you use whatever your shell's syntax for that (e.g. myscript blah blah 2&gt;errors).&lt;/i&gt;
+&lt;p&gt;That's the ticket.&lt;/p&gt;
+&lt;c&gt;$ ./6.weather.pl 2&gt;errors
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11116726</root_node>
+<parent_node field_name="parent_node">11116730</parent_node>
+<thread id="11116726">
+<node id="11116727"><node id="11116735"/>
+</node>
+<node id="11116730"><node id="11117011"><node id="11117097"><node id="11117148"><node id="11117149"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11116731"><node id="11117147"><node id="11117194"><node id="11117323"><node id="11117325"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100535" title="Re^2: r/w attached infrared head on /dev/ttyUSB0" created="2019-05-25 18:17:06" updated="2019-05-25 18:17:06" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11100516">stoerti</author>
+<doctext field_name="doctext">Thank you for the answer but it isn't.&lt;br&gt;&lt;br&gt;
+
+Thats my code:&lt;br&gt;&lt;br&gt;
+
+&lt;c&gt;
+use Fcntl qw/:DEFAULT/;
+use IO::Termios ();
+use IO::Stty ();
+
+sysopen my $fh, '/dev/ttyUSB0', O_RDWR or die "sysopen: $!";
+my $handle = IO::Termios-&gt;new($fh) or die "IO::Termios-&gt;new: $!";
+$handle-&gt;set_mode('300,7,e,1');
+IO::Stty::stty($handle, qw/ raw -parodd cs7 -cstopb parenb -ixoff -crtscts -hupcl -ixon -opost -onlcr -isig -icanon -iexten -echo -echoe -echoctl -echoke/);
+
+my $raw = "\x2F\x3F\x21\x0D\x0A";
+$handle-&gt;syswrite($raw) == length($raw) or die "syswrite";
+my $raw = "\x06\x30\x30\x30\x0D\x0A";
+$handle-&gt;syswrite($raw) == length($raw) or die "syswrite";
+
+for (1..300) {
+    my $toread = 1;
+    $handle-&gt;sysread(my $in, $toread)
+        == $toread or die "sysread";
+    print $in;
+}
+
+$handle-&gt;close;
+&lt;/c&gt;
+
+And it is always the same output:&lt;br&gt;&lt;br&gt;
+&lt;c&gt;
+/?!
+000
+/LOG4LK13BD202015
+&lt;/c&gt;
+
+Thats all - thats not, what I need
+
+&lt;p&gt;&lt;small&gt;&lt;i&gt;2019-05-28 [Athanasius] added code tags&lt;/small&gt;&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11100518</root_node>
+<parent_node field_name="parent_node">11100520</parent_node>
+<thread id="11100518">
+<node id="11100520"><node id="11100535"><node id="11100538"><node id="11100542"><node id="11100543"/>
+</node>
+</node>
+<node id="11100541"><node id="11100548"><node id="11100550"><node id="11100553"><node id="11100558"><node id="11100596"><node id="11100600"/>
+</node>
+</node>
+<node id="11100622"/>
+</node>
+</node>
+<node id="11100707"><node id="11100713"><node id="11100717"/>
+<node id="11100729"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

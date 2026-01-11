@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1226295" title="Re: print lines which are not reverse duplicates" created="2018-11-25 09:24:44" updated="2018-11-25 09:24:44" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;What you've got sounds like a [wp://directed graph], and CPAN has the module [mod://Graph]. I'm also using [mod://Text::CSV] to make parsing and output more robust (also install [mod://Text::CSV_XS] for speed).&lt;/p&gt;
+&lt;p&gt;&lt;c&gt;input.csv&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+personA,personB,10
+personB,personA,190
+personA,personC,23
+personA,personD,43
+personE,personF,10
+&lt;/c&gt;
+&lt;p&gt;Code:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Text::CSV;
+use Graph;
+
+my $filename = 'input.csv';
+
+my $g = Graph-&gt;new(directed=&gt;1);
+
+open my $fh, '&lt;', $filename or die "$filename: $!";
+my $csv = Text::CSV-&gt;new({ binary=&gt;1, auto_diag=&gt;2, eol=&gt;$/ });
+while ( my $row = $csv-&gt;getline($fh) ) {
+	my ($author1, $author2, $interactions) = @$row;
+	$g-&gt;set_edge_attribute( $author1, $author2, # auto-creates edge
+		'interactions', $interactions );
+}
+$csv-&gt;eof or $csv-&gt;error_diag;
+close $fh;
+
+for my $e ($g-&gt;edges) {
+	my ($author1, $author2) = @$e;
+	next if $g-&gt;has_edge($author2, $author1);
+	my $interactions = $g-&gt;get_edge_attribute( $author1, $author2,
+		'interactions' );
+	$csv-&gt;print(select, [ $author1, $author2, $interactions ]);
+}
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+personE,personF,10
+personA,personD,43
+personA,personC,23
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; The above does not handle the case of duplicates in the input. Is that a concern for you, and if yes, what happens with the "interactions"? Are they supposed to be summed up?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1226286</root_node>
+<parent_node field_name="parent_node">1226286</parent_node>
+<thread id="1226286">
+<node id="1226287"><node id="1226321"/>
+</node>
+<node id="1226288"><node id="1226289"><node id="1226324"/>
+</node>
+<node id="1226292"/>
+<node id="1226319"/>
+</node>
+<node id="1226290"><node id="1226320"/>
+</node>
+<node id="1226295"><node id="1226317"/>
+</node>
+<node id="1226298"><node id="1226318"/>
+<node id="1226325"/>
+</node>
+</thread></node>

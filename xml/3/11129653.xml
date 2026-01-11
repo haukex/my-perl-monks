@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129653" title="RFC: Kinda pseudo-shuffle using sort" created="2021-03-15 05:58:33" updated="2021-03-15 05:58:33" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="1094311">rsFalse</author>
+<doctext field_name="doctext">Hello.&lt;br&gt;
+&lt;br&gt;
+I'd like to share my observation how to shuffle an array with Perl's sort. This shuffle is far from perfect, and the result of &lt;b&gt;shuffle isn't uniform&lt;/b&gt;. But may it be useful for someone.&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;!!! UPD.&lt;/b&gt; &lt;u&gt;Using sort subroutine in that way is NOT RECOMMENDED! See further comments. [ikegami] and [haukex] provided explanation and cited documentation.&lt;/u&gt; &lt;b&gt;!!!&lt;/b&gt;
+&lt;br&gt;
+&lt;br&gt;
+Code:
+&lt;code&gt;
+@array = sort { 0.5 &lt;=&gt; rand } @array;
+&lt;/code&gt;
+Perl's default sort algorithm is &lt;b&gt;mergesort&lt;/b&gt; (perlsec: [doc://perlsec#Algorithmic-Complexity-Attacks]) from 5.8.0 version &lt;small&gt;(Although there may be some optimizations or different behavior if an array length is less than 18? e.g. [id://11129169])&lt;/small&gt;.&lt;br&gt;
+How does it work? Sort subroutine ignores values of both elements of a pair to compare, i.e. we don't use bindings: nor &lt;code&gt;$a&lt;/code&gt; neither &lt;code&gt;$b&lt;/code&gt;. Just a constant and &lt;code&gt;rand()&lt;/code&gt; function. Here &lt;code&gt;rand()&lt;/code&gt; produces some number from an interval 0 to 1 and compares it to a constant (i.e. 0.5). And the "spaceship" operator returns either -1, either 1 (hence with 0.5 probability). Then &lt;code&gt;sort&lt;/code&gt;, depending on subroutine's value, changes positions of elements of a pair.&lt;br&gt;
+&lt;br&gt;
+How the &lt;b&gt;results&lt;/b&gt; obtained with this sort subroutine &lt;b&gt;differ&lt;/b&gt; from uniformly shuffled array, e.g. Fisher-Yates shuffle?&lt;br&gt;
+&lt;readmore&gt;
+&lt;br&gt;
+Here is code which I used to produce distribution of occurrences. I.e. how many times the first element of the original array jumps to another places (i.e. indexes). The output is kinda pseudo-graphical histogram. In case of uniform distribution all values come in vertical columns. But in case of worse shuffle algorithm, columns are produced with slopes.
+&lt;code&gt;
+#!/usr/bin/perl
+
+use warnings;
+use strict;
+
+$\ = $/;
+
+srand 1;
+
+# https://perlmonks.org/?node_id=1905
+# randomly permutate @array in place
+my $fisher_yates_shuffle = sub
+{
+    my $array = shift;
+    my $i = @$array;
+    while ( --$i )
+    {
+        my $j = int rand( $i+1 );
+        @$array[$i,$j] = @$array[$j,$i];
+    }
+};
+
+my $pseudoshuffle_with_sort = sub {
+	my( $ref_array ) = shift;
+	
+	@{ $ref_array } = sort { 0.5 &lt;=&gt; rand } @{ $ref_array };
+	};
+
+
+my $size_of_array = 9;
+
+my $A = 'A';
+my @array = map { $A ++ } 1 .. $size_of_array;
+
+my $times = 10000;
+
+my @distribution;
+
+@distribution = &amp;distribution_of_occurrences( \@array, 
+	$pseudoshuffle_with_sort, $times );
+
+&amp;pretty_squeeze( \@distribution, \@array );
+print for '1)', @distribution;
+
+@distribution = &amp;distribution_of_occurrences( \@array, 
+    $fisher_yates_shuffle, $times );
+
+&amp;pretty_squeeze( \@distribution, \@array );
+print for '2)', @distribution;
+
+
+sub distribution_of_occurrences{
+	my( $ref_array, $shuffle_sub, $times ) = @_;
+	
+	my @distribution;
+	
+	for my $i ( 1 .. $times ){
+		
+		my @copy_of_array = @{ $ref_array };
+		$shuffle_sub-&gt;( \@copy_of_array );
+		
+		my $j = 0;
+		map { $distribution[ $j ++ ] .= " " . $_ } @copy_of_array;
+		}
+
+	return @distribution = map { 
+		join ' ', sort { length $a &lt;=&gt; length $b || $a cmp $b } split 
+		} @distribution;
+}
+
+sub pretty_squeeze{
+	my( $ref_distribution, $ref_array ) = @_;
+	
+	my $times_approx = split ' ', $ref_distribution-&gt;[ 0 ];
+	my $del_times = int $times_approx / @{ $ref_array } / 4;
+
+	s/(\b\w+\b) \K (?:[ ]\1){0,$del_times}//xg for @{ $ref_distribution };
+	
+	my $k = -1;
+	my $rx_every_second = join '|', grep $k ++ % 2 == 0, @{ $ref_array };
+	s/\b(?:$rx_every_second)\b/./g for @{ $ref_distribution };
+	}
+&lt;/code&gt;
+OUTPUT:
+&lt;code&gt;
+1)
+A A A . . . C C C . . . E E E E E . . . . . G G G G G . . . . . I I I I I I I I I I
+A A A . . . C C C . . . E E E E E . . . . . G G G G G G . . . . . . I I I I I I I
+A A A . . . C C C . . . E E E E E . . . . . G G G G G G G . . . . . . . I I I I I I
+A A A . . . C C C C . . . . E E E E E . . . . . G G G G G G . . . . . . I I I I I
+A A A A . . . . C C C C . . . . E E E E E . . . . . G G G G G . . . . . I I I I
+A A A A A . . . . . C C C C C . . . . . E E E E E . . . . . G G G G . . . . I I I
+A A A A A A . . . . . . C C C C C C . . . . . . E E E E . . . . G G G . . . I I
+A A A A A A A . . . . . . . C C C C C C C . . . . . . . E E E . . . G G G . . . I I
+A A A A A A A . . . . . . . C C C C C C C . . . . . . . E E E . . . G G . . I I
+2)
+A A A A . . . . C C C C . . . . . E E E E . . . . . G G G G G . . . . I I I I I
+A A A A . . . . C C C C C . . . . . E E E E E . . . . G G G G G . . . . . I I I I
+A A A A A . . . . . C C C C . . . . . E E E E . . . . G G G G . . . . . I I I I
+A A A A A . . . . C C C C C . . . . E E E E E . . . . G G G G . . . . I I I I I
+A A A A A . . . . . C C C C C . . . . E E E E E . . . . G G G G . . . . . I I I I I
+A A A A A . . . . C C C C . . . . . E E E E E . . . . . G G G G . . . . I I I I I
+A A A A . . . . C C C C . . . . . E E E E . . . . . G G G G . . . . . I I I I
+A A A A . . . . . C C C C . . . . . E E E E . . . . G G G G G . . . . I I I I
+A A A A . . . . . C C C C . . . . E E E E . . . . . G G G G G . . . . . I I I I
+&lt;/code&gt;
+One can vary a value of variable &lt;code&gt;$size_of_array&lt;/code&gt; to see how columns change with different array sizes. In the output example (with &lt;code&gt;$size_of_array = 9&lt;/code&gt;) we can see non-vertical columns in '1)' (pseudo-shuffle with sort) and vertical columns in '2)' (Fisher-Yates shuffle). This data means that the first element of an array more often jumped to the end of an array, and the last element jumped more often to the beginning of an array.&lt;br&gt;
+&lt;br&gt;
+&lt;i&gt;Upd.&lt;/i&gt;: P.S. Note time complexity difference: mergesort is &lt;i&gt;O(N log N)&lt;/i&gt;, Fisher-Yates shuffle is &lt;i&gt;O(N)&lt;/i&gt;.</doctext>
+<thread id="11129653">
+<node id="11129655"/>
+<node id="11129656"/>
+<node id="11129748"><node id="11129750"/>
+</node>
+</thread></node>

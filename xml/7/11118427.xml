@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118427" title="Re^4: substr on UTF-8 strings" created="2020-06-24 09:14:37" updated="2020-06-24 09:14:37" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1162917">rdiez</author>
+<doctext field_name="doctext">&lt;blockquote&gt;
+Add use open qw/:std :utf8/; at the top of your code to open STDIN/OUT/ERR as UTF-8 (assuming your console is UTF-8).
+&lt;/blockquote&gt;
+
+&lt;p&gt;Yes, that is the usual advice. But it is wrong in practice, in my opinion.&lt;/p&gt;
+
+&lt;p&gt;First of all, who knows where my script, or parts of it, will land. Maybe on Windows. I did write once a Perl script that I was using heavily on Windows. Why should I assume that my console is using UTF-8?&lt;/p&gt;
+
+&lt;p&gt;But most importantly, if you automatically open all files in UTF-8, then you'll have serious limitations. Say a file has an invalid UTF-8 sequence. What will Perl do? Die on read? Or just write a warning on stderr, so that the script will never know? Such warnings do not really help the end user. If you tell Perl not to check UTF-8 for validity on the file, will it really not check? Perl is internally doing many string operations, one of them may suddenly write a warning to stderr. What if you do want to check for UTF-8 encoding errors? What if your file mixes binary and UTF-8? Life is not that simple.&lt;/p&gt;
+
+&lt;p&gt;In my current script, I am reading a UTF-8 text file. I am opening the file in "raw" mode, and decoding every text line myself. This way, when a line has UTF-8 encoding errors, my script can cleanly tell the user what file number the error is in. You cannot do that if you let Perl I/O handle things magically.&lt;/p&gt;
+
+&lt;blockquote&gt;
+See the core module File::Spec for how to do operations on filenames in a portable way.
+&lt;/blockquote&gt;
+
+&lt;p&gt;File::Spec is a disaster. Just try this:&lt;/p&gt;
+
+&lt;code&gt;
+use File::Spec;
+
+foreach my $str ( File::Spec-&gt;splitdir( "/a///b/" ) )
+{
+    print "- \"$str\"\n";
+}
+&lt;/code&gt;
+
+&lt;p&gt;This is what you get:&lt;/p&gt;
+
+&lt;code&gt;
+- ""
+- "a"
+- ""
+- ""
+- "b"
+- ""
+&lt;/code&gt;
+
+&lt;p&gt;It does not collapse multiple '/' separators like POSIX says you should do. It adds empty directories before the first / and after the last /. That weird behavior is not documented (or did I miss it?) That does not really help.&lt;/p&gt;
+
+&lt;p&gt;You have to do everything manually if you want the job to be done properly. It is actually a shame, because I really like Perl.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11118415</root_node>
+<parent_node field_name="parent_node">11118421</parent_node>
+<thread id="11118415">
+<node id="11118417"/>
+<node id="11118418"><node id="11118419"><node id="11118421"><node id="11118427"><node id="11118428"/>
+<node id="11118585"/>
+</node>
+<node id="11118581"/>
+</node>
+<node id="11118580"/>
+<node id="11118584"/>
+</node>
+</node>
+<node id="11118432"/>
+<node id="11118578"><node id="11118583"/>
+</node>
+</thread></node>

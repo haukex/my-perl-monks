@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11122477" title="Re: Perl script runs fine if exec'd from the directory, but gives error if run outside the directory." created="2020-10-02 07:57:43" updated="2020-10-02 07:57:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;it runs fine if I execute it from within the directory where it's located ... However, running it by giving the path gives the following error&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This, coupled with the fact you've got relative pathnames in your script, is the very first thing I would fix. You need to have an absolute pathname somewhere, relative to which the filenames should be resolved. It either needs to be hardcoded, in a configuration file whose location is fixed, given by the user, or you can get pathnames relative to the current script's location like so:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use FindBin;
+use File::Spec::Functions qw/catfile/;
+use Config::Tiny;
+
+my $config_file = catfile($FindBin::Bin, 'vnxe_config.conf');
+my $array_creds = Config::Tiny-&gt;read($config_file)
+	or die "Failed to read $config_file";
+&lt;/c&gt;
+&lt;p&gt;Note how you don't need to call &lt;c&gt;-&gt;new&lt;/c&gt; if you're also calling &lt;c&gt;-&gt;read&lt;/c&gt;, and note how I added a check to make sure &lt;c&gt;-&gt;read&lt;/c&gt; isn't returning &lt;c&gt;undef&lt;/c&gt; (for example, if it can't find the file). You'll need to use this method of getting an absolute pathname for every filename that you don't want to be resolved relative to the current working directory.&lt;/p&gt;
+&lt;p&gt;If you still have the same issue after doing this, please let us know.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11122460</root_node>
+<parent_node field_name="parent_node">11122460</parent_node>
+<thread id="11122460">
+<node id="11122464"/>
+<node id="11122469"><node id="11122470"><node id="11122472"/>
+<node id="11122473"><node id="11122491"><node id="11122510"><node id="11122526"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11122471"/>
+</node>
+<node id="11122477"><node id="11122492"><node id="11122496"><node id="11122499"/>
+</node>
+</node>
+</node>
+<node id="11122489"/>
+</thread></node>

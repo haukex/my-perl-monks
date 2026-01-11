@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1176706" title="Propose addition to use warnings?" created="2016-11-28 09:30:10" updated="2016-11-28 09:30:10" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="1150057">perldigious</author>
+<doctext field_name="doctext">&lt;p&gt;I'm not sure what the official mechanism for making such a suggestion would be, but I recently had to go on a bug hunt in my code that left me surprised &lt;c&gt;use warnings&lt;/c&gt; didn't give me some sort of, "are you SURE you aren't doing something silly here at line x?" message.  Maybe it isn't practical to expect &lt;c&gt;use warnings&lt;/c&gt; to save me from myself in this case, but I figured I'd throw it out here as a meditation for discussion and to get opinions from Monks far wiser than I am.&lt;/p&gt;
+
+&lt;p&gt;I'm of course simplifying and paraphrasing, but essentially I had some code that did the following:&lt;/p&gt;
+
+&lt;p&gt;&lt;c&gt;
+open(my $first_fh, "&lt;", "file1.txt") or die "Cannot open \"file1.txt\": $!.";
+open(my $second_fh, "&lt;", "file2.txt") or die "Cannot open \"file2.txt\": $!.";
+
+my @file1_lines = &lt;$first_fh&gt;;
+close $first_fh;
+
+while (my $line = &lt;$second_fh&gt;)
+{
+    my @data = my_sub($first_fh, $line); # copy/paste error, should have passed $second_fh here
+
+    # and of course a bunch of non-relevant stuff here
+}
+&lt;/c&gt;&lt;/p&gt;
+
+&lt;p&gt;So I accidentally passed the &lt;c&gt;$first_fh&lt;/c&gt; that I had previously &lt;c&gt;close&lt;/c&gt;d to &lt;c&gt;my_sub&lt;/c&gt;, but as it turns out &lt;c&gt;use warnings&lt;/c&gt; didn't make a peep about this.  I did of course get warnings from inside &lt;c&gt;my_sub&lt;/c&gt; when it attempted to make use of the filehandle, but the kicker was that any such use was wrapped inside of a conditional that actually made it very rare it would ever get used (maybe once every 100,000 lines or so of typical data).&lt;/p&gt;
+
+&lt;p&gt;DISCLAIMER: The fact that I didn't have something in my standard test data that ensured the conditional that used the filehandle was exercised is entirely on me (forgive me, for I have sinned).  I accept full responsibility for that mistake and the initial copy/paste laziness error that forced me to engage in my bug hunt.  I'm only pointing out that usually &lt;c&gt;use strict&lt;/c&gt;, &lt;c&gt;use warnings&lt;/c&gt;, or perl itself is pretty good about preemptively saving me from myself, and in this case it didn't.&lt;/p&gt;
+
+&lt;p&gt;Any thoughts from the Monastery?&lt;/p&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1150057"&gt;
+Just another Perl hooker - will code for food
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1176706">
+<node id="1176707"><node id="1176710"><node id="1176721"/>
+</node>
+</node>
+<node id="1176708"><node id="1176724"><node id="1176739"/>
+</node>
+</node>
+<node id="1176709"><node id="1176719"><node id="1176723"/>
+</node>
+</node>
+<node id="1176712"><node id="1176720"/>
+</node>
+<node id="1176715"><node id="1176722"><node id="1176725"/>
+</node>
+</node>
+<node id="1176757"><node id="1176816"/>
+</node>
+</thread></node>

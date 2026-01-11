@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1172458" title="Re^3: creating an index of files contents" created="2016-09-23 08:24:32" updated="2016-09-23 08:24:32" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [nirelit],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;a more detailed description on your approach with the reverse index would be also much appreciated&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Please mark updates to your nodes as such. See [id://17557], especially "It is uncool to update a node in a way that renders replies confusing or meaningless".&lt;/p&gt;
+&lt;p&gt;Anyway, I'll give you the following hint: as you're reading your input files, let's say you have the current directory name stored in the variable &lt;c&gt;$curdir&lt;/c&gt;, and you're reading your input file line-by-line (see for example [doc://perlintro#Files-and-I/O|"Files and I/O" in perlintro]). Then you could do something like this:&lt;/p&gt;
+&lt;c&gt;
+my %reversetbl;  # at the beginning
+
+# ... open each file ...
+while (&lt;$fh&gt;) {
+	chomp; # remove newline
+	# ...
+	$reversetbl{$_}{$curdir}++;
+}
+
+# at the end:
+for my $k (keys %reversetbl) {
+	print $k, ';', join(',', keys %{ $reversetbl{$k} } ), "\n";
+}
+&lt;/c&gt;
+&lt;p&gt;This will give you the "&lt;c&gt;6576576;dir1,dir2&lt;/c&gt;" output you want.&lt;/p&gt;
+&lt;p&gt;To see what this code is doing, you can look at the data structure (a "[doc://perldsc#HASHES-OF-HASHES|hash of hashes]") with [doc://Data::Dumper], for example: &lt;c&gt;use Data::Dumper; print Dumper(\%reversetbl);&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1172437</root_node>
+<parent_node field_name="parent_node">1172443</parent_node>
+<thread id="1172437">
+<node id="1172439"><node id="1172443"><node id="1172447"/>
+<node id="1172458"><node id="1172460"/>
+</node>
+</node>
+</node>
+<node id="1172456"/>
+<node id="1172551"/>
+</thread></node>

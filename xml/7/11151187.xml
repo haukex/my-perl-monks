@@ -1,0 +1,741 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11151187" title="Re: PERL csv files to Excel" created="2023-03-25 03:01:39" updated="2023-03-25 03:01:39" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1166559">harangzsolt33</author>
+<doctext field_name="doctext">Okay, I know you have asked this question several days ago, and maybe you have already found a solution to it. But it inspired me to write a little program that performs this conversion. &lt;B&gt;What's unique about this Perl script is that it does not rely on any Perl modules or external libraries or inline C code. It doesn't even require you to have Windows or Office installed at all.&lt;/B&gt; Here is the program:
+
+&lt;P&gt;By the way, it converts one CSV file to one XLSX Excel file, but converting multiple CSV files into one Excel file should be relatively easy with only some slight tweaking.
+
+&lt;p&gt;
+&lt;p&gt;
+&lt;readmore&gt;
+&lt;CODE&gt;
+#!/usr/bin/perl
+
+#####################################################################
+#
+#  Pure Perl CSV-to-XLSX Converter v1.0        Last Update: 2023.3.24
+#
+#  This Perl script converts a CSV file to XSLX format without relying
+#  on any external programs or modules or libraries or inline C code.
+#  That means this program will work regardless of whether you have
+#  Office installed on your PC or whether or not you have a ZIP
+#  compression library or utility. This program will run on Windows,
+#  Linux, MacOS, and even MS-DOS.
+#
+#  Microsoft Excel 2007 introduced the XLSX file format, which
+#  stores spreadsheets in XML files which are then compressed into
+#  a ZIP file and renamed to XLSX. When creating a ZIP archive,
+#  the user can pick maximum compression, normal compression, fast,
+#  super fast, or no compression. This perl script uses the latter
+#  one, because it's the simplest solution using pure perl.
+#  The only downside is that the resulting XLSX file is going to
+#  be larger than usual. For example, let's say, you have a CSV file
+#  that is 5 KB in size. Excel would convert this to 20 KB XML format
+#  behind the scenes. Then it would compress it to about 5KB and save
+#  it as XLSX. This perl script, however, will simply save it as a
+#  20KB XLSX file with no compression.
+#
+#  NOTE: The input CSV file name and its contents may not
+#  contain any Unicode characters!
+#
+#  Written by Zsolt N. Perry in March 2023, Pensacola, Florida.
+#  Developed with TinyPerl 5.8 on Windows XP. For questions, comments,
+#  feature requests, or bug reports, write to zsnp@juno.com.
+#  This file was downloaded from http://www.wzsn.net/perl
+#
+#               THIS ENTIRE SOURCE CODE IS FREEWARE.
+#  If you want to incorporate it or parts of it into your program,
+#  just copy and paste whatever you need! There is no need to ask
+#  for permission. This software is distributed "AS IS." There is
+#  no warranty of any kind. The author will not be held liable for
+#  any loss resulting from the use or misuse of this software.
+#
+#####################################################################
+
+use 5.004;
+use strict;
+use warnings;
+$| = 1;
+
+#####################################################################
+#
+# All of this will be inserted into the Excel file's header:
+#
+my $SHEET    = 'Worksheet';  # Name of sheet
+my $SUBJECT  = '';  # Document subject
+my $TITLE    = '';  # Document title
+my $COMMENTS = '';  # Comments
+my $KEYWORDS = '';  # Keywords separated by space
+my $CATEGORY = '';  # Enter a word for category
+my $AUTHOR   = '';  # Person who originally made the document
+my $EDITOR   = '';  # Person who made the most recent changes
+my $REVISION = '';  # How many edits have been done to this document
+my $MANAGER  = '';  # Name of manager
+my $COMPANY  = '';  # Name of company
+
+# The following attributes will apply to ALL cell values:
+my $FONT      = 'Calibri';   # Font name
+my $TXSIZE    = 11;          # Font size
+my $TXCOLOR   = '000000';    # Text Color in RRGGBB hex format
+my $BOLD      = 0;           # This should be 0 or 1
+my $VALIGN    = 'center';    # Vertical align within cell
+my $HALIGN    = 'center';    # Horizontal align
+my $COLWIDTH  = 17;          # Column width
+my $ROWHEIGHT = 7;           # Row height
+
+#####################################################################
+
+# The input file name can be provided in two different ways.
+# First, the script will check if $F contains a file name.
+# And if not, then it will check if a file name is provided
+# as an argument. If not, then it displays the program usage.
+
+my $F = '';  # a file name may be specified here
+
+# Program header to be displayed:
+print "\n\n  CSV-TO-XLSX Converter",
+  " v1.0 by Zsolt N. Perry (zsnp\@juno.com)",
+  "\n  This perl script converts a CSV file to XLSX file format.",
+  "\n\n  You are using Perl $] " . (length(pack('P', 0)) &lt;&lt; 3),
+  "-bit running on $^O.\n  The current local time is " . localtime(),
+  ".\n  Script name: $0\n\n  ", '-' x 76;
+
+if (length($F) == 0)
+{
+  if (@ARGV == 0)  # Display program usage:
+  {
+    print "\n\n  Usage: perl csv2xlsx.pl &lt;filename.csv&gt;\n\n  The ",
+      "output file will have the same name as the original CSV file.\n",
+      "  The only difference is that it will have an .XLSX ending.\n";
+    exit;
+  }
+  $F = shift(@ARGV);
+}
+
+# Remove illegal characters from input file name.
+$F =~ tr`&lt;&gt;*%$?\x00-\x1F\"\|``d;
+
+
+# Create output file name.
+my $XLSXFILE = $F;
+if ($F =~ m/\.csv$/i)
+{
+  if ($XLSXFILE =~ m/\.CSV$/)
+  { $XLSXFILE =~ s/\.CSV$/\.XLSX/; } else # CSV -&gt; XLSX
+  { $XLSXFILE =~ s/\.csv$/\.xlsx/i; }     # csv -&gt; xlsx
+} else { $XLSXFILE .= '.xlsx'; }  # Add .XLSX extension
+
+print "\n\n  Reading file: $F  ";
+
+my $ERR = '';    # Error message
+my $DATA = '';   # File content will go here.
+my $FILESIZE = 0;
+local *INFILE;
+
+my $FILEDATE = GetFileDate($F);
+
+# Here we set up a try {} catch {} structure using a foreach() loop.
+# If everything goes well, the foreach() loop will only run once.
+# First, we open the file for reading, and if everything goes well,
+# we will exit at the bottom using "last;"
+# However, if an error occurs, we use "next;" to go back to the
+# beginning of the loop, and this time we print an
+# error message and terminate the script.
+foreach (0, 1)
+{
+  if ($_) { print "\n\n  Error: $ERR\n"; exit; }  # Error handler.
+
+  unless (-e $F) { $ERR = "File not found - $F"; next; }
+  unless (-f $F) { $ERR = "Not a plain file - $F"; next; }
+  $FILESIZE = -s $F;
+
+  unless (sysopen(INFILE, $F, 0))  # Open file for read only.
+    { $ERR = "Cannot open file for reading - $F"; next; }
+  binmode INFILE;
+  print '(', Commify($FILESIZE), " bytes)\n";
+  sysread(INFILE, $DATA, $FILESIZE);   # Read the entire file.
+  close INFILE;
+  last;
+}
+
+##################################################
+#
+#
+#  Here we convert the CSV file's contents from string to an array.
+#
+#
+
+$DATA =~ s/\r\n/\n/g;  # Convert DOS to Linux style line breaks
+$DATA =~ s/\r/\n/g;    # Convert MacIntosh to Linux style line breaks
+
+# Remove strange characters that will not show up in Excel:
+$DATA =~ tr|\x00-\x09\x0B-\x1F\x7F\x81\x8D\x8F\x90\xA0\xFE\xFF||d;
+
+$DATA =~ tr|\x80-\xFF||d;
+
+my @LINES = split(/\n/, $DATA);  # Move file content into an array
+undef $DATA;
+
+##################################################
+#
+#  Here we split the CSV lines and convert the
+#  individual cell values to XLSX spreadsheet structure.
+#
+#  This "spreadsheet structure" is basically two arrays.
+#  One array holds the cell values, and the other array
+#  holds pointers to those values. It's very simple.
+#
+
+my @STRINGS;       # Store each string (cell values)
+my @REFS;          # Store pointers to cell values in this array
+my $MAXCOL = 0;    # Number of columns used
+my $STRXML = '';   # Strings XML output
+my $STRCOUNT = 0;
+
+for (my $i = 0; $i &lt; @LINES; $i++)
+{
+  my $ROW = $i + 1;
+  my @ITEMS = SplitCSV($LINES[$i]);  # Convert CSV line to an array
+  $REFS[$i] = '';
+  for (my $j = 0; $j &lt; @ITEMS; $j++)
+  {
+    my $ITEM = $ITEMS[$j];
+
+    # By default, spaces before and after a cell value won't show
+    # up in Excel unless we add the xml:space="preserve"&gt; modifier.
+    # Most of these spaces get into Excel unintentionally anyway,
+    # so we're not going to preserve them.
+    $ITEM =~ s/\A\s+//;    # Trim space from the left
+    $ITEM =~ s/\s+\z//;    # Trim space from the right
+
+    # If this value could be better stored as a number, then
+    # we don't want to store it as a string. If we store a value
+    # as a string which happens to be a number, then Excel will
+    # offer to convert it to a number. But we'll try to do that
+    # automatically on our own if it is possible.
+
+    my $k = 0;
+    # Check each cell value to see if it has been stored already.
+    # And then store a reference to the appropriate @STRINGS element.
+    if (length($ITEM))
+    {
+      if ($MAXCOL &lt; $j) { $MAXCOL = $j; }  # Remember max width
+      for ($k = 0; $k &lt; @STRINGS; $k++) {
+        if ($STRINGS[$k] eq $ITEM) {
+          last; }}
+      if ($k == @STRINGS)  # Did not find cell value in @STRINGS?
+      {
+        if (GetExcelType($ITEM) == 0)  # Type string?
+        {
+          push(@STRINGS, $ITEM);
+          $STRXML .= '&lt;si&gt;&lt;t&gt;' . HTMLQuote($ITEM) . '&lt;/t&gt;&lt;/si&gt;';
+          $STRCOUNT++;
+        }
+      }
+    } else { $k = ''; }
+    $REFS[$i] .= "$k,";
+  }
+}
+
+##################################################
+#
+#
+#  Here we will generate two XML files in memory.
+#  The first XML file contains the cell values.
+#  And the second XML file contains the references.
+#
+#
+
+my $XMLVAL = ''; # This variable will be populated with XML content
+                # that has the cell values. The name of this file
+               # will be s.xml, but it will never be saved to disk
+              # as an individual file. We will write everything
+             # into an XLSX file at the end when we're done.
+
+my $XMLREF = '';  # This variable will be populated with XML content
+                 # that contains references. The name of this file will
+                # be called 1.xml, but it will not be written to disk
+               # as an individual file. We will write everything
+              # into an XLSX file at the end when we're done.
+
+map { s/\&amp;/\&amp;amp\;/g } @STRINGS;   # Replace "&amp;" with "&amp;amp;"
+map { s/\&lt;/\&amp;lt\;/g } @STRINGS;    # Replace "&lt;" with "&amp;lt;"
+map { s/\&gt;/\&amp;gt\;/g } @STRINGS;    # Replace "&gt;" with "&amp;gt;"
+map { s/\"/\&amp;quot\;/g } @STRINGS;  # Replace '"' with "&amp;quot;"
+
+$XMLVAL = "&lt;?xml version='1.0' encoding='UTF-8' standalone='yes'?&gt;&lt;sst xmlns='http://schemas.openxmlformats.org/spreadsheetml/2006/main' uniqueCount='$STRCOUNT'&gt;$STRXML&lt;/sst&gt;";
+
+# Okay, this XML file is ready to go.
+# Next we will work on the references file.
+
+my $ROWS = @REFS;
+my $COLS = GetColumnLetter($MAXCOL);
+my $RANGE = 'A1:' . $COLS . $ROWS;
+
+$XMLREF = "&lt;?xml version='1.0' encoding='UTF-8' standalone='yes'?&gt;\n"
+  . "&lt;worksheet xml:space='preserve' xmlns='http://schemas.openxmlformats.org/spreadsheetml/2006/main' xmlns:r='http://schemas.openxmlformats.org/officeDocument/2006/relationships' xmlns:xdr='http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing' xmlns:x14='http://schemas.microsoft.com/office/spreadsheetml/2009/9/main' xmlns:mc='http://schemas.openxmlformats.org/markup-compatibility/2006' mc:Ignorable='x14ac' xmlns:x14ac='http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac'&gt;"
+  . "&lt;sheetPr&gt;&lt;outlinePr summaryBelow='1' summaryRight='1'/&gt;&lt;/sheetPr&gt;"
+  . "&lt;dimension ref='$RANGE'/&gt;&lt;sheetViews&gt;&lt;sheetView tabSelected='1' workbookViewId='0' showGridLines='true' showRowColHeaders='1'&gt;&lt;selection activeCell='A1' sqref='A1'/&gt;&lt;/sheetView&gt;&lt;/sheetViews&gt;"
+  . "&lt;sheetFormatPr customHeight='false' defaultRowHeight='22' defaultColWidth='16' outlineLevelRow='0' outlineLevelCol='0'/&gt;&lt;sheetData&gt;";
+
+for (my $i = 0; $i &lt; @REFS; $i++)
+{
+  my $ROW = $i + 1;
+  my @VAL = SplitCSV($LINES[$i]);  # Convert CSV line to an array
+  my @ITEMS = split(/,/, $REFS[$i]);
+  my $SPAN = @ITEMS;
+  my $COMMAS = $LINES[$i] =~ tr|,|,|;  # Count number of commas in this
+  my $EMPTY = $COMMAS == length($REFS[$i]);
+  if ($EMPTY) { next; }
+  $XMLREF .= "&lt;row r='$ROW' spans='1:$SPAN'&gt;";
+  for (my $j = 0; $j &lt; @VAL; $j++)
+  {
+    my $COL = GetColumnLetter($j); # Column
+    my $REF = "$COL$ROW";          # Cell reference
+    my $VAL = $VAL[$j];
+    length($VAL) or next;          # If value is blank, it's empty cell
+    my $PTR = $ITEMS[$j];          # String pointer
+    my $TYPE = GetExcelType($VAL);
+    unless (defined $PTR &amp;&amp; length($PTR)) { $PTR = 1; }
+    if ($TYPE == 0)     # Write string:
+      { $XMLREF .= "&lt;c r='$REF' s='1' t='s'&gt;&lt;v&gt;$PTR&lt;/v&gt;&lt;/c&gt;"; }
+    elsif ($TYPE == 1)  # Write number:
+      { $XMLREF .= "&lt;c r='$REF' s='1'&gt;&lt;v&gt;$VAL&lt;/v&gt;&lt;/c&gt;"; }
+    elsif ($TYPE == 2)  # Write formula:
+      { $XMLREF .= "&lt;c r='$REF' s='1' t='s'&gt;&lt;f&gt;$VAL&lt;/f&gt;&lt;/c&gt;"; }
+  }
+  $XMLREF .= '&lt;/row&gt;';
+}
+$XMLREF .= "&lt;/sheetData&gt;&lt;printOptions headings='false' gridLines='false' gridLinesSet='true' horizontalCentered='false' verticalCentered='false'/&gt;&lt;pageMargins left='0.7' right='0.7' top='0.7' bottom='0.7' header='0.5' footer='0.5'/&gt;&lt;pageSetup paperSize='1' scale='100' firstPageNumber='1' fitToWidth='1' fitToHeight='1' pageOrder='downThenOver' orientation='portrait' usePrinterDefaults='false' blackAndWhite='false' draft='false' cellComments='none' useFirstPageNumber='true' horizontalDpi='300' verticalDpi='300' copies='1'/&gt;&lt;headerFooter differentFirst='false' differentOddEven='false'&gt;&lt;oddHeader&gt;&lt;/oddHeader&gt;&lt;oddFooter&gt;&lt;/oddFooter&gt;&lt;/headerFooter&gt;&lt;/worksheet&gt;";
+
+# Add date created and date modified...
+my $CORE = "&lt;?xml version='1.0' encoding='UTF-8' standalone='yes'?&gt;"
+  . "&lt;cp:coreProperties xmlns:cp='http://schemas.openxmlformats.org/package/2006/metadata/core-properties' "
+  . "xmlns:dc='http://purl.org/dc/elements/1.1/' xmlns:dcterms='http://purl.org/dc/terms/' "
+  . "xmlns:dcmitype='http://purl.org/dc/dcmitype/' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'&gt;"
+  . "&lt;dcterms:created xsi:type='dcterms:W3CDTF'&gt;$FILEDATE&lt;/dcterms:created&gt;"
+  . "&lt;dcterms:modified xsi:type='dcterms:W3CDTF'&gt;$FILEDATE&lt;/dcterms:modified&gt;"
+  . (length($REVISION) ? '&lt;cp:revision&gt;'       . HTMLQuote($REVISION) . '&lt;/cp:revision&gt;'       : '')
+  . (length($AUTHOR)   ? '&lt;dc:creator&gt;'        . HTMLQuote($AUTHOR)   . '&lt;/dc:creator&gt;'        : '')
+  . (length($TITLE)    ? '&lt;dc:title&gt;'          . HTMLQuote($TITLE)    . '&lt;/dc:title&gt;'          : '')
+  . (length($EDITOR)   ? '&lt;cp:lastModifiedBy&gt;' . HTMLQuote($EDITOR)   . '&lt;/cp:lastModifiedBy&gt;' : '')
+  . (length($COMMENTS) ? '&lt;dc:description&gt;'    . HTMLQuote($COMMENTS) . '&lt;/dc:description&gt;'    : '')
+  . (length($SUBJECT)  ? '&lt;dc:subject&gt;'        . HTMLQuote($SUBJECT)  . '&lt;/dc:subject&gt;'        : '')
+  . (length($KEYWORDS) ? '&lt;cp:keywords&gt;'       . HTMLQuote($KEYWORDS) . '&lt;/cp:keywords&gt;'       : '')
+  . (length($CATEGORY) ? '&lt;cp:category&gt;'       . HTMLQuote($CATEGORY) . '&lt;/cp:category&gt;'       : '')
+  . '&lt;/cp:coreProperties&gt;';
+
+my $APP = "&lt;?xml version='1.0' encoding='UTF-8' standalone='yes'?&gt;"
+  . "&lt;Properties xmlns='http://schemas.openxmlformats.org/officeDocument/2006/extended-properties' "
+  . "xmlns:vt='http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes'&gt;"
+  . "&lt;TotalTime&gt;0&lt;/TotalTime&gt;"
+  . "&lt;Application&gt;Microsoft Excel&lt;/Application&gt;"
+  . "&lt;DocSecurity&gt;0&lt;/DocSecurity&gt;"
+  . "&lt;ScaleCrop&gt;false&lt;/ScaleCrop&gt;"
+  . "&lt;HeadingPairs&gt;"
+  . "&lt;vt:vector size='2' baseType='variant'&gt;"
+  . "&lt;vt:variant&gt;&lt;vt:lpstr&gt;Worksheets&lt;/vt:lpstr&gt;&lt;/vt:variant&gt;"
+  . "&lt;vt:variant&gt;&lt;vt:i4&gt;1&lt;/vt:i4&gt;&lt;/vt:variant&gt;"
+  . "&lt;/vt:vector&gt;"
+  . "&lt;/HeadingPairs&gt;"
+  . "&lt;TitlesOfParts&gt;"
+  . "&lt;vt:vector size='1' baseType='lpstr'&gt;"
+  . "&lt;vt:lpstr&gt;Worksheet&lt;/vt:lpstr&gt;"
+  . "&lt;/vt:vector&gt;"
+  . "&lt;/TitlesOfParts&gt;"
+  . "&lt;Company&gt;$COMPANY&lt;/Company&gt;"
+  . "&lt;Manager&gt;$MANAGER&lt;/Manager&gt;"
+  . "&lt;LinksUpToDate&gt;false&lt;/LinksUpToDate&gt;"
+  . "&lt;SharedDoc&gt;false&lt;/SharedDoc&gt;"
+  . "&lt;HyperlinksChanged&gt;false&lt;/HyperlinksChanged&gt;"
+  . "&lt;AppVersion&gt;12.0000&lt;/AppVersion&gt; "
+  . "&lt;/Properties&gt;";
+
+my $STYLES = "&lt;?xml version='1.0' encoding='UTF-8' standalone='yes'?&gt;"
+  . "&lt;styleSheet xml:space='preserve' xmlns='http://schemas.openxmlformats.org/spreadsheetml/2006/main'&gt;"
+  . "&lt;numFmts count='0'/&gt;&lt;fonts count='2'&gt;&lt;font&gt;&lt;b val='$BOLD'/&gt;&lt;i val='0'/&gt;&lt;strike val='0'/&gt;"
+  . "&lt;u val='none'/&gt;&lt;sz val='$TXSIZE'/&gt;&lt;color rgb='FF$TXCOLOR'/&gt;&lt;name val='$FONT'/&gt;&lt;/font&gt;"
+  . "&lt;font&gt;&lt;b val='$BOLD'/&gt;&lt;i val='0'/&gt;&lt;strike val='0'/&gt;&lt;u val='none'/&gt;&lt;sz val='$TXSIZE'/&gt;"
+  . "&lt;color rgb='FF$TXCOLOR'/&gt;&lt;name val='$FONT'/&gt;&lt;/font&gt;&lt;/fonts&gt;"
+  . "&lt;fills count='2'&gt;&lt;fill&gt;&lt;patternFill patternType='none'/&gt;&lt;/fill&gt;"
+  . "&lt;fill&gt;&lt;patternFill patternType='gray125'&gt;&lt;fgColor rgb='FFFFFFFF'/&gt;"
+  . "&lt;bgColor rgb='FF000000'/&gt;&lt;/patternFill&gt;&lt;/fill&gt;&lt;/fills&gt;&lt;borders count='1'&gt;&lt;border/&gt;&lt;/borders&gt;"
+  . "&lt;cellStyleXfs count='1'&gt;&lt;xf numFmtId='0' fontId='0' fillId='0' borderId='0'/&gt;&lt;/cellStyleXfs&gt;"
+  . "&lt;cellXfs count='3'&gt;&lt;xf xfId='0' fontId='0' numFmtId='0' fillId='0' borderId='0' applyFont='0' "
+  . "applyNumberFormat='0' applyFill='0' applyBorder='0' applyAlignment='0' applyProtection='true'&gt;"
+  . "&lt;alignment horizontal='general' vertical='bottom' textRotation='0' wrapText='false' shrinkToFit='false'/&gt;"
+  . "&lt;protection hidden='false'/&gt;&lt;/xf&gt;&lt;xf xfId='0' fontId='1' numFmtId='49' fillId='0' borderId='0' applyFont='1' "
+  . "applyNumberFormat='1' applyFill='0' applyBorder='0' applyAlignment='1' applyProtection='true'&gt;"
+  . "&lt;alignment horizontal='$HALIGN' vertical='$VALIGN' textRotation='0' wrapText='false' shrinkToFit='false'/&gt;"
+  . "&lt;protection hidden='false'/&gt;&lt;/xf&gt;&lt;xf xfId='0' fontId='1' numFmtId='49' fillId='0' borderId='0' applyFont='1' "
+  . "applyNumberFormat='1' applyFill='0' applyBorder='0' applyAlignment='1' applyProtection='true'&gt;"
+  . "&lt;alignment horizontal='$HALIGN' vertical='$VALIGN' textRotation='0' wrapText='false' shrinkToFit='false'/&gt;"
+  . "&lt;protection hidden='false'/&gt;&lt;/xf&gt;&lt;/cellXfs&gt;&lt;cellStyles count='1'&gt;"
+  . "&lt;cellStyle name='Normal' xfId='0' builtinId='0'/&gt;&lt;/cellStyles&gt;&lt;dxfs count='0'/&gt;"
+  . "&lt;tableStyles defaultTableStyle='TableStyleMedium9' defaultPivotStyle='PivotTableStyle1'/&gt;&lt;/styleSheet&gt;";
+
+my $MAIN = "&lt;?xml version='1.0' encoding='UTF-8' standalone='yes'?&gt;&lt;Types xmlns='http://schemas.openxmlformats.org/package/2006/content-types'&gt;&lt;Override PartName='/y.xml' ContentType='application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml'/&gt;&lt;Default Extension='rels' ContentType='application/vnd.openxmlformats-package.relationships+xml'/&gt;&lt;Default Extension='xml' ContentType='application/xml'/&gt;&lt;Override PartName='/w.xml' ContentType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml'/&gt;&lt;Override PartName='/a.xml' ContentType='application/vnd.openxmlformats-officedocument.extended-properties+xml'/&gt;&lt;Override PartName='/c.xml' ContentType='application/vnd.openxmlformats-package.core-properties+xml'/&gt;&lt;Override PartName='/1.xml' ContentType='application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml'/&gt;&lt;Override PartName='/s.xml' ContentType='application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml'/&gt;&lt;/Types&gt;";
+my $WREL = "&lt;?xml version='1.0' encoding='UTF-8' standalone='yes'?&gt;&lt;Relationships xmlns='http://schemas.openxmlformats.org/package/2006/relationships'&gt;&lt;Relationship Id='rId1' Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles' Target='y.xml'/&gt;&lt;Relationship Id='rId3' Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings' Target='s.xml'/&gt;&lt;Relationship Id='rId4' Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet' Target='1.xml'/&gt;&lt;/Relationships&gt;";
+my $RELS = "&lt;?xml version='1.0' encoding='UTF-8' standalone='yes'?&gt;&lt;Relationships xmlns='http://schemas.openxmlformats.org/package/2006/relationships'&gt;&lt;Relationship Id='rId1' Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument' Target='w.xml'/&gt;&lt;Relationship Id='rId2' Type='http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties' Target='c.xml'/&gt;&lt;Relationship Id='rId3' Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties' Target='a.xml'/&gt;&lt;/Relationships&gt;";
+my $BOOK = "&lt;?xml version='1.0' encoding='UTF-8' standalone='yes'?&gt;&lt;workbook xml:space='preserve' xmlns='http://schemas.openxmlformats.org/spreadsheetml/2006/main' xmlns:r='http://schemas.openxmlformats.org/officeDocument/2006/relationships'&gt;&lt;fileVersion appName='xl' lastEdited='4' lowestEdited='4' rupBuild='4505'/&gt;&lt;workbookPr codeName='ThisWorkbook'/&gt;&lt;bookViews&gt;&lt;workbookView activeTab='0' autoFilterDateGrouping='true' firstSheet='0' minimized='false' showHorizontalScroll='true' showSheetTabs='true' showVerticalScroll='true' tabRatio='600' visibility='visible'/&gt;&lt;/bookViews&gt;&lt;sheets&gt;&lt;sheet name='$SHEET' sheetId='1' r:id='rId4'/&gt;&lt;/sheets&gt;&lt;definedNames/&gt;&lt;calcPr calcId='999999' calcMode='auto' calcCompleted='1' fullCalcOnLoad='0' forceFullCalc='0'/&gt;&lt;/workbook&gt;";
+
+# Okay, at this point, all the XML file content is ready to go.
+# We just need to pack all this into a ZIP file, and we're done!
+
+# Now, I am not sure how ZIP files store the file date and time,
+# so I'll just use these constant values to set the date and time.
+# The file date and time doesn't really matter. I think, it will
+# never be seen by anyone, so it doesn't matter what this is as
+# long as it works. Ideally, it would be nice if $MDATE and $MTIME
+# reflected the last modified time of the CSV file, but who cares...
+my $MDATE = 0x2806;  # This is set to 3/22/2023 5:00 AM
+my $MTIME = 0x5676;
+
+CreateZipArchive($XLSXFILE,
+  '[Content_Types].xml', $MAIN,
+  '_rels/w.xml.rels',    $WREL,
+  '_rels/.rels',         $RELS,
+  's.xml',               $XMLVAL,
+  'a.xml',               $APP,
+  'c.xml',               $CORE,
+  'y.xml',               $STYLES,
+  '1.xml',               $XMLREF,
+  'w.xml',               $BOOK)
+and print '(', Commify(-s $XLSXFILE), " bytes)\n\n  SUCCESS!\n\n";
+exit;
+
+##################################################
+#                               Excel | v2023.3.22
+# This function decides how a value should be stored
+# in Excel. Returns:
+#   0=value should be stored as a string
+#   1=value should be stored as a number
+#   2=value should be stored as a formula
+#
+# Usage: INTEGER = GetExcelType(STRING)
+#
+sub GetExcelType
+{
+  my $S = defined $_[0] ? $_[0] : '';
+
+  # Check the length of string.
+  my $L = length($S);
+  $L or return 0;
+  if (substr($S, 0, 1) eq '=') { return 2; }
+  $L &lt; 16 or return 0;
+
+  # String must contain only these characters:
+  if ($S =~ m/[^0-9\.\,\-\+\(\)\$]+/) { return 0; }
+
+  # Now, let's replace all digits with letter 'N' and
+  # replace all plus signs with a minus.
+  $S =~ tr|\+0123456789|\-NNNNNNNNNN|;
+  my $DIGITS = $S =~ tr|N|N|;  # Count all digits 0-9
+  $DIGITS &amp;&amp; $DIGITS &lt; 12 or return 0;
+
+  $S =~ tr|,||d;  # Remove all commas
+  $S =~ tr|N||s;  # Remove multiple consecutive 'N's
+  # So, we end up with a pattern string,
+  # and now we try to see if it matches any of these:
+  my $OK = '|N|N.N|.N|N.|-N|-N.N|-.N|-N.|(N)|(N.N)|(.N)|(N.)|$N|$N.N|$.N|$N.|-$N|-$N.N|-$.N|-$N.|($N)|($N.N)|($.N)|($N.)|';
+  return (index($OK, "|$S|") &lt; 0) ? 0 : 1;
+}
+##################################################
+#                               Excel | v2023.3.20
+# This function converts a number to Excel column
+# letters such as 0=A, 1=B, 2=C, and so forth...
+# The maximum number of columns in Excel is 16,384
+# which is column XFE. The upper limit of this
+# function is 18,277 which is ZZZ. Any number
+# greater than this will produce 'AAAA' as output.
+#
+# Usage: STRING = GetColumnLetter(INTEGER)
+# 
+sub GetColumnLetter
+{
+  no warnings;
+  my $c = defined $_[0] ? int($_[0]) : 0;
+  use warnings;
+  $c &gt; 0 or return 'A';
+  $c &gt; 25 or return chr($c + 65);
+  my $PREFIX = '';
+  my $LIMIT = 17601;
+  for (my $i = 90; $i &gt; 64; $i--)  # Calculate three-letter prefix
+  {
+    if ($c &gt; $LIMIT) { $PREFIX = chr($i); $c -= $LIMIT - 25; last; }
+    $LIMIT -= 676;
+  }
+  if ($c &lt; 702)  # Calculate 1-letter and 2-letter columns.
+  {
+    $LIMIT = 52;
+    for (my $i = 65; $i &lt; 91; $i++)
+    {
+      if ($c &lt; $LIMIT)
+      { return $PREFIX . chr($i) . chr($c + 91 - $LIMIT); }
+      $LIMIT += 26;
+    }
+  }
+  return 'AAAA';
+}
+##################################################
+# This function inserts commas into a number at
+# every 3 digits and returns a string.
+# Usage: STRING = Commify(INTEGER)
+# Copied from www.PerlMonks.org/?node_id=157725
+#
+sub Commify
+{
+  my $N = reverse $_[0];
+  $N =~ s/(\d\d\d)(?=\d)(?!\d*\.)/$1,/g;
+  return scalar reverse $N;
+}
+##################################################
+#                              String | v2023.3.18
+# Thie function calculates a 32-bit CRC for any string.
+# This was written by Eli Billauer (lets_talk@billauer.co.il).
+# All I did was change the name of the sub. I copied it from:
+# http://billauer.co.il/blog/2011/05/perl-crc32-crc-xs-module
+# Thank you very much! :-)
+#
+# Usage: INTEGER = GetCRC32(STRING)
+#
+sub GetCRC32
+{
+  my ($input, $init_value, $polynomial) = @_;
+  $init_value = 0 unless (defined $init_value);
+  $polynomial = 0xedb88320 unless (defined $polynomial);
+  my @lookup_table;
+
+  for (my $i=0; $i&lt;256; $i++) {
+    my $x = $i;
+    for (my $j=0; $j&lt;8; $j++) {
+      if ($x &amp; 1) {
+        $x = ($x &gt;&gt; 1) ^ $polynomial;
+      } else {
+        $x = $x &gt;&gt; 1;
+      }
+    }
+    push @lookup_table, $x;
+  }
+  my $crc = $init_value ^ 0xffffffff;
+  foreach my $x (unpack ('C*', $input)) {
+    $crc = (($crc &gt;&gt; 8) &amp; 0xffffff) ^ $lookup_table[ ($crc ^ $x) &amp; 0xff ];
+  }
+  return $crc ^ 0xffffffff;
+}
+##################################################
+#                                 CSV | v2023.3.20
+# Splits a single line from a CSV file along commas
+# and returns a list of strings.
+#
+# Usage: LIST = SplitCSV(STRING)
+#
+sub SplitCSV
+{
+  my @LIST;
+  my $L = defined $_[0] ? length($_[0]) : 0;
+  my $ITEM = '';
+  my $QUOTED = 0;
+  for (my $i = 0; $i &lt; $L; $i++)
+  {
+    my $c = vec($_[0], $i, 8);
+    if ($c == 34)  # Quote
+    {
+      $QUOTED++;
+      $c = ($QUOTED == 3) ? 34 : 0;
+      if ($QUOTED &gt; 2) { $QUOTED = 1; }
+    }
+    elsif ($QUOTED == 2) { $QUOTED = 0; }
+    if ($c == 44)  # Comma
+    {
+      unless ($QUOTED)
+      {
+        push(@LIST, $ITEM);
+        $ITEM = '';
+        $c = 0;
+      }
+    }
+    elsif ($c &lt; 32 || $c &gt; 253) { $c == 9 or $c = 0; }  # Special chars
+    $c and $ITEM .= chr($c);
+  }
+  length($ITEM) and push(@LIST, $ITEM);
+  undef $ITEM;
+  return @LIST;
+}
+##################################################
+#                                File | v2022.11.8
+# Creates and overwrites a file in binary mode.
+# If the file has already existed, it erases the
+# old content and replaces it with the new content.
+# Returns 1 on success or 0 if something went wrong.
+#
+# Usage: STATUS = CreateFile(FILENAME, CONTENT)
+#
+sub CreateFile
+{
+  my $F = defined $_[0] ? shift : '';
+  $F =~ tr/\x00-\x1F\"\|*%$?&lt;&gt;//d;    # Remove illegal characters.
+  local *FILE;
+  open(FILE, "&gt;$F") or return 0;
+  binmode FILE;
+  foreach (@_) { defined $_ and length($_) and print FILE $_; }
+  close FILE;
+  -e $F or return 0;   # File exists?
+  -f $F or return 0;   # It's a plain file?
+  return 1;
+}
+##################################################
+#                                HTML | v2023.3.23
+# This function converts text containing the following
+# characters to safe HTML code: " &lt; &gt; &amp;
+#
+# Usage: STRING = HTMLQuote(STRING)
+#
+sub HTMLQuote
+{
+  my $S = defined $_[0] ? $_[0] : '';
+  $S =~ s/\&amp;/\&amp;amp\;/g;   # Replace "&amp;" with "&amp;amp;"
+  $S =~ s/\&lt;/\&amp;lt\;/g;    # Replace "&lt;" with "&amp;lt;"
+  $S =~ s/\&gt;/\&amp;gt\;/g;    # Replace "&gt;" with "&amp;gt;"
+  $S =~ s/\"/\&amp;quot\;/g;  # Replace '"' with "&amp;quot;"
+  return $S;
+}
+##################################################
+#                                Time | v2023.3.23
+# This function converts a file date given in seconds
+# to "YYYY-MM-DDTHH:MM:SSZ" format as expected in
+# the Excel XML file.
+#
+# Usage: STRING = GetFileDate(INTEGER)
+#
+sub GetFileDate
+{
+  my @INFO = stat($_[0]);
+  my $FILEDATE = $INFO[9];
+  @INFO = localtime($FILEDATE);
+  my $YYYY = $INFO[5] + 1900;
+  my $MM = $INFO[4];
+  my $DD = $INFO[3];
+  my $HR = $INFO[2];
+  my $MIN = $INFO[1];
+  my $SEC = $INFO[0];
+  my $DATE = sprintf('%0.4d-%0.2d-%0.2d', $YYYY, $MM, $DD);
+  my $TIME = sprintf('%0.2d:%0.2d:%0.2d', $HR, $MIN, $SEC);
+  return "${DATE}T${TIME}Z";
+}
+##################################################
+#                                 ZIP | v2023.3.23
+# This function converts a file name and file content
+# into a single ZIP sub-package that can be inserted
+# straight into a ZIP file. It returns the ZIP content
+# and the CRC-32 number that was calculated.
+# Usage: (ZIPSTRING, CRC) = CreateSingleZip(FILENAME, CONTENT)
+#
+sub CreateSingleZip
+{
+  my $FILENAME = $_[0];
+  my $CRC = GetCRC32($_[1]);
+  my $MARKER = "PK\3\4";
+  my $MINVER = 20;
+  my $FLAGS = 0;
+  my $COMPR = 0;                 # Using no compression
+  my $REALSIZE = length($_[1]);  # Uncompressed size
+  my $COMPSIZE = $REALSIZE;      # Compressed size is the same
+  my $NAME = $_[0];
+  my $EXTRA = '';
+  my $XLEN = length($EXTRA);
+  my $NAMELEN = length($NAME);
+  return ($MARKER . pack('v5V3vv', $MINVER, $FLAGS, $COMPR,
+    $MDATE, $MTIME, $CRC, $COMPSIZE, $REALSIZE, $NAMELEN, $XLEN)
+    . $NAME . $EXTRA . $_[1], $CRC);
+}
+##################################################
+#                                 ZIP | v2023.3.24
+# This function builds an archive and saves it
+# to a ZIP file. The first argument should be the
+# name of the zip file. The files to be added to
+# the ZIP archive must be provided in the arguments.
+# The files must reside in the memory already.
+#
+# Usage: CreateZipArchive(ZIPFILE,  &lt;- name of ZIP file to be created
+#
+#                         FILENAME, &lt;- file name to be saved
+#                         CONTENT,  &lt;- file content as a string
+#
+#                         FILENAME,
+#                         CONTENT,
+#
+#                         ... )
+#
+sub CreateZipArchive
+{
+  @_ &gt; 2 or return 0;
+  my $ZIPFILE = shift;
+  my $OUTPUT = '';
+  my $MAINDIR = '';
+  my $FILECOUNT = 0;
+  my $i = 0;
+  while ($i &lt; @_)
+  {
+    $FILECOUNT++;
+    my $NAME    = $_[$i++];
+    my $CONTENT = $_[$i++];
+    my ($ZIPUNIT, $CRC) = CreateSingleZip($NAME, $CONTENT);
+    my $P = length($OUTPUT);
+    $OUTPUT .= $ZIPUNIT;
+    $MAINDIR .= "PK\1\2"  # Central directory header signature
+      . pack('v6V3v5VV',
+      20,  # 2 BYTES: Version made by
+      10,  # 2 BYTES: Version needed to extract (minimum)
+      0,   # 2 BYTES: Flags
+      0,   # 2 BYTES: Compression method (Store)
+      $MDATE,   # 2 BYTES: File last modified date
+      $MTIME,   # 2 BYTES: File last modified time
+      $CRC,                # 4 BYTES: CRC-32
+      length($CONTENT),    # 4 BYTES: Compressed size
+      length($CONTENT),    # 4 BYTES: Uncompressed size
+      length($NAME),       # 2 BYTES: File name length
+      0,    # 2 BYTES: Extra field length
+      0,    # 2 BYTES: File comment length
+      0,    # 2 BYTES: Disk number where file starts
+      0,    # 2 BYTES: Internal file attributes
+      0,    # 4 BYTES: External file attributes
+      $P)   # 4 BYTES: File pointer to local file header
+    . $NAME;
+  }
+  my $PP = length($OUTPUT);
+  my $EOCD = "PK\5\6" . pack('vvvvVVv',
+      0,   # 2 BYTES: Number of this disk
+      0,   # 2 BYTES: Disk where central directory starts
+      $FILECOUNT, # 2 BYTES: Number of central directory records here
+      $FILECOUNT, # 2 BYTES: Number of central directory records total
+      length($MAINDIR),  # 4 BYTES: Size of central directory (bytes)
+      $PP,               # 4 BYTES: File pointer to central directory
+      0);                # 2 BYTES: ZIP file comment length
+  print "\n  Writing : $ZIPFILE ";
+  CreateFile($ZIPFILE, $OUTPUT . $MAINDIR . $EOCD);
+}
+##################################################
+&lt;/CODE&gt;
+&lt;/readmore&gt;
+&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11150962</root_node>
+<parent_node field_name="parent_node">11150962</parent_node>
+<thread id="11150962">
+<node id="11150963"><node id="11150964"/>
+</node>
+<node id="11150970"/>
+<node id="11150980"/>
+<node id="11151187"><node id="11151188"><node id="11151196"><node id="11151201"><node id="11151210"><node id="11151214"/>
+<node id="11151220"><node id="11151221"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11151192"><node id="11151197"><node id="11151350"><node id="11151352"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

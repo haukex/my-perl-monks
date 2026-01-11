@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11149277" title="Using perl to script an upload page" created="2023-01-02 02:21:47" updated="2023-01-02 02:21:47" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">
+
+&lt;p&gt;Hi Monks&lt;/p&gt;
+&lt;p&gt;I've had some success with scripts lately, but unfortunately, I haven't been able to upload them to gitlab yet. I was hoping that I might change my luck by starting with a clean slate. I couldn't get my source scripts loaded up to [https://gitlab.com/perlmonks/betelgeuse|gitlab repo for betelgeuse]. I have expended more than 3 strikes thrice. Maybe a change of tactic....&lt;/p&gt;
+&lt;p&gt;I know I've run scripts from [bliako] before to create repos on github. I looked through his and my stuff and didn't see anything, nor do I get anything from a super search:&lt;/p&gt;
+
+&lt;c&gt;
+ Found 0 nodes roughly between 2023-01-02 and 2012-01-20 (searched 26.04% of DB).
+
+
+where any text contains all of "create", "repo"
+&lt;/c&gt;
+&lt;p&gt;So again, it's looking like a need to start from scratch. This project wants to be an upload page using perl. Let's start with some primitive html:&lt;/p&gt;
+
+&lt;c&gt;&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+	&lt;title&gt;How to upload files using HTML to website?&lt;/title&gt;
+&lt;/head&gt;
+
+&lt;body&gt;
+	&lt;center&gt;
+		&lt;h1&gt;Welcome to GFG&lt;/h1&gt;
+		&lt;h2&gt;How to upload files using HTML to website?&lt;/h2&gt;
+		&lt;input type="file"
+			id="file1"
+			name="upload"&gt;
+	&lt;/center&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/c&gt;
+
+&lt;p&gt;I've spent some time now fishing around the net for best methods, and time before the advent of CE 2023 is very relevant. I wish I could set my browser to get me nothing that is over 5 years old. Heck I'm not too proud to ask:&lt;/p&gt;
+&lt;p&gt;OT Q1) How do you search the web with a secure anonymous browser that prioritizes recent matches and thinks anything 15 years old is broken?&lt;/p&gt;
+&lt;p&gt;I don't find a date on [https://www.positioniseverything.net/html-file-upload|is position everything?] and [https://www.geeksforgeeks.org/perl-file-upload-in-cgi/|not completely sure about geeks for geeks]. This part looks about right:&lt;/p&gt;
+
+
+&lt;c&gt;
+&lt;form method=”post” enctype=”multipart/form-data”&gt;
+&lt;div&gt;
+&lt;label for=”profile_pic”&gt; Choose file to upload &lt;/label&gt;
+&lt;input type=”file” id=”profile_pic” name=”profile_pic”
+accept=”.jpg, .jpeg, .png”&gt;
+&lt;/div&gt;
+&lt;div&gt;
+&lt;button&gt; Submit here &lt;/button&gt;
+&lt;/div&gt;
+&lt;/form&gt;
+
+&lt;/c&gt;
+
+&lt;p&gt;Here's another take on the html:&lt;/p&gt;
+&lt;c&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+	&lt;meta http-equiv = "Content-Type" content = "text/html; charset=utf-8" /&gt;
+	&lt;title&gt;File Upload&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style = "text-align:center;"&gt;
+	&lt;h1 style = "color:green;"&gt; GeeksForGeeks &lt;/h1&gt;
+	&lt;form action = "/cgi-bin/upload.cgi"
+		method = "post" enctype = "multipart/form-data"&gt;
+	&lt;p&gt;Upload Photo: &lt;input type = "file" name = "photo" /&gt;&lt;/p&gt;
+	&lt;p&gt;Email: &lt;input type = "text"
+					placeholder = "e.g. GFG@gmail.com"
+					name = "email_address" /&gt;&lt;/p&gt;
+	&lt;p&gt;&lt;input type = "submit" name = "Submit" value = "Submit Form" /&gt;&lt;/p&gt;
+	&lt;/form&gt;
+&lt;/body&gt;
+&lt;/html&gt;					
+
+&lt;/c&gt;
+
+
+&lt;p&gt;On the perl side, this is where I'm starting:&lt;/p&gt;
+&lt;c&gt;
+use CGI;
+$query = new CGI;
+
+$filename = $query-&gt;param('file-to-upload');
+my ($bytes, $buffer);
+
+open (IMAGE, "&gt;image.gif");
+    while ($byte = read($filename, $buffer, 1024)) {
+    print FILE $buffer;
+Quote:
+}
+
+close (IMAGE);
+
+print "Content-type: text/html\n\n";
+print "Done Uploading Image";
+exit; 
+
+&lt;/c&gt;
+
+&lt;p&gt;Q2) Do we live in a post CGI-bin world? This looks pretty ancient to be worried about buffers.&lt;/p&gt;
+
+&lt;p&gt;Q3) What are preferred and modern ways to do this? (If the answer is PHP, then I don't want to jump syntaxes to do this erstwhile trivial thing.)&lt;/p&gt;
+
+&lt;p&gt;This is where it always ends for gitlab now:&lt;/p&gt;
+&lt;c&gt;
+fritz@laptop:~/Documents/gitlab1$ ll
+total 52
+drwxrwxr-x  4 fritz fritz 4096 Jan  1 21:24 ./
+drwxr-xr-x 10 fritz fritz 4096 Jan  1 21:24 ../
+-rwxr-xr-x  1 fritz fritz 1156 Dec 24 22:43 1.2.solstice.pl*
+...
+drwxr-xr-x  2 fritz fritz 4096 Dec 15 21:44 conf_files/
+drwxrwxr-x  8 fritz fritz 4096 Dec 25 11:07 .git/
+-rw-rw-r--  1 fritz fritz   14 Dec 19 13:58 README.md
+fritz@laptop:~/Documents/gitlab1$ git remote -v 
+origin	git@gitlab.com:tallharry66@yahoo.com/trans.git (fetch)
+origin	git@gitlab.com:tallharry66@yahoo.com/trans.git (push)
+fritz@laptop:~/Documents/gitlab1$ git add *.pl
+fritz@laptop:~/Documents/gitlab1$ git push -u origin master
+ssh: Could not resolve hostname gitlab.com: Name or service not known
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+fritz@laptop:~/Documents/gitlab1$ 
+&lt;/c&gt;
+&lt;p&gt;I do have this:&lt;/p&gt;
+
+&lt;c&gt;
+fritz@laptop:~/Documents/gitlab1$ ssh -T git@gitlab.com
+Welcome to GitLab, @tallharry66!
+fritz@laptop:~/Documents/gitlab1$ 
+&lt;/c&gt;
+
+&lt;p&gt;, but then I man ssh and realize, I don't even know what this means:&lt;/p&gt;
+
+
+&lt;c&gt;
+     -T      Disable pseudo-terminal allocation.
+
+&lt;/c&gt;
+
+&lt;p&gt;, so&lt;/p&gt;
+
+&lt;p&gt;Q4) How do experienced Gitlabers cook up a project from scratch?&lt;/p&gt;
+
+&lt;p&gt;Thanks for your comment,&lt;/p&gt;
+</doctext>
+<thread id="11149277">
+<node id="11149278"><node id="11149520"><node id="11149524"><node id="11150173"><node id="11150181"/>
+</node>
+</node>
+</node>
+<node id="11150086"><node id="11150163"/>
+</node>
+</node>
+<node id="11149283"/>
+<node id="11149525"/>
+</thread></node>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227734" title="Re: Doubt in code - Beginner in perl" created="2018-12-27 02:55:57" updated="2018-12-27 02:55:57" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Welcome to Perl and the Monastery, [Perl_Programmer1992]!&lt;/p&gt;
+&lt;p&gt;The way you've shown it here, some of the output is split onto two lines, and because of that I would guess that some of your strings have extra newlines at the end. You've used [doc://chomp], which is good, but it's possible that, for example,  your input has [wp://Newline#Representation|CRLF] line endings, and [doc://chomp] is only removing the LF, not the CR. To check this, it's usually best to use a module like [doc://Data::Dumper], which normally comes installed with Perl. At the top of your program, add the lines &lt;c&gt;use Data::Dumper;&lt;/c&gt; and then &lt;c&gt;$Data::Dumper::Useqq=1;&lt;/c&gt; (the latter to make the output more helpful for this case), and then at the end of the program add &lt;c&gt;print Dumper(\%count);&lt;/c&gt;. Then, if you see output where the strings look like, for example, &lt;c&gt;"Perl\r"&lt;/c&gt;, that means my theory was correct, as the &lt;c&gt;\r&lt;/c&gt; represents the CR (&lt;c&gt;\n&lt;/c&gt; is LF). If it's something else and you're not sure, feel free to post the output here, inside &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags. Another way to verify this, if you're on a *NIX system, is to use a program like [man://hexdump] or [man://od] to show the files, e.g. &lt;c&gt;hexdump -C input.txt&lt;/c&gt; or &lt;c&gt;od -tx1c input.txt&lt;/c&gt; - if you see &lt;c&gt;0d 0a&lt;/c&gt;, that's a CRLF and again, if you have doubts, show the output here, inside &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags.&lt;/p&gt;
+&lt;p&gt;Now, as for how to fix it, I'd suggest maybe converting the input to use LF line endings. I doubt that your terminal will use CRLF when you type the input into it directly*, so I suspect that probably you have an input file that you are piping to Perl (such as &lt;c&gt;cat input.txt | perl script.pl&lt;/c&gt; or &lt;c&gt;perl script.pl &lt;input.txt&lt;/c&gt;, so it's best to edit the file. One way to do this is to open the file in a text editor that supports different line endings, often they will have an option when saving the file to change them. You'd have to tell us which editor you're using for more help on that. Another option is to use a program like [https://www.thefreecountry.com/tofrodos/index.shtml|Tofrodos], which often comes installed on *NIX systems or can be installed (for example on Debian or Ubuntu, &lt;c&gt;sudo apt-get install tofrodos&lt;/c&gt;), then you can use the command &lt;c&gt;fromdos input.txt&lt;/c&gt; to change CRLF line endings to LF.&lt;/p&gt;
+&lt;p&gt;One other option is to change the program itself, although I would really only recommend this if you know you'll be dealing with mixed line endings. You can remove extra whitespace from the end of the strings in &lt;c&gt;@words&lt;/c&gt; by saying &lt;c&gt;s/\s+\z// for @words;&lt;/c&gt; just after the &lt;c&gt;chomp&lt;/c&gt; - this will loop over the strings, and the regular expression will remove any whitespace at the end of the string (for details on this, see [doc://perlsyn] and [doc://perlretut]). There is another alternative involving the special variable [doc://$/], but since that only applies when your know for sure that your input will always have CRLF line endings, we don't need to get into that here.&lt;/p&gt;
+&lt;p&gt;Here are some more tips:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;When posting here, it's best to put &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags around both your example input and your code.&lt;/li&gt;
+&lt;li&gt;Always [id://111088], since they will help you catch (potential) mistakes. If you're not sure what the messages that you get mean, you can also add &lt;c&gt;use diagnostics;&lt;/c&gt; at the top of the program.&lt;/li&gt;
+&lt;li&gt;I would suggest that you don't declare all your variables at the top of the file, the best thing is to declare them only when they are needed, for example &lt;c&gt;foreach my $words (@words)&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;It's best to get into the habit of indenting your code, in this case the lines within the loops. Text editors can often help with that, or, you can use a tool like [mod://perltidy] to clean up your code.&lt;/li&gt;
+&lt;li&gt;Instead of &lt;c&gt;&lt;STDIN&gt;&lt;/c&gt;, Perl has a "magic" operator &lt;c&gt;&lt;&gt;&lt;/c&gt;. If there are files specified on the command line, Perl will open and read those, but if there are no files specified there, it will read from &lt;c&gt;STDIN&lt;/c&gt;. This means that instead of &lt;c&gt;cat input.txt | perl script.pl&lt;/c&gt;, you can just say &lt;c&gt;perl script.pl input.txt&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;Some more hopefully helpful reading: [id://745674], and [id://1177642|SSCCE]&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;* &lt;i&gt;Update:&lt;/i&gt; To be more specific, on Windows, Perl will normally translate CRLF to LF on its own, so that your Perl strings should still only contain LF line endings, which is why I've been guessing that your input is coming from a file (on *NIX), but please correct me if I'm wrong.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1227730</root_node>
+<parent_node field_name="parent_node">1227730</parent_node>
+<thread id="1227730">
+<node id="1227731"><node id="1227738"/>
+</node>
+<node id="1227734"><node id="1227739"/>
+</node>
+<node id="1227746"><node id="1227747"/>
+</node>
+<node id="1227749"><node id="1227754"/>
+</node>
+<node id="1227780"><node id="1227827"/>
+</node>
+</thread></node>

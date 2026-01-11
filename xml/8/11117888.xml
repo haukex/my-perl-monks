@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117888" title="Re^3: Substitute some Unicodes with their escapes" created="2020-06-09 19:49:53" updated="2020-06-09 19:49:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;UPDATE: here the SSCCE&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Thank you very much, that's very helpful!&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;use utf8; # used only for this SSCCE to set scalar $SGML at line 44&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Just to nitpick this comment: the pragma is also necessary so that the &lt;c&gt;DATA&lt;/c&gt; section is read as UTF-8 as well.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;it works, but still the regex is on every char&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, that's true. There are a couple of different approaches on how to solve this - you could use the modules that [Corion] [id://11117867|suggested] (but that would replace the entire functionality of the code you inherited; you'd have to be sure that there isn't any tricky legacy behavior that you need to preserve), you could [id://1179840|build a regex dynamically] to match only those characters that have an entry in the hash (but in the root node you said &lt;i&gt;"A builtin ? is returned for the Unicodes missing in that hash."&lt;/i&gt;), or my approach to answering this question so far has been to preserve as much of the original behavior as makes sense while still modernizing a bit.&lt;/p&gt;
+&lt;p&gt;To that end, the regex that I [id://11117862|suggested] seems to work fine on this small bit of sample data. Also, note that in this case, the whole &lt;c&gt;if length encode_utf8($char) &gt; 1&lt;/c&gt; logic isn't needed, because in [wp://UTF-8], the bytes &lt;c&gt;0x00&lt;/c&gt;-&lt;c&gt;0x7F&lt;/c&gt; map 1:1 to ASCII and are always single bytes, while any characters &lt;c&gt;&gt;= 0x80&lt;/c&gt; are guaranteed to be multibyte.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;if ( $char !~ /[\r\n\s]/ )&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note you have to be careful with this one: under Unicode matching rules, &lt;c&gt;\s&lt;/c&gt; will match Unicode whitespace characters as well, so for example if you were to have a table entry &lt;tt&gt;&amp;amp;nbsp; &amp;nbsp;&lt;/tt&gt;, because of this regex it wouldn't be applied! You probably want [doc://perlre#Character-set-modifiers|the &lt;c&gt;/a&lt;/c&gt; modifier], and the regex could be simplified to just &lt;c&gt;\s&lt;/c&gt;. However, because &lt;c&gt;[^\x00-\x7F]&lt;/c&gt; only matches on non-ASCII characters anyway, the &lt;c&gt;$char !~ /\s/a&lt;/c&gt; test will always be true anyway, and so it can be omitted as well. In fact, in the below code I've inlined the entire &lt;c&gt;sub _mapchar&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;By the way, in the root node you said you're using the [doc://bytes] pragma, note that its documentation says "Use of this module for anything other than debugging purposes is strongly discouraged."&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use utf8;
+use open qw/:std :utf8/;
+use Devel::Peek qw/Dump/;
+use Data::Dump;
+
+my %_table;
+sub load_map {
+	while (&lt;DATA&gt;) {
+		chomp;
+		my ($esc,$bin) = split / /, $_, 2;
+		$_table{$bin} = $esc;
+	}
+}
+
+sub escapeUTF8 {
+	my ($sgml_r) = @_;
+	$$sgml_r =~ s{([^\x00-\x7F])}
+		{ exists $_table{$1} ? $_table{$1} : '?' }eg;
+}
+
+load_map();
+dd \%_table;
+
+use Test::More tests=&gt;1;
+my $SGML='RÖCHLING ';
+Dump $SGML;
+escapeUTF8(\$SGML);
+is $SGML, 'R&amp;Ouml;CHLING&amp;nbsp;';
+
+__DATA__
+&amp;dollar; $
+&amp;Ouml; Ö
+&amp;raquo; »
+&amp;nbsp;  
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+1..1
+{
+  "\$"   =&gt; "&amp;dollar;",
+  "\xA0" =&gt; "&amp;nbsp;",
+  "\xBB" =&gt; "&amp;raquo;",
+  "\xD6" =&gt; "&amp;Ouml;",
+}
+SV = PV(0x12fca50) at 0x134f698
+  REFCNT = 1
+  FLAGS = (POK,IsCOW,pPOK,UTF8)
+  PV = 0x1361200 "R\303\226CHLING\302\240"\0 [UTF8 "R\x{d6}CHLING\x{a0}"]
+  CUR = 11
+  LEN = 13
+  COW_REFCNT = 1
+ok 1
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11117861</root_node>
+<parent_node field_name="parent_node">11117864</parent_node>
+<thread id="11117861">
+<node id="11117862"><node id="11117864"><node id="11117866"><node id="11117871"/>
+</node>
+<node id="11117888"><node id="11117889"/>
+</node>
+</node>
+</node>
+<node id="11117867"><node id="11117872"/>
+<node id="11117873"/>
+</node>
+</thread></node>

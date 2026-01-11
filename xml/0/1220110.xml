@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1220110" title="Re^2: counting words in string" created="2018-08-08 10:26:40" updated="2018-08-08 10:26:40" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1091361">frazap</author>
+<doctext field_name="doctext">&lt;p&gt;Since I'm a not an expert with perl regex, I start digging in the code of [haukex] with commenting it's original code and with searching a simpler loop.&lt;/p&gt;
+&lt;p&gt;Here we go:&lt;/p&gt;
+&lt;code&gt;
+use warnings;
+use strict;
+use Test::More tests=&gt;2;
+
+my $str = "iowq john stepy andy anne alic bert stepy anne bert andy step alic andy";
+
+my %names;
+=for comment
+pos 
+Returns the offset of where the last m//g search left off for the variable in question ($_ is used when the variable is not specified). 
+Note that 0 is a valid match offset. 
+undef indicates that the search position is reset (usually due to match failure, but can also be because no match has yet been run on the scalar).
+=cut
+
+pos($str)=undef;
+
+=for comment
+https://www.regular-expressions.info/continue.html
+The position where the last match ended is a "magical" value that is remembered separately for each string variable. 
+The position is not associated with any regular expression. 
+This means that you can use \G to make a regex continue in a subject string where another regex left off.
+If a match attempt fails, the stored position for \G is reset to the start of the string. To avoid this, specify the continuation modifier /c.
+=cut
+
+while ($str=~/\G #start where the last match ended
+    \s*  #match 0 to n space char
+    (\S+) #remember any non space char after that and followed by
+    (?:  #start clustering of
+    \s+|\z #1 to n spaces or the end of the string
+    ) #end clustering
+    /gcx) {
+	$names{$1}++;
+}
+die "failed to parse \$str" unless pos($str)==length($str);
+
+test_it (\%names);
+
+%names = ();
+#Takes a new variable
+#my $str2 = "iowq john stepy andy anne alic bert stepy anne bert andy step alic andy";
+#or reset pos for the original var
+pos($str)=undef;
+my $last;
+while ($str=~/(\w+)/g) {
+    #print $1, " ", pos $str, "\n";
+	$names{$1}++;
+    $last = pos $str;
+}
+
+die "failed to parse \$str" unless $last ==length($str);
+
+test_it(\%names);
+
+sub test_it {
+    my $hr_names = shift;
+    is_deeply $hr_names, { alic =&gt; 2, andy =&gt; 3, anne =&gt; 2, bert =&gt; 2,
+	iowq =&gt; 1, john =&gt; 1, step =&gt; 1, stepy =&gt; 2 };
+}
+&lt;/code&gt;
+I have 3 questions
+&lt;ul&gt;
+&lt;li&gt;Where is the /c modifier documented in the perldoc ? It is given at the end of [doc://perlfunc#pos] but I couldn't find no other description&lt;/li&gt;
+&lt;li&gt;How comes that I have to remember pos $str in the second loop ? It's undef after the second loop but not after the first one 
+&lt;li&gt;Are the two loops equivalent or will the second one failed in some situation ?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Cheers&lt;/p&gt;
+&lt;p&gt;François&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1219990</root_node>
+<parent_node field_name="parent_node">1220004</parent_node>
+<thread id="1219990">
+<node id="1219992"/>
+<node id="1219994"/>
+<node id="1219999"><node id="1220027"/>
+</node>
+<node id="1220004"><node id="1220110"><node id="1220217"/>
+</node>
+</node>
+<node id="1220030"/>
+<node id="1220061"/>
+</thread></node>

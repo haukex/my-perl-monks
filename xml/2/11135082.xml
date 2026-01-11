@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11135082" title="Re: Stopping excessive periods in email" created="2021-07-16 16:42:52" updated="2021-07-16 16:42:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;As others have mentioned, adding a single rule to your checks is unlikely to be an effective way of stopping spam - you may want to consider captchas, established software to prevent spam, and so on, instead of trying to roll your own.&lt;/p&gt;
+&lt;p&gt;Having said, that, regexes are also not really a good way to parse email addresses, which is why I would use [mod://Email::Address]; you may also be interested in [mod://Email::Valid] (which isn't perfect either, but still better than hand-rolled checks).&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use Email::Address;
+sub countdots {
+	my @addrs = Email::Address-&gt;parse(shift);
+	die "expected exactly one address" unless @addrs==1;
+	my $x = (my $tmp = $addrs[0]-&gt;user) =~ tr/././;
+	my $y = ($tmp = $addrs[0]-&gt;host) =~ tr/././;
+	return wantarray ? ($x,$y) : $x+$y;
+}
+
+use Test::More;
+my @tests = (
+	['test@gmail.com', 0, 1],
+	['test.test@gmail.com', 1, 1],
+	['test.test.test@gmail.com', 2, 1],
+	['test.test.test.test@gmail.com', 3, 1],
+	['test.test.test.test.test@gmail.com', 4, 1],
+	['test@foo.bar.com', 0, 2],
+	['test.test@foo.bar.com', 1, 2],
+);
+plan tests =&gt; 2*@tests+1;
+
+for my $t (@tests) {
+	my ($ad, $exp_x, $exp_y) = @$t;
+	my ($got_x, $got_y) = countdots($ad);
+	is $got_x, $exp_x;
+	is $got_y, $exp_y;
+}
+is countdots($tests[0][0]), $tests[0][1]+$tests[0][2];
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11135077</root_node>
+<parent_node field_name="parent_node">11135077</parent_node>
+<thread id="11135077">
+<node id="11135078"/>
+<node id="11135079"/>
+<node id="11135080"/>
+<node id="11135081"/>
+<node id="11135082"/>
+<node id="11135096"/>
+<node id="11135097"><node id="11135226"/>
+</node>
+</thread></node>

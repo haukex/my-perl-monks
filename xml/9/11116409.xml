@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116409" title="getting text from HTML" created="2020-05-03 17:17:56" updated="2020-05-03 17:17:56" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1189588">IB2017</author>
+<doctext field_name="doctext">&lt;p&gt;I want to extract the textual parts of HTML pages (i.e. the texts that a browser normally shows). I am using the following script, however with some pages it prints out code too. The script and the url can reproduce the issue. Any idea?&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+use LWP::Simple;
+use LWP::UserAgent;
+use HTML::TokeParser::Simple;
+
+my $ua = LWP::UserAgent-&gt;new( );
+my $text = do_GET_TXT("http://www.spacex.com/webcast");
+print $text;
+
+sub do_GET_TXT {
+	my ($url)=@_;
+	print "Downloading and reading HTML $url...\n";
+	my $response = $ua-&gt;get($url);
+	if ($response-&gt;is_error) {
+		$response-&gt;code;
+	}
+	else{
+		my $HTML = $response-&gt;decoded_content();
+		my @text;
+		require HTML::TokeParser::Simple;
+		my $p = HTML::TokeParser::Simple-&gt;new(\$HTML);
+		while ( my $token = $p-&gt;get_token ) {
+			next unless $token-&gt;is_text;
+			my $out = $token-&gt;as_is;
+			$out =~ s/^\s+/\n/;
+			push (@text, $out);
+		}
+		my $text = join("", @text);
+                #some heuristics
+		$text =~  s/\n+/\n/g; 
+		$text =~  s/\n(\d+\.)\n/$1\t/g; 
+		$text =~  s/(\(\d+\))\n/$1\t/g; 
+		$text =~  s/([a-z]\))\n/$1\t/g;  
+		return $text;
+	}
+}
+&lt;/code&gt;
+&lt;p&gt;I obtain more or less the same using Mojo::DOM with the following:&lt;/p&gt;
+&lt;code&gt;		
+my $dom = Mojo::DOM-&gt;new($HTML);
+my $text = $dom-&gt;all_text();
+&lt;/code&gt;
+&lt;p&gt;A bit better gets with the following (with reduces the parsing to the body, however snippets of javascript are still to be seen...&lt;/p&gt;
+&lt;code&gt;
+my $dom = Mojo::DOM-&gt;new($HTML);
+my $text = $dom-&gt;at('body')-&gt;all_text();
+&lt;/code&gt;</doctext>
+<thread id="11116409">
+<node id="11116410"><node id="11116413"/>
+<node id="11116428"><node id="11116429"/>
+</node>
+</node>
+<node id="11116440"><node id="11116708"/>
+<node id="11116723"/>
+</node>
+<node id="11116693"/>
+</thread></node>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1194005" title="Re: Avoid keeping larger lists in Memory" created="2017-07-01 15:23:20" updated="2017-07-01 15:23:20" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I'm running your script and watching the memory usage ([man://top]), and it's minimal and also not growing, I don't think that memory is your problem. Instead, I think it's just that the code you've implemented is relatively slow, so you probably want to look into optimizing it. A couple of recommendations there: you could, for example&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;research faster algorithms for [wp://Prime_number#Testing_primality_and_integer_factorization|determining whether a number is prime], as well as faster algorithms for [wp://Integer_factorization#Factoring_algorithms|determining the factors of an integer],&lt;/li&gt;
+&lt;li&gt;investigate where your code is spending the most time by profiling it with something like [mod://Devel::NYTProf],&lt;/li&gt;
+&lt;li&gt;set up caching for a speed/memory tradeoff for your &lt;c&gt;sub is_prime&lt;/c&gt; by using [doc://Memoize] to cache its return values (or even cache its results to disk using that module or one of the methods I mention below), and&lt;/li&gt;
+&lt;li&gt;think about how you might conceptually improve your algorithm. For example, you're looking for the &lt;i&gt;largest&lt;/i&gt; prime factor, so why don't you iterate through the (potential) factors from largest to smallest, stopping when you've found the first prime one?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Alternatively, for the task you're doing I can recommend [mod://Math::Prime::Util], it has lots of really helpful mathematical routines and it can deal with huge numbers (you should install [mod://Math::Prime::Util::GMP] for speed). However, if this is homework, that might be considered cheating ;-)&lt;/p&gt;
+&lt;c&gt;
+use Math::Prime::Util qw/factor/;
+use List::Util qw/max/;
+print max(factor(20)), "\n";
+print max(factor(13195)), "\n";
+print max(factor("600851475143")), "\n";
+__END__
+5
+29
+6857
+&lt;/c&gt;
+&lt;p&gt;As for your original question, note that once you put things on disk, you'll have disk I/O as a potential bottleneck. But if you still want to look into that, there are a few Perl modules that make storing things on disk fairly transparent, such as [doc://AnyDBM_File] for tying a hash to a DBM file, or [doc://Tie::File] for tying an array to a flat text file. Also, this thread might be an interesting read: [id://1187512], where the replies show how to cache data structures using [doc://Storable], [mod://JSON], or [mod://Path::Class] (the latter only for simple arrays).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1193998</root_node>
+<parent_node field_name="parent_node">1193998</parent_node>
+<thread id="1193998">
+<node id="1194005"/>
+<node id="1194006"/>
+<node id="1194016"><node id="1194025"><node id="1194036"><node id="1194155"><node id="1194157"><node id="1194164"><node id="1194167"><node id="1194192"><node id="1194197"/>
+<node id="1194248"><node id="1194288"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1194017"/>
+<node id="1194060"/>
+</thread></node>

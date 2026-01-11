@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1190316" title="corruption of jpg written and retrieved from sqlite" created="2017-05-15 11:27:55" updated="2017-05-15 11:27:55" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">I am trying to write a jpg to a sqlite database and read it back.  The read-back info says that the file maybe corrupted.  The original size is 120,453 and the read-back file is 120,895 consistently.  
+
+&lt;code&gt;
+use strict;
+use warnings;
+use util_routines;
+use DBI;
+
+my $my_picture_file = "c:\\users\\xxx\\work\\blob.jpg";
+my $dbname = "a.dat";
+
+my $dbh = util_routines::connect_to_sqlite($dbname);
+
+create_my_blob();
+
+open (my $MYFILE,'&lt;', $my_picture_file)  or die "Cannot open file....$!";
+my $data;
+{
+	local $/;
+	$data = &lt;$MYFILE&gt;;
+	close $MYFILE;
+}
+$data =~ s/^\s+//g;
+$data =~ s/\s+$//g;
+
+# insert image into table
+my $sql = "INSERT INTO my_blob VALUES (?)";
+my $sth = $dbh-&gt;prepare($sql) or die; 
+$sth-&gt;execute($data) or die;
+
+# retrieve image from table
+$sql = "SELECT image FROM my_blob";
+$sth = $dbh-&gt;prepare($sql) or die;
+$sth-&gt;execute() or die;
+
+my $ref = $sth-&gt;fetchrow_hashref;
+my $newdata = $$ref{'image'};
+
+$newdata =~ s/^\s+//g;
+$newdata =~ s/\s+$//g;
+
+open (my $OUTPUT, '&gt;', "output_blob.jpg") or die "$!\n";	
+print $OUTPUT $newdata;
+close $OUTPUT;
+
+$sth-&gt;finish;
+$dbh-&gt;disconnect;
+
+sub create_my_blob {
+	$dbh-&gt;do('drop table my_blob');
+	my $sql = qq/create table my_blob (image blob)/;
+	$dbh-&gt;do($sql) or die "\n\n$DBI::errstr";
+	print "Created my_blob\n";
+	return;
+}
+__END__
+&lt;/code&gt;
+
+OS os win7 with Strawberry Perl v5.24.1</doctext>
+<reputation field_name="reputation">8</reputation>
+<thread id="1190316">
+<node id="1190318"/>
+<node id="1190319"/>
+<node id="1190320"><node id="1190322"/>
+</node>
+</thread></node>

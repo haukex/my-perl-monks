@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201924" title="Re^3: Regex: matching character which happens exactly once" created="2017-10-23 15:26:27" updated="2017-10-23 15:26:27" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I spent some more time playing with this, trying out different things, like recursion, or backtracking control verbs, similar to what you did [id://1201903|here]. I also tried inverting the condition, that is, match strings where each character is repeated at least once. Sadly, test cases like &lt;c&gt;"abacbc"&lt;/c&gt; and &lt;c&gt;"abaxcbc"&lt;/c&gt; leave me doubting whether it is possible at all with pure regexes, although now that I've said that some regex wizard will probably prove me wrong ;-)&lt;/p&gt;
+&lt;p&gt;So despite not having achieved success yet, I thought I'd share one or two of the avenues I explored. One thing I tried was thinking about it as a &lt;i&gt;prefix&lt;/i&gt; + &lt;i&gt;single character&lt;/i&gt; + &lt;i&gt;suffix&lt;/i&gt;. Defining the latter two is fairly easy, but the &lt;i&gt;prefix&lt;/i&gt; is not, since for the test case &lt;c&gt;"abaxcbc"&lt;/c&gt; I haven't yet found a way for either the &lt;i&gt;prefix&lt;/i&gt; to "mark" the second &lt;c&gt;b&lt;/c&gt; as "seen", or the &lt;i&gt;suffix&lt;/i&gt; to look back and notice that &lt;c&gt;b&lt;/c&gt; has been seen before. This is what I was meant regarding variable-width lookbehind, the &lt;c&gt;(*SKIP)(*FAIL)&lt;/c&gt; trick [id://936151|shown] by [AnomalousMonk] looked interesting, but does not seem applicable here.&lt;/p&gt;
+&lt;p&gt;Another, simpler problem is that in a string like &lt;c&gt;"abccacb"&lt;/c&gt;, the regex will easily misidentify the second &lt;c&gt;a&lt;/c&gt; as the "single" character, since I couldn't find a way to look back - while I did manage to cover some of those cases with recursion, by doing stuff like &lt;c&gt;/ (?&lt;r1&gt;.)\g{r1}* (?&amp;subpat) \g{r1}++ /&lt;/c&gt;, I still couldn't cover all the cases. For example, I couldn't come up with a way to match &lt;c&gt;"abaxcbc"&lt;/c&gt; against &lt;c&gt;/a.*a/&lt;/c&gt;, &lt;c&gt;/b.*b/&lt;/c&gt;, and &lt;c&gt;/c.*c/&lt;/c&gt; simultaneously and in a way that advanced the match position in a useful manner. For example, in &lt;c&gt;"abaxcbc"=~/b(.*)b/&lt;/c&gt;, &lt;c&gt;$1 eq 'axc'&lt;/c&gt;, and while &lt;c&gt;cbc&lt;/c&gt; could be matched with a lookahead, how does one determine that the &lt;c&gt;a&lt;/c&gt; has been seen before? Alternatively, one could match &lt;c&gt;"abaxcbc"=~/ab(?=.*b)a/&lt;/c&gt;, but when you get to &lt;c&gt;cbc&lt;/c&gt;, how do you determine that &lt;c&gt;b&lt;/c&gt; has been seen before? (This is basically the same problem as mentioned above, no variable-width lookbehind.)&lt;/p&gt;
+&lt;p&gt;Of course, I may have painted myself into a corner with all my (over)thinking, so now I'm really curious if there &lt;i&gt;is&lt;/i&gt; a solution :-) (&lt;i&gt;Update:&lt;/i&gt; [id://1201976|There is!])&lt;/p&gt;
+&lt;p&gt;I also spent some time on generating test cases, which was an interesting little problem in itself. Although I am out of time for now, maybe something in the following is useful:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use feature 'say';
+use Test::More;
+
+my $re = qr{ \A  ## Reference Implementation ##
+		(?&lt;prefix&gt; .* )
+		(?&lt;single&gt; (??{ length $+{prefix}
+			? '[^'.quotemeta($+{prefix}).']' : '.' }) )
+		(?&lt;suffix&gt; (?: (?! \g{single} ) . )* )
+	\z }msx;
+
+my $re_nope = qr{ \A  ## one of my early failed attempts
+		# the prefix contains only characters that repeat later on
+		(?&lt;prefix&gt; (?: (?&lt;rep&gt; . ) (?= .* \g{rep} ) )*  )
+		# the single character obviously can't be part of the prefix
+		(?&lt;single&gt; (?! \g{rep} ) . )
+		# the suffix must not contain the "single" character
+		(?&lt;suffix&gt; (?: (?! \g{single} ) . )* )
+	\z }msx;
+
+# run the regex against the test cases
+for my $len (1..7) {
+	my $odo = deduped_odo( map ['a'..chr(ord('a')+$_-1)], 1..$len );
+	while (my @c = $odo-&gt;()) {
+		my $str = join '', @c;
+		my $expect = do { my %h; $h{$_}++ for @c;
+			my %r = reverse %h; exists $r{1} };
+		is $str=~$re, $expect, $str.($expect?' =~':' !~').' re'
+		# or, for regexes that match strings with no single chars:
+		#is $str!~$re2, $expect, $str.($expect?' !~':' =~').' re2'
+			or diag explain
+				[ \%-, map [ $-[$_], eval "\$$_", $+[$_] ], 1..@+ ];
+	}
+}
+
+done_testing;
+say "FAIL: $_-&gt;{name}"  # a shorter summary of failures
+	for grep { !$_-&gt;{ok} } Test::More-&gt;builder-&gt;details;
+exit;
+
+# test case generation stuff follows
+
+sub odometer {  # http://www.perlmonks.org/?node_id=1197785
+	my @w = map { [ 1, ref eq 'ARRAY' ? @$_ : $_ ] } @_;
+	my $done;
+	return sub {
+		if ($done) { $done=0; return }
+		my @cur = map {$$_[$$_[0]]} @w;
+		for (my $i=$#w; $i&gt;=0; $i--) {
+			last if ++$w[$i][0]&lt;@{$w[$i]};
+			$w[$i][0]=1;
+			$done=1 unless $i;
+		}
+		return wantarray ? @cur : join '', @cur;
+	}
+}
+
+sub deduped_odo {
+	my $odo = odometer(@_);
+	# this sequence can probably be generated directly...
+	my %seen;
+	return sub {
+		while (1) {
+			my @next = $odo-&gt;() or return;
+			my $pat = do { my ($i,%h)=('A');
+				join '', map {$h{$_}//=$i++} @next };
+			if ( not $seen{$pat}++ )
+				{ return wantarray ? @next : join '', @next }
+		}
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update 2019-10-05:&lt;/b&gt; I've just released [mod://Algorithm::Odometer::Tiny]!&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1201795</root_node>
+<parent_node field_name="parent_node">1201807</parent_node>
+<thread id="1201795">
+<node id="1201796"><node id="1201799"/>
+</node>
+<node id="1201806"><node id="1201807"><node id="1201924"><node id="1201940"/>
+</node>
+</node>
+</node>
+<node id="1201823"><node id="1201849"><node id="1201853"><node id="1201863"/>
+</node>
+</node>
+<node id="1201850"/>
+</node>
+<node id="1201894"/>
+<node id="1201896"><node id="1201899"><node id="1201900"><node id="1201903"><node id="1201911"><node id="1201921"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1201938"><node id="1201951"><node id="1201972"/>
+</node>
+</node>
+</node>
+<node id="1201912"><node id="1201920"><node id="1201950"/>
+</node>
+</node>
+<node id="1201958"><node id="1201959"/>
+<node id="1203237"/>
+</node>
+</thread></node>

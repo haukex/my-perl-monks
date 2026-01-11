@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1225564" title="Final Print Statement in Foreach Loop Prints Twice" created="2018-11-11 03:04:25" updated="2018-11-11 03:04:25" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1225562">ScarletRoxanne</author>
+<doctext field_name="doctext">I'm trying to write a very simple script that takes two words from STDIN and outputs TRUE if they're anagrams and FALSE if not. My main issue is that if the two words aren't anagrams (this is the final "else" statement in the script), the output looks like:
+Sorry, that's not an anagram pair Sorry, that's not an anagram pair&lt;P&gt;
+
+where I just want:&lt;P&gt;
+
+Sorry, that's not an anagram pair&lt;P&gt;
+
+Other, more minor issues for the especially generous:&lt;P&gt;
+
+1. I know what the FALSE values are for Perl, but I can't get the script to print FALSE by, for example, setting a variable to '' or 0, etc. or saying return ''. Ideally, I wouldn't have to put "print TRUE/FALSE" in the script at all.&lt;P&gt;
+
+2. I put in the last elsif statement in the script to see if it would affect the printing twice problem. It didn't, and now I'm curious why my m// expression doesn't work. It's supposed to find pairs that are identical except that one has more whitespace than the other.&lt;P&gt;
+
+Here's the script! I'm sorry it's so long - again, the problem is at the very end with the final "else" statement. Many thanks!!!
+&lt;c&gt;
+#To Run: Type start.pl on the command line.
+#The script should prompt you to enter a word or phrase.
+#Once you've done that, it'll prompt you for another one.
+#Then you will be told if the two terms are anagrams or not.
+
+#!/usr/bin/perl -w
+use strict;
+
+#I have to use this to make STDIN work. IDK why.
+
+$|=1;
+
+#variables
+
+my $aWord;
+my $bWord;
+my $word;
+my $sortWord;
+my $sortWords;
+my @words;
+my %anaHash;
+
+print "\nReady to play the anagram game? Excellent.\n\nType your first word or phrase, then hit Enter.\n\n";
+
+$aWord = &lt;STDIN&gt;;
+chomp $aWord;
+  
+print "\n\nThanks! Now type your second word or phrase and hit Enter.\n\n";
+
+$bWord = &lt;STDIN&gt;;
+chomp $bWord;
+
+#This foreach loop performs the following tasks:
+
+#1. Pushes the two words from STDIN into an array (unsure if this is really necessary)
+#2. lowercases everything and removes all characters except for letters &amp; spaces
+#3. splits both words into characters, sorts them alphabetically, then joins the sorted letters into a single "word"
+#4.pushes the array into a hash
+                          
+@words = ($bWord, $aWord);
+foreach $word (@words) {
+    $word =~ tr/A-Z/a-z/;
+    $word =~ s/[^a-z ]//ig;
+    $sortWord = join '', sort(split(//, $word));
+    push @{$anaHash{$sortWord}}, $word;
+}
+
+#This foreach loop tries to determine if the word pairs are anagrams or not.
+
+foreach  $sortWords (values %anaHash) {
+    
+    #"if you see the same word twice AND the input was two identical words:"
+    
+    if (1 &lt; @$sortWords  &amp;&amp;
+    @$sortWords[0] eq @$sortWords[1]) {
+    print "\n\nFALSE: Your phrases are identical!\n\n";
+    }
+    
+    #"if you see the same word twice AND the input was two different words (i.e. a real anagram):"
+    
+    elsif (1 &lt; @$sortWords &amp;&amp;
+       @$sortWords[0] ne @$sortWords[1]) {
+    print "\n\nTRUE: @$sortWords[0] and @$sortWords[1] are anagrams!\n\n";
+    }
+
+    #this is a failed attempt to identify pairs that are identical except one has extra spaces. Right now, this fails and falls into the "else" category below.
+    
+    elsif  (@$sortWords[0] =~ m/ +@$sortWords[-1]/ ||
+        @$sortWords[-1] =~ m/ +@$sortWords[0]/) { 
+    print "\n\FALSE: @$sortWords[0] and @$sortWords[-1] are NOT anagrams. Spaces are characters, too!\n\n";
+    }
+
+    #This is supposed to identify anything that's not an acronym. But the output prints twice! It's maddening!!!!
+    else {
+    print "Sorry, that's not an anagram pair\n";    
+    }
+}
+&lt;/c&gt;&lt;P&gt;
+
+&lt;small&gt;restored content by [Discipulus]&lt;/small&gt;&lt;!-- Wiki2Monks {"version":1.142} --&gt;</doctext>
+<thread id="1225564">
+<node id="1225565"/>
+<node id="1225566"/>
+<node id="1225570"/>
+<node id="1225572"/>
+<node id="1226188"/>
+</thread></node>

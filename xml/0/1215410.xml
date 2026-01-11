@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1215410" title="Flattening out arguments to splice" created="2018-05-29 18:12:03" updated="2018-05-29 18:12:03" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="209257">Oberon</author>
+<doctext field_name="doctext">&lt;p&gt;Oh enlightened ones, please share your wisdom on the following trivial topic:&lt;/p&gt;
+&lt;code&gt;
+use 5.14.0;
+use warnings;
+
+sub my_splice_like_func
+{
+    my ($list, @args) = @_;
+    my @copy = @$list;
+    return splice @copy, @args;         # this doesn't actually work :-(
+}
+
+$, = ' ';                               # just keepin' it pretty
+
+my $list = [qw&lt; one two three four &gt;];
+say my_splice_like_func($list, 2);      # want "three four"; get "two three four"
+say my_splice_like_func($list, 2, -1);  # want "three"; get "three four"
+&lt;/code&gt;
+&lt;p&gt;Now, I &lt;i&gt;see&lt;/i&gt; what's actually happening: &lt;code&gt;splice&lt;/code&gt; is forcing scalar context on &lt;code&gt;@args&lt;/code&gt;, so all I'm really passing in is the &lt;i&gt;number&lt;/i&gt; of args, which is obviously not what I want.  So I see what's wrong, but I have no clue how to fix it.  AFAIK there's no way to force list context (and Google seems to back me up on that).  I suppose if this were Perl6 I could do something like &lt;code&gt;*@args&lt;/code&gt; to flatten out the array, but in Perl5 I can't see any options other than something like:&lt;/p&gt;
+&lt;code&gt;
+    if (@args == 0)
+    {   
+        return @copy;
+    }
+    elsif (@args == 1)
+    {   
+        return splice @copy, $args[0];
+    }
+    elsif (@args == 2)
+    {   
+        return splice @copy, $args[0], $args[1];
+    }
+    else
+    {   
+        die("too many args");
+    }
+}
+&lt;/code&gt;
+&lt;p&gt;... which &lt;b&gt;works&lt;/b&gt;, but damn, that's clumsy.  (Other than checking for too many args, which the original version should have had, granted.)&lt;/p&gt;
+&lt;p&gt;Does anyone see a way that I've misssed?  As always, I humbly await illumination from the collective consciousness.&lt;/p&gt;</doctext>
+<thread id="1215410">
+<node id="1215414"><node id="1215416"><node id="1215419"/>
+<node id="1215422"/>
+</node>
+</node>
+<node id="1215423"/>
+<node id="1215477"/>
+</thread></node>

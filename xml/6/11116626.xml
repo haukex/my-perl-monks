@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116626" title="Re: Old random number generator" created="2020-05-09 17:27:31" updated="2020-05-09 17:27:31" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt; Is there a way to get the old behavior back?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;From what little I can tell from [https://github.com/Perl/perl5/commit/e7ab04ce52|this], it &lt;i&gt;may&lt;/i&gt; still be possible to compile Perl on Windows to use the old way. But that seems overly complex.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I have a few programs that depend upon generating repeatable pseudorandom number sequences.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The new random number generator still does this, it's even more reliable because it'll be the same no matter what platform. So I suspect that's not really your point - I suspect you've got code that is depending on a certain sequence of random numbers? Note that, in general, this isn't reliable anyway, since AFAICT, Perl before 5.20 didn't guarantee a certain algorithm to be used. What you probably really want is a PRNG with a known algorithm.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Before 5.20, &lt;c&gt;srand 0;print rand&lt;/c&gt; in Strawberry Perl always gave me &lt;c&gt;0.00115966796875&lt;/c&gt;.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, the following appears to work (after installing [https://www.microsoft.com/en-us/download/details.aspx?id=14632|Microsoft Visual C++ 2010 Redistributable Package (x64)]; I'm not a Windows expert so maybe there's a better way*) - at least for the single value you provided. But again, you're probably better off choosing a known PRNG instead, possibly from CPAN.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Win32::API;
+
+my $srand = Win32::API::More-&gt;new(
+	'msvcr100', 'void srand(unsigned int seed)'
+) or die "Error: ".Win32::FormatMessage(Win32::GetLastError());
+my $rand = Win32::API::More-&gt;new(
+	'msvcr100', 'int rand()'
+) or die "Error: ".Win32::FormatMessage(Win32::GetLastError());
+
+$srand-&gt;Call(0);
+print $rand-&gt;Call()/(1&lt;&lt;15), "\n"; # 0.00115966796875
+&lt;/c&gt;
+&lt;p&gt;* &lt;i&gt;Update:&lt;/i&gt; I can confirm that &lt;c&gt;'msvcrt'&lt;/c&gt; instead of &lt;c&gt;'msvcr100'&lt;/c&gt; works for me as well, thanks [syphilis]! &lt;i&gt;/Update&lt;/i&gt;&lt;/p&gt;
+&lt;p&gt;And after a bit of digging, the [wp://Linear congruential generator] that Windows uses can be reimplemented in Perl:&lt;/p&gt;
+&lt;c&gt;
+sub winrand {
+	use feature 'state';
+	state $r = 0; # seed
+	$r = ( 214013*$r + 2531011 ) &amp; 0xFFFFFFFF;
+	return ($r&gt;&gt;16)&amp;0x7FFF;
+}
+&lt;/c&gt;
+&lt;p&gt;The output of this function can be used in the same way, i.e. the first call to &lt;c&gt;winrand()/(1&lt;&lt;15)&lt;/c&gt; also produces &lt;c&gt;0.00115966796875&lt;/c&gt;, and further calls to &lt;c&gt;winrand()&lt;/c&gt; produce the same as &lt;c&gt;$rand-&gt;Call()&lt;/c&gt; in the above code. Note I've only tested this on a 64-bit Perl.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11116622</root_node>
+<parent_node field_name="parent_node">11116622</parent_node>
+<thread id="11116622">
+<node id="11116624"/>
+<node id="11116626"><node id="11116632"/>
+<node id="11116635"><node id="11116636"><node id="11116638"><node id="11116642"/>
+</node>
+<node id="11116646"/>
+</node>
+<node id="11116676"/>
+</node>
+</node>
+<node id="11116645"><node id="11116659"/>
+</node>
+<node id="11116672"/>
+<node id="11116686"/>
+</thread></node>

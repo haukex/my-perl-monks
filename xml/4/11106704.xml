@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11106704" title="Re^7: How do I display only matches" created="2019-09-25 17:52:12" updated="2019-09-25 17:52:12" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;You may not know this (many folks don't), but no matter what the OS platform, when writing to a network socket, "\n" means &amp;lt;CR&amp;gt;&amp;lt;LF&amp;gt;. ... So, yes, even on Unix, a write to network socket will be &amp;lt;CR&amp;gt;&amp;lt;LF&amp;gt;, while a write to a disk file will be just &amp;lt;LF&amp;gt;.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The way you worded this actually annoyed me enough that I double-checked my knowledge on this.&lt;/p&gt;
+&lt;p&gt;&lt;c&gt;serv.pl&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use IO::Socket::INET;
+use Devel::Peek;
+
+my $sock = IO::Socket::INET-&gt;new(Listen =&gt; 5, LocalPort =&gt; 9000,
+	LocalAddr =&gt; 'localhost',  Proto =&gt; 'tcp') or die $!;
+my $cli = $sock-&gt;accept();
+$cli-&gt;read(my $in, 5);
+Dump($in);
+&lt;/c&gt;
+&lt;p&gt;&lt;c&gt;cli.pl&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use IO::Socket::INET;
+
+my $sock = IO::Socket::INET-&gt;new("localhost:9000") or die $!;
+print $sock "foo\n\0\0";
+&lt;/c&gt;
+&lt;p&gt;Output of &lt;c&gt;serv.pl&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+SV = PV(0x573aeb89cfe0) at 0x573aeb8e2b50
+  REFCNT = 1
+  FLAGS = (POK,pPOK)
+  PV = 0x573aeb8ed890 "foo\n\0"\0
+  CUR = 5
+  LEN = 10
+&lt;/c&gt;
+&lt;p&gt;And, a Wireshark capture of the raw packet on the wire shows:&lt;/p&gt;
+&lt;c&gt;
+66:6f:6f:0a:00:00
+&lt;/c&gt;
+&lt;p&gt;On Linux &lt;b&gt;and on Windows&lt;/b&gt;. You're wrong on both of those counts as well. (You can add &lt;c&gt;binmode $sock, ':crlf';&lt;/c&gt; to the client, and it'll be &lt;c&gt;0d0a&lt;/c&gt; on both platforms, as expected.)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I hope this post adds more clarity to the issue.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, it spreads false and confusing information.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11106612</root_node>
+<parent_node field_name="parent_node">11106698</parent_node>
+<thread id="11106612">
+<node id="11106613"><node id="11106614"><node id="11106617"><node id="11106623"/>
+</node>
+</node>
+</node>
+<node id="11106615"><node id="11106616"><node id="11106620"><node id="11106624"><node id="11106693"><node id="11106698"><node id="11106700"><node id="11106705"><node id="11106706"><node id="11106708"><node id="11106719"><node id="11106805"><node id="11106813"><node id="11106815"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11106704"><node id="11106709"><node id="11106718"/>
+</node>
+<node id="11106716"><node id="11106717"><node id="11106809"><node id="11106811"/>
+</node>
+</node>
+<node id="11106773"><node id="11106803"><node id="11106810"><node id="11106814"><node id="11106823"><node id="11106826"><node id="11106858"/>
+<node id="11106934"><node id="11106939"><node id="11106981"><node id="11106993"><node id="11107025"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11106854"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11106655"><node id="11106702"><node id="11106754"><node id="11106806"><node id="11106812"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11106622"><node id="11106626"/>
+</node>
+</node>
+</node>
+<node id="11106619"/>
+</thread></node>

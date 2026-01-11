@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111868" title="missing second of time" created="2020-01-25 04:47:03" updated="2020-01-25 04:47:03" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">I was calculating orbital elements once per second with Perl 
+and noticed a glitch that occasionally doubled one of the 
+derivatives for a single second.
+&lt;p&gt;
+I was using the core function "time" and noticed that the  
+unixtime stamp would skip a second just before the event 
+would occur.  
+&lt;p&gt;
+Then I tried to see more with [cpan://Time::HiRes] and saw that a 
+second would be skipped when the decimal turned over.
+&lt;p&gt;
+I ran these two lines of code concurrently in bash shells, 
+and saw the strange results:
+&lt;pre&gt;
+
+perl -le 'while () { print time; sleep 1 }'
+
+1579941920
+1579941921
+1579941922
+1579941924 &lt;- WTF?
+
+perl -MTime::HiRes=time -le 'while () { print time; sleep 1 }'
+
+1579941920.99577
+1579941921.99751
+1579941922.99824
+1579941924.00213 &lt;- WTF!
+
+&lt;/pre&gt;
+
+A third terminal running at the same time printed the missing 
+second, but, it skipped one when it eventually turned over.
+
+&lt;pre&gt;
+1579941920.51386
+1579941921.51823
+1579941922.52046
+1579941923.52163 &lt;- OK
+1579941924.52477
+&lt;/pre&gt;
+
+The interval does not seem significant:
+
+&lt;pre&gt;
+1579941920.99577
+1.00174
+1579941921.99751
+1.00073
+1579941922.99824
+1.00389
+1579941924.00213 &lt;- WTF!
+&lt;/pre&gt;
+
+I tried a lot of things like disabling NTP and using usleep but it always skips and causes my program to flip out for a second. What is this sorcery? Thanx
+</doctext>
+<reputation field_name="reputation">14</reputation>
+<thread id="11111868">
+<node id="11111872"/>
+<node id="11111874"/>
+<node id="11111875"><node id="11111876"><node id="11111897"/>
+</node>
+</node>
+<node id="11111878"><node id="11111890"/>
+<node id="11111892"><node id="11111893"/>
+</node>
+<node id="11113423"><node id="11113425"><node id="11113443"/>
+</node>
+</node>
+</node>
+<node id="11111882"/>
+<node id="11111883"><node id="11111884"><node id="11111891"/>
+</node>
+</node>
+<node id="11111885"/>
+<node id="11111888"/>
+</thread></node>

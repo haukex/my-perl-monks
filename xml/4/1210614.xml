@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1210614" title="Perl/Moose calling writer doesnt work" created="2018-03-10 07:21:40" updated="2018-03-10 07:21:40" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1197356">jorba</author>
+<doctext field_name="doctext">Having a weird problem with perl/Moose.
+&lt;p&gt;
+Calling a writer for an attribute in a class to set the attribute value, but as far as I can tell the writer doesnt actually get called. The problem is with the call to SetFleName on line 15.
+&lt;p&gt;
+Here is the calling code
+&lt;p&gt;&lt;code&gt;
+use lib 'C:\Users\Jay\Desktop\SBS DEV\CODE\perl\Utilities';
+use AXControl;
+use AXSQL;
+use AXField;
+use Moose;
+use DBI;
+use DocPart;
+
+	my ($cntl,$dp, $i, $rc); 
+
+	$cntl = AXControl-&gt;new(System =&gt; "paperless");
+	$dp = DocPart-&gt;new(ControlObject =&gt; $cntl, DocID =&gt; 1, Seq =&gt; 1);
+	
+	print "bef call\n";
+	$rc = $dp-&gt;SetFileName('C:\Users\Jay\Desktop\SBS DEV\CODE\perl\test scripts\testdoc_part.pl');
+	print "set filename $rc\n";
+	
+
+	my $x = $dp-&gt;Save;
+	print "save rc $x\n";
+	print "Err msg " . $dp-&gt;ErrMsg;
+&lt;/code&gt;
+&lt;p&gt;
+Here is the code for the doc part object
+&lt;p&gt;&lt;code&gt;
+package DocPart;
+
+# Our libraries
+use lib 'C:\Users\Jay\Desktop\SBS DEV\CODE\perl\Utilities';
+use AXControl;
+use AXRecord;
+
+use Moose;
+use DBI;
+
+# Attributes
+has 'ControlObject' =&gt; (is =&gt; 'rw', isa =&gt; 'Object', required =&gt; 1);
+has 'DocID' =&gt; (is =&gt; 'rw', isa =&gt; 'Num', writer =&gt; 'SetDocID');
+has 'Seq' =&gt; (is =&gt; 'rw', isa =&gt; 'Num', writer =&gt; 'SetSeq');
+has 'FileName' =&gt; (is =&gt; 'rw', isa =&gt; 'Str', writer =&gt; 'SetFileName');
+has 'Rec' =&gt; (is =&gt; 'rw', isa =&gt; 'Object');
+has 'Valid' =&gt; (is =&gt; 'rw', isa =&gt; 'Bool');
+has 'ErrMsg' =&gt; (is =&gt; 'rw', isa =&gt; 'Str');
+
+#private - should not be accessed by outside code
+has 'NewDocPart' =&gt; (is =&gt; 'rw', isa =&gt; 'Bool');
+
+sub BUILD
+{
+	
+	my ($self, $db);
+	
+	$self = shift;
+	$self-&gt;Valid(0);
+	if (defined($self-&gt;DocID) and defined($self-&gt;Seq))
+		{
+		$self-&gt;Rec( AXRecord-&gt;new(ControlObject =&gt; $self-&gt;ControlObject, Name =&gt; 'document_part', Where =&gt; "WHERE DOC_ID = " . $self-&gt;DocID . " AND SEQNO = " . $self-&gt;Seq));
+		$self-&gt;NewDocPart(0);
+		}
+	else
+		{
+		$self-&gt;Rec( AXRecord-&gt;new(ControlObject =&gt; $self-&gt;ControlObject, Name =&gt; 'document_part'));
+		$self-&gt;NewDocPart(1);
+		}
+		
+}	
+
+sub SetDocID
+{
+	my $self;
+	
+	$self-&gt;DocID = shift;
+	
+	$self-&gt;get;
+}
+
+sub SetSeq
+{
+	
+	my $self;
+	
+	$self-&gt;Seq = shift;
+	
+	$self-&gt;get;
+}
+
+sub get
+{
+	my ($self, $Where);
+	
+	if ($self-&gt;ControlObject-&gt;IsNumber($self-&gt;DocId) and $self-&gt;ControlObject-&gt;IsNumber($self-&gt;Seq))	
+		{
+		$Where = "WHERE DOC_ID = " . $self-&gt;DocID() . " AND SEQNO = " . $self-&gt;Seq();
+		$self-&gt;Rec-&gt;Select(Where =&gt; $Where);
+		if ($self-&gt;Rec-&gt;Populated()) 
+			{
+			$self-&gt;NewDocPart(0);
+			$self-&gt;Valid(1);
+			$self-&gt;FileName($self-&gt;Rec-&gt;GetField("FILENAME"));
+			}
+		}	
+	
+}
+
+sub Validate
+{
+	my $self;
+	
+	$self = shift;
+	$self-&gt;Valid(1);
+	$self-&gt;ErrMsg(" ");
+	
+	if ( not $self-&gt;ControlObject-&gt;IsNumber($self-&gt;DocID)) 
+		{
+		$self-&gt;Valid(0);
+		$self-&gt;ErrMsg("DocID is non numeric");
+		}
+	
+	if (not $self-&gt;ControlObject-&gt;IsNumber($self-&gt;Seq)) 
+		{
+		$self-&gt;Valid(0);
+		$self-&gt;ErrMsg("Seq is non numeric");
+		}
+		
+	if (not $self-&gt;Rec-&gt;Populated() and $self-&gt;Rec-&gt;GetField("FILENAME")-&gt;Value eq " " )
+		{
+		$self-&gt;Valid(0);
+		$self-&gt;ErrMsg("Filename required for new document.");
+		}
+	else
+		{
+		if (not -e $self-&gt;FileName)
+			{
+			$self-&gt;Valid(0);
+			$self-&gt;ErrMsg("File named does not exist.");
+			}
+		}
+	
+}
+
+sub Save
+{
+	
+	my ($SQLStr, $sql, $self);
+	
+	$self = shift;
+	
+	$self-&gt;Validate;
+	if ($self-&gt;Valid)
+		{
+		if ($self-&gt;Rec-&gt;Populated)
+			{
+			#Existing Record 
+			if ($self-&gt;Rec-&gt;GetField("FILENAME")-&gt;Value ne $self-&gt;Rec-&gt;GetField("FILENAME")-&gt;OriginalValue)
+				{
+				#First delete any existing segments for this document part
+				$SQLStr = "DELETE FROM doc_part_segment WHERE DOC_ID = " . $self-&gt;DocID . " AND SEQNO = " . $self-&gt;Seq;
+				$sql = AXSQL-&gt;new(ControlObject =&gt; $self-&gt;ControlObject, SQLString =&gt; $SQLStr); 
+			
+				# load new file
+				$self-&gt;LoadFile
+				}
+			$self-&gt;Rec-&gt;Update;
+			}
+		else
+			{
+			#load new file
+			$self-&gt;Rec-&gt;Insert;
+			$self-&gt;LoadFile;
+			}
+		return 1;
+		}
+	else
+		{
+		return 0;
+		}
+	
+}	
+
+sub SetFileName
+{
+	my ($self, $fn);
+	$self = shift;
+	$fn = shift;
+	
+	print "fn $fn\n";
+	
+	if (not -e $fn)
+		{
+		print "ret 0\n";
+		return 0;
+		}
+	else 
+		{
+		$self-&gt;Rec-&gt;GetField("FILENAME")-&gt;NewValue($fn);
+		$self-&gt;FileName($fn);
+		print "ret 1\n";
+		return 1;
+		}
+	
+}
+
+sub LoadFile
+{
+	my $self;
+	
+	#read the file, split it into segments of the appropriate size and load to the db
+	my ($maxlen, $db, $sql, $cnt, $data);
+	
+	open FILE, "&lt;" . $self-&gt;Rec-&gt;GetField("FILENAME") or die "cant open file " . $self-&gt;Rec-&gt;GetField("FILENAME");
+	
+	#need to get this from the db next
+	$maxlen = 1000;
+	
+	$db = $self-&gt;ControlObject-&gt;{"SysHandle"};
+	$sql = $db-&gt;prepare(qq{INSERT INTO doc_part_segment (DOC_ID, SEQNO, SEGMENT_NO, FILE_SEGMENT) VALUES(?,?,?,?)});
+	read FILE, $data, $maxlen;
+	$cnt = 1;
+	while($data)
+		{
+		$sql-&gt;execute($self-&gt;DocID, $self-&gt;Seq, $cnt, $data);
+		read FILE, $data, $maxlen;
+		$cnt++;
+		}
+	close FILE;
+	
+}
+1;
+&lt;/code&gt;
+&lt;p&gt;
+Here is the output I get (I've left out the majority of the moose messages)
+&lt;p&gt;&lt;code&gt;
+SQL select column_name, column_key, character_maximum_length, numeric_scale, data_type, numeric_precision, datetime_precision from information_schema.columns where table_schema = 'paperless' and table_name = 'document_part' order by ordinal_position
+SQL RowCount 4
+SQL SELECT * FROM document_part WHERE DOC_ID = 1 AND SEQNO = 1
+SQL RowCount 0
+bef call
+set filename C:\Users\Jay\Desktop\SBS DEV\CODE\perl\test scripts\testdoc_part.pl
+save rc 0
+Err msg Filename required for new document.
+C:\Users\Jay\Desktop\SBS DEV\CODE\perl\test scripts&gt;
+&lt;/code&gt;
+&lt;p&gt;
+What am I doing wrong?</doctext>
+<thread id="1210614">
+<node id="1210616"><node id="1210618"/>
+</node>
+<node id="1210619"><node id="1210620"><node id="1210631"/>
+</node>
+</node>
+<node id="1210623"><node id="1210626"/>
+</node>
+</thread></node>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1173710" title="Re: How bad is $SIG{__DIE__} really?" created="2016-10-11 06:34:34" updated="2016-10-11 06:34:34" _doctext_mode="lenient"><type id="11">note</type>
+<author id="5348">Corion</author>
+<doctext field_name="doctext">&lt;p&gt;Having looked at &lt;c&gt;SIG&lt;/c&gt; magic, it's even more horrible, but the real thing on why to avoid &lt;c&gt;$SIG{__DIE__}&lt;/c&gt; is when you mix &lt;c&gt;die&lt;/c&gt; and &lt;c&gt;eval&lt;/c&gt;. If you can live with your &lt;c&gt;$SIG{__DIE__}&lt;/c&gt; handler getting called even when the program doesn't actually die, then I think using it to copy the message to some logging/notification is OK.&lt;/p&gt;
+&lt;c&gt;
+$SIG{__DIE__} = sub { die "[".gmtime." UTC] (PID $$) FATAL ".shift };
+
+if( !eval {
+    die "Whoops";
+    1;
+}) {
+    print "Error reading config file, using defaults\n";
+    ...
+};
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update&lt;/b&gt;: Upon reading your node to completion, you already mentioned the case I'm pointing out, sorry.&lt;/p&gt;
+&lt;p&gt;Outside of that weird/potentially confusing interaction, I simply wouldn't want to put complex logic in a SIG handler because something already went wrong, but again, copying the message to syslog or whatever doesn't seem too bad.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1173708</root_node>
+<parent_node field_name="parent_node">1173708</parent_node>
+<thread id="1173708">
+<node id="1173710"><node id="1174766"/>
+</node>
+<node id="1173711"/>
+<node id="1173726"><node id="1173788"><node id="1173829"/>
+</node>
+</node>
+<node id="1173729"/>
+<node id="1174765"/>
+</thread></node>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1225367" title="Re: Why is this exit code -1?" created="2018-11-07 12:13:32" updated="2018-11-07 12:13:32" _doctext_mode="lenient"><type id="11">note</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">Sometimes Perl tries to be smart and avoid launching the shell (notice no &lt;c&gt;/bin/sh&lt;/c&gt; being executed):
+
+&lt;c&gt;$ strace -fe execve perl -e '$code=system("exit 3"); print("Finished with $? (or ",$?&gt;&gt;8,") $code (or ",$code&gt;&gt;8,")\n");'
+execve("/usr/bin/perl", ["perl", "-e", "$code=system(\"exit 3\"); print(\"F"...], [/* 51 vars */]) = 0
+strace: Process 24553 attached
+[pid 24553] execve("/home/username/perl5/bin/exit", ["exit", "3"], [/* 51 vars */]) = -1 ENOENT (No such file or directory)
+[pid 24553] execve("/usr/local/bin/exit", ["exit", "3"], [/* 51 vars */]) = -1 ENOENT (No such file or directory)
+[pid 24553] execve("/usr/bin/exit", ["exit", "3"], [/* 51 vars */]) = -1 ENOENT (No such file or directory)
+[pid 24553] execve("/bin/exit", ["exit", "3"], [/* 51 vars */]) = -1 ENOENT (No such file or directory)
+[pid 24553] execve("/usr/local/games/exit", ["exit", "3"], [/* 51 vars */]) = -1 ENOENT (No such file or directory)
+[pid 24553] execve("/usr/games/exit", ["exit", "3"], [/* 51 vars */]) = -1 ENOENT (No such file or directory)
+[pid 24553] execve("/home/username/.local/bin/exit", ["exit", "3"], [/* 51 vars */]) = -1 ENOENT (No such file or directory)
+[pid 24553] +++ exited with 255 +++
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=24553, si_uid=1000, si_status=255, si_utime=0, si_stime=0} ---
+Finished with -1 (or 72057594037927935) -1 (or 72057594037927935)
++++ exited with 0 +++
+&lt;/c&gt;
+
+But when it notices enough special characters in the command line, a real shell is launched:
+
+&lt;c&gt;$ strace -fe execve perl -e '$code=system("ps &gt; /dev/null;exit 3"); print("Finished with $? (or ",$?&gt;&gt;8,") $code (or ",$code&gt;&gt;8,")\n");'
+execve("/usr/bin/perl", ["perl", "-e", "$code=system(\"ps &gt; /dev/null;exi"...], [/* 51 vars */]) = 0
+strace: Process 24618 attached
+[pid 24618] execve("/bin/sh", ["sh", "-c", "ps &gt; /dev/null;exit 3"], [/* 51 vars */]) = 0
+strace: Process 24619 attached
+[pid 24619] execve("/bin/ps", ["ps"], [/* 51 vars */]) = 0
+[pid 24619] +++ exited with 0 +++
+[pid 24618] --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=24619, si_uid=1000, si_status=0, si_utime=0, si_stime=1} ---
+[pid 24618] +++ exited with 3 +++
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=24618, si_uid=1000, si_status=3, si_utime=0, si_stime=0} ---
+Finished with 768 (or 3) 768 (or 3)
++++ exited with 0 +++
+&lt;/c&gt;
+
+This is described in the first paragraph of [doc://system|perldoc -f system]:
+
+&lt;blockquote&gt;If there is only one scalar argument, the argument is checked for shell metacharacters, and if there are any, the entire argument is passed to the system's command shell for parsing (this is &lt;c&gt;/bin/sh -c&lt;/c&gt; on Unix platforms, but varies on other platforms). If there are no shell metacharacters in the argument, it is split into words and passed directly to &lt;c&gt;execvp&lt;/c&gt;, which is more efficient.&lt;/blockquote&gt;</doctext>
+<root_node field_name="root_node">1225366</root_node>
+<parent_node field_name="parent_node">1225366</parent_node>
+<reputation field_name="reputation">24</reputation>
+<thread id="1225366">
+<node id="1225367"/>
+<node id="1225368"/>
+<node id="1225371"/>
+</thread></node>

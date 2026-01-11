@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11121852" title="Losing Bits with Pack/Unpack" created="2020-09-16 15:50:27" updated="2020-09-16 15:50:27" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="323003">o0lit3</author>
+<doctext field_name="doctext">&lt;p&gt;I am trying to pack bytes into as few unicode characters as possible. Consider the Twitter 140 character limit, which allows byte-heavy unicode characters. I believe I can squeeze 3 8-bit ascii characters into a single 20-bit unicode character, which I am currently trying via the following:&lt;/p&gt;
+
+&lt;code&gt;
+$\="\n";
+$_='Hello World!'; print;
+$_=pack'(U)*',map{hex}unpack'(H5)*'; print;
+$_=pack'(H5)*',map{sprintf"%05X",$_}unpack'(U)*'; print;
+&lt;/code&gt;
+
+&lt;pre&gt;
+Hello World!
+&amp;#296534;&amp;#444146;&amp;#358135;&amp;#443970;
+He`lo Wopld
+&lt;/pre&gt;
+
+&lt;p&gt;Note that when I attempt to pack'(H5)*' the same data I map/unpacked, (almost*) every third character is garbled, a symptom of dealing with an odd 5 hex characters, I'm sure. &lt;strong&gt;What is the appropriate way to do this without losing bits?&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Packing/Unpacking with the normal 16-bits works as expected:&lt;/p&gt;
+
+&lt;code&gt;
+$\="\n";
+$_='Hello World!'; print;
+$_=pack'(U)*',map{hex}unpack'(H4)*'; print;
+$_=pack'(H4)*',map{sprintf"%04X",$_}unpack'(U)*'; print;
+&lt;/code&gt;
+
+&lt;pre&gt;
+Hello World!
+&amp;#18533;&amp;#27756;&amp;#28448;&amp;#22383;&amp;#29292;&amp;#25633;
+Hello World!
+&lt;/pre&gt;
+
+&lt;p&gt;...and even allows 'n*' packing, since n is a 16-bit unsigned short:&lt;/p&gt;
+
+&lt;code&gt;
+$\="\n";
+$_='Hello World!'; print;
+$_=pack'(U)*',map{hex}unpack'(H4)*'; print;
+$_=pack'n*',unpack'(U)*'; print
+&lt;/code&gt;
+
+&lt;pre&gt;
+Hello World!
+&amp;#18533;&amp;#27756;&amp;#28448;&amp;#22383;&amp;#29292;&amp;#25633;
+Hello World!
+&lt;/pre&gt;
+
+Thanks for the help, and Cheers!</doctext>
+<thread id="11121852">
+<node id="11121856"/>
+<node id="11121858"/>
+<node id="11121865"/>
+<node id="11121866"><node id="11121900"/>
+</node>
+<node id="11121868"><node id="11121873"><node id="11121874"/>
+</node>
+</node>
+<node id="11121871"><node id="11121875"><node id="11121876"/>
+</node>
+</node>
+<node id="11121926"/>
+</thread></node>

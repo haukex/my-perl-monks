@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11148255" title="Re: Global match and capture group in look-ahead == under-populated &quot;@-&quot;?" created="2022-11-19 08:20:27" updated="2022-11-19 08:20:27" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Is this a bug?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The regexp debugger shows that in the &lt;c&gt;/g&lt;/c&gt; case, the last match in the "implicit loop" of &lt;c&gt;/g&lt;/c&gt; is a failed one (see also [doc://perlre#Repeated-Patterns-Matching-a-Zero-length-Substring]), probably leading to that result in [doc://@-]; note that [doc://$+] and [doc://$^N] are also &lt;c&gt;undef&lt;/c&gt; in this case. In addition to the below, try &lt;c&gt;perl -MRegexp::Debugger -e '$_="a";s/(?=(a))/b/g'&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;However, using those variables after a &lt;c&gt;/g&lt;/c&gt; match feels a little sketchy to me, so this may be an XY problem, so if you could explain the bigger picture, perhaps we can help solve that.&lt;/p&gt;
+&lt;c&gt;
+$ perl -Mre=debug -e '$_="a";s/(?=(a))/b/g'
+Compiling REx "(?=(a))"
+Final program:
+   1: IFMATCH[0] (11)
+   3:   OPEN1 (5)
+   5:     EXACT &lt;a&gt; (7)
+   7:   CLOSE1 (9)
+   9:   SUCCEED (0)
+  10: TAIL (11)
+  11: END (0)
+minlen 0 
+Matching REx "(?=(a))" against "a"
+   0 &lt;&gt; &lt;a&gt;                  |   0| 1:IFMATCH[0](11)
+   0 &lt;&gt; &lt;a&gt;                  |   1|  3:OPEN1(5)
+   0 &lt;&gt; &lt;a&gt;                  |   1|  5:EXACT &lt;a&gt;(7)
+   1 &lt;a&gt; &lt;&gt;                  |   1|  7:CLOSE1(9)
+   1 &lt;a&gt; &lt;&gt;                  |   1|  9:SUCCEED(0)
+                             |   1|  SUCCEED: subpattern success...
+   0 &lt;&gt; &lt;a&gt;                  |   0| 11:END(0)
+Match successful!
+Matching REx "(?=(a))" against "a"
+   0 &lt;&gt; &lt;a&gt;                  |   0| 1:IFMATCH[0](11)
+   0 &lt;&gt; &lt;a&gt;                  |   1|  3:OPEN1(5)
+   0 &lt;&gt; &lt;a&gt;                  |   1|  5:EXACT &lt;a&gt;(7)
+   1 &lt;a&gt; &lt;&gt;                  |   1|  7:CLOSE1(9)
+   1 &lt;a&gt; &lt;&gt;                  |   1|  9:SUCCEED(0)
+                             |   1|  SUCCEED: subpattern success...
+   0 &lt;&gt; &lt;a&gt;                  |   0| 11:END(0)
+END: Match possible, but length=0 is smaller than requested=1, failing!
+   1 &lt;a&gt; &lt;&gt;                  |   0| 1:IFMATCH[0](11)
+   1 &lt;a&gt; &lt;&gt;                  |   1|  3:OPEN1(5)
+   1 &lt;a&gt; &lt;&gt;                  |   1|  5:EXACT &lt;a&gt;(7)
+                             |   1|  failed...
+                             |   0| failed...
+Match failed
+Freeing REx: "(?=(a))"
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11148253</root_node>
+<parent_node field_name="parent_node">11148253</parent_node>
+<thread id="11148253">
+<node id="11148254"/>
+<node id="11148255"><node id="11148260"/>
+<node id="11148267"><node id="11148269"/>
+</node>
+</node>
+<node id="11148257"/>
+</thread></node>

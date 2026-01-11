@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11120515" title="Re: Multiline search and replace in file(s)" created="2020-08-09 04:03:13" updated="2020-08-09 04:03:13" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You can use the following pattern to slurp and spew a file:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my @files = &lt;Test*_Copy&gt;;
+for my $modfile (@files) {
+	# read
+	open my $ifh, '&lt;', $modfile or die "$modfile: $!";
+	my $data = do { local $/; &lt;$ifh&gt; }; # slurp
+	close $ifh;
+	# modify
+	$data =~ s/Marry Had A\nLittle Lamb\nShe Was GOOD\n/CHANGED!!!\n/smg;
+	# write
+	open my $ofh, '&gt;', $modfile or die "$modfile: $!";
+	print $ofh $data;
+	close $ofh;
+}
+&lt;/c&gt;
+&lt;p&gt;(Slurping can also be shortened to &lt;c&gt;my $data = do { open my $fh, '&lt;', $modfile or die $!; local $/; &lt;$fh&gt; };&lt;/c&gt;, though that's a bit less readable if you're not used to it).&lt;/p&gt;
+&lt;p&gt;Or you can use a nice module like [mod://Path::Class] or [mod://Path::Tiny]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Path::Tiny;
+
+my @files = path(".")-&gt;children(qr/^Test.*_Copy$/);
+for my $modfile (@files) {
+	$modfile-&gt;edit(sub {
+		s/Marry Had A\nLittle Lamb\nShe Was GOOD\n/CHANGED!!!\n/smg;
+	});
+}
+&lt;/c&gt;
+&lt;p&gt;Or you can use a oneliner ([id://1216313|see also] [doc://$^I]):&lt;/p&gt;
+&lt;c&gt;
+perl -wMstrict -0777 -i -pe 's/Marry Had A\nLittle Lamb\nShe Was GOOD\n/CHANGED!!!\n/smg' Test*_Copy
+&lt;/c&gt;
+&lt;p&gt;Or you can use my module [mod://File::Replace] for atomic updates when the filesystem supports it:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use File::Replace 'replace3';
+
+my @files = &lt;Test*_Copy&gt;;
+for my $modfile (@files) {
+	my ($infh,$outfh,$repl) = replace3($modfile);
+	my $data = do { local $/; &lt;$infh&gt; };
+	$data =~ s/Marry Had A\nLittle Lamb\nShe Was GOOD\n/CHANGED!!!\n/smg;
+	print $outfh $data;
+	$repl-&gt;finish;
+}
+&lt;/c&gt;
+&lt;p&gt;Or you can open the file in read-write mode, truncate it after reading, and then write it - though note I see this being done very rarely. (It's useful if you want to [doc://flock] the file while editing. That can be as simple as adding &lt;c&gt;use Fcntl qw/:flock/;&lt;/c&gt; at the top of the code and &lt;c&gt;flock($fh, LOCK_EX) or die "flock $modfile: $!";&lt;/c&gt; immediately after the [doc://open]. Keep in mind that &lt;c&gt;flock&lt;/c&gt; locks are merely advisory, though!)&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my @files = &lt;Test*_Copy&gt;;
+for my $modfile (@files) {
+	open my $fh, '+&lt;', $modfile or die "$modfile: $!";
+	my $data = do { local $/; &lt;$fh&gt; };
+	$data =~ s/Marry Had A\nLittle Lamb\nShe Was GOOD\n/CHANGED!!!\n/smg;
+	seek $fh, 0, 0 or die $!;
+	truncate $fh, 0 or die $!;
+	print $fh $data;
+	close $fh;
+}
+&lt;/c&gt;
+&lt;p&gt;Note that [id://1206848|glob has several caveats], though as shown in this code it's ok.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Updates:&lt;/i&gt; Added info on &lt;c&gt;flock&lt;/c&gt; and &lt;c&gt;$^I&lt;/c&gt;.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11120512</root_node>
+<parent_node field_name="parent_node">11120512</parent_node>
+<thread id="11120512">
+<node id="11120515"/>
+<node id="11120516"/>
+</thread></node>

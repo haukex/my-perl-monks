@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11119206" title="Modifying muliple matched strings in text" created="2020-07-12 08:18:48" updated="2020-07-12 08:18:48" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="66801">nysus</author>
+<doctext field_name="doctext">&lt;p&gt;In the following piece of markdown text, I want to replace the spaces with a hyphen and also make the link absolute with a slash in front. So I want to go from:
+
+&lt;c&gt;
+blah blah [click me](click me) more stuff
+blah [link here](link here) blah blah
+...
+&lt;/c&gt;
+
+&lt;p&gt;to:&lt;/p&gt;
+
+&lt;c&gt;
+blah blah [click me](/click-me) more stuff
+blah [link here](/link-here) blah blah
+...
+&lt;/c&gt;
+&lt;div class="readmore"&gt;
+&lt;p&gt;So this is as far as I got and I'm stymied:
+
+&lt;c&gt;
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+my $text = "blah blah [click me](click me) more stuff\nblah [link here](link here) blah blah";
+$text =~ s/(\[[^]]+]\()/$1\//g; # make links absolute
+$text =~ /(\[[^]]+]\(\/)([^\)]+)/;
+my $part1 = $1;
+my $part2 = $2;
+my $orig_part2 = $part2;
+$part2 =~ s/ /-/g;
+$text =~ s/\Q$part1$orig_part2\E/$part1$part2/g;
+&lt;/c&gt;
+
+&lt;p&gt;The obvious problem with this code is that only the first link gets the space replaced:&lt;/p&gt;
+
+&lt;c&gt;
+blah blah [click me](/click-me) more stuff
+blah [link here](/link here) blah blah
+&lt;/c&gt;
+
+&lt;p&gt;I'm drawing a blank on how I might loop through all matches to links and modify those matches. Or maybe there is an entirely better way of pulling this off. Thanks!
+
+&lt;p&gt;&lt;b&gt;UPDATE:&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;OK, I noodled around with this some more. On a lark, I tried a "global" match (which I didn't know existed outside substitution), and came up with this:
+&lt;c&gt;
+my $text = "blah blah [click me](click me) more stuff\nblah [link here](link here) blah blah";
+$text =~ s/(\[[^]]+]\()/$1\//g; # make links absolute
+my @matches = $text =~ /(\[[^]]+]\(\/)([^\)]+)/g;
+while (@matches) {
+  my $part1 = shift @matches;
+  my $part2 = shift @matches;
+  my $orig_part2 = $part2;
+  $part2 =~ s/ /-/g;
+  $text =~ s/\Q$part1$orig_part2\E/$part1$part2/g;
+}
+&lt;/c&gt;
+
+&lt;p&gt;Though it seems to work, I have a hunch this isn't ideal.
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-66801"&gt;
+&lt;font size=2&gt;&lt;p&gt;
+$PM = "Perl Monk's";&lt;br&gt;
+$MCF = "Most Clueless &lt;strike&gt;Friar&lt;/strike&gt; &lt;strike&gt;Abbot&lt;/strike&gt; &lt;strike&gt;Bishop&lt;/strike&gt; &lt;strike&gt;Pontiff&lt;/strike&gt; &lt;strike&gt;Deacon&lt;/strike&gt; &lt;strike&gt;Curate&lt;/strike&gt; &lt;strike&gt;Priest&lt;/strike&gt; Vicar";&lt;br&gt;
+$nysus = $PM . ' ' . $MCF;&lt;br&gt;
+&lt;a href="http://perlmonks.org/index.pl?node=Offering%20Plate"&gt;Click here if you love Perl Monks&lt;/a&gt;&lt;br&gt;&lt;/font&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="11119206">
+<node id="11119208"><node id="11119303"/>
+</node>
+<node id="11119211"><node id="11119304"/>
+</node>
+<node id="11119220"/>
+</thread></node>

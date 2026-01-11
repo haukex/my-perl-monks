@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11114417" title="Re: Mojolicious waiting page" created="2020-03-18 04:23:30" updated="2020-03-18 04:23:30" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Here's one way, with AJAX:&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; To clarify, this mainly shows how to do the form submission asynchronously - you can always modify this code so that it, for example, redirects to a different page when the form submission is complete, to show a "spinner" image instead of the "Submitting" message, and so on. &lt;i&gt;/Update&lt;/i&gt;&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use Mojolicious::Lite -signatures;
+
+get '/' =&gt; sub ($c) {
+	$c-&gt;render(template =&gt; 'index');
+} =&gt; 'index';
+
+post '/submit' =&gt; sub ($c) {
+	$c-&gt;render_later;
+	Mojo::IOLoop-&gt;timer(10 =&gt; sub { # simulate long process
+		if ( $c-&gt;param('foo') =~ /foo/i ) {
+			$c-&gt;render(json =&gt; { ok=&gt;1, message=&gt;"All good" });
+		}
+		else {
+			$c-&gt;render(json =&gt; { ok=&gt;0, message=&gt;"Bad foo value" });
+		}
+	});
+} =&gt; 'formsubmit';
+
+app-&gt;start;
+
+__DATA__
+
+@@ layouts/main.html.ep
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+%= content
+&lt;/body&gt;
+&lt;/html&gt;
+
+@@ index.html.ep
+% layout 'main', title =&gt; 'Hello, World!';
+&lt;div&gt;
+%= form_for formsubmit =&gt; ( method=&gt;'post', id=&gt;'myform' ) =&gt; begin
+&lt;div&gt;
+%= label_for foo =&gt; 'Foo'
+%= text_field foo =&gt; ( placeholder=&gt;"Foo", required=&gt;'required' )
+(must contain "foo")
+&lt;/div&gt;&lt;div&gt;
+%= label_for bar =&gt; 'Bar'
+%= text_field bar =&gt; ( placeholder=&gt;"Bar" )
+&lt;/div&gt;&lt;div&gt;
+%= submit_button 'Login'
+&lt;span id="formmessage"&gt;&lt;/span&gt;
+&lt;/div&gt;
+%= end
+&lt;/div&gt;
+&lt;script src="https://code.jquery.com/jquery-3.4.1.min.js"
+	integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+	crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script&gt;
+$(function () {
+	$('#myform').on('submit', function (e) {
+		e.preventDefault();
+		var thedata = $('#myform').serialize(); // before disabling!
+		$("#formmessage").text("Submitting, please wait...");
+		$("#myform :input").prop("disabled", true);
+		$.ajax({ type: 'post', url: '&lt;%= url_for 'formsubmit' %&gt;',
+			data: thedata, timeout: 120*1000 })
+			.done( function( data ) {
+				if (data.ok) {
+					alert("Form was submitted: "+data.message);
+				}
+				else {
+					alert("Problem with submission: "+data.message);
+				}
+			})
+			.fail( function( jqXHR, textStatus, errorThrown ) {
+				alert("Form submission error: "+textStatus
+					+" / "+jqXHR.status+" "+errorThrown);
+			})
+			.always( function () {
+				$("#formmessage").text("");
+				$("#myform :input").prop("disabled", false);
+			});
+	});
+});
+&lt;/script&gt;
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11114315</root_node>
+<parent_node field_name="parent_node">11114315</parent_node>
+<thread id="11114315">
+<node id="11114319"><node id="11114324"/>
+</node>
+<node id="11114330"/>
+<node id="11114417"/>
+</thread></node>

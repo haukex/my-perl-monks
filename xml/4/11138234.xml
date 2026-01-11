@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11138234" title="Re: Iterating over hash to find specific key to sum up the cost (updated!)" created="2021-10-29 15:24:56" updated="2021-10-29 15:24:56" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;b&gt;Final Update:&lt;/b&gt; When I replied, the code in the OP did not compile, as one of the four closing braces of &lt;c&gt;$VAR1&lt;/c&gt; was missing, leading me to have to make an assumption of what the data structure looks like. The unmarked update to the OP has now invalidated my code below. Plus, the first nested hash was as shown below instead of the current &lt;c&gt;'19-4' =&gt; { 'cost' =&gt; '6300.00', 'cost2' =&gt; '630.00' }&lt;/c&gt;, so the sum of the &lt;c&gt;cost&lt;/c&gt; keys was indeed originally 430 as OP expects. [vaitor15]: &lt;b&gt;[id://17557|It is uncool to update a node in a way that renders replies confusing or meaningless]&lt;/b&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;strike&gt;Note what you've posted here is not runnable. See [id://174051] &lt;b&gt;Update 2:&lt;/b&gt; Because it's not runnable,&lt;/strike&gt; I've had to &lt;i&gt;guess&lt;/i&gt; as to what your data structure looks like, &lt;strike&gt;but as [LanX] points out in his reply, other interpretations are possible. Please clarify what your real input data looks like. &lt;b&gt;/Update&lt;/b&gt;&lt;/strike&gt;&lt;/p&gt;
+&lt;p&gt;You should read the [doc://perldsc|Perl Data Structures Cookbook] (in particular [doc://perldsc#Access-and-Printing-of-a-HASH-OF-HASHES]) and the [doc://perlreftut|Perl References Tutorial] to learn how to work with nested data structures like these. Basically, you can use [doc://keys] to loop over the keys of each level of hashes - this should be enough to get you started:&lt;/p&gt;
+&lt;strike&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my %result = (
+  "1069-9" =&gt; {},
+  "135-1"  =&gt; { "68-4" =&gt; { cost =&gt; "300.00", cost2 =&gt; "130.00" } },
+  "153-1"  =&gt; { "19-4" =&gt; { cost =&gt; "100.00", cost2 =&gt;  "30.00" } },
+  "35-1"   =&gt; { "28-4" =&gt; { cost =&gt;  "30.00", cost2 =&gt;  "10.00" } },
+);
+
+for my $k1 ( keys %result ) {
+	for my $k2 ( keys %{ $result{$k1} } ) {
+		if ( exists $result{$k1}{$k2}{cost} ) {
+			print "$k1 / $k2 / $result{$k1}{$k2}{cost}\n";
+		}
+	}
+}
+&lt;/c&gt;
+&lt;/strike&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; I used [doc://exists] in the above code to check for the existence of the &lt;c&gt;cost&lt;/c&gt; key because you said &lt;i&gt;"find sum of value when cost key is found"&lt;/i&gt;. I should add that, depending on what values are possible in your input data, you may want to check for [doc://defined]ness or [id://11104607|truth] instead.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11138233</root_node>
+<parent_node field_name="parent_node">11138233</parent_node>
+<thread id="11138233">
+<node id="11138234"/>
+<node id="11138235"><node id="11138236"><node id="11138237"><node id="11138238"><node id="11138239"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11138243"/>
+<node id="11138245"><node id="11138246"/>
+</node>
+<node id="11138250"/>
+</thread></node>

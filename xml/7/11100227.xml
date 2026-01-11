@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100227" title="Re^4: processing file content as string vs array" created="2019-05-18 14:58:38" updated="2019-05-18 14:58:38" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I have no issue with that for a short (&amp;lt;1 page) piece of code.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;For a short script, I don't see the advantage of a &lt;c&gt;sub&lt;/c&gt; over just inlining the code. But since TMTOWTDI, it's fine.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I don't see any issue here at all. ... I don't see any case for "more flexible".&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Just to be clear, I was talking about the general case, and especially for a longer script, where I disagree with this pattern. Personally, I think it's best to just read from the file in one place in the code, because as I said, I think it's more flexible across different input file formats. In a long script it would also become difficult to keep track of all the places that read the file, and what state they expect the filehandle to be in, and what state they leave it in.&lt;/p&gt;
+&lt;p&gt;You said &lt;i&gt;"You are correct in that there is no 'unget' or 'un-read' for a line that has already been read."&lt;/i&gt; - that's what I was referring to. I still think a state machine approach is better, but if you disagree, perhaps you could show how you'd use the pattern you showed (a &lt;c&gt;&lt;DATA&gt;&lt;/c&gt; in the main loop and a &lt;c&gt;&lt;DATA&gt;&lt;/c&gt; in a &lt;c&gt;sub&lt;/c&gt;) to read a file like the below &lt;c&gt;__DATA__&lt;/c&gt; section.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+my @output;
+use constant { STATE_IDLE=&gt;0, STATE_IN_SECTION=&gt;1 };
+my $state = STATE_IDLE;
+my @buf;
+my $end_section = sub {
+	if ( $state == STATE_IN_SECTION )
+		{ push @output, [@buf]; @buf = () }
+	$state = STATE_IDLE;
+};
+while (&lt;DATA&gt;) {
+	chomp;
+	if ( my ($x,$y) = /^ (?: (.+) \s+ )? START (?: \s+ (.+) )? $/x ) {
+		if ( defined $x ) {
+			die "unexpected: $_\n" unless $state == STATE_IN_SECTION;
+			push @buf, $x;
+		}
+		$end_section-&gt;();
+		$state = STATE_IN_SECTION;
+		push @buf, $y if defined $y;
+	}
+	elsif ( my ($z) = /^ (?: (.+) \s+ )? END $/x ) {
+		die "unexpected: $_\n" unless $state == STATE_IN_SECTION;
+		push @buf, $z if defined $z;
+		$end_section-&gt;();
+	}
+	else {
+		if ( $state == STATE_IN_SECTION )
+			{ push @buf, $_ }
+		else {} # ignore outside of section
+	}
+}
+$end_section-&gt;();
+
+use Test::More tests=&gt;1;
+is_deeply \@output, [["a", "b"], ["c" .. "g"], ["h", "i"], ["j", "k"]]
+	or diag explain \@output;
+
+__DATA__
+START
+a
+b
+START c
+d
+e
+f
+g END
+ignoreme
+START h
+i START j
+k
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1233681</root_node>
+<parent_node field_name="parent_node">11100133</parent_node>
+<thread id="1233681">
+<node id="1233684"><node id="1233687"><node id="1233688"/>
+<node id="1233689"/>
+<node id="1233732"/>
+</node>
+</node>
+<node id="1233692"><node id="1233694"><node id="1233695"><node id="1233698"/>
+</node>
+<node id="1233755"/>
+</node>
+</node>
+<node id="11100004"><node id="11100041"><node id="11100133"><node id="11100227"><node id="11100307"><node id="11100327"><node id="11100328"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11115735" title="Re: lexical vs. local file handles" created="2020-04-18 15:04:22" updated="2020-04-18 15:04:22" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Do I miss something here? Do you see any pitfalls using this approach?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;When you localize a glob, you're localizing &lt;i&gt;every&lt;/i&gt; variable with that name - scalars, arrays, hashes, etc.&lt;/li&gt;
+&lt;li&gt;[doc://local]'s effects have dynamic scope, so they effect &lt;i&gt;everything&lt;/i&gt; called in that scope, including code that might not be yours. You might step on someone else's globals, or they might step on yours. The major issue is that this is action at a distance: things may break in remote pieces of code, and it may be incredibly hard to connect the problem to the cause. This will not happen with lexicals.&lt;/li&gt;
+&lt;li&gt;Bareword filehandles also clash with package names ([id://1083985|see also]).&lt;/li&gt;
+&lt;li&gt;&lt;small&gt;&lt;i&gt;Update from [id://11115750|here]:&lt;/i&gt;&lt;/small&gt; &lt;c&gt;open local *HMD, "&gt;", \(my $x) or die $!; print HND "Foo"; close HND;&lt;/c&gt; only causes warnings, while &lt;c&gt;open my $hmd, "&gt;", \(my $x) or die $!; print $hnd "Foo"; close $hnd;&lt;/c&gt; is a compile-time error.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+our $FH = "Hello, World!";
+sub FH::awesome { print "&lt;$FH&gt;\n" }
+
+FH-&gt;awesome;
+
+open local *FH, "&lt;", \my $x or die $!;
+
+FH::awesome;
+# =&gt; Use of uninitialized value $FH in concatenation (.) or string
+
+FH-&gt;awesome;
+# =&gt; Can't locate object method "awesome" via package "IO::File"
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;Though there are good reasons for this, it has a drawback. Filehandles in Perl are special on a syntactical level. The compiler is capable of catching errors like this:&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You seem to be naming only a single (IMHO minor) advantage, compared to all the arguments against bareword filehandles. Unless there's something else I'm missing, for me, the arguments against bareword filehandles outweigh those in favor of them.&lt;/p&gt;
+&lt;p&gt;Instead of using bareword filehandles, you could get into the practice of being explicit about your [doc://print]s, as in &lt;c&gt;print {$fh} "something\n";&lt;/c&gt; - visually a whole lot more clear. (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; see also [mod://Perl::Critic::Policy::InputOutput::RequireBracedFileHandleWithPrint].)&lt;/p&gt;
+&lt;p&gt;See also [id://11102684].&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update 2:&lt;/i&gt; Just to cross-reference this thread to another lexical vs. bareword filehandle discussion: [id://11117517]&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11115734</root_node>
+<parent_node field_name="parent_node">11115734</parent_node>
+<thread id="11115734">
+<node id="11115735"><node id="11115736"><node id="11115737"><node id="11115738"><node id="11115739"><node id="11115741"><node id="11115742"/>
+</node>
+</node>
+<node id="11115746"/>
+</node>
+</node>
+<node id="11115750"><node id="11115784"><node id="11115786"><node id="11115787"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11115748"/>
+<node id="11115756"><node id="11115785"/>
+</node>
+</thread></node>

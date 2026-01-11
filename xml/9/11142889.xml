@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11142889" title="Re^4: 32bit/64bit hash function: Use perls internal hash function?" created="2022-04-10 07:11:01" updated="2022-04-10 07:11:01" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1145534">sectokia</author>
+<doctext field_name="doctext">&lt;p&gt;In terms of database performance: Basically I have ~120m+ records, about 10m per day added, and 10m deleted. And the need to fetch (via UDP request) a record by its identifer and respond within &lt;5mS, with a peak around 100 to 150 requests per second.&lt;/p&gt;
+
+&lt;p&gt;No database we have tried consistently achieves this. Most of them can do it for a while, then slow down, or inconsistently achieve it. MSSQL can go for 10+ seconds without answering a basic query if you are inserting and deleting heavily at the same time. Same with mssql. Even Redis will suddenly lurch for hundreds of milliseconds especially when large numbers of records all expire at the same time, including when you have it running under linux as RT with top FIFO scheduling. The simple fact seems to be almost no databases don't have branches that cause large amount of I/O and internal work to be done before they get back to doing their job of answering your query.&lt;/p&gt;
+
+&lt;p&gt;In comparison this hash perl cache thing, has a perfect record because it never has to do anything else. So long as it has priority to disk and CPU, it works flawlessly. I can ingest over 100,000 records per second, while still servicing 5,000 requests per second on a modest PC. It achieves &lt;1mS 100% of the time.&lt;/p&gt;
+
+&lt;p&gt;In terms of why I want a faster hasher: The number of hashes per insert is 1 when the hash table is empty, averages 2 when the hash table is half full, and obviously ramps up to infinity when the hash table is full. By moving to a faster hash algorithm, I am able to move the hash table size down toward the total number of records (because as you do that number of hashes for an insert goes up) which wastes less RAM but increases CPU.&lt;/p&gt;
+
+&lt;p&gt;In terms of the 8KB vs 512b IO fetch: This allows the number of records per second I can fetch to approach the storage/SSD's IOPS.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11142822</root_node>
+<parent_node field_name="parent_node">11142865</parent_node>
+<thread id="11142822">
+<node id="11142823"/>
+<node id="11142824"/>
+<node id="11142825"><node id="11142887"><node id="11142892"/>
+</node>
+<node id="11142893"><node id="11142914"/>
+</node>
+</node>
+<node id="11142827"><node id="11142863"><node id="11142864"><node id="11142869"/>
+</node>
+<node id="11142865"><node id="11142888"/>
+<node id="11142889"/>
+</node>
+<node id="11142868"/>
+</node>
+</node>
+</thread></node>

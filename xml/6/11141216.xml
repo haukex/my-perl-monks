@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11141216" title="AnyEvent::Socket -&gt; Hosts File -&gt; CR/LF Issue on windows?" created="2022-02-07 21:44:06" updated="2022-02-07 21:44:06" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1145534">sectokia</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Monks,&lt;/p&gt;
+&lt;p&gt;I was tracking down my issue with IP's in hosts file not resolving when using AnyEvent on Windows.&lt;/p&gt;
+&lt;p&gt;I was eventually lead to this code in AnyEvent::Socket.pm:&lt;/p&gt;
+
+&lt;code&gt;
+sub _parse_hosts($) {
+   %HOSTS = ();
+   
+  for (split /\n/, $_[0]) {
+      s/#.*$//;
+      s/^[ \t]+//;
+      y/A-Z/a-z/;
+
+      my ($addr, @aliases) = split /[ \t]+/;
+
+...
+&lt;/code&gt;
+
+&lt;p&gt;The problem is on windows the lines in the hosts file end with '\r\n'. But this code only splits on '\n'. So whats happening is '\r' ends up literally in the (last) alias, and thus it will never match when later the attempt is made to match the hostname to the alias.&lt;/p&gt;
+&lt;p&gt;Is this a mistake in this module? Or have I somehow messed up and perl on windows? Is perl meant to treat '\n' in regex as '\r\n' when running on windows?&lt;/p&gt;
+
+
+
+
+</doctext>
+<thread id="11141216">
+<node id="11141218"><node id="11141270"/>
+</node>
+<node id="11141219"><node id="11141224"><node id="11141225"><node id="11141226"><node id="11141233"><node id="11141241"><node id="11141259"/>
+<node id="11141260"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11141221"><node id="11141269"/>
+</node>
+<node id="11141234"/>
+</thread></node>

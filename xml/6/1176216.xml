@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1176216" title="Re^4: Need a regex to replace incomplete html entities" created="2016-11-20 13:30:04" updated="2016-11-20 13:30:04" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [Chris Daniel],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I need to remove the entities without opening the file.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm going to take a guess as to what you mean by this. I assume you have an existing Perl script that uses an XML module to parse the file, and that is what you mean by "opening the file", and you want to make the replacements in the file &lt;i&gt;before&lt;/i&gt; running this particular Perl script. The reason the terminology you're using is confusing is that a search &amp;amp; replace on the file will always require opening it.&lt;/p&gt;
+&lt;p&gt;It is possible but not necessary to use [man://sed] for your task, Perl will work just fine, this is a Perl website after all. You can either use a solution like for example what [FreeBeerReekingMonk] showed [id://1176115|here], running that one-liner before you run your script that parses the XML file, or you could even integrate the search and replace into the same script that parses the XML file. Here's a rough idea that takes an input file, runs the search and replace and writes the result to an intermediate file, which you can then open with your XML parser:&lt;/p&gt;
+&lt;c&gt;
+my $input_filename = 'foo.xml';
+my $temp_filename = 'bar.xml';
+open my $ofh, '&gt;', $temp_filename or die $!;
+open my $ifh, '&lt;', $input_filename or die $!;
+while (&lt;$ifh&gt;) {
+	s/foo/bar/g;
+	print $ofh $_;
+}
+close $ifh;
+close $ofh;
+
+# now open $temp_filename with your XML parser
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1176192</root_node>
+<parent_node field_name="parent_node">1176200</parent_node>
+<thread id="1176192">
+<node id="1176194"><node id="1176199"><node id="1176202"><node id="1176206"/>
+</node>
+</node>
+</node>
+<node id="1176195"/>
+<node id="1176196"><node id="1176197"><node id="1176198"/>
+<node id="1176200"><node id="1176203"/>
+<node id="1176213"/>
+<node id="1176216"/>
+</node>
+</node>
+</node>
+<node id="1176209"><node id="1176210"/>
+</node>
+<node id="1176215"><node id="1176247"><node id="1176253"><node id="1176254"/>
+<node id="1176255"/>
+</node>
+<node id="1176262"/>
+</node>
+</node>
+<node id="1176245"/>
+</thread></node>

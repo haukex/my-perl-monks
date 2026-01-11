@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1178811" title="Re^2: How to pass data as STDIN to Capture::Tiny" created="2017-01-02 14:07:52" updated="2017-01-02 14:07:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [kcott|Ken],&lt;/p&gt;
+&lt;p&gt;Just to pick up on what the AM mentioned: properly [doc://close]ing a piped open is important so one can catch all possible errors (as opposed to [doc://close]ing regular files, where in my experience things go wrong much less often). I see you used [doc://autodie], but as far as I can tell it doesn't catch errors when the filehandle is implicitly closed when it goes out of scope.&lt;/p&gt;
+&lt;p&gt;In your code, if I replace the command with something that returns a nonzero exit code, and add the [doc://close] at the end of the &lt;c&gt;sub&lt;/c&gt;, I get confusing results: inside of &lt;c&gt;capture&lt;/c&gt;, the error doesn't seem to get caught at all, and outside of &lt;c&gt;capture&lt;/c&gt;, I get the confusing error message "&lt;c&gt;Can't close(GLOB(0x8e2b62)) filehandle: '' at&lt;/c&gt; ...". (In fact, if I remember correctly, strange interactions with [doc://autodie] and piped [doc://open]s is one of the reasons I started avoiding [doc://autodie].)&lt;/p&gt;
+&lt;p&gt;So here's the same &lt;c&gt;run_external_command&lt;/c&gt; code, without [doc://autodie] but with the minimum error handling:&lt;/p&gt;
+&lt;c&gt;
+my $extcmd = 'cat';
+open my $cmd_pipe, '|-', $extcmd or die "open $extcmd: $!";
+print $cmd_pipe "password\n";
+close $cmd_pipe or die "close $extcmd: ".($! ? $! : "\$?=$?");
+&lt;/c&gt;
+&lt;p&gt;However, nowadays I very much prefer to use more better-suited modules, one of my favorites is [mod://IPC::Run3]. For the OP:&lt;/p&gt;
+&lt;c&gt;
+use IPC::Run3 'run3';
+my $stdin = "password\n";
+my @extcmd = ('cat');
+run3 \@extcmd, \$stdin, \my $stdout, \my $stderr
+    or die "run3 failed";
+$? and die "run3: \$?=$?";
+print "stdout: &lt;&lt;$stdout&gt;&gt;\n";
+print "stderr: &lt;&lt;$stderr&gt;&gt;\n";
+&lt;/c&gt;
+&lt;p&gt;Regards,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1178787</root_node>
+<parent_node field_name="parent_node">1178796</parent_node>
+<thread id="1178787">
+<node id="1178788"/>
+<node id="1178795"/>
+<node id="1178796"><node id="1178800"><node id="1178803"/>
+<node id="1178809"/>
+<node id="1178816"><node id="1178817"/>
+</node>
+</node>
+<node id="1178811"><node id="1178823"><node id="1178849"/>
+</node>
+</node>
+</node>
+<node id="1178900"><node id="1179040"/>
+</node>
+</thread></node>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1180717" title="Re: More efficient ways to pass values to a sub routine" created="2017-01-31 14:46:07" updated="2017-01-31 14:46:07" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Anonymous,&lt;/p&gt;
+&lt;p&gt;&lt;c&gt;send_1&lt;/c&gt; is a good example of passing named parameters to a sub with a hash. (&lt;i&gt;Update:&lt;/i&gt; Technically, what is happening is that the subroutine is passed a flat list of key+value pairs, since using the &lt;c&gt;=&gt;&lt;/c&gt; operator doesn't automatically make something a hash. However, once you say &lt;c&gt;my (%args) = @_;&lt;/c&gt;, that flat list of key+value pairs is stored in a hash.)&lt;/p&gt;
+&lt;p&gt;However, in &lt;c&gt;send_2&lt;/c&gt;, in the call of the sub (&lt;c&gt;send_2( { name =&gt; ... } )&lt;/c&gt;) what you are passing the sub is a reference to an anonymous hash, whereas the implementation of &lt;c&gt;sub send_2&lt;/c&gt; is expecting a flat list of positional parameters. The correct way to call the &lt;c&gt;sub send_2&lt;/c&gt; in your example code would be:&lt;/p&gt;
+&lt;c&gt;
+send_2( $name, $pic, 'test' );
+&lt;/c&gt;
+&lt;p&gt;If instead you wanted to implement arguments passed in as a hash reference, you'd need to rewrite &lt;c&gt;sub send_2&lt;/c&gt; like this (untested):&lt;/p&gt;
+&lt;c&gt;
+sub send_2 {
+    my ($args) = @_;
+    my $name = $args-&gt;{ name } || '';
+    my $filehandle = $args-&gt;{ filehandle } || '';
+    my $id = $args-&gt;{ id } || '';
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; See "Use Rule 2" in [doc://perlreftut] for an explanation of the &lt;c&gt;$args-&gt;{...}&lt;/c&gt; syntax. Note that it could also be written &lt;c&gt;$$args{...}&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1180716</root_node>
+<parent_node field_name="parent_node">1180716</parent_node>
+<thread id="1180716">
+<node id="1180717"/>
+<node id="1180718"/>
+<node id="1180720"/>
+<node id="1180727"/>
+</thread></node>

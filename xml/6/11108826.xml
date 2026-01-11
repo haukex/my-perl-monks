@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108826" title="Re^3: Can I access and use UV types from perl?" created="2019-11-17 14:31:51" updated="2019-11-17 14:31:51" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Sorry, but I still don't understand. See [XY Problem] - what I was asking is what practical requirement you have such that you are required to use &lt;c&gt;unsigned int&lt;/c&gt;s.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;use_integer&lt;/c&gt; literally turns all the values into &lt;c&gt;IV&lt;/c&gt;'s.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, see [doc://integer]: It changes the way the operators work.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;At some point though it seems like somewhere somebody decided that, well, before we can do that we have to convert this thing we call 1 into some more complicated thing called an integer with a respective value of 1, that can then be added to itself to produce the answer to this question. To this I say, cool now we're doing computing, but, can we just add 1 to 1 first, without turning into one of those.. uhm integer thingys?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If by "integer thingys" you mean Perl's data types, then yes, Perl does abstract out the underlying representation of the values. Perl is a higher-level language, and there is only a limited amount of sense in trying to work with Perl on a lower level - if there is a requirement to work with specific data types (or you just want to learn more about the underlying data types), then it's usually best to use a language that works more closely to the machine level, such as C. Perl abstracting these things removes a lot of the complexity that can arise in languages such as C, such as having to [wp://Type conversion|cast] between different data types manually, at the cost of some performance and memory usage relative to C. But the lower complexity also means less chance to introduce bugs due to incorrect typecasts (not to mention all the complexities that are avoided by having dynamic string and array sizing, references instead of pointers, and automatic memory management).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;One relating to Perl is in the difference between return values. Perl returns undef, zero or &amp;gt; zero, whereas C can return negative one. Does this mean that Perl returns &lt;c&gt;unsigned int&lt;/c&gt; values, whereas C returns &lt;c&gt;signed int&lt;/c&gt; values?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Many C functions do return &lt;c&gt;int&lt;/c&gt;s, i.e. &lt;c&gt;signed int&lt;/c&gt;s. However, as I said above, Perl functions return Perl's own variable types, and there are also Perl functions that mirror the underlying C API and return negative values.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;From an educational aspect, it is a bit like saying, ok I get we are all using signed ints as the basis of our computing because it leads to a lot of efficiencies and optimisations, but where are those intermediate steps we took to go from using a byte as a 7 bit bit field to using it as an 128 decimal mapping to a non-symmetric range around zero.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Modern processors can handle unsigned and signed integers of varying widths (64 bits on modern architectures) natively, there are no "intermediate steps" there. If your goal here is to learn more about the underlying operations, it might be best if you take some time to look at C. You might also be interested in [wp://Two's complement] math - the great thing about it is that there isn't really a "mapping" necessary to do many of the operations.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;This helps, but I do wonder what this strange &lt;c&gt;signed char&lt;/c&gt; thingy is.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It's &lt;small&gt;(pretty much always)&lt;/small&gt; an octet that stores the values -128 to 127 instead of 0 to 255 (&lt;c&gt;unsigned char&lt;/c&gt;).&lt;/p&gt;
+&lt;c&gt;
+$ perl -e 'print"unsigned   signed\n";printf"%-3d %08b %4d\n",$_,$_,unpack"c",pack"C",$_ for 0..255'
+unsigned   signed
+0   00000000    0
+1   00000001    1
+2   00000010    2
+3   00000011    3
+...
+125 01111101  125
+126 01111110  126
+127 01111111  127
+128 10000000 -128
+129 10000001 -127
+130 10000010 -126
+...
+253 11111101   -3
+254 11111110   -2
+255 11111111   -1
+&lt;/c&gt;
+&lt;p&gt;It's the same bits, just different interpretations. The difference of how which bits are treated happens at the at the lowest level, in the assembly instructions provided to the microprocessor. In C, when you say that a variable is a &lt;c&gt;signed int&lt;/c&gt; or an &lt;c&gt;unsigned int&lt;/c&gt;, that will tell the C compiler which assembly instructions to emit when doing operations with those variables. Perl's runtime abstracts that out even more, so that you don't have to worry about &lt;c&gt;signed&lt;/c&gt; vs. &lt;c&gt;unsigned&lt;/c&gt; or even &lt;c&gt;int&lt;/c&gt; vs. &lt;c&gt;float&lt;/c&gt;.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11108820</root_node>
+<parent_node field_name="parent_node">11108824</parent_node>
+<thread id="11108820">
+<node id="11108821"><node id="11108824"><node id="11108826"><node id="11108831"><node id="11108835"><node id="11108838"><node id="11108843"><node id="11108846"><node id="11108858"><node id="11108880"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11108873"/>
+</node>
+</node>
+</node>
+<node id="11108839"><node id="11108842"><node id="11108845"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11108823"><node id="11108825"><node id="11108827"><node id="11108828"><node id="11108829"><node id="11108834"><node id="11108840"/>
+</node>
+</node>
+<node id="11108844"><node id="11108847"><node id="11108848"><node id="11108849"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11151556" title="Automatic documentation of match operations?" created="2023-04-09 13:46:20" updated="2023-04-09 13:46:20" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">&lt;H5&gt; motivation&lt;/H5&gt;&lt;P&gt;
+
+I was confronted to present a condensed explanation of the use cases and side-effects of matching-regexes in Perl&lt;P&gt;
+
+&lt;c&gt; LHS = ($string =~ /RE(G)EX/MOD)   &lt;/c&gt;&lt;P&gt;
+
+which depend on:
+&lt;UL&gt;
+&lt;LI&gt; context: SCALAR vs LIST
+&lt;LI&gt; returned value(s): Boolean, Count or Capture-List
+&lt;LI&gt; &lt;C&gt;(capture groups)&lt;/C&gt; inside REGEX
+&lt;LI&gt; presence of /g modifier in MOD
+&lt;/UL&gt;
+for comparison, these use cases had to be implemented with multiple methods in JS
+&lt;UL&gt;
+&lt;LI&gt; [HTTPs://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/match|String.match()]
+&lt;LI&gt; [HTTPs://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/matchAll|String.matchAll()] 
+&lt;LI&gt; [HTTPs://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/test|RegExp.test()]
+&lt;LI&gt; [HTTPs://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/exec%7CRegExp.prototype.exec()]
+&lt;/UL&gt;
+&lt;H5&gt; meditation&lt;/H5&gt;&lt;P&gt;
+
+Wouldn't it be nice to create automatic tests for all cases to create a nice lookup-table/cheat-sheet?&lt;P&gt;
+
+This table would have a worst case of 4 dimensions ( context, result, capture, &lt;C&gt;/g&lt;/C&gt; ), which means many possible projections into a 2D table, here an attempt how it might look like, if the result is coded into the cell's value&lt;P&gt;
+
+(NB: this is untested guess work and turned out to be &lt;B&gt;wrong&lt;/B&gt; I leave it to you to spot the errors)
+&lt;c&gt;
++------------+-----------+----------+----------+--------------+
+|            |    SCALAR / VOID     |        LIST             |
+| m/REGEX/   +-----------+----------+-----------+-------------+
+|            |           | (groups) |           | (groups)    |
++------------+-----------+----------+-----------+-------------+
+| /          | -&gt;BOOLEAN | -&gt;COUNT  | -&gt;BOOLEAN | -&gt;CAPTURES  |
+| /g         | -&gt;BOOLEAN | -&gt;COUNT  | -&gt;BOOLEAN | -&gt;CAPTURES  |
++------------+-----------+----------+-----------+-------------+
+&lt;/c&gt;&lt;P&gt;
+
+
+So in an outbreak of ADHD, hubris, and too much time b/c of Easter holidays I started to write - well hack - test code:&lt;P&gt;
+
+These are my results so far, only as data structures.&lt;P&gt;
+
+Imperfect because I wanna leave the house still during daylight and risks are high that the code will remain unfinished on my disk without being shared. And it even seems to be wrong.
+ 
+The task to condense it into a meaningful table which avoids unnecessary repetitions is even farther away...  &lt;P&gt;
+
+&lt;H5&gt; hack&lt;/H5&gt;&lt;P&gt;
+
+&lt;readmore&gt;
+&lt;c&gt;
+use v5.12.0;
+use warnings;
+use Data::Dump qw/pp dd/;
+use Data::Dumper;
+
+
+my $time = '"2$X:1$X:0$X "';
+
+my $str = "";
+
+for my $X (1..3) {
+    $str .= eval($time);
+}
+
+say $str;
+
+my ($res,@res) ;
+
+my %CTX=
+  (
+   VOID   =&gt; { LHS =&gt; ''      , RES =&gt; undef },
+   SCALAR =&gt; { LHS =&gt; '$res =', RES =&gt; \$res },
+   LIST   =&gt; { LHS =&gt; '@res =', RES =&gt; \@res },
+  );
+
+
+my %REGEX =
+  (
+   "GROUPS_NO"   =&gt; '2.:1.:0.',
+   "GROUPS_YES"  =&gt; '(2.):(1.):(0.)'
+  );
+
+my %got;
+
+my $ctxt_cnt = 0;
+for my $ctx (qw/SCALAR LIST VOID/) {
+    for my $groups ( map "GROUPS_$_", qw/YES NO/ ) {
+        for my $mod ("","g") {
+            my $LHS   = $CTX{$ctx}{LHS};
+            my $REGEX = $REGEX{$groups};
+            my $code  = "$LHS ( \$str =~ /$REGEX/$mod );";
+            eval($code);
+            my $ref   = $CTX{$ctx}{RES} ;
+            my $type  = ref $ref;
+            my $res =
+              $type eq "SCALAR" ? $$ref :
+                $type eq "ARRAY" ? [ @$ref ] :
+                  undef;
+            pp { context =&gt; $ctx, code =&gt; $code, mod =&gt; $mod, result =&gt; $CTX{$ctx}{RES} };
+            $got{$ctx}{"MOD_$mod"}{$groups} = $res ;
+        }
+    }
+    $ctxt_cnt++;
+}
+
+$Data::Dumper::Indent=1;
+$Data::Dumper::Terse =1;
+
+say Dumper \%got;
+
+#pp \%got;
+
+
+
+&lt;/c&gt;&lt;P&gt;
+
+--&gt;
+&lt;Spoiler&gt;
+&lt;c&gt;
+{
+  code =&gt; "\$res = ( \$str =~ /(2.):(1.):(0.)/ );",
+  context =&gt; "SCALAR",
+  mod =&gt; "",
+  result =&gt; \1,
+}
+{
+  code =&gt; "\$res = ( \$str =~ /(2.):(1.):(0.)/g );",
+  context =&gt; "SCALAR",
+  mod =&gt; "g",
+  result =&gt; \1,
+}
+{
+  code =&gt; "\$res = ( \$str =~ /2.:1.:0./ );",
+  context =&gt; "SCALAR",
+  mod =&gt; "",
+  result =&gt; \1,
+}
+{
+  code =&gt; "\$res = ( \$str =~ /2.:1.:0./g );",
+  context =&gt; "SCALAR",
+  mod =&gt; "g",
+  result =&gt; \1,
+}
+{
+  code =&gt; "\@res = ( \$str =~ /(2.):(1.):(0.)/ );",
+  context =&gt; "LIST",
+  mod =&gt; "",
+  result =&gt; [21, 11, "01"],
+}
+{
+  code =&gt; "\@res = ( \$str =~ /(2.):(1.):(0.)/g );",
+  context =&gt; "LIST",
+  mod =&gt; "g",
+  result =&gt; [23, 13, "03"],
+}
+{
+  code =&gt; "\@res = ( \$str =~ /2.:1.:0./ );",
+  context =&gt; "LIST",
+  mod =&gt; "",
+  result =&gt; [1],
+}
+{
+  code =&gt; "\@res = ( \$str =~ /2.:1.:0./g );",
+  context =&gt; "LIST",
+  mod =&gt; "g",
+  result =&gt; ["21:11:01", "22:12:02", "23:13:03"],
+}
+{
+  code =&gt; " ( \$str =~ /(2.):(1.):(0.)/ );",
+  context =&gt; "VOID",
+  mod =&gt; "",
+  result =&gt; undef,
+}
+{
+  code =&gt; " ( \$str =~ /(2.):(1.):(0.)/g );",
+  context =&gt; "VOID",
+  mod =&gt; "g",
+  result =&gt; undef,
+}
+{
+  code =&gt; " ( \$str =~ /2.:1.:0./ );",
+  context =&gt; "VOID",
+  mod =&gt; "",
+  result =&gt; undef,
+}
+{
+  code =&gt; " ( \$str =~ /2.:1.:0./g );",
+  context =&gt; "VOID",
+  mod =&gt; "g",
+  result =&gt; undef,
+}
+21:11:01 22:12:02 23:13:03 
+{
+  'LIST' =&gt; {
+    'MOD_' =&gt; {
+      'GROUPS_NO' =&gt; [
+        1
+      ],
+      'GROUPS_YES' =&gt; [
+        '21',
+        '11',
+        '01'
+      ]
+    },
+    'MOD_g' =&gt; {
+      'GROUPS_NO' =&gt; [
+        '21:11:01',
+        '22:12:02',
+        '23:13:03'
+      ],
+      'GROUPS_YES' =&gt; [
+        '23',
+        '13',
+        '03'
+      ]
+    }
+  },
+  'SCALAR' =&gt; {
+    'MOD_g' =&gt; {
+      'GROUPS_YES' =&gt; 1,
+      'GROUPS_NO' =&gt; 1
+    },
+    'MOD_' =&gt; {
+      'GROUPS_NO' =&gt; 1,
+      'GROUPS_YES' =&gt; 1
+    }
+  },
+  'VOID' =&gt; {
+    'MOD_g' =&gt; {
+      'GROUPS_NO' =&gt; undef,
+      'GROUPS_YES' =&gt; undef
+    },
+    'MOD_' =&gt; {
+      'GROUPS_YES' =&gt; undef,
+      'GROUPS_NO' =&gt; undef
+    }
+  }
+}
+
+&lt;/c&gt;
+&lt;/Spoiler&gt;
+what's even worse, even my tests don't fit with what I see in the debugger
+&lt;c&gt;
+  DB&lt;36&gt; @res = ( $str =~ /(2.):(1.):(0.)/g )
+
+  DB&lt;37&gt; x @res
+0  21
+1  11
+2  01
+3  22
+4  12
+5  02
+6  23
+7  13
+8  03
+  DB&lt;38&gt;
+&lt;/c&gt;&lt;P&gt;
+
+&lt;/readmore&gt;&lt;P&gt;
+
+&lt;H5&gt; Edit&lt;/H5&gt;&lt;P&gt;
+
+Hmm, the bug may be related to [DOC://pos|&lt;tt&gt;pos&lt;/tt&gt;] not being properly reset.
+Must check when back home :)&lt;P&gt;
+
+&lt;H5&gt; update&lt;/H5&gt;&lt;P&gt;
+
+yeah, that was it, resetting the string is fixing the issue. Next version must monitor the side effects.&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;!--nowiki--&gt;&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the &amp;#66368;&amp;#66356;&amp;#66370;&amp;#66363; Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;/sub&gt; 
+&lt;!--nowiki--&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.161} --&gt;</doctext>
+<thread id="11151556">
+<node id="11151575"><node id="11151577"/>
+</node>
+</thread></node>

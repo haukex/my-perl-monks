@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118367" title="Re^3: Efficient way to verify scalar contents" created="2020-06-22 09:44:01" updated="2020-06-22 09:44:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;my goal was maintainability, if speed mattered, I'd move the declaration of the rules and rulesets out of the sub. redefining them each time is useless.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Good point, modified:&lt;/p&gt;
+&lt;c&gt;
+             Rate choroba2    LanX2 choroba1    LanX1  haukex1     orig  haukex2
+choroba2  84800/s       --      -8%     -37%     -38%     -59%     -68%     -73%
+LanX2     91935/s       8%       --     -32%     -33%     -56%     -66%     -71%
+choroba1 134606/s      59%      46%       --      -2%     -35%     -50%     -58%
+LanX1    136955/s      62%      49%       2%       --     -34%     -49%     -57%
+haukex1  208522/s     146%     127%      55%      52%       --     -22%     -35%
+orig     267007/s     215%     190%      98%      95%      28%       --     -16%
+haukex2  318577/s     276%     247%     137%     133%      53%      19%       --
+&lt;/c&gt;
+&lt;readmore title="Benchmark code"&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Benchmark qw/cmpthese/;
+
+# x_stream3m, https://www.perlmonks.org/?node_id=11118334
+sub orig {
+	use feature 'switch';
+	no if $] &gt;= 5.018, warnings =&gt; "experimental::smartmatch";
+	my $password = shift;
+	my $lengthOfPassword = length $password;
+	given ($lengthOfPassword) {
+		when ($_ &gt;= 8 &amp;&amp; $_ &lt;= 11)  {
+			if ($password =~ /[a-z]/ &amp;&amp; 
+				$password =~ /[A-Z]/ &amp;&amp; 
+				$password =~ /[0-9]/ &amp;&amp;
+				($password =~ /[\x21-\x2F]/ || 
+					$password =~ /[\x3A-\x40]/ || 
+					$password =~ /[\x5B-\x60]/ || 
+					$password =~ /[\x7B-\x7E]/)) {
+				return 1;
+			} else {
+				return 0;
+			}
+		}
+		when ($_ &gt;= 12 &amp;&amp; $_ &lt;= 15) {
+			if ($password =~ /[a-z]/ &amp;&amp; 
+				$password =~ /[A-Z]/ &amp;&amp; 
+				$password =~ /[0-9]/) {
+				return 1;
+			} else {
+				return 0;
+			}
+		}
+		when ($_ &gt;= 16 &amp;&amp; $_ &lt;= 19) {
+			if ($password =~ /[a-z]/ &amp;&amp; $password =~ /[A-Z]/) {
+				return 1;
+			} else {
+				return 0;
+			}
+		}
+		when ($_ &gt;= 20) {
+			return 1;
+		}
+		default {
+			return 0;
+		}
+	}
+}
+
+# haukex, https://www.perlmonks.org/?node_id=11118347
+sub regex1 { $_[0] =~ m{ \A (?:
+		  .{20,}
+		| (?=.*[a-z]) (?=.*[A-Z])
+		  .{16,19}
+		| (?=.*[a-z]) (?=.*[A-Z]) (?=.*[0-9])
+		  .{12,15}
+		| (?=.*[a-z]) (?=.*[A-Z]) (?=.*[0-9])
+		  (?=.*[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E])
+		  .{8,11}
+	) \z }msx }
+sub regex2 { $_[0] =~ m{ \A (?: .{20,} | (?=.*[a-z]) (?=.*[A-Z])
+		(?: .{16,19} | (?=.*[0-9]) (?: .{12,15}
+			| (?=.*[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]) .{8,11}
+	) ) ) \z }msx }
+
+# choroba, https://www.perlmonks.org/?node_id=11118354
+my @RE1 = (qr/[[:lower:]]/, qr/[[:upper:]]/, qr/[0-9]/, qr/[^[:alnum:]]/);
+sub check1 {
+    local ($_) = @_;
+    my $length = length;
+    return if $length &lt; 8;
+    return if $length &lt; 12 &amp;&amp; (! /$RE1[0]/ || ! /$RE1[1]/ || ! /$RE1[2]/ || ! /$RE1[3]/);
+    return if $length &lt; 16 &amp;&amp; (! /$RE1[0]/ || ! /$RE1[1]/ || ! /$RE1[2]/);
+    return if $length &lt; 20 &amp;&amp; (! /$RE1[0]/ || ! /$RE1[1]/);
+    return 1
+}
+use List::Util qw{ any };
+my @RE2 = (qr/[[:lower:]]/, qr/[[:upper:]]/, qr/[0-9]/, qr/[^[:alnum:]]/);
+sub check2 {
+    my ($password) = @_;
+    my $length = length $password;
+    return if $length &lt; 8;
+    return if $length &lt; 12 &amp;&amp; any { $password !~ $RE2[$_] } 0 .. 3;
+    return if $length &lt; 16 &amp;&amp; any { $password !~ $RE2[$_] } 0 .. 2;
+    return if $length &lt; 20 &amp;&amp; any { $password !~ $RE2[$_] } 0 .. 1;
+    return 1
+}
+
+# LanX, https://www.perlmonks.org/?node_id=11118358
+use List::Util qw/min/;
+{ # for lexicals
+    my $short     = sub { "is too short" };
+    my $lowercase = sub { /[a-z]/ ? "" : "has no lowercase character" };
+    my $uppercase = sub { /[A-Z]/ ? "" : "has no uppercase character" };
+    my $number = sub { /[0-9]/ ? "" : "has no number" };
+    my $special = sub {
+          if (/[\x21-\x2F]/ ||
+              /[\x3A-\x40]/ ||
+              /[\x5B-\x60]/ ||
+              /[\x7B-\x7E]/ ) {
+              return "";
+          } else {
+              return "has no special characters";
+          }
+      };
+    my $pass = sub {""};
+    my @rules_for_class = (
+       [ $short ],
+       [ $short ],
+       [ $lowercase, $uppercase, $number ,$special ],
+       [ $lowercase, $uppercase, $number           ],
+       [ $lowercase, $uppercase                    ],
+       [ $pass ]
+      );
+    sub pw_not_ok1 {
+        my $pw  = shift;
+        my $len = length $pw;
+        my $idx = min(int($len/4),5);
+        for my $rule ( @{ $rules_for_class[$idx] } ) {
+            $_ = $pw;
+            if ( my $err = $rule-&gt;() ) {
+                 return $err;
+            }
+        }
+        return;
+    }
+    # LanX, https://www.perlmonks.org/?node_id=11118360
+    my %rules_by_max_length = (
+       7 =&gt;  [ $short ],
+       11 =&gt; [ $lowercase, $uppercase, $number ,$special ],
+       15 =&gt; [ $lowercase, $uppercase, $number           ],
+       19 =&gt; [ $lowercase, $uppercase                    ],
+       50 =&gt; [ $pass ]
+      );
+    my @boundaries = sort { $a &lt;=&gt; $b } keys %rules_by_max_length;
+    sub pw_not_ok2 {
+        my $pw  = shift;
+        my $len = length $pw;
+        return "too long" if $len &gt;= 50;
+        for my $boundary ( @boundaries ) {
+            next if $len &gt; $boundary;
+            my $rules = $rules_by_max_length{$boundary};
+            for my $rule ( @$rules ) {
+                $_ = $pw;
+                if ( my $err = $rule-&gt;() ) {
+                    return $err;
+                }
+            }
+        }
+        return;
+    }
+}
+
+cmpthese(-2, {
+	orig =&gt; sub {
+		orig('aaaaA0-') and die;
+		orig('aaaaaA0-') or die;
+		orig('aaaaaaaaa0-') and die;
+		orig('aaaaaaaaaaA0') or die;
+		orig('aaaaaaaaaaaaaaA') and die;
+		orig('aaaaaaaaaaaaaaaA') or die;
+		orig('aaaaaaaaaaaaaaaaaaa') and die;
+		orig('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') or die;
+	},
+	haukex1 =&gt; sub {
+		regex1('aaaaA0-') and die;
+		regex1('aaaaaA0-') or die;
+		regex1('aaaaaaaaa0-') and die;
+		regex1('aaaaaaaaaaA0') or die;
+		regex1('aaaaaaaaaaaaaaA') and die;
+		regex1('aaaaaaaaaaaaaaaA') or die;
+		regex1('aaaaaaaaaaaaaaaaaaa') and die;
+		regex1('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') or die;
+	},
+	haukex2 =&gt; sub {
+		regex2('aaaaA0-') and die;
+		regex2('aaaaaA0-') or die;
+		regex2('aaaaaaaaa0-') and die;
+		regex2('aaaaaaaaaaA0') or die;
+		regex2('aaaaaaaaaaaaaaA') and die;
+		regex2('aaaaaaaaaaaaaaaA') or die;
+		regex2('aaaaaaaaaaaaaaaaaaa') and die;
+		regex2('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') or die;
+	},
+	choroba1 =&gt; sub {
+		check1('aaaaA0-') and die;
+		check1('aaaaaA0-') or die;
+		check1('aaaaaaaaa0-') and die;
+		check1('aaaaaaaaaaA0') or die;
+		check1('aaaaaaaaaaaaaaA') and die;
+		check1('aaaaaaaaaaaaaaaA') or die;
+		check1('aaaaaaaaaaaaaaaaaaa') and die;
+		check1('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') or die;
+	},
+	choroba2 =&gt; sub {
+		check2('aaaaA0-') and die;
+		check2('aaaaaA0-') or die;
+		check2('aaaaaaaaa0-') and die;
+		check2('aaaaaaaaaaA0') or die;
+		check2('aaaaaaaaaaaaaaA') and die;
+		check2('aaaaaaaaaaaaaaaA') or die;
+		check2('aaaaaaaaaaaaaaaaaaa') and die;
+		check2('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') or die;
+	},
+	LanX1 =&gt; sub {
+		pw_not_ok1('aaaaA0-') or die;
+		pw_not_ok1('aaaaaA0-') and die;
+		pw_not_ok1('aaaaaaaaa0-') or die;
+		pw_not_ok1('aaaaaaaaaaA0') and die;
+		pw_not_ok1('aaaaaaaaaaaaaaA') or die;
+		pw_not_ok1('aaaaaaaaaaaaaaaA') and die;
+		pw_not_ok1('aaaaaaaaaaaaaaaaaaa') or die;
+		pw_not_ok1('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') and die;
+	},
+	LanX2 =&gt; sub {
+		pw_not_ok2('aaaaA0-') or die;
+		pw_not_ok2('aaaaaA0-') and die;
+		pw_not_ok2('aaaaaaaaa0-') or die;
+		pw_not_ok2('aaaaaaaaaaA0') and die;
+		pw_not_ok2('aaaaaaaaaaaaaaA') or die;
+		pw_not_ok2('aaaaaaaaaaaaaaaA') and die;
+		pw_not_ok2('aaaaaaaaaaaaaaaaaaa') or die;
+		pw_not_ok2('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') and die;
+	},
+});
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">11118334</root_node>
+<parent_node field_name="parent_node">11118366</parent_node>
+<thread id="11118334">
+<node id="11118336"><node id="11118337"><node id="11118341"/>
+<node id="11118358"><node id="11118360"><node id="11118363"><node id="11118364"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11118340"/>
+<node id="11118347"><node id="11118386"><node id="11118387"><node id="11118389"/>
+</node>
+</node>
+</node>
+<node id="11118354"><node id="11118361"><node id="11118362"/>
+</node>
+</node>
+<node id="11118365"><node id="11118366"><node id="11118367"/>
+</node>
+</node>
+<node id="11118369"/>
+<node id="11118395"><node id="11118408"><node id="11118433"><node id="11118485"/>
+</node>
+</node>
+</node>
+</thread></node>

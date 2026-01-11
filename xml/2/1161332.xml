@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1161332" title="Re^3: [DSL] disabling packages in Perl? (meditation)" created="2016-04-23 16:28:52" updated="2016-04-23 16:28:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Rolf,&lt;/p&gt;
+&lt;p&gt;I've finally had some time to think about this some more. I don't think there's a clear answer here, but I've included some sample code in which I've experimented with a few things.&lt;/p&gt;
+&lt;readmore&gt;
+&lt;p&gt;First, the basic library, &lt;c&gt;SQL_DSL.pm&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+#!perl
+use warnings;
+use strict;
+
+package SQL_DSL;
+use Exporter 'import';
+our @EXPORT_OK = qw/SQL WHERE/;
+use Carp;
+sub SQL (&amp;;@) {
+	# $SQL_DSL::IN_SQL is *not* required when using 
+	# SQL_DSL_Transform or SQL_DSL_Keyword
+	croak "Already in SQL block" if $SQL_DSL::IN_SQL;
+	local $SQL_DSL::IN_SQL = 1;
+	print "Exec SQL\n"; # Debug
+	shift-&gt;(@_)
+}
+sub WHERE (&amp;;@) {
+	croak "WHERE not in SQL block" unless $SQL_DSL::IN_SQL;
+	print "Exec WHERE\n"; # Debug
+	shift-&gt;(@_)
+}
+
+package LIKE;
+use Carp;
+sub AUTOLOAD {
+	our $AUTOLOAD;
+	croak "$AUTOLOAD not in SQL block" unless $SQL_DSL::IN_SQL;
+	print "Exec $AUTOLOAD (@_)\n"; # Debug
+}
+
+1;
+&lt;/c&gt;
+&lt;p&gt;Next, my test script, in which one of the three sets of &lt;c&gt;use&lt;/c&gt; statements at the top needs to be uncommented:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+# Version "one":
+#use SQL_DSL qw/SQL WHERE/;
+# Version "two":
+#use SQL_DSL_Keyword;
+# Version "three":
+#use SQL_DSL 'SQL';
+#use Filter::PPI::Transform 'SQL_DSL_Transform';
+
+my $x = '%abc%';
+SQL {
+	WHERE { print "Where: ",__PACKAGE__, "\n"; b LIKE $x };
+};
+WHERE {}; # dies b/c not in SQL { ... }
+&lt;/c&gt;
+&lt;p&gt;The output of version "one" is:&lt;/p&gt;
+&lt;c&gt;
+Exec SQL
+Exec WHERE
+Where: main
+Exec LIKE::b (LIKE %abc%)
+WHERE not in SQL block at ...
+&lt;/c&gt;
+&lt;p&gt;The output of versions "two" and "three" are:&lt;/p&gt;
+&lt;c&gt;
+Exec SQL
+Exec WHERE
+Where: SQL_DSL
+Exec LIKE::b (LIKE %abc%)
+Can't call method "WHERE" without a package or object reference at ...
+&lt;/c&gt;
+&lt;p&gt;As you can see, version "one" doesn't really add any magic except en-/disabling the &lt;c&gt;SQL_DSL::WHERE&lt;/c&gt; and &lt;c&gt;LIKE::AUTOLOAD&lt;/c&gt; functions in dynamic scope.&lt;/p&gt;
+&lt;p&gt;Versions "two" and "three" get a little more interesting. They both work by inserting the declaration "&lt;c&gt;package SQL_DSL;&lt;/c&gt;" inside the &lt;c&gt;SQL { ... }&lt;/c&gt; block.&lt;/p&gt;
+&lt;p&gt;Version "two" uses the [doc://perlapi#PL_keyword_plugin|experimental keyword plugin feature] that is available as of v5.12. It seems to be a better solution than source filters, but it's been in experimental state for quite a while and back then the [https://rt.perl.org/Public/Bug/Display.html?id=119455|discussion] sounded like it might not stay. Anyway, I implemented it using [mod://Keyword::Simple], this is &lt;c&gt;SQL_DSL_Keyword.pm&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+#!perl
+package SQL_DSL_Keyword;
+use warnings;
+use 5.012; # for experimental pluggable keyword API
+
+use parent 'SQL_DSL';
+use Carp;
+use Keyword::Simple;
+
+sub import {
+	Keyword::Simple::define SQL =&gt; sub {
+		${$_[0]}=~s/^\s*\{/SQL_DSL::SQL { package SQL_DSL; /
+			or croak "SQL keyword must be followed by a block";
+	};
+}
+
+sub unimport {
+	Keyword::Simple::undefine 'SQL';
+}
+
+1;
+&lt;/c&gt;
+&lt;p&gt;Lastly, version "three" is implemented with a source filter - yes, I know they're widely regarded as bad, and for good reason, but at least this one uses [mod://PPI] for a hopefully decent parse, this is &lt;c&gt;SQL_DSL_Transform.pm&lt;/c&gt; (based on [mod://PPI::Transform::UpdateCopyright] and [id://815650]):&lt;/p&gt;
+&lt;c&gt;
+#!perl
+package SQL_DSL_Transform;
+use warnings;
+use strict;
+
+use Params::Util qw/_INSTANCE/;
+use parent 'PPI::Transform';
+
+sub new { shift-&gt;SUPER::new(@_) }
+
+sub document {
+	my $self = shift;
+	my $document = _INSTANCE(shift, 'PPI::Document') or return undef;
+	my $elements = $document-&gt;find( sub {
+		$_[1]-&gt;isa('PPI::Token::Word') or return '';
+		$_[1]-&gt;content eq 'SQL' or return '';
+		$_[1]-&gt;snext_sibling-&gt;isa('PPI::Structure::Block') or return '';
+		return 1;
+	} );
+	return undef unless defined $elements;
+	return 0 unless $elements;
+	foreach my $e (@$elements) {
+		my $n = PPI::Document-&gt;new(\"package SQL_DSL;");
+		for my $t (reverse $n-&gt;tokens) {
+			$e-&gt;snext_sibling-&gt;first_token-&gt;insert_after($t-&gt;remove) or die;
+		}
+	}
+	return scalar @$elements;
+}
+
+1;
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;I realized that automatically switching packages inside an &lt;c&gt;SQL { ... }&lt;/c&gt; block might not be such a good idea, because it breaks something as simple as &lt;c&gt;sub get_value { ... }; SQL { xyz LIKE get_value() };&lt;/c&gt;. So instead, it might make sense to [doc://use] a module or a pragma that is only effective in its lexical scope, i.e. &lt;c&gt;SQL { use SQL_DSL; ...; no SQL_DSL; }&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;I agree that [doc://%^H] does not seem to be useful to have something "unimported" or "undefined" at the end of a scope, it could only disable the functions like in my version "one" above. However, there is [mod://B::Hooks::EndOfScope], which is used by all three [mod://namespace::clean], [mod://namespace::autoclean] and [mod://namespace::sweep]! Or, one of the two methods above (pluggable keywords or source filters) could theoretically be used to insert a [doc://no] statement at the end of the block. However, the problem that does remain is that these two methods are not particularly robust.&lt;/p&gt;
+&lt;p&gt;I haven't yet come up with any better ways to enable and disable syntactical features in a certain lexical scope at compile time without reaching into the internals (then again I'm not that much of an expert, so I could be missing something - I did run across [mod://Devel::Declare] but haven't had a chance to look at it more closely*). It &lt;i&gt;might&lt;/i&gt; be possible to define your DSL in a way that a &lt;c&gt;SQL { ... }&lt;/c&gt; block &lt;i&gt;complies&lt;/i&gt; cleanly, and then the features used within it are only enabled at run time (&lt;c&gt;sub SQL (&amp;) { enable_features(); shift-&gt;(); disable_features(); }&lt;/c&gt;), but that might be too limited. On the other hand, if you're trying to add syntactic sugar that goes too far beyond what Perl can do natively, you're essentially defining a mini-language that extends Perl. And if you don't want to slap a source filter around your &lt;i&gt;whole&lt;/i&gt; program, the simplest solution might be: &lt;c&gt;sub SQL ($) { ... };  SQL q{ WHERE b LIKE %abc% };&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;A lot of the above thoughts are more about the technical "how" than the "why" or "what for". Of course a lot depends on what you want your DSL to look like and what you want it to do. For SQL, there's already [mod://SQL::Abstract] and [mod://SQL::Statement], or perhaps, as you mentioned elsewhere in this thread, you want something more like [mod://CGI]'s HTML generation statements, &lt;c&gt;select(from(...),where(like('b','%abc%'))&lt;/c&gt;...&lt;/p&gt;
+&lt;p&gt;Anyways, that's just some more thoughts on the matter, maybe it helps!&lt;/p&gt;
+&lt;p&gt;Regards,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;* Update: From the documentation of [mod://MooseX::Declare]:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;b&gt;Warning:&lt;/b&gt; MooseX::Declare is based on [mod://Devel::Declare], a giant bag of crack originally implemented by mst with the goal of upsetting the perl core developers so much by its very existence that they implemented proper keyword handling in the core.&lt;/p&gt;
+&lt;p&gt;As of perl5 version 14, this goal has been achieved, and modules such as [mod://Devel::CallParser], [mod://Function::Parameters], and [mod://Keyword::Simple] provide mechanisms to mangle perl syntax that don't require hallucinogenic drugs to interpret the error messages they produce.&lt;/p&gt;
+&lt;/blockquote&gt;</doctext>
+<root_node field_name="root_node">1160828</root_node>
+<parent_node field_name="parent_node">1160885</parent_node>
+<thread id="1160828">
+<node id="1160830"><node id="1160885"><node id="1161332"/>
+</node>
+<node id="1161117"/>
+</node>
+<node id="1160832"/>
+<node id="1160886"><node id="1160896"><node id="1160934"/>
+</node>
+</node>
+</thread></node>

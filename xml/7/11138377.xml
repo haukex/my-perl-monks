@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11138377" title="Re: (SOLVED) parsing problems with prototype blocks (updated)" created="2021-11-03 09:57:54" updated="2021-11-03 09:57:54" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Unfortunately I think you're right, these are just a few additional thoughts.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;that's unfortunate, prototypes don't seem to influence precedence at all&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Nitpick: They do influence precedence&lt;ins&gt;/parsing&lt;/ins&gt;, just not in the way you want - from [doc://perlsub#Prototypes]:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;c&gt;
+sub mygrep (&amp;@)         mygrep { /foo/ } $a, $b, $c
+sub myrand (;$)         myrand 42
+&lt;/c&gt;
+... treated specially by the parser. &lt;c&gt;mygrep()&lt;/c&gt; is parsed as a true list operator, &lt;c&gt;myrand()&lt;/c&gt; is parsed as a true unary operator with unary precedence the same as &lt;c&gt;rand()&lt;/c&gt; ...
+&lt;/blockquote&gt;
+&lt;c&gt;
+$ perl -MO=Deparse,-p -e 'sub myrand (;$) {} rand 123 / rand 456; myrand 123 / myrand 456'
+sub myrand (;$) {}
+  rand((123 /   rand(456)));
+myrand((123 / myrand(456)));
+
+$ perl -MO=Deparse,-p -e 'sub mygrep (&amp;@) {} grep {$A} + grep {$B} 1; mygrep {$A} + mygrep {$B} 1'
+sub mygrep (&amp;@) {}
+  grep(    {$A;}    grep(    {$B;}  1));
+mygrep(sub {$A;}, mygrep(sub {$B;}, 1));
+&lt;/c&gt;
+&lt;p&gt;... so builtins do basically behave the same way in terms of precedence - though as of 5.34 there isn't a builtin with a prototype of &lt;c&gt;(&amp;)&lt;/c&gt; or even &lt;c&gt;(&amp;@)&lt;/c&gt;; [doc://grep] has no [doc://prototype], which indicates it is treated specially by the parser (which is why I had to add the &lt;c&gt;1&lt;/c&gt; after the above &lt;c&gt;grep&lt;/c&gt; lest it be a &lt;c&gt;syntax error&lt;/c&gt; instead of &lt;c&gt;Not enough arguments&lt;/c&gt;).&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Relevant: [doc://perlop#Named-Unary-Operators]&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11138374</root_node>
+<parent_node field_name="parent_node">11138374</parent_node>
+<thread id="11138374">
+<node id="11138377"><node id="11138393"/>
+</node>
+<node id="11138389"><node id="11138391"><node id="11138434"/>
+</node>
+</node>
+</thread></node>

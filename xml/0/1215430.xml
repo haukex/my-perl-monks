@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1215430" title="non-capture mode sometimes erases previous capture" created="2018-05-30 05:09:38" updated="2018-05-30 05:09:38" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="930250">raygun</author>
+<doctext field_name="doctext">There is either a bug in perl, or in my understanding of the /n regular-expression option.  (This is perl v5.24.3, in case behavior varies among releases.)
+
+&lt;code&gt;
+#!/usr/bin/perl
+
+$_ = 'abcdefg';        # define a string
+
+/(..)(..)(..)/;        # break the string into 3 two-character chunks
+
+print "$1 $2 $3\n";    # print the chunks
+
+/(j)/n;                # search for a letter that's not in the string
+
+print "$1 $2 $3\n";    # print the chunks
+
+/(g)/n;                # search for a letter that's in the string
+
+print "$1 $2 $3\n";    # print the chunks
+&lt;/code&gt;
+
+Because the latter two regular expressions use the /n option, they should have no effect on the existing values of $1, $2, and $3.  And in fact the first one does not.  But the second one erases all three.
+
+&lt;p&gt;I grant you, the documentation for /n is a little sketchy, saying only "Non-capture mode. Don't let () fill in $1, $2, etc..."  It doesn't actually specify what happens to existing values of these variables.  But I would expect consistent behavior: it should either always preserve the values (and this seems the ideal &amp;mdash; what is ever gained from overwriting them when the user has asked that they not be populated?), or always erase them.  Erasing them in the case of a successful match but not a failed one is at least unexpected, if it doesn't rise to the level of outright bug.&lt;/p&gt;
+
+Or, I'm fundamentally misunderstanding something about /n.  What says the wisdom of the monastery?</doctext>
+<thread id="1215430">
+<node id="1215431"><node id="1215434"><node id="1215436"><node id="1215443"/>
+</node>
+<node id="1215452"/>
+</node>
+</node>
+<node id="1215449"><node id="1215651"/>
+</node>
+</thread></node>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1177887" title="Re^5: Running Perl in an Expect loop" created="2016-12-15 16:26:52" updated="2016-12-15 16:26:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [StoneLeopard],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;The reason a simple eval() doesn't work is because there is Perl variable state that needs to be honored across the entire file (e.g. $lsb in the example above is set to 0 at the start and incremented a number of times through the file. Hence, we will need a full Perl process to evaluate the whole file.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I don't follow this argument as a reason for needing a separate process. The state of package variables (those declared with &lt;c&gt;our&lt;/c&gt;, or if &lt;c&gt;no strict 'vars'&lt;/c&gt; is in effect, any undeclared variables) is honored across [doc://eval]s:&lt;/p&gt;
+&lt;c&gt;
+$ perl -le 'eval q{ print ++$x }; eval q{ print ++$x }'
+1
+2
+&lt;/c&gt;
+&lt;p&gt;If you had said that you &lt;i&gt;don't&lt;/i&gt; want code from [doc://eval]ing one file to affect code from another [doc://eval]ed file, that would be a slightly different story. There are a few Perl modules, pragmas and [doc://perlvar|variables] which affect everything in the interpreter process, so if those are used, I would agree that yes, the best way to go is starting up a new interpreter for evaluating each file. But other than that, most Perl code can be compartmentalized in a [doc://package] just fine. A [doc://package] within its own block would hold lexicals, package variables, subroutine definitions, pragmas with lexical scopes such as [doc://strict] and [doc://warnings], and in most cases subroutines imported from [doc://use]d modules, and all those would be kept separate from other packages. And [doc://perlvar|special variables] can and should be [doc://local]ized.&lt;/p&gt;
+&lt;p&gt;The suggested approach &lt;i&gt;"wrap all non-Perl chunks with prints, leaving the code snippets as is, and let Perl evaluate the whole thing"&lt;/i&gt; makes sense to me. And just to show that it can be done all within a single Perl process with [doc://eval], here's a simple implementation of exactly that. Doing a second round of replacements, as [Corion] said, is just a matter of applying the same idea a second time.&lt;/p&gt;
+&lt;p&gt;File a.txt:&lt;/p&gt;
+&lt;c&gt;
+CHAIN&lt;%=$chain_num%&gt;_EN [&lt;%=$lsb%&gt;:&lt;%=$lsb++%&gt;] = 1'h0;
+&lt;% use File::Spec::Functions qw/catfile/ %&gt;
+&lt;/c&gt;
+&lt;p&gt;File b.txt:&lt;/p&gt;
+&lt;c&gt;
+&lt;%$lsb++%&gt;
+&lt;% for my $x (0..2) { %&gt;
+Hello, World Nr. &lt;%=$x%&gt; (LSB=&lt;%=$lsb%&gt;)
+&lt;% } warn "test warning" %&gt;
+$this is not $Perl
+&lt;% # note catfile() not available here %&gt;
+&lt;/c&gt;
+&lt;p&gt;The script:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use feature qw/say state/;
+use Data::Dumper;
+use Capture::Tiny qw/capture_stdout/;
+my $DEBUG = 0;
+
+for my $filename (@ARGV) {
+	open my $fh, '&lt;', $filename or die "$filename: $!";
+	my $input = do { local $/; &lt;$fh&gt; }; # slurp
+	close $fh;
+	my $code = translate($input);
+	$DEBUG and say "&gt;&gt;&gt;&gt;&gt; Generated Code:\n", $code, "&lt;&lt;&lt;&lt;&lt;";
+	# execute
+	my ($output, $rv) = capture_stdout { eval $code };
+	$rv or die "eval failed: ".($@//'unknown error');
+	say "&gt;&gt;&gt;&gt;&gt; Output:\n", $output, "&lt;&lt;&lt;&lt;&lt;";
+}
+
+sub translate {
+	my ($input) = @_;
+	state $packcnt = 1;
+	my $pack = "Generated".$packcnt++;
+	my $output = "{ package $pack;\n";
+	$output.= "no warnings; no strict;\n";
+	$output.= "#line 1 \"$pack\"\n";
+	while ($input=~/(.*?)&lt;%/sgc) {
+		$output.= "print ".perlstr($1).";\n" if length($1);
+		$input=~/(.*?)%&gt;\n?/sgc or die "couldn't find %&gt;";
+		my $code = $1;
+		$code =~ s/^=/print /;
+		$code .= ";" unless $code=~/;\s*$/;
+		$output.= "$code\n";
+	}
+	my $str = substr $input, pos($input)//0;
+	$output.= "print ".perlstr($str).";\n" if length($str);
+	$output.= "} # end package $pack\n1;\n";
+	return $output;
+}
+
+sub perlstr { Data::Dumper-&gt;new([''.shift])
+	-&gt;Terse(1)-&gt;Indent(0)-&gt;Useqq(1)-&gt;Dump }
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Output of running &lt;c&gt;perl script.pl a.txt b.txt&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+&gt;&gt;&gt;&gt;&gt; Output:
+CHAIN_EN [:0] = 1'h0;
+&lt;&lt;&lt;&lt;&lt;
+test warning at Generated2 line 8.
+&gt;&gt;&gt;&gt;&gt; Output:
+Hello, World Nr. 0 (LSB=1)
+Hello, World Nr. 1 (LSB=1)
+Hello, World Nr. 2 (LSB=1)
+$this is not $Perl
+&lt;&lt;&lt;&lt;&lt;
+&lt;/c&gt;
+&lt;p&gt;Note how the two files each have their own &lt;c&gt;$lsb&lt;/c&gt; variable.&lt;/p&gt;
+&lt;p&gt;Of course, I've just re-invented the wheel (for fun, so it's okay &lt;c&gt;:-)&lt;/c&gt; ). See for example [https://perl.apache.org/embperl/|Embperl].&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update: Added info on special variables.&lt;/i&gt;&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update 2018-03-10:&lt;/i&gt; Posted a modified version of the above as [https://stackoverflow.com/a/49214465/9300627|this StackOverflow answer].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1177816</root_node>
+<parent_node field_name="parent_node">1177858</parent_node>
+<thread id="1177816">
+<node id="1177824"><node id="1177839"><node id="1177840"><node id="1177858"><node id="1177887"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1177825"/>
+<node id="1177826"/>
+<node id="1177862"/>
+<node id="1177899"/>
+</thread></node>

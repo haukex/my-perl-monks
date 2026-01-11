@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201393" title="Re: Matching regular expression over multiple lines" created="2017-10-15 05:53:54" updated="2017-10-15 05:53:54" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Welcome to Perl and the Monastery! The best thing to do is not use regexes to try to parse HTML. Here, I'm using [mod://Mojo::DOM], which is modern and fairly easy to use:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Mojo::DOM;
+
+my $filename = 'C:/Users/li/data_collection/posts/165644996453.html';
+
+# slurp the whole file into memory
+open my $fh, '&lt;', $filename or die $!;
+my $html = do { local $/; &lt;$fh&gt; };
+close $fh;
+
+my $dom = Mojo::DOM-&gt;new($html);
+my $text = $dom-&gt;find('footer')-&gt;last-&gt;previous-&gt;text;
+print $text,"\n";  # prints "indeed I am"
+&lt;/c&gt;
+&lt;p&gt;The problem you're probably having with the regex in your solution is that &lt;c&gt;while (&lt;FILE&gt;)&lt;/c&gt; is only reading one line at a time, but to match over multiple lines, you need to read multiple lines (or the whole file) into memory.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Just to make clear what's going on in that &lt;c&gt;my $html&lt;/c&gt; line: &lt;c&gt;$dom-&gt;find('footer')&lt;/c&gt; returns a list of &lt;c&gt;&lt;footer&gt;&lt;/c&gt; elements (probably only one?), &lt;c&gt;-&gt;last&lt;/c&gt; picks the last one of those, &lt;c&gt;-&gt;previous&lt;/c&gt; goes one node back to the &lt;c&gt;&lt;p&gt;&lt;/c&gt; element, and &lt;c&gt;-&gt;text&lt;/c&gt; gets the text content of that element.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1201392</root_node>
+<parent_node field_name="parent_node">1201392</parent_node>
+<thread id="1201392">
+<node id="1201393"><node id="1201395"/>
+<node id="1201421"><node id="1201439"><node id="1201447"/>
+</node>
+</node>
+</node>
+<node id="1201394"><node id="1201400"/>
+<node id="1201417"><node id="1201418"><node id="1201434"/>
+</node>
+</node>
+<node id="1201422"/>
+</node>
+<node id="1201401"><node id="1201420"/>
+</node>
+</thread></node>

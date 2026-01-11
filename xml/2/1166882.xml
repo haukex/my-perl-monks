@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1166882" title="Re: Reformat command output inline" created="2016-06-29 09:13:12" updated="2016-06-29 09:13:12" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [RenMcCourtey],&lt;/p&gt;
+&lt;p&gt;While what you want to do &lt;i&gt;could&lt;/i&gt; be done with a oneliner*, as the code gets more complex it's certainly advisable to use the proper tools for the job.&lt;/p&gt;
+&lt;p&gt;Apparently [man://ldapsearch] outputs in LDIF format, which can be read by, for example, [mod://Net::LDAP::LDIF]. Here's a quick example I whipped up using the documentation, its output looks like what you want:&lt;/p&gt;
+&lt;c&gt;
+use Net::LDAP::LDIF;
+my $ldif = Net::LDAP::LDIF-&gt;new('nejms.txt', 'r', onerror=&gt;'die');
+while (!$ldif-&gt;eof) {
+	my $entry = $ldif-&gt;read_entry;
+	print $entry-&gt;get_value('cn'), "=",
+		$entry-&gt;get_value('orclnetdescstring'), "\n";
+}
+$ldif-&gt;done;
+&lt;/c&gt;
+&lt;p&gt;If it's an option for you, you could maybe use [mod://Net::LDAP] for all your work. (Disclaimer: I don't have experience with the module. It does have a long release history and good reviews, though.)&lt;/p&gt;
+&lt;p&gt;* I'd strongly recommend the above instead, this is just an example of one way to do it:&lt;/p&gt;
+&lt;c&gt;
+$ perl -ne 'next if /^dn:|^\s*$/; s/^cn:\s*(.+)\n/$1/;
+  s/^orclnetdescstring:\s*/=/; print' nejms.txt
+common_name1=complex_address_line1
+common_name2=complex_address_line2
+common_name3=complex_address_line3
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1166879</root_node>
+<parent_node field_name="parent_node">1166879</parent_node>
+<thread id="1166879">
+<node id="1166881"><node id="1166883"><node id="1166885"><node id="1166886"/>
+</node>
+</node>
+</node>
+<node id="1166882"><node id="1166884"/>
+</node>
+<node id="1166912"/>
+</thread></node>

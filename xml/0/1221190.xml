@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1221190" title="Re^3: Execute command with spaces in perl" created="2018-08-27 08:52:55" updated="2018-08-27 08:52:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+The '-|", LIST pipe seems not working on Windows.
+&lt;c&gt;
+open my $fh2, "$cmd|" or die $!;
+&lt;/c&gt;
+it again breaks splitting on the space
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I tested my code before posting, and the &lt;c&gt;'-|', LIST&lt;/c&gt; form should work on Windows (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; at least [doc://perl5220delta#List-form-of-pipe-open-implemented-for-Win32|on Perl 5.22 and up]). If it's not working for you, please show the code you're trying and the exact error messages you're getting ([id://174051] and [id://1177642]). The code you posted here is not the &lt;c&gt;'-|', LIST&lt;/c&gt; form, which it why it isn't working - why aren't you using the code I showed? With a single string argument, you need to do the quoting correctly; I explained the difference between the two in [id://1180578|the node I linked to earlier]. &lt;/p&gt;
+&lt;p&gt;If you need &lt;c&gt;--version&lt;/c&gt; to be variable as well, you could do this:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my @cmd = ('C:\Program Files\Mozilla Firefox\firefox.exe',
+	'--version');
+die "\@cmd must have more than one element" unless @cmd&gt;1;
+open my $fh, '-|', @cmd or die $!;
+my $out = do { local $/; &lt;$fh&gt; };  # slurp
+close $fh or die $! ? $! : "\$?=$?";
+chomp $out;
+&lt;/c&gt;
+&lt;p&gt;Note I've added the check for &lt;c&gt;@cmd&lt;/c&gt; having more than one element to make sure the &lt;c&gt;LIST&lt;/c&gt; form is being used.&lt;/p&gt;
+&lt;p&gt;If for whatever reason you really need the string form, then you'll have to use better quoting, like what is provided by [mod://Win32::ShellQuote], or the other modules I named.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;My script should be able to execute seamlessly between Linux and Windows.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The code I showed should work fine on both OSes, except of course for the filename of the Firefox executable; if you've having trouble on Linux, again, please show exactly what that trouble is. For platform-independent filename handling, I recommend the core module [doc://File::Spec], or with a nicer interface [mod://Path::Class].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1221169</root_node>
+<parent_node field_name="parent_node">1221188</parent_node>
+<thread id="1221169">
+<node id="1221172"><node id="1221208"/>
+</node>
+<node id="1221180"><node id="1221188"><node id="1221190"><node id="1221203"><node id="1221206"><node id="1221245"><node id="1221261"/>
+</node>
+</node>
+<node id="1221207"><node id="1221210"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1221193"><node id="1221194"/>
+</node>
+</node>
+</thread></node>

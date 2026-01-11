@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11150368" title="DNS lookup" created="2023-02-14 11:19:54" updated="2023-02-14 11:19:54" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="531404">g_speran</author>
+<doctext field_name="doctext">Hello Perl monks,
+Just to start off with, I am not a DNS expert by no means so I am going to try to ask with what I have
+In our DNS server, we have a forward zone called "mycompany.local".  in here we have an entry &lt;C&gt;192.168.100.100&lt;/C&gt; to &lt;C&gt;t4400-100&lt;/C&gt;
+Two reverse zone 100.168.192 and 110.168.192.  In both of these reverse zones, there is an entry for &lt;C&gt;t4400-100&lt;/C&gt;&lt;P&gt;
+
+  100.168.192 - has t4400-100 associated with 192.168.100.100&lt;br&gt;
+  110.168.192 - has t4400-100 associated with 192.168.110.100&lt;br&gt;
+			
+Is there a way/process, when looking up the host name of t4400-100, it will return both IP address of &lt;C&gt;192.168.100.100&lt;/C&gt; &amp;  &lt;C&gt;192.168.110.100&lt;/C&gt;
+	
+&lt;code&gt;
+#!/usr/bin/perl -w 
+# hostaddrs - canonize name and show addresses 
+use Socket; 
+use Net::hostent; 
+use strict;
+
+print "\nHost_Name \n";
+my ($name, $hent, @addresses); 
+$name = shift || die "usage: $0 hostname\n"; 
+if ($hent = gethostbyname($name)) { 
+	$name = $hent-&gt;name; # in case different 
+	my $addr_ref = $hent-&gt;addr_list; 
+	@addresses = map { inet_ntoa($_) } @$addr_ref; 
+} 
+	print "$name =&gt; @addresses\n"; 
+	
+&lt;/code&gt;
+&lt;code&gt;
+Output
+I:\&gt;perl dnslookup.pl t4400-202.mycompany.local
+
+Host_Name
+t4400-202.mycompany.local =&gt; 192.168.100.202
+	( ==&gt; wanting to show 192.168.110.202 as well &lt;== 
+
+I:\&gt;
+&lt;/code&gt;&lt;P&gt;
+
+&lt;small&gt;&lt;small&gt;[Discipulus] changed some formatting&lt;/small&gt;&lt;/small&gt;&lt;!-- Wiki2Monks {"version":1.161} --&gt;</doctext>
+<thread id="11150368">
+<node id="11150370"><node id="11150372"><node id="11150376"/>
+<node id="11150399"/>
+</node>
+</node>
+<node id="11150373"><node id="11150374"/>
+</node>
+<node id="11150390"/>
+</thread></node>

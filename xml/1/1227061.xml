@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227061" title="Re: Passing values from an AJAX call to non-CGI Perl script" created="2018-12-10 14:18:45" updated="2018-12-10 14:18:45" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;There are several issues with the code you showed:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Your JS is expecting JSON (&lt;c&gt;dataType: "json"&lt;/c&gt;), but you're just doing a &lt;c&gt;print "F=$first - L=$last\n";&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;In [https://api.jquery.com/jQuery.Ajax/#jQuery-ajax-url-settings|jQuery's &lt;c&gt;.ajax&lt;/c&gt;] function, you should give it the query string as the &lt;c&gt;data&lt;/c&gt; parameter, instead of trying to encode it yourself.&lt;/li&gt;
+&lt;li&gt;You're not printing a HTTP header in the response.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;For your second piece of Perl code, note that CGI scripts don't usually get their data passed to them via &lt;c&gt;@ARGV&lt;/c&gt;. I'm not sure what you mean by "&lt;i&gt;non- CGI Perl script&lt;/i&gt;". Are you saying that you have two scripts, a CGI script and another script that it takes its arguments on the command line, and you're trying to call the latter from the former? If so, see my post on running external commands somewhat more safely [id://1180578|here], but in any case you should be &lt;i&gt;very careful&lt;/i&gt; with what user input you pass along. You probably also want to use [doc://perlsec#Taint-mode].&lt;/p&gt;
+&lt;p&gt;The following works correctly for me:&lt;/p&gt;
+&lt;p&gt;&lt;c&gt;test.html&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en-US"&gt;
+&lt;head&gt;
+	&lt;title&gt;Example&lt;/title&gt;
+	&lt;meta http-equiv="Content-Type" content="text/html;charset=UTF-8"&gt;
+	&lt;script
+	  src="https://code.jquery.com/jquery-3.3.1.min.js"
+	  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+	  crossorigin="anonymous"&gt;&lt;/script&gt;
+	&lt;script&gt;
+"use strict";
+$(document).ready(function() {
+	$("#send").click(function() {
+		$.ajax({
+			type: 'POST', url: 'process.cgi',
+			data: { first:'&lt;TMPL_VAR NAME="FR"&gt;',
+				last:'&lt;TMPL_VAR NAME="LA"&gt;' },
+			dataType: "json",
+			success: function(data) {
+				if (data) {
+					alert("We pass!");
+				}
+			},
+			error: function() {
+				alert("We have a problem!");
+			}
+		});
+	});
+});
+	&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div&gt;&lt;button id="send"&gt;Send&lt;/button&gt;&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/c&gt;
+&lt;p&gt;&lt;c&gt;process.cgi&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use open qw/:utf8 :std/;
+use CGI qw/header/;
+use JSON::MaybeXS qw/encode_json/;
+
+my $q = new CGI;
+my $first = $q-&gt;param("first");
+my $last = $q-&gt;param("last");
+
+my $response = { F=&gt;$first, L=&gt;$last };
+
+print header(-charset=&gt;'UTF-8', -type=&gt;'application/json');
+print encode_json($response);
+&lt;/c&gt;
+&lt;p&gt;The resulting &lt;c&gt;data&lt;/c&gt; variable in the JS code is &lt;c&gt;{ "F": "&lt;TMPL_VAR NAME=\"FR\"&gt;", "L": "&lt;TMPL_VAR NAME=\"LA\"&gt;" }&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Removed a stray set of parens from the text.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1227044</root_node>
+<parent_node field_name="parent_node">1227044</parent_node>
+<thread id="1227044">
+<node id="1227049"/>
+<node id="1227061"/>
+</thread></node>

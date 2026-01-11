@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11138833" title="Re^3: Avoiding escaped child elements with HTML::TreeBuilder::XPath or HTML::Element" created="2021-11-15 07:50:50" updated="2021-11-15 07:50:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;However, I am not sure how to apply a substitution, s///, to an element containing more that just text.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The documentation of [mod://HTML::Element#content_refs_list|&lt;c&gt;HTML::Element&lt;/c&gt;'s &lt;c&gt;content_refs_list&lt;/c&gt;] gives an example of how to modify text nodes contained in an element and the documentation of [mod://HTML::Element::traverse] shows how to use a recursive function to walk the tree. Putting those together:&lt;/p&gt;
+&lt;c&gt;
+sub html_trim {
+	my $elem = shift;
+	for my $itemref ($elem-&gt;content_refs_list) {
+		if ( ref $$itemref )
+			{ html_trim($$itemref) } # remove this for non-recursive
+		else { $$itemref =~ s/^\s+|\s+$//g }
+	}
+}
+for my $elem ($xhtml-&gt;findnodes('//div/ul/li')) {
+	html_trim($elem)
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11138822</root_node>
+<parent_node field_name="parent_node">11138831</parent_node>
+<thread id="11138822">
+<node id="11138827"/>
+<node id="11138828"><node id="11138831"><node id="11138833"/>
+</node>
+</node>
+<node id="11138832"/>
+<node id="11138834"/>
+</thread></node>

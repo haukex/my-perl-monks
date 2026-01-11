@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118708" title="Re: Reliably parsing an integer" created="2020-06-30 04:46:17" updated="2020-06-30 04:46:17" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;TIMTOWTDI (and d'oh): For integers matching &lt;c&gt;/^[0-9]+$/&lt;/c&gt;, Perl's string comparisons are perfectly fine, provided that one pads the shorter number with zeros.&lt;/p&gt;
+&lt;c&gt;
+sub validate_int {
+	my $str = shift;
+	state $max = int(eval $Config{nv_overflows_integers_at} or die);
+	croak "not an integer" unless defined $str &amp;&amp; $str=~/\A[0-9]+\z/;
+	$str =~ s/\A0+(?=[1-9])//;
+	croak "integer too big" if length $str &gt; length $max
+		|| sprintf("%0*s", length $max, $str) gt $max;
+	return 0+$str;
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; A quick test shows that this is faster than the [id://11118681|regex version] even if I use string comparisons (&lt;c&gt;(?{ $^N gt $max })&lt;/c&gt;) instead of [doc://Math::BigInt]. &lt;i&gt;/Update&lt;/i&gt;&lt;/p&gt;
+&lt;readmore title="Tests"&gt;
+&lt;p&gt;Tests&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use feature 'state';
+use Carp;
+use Config;
+
+sub validate_int {
+	my $str = shift;
+	state $max = int(eval $Config{nv_overflows_integers_at} or die);
+	croak "not an integer" unless defined $str &amp;&amp; $str=~/\A[0-9]+\z/;
+	$str =~ s/\A0+(?=[1-9])//;
+	croak "integer too big" if length $str &gt; length $max
+		|| sprintf("%0*s", length $max, $str) gt $max;
+	return 0+$str;
+}
+
+
+use Math::BigInt;
+use Test::More;
+sub exception (&amp;) { eval { shift-&gt;(); 1 } ? undef : ($@ || die) }
+
+is validate_int(0), 0;
+is validate_int(1), 1;
+is validate_int(3), 3;
+is validate_int("000000000000000000000000000000000000000001"), 1;
+ok exception { validate_int(undef) };
+ok exception { validate_int("") };
+ok exception { validate_int("x") };
+ok exception { validate_int("123y") };
+ok exception { validate_int(-1) };
+ok exception { validate_int("-9999999999999999999999999999999") };
+
+my $x = Math::BigInt-&gt;new(eval $Config{nv_overflows_integers_at})-1;
+is validate_int("$x"), 0+$x-&gt;numify, "'$x' works (max-1)";
+$x++;
+is validate_int("$x"), 0+$x-&gt;numify, "'$x' works (max)";
+$x++;
+ok exception { validate_int("$x") }, "'$x' fails (max+1)";
+
+ok exception { validate_int("999999999999999999999999999999999999") };
+
+done_testing;
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;readmore title="Benchmark"&gt;
+&lt;p&gt;Benchmark (updated version of [id://11118681|this]):&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Benchmark qw/cmpthese/;
+
+use feature 'state';
+use Carp;
+use Math::BigInt;
+use Config;
+use Regexp::Common qw/number/;
+
+sub validate_int {
+	my $str = shift;
+	state $max = Math::BigInt-&gt;new(
+		eval $Config{nv_overflows_integers_at} );
+	croak "not an integer"
+		unless defined $str &amp;&amp; $str=~/\A$RE{num}{int}\z/;
+	my $num = Math::BigInt-&gt;new($str);
+	croak "integer to small" if $num &lt; 0;
+	croak "integer too big" if $num &gt; $max;
+	return $num-&gt;numify;
+}
+
+sub validate_int2 {
+	my $str = shift;
+	state $regex = do {
+		my $max = eval $Config{nv_overflows_integers_at} or die;
+		my $len1 = length($max) - 1;
+		my $range = substr $max, 0, 1;
+		$range = $range eq "1" ? "1" : "1-$range";
+		qr{ \A (?: (?!0) [0-9]{1,$len1}
+			| ( [$range] [0-9]{$len1} )
+				(?(?{ Math::BigInt-&gt;new($^N)-&gt;bgt($max) })(*F))
+		) \z }x };
+	croak "bad integer" unless $str =~ $regex;
+	return 0+$str;
+}
+
+sub validate_int3 {
+	my $str = shift;
+	state $max = int(eval $Config{nv_overflows_integers_at} or die);
+	croak "not an integer" unless defined $str &amp;&amp; $str=~/\A[0-9]+\z/;
+	$str =~ s/\A0+(?=[1-9])//;
+	croak "integer too big" if length $str &gt; length $max
+		|| sprintf("%0*s", length $max, $str) gt $max;
+	return 0+$str;
+}
+
+my $max = eval($Config{nv_overflows_integers_at});
+
+cmpthese(-2, {
+	first =&gt; sub {
+		validate_int(1)==1 or die;
+		validate_int(999)==999 or die;
+		validate_int($max-1)==$max-1 or die;
+		validate_int($max)==$max or die;
+		defined eval { validate_int($max+1) } and die;
+	},
+	second =&gt; sub {
+		validate_int2(1)==1 or die;
+		validate_int2(999)==999 or die;
+		validate_int2($max-1)==$max-1 or die;
+		validate_int2($max)==$max or die;
+		defined eval { validate_int2($max+1) } and die;
+	},
+	third =&gt; sub {
+		validate_int3(1)==1 or die;
+		validate_int3(999)==999 or die;
+		validate_int3($max-1)==$max-1 or die;
+		validate_int3($max)==$max or die;
+		defined eval { validate_int3($max+1) } and die;
+	},
+});
+
+__END__
+
+          Rate  first second  third
+first   4544/s     --   -70%   -90%
+second 15386/s   239%     --   -67%
+third  46631/s   926%   203%     --
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">11118650</root_node>
+<parent_node field_name="parent_node">11118650</parent_node>
+<thread id="11118650">
+<node id="11118652"><node id="11118666"><node id="11118669"><node id="11118722"><node id="11118724"/>
+<node id="11118728"/>
+</node>
+</node>
+<node id="11118670"><node id="11118676"><node id="11118680"><node id="11118705"><node id="11118710"><node id="11118714"><node id="11118716"><node id="11118720"><node id="11118723"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11118712"><node id="11118721"><node id="11118730"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11118681"/>
+</node>
+<node id="11118679"/>
+</node>
+</node>
+<node id="11118658"/>
+<node id="11118671"><node id="11118673"><node id="11118678"/>
+<node id="11118698"/>
+</node>
+</node>
+<node id="11118708"/>
+<node id="11118880"/>
+</thread></node>

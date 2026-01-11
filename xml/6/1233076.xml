@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1233076" title="Re: Compare the values in the hash" created="2019-04-28 09:02:30" updated="2019-04-28 09:02:30" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Here's one way to do it. I'm creating a [doc://perldsc#HASHES-OF-HASHES|hash of hashes], where the elements of the inner hash are array references (so a [doc://perldsc#HASHES-OF-ARRAYS|hash of arrays]). This means that for &lt;c&gt;vg&lt;/c&gt;s that all have the same &lt;c&gt;maj_num&lt;/c&gt;, the hash should only have one key, whereas if the &lt;c&gt;maj_num&lt;/c&gt;s are different, there's more than one key. The output generation uses [doc://join], [doc://map], and de-referencing operations (see [doc://perlreftut] and [doc://perlref]).&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;  # debug
+
+my @vgmap = (
+	{ node =&gt; "node1", vg =&gt; "vg1", maj_num =&gt; 36 },
+	{ node =&gt; "node2", vg =&gt; "vg1", maj_num =&gt; 36 },
+	{ node =&gt; "node1", vg =&gt; "vg2", maj_num =&gt; 37 },
+	{ node =&gt; "node2", vg =&gt; "vg2", maj_num =&gt; 37 },
+	{ node =&gt; "node1", vg =&gt; "vg3", maj_num =&gt; 38 },
+	{ node =&gt; "node2", vg =&gt; "vg3", maj_num =&gt; 40 },
+);
+
+my %vgmap;
+for my $vgm (@vgmap) {
+	push @{ $vgmap{ $vgm-&gt;{vg} }{ $vgm-&gt;{maj_num} } }, $vgm-&gt;{node};
+}
+dd \%vgmap;  # debug
+
+for my $vg (sort keys %vgmap) {
+	my @maj_nums = sort keys %{ $vgmap{$vg} };
+	if ( @maj_nums != 1 ) {
+		print "$vg: ", join( "; ",
+			map { "$_ used on "
+				. join ", ", @{ $vgmap{$vg}{$_}} } @maj_nums
+			), "\n";
+	}
+}
+
+__END__
+
+{
+  vg1 =&gt; { 36 =&gt; ["node1", "node2"] },
+  vg2 =&gt; { 37 =&gt; ["node1", "node2"] },
+  vg3 =&gt; { 38 =&gt; ["node1"], 40 =&gt; ["node2"] },
+}
+vg3: 38 used on node1; 40 used on node2
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1233074</root_node>
+<parent_node field_name="parent_node">1233074</parent_node>
+<thread id="1233074">
+<node id="1233076"><node id="1233081"/>
+</node>
+<node id="1233089"/>
+</thread></node>

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116478" title="Why a regex *really* isn't good enough for HTML and XML, even for &quot;simple&quot; tasks" created="2020-05-05 07:41:05" updated="2020-05-05 07:41:05" _doctext_mode="strict"><type id="120">perlmeditation</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;TL;DR: [href://#solutions|Working code below!]&lt;/p&gt;
+&lt;p&gt;Say you "just" want to extract some links. Are you sure the HTML's formatting will &lt;i&gt;never&lt;/i&gt; change (whitespace, order of attributes, its structure, and so on)? Well, here's some perfectly valid HTML - good luck!&lt;/p&gt;
+&lt;readmore title="HTML"&gt;
+&lt;p&gt;This is valid HTML5:&lt;/p&gt;
+&lt;c&gt;
+&lt;a
+href
+=
+"http://www.example.com/1"
+&gt;
+One
+&lt;/a
+&gt;
+&lt;a id="Two" title="href="&gt;&lt;/a&gt;
+&lt;!--
+&lt;a href="http://www.example.com/3"&gt;Three&lt;/a&gt;
+--&gt;
+&lt;a title=' href="http://www.example.com/4"&gt;Four'
+href="http://www.example.com/5"&gt;Five&lt;/a&gt;
+&lt;script&gt;
+console.log(' &lt;a href="http://www.example.com/6"&gt;Six&lt;/a&gt; '); /*
+&lt;!--
+*/ &lt;/script&gt;
+&lt;a href=http://www.example.com/7&gt;Se&lt;span
+&gt;v&amp;#101;&lt;/span&gt;n&lt;/a&gt;
+&lt;script&gt;/* --&gt; */&lt;/script&gt;
+&lt;/c&gt;
+&lt;p&gt;In addition, replace everything starting with the first &lt;c&gt;&lt;script&gt;&lt;/c&gt; tag with this, and you've got valid XHTML - in other words, valid XML as well:&lt;/p&gt;
+&lt;c&gt;
+&lt;script type="text/javascript"&gt;/*&lt;![CDATA[
+&lt;/script&gt;
+*/ console.log(' &lt;a href="http://www.example.com/6"&gt;Six&lt;/a&gt; '); /*
+&lt;!--
+]]&gt;*/&lt;/script&gt;
+&lt;a href="http://www.example.com/7"&gt;&lt;![CDATA[Se]]&gt;&lt;span
+&gt;v&amp;#101;&lt;/span&gt;n&lt;/a&gt;
+&lt;script type="text/javascript"&gt;/*&lt;![CDATA[
+--&gt;
+]]&gt;*/&lt;/script&gt;
+&lt;![CDATA[
+&lt;a href="http://www.example.com/8"&gt;Eight&lt;/a&gt;
+]]&gt;
+&lt;/c&gt;
+&lt;p&gt;(There's only three links, "One", "Five", and "Seven".)&lt;/p&gt;
+&lt;/readmore&gt;
+&lt;p&gt;&lt;a name="solutions"&gt;&lt;/a&gt;Solutions that work on all of the above:&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;p&gt;[mod://Mojo::DOM] (my personal favorite):&lt;/p&gt;
+&lt;c&gt;
+use Mojo::DOM;
+my $links = Mojo::DOM-&gt;new($html)-&gt;find('a[href]');
+for my $link (@$links) {
+	( my $txt_trim = $link-&gt;all_text ) =~ s/^\s+|\s+$//g;
+	print $link-&gt;{href}, "\t", $txt_trim, "\n";
+}
+&lt;/c&gt;
+&lt;p&gt;(Note you can use [mod://Mojo::Collection] methods instead of the &lt;c&gt;for&lt;/c&gt; loop if you like. And on Perl 5.14 and above, the code in the &lt;c&gt;for&lt;/c&gt; loop can be simplified to: &lt;c&gt;print $link-&gt;{href}, "\t", $link-&gt;all_text =~ s/^\s+|\s+$//gr, "\n";&lt;/c&gt;. Use &lt;c&gt;Mojo::DOM-&gt;new-&gt;xml(1)-&gt;parse($xml)&lt;/c&gt; to use this module to parse XML, including XHTML.)&lt;/p&gt;
+&lt;p&gt;[mod://HTML::TreeBuilder::XPath] (a bit older, but still works):&lt;/p&gt;
+&lt;c&gt;
+use HTML::TreeBuilder::XPath;
+my $p = HTML::TreeBuilder::XPath-&gt;new;
+$p-&gt;marked_sections(1);
+$p-&gt;xml_mode(1); # DEPENDING ON INPUT
+my @links = $p-&gt;parse($html)-&gt;findnodes('//a[@href]');
+for my $link (@links) {
+	print $link-&gt;attr('href'), "\t", $link-&gt;as_text_trimmed, "\n";
+}
+&lt;/c&gt;
+&lt;p&gt;[mod://HTML::LinkExtor] (a well-established module, based on [mod://HTML::Parser] like the previous solution; only gets link attributes, no text content):&lt;/p&gt;
+&lt;c&gt;
+use HTML::LinkExtor;
+my $p = HTML::LinkExtor-&gt;new;
+$p-&gt;marked_sections(1);
+$p-&gt;xml_mode(1); # DEPENDING ON INPUT
+my @links = $p-&gt;parse($html)-&gt;links;
+for my $link (@links) {
+	my ($tag, %attrs) = @$link;
+	print $attrs{href}, "\n";
+}
+&lt;/c&gt;
+&lt;p&gt;(Note: for the previous two solutions, you might be tempted to do &lt;c&gt;$p-&gt;xml_mode( $html=~/^\s*&lt;\?xml/ );&lt;/c&gt;, but note that this isn't completely reliable - some XML documents may not have an XML processing instruction, and this regex is very simplistic. It's much more reliable if you know your inputs.)&lt;/p&gt;
+&lt;p&gt;For even more potential solutions, see the thread [id://1201438]. For example, XHTML [https://gist.github.com/haukex/fd76efa16f0b07ce6a7441d9b2265b2a#file-sol-libxml-pl|can be parsed] with [mod://XML::LibXML].&lt;/p&gt;
+&lt;p&gt;All of the above code (and more!) is also available as a Gist: [https://gist.github.com/haukex/fd76efa16f0b07ce6a7441d9b2265b2a]&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update 2020-05-28:&lt;/i&gt; Edited title to reflect that the XHTML example is just as much about XML as HTML.&lt;/small&gt;&lt;/p&gt;
+&lt;/readmore&gt;
+</doctext>
+<thread id="11116478">
+<node id="11116482"><node id="11116572"/>
+</node>
+<node id="11116558"><node id="11116571"/>
+</node>
+<node id="11116573"><node id="11116574"/>
+<node id="11116774"/>
+</node>
+<node id="11116575"><node id="11116590"/>
+</node>
+<node id="11116601"><node id="11116602"><node id="11116603"><node id="11116607"/>
+</node>
+<node id="11116604"/>
+<node id="11116605"><node id="11116606"><node id="11116609"/>
+</node>
+<node id="11116608"/>
+</node>
+</node>
+</node>
+<node id="11116673"><node id="11116674"/>
+</node>
+<node id="11117652"><node id="11117655"/>
+</node>
+<node id="11117665"/>
+<node id="11122195"/>
+</thread></node>

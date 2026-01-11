@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1208950" title="Re^3: Code Works But Not Sure How (updated)" created="2018-02-11 07:36:26" updated="2018-02-11 07:36:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The code you showed still does not work because it suffers from the problem [1nickt] and I explained: With "&lt;c&gt;make_menu_items();&lt;/c&gt;", you're not giving it any arguments, so inside &lt;c&gt;make_menu_items&lt;/c&gt;, &lt;c&gt;$items&lt;/c&gt; is still &lt;c&gt;undef&lt;/c&gt;, this is the reason you get the "&lt;c&gt;Use of uninitialized value&lt;/c&gt;" warning. Again, use [doc://Data::Dumper] or [mod://Data::Dump] to actually look at the values you are working with, see the [id://745674].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;but then I have to pass the array size.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;While necessary in languages like C, it's not necessary in Perl because you can easily get the size of an array via &lt;c&gt;scalar(@array)&lt;/c&gt;, or the index of its last element via &lt;c&gt;$#array&lt;/c&gt;. For an array reference like the one you're passing to &lt;c&gt;new&lt;/c&gt;, you can get its size via &lt;c&gt;scalar(@{$arrayref})&lt;/c&gt;, or the index of its last element via &lt;c&gt;$#{$arrayref}&lt;/c&gt;. There are also shorter ways to express the size of an array, but the aforementioned should work in just about any situation.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Plus, another central point is that Perl provides the [doc://perlsyn#Foreach-Loops|&lt;c&gt;foreach&lt;/c&gt;] loop, where you don't even need to know the size of the array you are iterating over, and that kind of loop is almost always better. Plus, it "aliases" the iterator variable to the actual array item, so you can modify array items through it. The following prints "&lt;c&gt;("Laziness is cool", "Impatience is cool", "Hubris is cool")&lt;/c&gt;":&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+my @array = ('Laziness', 'Impatience', 'Hubris');
+for my $item (@array) {
+    $item = "$item is cool";
+}
+
+dd @array;
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1208937</root_node>
+<parent_node field_name="parent_node">1208948</parent_node>
+<thread id="1208937">
+<node id="1208938"><node id="1208945"><node id="1208953"/>
+</node>
+<node id="1208948"><node id="1208950"><node id="1208955"><node id="1208961"/>
+</node>
+</node>
+<node id="1208951"><node id="1208956"/>
+</node>
+</node>
+<node id="1208952"/>
+</node>
+<node id="1208941"/>
+<node id="1208946"><node id="1208957"/>
+</node>
+</thread></node>

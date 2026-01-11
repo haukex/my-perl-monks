@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11122632" title="Re: How do I make a tcp socket heartbeat?" created="2020-10-09 10:45:46" updated="2020-10-09 10:45:46" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I see two issues with your code: First, you're not giving a timeout to the [doc://select] (or rather, [doc://IO::Select]) call, which is what you would need to do to implement the 10-second interval. Second, you've got the code for the heartbeat inside the loop over &lt;c&gt;@$new_readable&lt;/c&gt;, however, if the &lt;c&gt;select&lt;/c&gt; call times out, that variable will be &lt;c&gt;undef&lt;/c&gt;ined - please see those two documentation links for details. You will need to move the heartbeat code out of the loop, and detect timeout by setting and checking [doc://$!] as described in the [doc://IO::Select] docs.&lt;/p&gt;
+&lt;p&gt;Note that at the moment, your code does not cover a lot of the cases of &lt;c&gt;select&lt;/c&gt;-based server code (e.g. errors or even the clients sending data). If you are still getting to that, great, I think that writing a complete server with &lt;c&gt;select&lt;/c&gt; is a great learning experience for how things work on a relatively low level. OTOH, IMHO nowadays using an event loop is my personal favorite way to go, and at the moment, my favorite event loop is [mod://Mojo::IOLoop]. I even wrote an example server and client and [id://11113259|posted them here]. A heartbeat can be implemented using &lt;c&gt;Mojo::IOLoop-&gt;recurring&lt;/c&gt;.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11122630</root_node>
+<parent_node field_name="parent_node">11122630</parent_node>
+<thread id="11122630">
+<node id="11122632"><node id="11122634"><node id="11122636"/>
+</node>
+<node id="11122642"><node id="11122643"/>
+</node>
+</node>
+<node id="11122633"><node id="11122635"/>
+</node>
+<node id="11122644"><node id="11122769"/>
+</node>
+<node id="11122646"/>
+<node id="11122649"/>
+</thread></node>

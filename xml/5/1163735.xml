@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1163735" title="Re: Is validation of all subroutine arguments overkill?" created="2016-05-21 09:48:24" updated="2016-05-21 09:48:24" _doctext_mode="lenient"><type id="11">note</type>
+<author id="789891">stevieb</author>
+<doctext field_name="doctext">&lt;blockquote&gt;"Though I'm sure it makes my code is more robust, I'm wondering at what cost."&lt;/blockquote&gt;
+
+&lt;p&gt;The cost is time and extra effort, but the payoff is easier to troubleshoot, more robust and easier to update code.&lt;/p&gt;
+
+&lt;p&gt;Not only that, but it's experience for later projects; you get a very good understanding and knowledge of when you need to do deep validation, and when only a light skim will do. Not only that, but with good validation, your test suite can be (sometimes slightly) simpler... less edge cases to test against. You can &lt;c&gt;for()&lt;/c&gt; loop a boatload of bad params at a sub in a test, and get back the same error/warning etc. if you've validated/checked them in the actual code. Get familiar with &lt;c&gt;dies_ok()&lt;/c&gt; and &lt;c&gt;throws_ok()&lt;/c&gt; from [metamod://Test::Exception], and tricks to catch warnings, eg:&lt;/p&gt;
+
+&lt;c&gt;
+{
+    my $warning;
+    local $SIG{__WARN__} = sub { $warning = shift; };
+    Module::do_something($param, $param1);
+    like ($warning, qr/ignoring/, 'param 1 isn't an href, ignored');
+}
+&lt;/c&gt;
+
+&lt;p&gt;Keep up the good work. The extra effort put in up front will pay off later when writing new projects, and when you come back to existing ones to make updates/fix bugs etc.&lt;/p&gt;
+
+&lt;p&gt;In my larger distributions, I typically use a named param public interface:&lt;/p&gt;
+
+&lt;c&gt;
+sub blah {
+    my %params = @_;
+    ...
+}
+&lt;/c&gt;
+
+&lt;p&gt;...called like:&lt;/p&gt;
+
+&lt;c&gt;
+my $farm = blah(moo =&gt; $href, meow =&gt; "Phoebe's smelly cat");
+&lt;/c&gt;
+
+&lt;p&gt;...along with some sort of &lt;c&gt;_validate_params()&lt;/c&gt; function/method, and sometimes a public function so a user can fetch all the valid params if desired. Here's a really basic example.&lt;/p&gt;
+
+&lt;c&gt;
+sub valid_params {
+    my %valid = (
+        moo =&gt; 1,
+        woof =&gt; 1,
+        meow =&gt; 1,
+    );
+    return %valid;
+}
+sub _validate_params {
+    my %p = @_;
+    
+    my %valid = valid_params();
+
+    for (keys %p){
+        die "$_ isn't a valid param" if ! exists $valid{$_};
+    }
+    if (exists $p{moo} &amp;&amp; ref $p{moo} ne 'HASH'){
+        die "param 'moo' must be a hash reference";
+    }
+}
+&lt;/c&gt;
+
+&lt;p&gt;Then in each sub that accepts params:&lt;/p&gt;
+
+&lt;c&gt;
+sub yell {
+    my %p = @_;
+    _validate_params(%p);
+    ...
+}
+&lt;/c&gt;
+
+&lt;p&gt;Also keep in mind that the CPAN has some good modules for specific validations. [metamod://Email::Valid] for email addresses, [metamod://Data::Validate::IP] for v4/v6 IP addresses etc. Some of these validation distributions have been written by Perl heavy-hitters (the two I've mentioned certainly have), so if you've got a common type of param, do a quick search to see if someone has already written a validator for it. Sometimes the extra weight of an external module is worth it, sometimes it's not, but it's good to know these things are available if desired.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1163720</root_node>
+<parent_node field_name="parent_node">1163720</parent_node>
+<thread id="1163720">
+<node id="1163721"/>
+<node id="1163724"/>
+<node id="1163726"/>
+<node id="1163727"/>
+<node id="1163729"/>
+<node id="1163735"><node id="1163737"><node id="1163740"/>
+</node>
+<node id="1163907"/>
+</node>
+</thread></node>

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11113274" title="Mass Class Confusion - Who calls what how?" created="2020-02-20 14:36:25" updated="2020-02-20 14:36:25" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="575005">holandes777</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Monks:&lt;/p&gt;
+&lt;p&gt;I am attempting to learn how to use objects and have made progress, but here I am stymied. I am using HTTP::Server::Simple::CGI;= and having cognitive difficulties getting it to pass the incoming message to another class. I thought the answer was in the post_setup_hook method, but when I try to run I get a error that says I cannot call SUPER when I reach the handle_request method.&lt;/p&gt;
+&lt;p&gt;What I am trying to do below is to geth the message from the handle_request method of HTTP::Server::Simple::CGI;= to the process method of the Kiosk package and then to get the response to go back out. I tried passing the Kiosk object into the server first adn that did not work because I don't see how to add this to the "new" method of the server, so now I am trying to pass the server into the Kiosk module and attempting to get a hold of the message &lt;/p&gt;
+
+&lt;p&gt;this is the main program, as you can see I instantiate the server adn pass it to the Kiosk&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+{
+    package MyWebServer;
+    # https://metacpan.org/pod/HTTP::Server::Simple
+    # curl --header "Content-Type: application/json" --request POST --data '{ "type":"cardCheck", "date":"1482307795601", "lang": "EN", "machineName":"PLUSMAKM", "cardNumber":"1234567890", "PIN": "1234" }' http://localhost:2999
+    use lib qw (/home/pi/cashcade /home/gary/projects/cashcade);
+
+    use HTTP::Server::Simple::CGI;
+    use base qw(HTTP::Server::Simple::CGI);
+    # use HTTP::Server::Simple;
+    # use base qw(HTTP::Server::Simple);
+    use Data::Dumper;
+    use JSON;
+
+
+
+    sub handle_request {
+        my $self = shift;
+        my $cgi  = shift;
+        my $json_string = $cgi-&gt;param('POSTDATA');
+        # { "type":"cardCheck", "date":"1482307795601", "lang": "EN", "machineName":"PLUSMAKM", "cardNumber":"1234567890", "PIN": "1234" }
+        print "json_string=$json_string\n";
+        $json_dict = decode_json $json_string;
+        print "json_dict=" . Dumper($json_dict) . "\n";
+        my $msg = $json_dict-&gt;{param}-&gt;{POSTDATA}-&gt;[0];
+        # my $response = $self-&gt;{kiosk}-&gt;process($msg);  # note: this says I cannot call on undefined, the problme is, how do I pass the object in
+        # print "response=$response\n";
+        return $msg;
+    }
+}
+
+
+sub sigIntHandler { exit; }
+END {
+    print "MAIN: END*END*END*END*END*END*END*END*END*END*END*END*END*END\n";
+    $kiosk-&gt;disconnect();
+}
+
+
+my $kiosk_port = shift // 'unknown';
+die "FATAL ERROR: Need to specify a port\n" unless ($kiosk_port ne 'unknown');
+my $placard = shift // 'unknown';
+die "FATAL ERROR: Need to specify a placard\n" unless ($placard ne 'unknown');
+my $debug_level = shift // 9; # TODO: make level higher on final
+
+print "$placard, $debug_level\n";
+
+use Kiosk;
+# start the server on port __
+print "INSTANTIATING SERVER port $kiosk_port ==============================\n";
+my $server = MyWebServer-&gt;new($kiosk_port);
+print "INSTANTIATING KIOSK ==============================\n";
+$kiosk = Kiosk-&gt;new($placard, $server, $debug_level);
+&lt;/code&gt;
+&lt;p&gt;In the Kiosk module (the first part below, I run the server when I instantiate the Kiosk&lt;/p&gt;
+&lt;code&gt;
+package Kiosk;
+
+# This implements communications to a VNE kiosk as an HTTP server
+# based on VNE JSON Communication Protocol Ver. 1.8
+# Alessandro: add to protocol: change PIN? There is no card removed message
+
+use strict;
+use Device::SerialPort;
+#use Data::CISerializer;
+#use MIME::Base64;
+#use JSON;
+use Time::HiRes qw(usleep gettimeofday tv_interval time);
+use Data::Dumper;
+
+use Debug;
+use GetConfiguration;
+use Database;
+use DatabaseProcesses;
+
+$|=1;
+
+sub new {
+    my ($class, $placard, $server, $debug_level) = @_; # config is a data structure that has serial setup information
+    my $self = {};
+    $self-&gt;{me} = 'Kiosk';
+    $self-&gt;{class} = $class;
+    $self-&gt;{placard} = $placard;
+    $self-&gt;{server} = $server;
+    $self-&gt;{debug} = Debug-&gt;new($placard, "MAIN_$placard", $debug_level);
+    $self-&gt;{config} == GetConfiguration-&gt;new($self-&gt;{debug}, '/etc/cashcade/cashcade.conf');
+    $self-&gt;{debug}-&gt;prt(9, "KIOSK Config " . Dumper($self-&gt;{config}), 'KIOSK');
+    $self-&gt;{dbcomm} = Database-&gt;new($self-&gt;{debug}, $self-&gt;{configuration}-&gt;{config}-&gt;{local_db}); # the DB connection must go first and succeed
+    $self-&gt;{dbcomm}-&gt;connect();
+    die "Database unable to connect!" if (!$self-&gt;{dbcomm}-&gt;{connected});
+    print "Database Connected\n";
+    $self-&gt;{dbproc} = DatabaseProcesses-&gt;new($self-&gt;{debug}, $self-&gt;{dbcomm});
+    $self-&gt;{maxDeposit} = $self-&gt;{config}-&gt;{maxDepositCents};
+    $self-&gt;{maxWithdraw} = $self-&gt;{config}-&gt;{maxWithdrawCents};
+    $self-&gt;{debug}-&gt;prt(2, "KIOSK CONFIG: kiosk_id=$self-&gt;{kiosk_id} maxDeposit=$self-&gt;{maxDeposit} maxWithdraw=$self-&gt;{maxWithdraw}", 'KIOSK INIT');
+    $self-&gt;{connected} = 0;
+    $self-&gt;{verbose} = 0;
+    $self-&gt;{kiosk_id} = $self-&gt;{dbproc}-&gt;get_kiosk_sysid_from_placard($self-&gt;{placard});
+    $self-&gt;{card_number} = 0; # this is the latest card number seen
+    $self-&gt;{account_id} = 0; # this is the account id while the card is in the reader of the kiosk
+    $self-&gt;{account_value} = 0; # value of account in cents
+    $self-&gt;{response} = '';
+    $self-&gt;{server}-&gt;run();
+    bless($self,$class);
+    return $self;
+}
+sub process {
+    my ($self, $msg) = @_;  # $msg is the pointer to the incoming message json hash
+    # { "type":"cardCheck", "date":"1482307795601", "lang": "EN", "machineName":"PLUSMAKM", "cardNumber":"1234567890", "PIN": "1234" }
+    # TODO: is message for this machine $msg-&gt;{machineName}
+    # TODO: is date of message reasonable $msg-&gt;{date}
+    $self-&gt;{response} = '';
+    if ( $msg-&gt;{type} eq 'cardCheck') {
+        return $self-&gt;card_was_inserted($msg);
+    }
+    if ( $msg-&gt;{type} eq 'cardLoad') {
+        return $self-&gt;deposit_amount_received($msg);
+    }
+    if ( $msg-&gt;{type} eq 'cardWithdrawal') {
+        return $self-&gt;withdrawal_amount_requested($msg);
+    }
+}
+&lt;/code&gt;
+&lt;p&gt;Anyhow, I am confused after several hours of tinkering and appreciate your help.&lt;/p&gt;
+</doctext>
+<thread id="11113274">
+<node id="11113278"><node id="11113313"/>
+</node>
+<node id="11113279"><node id="11113309"><node id="11113331"><node id="11113342"/>
+</node>
+</node>
+</node>
+<node id="11113283"><node id="11113311"/>
+</node>
+</thread></node>

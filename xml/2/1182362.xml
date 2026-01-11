@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1182362" title="Re^4: Devel::Peek Dump() not printing out" created="2017-02-20 12:38:26" updated="2017-02-20 12:38:26" _doctext_mode="lenient"><type id="11">note</type>
+<author id="721567">ultranerds</author>
+<doctext field_name="doctext">Aaahh my mistake. I thought you were telling me that I may have somewhere slurping in the STDOUT (i.e a log file).
+
+Ok - so I'm now seeing the debugging, but I'm still baffled with it. 
+
+I'm doing a basic curl request to PayPal:
+
+&lt;code&gt;    my $results = `curl https://$config-&gt;{$config-&gt;{mode}}-&gt;{transaction_endpoint}/v1/payments/payment/$_[0] -H "Content-Type: application/json; charset=utf-8" -H "Authorization: Bearer $token"`;
+    #my $json_vals = decode_json($results); # also tried just this
+    my $json_vals = JSON-&gt;new-&gt;utf8-&gt;decode($results);&lt;/code&gt;
+
+If I add &lt;b&gt;-v&lt;/b&gt; to the command and run it manually, I get:
+
+&lt;code&gt;curl -v https://api.sandbox.paypal.com/v1/payments/payment/PAY-6KY19646FF321593HLCVRQSY -H "Content-Type: application/json; charset=utf-8" -H "Authorization: Bearer MY_AUTH_TOKEN"
+* Hostname was NOT found in DNS cache
+*   Trying 173.0.82.78...
+* Connected to api.sandbox.paypal.com (173.0.82.78) port 443 (#0)
+* successfully set certificate verify locations:
+*   CAfile: none
+  CApath: /etc/ssl/certs
+* SSLv3, TLS Unknown, Unknown (22):
+* SSLv3, TLS handshake, Client hello (1):
+* SSLv2, Unknown (22):
+* SSLv3, TLS handshake, Server hello (2):
+* SSLv2, Unknown (22):
+* SSLv3, TLS handshake, CERT (11):
+* SSLv2, Unknown (22):
+* SSLv3, TLS handshake, Request CERT (13):
+* SSLv2, Unknown (22):
+* SSLv3, TLS handshake, Server finished (14):
+* SSLv2, Unknown (22):
+* SSLv3, TLS handshake, CERT (11):
+* SSLv2, Unknown (22):
+* SSLv3, TLS handshake, Client key exchange (16):
+* SSLv2, Unknown (20):
+* SSLv3, TLS change cipher, Client hello (1):
+* SSLv2, Unknown (22):
+* SSLv3, TLS handshake, Finished (20):
+* SSLv2, Unknown (20):
+* SSLv3, TLS change cipher, Client hello (1):
+* SSLv2, Unknown (22):
+* SSLv3, TLS handshake, Finished (20):
+* SSL connection using TLSv1.2 / AES256-SHA256
+* Server certificate:
+*        subject: C=US; ST=California; L=San Jose; O=PayPal, Inc.; OU=PayPal Production; CN=api.sandbox.paypal.com
+*        start date: 2016-01-13 00:00:00 GMT
+*        expire date: 2018-01-13 23:59:59 GMT
+*        subjectAltName: api.sandbox.paypal.com matched
+*        issuer: C=US; O=Symantec Corporation; OU=Symantec Trust Network; CN=Symantec Class 3 Secure Server CA - G4
+*        SSL certificate verify ok.
+* SSLv2, Unknown (23):
+&gt; GET /v1/payments/payment/PAY-6KY19646FF321593HLCVRQSY HTTP/1.1
+&gt; User-Agent: curl/7.38.0
+&gt; Host: api.sandbox.paypal.com
+&gt; Accept: */*
+&gt; Content-Type: application/json; charset=utf-8
+&gt; Authorization: Bearer MY_AUTH_TOKEN
+&gt;
+* SSLv2, Unknown (23):
+&lt; HTTP/1.1 200 OK
+&lt; Date: Mon, 20 Feb 2017 17:32:59 GMT
+* Server Apache is not blacklisted
+&lt; Server: Apache
+&lt; paypal-debug-id: a347a7a059ab9
+&lt; Content-Language: *
+&lt; Paypal-Debug-Id: a347a7a059ab9
+&lt; Set-Cookie: X-PP-SILOVER=name%3DSANDBOX3.API.1%26silo_version%3D1880%26app%3Dplatformapiserv%26TIME%3D1260956504%26HTTP_X_PP_AZ_LOCATOR%3D; Expires=Mon, 20 Feb 2017 18:02:59 GMT; domain=.paypal.com; path=/; Secure; HttpOnly
+&lt; Set-Cookie: X-PP-SILOVER=; Expires=Thu, 01 Jan 1970 00:00:01 GMT
+&lt; Vary: Authorization
+&lt; Content-Length: 1853
+&lt; Connection: close
+&lt; Content-Type: application/json
+&lt;                                                                                                      Ã³Ã© ","line1":"19 gaskyns close","city":"Rudgwick","state":"West Sussex","postal_code":"rh123he","country_code":"GB"},"phone":"07769201576","Ã³Ã© ","line1":"19 gaskyns close","city":"Rudgwick","state":"West Sussex","postal_code":"rh123he","country_code":"GB"}},"related_resources":[{"sale":{"id":"5EH65998225152523","state":"pending","amount":{"total":"160.75","currency":"EUR","details":{"subtotal":"160.75"}},"payment_mode":"INSTANT_TRANSFER* Closing connection 0
+* SSLv2, Unknown (21):
+* SSLv3, TLS alert, Client hello (1):
+","reason_code":"RECEIVING_PREFERENCE_MANDATES_MANUAL_ACTION","protection_eligibility":"INELIGIBLE","parent_payment":"PAY-6KY19646FF321593HLCVRQSY","create_time":"2017-02-20T16:25:19Z","update_time":"2017-02-20T16:25:36Z","links":[{"href":"https://api.sandbox.paypal.com/v1/payments/sale/5EH65998225152523","rel":"self","method":"GET"},{"href":"https://api.sandbox.paypal.com/v1/payments/sale/5EH65998225152523/refund","rel":"refund","method":"POST"},{"href":"https://api.sandbox.paypal.com/v1/payments/payment/PAY-6KY19646FF321593HLCVRQSY","rel":"parent_payment","method":"GET"}],"soft_descriptor":"PAYPAL *TESTFACILIT"}}]}],"create_time":"2017-02-20T16:25:19Z","update_time":"2017-02-20T16:25:36Z","links":[{"href":"https://api.sandbox.paypal.com/v1/payments/payment/PAY-6KY19646FF321593HLCVRQSY","rel":"self","method":"GET"}]&lt;/code&gt;
+
+(I'm not in a utf8 session, which is why I guess it looks a bit weird on some parts). The main point though, is that its sending the request as utf8. This is how the string comes out in a Dump();
+
+&lt;code&gt;SV = PV(0x1143890) at 0x11e5758
+  REFCNT = 1
+  FLAGS = (POK,pPOK,UTF8)
+  PV = 0x11a47c0 "Andy\303\255\303\255\303\255\303\255\303\251\303\251\303\251 \303\215\303\263\303\251 "\0 [UTF8 "Andy\x{ed}\x{ed}\x{ed}\x{ed}\x{e9}\x{e9}\x{e9} \x{cd}\x{f3}\x{e9} "]
+  CUR = 26
+  LEN = 28&lt;/code&gt;
+
+Maybe I'm missing something? It's been a long day! 
+
+&lt;br&gt;&lt;br&gt;
+&lt;b&gt;UPDATE:&lt;/b&gt; Interestingly, if I comment this out of my code:
+
+&lt;code&gt;binmode(STDOUT, ":utf8");&lt;/code&gt;
+
+...then it works! (I'm not sure why though, and I don't like things like that! ;))</doctext>
+<root_node field_name="root_node">1182356</root_node>
+<parent_node field_name="parent_node">1182361</parent_node>
+<thread id="1182356">
+<node id="1182357"><node id="1182359"><node id="1182361"><node id="1182362"><node id="1182365"><node id="1182366"><node id="1182559"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1182558"><node id="1182567"><node id="1182570"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201976" title="Variable-Width Lookbehind (hacked via recursion)" created="2017-10-24 13:43:36" updated="2017-10-24 13:43:36" _doctext_mode="strict"><type id="120">perlmeditation</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;b&gt;Warning:&lt;/b&gt; Since this uses recursion it is horribly inefficient and
+may easily blow up on longer strings. If you think you need this for variable-width
+lookbehind, then first think about how you might solve this with other
+techniques like lookahead, which is variable-width out of the box, or simply
+with multiple regular expressions. &lt;b&gt;/Warning&lt;/b&gt;
+The following is presented as a curiosity
+as the result of the discussion [id://1201795|here] - thank you [LanX] and
+[QM] for providing the inspiration :-)&lt;/p&gt;
+
+&lt;p&gt;Zero-width [doc://perlre#Lookaround-Assertions] are incredibly useful,
+but unfortunately the lookbehind assertions &lt;c&gt;(?&lt;=pattern)&lt;/c&gt; and
+&lt;c&gt;(?&lt;!pattern)&lt;/c&gt; are restricted to fixed length lookbehinds, and sometimes
+you just really want to be able to say something like e.g. &lt;c&gt;(?&lt;=ab+.*)c&lt;/c&gt;.
+With the following technique, you can emulate these kinds of variable-width
+lookbehind assertions.&lt;/p&gt;
+
+&lt;readmore&gt;
+
+&lt;p&gt;The basic principle is to use repeated, recursive lookbehind operations,
+each of which is fixed-width (either one or two characters, depending on the
+situation), thus "looping" backwards through the string character by character,
+and using zero-width lookahead assertions at each position, checking whether
+a match occurs or not.&lt;/p&gt;
+
+&lt;p&gt;The examples are a bit contrived, and are just intended to demonstrate this idea.
+One thing to notice is that, although you can match multiple targets in a single
+string via &lt;c&gt;/g&lt;/c&gt;, there are extra capture groups that you need to ignore
+(I'd suggest using the long forms and named capture groups to avoid confusion).
+Another thing to note is that the following examples scan backwards all the way to
+the beginning of the string (or until a match is found), without anchoring the
+"recursive lookbehind" at the current match position.
+&lt;small&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/small&gt; Also, I just tested this across different versions of Perl,
+and it (currently) only works correctly on Perl v5.20 and above. &lt;small&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/small&gt;
+&lt;/p&gt;
+
+&lt;p&gt;This matches the pattern &lt;c&gt;x\d+&lt;/c&gt;, but only when it is preceded
+by the pattern &lt;c&gt;ab\d+&lt;/c&gt; with the &lt;i&gt;same&lt;/i&gt; &lt;c&gt;\d+&lt;/c&gt; part
+(hence the &lt;c&gt;\d+(?!\d)&lt;/c&gt;).&lt;/p&gt;
+
+&lt;c&gt;
+my $re1 = qr{
+	(?&lt;target&gt; x (?&lt;digits&gt; \d+ ) (?!\d) )
+	(?= (?&lt;lookback&gt;
+		(?&lt;=
+			(?! (?&lt;match&gt; ab \g{digits} (?!\d) ) ) .
+			(?=(?&amp;lookback)) .
+		|
+			(?=(?&amp;match)) . .
+		)
+	) )
+}msx;
+my $re1_short = qr
+	/ (x(\d+)(?!\d)) (?=((?&lt;=(?!( ab\2(?!\d) )).(?=(?-2)).
+		|(?=(?-1))..)))/sx;
+&lt;/c&gt;
+
+&lt;p&gt;This matches any duplicated characters, so the inverse of the original problem [id://1201795|here].&lt;/p&gt;
+
+&lt;c&gt;
+my $re2 = qr{
+	(?&lt;char&gt; . )
+	(?= (?&lt;lookback&gt;
+		(?&lt;=
+			(?! \g{char} ) .
+			(?=(?&amp;lookback)) .
+		|
+			(?= \g{char} ) . .
+		)
+	) )
+}msx;
+my $re2_short = qr
+	/(.)(?=((?&lt;=(?!\1).(?=(?-1)).|(?=\1)..)))/sx;
+&lt;/c&gt;
+
+&lt;p&gt;If the string you're looking for doesn't depend on the match, you can write
+it in the following order; the following matches any &lt;c&gt;x\d+&lt;/c&gt; that is
+preceded by &lt;c&gt;ab+c&lt;/c&gt;.&lt;/p&gt;
+
+&lt;c&gt;
+my $re3 = qr{
+	(?= (?&lt;lookback&gt;
+		(?&lt;=
+			(?! (?&lt;match&gt; ab+c ) )
+			(?=(?&amp;lookback)) .
+		|
+			(?=(?&amp;match)) .
+		)
+	) )
+	(?&lt;target&gt; x \d+ )
+}msx;
+my $re3_short = qr
+	/(?=((?&lt;=(?!( ab+c ))(?=(?-2)).|(?=(?-1)).))) (x\d+) /sx;
+&lt;/c&gt;
+
+&lt;p&gt;Things get a little bit shorter for single characters;
+this matches any &lt;c&gt;\d.&lt;/c&gt; that is preceded by an &lt;c&gt;a&lt;/c&gt;
+(anywhere in the string before it, as I said above -
+otherwise you could just use &lt;c&gt;(?&lt;=a)&lt;/c&gt;).&lt;/p&gt;
+
+&lt;c&gt;
+my $re4 = qr{
+	(?= (?&lt;lookback&gt;
+		(?&lt;=
+			a
+		|
+			(?=(?&amp;lookback)) .
+		)
+	) )
+	(?&lt;target&gt; \d . )
+}msx;
+my $re4_short = qr
+	/(?=((?&lt;= a |(?=(?-1)).))) (\d.) /sx;
+&lt;/c&gt;
+
+&lt;p&gt;Probably someone can find a way to improve on this even more :-)&lt;/p&gt;
+
+&lt;p&gt;Here's the code I used to test the above regexen:&lt;/p&gt;
+
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Test::More;
+
+# regexen here...
+
+for my $regex ($re1,$re1_short) {
+	unlike "foo",            $regex;
+	unlike "x5",             $regex;
+	unlike "ab5",            $regex;
+	unlike "ab5 x4",         $regex;
+	unlike "x5 ab5",         $regex;
+	  like "ab5 x5",         $regex;
+	  like "ab5x5",          $regex;
+	  like "ab51 x51",       $regex;
+	  like "ab51 ab4 x5 x4", $regex;
+	my @results;
+	while ("ab1 ab32 x2 ab42 x3 ab3 ab4x4ab5x1x42x45" =~ /$regex/g)
+		{ push @results, $+{target} // $1 }
+	is_deeply \@results, ["x4","x1","x42"];
+}
+for my $regex ($re2,$re2_short) {
+	unlike "fo",       $regex;
+	unlike "x5",       $regex;
+	unlike "ab5",      $regex;
+	unlike "ab5 x4",   $regex;
+	  like "foo",      $regex;
+	  like "x5 ab5",   $regex;
+	  like "ab5 x5",   $regex;
+	  like "ab55",     $regex;
+	  like "ab51 x51", $regex;
+	my @results;
+	while ("abcdefbdfbb" =~ /$regex/g)
+		{ push @results, $+{char} // $1 }
+	is_deeply \@results, ["b","d","f","b","b"];
+}
+for my $regex ($re3,$re3_short) {
+	unlike "foo",            $regex;
+	unlike "x5",             $regex;
+	unlike "ab5",            $regex;
+	unlike "x5 abc5",        $regex;
+	unlike "ab x4",          $regex;
+	  like "abc x4",         $regex;
+	  like "abc x5",         $regex;
+	  like "abbbcx5",        $regex;
+	  like "abbc51 x51",     $regex;
+	  like "abc51 ab x5 x4", $regex;
+	my @results;
+	while ("x2 abbbc x4 abc5 x1 x42" =~ /$regex/g)
+		{ push @results, $+{target} // $3 }
+	is_deeply \@results, ["x4","x1","x42"];
+}
+for my $regex ($re4,$re4_short) {
+	unlike "fo",        $regex;
+	unlike "x5",        $regex;
+	unlike "5ab",       $regex;
+	unlike "x5 ab5",    $regex;
+	  like "ab5 x4",    $regex;
+	  like "x5 ab5 x2", $regex;
+	my @results;
+	while ("x2 a4 x3a55aaa1" =~ /$regex/g)
+		{ push @results, $+{target} // $2 }
+	is_deeply \@results, ["4 ","3a","55"];
+}
+
+done_testing;
+&lt;/c&gt;
+
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor edits for clarification.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;/readmore&gt;
+</doctext>
+<thread id="1201976">
+<node id="1202033"><node id="1202048"><node id="1202346"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1180936" title="Re: appending to html at beginning" created="2017-02-03 03:13:11" updated="2017-02-03 03:13:11" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [Limbomusic],&lt;/p&gt;
+&lt;p&gt;It appears you have found some &lt;i&gt;very&lt;/i&gt; old example code - the code you are using to get the form parameters is outdated, and your script isn't doing &lt;c&gt;use warnings; use strict;&lt;/c&gt; at the top (see [id://111088]).&lt;/p&gt;
+&lt;p&gt;If you are just learning Perl / CGI scripting, there are several modern web frameworks nowadays, whose use I'd strongly recommend. For example, a good starting point is [mod://Mojolicious::Guides::Tutorial]. The "old" [mod://CGI] module, which is the way a script like the one you've shown would handle form parameters, is no longer recommended for new developments.&lt;/p&gt;
+&lt;p&gt;Anyway, moving on to your question: Your [doc://open] is using a mode of &lt;c&gt;'&gt;&gt;'&lt;/c&gt;, which is "append mode", that's why anything you write to the filehandle &lt;c&gt;$fh&lt;/c&gt; is being inserted at the end of the file. If you wanted to insert lines at the top of a file, there are several ways to do so. However, simply inserting lines at the top of the file will break the HTML, so instead you'd need to insert the lines at the correct place instead. One way to do this would be to insert a marker comment at the proper place in the file, like &lt;c&gt;&lt;!-- INSERT HERE --&gt;&lt;/c&gt;, and then one relatively easy way to insert lines in the middle of a file is [doc://Tie::File] (see also the documentation of [doc://splice]).&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+my $filename = 'test.html';
+my @to_insert = ( '&lt;p&gt;Hello,',
+	'World! It is '.gmtime(time).' UTC&lt;/p&gt;' );
+
+use Tie::File;
+tie my @lines, 'Tie::File', $filename
+	or die "tie $filename: $!";
+my $found;
+for (my $i=0; defined($lines[$i]); $i++) {
+	if ($lines[$i]=~/&lt;!--\s*INSERT\s+HERE\s*--&gt;/i) {
+		$found=1;
+		splice @lines, $i+1, 0, @to_insert;
+		last;
+	}
+}
+die "Marker not found" unless $found;
+untie @lines;
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Code now inserts current time to make the order of updates to the file more clear.&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;Note that there are more "modern" ways to accomplish this instead of editing an HTML file. For example, you could store new "stories" in a file or a database on the server, and then when someone wants to see the list of stories, build the HTML page to display them dynamically. This has the advantages that you could allow for the user to select a range of stories, easily change the display format, etc. Even more advanced and "modern" techniques would be to provide the "stories" in JSON format, and then have JavaScript in the browser dynamically retrieve and display them. However, if you are just getting started, then the above is a good first step before going into these advanced techniques.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1180934</root_node>
+<parent_node field_name="parent_node">1180934</parent_node>
+<thread id="1180934">
+<node id="1180935"><node id="1180937"/>
+</node>
+<node id="1180936"><node id="1180939"><node id="1180942"/>
+<node id="1180943"/>
+<node id="1180944"><node id="1180946"/>
+</node>
+</node>
+</node>
+<node id="1180955"><node id="1180956"><node id="1180958"><node id="1180963"><node id="1180964"/>
+</node>
+<node id="1180985"><node id="1180986"><node id="1180988"/>
+<node id="1180993"><node id="1181006"><node id="1181076"><node id="1181085"/>
+<node id="1182962"><node id="1183489"><node id="1183493"><node id="1183544"><node id="1183550"/>
+<node id="1183586"/>
+</node>
+</node>
+<node id="1183503"><node id="1183541"><node id="1183548"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1181008"/>
+<node id="1181047"><node id="1181063"/>
+</node>
+<node id="1183588"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

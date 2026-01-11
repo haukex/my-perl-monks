@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11114025" title="Re: 302 Found Location Message" created="2020-03-09 13:56:12" updated="2020-03-09 13:56:12" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+print header;
+print start_html("Login");
+...
+print redirect("http//192.168.1.5/train/main.htm");
+&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You can't use both &lt;c&gt;redirect&lt;/c&gt; &lt;i&gt;and&lt;/i&gt; output something else to the browser. If I understand what your code is doing, you probably want to wait with outputting the header and HTML until it's clear the user &lt;i&gt;isn't&lt;/i&gt; being redirected.&lt;/p&gt;
+&lt;p&gt;I see a few more points in your code that could be improved:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Declare variables for the smallest possible scope where they are needed, for example &lt;c&gt;while( my ($id, $user, ...&lt;/c&gt;. This will lead to less scoping issues; for example you've declared &lt;c&gt;($l,$a,$z)&lt;/c&gt; twice, which isn't necessary (and you should prefer [doc://my] over [doc://our]).&lt;/li&gt;
+&lt;li&gt;Avoid the variable names &lt;c&gt;$a&lt;/c&gt; or &lt;c&gt;$b&lt;/c&gt; as they are special for [doc://sort].&lt;/li&gt;
+&lt;li&gt;You don't need the &lt;c&gt;foreach my $p (param())&lt;/c&gt; loop since you're accessing the parameters directly by name.&lt;/li&gt;
+&lt;li&gt;You don't need the &lt;c&gt;$query = new CGI;&lt;/c&gt; since you're not using it anywhere; use &lt;i&gt;either&lt;/i&gt; [mod://CGI].pm's object-oriented interface &lt;i&gt;or&lt;/i&gt; its functional interface.&lt;/li&gt;
+&lt;li&gt;You're doing the &lt;c&gt;if($role eq $z)&lt;/c&gt; test twice; the second time it'll always be true.&lt;/li&gt;
+&lt;li&gt;Instead of scanning the database yourself, look into SQL's [https://www.w3schools.com/sql/sql_where.asp|&lt;c&gt;WHERE&lt;/c&gt; clause] and make sure to use placeholders, as documented in [mod://DBI].&lt;/li&gt;
+&lt;li&gt;If &lt;c&gt;train/main.htm&lt;/c&gt; doesn't do any authentication of its own, people will be able to easily circumvent this login form by entering the URL directly.&lt;/li&gt;
+&lt;li&gt;See [id://1182902] - personally I'd strongly recommend [mod://Mojolicious] instead of [mod://CGI].pm; see [mod://Mojolicious::Guides::Tutorial], it's a very different and IMHO much nicer way to do web development. &lt;i&gt;Update:&lt;/i&gt; [id://11114043|I just posted an example.]&lt;/li&gt;
+&lt;/ul&gt;
+</doctext>
+<root_node field_name="root_node">11114021</root_node>
+<parent_node field_name="parent_node">11114021</parent_node>
+<thread id="11114021">
+<node id="11114025"><node id="11114027"/>
+</node>
+<node id="11114043"/>
+<node id="11114048"/>
+</thread></node>

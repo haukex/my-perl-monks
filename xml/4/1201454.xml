@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201454" title="Re^2: Parsing HTML/XML with Regular Expressions (XML::LibXML; updated!)" created="2017-10-16 11:12:11" updated="2017-10-16 11:12:11" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;b&gt;&lt;c&gt;&lt;update nr="4"&gt;&lt;/c&gt;&lt;/b&gt; For the sake of completeness, here's a working script with the changes mentioned below:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+
+my $doc = XML::LibXML-&gt;load_xml( location =&gt; 'example.xhtml',
+	no_network=&gt;1, recover=&gt;1 );
+my $xpc = XML::LibXML::XPathContext-&gt;new($doc);
+$xpc-&gt;registerNs('html', 'http://www.w3.org/1999/xhtml');
+my @ids2text = map { [ $_-&gt;getAttribute('id'), $_-&gt;textContent ] }
+	$xpc-&gt;findnodes(q{//html:div[@class='data']});
+
+$_-&gt;[1] =~ s/\W+//g for @ids2text;
+
+print join ", ", map sprintf("%s=%s", @$_), @ids2text;
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;Thanks very much for the reply! Your post inspired some more test cases for my file, and I'm sorry to say I broke your code &lt;c&gt;:-(&lt;/c&gt; But here's the fix:&lt;/p&gt;
+&lt;c&gt;
+my @ids2text = map { [ $_-&gt;getAttribute('id'), $_-&gt;textContent ] }
+	$doc-&gt;findnodes(q{//div[@class='data']});
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; And yes, it does seem that &lt;c&gt;load_html&lt;/c&gt; doesn't like XHTML - &lt;c&gt;load_xml&lt;/c&gt; seems to work a bit better, although fetching the DTD from the net is pretty slow at the moment; adding the options &lt;c&gt;{no_network=&gt;1,recover=&gt;1}&lt;/c&gt; disables the network check. However, with &lt;c&gt;load_xml&lt;/c&gt; one also has to start using [mod://XML::LibXML::XPathContext]:&lt;/p&gt;
+&lt;c&gt;
+my $xpc = XML::LibXML::XPathContext-&gt;new($doc);
+$xpc-&gt;registerNs('html', 'http://www.w3.org/1999/xhtml');
+my @ids2text = map { [ $_-&gt;getAttribute('id'), $_-&gt;textContent ] }
+    $xpc-&gt;findnodes(q{//html:div[@class='data']});
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update 2:&lt;/i&gt; Even with network, [mod://XML::LibXML] is still complaining about &lt;c&gt;&amp;nbsp;&lt;/c&gt; ("&lt;c&gt;Entity 'nbsp' not defined&lt;/c&gt;"), I'm not entirely sure why yet, as it seems to be defined in the DTD... &lt;small&gt;&lt;i&gt;Update 3:&lt;/i&gt;&lt;/small&gt; The [https://validator.w3.org/|W3C Validator] doesn't complain...&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1201438</root_node>
+<parent_node field_name="parent_node">1201443</parent_node>
+<thread id="1201438">
+<node id="1201443"><node id="1201454"><node id="1201483"><node id="1201489"/>
+</node>
+</node>
+</node>
+<node id="1201450"><node id="1201457"/>
+</node>
+<node id="1201473"><node id="1201488"><node id="1201493"><node id="1201521"><node id="1201551"/>
+</node>
+</node>
+<node id="1201633"><node id="1201689"><node id="1201709"/>
+<node id="1201716"><node id="1201740"><node id="1201776"/>
+<node id="1201933"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201490"><node id="1201529"><node id="1201612"/>
+</node>
+</node>
+</node>
+<node id="1201497"/>
+<node id="1201514"><node id="1201621"><node id="1201623"><node id="1201624"><node id="1201625"><node id="1201628"><node id="1201663"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201540"><node id="1201622"><node id="1201657"/>
+</node>
+</node>
+<node id="1201544"><node id="1201553"/>
+</node>
+<node id="1201545"><node id="1201554"/>
+</node>
+</thread></node>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109287" title="Re^3: The most precise second (timer)" created="2019-11-26 15:54:06" updated="2019-11-26 15:54:06" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;[mod://EV] is an interface to the lower-level &lt;c&gt;libev&lt;/c&gt;, and AFAIK it's fairly performant. Its "periodic" function claims to work with wall clock time, so you shouldn't have any drift relative to the system clock. That the system clock can drift relative to real time, and that it can be adjusted in jumps, are whole different issues. I'm not sure if the default [man://ntpd] supports smooth adjustments to the system clock (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; apparently, it does), &lt;del&gt;but&lt;/del&gt;&lt;ins&gt;and&lt;/ins&gt; I believe [https://chrony.tuxfamily.org/|chrony] does. (I have several systems with a GPS receiver that supports the PPS signal, and I feed that into &lt;c&gt;chronyd&lt;/c&gt; to provide a system time that should be quite accurate. I've published some info on that [https://bitbucket.org/haukex/hgpstools/src/master/RPi3_Adafruit-GPS_NTP-chrony.md|here].)&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Math::BigFloat;
+use Time::HiRes qw/gettimeofday/;
+use EV;
+
+my $w1 = EV::signal( 'INT', sub { EV::break } );
+
+my ($cnt, $avg, $prev) = (0);
+my $w2 = EV::periodic( 0, 1, 0, sub {
+	my $cur = Math::BigFloat-&gt;new( sprintf("%d.%06d",gettimeofday) );
+	if ( defined $prev ) {
+		my $delta = $cur - $prev;
+		$avg = defined $avg ? ( $avg + $delta ) / 2.0 : $delta-&gt;copy;
+		$cnt++;
+	}
+	$prev = $cur-&gt;copy;
+} );
+
+EV::run;
+
+print "\nAverage over $cnt deltas: $avg\n";
+&lt;/c&gt;
+&lt;p&gt;Sample output from different runs on my system:&lt;/p&gt;
+&lt;c&gt;
+Average over 67 deltas: 1.000005597916695584862263807609389365538
+Average over 76 deltas: 1.00012161307435464691799175142220832736
+Average over 137 deltas: 0.9997675784785176200109895891945901313775
+Average over 442 deltas: 0.9999437250604076389815434390305220372265
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11109264</root_node>
+<parent_node field_name="parent_node">11109279</parent_node>
+<thread id="11109264">
+<node id="11109266"><node id="11109268"/>
+</node>
+<node id="11109272"><node id="11109275"><node id="11109301"><node id="11109305"><node id="11109374"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11109278"><node id="11109279"><node id="11109287"><node id="11109291"><node id="11109299"/>
+<node id="11109304"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11109280"/>
+<node id="11109293"><node id="11109313"/>
+</node>
+<node id="11109295"><node id="11109300"/>
+</node>
+<node id="11109306"><node id="11109310"><node id="11109314"><node id="11109331"><node id="11109343"><node id="11109358"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11109341"/>
+<node id="11109487"><node id="11109489"><node id="11109554"><node id="11109574"><node id="11109655"><node id="11109673"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11109577"/>
+<node id="11109665"/>
+</thread></node>

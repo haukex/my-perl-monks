@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110543" title="utf8 for require scripts" created="2019-12-23 06:09:55" updated="2019-12-23 06:09:55" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1197542">YarNik</author>
+<doctext field_name="doctext">Hello Monks,
+&lt;p&gt;In Perl v5.10.1 I did not declare utf8 for require scripts, but in Perl v5.16.3 it is necessary.&lt;/p&gt;
+&lt;p&gt;What is another solution, do not change a lot of require scripts?&lt;/p&gt;
+&lt;p&gt;Now my index.pl script looks like this:&lt;/p&gt;
+&lt;pre&gt;
+#!/usr/bin/perl
+use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
+use utf8;
+use CGI qw/:standard -utf8 -nosticky/;
+use open qw/:utf8/;
+binmode(STDOUT, ":utf8");
+print header(-type =&gt; 'text/html',-charset =&gt; 'UTF-8');
+print "one &amp;#1086;&amp;#1076;&amp;#1080;&amp;#1085;\n";
+require "index_req.pl";
+print @select;
+&lt;/pre&gt;
+
+index_req.pl
+&lt;pre&gt;
+#!/usr/bin/perl
+@select = qw(one &amp;#1086;&amp;#1076;&amp;#1080;&amp;#1085;);
+1;
+&lt;/pre&gt;
+
+output:
+&lt;blockquote&gt;one &amp;#1086;&amp;#1076;&amp;#1080;&amp;#1085; one????????&lt;/blockquote&gt;
+
+if I add utf8 in index_req.pl
+&lt;pre&gt;
+#!/usr/bin/perl
+use utf8;
+@select = qw(one &amp;#1086;&amp;#1076;&amp;#1080;&amp;#1085;);
+1;
+&lt;/pre&gt;
+
+then output is good:
+&lt;blockquote&gt;one &amp;#1086;&amp;#1076;&amp;#1080;&amp;#1085; one&amp;#1086;&amp;#1076;&amp;#1080;&amp;#1085;&lt;/blockquote&gt;
+</doctext>
+<thread id="11110543">
+<node id="11110544"><node id="11110547"/>
+</node>
+<node id="11110550"><node id="11110551"/>
+</node>
+</thread></node>

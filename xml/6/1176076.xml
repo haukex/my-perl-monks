@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1176076" title="Re^14: CPAN failed install" created="2016-11-17 19:04:24" updated="2016-11-17 19:04:24" _doctext_mode="lenient"><type id="11">note</type>
+<author id="747201">afoken</author>
+<doctext field_name="doctext">&lt;blockquote&gt;It seems the only two distros that haven't adopted it as the default yet are Slackware and Gentoo. &lt;/blockquote&gt;
+&lt;p&gt;At work, we use a third-party, ARM-based embedded computer featuring a touch screen for one of our products. It runs Yocto Linux, customized by the hardware vendor, further customized by us. It is just a really big pain to change anything in the distributed code. There are literally thousands of different configuration files, all depend on another, include, extend or override each other. The build process starts by building a big database of all that junk, then builds gcc, binutils, bash and friends a few times (LFS and T2 have to do that, too), builds qemu, one or two kernels, and finally builds native binaries inside qemu. And yes, you may have guessed it, a complete compile cycle takes about a day.&lt;/p&gt;
+&lt;p&gt;I've burned a few days trying to customize really tiny things, like getting rid of audio or bluetooth drivers and applications that won't ever be able run on the hardware we use, because it lacks both audio and bluetooth hardware. Or trying to simply disable a service run from the init scripts. I didn't even &lt;i&gt;try&lt;/i&gt; to integrate our own programs. In the end, I just used the vendor-supplied tar file and added, deleted and changed files during the installation from a shell script. Our programs are build using Makefiles, shell and perl scripts, and the vendor's "SDK", a toolchain hacked out of the Yocto build process, with lots of references to directories that only exist on the vendor's build server.&lt;/p&gt;
+&lt;p&gt;It's not pretty, neither the toolchain nor my hack to get the system running, but it works and runs absolutely stable. And it does not use systemd.&lt;/p&gt;
+&lt;p&gt;Yocto is not a distribution in the classic sense, its a distribution building kit like T2 or LFS, or [https://buildroot.org/|buildroot]. But it's the most complex one I've ever seen, and I think it takes a few weeks or months to learn how to use it. In [https://xkcd.com/1343/], Yocto is about 1 m outside the screen, on the right-hand side.&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;It is still possible to get rid of systemd. Systemd is nothing new, it's just a tons of more or less useful utilities stuffed into one ultra-fat binary nightmare that runs as the most privileged userspace process that absolutely must not die. The idea of starting several services in parallel, with automatic dependency resolving is years older, and has been implemented at least three times. All three times, the init process is reduced to nearly the bare minimum, as the name promises. In all of the three implementations, init just starts a monitoring process. The monitoring process starts one supervisor per service, and the supervisors start the services. System logging, filesystem mounting and almost all other tasks are handled as services.&lt;/p&gt;
+&lt;p&gt;How?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;[http://cr.yp.to/daemontools.html|djb's daemontools], I've written serveral posts about them. [http://thedjbway.b0llix.net/|The djb way] is the inofficial manual, longer than djb's spec-like documentation. [http://code.dogmap.org/svscan-1/|Running svscan as process 1] replaces the classic init with djb's svscan.&lt;/li&gt;
+&lt;li&gt;[http://smarden.org/runit/|runit] follows the spirit of daemontools, can be combined with them, and is explicitly designed to run as process 1 aka init.&lt;/li&gt;
+&lt;li&gt;[http://www.fefe.de/minit/] is yet another tiny init.&lt;/li&gt;
+&lt;li&gt;[http://www.busybox.net/|Busybox] contains a lot of clones of those tools, including its own small init.&lt;/li&gt;
+&lt;li&gt;[http://www.safe-mbox.com/~rgooch/linux/boot-scripts/|need, provide, simpleinit] provide automatic dependencies at runtime.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Why init should be small and have as few features as possible, in one four-word sentence: init must not die. If init dies, the kernel will panic. All unsaved data is lost, the machine is down. [http://code.dogmap.org/|Paul Jarc] has explained init's main jobs in [http://code.dogmap.org/svscan-1/|Running svscan as process 1]:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Start up other processes (services, logging) - svscan, svscanboot from daemontools is an ideal candidate to be started by init.&lt;/li&gt;
+&lt;li&gt;wait() for children not reaped by other processes. It's really just that. Call wait(), over and over again. Discard the results.&lt;/li&gt;
+&lt;li&gt;Handle signals, mainly as interface to the kernel. Well, that's nearly handled by wait(), just set up a few signal handlers before.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Everything else can and should be handled in different processes, started by init or one of the processes started by init. This way, init needs only very little code, and it can (ideally) completely be audited.
+&lt;/p&gt;
+&lt;p&gt;Systemd puts inetd, syslog, and tons of other services into process 1. Do you want a system where a malformed network package or a malformed log message kills init (not in the sense of sending a signal, but in the sense of terminating the process)? Well, some people accept that risk for a system that boots in 10 instead of 20 seconds. Imagine that. Half of the boot time, you can reboot your shiny new machine twice as often as with a traditional init.&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;I don't really care about boot times, anything less than five minutes is ok. Servers and firewalls run 24/7, so boot time is absolutely irrelevant. Workstations are started when I enter the office, and shut down several hours later. During system boot, I walk around the office, greet the co-workers, fetch a new bootle of water, find out what needs to be done that day, perhaps try to guess a solution for a bizarre problem at a customer site that may have a hardware or a software cause. That takes from 3 min to hours, depending on what has happened since the last work day. So again, boot time is irrelevant.&lt;/p&gt;
+&lt;p&gt;What if I really need instant access to a computer? I use an always-on machine, like an X terminal running on my main server, or my smartphone, or I simply use a computer of a co-worker to get a browser or a PDF viewer.&lt;/p&gt;
+&lt;p&gt;Alexander&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-747201"&gt;
+--&lt;br&gt;
+Today I will gladly share my knowledge and experience, for there are no sweeter words than "I told you so". ;-)
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1175809</root_node>
+<parent_node field_name="parent_node">1175935</parent_node>
+<thread id="1175809">
+<node id="1175810"><node id="1175811"><node id="1175812"><node id="1175828"><node id="1175833"><node id="1175834"><node id="1175864"/>
+<node id="1175870"><node id="1175874"><node id="1175885"><node id="1175898"><node id="1175901"><node id="1175904"><node id="1175920"/>
+<node id="1175935"><node id="1176076"><node id="1176218"><node id="1176222"><node id="1176327"><node id="1176363"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1176148"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1175813"/>
+</node>
+</node>
+</thread></node>

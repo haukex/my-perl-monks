@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11126683" title="Re^7: looking for feedback on my first script" created="2021-01-09 19:58:15" updated="2021-01-09 19:58:15" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;In Perl, if printf() fails, a fatal error will be thrown long before it returns to the caller.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;blockquote&gt;&lt;i&gt;I disagree about printf() errors.
+With normal file operations, what I said is true. It is almost impossible for a print or printf to "fail" once a local Hard Disk file handle is open. One way would be "File system full", but in that case, a fatal exception is thrown - the calling program won't see that.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Test before posting. Confidently making incorrect statements doesn't help anyone.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+my $file = $^O eq 'MSWin32' ? "P:\\foo" : '/tmp/foo/bar';
+open my $fh, '&gt;', $file or die "$file: $!";
+my $data = "\0" x 2_000_000;
+print "Writing ", length $data, " bytes to $file\n";
+printf $fh "%s", $data or warn "printf: $!";
+close $fh or warn "close: $!";
+print "Still not fatal\n";
+
+__END__
+
+Windows:
+
+Install https://www.ltr-data.se/opencode.html/#ImDisk
+As Administrator:
+&gt; imdisk -a -t vm -m P: -s 1M -p "/fs:fat /q /y"
+&gt; perl write.pl
+Writing 2000000 bytes to P:\foo
+printf: No space left on device at write.pl line 9.
+close: No space left on device at write.pl line 10.
+Still not fatal
+&gt; imdisk -D -m P:
+
+Linux:
+
+$ mkdir -vp /tmp/foo
+$ sudo mount -t tmpfs -o size=1M,uid=`id -u` tmpfs /tmp/foo
+$ perl write.pl
+Writing 2000000 bytes to /tmp/foo/bar
+printf: No space left on device at write.pl line 9.
+close: No space left on device at write.pl line 10.
+Still not fatal
+$ sudo umount /tmp/foo
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11126607</root_node>
+<parent_node field_name="parent_node">11126678</parent_node>
+<thread id="11126607">
+<node id="11126610"/>
+<node id="11126611"><node id="11126615"/>
+<node id="11126616"/>
+</node>
+<node id="11126614"><node id="11126617"/>
+<node id="11126659"><node id="11126661"><node id="11126665"><node id="11126666"/>
+<node id="11126673"><node id="11126678"><node id="11126683"/>
+<node id="11126688"><node id="11126880"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11126628"/>
+<node id="11126631"/>
+<node id="11126644"/>
+</thread></node>

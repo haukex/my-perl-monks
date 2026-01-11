@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1102209" title="Best practices for handling errors" created="2014-09-27 07:31:36" updated="2014-09-27 07:31:36" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1087432">v_melnik</author>
+<doctext field_name="doctext">&lt;p&gt;Dear colleagues,&lt;/p&gt;
+&lt;p&gt;I think, it's a matter of religion, but I'd like to get to know more on how other people, more experienced, prefer to handle errors/exceptions in respect to the structure of your programs.&lt;/p&gt;
+&lt;p&gt;Let me describe how I'm doing it now and, if you have some time to share your experience, I'd be very grateful to you for describing how do you prefer to do it.&lt;/p&gt;
+&lt;p&gt;My own "rules" for myself are quite simple.&lt;/p&gt;
+&lt;ol start="1"&gt;
+&lt;li&gt;Don't die() while executing a subrotine or method. Only the main module can die() if something goes wrong. Nobody can predict where the class will be used, so an unexpected die() can break the caller's logic.&lt;/li&gt;
+&lt;li&gt;If I've got an exception inside of a subroutine, the subroutine may return(undef). If everything's fine, it return's some value (it can be true or false - no matter), but if some error has been occuried (e.g. if we can't get data from the database), the undef shall be returned.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;That's okay, but how to let the caller know what's happened with the subroutine? As I think, the caller must have some explaination to be able to write something to the log-file or to show the error message to the operator. So, there is one more rule.&lt;/p&gt;
+&lt;ol start="3"&gt;
+&lt;li&gt;Any class may have the "errstr" attribute, so if its' methor returned undef, the caller may get the explaination from this attribute.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;So, usually it looks like this:&lt;/p&gt;
+&lt;code&gt;
+package SomeClass;
+#...
+sub some_method {
+  # ...
+  eval { die("Oops!"); };
+  if($@) {
+    $self-&gt;{'errstr'} = "Something has gone wrong: $@";
+    return(undef)
+  }
+  # ...
+}
+#...
+package main;
+#...
+my $result = $obj-&gt;some_method;
+unless(defined($result)) {
+  die("Can't SomeClass-&gt;some_method(): $obj-&gt;{'errstr'}");
+}
+#...
+&lt;/code&gt;
+&lt;p&gt;And, when something goes wrong, I can get something like that:&lt;/p&gt;
+&lt;code&gt;Can't SomeClass-&gt;some_method(): Can't AnotherClass-&gt;another_method(): Can't OtherClass-&gt;other_method(): Can't open(): No such file at script.pl line 666.&lt;/code&gt;
+&lt;p&gt;Frankly speaking, I have a persistent feeling that there are some other, much more elegant way to do it. And I hate how the final error message looks like. Just like "can't A, because can't B, because can't C, because f*** you". Ugh... :(&lt;/p&gt;
+&lt;p&gt;And there is another annoying thing: I have to use die() in the constructor of an object (I mean new()), because if the constructor returns undef, the caller doesn't have an access to the object's "errstr" attribute at all (as we don't have the object bless()ed). So I have to always call constructors from eval()-blocks and get the explaination from $@.&lt;/p&gt;
+&lt;code&gt;
+package SomeClass;
+#...
+sub new {
+  # ...
+  eval { die("Oops!"); };
+  if($@) {
+    die("Something has gone wrong: $@");
+  }
+  # ...
+}
+#...
+package main;
+#...
+my $obj = eval { $obj-&gt;new };
+unless(defined($obj)) {
+  die("Can't SomeClass-&gt;new(): $@");
+}
+#...
+&lt;/code&gt;
+&lt;p&gt;I absolutely hate it, but I don't see better ways to let the caller know why the object hasn't been blessed.&lt;/p&gt;
+&lt;p&gt;Maybe I should consider using some global variable to keep the reference to the stack of errors occuried? What do you think?&lt;/p&gt;
+&lt;p&gt;Maybe I should always die() (or confess() - as a better way to get to know who has called whom) inside of any method and call every method inside of eval()- or try()-block?&lt;/p&gt;
+&lt;p&gt;I'll be very grateful to each of you for sharing your best practices on this matter. It really makes me feel unsatisfacted. :)&lt;/p&gt;
+&lt;p&gt;Have a nice time!&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;UPD:&lt;/b&gt; Now I see, why it's better to use exceptions such as die(), croak() or even my own exception classes based on Throwable::Error superclass instead of returning undef's or setting flags. Lots of thanks to all!&lt;/p&gt;
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1087432"&gt;
+V.Melnik
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1102209">
+<node id="1102221"><node id="1102222"><node id="1102225"/>
+</node>
+</node>
+<node id="1102235"/>
+<node id="1102243"/>
+<node id="1102247"><node id="1102248"><node id="1102253"/>
+</node>
+</node>
+<node id="1102262"/>
+<node id="1102266"/>
+<node id="1102311"/>
+</thread></node>

@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229686" title="[SOLVED] -Help encode_entities doesn't seem to work" created="2019-02-09 16:53:46" updated="2019-02-09 16:53:46" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1229680">Balawoo</author>
+<doctext field_name="doctext">hello
+
+I'm a newbie and French. I need to convert and Excel file in XML file with text in HTML. So I need to convert accent in HTML. For information, this post is double in a French website&lt;p&gt;
+ https://www.developpez.net/forums/d1941017/autres-langages/perl/langage/impossible-convertir-cellule-html-accents-convertis/
+
+When I do a test script like this one, it's working
+&lt;code&gt;
+#!/usr/bin/perl
+
+use HTML::Entities;
+use warnings;
+#use	utf8;
+#binmode(stdout =&gt; utf8);
+
+my $unsafe_chars = "&lt; &amp; &gt;";
+my $string="&lt;br&gt;àéèçûîùô&lt;&gt;";
+print $string, "\n";
+print encode_entities($string, "àéèçûîùô");
+
+&lt;/code&gt;
+&lt;p&gt;When I do the same based on an excel file &lt;/p&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+
+#!/usr/bin/perl -w
+#######################################################
+#
+# Author: Polina Antipova aka Kitsune
+#
+# What it does:
+# 	This script converts XLS files to XML format compatible with Testlink.
+#
+# More info at https://bitbucket.org/kitsuneo/xls2testlink-script/wiki
+# Suggestion/bugs are also accepted at polina.antipova@gmail.com
+#
+# !! Script is very data sensible. Please, be careful with input XLS file !!
+#
+########################################################
+
+use warnings;
+use Encode qw/encode decode/;
+use Spreadsheet::ParseExcel;
+use File::Basename;
+use feature qw(say);
+use feature "switch";
+#use Text::EtText::EtText2HTML;
+#use HTML::TextToHTML;
+use HTML::Entities;
+
+sub log_and_print {
+    print (scalar(localtime()), " ", @_, "\n");
+    print LOGFILE (scalar(localtime()), " ", @_, "\n");
+}
+
+sub print_log {
+	print LOGFILE (scalar(localtime()), " ", @_, "\n");
+}
+
+sub print_txt {
+	print TXT (@_);
+}
+
+sub print_xml {
+	print XML (@_);
+}
+
+# Source file and path are taken as script parameter
+if (@ARGV) {
+	$full_source_file_path = $ARGV[0];
+	}
+
+else {
+	die (" ! Please, enter file name as script parameter. \n See README.txt for mor details");
+	}
+
+# Parse @ARGV, get path and file from script parameter
+($source_file_name, $source_file_path, $source_file_suffix) = fileparse($full_source_file_path, qr/\.[^.]*/);	
+
+# Define all files and paths
+$source_file = "$source_file_name$source_file_suffix";
+
+$logs_dir = "logs";
+$converted_dir = "converted_files";
+
+# Create folders for logs and converted files
+chdir ($source_file_path);
+mkdir ($logs_dir);
+mkdir ($converted_dir);
+
+# Output files get names after source file
+$txt_file = ("$source_file_name\_parsed.txt");
+$xml_file = ("$source_file_name\_resulted.xml");
+$file_log = ("$source_file_name\_debug.log");
+
+# Files + folders knocked into variables
+$txt = "$converted_dir/$txt_file";
+$xml = "$converted_dir/$xml_file";
+$log = "$logs_dir/$file_log";
+
+open (LOGFILE, "&gt; $log") || die("Could not open file! $log");
+open (TXT, "&gt; $txt") || die("Could not open file! $txt");
+
+log_and_print ("**************");
+log_and_print ("Start working");
+log_and_print ("STEP1: converting $source_file to TXT \n");
+
+# see http://search.cpan.org/~jmcnamara/Spreadsheet-ParseExcel-0.59/lib/Spreadsheet/ParseExcel.pm#SYNOPSIS
+# STEP1: The data from XLS file is stored in temp TXT file 
+my $parser   = Spreadsheet::ParseExcel-&gt;new();
+    my $workbook = $parser-&gt;parse($source_file);
+
+    if ( !defined $workbook ) {
+        die $parser-&gt;error(), ".\n";
+    }
+	
+    for my $worksheet ( $workbook-&gt;worksheets() ) {
+
+        my ( $row_min, $row_max ) = $worksheet-&gt;row_range();
+        my ( $col_min, $col_max ) = $worksheet-&gt;col_range();
+
+        for my $row ( $row_min .. $row_max ) {
+            for my $col ( $col_min .. $col_max ) {
+
+                my $cell = $worksheet-&gt;get_cell( $row, $col );
+                next unless $cell;
+
+               # Every cell is readed as row in .txt. Output format "Row, Col, value" 
+			   $cell_unformatted = $cell-&gt;unformatted();	
+			   $cell_unformatted =~ s/\n/&lt;br&gt;/g; 
+			  
+			   print_txt "$row;;$col;;", $cell_unformatted ,"\n";
+			
+            }
+        }
+    }
+	
+close(TXT);	
+
+log_and_print ("STEP1: OK \n Result: file $txt is created \n");	
+log_and_print ("STEP2: converting $txt to XML \n");
+
+# HERE THE KINGDOM OF CONVERTING BEGINS
+open (XML, "&gt; $xml") || die("Could not open file! $xml");
+ 
+ # Read TXT to an array
+	open (SOURCE, "$txt") || die ("Could not open file! $txt");
+	@parsed_data = &lt;SOURCE&gt;;
+	close (SOURCE);
+
+	# Initialize auxiliary variables
+	$source_row_counter = 0;
+	$commented = "//";
+
+	$header_of_xml = "&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n&lt;requirements&gt;\n";
+	$end_of_kw = "&lt;/requirements&gt;";
+	
+	# Print first row of XML file
+	print_xml $header_of_xml;
+	
+ # Read every row from .txt array.	
+ foreach $file_row (@parsed_data){	
+ 	
+	chomp $file_row;
+	
+	# Cell is processed according to its positions and value
+	@splited_row = split(/;;/, $file_row);
+		
+	$cell_row_position = $splited_row[0];
+	$cell_col_position = $splited_row[1];
+	$cell_value = $splited_row[2];
+	
+	print_log ("Debug: Current position: row - $cell_row_position, col - $cell_col_position");
+	
+	# First cell in excel file is expected to be mark of new test case (one test case - one excel row)
+	# If cell is first, all test case variable are cleaned up
+	if ($cell_col_position == 0){
+		$test_requirement = "";
+		$tc_docid_tag = "";
+		$tc_title_tag = "";
+		$tc_version_tag = "";
+		$tc_revision_tag = "";
+		$tc_node_order_tag = "";
+		$tc_description_tag = "";
+		$tc_status_tag = "";
+		$tc_type_tag = "";
+		$tc_coverage_tag = "";
+		
+		# TODO shift positions in arrays: in excel rows starts from 1, in parsed excel from 0
+		print_log ("Debug: Start accumulate test case at row position $cell_row_position");
+	}
+	
+	# Each value is checked if it is commented or not
+	# Commented if cell is empty or first cell symbol is double slash "//"
+	no warnings;
+	$if_commented = substr $cell_value, 0, 2;
+	
+	# Skip cells from Row1 and Column A - reserved for Header and comments
+	if (($cell_row_position == 0) and ($cell_col_position == 0)) {	
+		print_log ("File: Skip \"Header or Comments\". Cell position: row - $cell_row_position, col - $cell_col_position");
+	}
+	
+	# Skip empty cells
+	# Check that 1st test case has a test suite name (!mandatory)
+	
+	# Skip cells started with "//"
+	elsif ($if_commented eq $commented) {	
+		print_log ("File: Skip empty cell. Cell begins with \"$if_commented\", cell position: row - $cell_row_position, col - $cell_col_position");
+		log_and_print ("! File: Test suite (row2) must not be commented, otherwise .xml will be broken!") if (($cell_row_position == 1)&amp;&amp; ($cell_col_position ==1));
+		log_and_print ("! File: Test case name (row", $cell_row_position+1, ") must not be commented, otherwise .xml will be broken!") if ($cell_col_position == 2);
+	}
+	
+	# Accumulate test case record from all other values
+	# Script use hard-coded values (columns numbers) and expects precise work with source file	
+	else {	
+		given ($cell_col_position) {
+		
+			# Block &lt;requirement&gt;
+
+					
+			# Block &lt;docid&gt;	
+			when (0) {; 
+				my $tc_docid = "$cell_value"; 
+						$tc_docid_tag = "&lt;requirement&gt;&lt;docid &gt;&lt;![CDATA[$tc_docid]]&gt;&lt;/docid&gt;\n";
+					print_log("Ligne\n $cell_col_position\n $tc_docid_tag")
+					}
+					
+			# Block &lt;title&gt;		
+			when (1) { my $tc_title = "$cell_value"; 
+						$tc_title_tag = "&lt;title&gt;&lt;![CDATA[$tc_title]]&gt;&lt;/title&gt;\n";			
+					}	
+					
+			# Block &lt;version&gt;		
+			when (2) { my $tc_version = "$cell_value"; 
+						$tc_version_tag = "&lt;version&gt;$tc_version&lt;/version&gt;\n";
+					}
+					
+			# Block &lt;revision&gt;		
+			when (3) { my $tc_revision = "$cell_value";
+						$tc_revision_tag = "&lt;revision&gt; $tc_revision &lt;/revision&gt;\n";
+					}
+
+			# Block &lt;node_order&gt;
+			when (4) { my $tc_node_order = "$cell_value";
+							$tc_node_order_tag = "&lt;node_order&gt;$tc_node_order&lt;/node_order&gt;\n";
+					
+							}
+							
+			# Block &lt;description&gt;
+			when (5) { my $tc_description = shift;
+				my $tc_description = "$cell_value";
+			$t = encode_entities($tc_description, "àéèçûîùôâ");
+
+						$tc_description_tag = "&lt;description&gt;&lt;![CDATA[$t]]&gt;&lt;/description&gt;\n";
+						}
+								
+			# Block &lt;status&gt;
+			when (6) { my $tc_status = "$cell_value";
+					$tc_status_tag = "&lt;status&gt;&lt;![CDATA[V]]&gt;&lt;/status&gt;\n";
+			
+					}
+					
+			# Block &lt;type&gt;
+			when (7) { my $tc_type = "$cell_value";
+					$tc_type_tag = "&lt;type&gt;&lt;![CDATA[3]]&gt;&lt;/type&gt;\n";
+					
+				}
+			# Block &lt;excepted_coverage&gt;
+			when (8) { my $tc_coverage = "$cell_value";
+					$tc_coverage_tag = "&lt;expected_coverage&gt;&lt;![CDATA[1]]&gt;&lt;/expected_coverage&gt;\n";
+				
+	
+
+		# Final accumulated requirement
+		$test_requirement = "$tc_docid_tag $tc_title_tag $tc_version_tag $tc_revision_tag $tc_node_order_tag $tc_description_tag $tc_status_tag $tc_type_tag $tc_coverage_tag	&lt;/requirement&gt;\n";	
+		print_xml $test_requirement;		
+}
+	
+	# When cell is last in the excel row - call to print test case to file
+		if ($cell_col_position == 8) {
+		$source_row_counter++;
+		
+		print_log ("File: Print accumulated keyword at row position $cell_row_position");
+		print_log ("Fichier $test_requirement");
+		print_xml $test_requirement;		
+		}
+	}
+	}
+
+}
+ 
+  
+ # Close XML file - double &lt;/testsuite&gt;
+print_xml ($end_of_kw, "\n");
+  
+ # deduct one row from row counter (reserved for headers) for get number of processed Excel test cases
+ $source_row_counter = $source_row_counter -1; 
+ 
+ log_and_print ("STEP2: OK \n Result: file $xml is created \n");	
+ log_and_print ("Processed $source_row_counter rows from $source_file \n See debug log for more details.\n\n");
+ 
+close(XML);
+close(LOGFILE);
+&lt;/code&gt;
+
+Block Description, the result is wrong, it' like that
+&lt;c&gt;
+éiùûôêçà&lt;&gt;&lt;br&gt;aqwzsx
+&lt;/c&gt;
+Thanks for your help</doctext>
+<thread id="1229686">
+<node id="1229688"><node id="1229699"><node id="1229703"><node id="1229730"/>
+<node id="1229738"><node id="1229747"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1229690"><node id="1229700"><node id="1229706"><node id="1229725"><node id="1229734"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1229702"><node id="1229712"/>
+</node>
+</thread></node>

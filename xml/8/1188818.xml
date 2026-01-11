@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1188818" title="Re^4: Use of uninitialized value $pic" created="2017-04-25 01:40:44" updated="2017-04-25 01:40:44" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1185977">dazz</author>
+<doctext field_name="doctext">Hello
+
+Yes, it wasn't a good night for troubleshooting code.  I have incorporated your suggestions and fixed the code. &lt;br&gt;
+I used a hash because I have a couple of switches and args that determine which camera is being used and where the files should go.  &lt;br&gt; &lt;br&gt;
+
+
+Moving onto my next problem. I want to call a subroutine ImageNotDark.  I want to pass an Image::Magick object ($pic).&lt;br&gt;
+By design, the object is not changed inside the subroutine.  My problem is that I am not passing the image object correctly. &lt;br&gt; 
+
+&lt;code&gt;
+# Convert to Image::Maggick image
+my $pic = Image::Magick-&gt;new(magick=&gt;'jpg');  #   create new image object
+$pic-&gt;BlobToImage($img);  #convert the grabbed blob image to Image::Magick object
+
+## test point A
+
+#pass the $pic object to the subroutine and measure image darkness.
+my $test = ImageNotDark ($pic);  # 
+&lt;/code&gt;
+
+The code snippet at the start of the subroutine is as follows:
+
+&lt;code&gt;
+sub ImageNotDark  {
+# Argument is one reference to an image object.
+# ImageNotDark compares the image with a blank black canvas.  If the comparison is
+# above the defined threshold, the image is bright enough to send (not dark).
+# the return value is true if the images is bright enough.
+
+    my $iutImage = Image::Magick-&gt;new;  #the image tested for darkness
+    $iutImage-&gt;Read(@_);  # get the image under test (iut)
+&lt;/code&gt;
+
+So the debugger shows that  $iutImage is not initialised.  At test point A, I temporarily added  code to save the $pic image to a file.  &lt;br&gt;
+I was able to confirm that $pic holds a valid image.  So I am reasonably certain the problem is the way I call the subroutine and attempt to pass the image.
+
+Any tips would be much appreciated.</doctext>
+<root_node field_name="root_node">1188743</root_node>
+<parent_node field_name="parent_node">1188749</parent_node>
+<thread id="1188743">
+<node id="1188745"/>
+<node id="1188746"><node id="1188747"><node id="1188748"/>
+<node id="1188749"><node id="1188818"><node id="1188820"><node id="1188830"/>
+</node>
+<node id="1188848"><node id="1189249"><node id="1189250"><node id="1189252"/>
+<node id="1189300"><node id="1189341"/>
+<node id="1189384"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1188750"/>
+</node>
+</node>
+</thread></node>

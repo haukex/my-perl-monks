@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1159373" title="Re: Warning in objImageMagick" created="2016-04-02 12:56:26" updated="2016-04-02 12:56:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Anonymous,&lt;/p&gt;
+&lt;p&gt;The [http://www.imagemagick.org/script/perl-magick.php#exceptions|documentation] says:&lt;/p&gt;
+&lt;blockquote&gt;All PerlMagick methods return an undefined string context upon success. If any problems occur, the error is returned as a string with an embedded numeric status code.&lt;/blockquote&gt;
+&lt;p&gt;Which means you've got your condition reversed - with &lt;c&gt;or&lt;/c&gt;, your [doc://warn]ing is displayed when &lt;c&gt;Read&lt;/c&gt; returns a false value, but actually, a false value ("an undefined string") means success. There's also this piece of example code:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;c&gt;
+$x = $image-&gt;Read(...);
+warn "$x" if "$x";      # print the error message
+$x =~ /(\d+)/;
+print $1;               # print the error number
+print 0+$x;             # print the number of images read
+&lt;/c&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Update: It's been quite a while since I used PerlMagick, but as the documentation and a quick test of the sample code makes clear, the value returned by &lt;c&gt;Read&lt;/c&gt; is special and somewhat unusual, so it warrants further explanation: It actually has two different values, one in string context (the error message with an embedded numeric status code, possibly making things even more confusing) and one in numeric context (the number of images read). This means that &lt;c&gt;"$x"&lt;/c&gt; and &lt;c&gt;0+$x&lt;/c&gt;, as in the above example, will return two different values. Because it's easy to mix up string and numeric contexts, you should be careful with the return values and follow the code examples from the documentation, i.e. checking &lt;c&gt;"$x"&lt;/c&gt; for errors instead of just plain &lt;c&gt;$x&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt; </doctext>
+<root_node field_name="root_node">1159371</root_node>
+<parent_node field_name="parent_node">1159371</parent_node>
+<thread id="1159371">
+<node id="1159373"><node id="1159375"><node id="1159377"><node id="1159378"><node id="1159379"><node id="1159383"><node id="1159385"><node id="1159388"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1159376"/>
+</thread></node>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11120496" title="Re: XML::LibXML::XPathContext-&gt;string_value - should ALL of the descendant's text be there?" created="2020-08-08 03:25:32" updated="2020-08-08 03:25:32" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I get a nodeset, start walking through it and getting text out, but when it comes out, for each node I get the text contained in node element AND the text of all of it's descendants (contained elements).&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This makes sense to me. Consider this piece of HTML: &lt;c&gt;&lt;p&gt;Hello, &lt;b&gt;World&lt;/b&gt;!&lt;/p&gt;&lt;/c&gt; - the &lt;c&gt;&lt;p&gt;&lt;/c&gt; element has three child nodes: a text node (&lt;c&gt;"Hello, "&lt;/c&gt;), the &lt;c&gt;&lt;b&gt;&lt;/c&gt; element, and another text node (&lt;c&gt;"!"&lt;/c&gt;). But if you ask the question "what text is contained in that paragraph?" then wouldn't the natural answer be &lt;c&gt;"Hello, World!"&lt;/c&gt; instead of &lt;c&gt;"Hello, !"&lt;/c&gt;? Otherwise, what question are you asking? If it's "what are the children of this &lt;c&gt;&lt;p&gt;&lt;/c&gt; element that are text nodes", you'll have to code that explicitly, and you may get any number of text nodes (in the aforementioned example, it's two, but consider that any whitespace like newlines and indentation are text nodes too, e.g. the &lt;c&gt;&lt;body&gt;&lt;/c&gt; in your example has three text children, all whitespace). Two ways to do that are to iterate over the &lt;c&gt;childNodes&lt;/c&gt; of a node, checking their &lt;c&gt;nodeType&lt;/c&gt; for &lt;c&gt;XML_TEXT_NODE&lt;/c&gt; and &lt;c&gt;XML_CDATA_SECTION_NODE&lt;/c&gt;. Or, use an XPath expression like &lt;c&gt;'//p/child::text()'&lt;/c&gt;. OTOH, event-based parsers will return nodes as they encounter them. Perhaps you could explain what you're trying to do and what your expected output is?&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;$node-&gt;string_value();&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note this method is undocumented (there's a method with that name in [mod://XML::LibXML::NodeList], but your &lt;c&gt;$node&lt;/c&gt;s are [mod://XML::LibXML::Element]s), you should use &lt;c&gt;textContent&lt;/c&gt; instead.&lt;/p&gt;
+&lt;p&gt;Note that you don't need [mod://XML::LibXML::XPathContext] unless the document you're parsing contains namespaces; the regular [mod://XML::LibXML::Node] has a &lt;c&gt;findnodes&lt;/c&gt; too.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor edits.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11120492</root_node>
+<parent_node field_name="parent_node">11120492</parent_node>
+<thread id="11120492">
+<node id="11120496"><node id="11120507"><node id="11120517"><node id="11120533"/>
+</node>
+</node>
+</node>
+</thread></node>

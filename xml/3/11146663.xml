@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11146663" title="Re: Reading a timestamp and getting the written value" created="2022-09-03 11:51:45" updated="2022-09-03 11:51:45" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;my $fmt = '%d %b %Y %T %Z';&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;&lt;i&gt;Don't&lt;/i&gt; use &lt;c&gt;%Z&lt;/c&gt; as it may produce ambiguous time zone names like &lt;c&gt;CST&lt;/c&gt; ("Central Standard Time", "China Standard Time", "Cuba Standard Time", ...), and as you can tell [doc://Time::Piece]'s &lt;c&gt;strptime&lt;/c&gt; can't handle parsing its own output. Personally, I usually use [mod://DateTime::Format::Strptime] for parsing, but AFAICT [doc://Time::Piece] works with &lt;c&gt;%z&lt;/c&gt; as well.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Time::Piece;
+
+my $fmt = '%d %b %Y %T %z';  # %z instead of %Z appears to work
+my $str = localtime-&gt;strftime($fmt);
+print $str, "\n";
+my $strtime = Time::Piece-&gt;strptime($str, $fmt);
+print $strtime-&gt;strftime($fmt), "\n";
+&lt;/c&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime;
+use DateTime::Format::Strptime;
+
+my $fmt = '%d %b %Y %T %z';
+
+my $strp = DateTime::Format::Strptime-&gt;new( on_error=&gt;'croak',
+	pattern=&gt;$fmt );
+
+my $dt = DateTime-&gt;now;
+$dt-&gt;set_time_zone('America/Chicago');  # try this with "%Z"...
+print $dt-&gt;rfc3339, "\n";
+my $str = $dt-&gt;strftime($fmt);
+print "$str\n";
+my $dt2 = $strp-&gt;parse_datetime($str);
+print $dt2-&gt;rfc3339, "\n";
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11146660</root_node>
+<parent_node field_name="parent_node">11146660</parent_node>
+<thread id="11146660">
+<node id="11146663"><node id="11146664"/>
+</node>
+</thread></node>

@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230699" title="Re^2: rectangularizing input to become array" created="2019-02-28 17:25:29" updated="2019-02-28 17:25:29" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;i&gt;BTW, I'm not sure what you want to do with the tab character in your input file? This code counts it as a single character.&lt;/i&gt;
+&lt;p&gt;I'm making every effort to quote [haukex] fairly, but I will re-order for thematic and write-up reasons. I threw the tab character in to be a possible  problem. I think I deal with it with:&lt;/p&gt;
+&lt;c&gt;$input=~ s/\t/ /g;&lt;/c&gt;
+&lt;p&gt;I'm also trying to make the write-up as austere as it can be in terms of using vertical space, so I will continue in readmore tags. I think I get more eyes if people don't have to scroll down to continue finding good content, and the thread might read more about the solutions as opposed to the problem. I haven't even gotten to the third one yet.&lt;/p&gt;
+&lt;readmore&gt;&lt;i&gt;Typically, the content of such directories is not what would get modified by a user or get modified during the run of a script.&lt;/i&gt;
+
+&lt;p&gt;I'm reminded what someone told me the first time I got on the U-bahn in Berlin with my bike: "Das hast Du voellig verkehrt getan." I figured out what signs he was pointed at and never made the same mistake. Were it only one and done with perl....&lt;/p&gt;
+
+&lt;p&gt;So there's the base directory of the script. I wouldn't want output there. I've now put a module in the lib folder that presumably would be done before release. It is certainly not in such a state now. Given that we need a "hard" output file, would you rather put such a thing on our one and only subdirectory or split input and output into separate directories? Won't that complicate diff'ing?&lt;/p&gt;
+
+&lt;i&gt;you've included a link to GitHub, which might go down sometime in the future &lt;/i&gt;
+
+&lt;p&gt;And they may change over time. For example, I added a module to lib/ which brought the size of the zip file from 1.1 to 3.1 k. Should I go update that on the original post?&lt;/p&gt;
+
+&lt;p&gt;For this subthread, I would like to stick to the SSCCE input you offered.&lt;/p&gt;
+
+&lt;i&gt;in your code tags you've included the command-line invocations that I'd have to trim&lt;/i&gt;
+
+&lt;p&gt;I tend to think that it provides context; where I might describe a situation completely "verkehrt," the computer commands inform the sleuths who can divine what I am actually asking my computer to do. Sometimes I can get too cute. Sometimes, I can't read my own input or output. We have to be somewhat ecumenical about the starts of scripts. Might pre tags work here? I'll put pre tags on the output and invocation line, and leave everything inside code tags be an executable.&lt;/p&gt;
+
+&lt;pre&gt;$ ./3.rm.pl 
+["abcdef", "abcdefg", "abcde", " bcdefgh", " bcd "]
+["abcdef", "abcdef", "abcde ", " bcdef"]
+inside first anonymous block
+Can't use string ("abcdef") as an ARRAY ref while "strict refs" in use at ./3.rm.pl line 59.
+$ cat 3.rm.pl 
+
+&lt;/pre&gt;
+
+&lt;c&gt;#!/usr/bin/perl -w
+use 5.011;
+use Data::Dump;
+
+my $input = &lt;&lt;'(END INPUT)';
+abcdef
+abcdefg
+abcde
+ bcdefgh
+ bcd	
+(END INPUT)
+
+$input=~ s/\t/ /g;
+my @lines = split /\n/, $input;
+dd \@lines;
+my $out = make_rectangular( \@lines, 4, 6 );
+dd $out;
+
+use Test::More;
+
+{
+  say "inside first anonymous block";
+  my $subset = getsubset( $out, "R1" );
+  is_deeply $subset, [ [ 'a' .. 'f' ] ];
+  say "exiting first anonymous block";
+}
+
+
+sub make_rectangular {
+	my ( $lines, $maxrows, $maxlength ) = @_;
+	my @out;
+	my $rowcount=1;
+	for my $line (@$lines) {
+		my $trimmed = substr $line, 0, $maxlength;
+		push @out, sprintf "%-*s", $maxlength, $trimmed;
+		last if ++$rowcount&gt;$maxrows;
+	}
+	return \@out;
+}
+
+sub rangeparse {
+  use Carp;
+  local $_ = shift;
+  my @o;    # [ row1,col1, row2,col2 ] (-1 = last row/col)
+  if ( @o = /\AR([0-9]+|n)C([0-9]+|n):R([0-9]+|n)C([0-9]+|n)\z/ ) { }
+  elsif (/\AR([0-9]+|n):R([0-9]+|n)\z/) { @o = ( $1, 1, $2, -1 ) }
+  elsif (/\AC([0-9]+|n):C([0-9]+|n)\z/) { @o = ( 1, $1, -1, $2 ) }
+  elsif (/\AR([0-9]+|n)C([0-9]+|n)\z/) { @o = ( $1, $2, $1, $2 ) }
+  elsif (/\AR([0-9]+|n)\z/) { @o = ( $1, 1, $1, -1 ) }
+  elsif (/\AC([0-9]+|n)\z/) { @o = ( 1, $1, -1, $1 ) }
+  else                      { croak "failed to parse '$_'" }
+  $_ eq 'n' and $_ = -1 for @o;
+  return \@o;
+}
+
+sub getsubset {
+  use Carp;
+  my ( $data, $range ) = @_;
+  my $cols = @{ $$data[0] };
+  @$_ == $cols or croak "data not rectangular" for @$data;
+  $range = rangeparse($range) unless ref $range eq 'ARRAY';
+  @$range == 4 or croak "bad size of range";
+  my @max = ( 0 + @$data, $cols ) x 2;
+  for my $i ( 0 .. 3 ) {
+    $$range[$i] = $max[$i] if $$range[$i] &lt; 0;
+    croak "index $i out of range"
+      if $$range[$i] &lt; 1 || $$range[$i] &gt; $max[$i];
+  }
+  croak "bad rows $$range[0]-$$range[2]" if $$range[0] &gt; $$range[2];
+  croak "bad cols $$range[1]-$$range[3]" if $$range[1] &gt; $$range[3];
+  my @cis = $$range[1] - 1 .. $$range[3] - 1;
+  return [
+    map {
+      sub { \@_ }
+        -&gt;( @{ $$data[$_] }[@cis] )
+    } $$range[0] - 1 .. $$range[2] - 1
+  ];
+}
+
+__END__&lt;/c&gt;
+
+&lt;p&gt;The ultimate two routines are from [id://1224734], and work fine with other data.&lt;/p&gt;
+
+
+&lt;/readmore&gt;
+
+&lt;i&gt;using e.g. Test::More to check if it matches&lt;/i&gt;
+
+&lt;p&gt;What I seek to do is pass the first test...then others....&lt;/p&gt;
+
+&lt;b&gt;Vielen Dank und Schoenen Gruss aus Amiland,&lt;/b&gt;
+
+
+
+
+
+
+
+</doctext>
+<root_node field_name="root_node">1230600</root_node>
+<parent_node field_name="parent_node">1230601</parent_node>
+<thread id="1230600">
+<node id="1230601"><node id="1230699"><node id="1230700"><node id="1230703"/>
+<node id="1230769"><node id="1230781"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1230602"><node id="1230684"/>
+</node>
+<node id="1230610"><node id="1230701"><node id="1230707"/>
+<node id="1230710"/>
+</node>
+</node>
+</thread></node>

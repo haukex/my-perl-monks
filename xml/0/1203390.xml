@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203390" title="Re^3: regex negativ lookahead" created="2017-11-14 10:43:01" updated="2017-11-14 10:43:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+negativ lookahead did not work as expected. let's focus on:&lt;br&gt;
+("gugus" =~ /gu(?!gu)/) ==&gt; &lt;gugus&gt; found ("gu", "gu", "s")&lt;br&gt;
+and&lt;br&gt;
+("gugis" =~ /gu(?!gi)/) ==&gt; &lt;gugis&gt; nomatch (undef, undef, undef)&lt;br&gt;
+do not solve the same.
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Look at it this way:&lt;/p&gt;
+&lt;ol&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;b&gt;&lt;c&gt;"gugus" =~ /gu(?!gu)/&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;ol type="a"&gt;
+&lt;li&gt;Where does &lt;c&gt;/gu/&lt;/c&gt; match in &lt;c&gt;"gugus"&lt;/c&gt;?
+&lt;c&gt;
+"gugus"                "gugus"
+ ^^ here        and       ^^ here
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;What is the string following the match?
+&lt;c&gt;
+"gugus"                "gugus"
+ ^^ "gus"       and       ^^ "s"
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;Does that string match &lt;c&gt;/^gu/&lt;/c&gt; (negative lookahead)?
+&lt;c&gt;
+"gugus"                "gugus"
+ ^^ "gus" yes!            ^^ "s" no!
+=&gt; match fails,
+   keep looking        =&gt; match succeeds
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Overall, the match succeeds at &lt;tt&gt;"gu&lt;u&gt;gu&lt;/u&gt;s"&lt;/tt&gt;&lt;/p&gt;
+&lt;p&gt;&lt;c&gt;&lt;update2&gt;&lt;/c&gt; I realized the above might be a little misleading: The regex engine always works from left to right, so it does not execute the steps in the order I've shown here. It first fully inspects the leftmost match before continuing on to find the second &lt;c&gt;"gu"&lt;/c&gt; in the string. &lt;c&gt;&lt;/update2&gt;&lt;/c&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;b&gt;&lt;c&gt;"gugis" =~ /gu(?!gi)/&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;ol type="a"&gt;
+&lt;li&gt;Where does &lt;c&gt;/gu/&lt;/c&gt; match in &lt;c&gt;"gugis"&lt;/c&gt;?
+&lt;c&gt;
+"gugis"
+ ^^ here
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;What is the string following the match?
+&lt;c&gt;
+"gugis"
+ ^^ "gis"
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;Does that string match &lt;c&gt;/^gi/&lt;/c&gt; (negative lookahead)?
+&lt;c&gt;
+"gugis"
+ ^^ "gis" yes!
+=&gt; match fails
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;Overall, the match fails.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;b&gt;&lt;c&gt;"start" =~ /(?!start)/&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;ol type="a"&gt;
+&lt;li&gt;Where does &lt;c&gt;//&lt;/c&gt; match in &lt;c&gt;"start"&lt;/c&gt;? (whitespace added to show the "zero-length strings" around each character, as in &lt;c&gt;""."s".""."t".""."a".""."r".""."t".""&lt;/c&gt;)
+&lt;c&gt;
+ v v v v v v  (everywhere)
+" s t a r t "
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;What is the string following the match?
+&lt;c&gt;
+ "start"
+ | "tart"
+ | | "art"
+ | | | "rt"
+ | | | | "t"
+ | | | | | ""
+ v v v v v v
+" s t a r t "
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;Does that string match &lt;c&gt;/^start/&lt;/c&gt; (negative lookahead)?
+&lt;c&gt;
+ "start"        yes =&gt; fails
+ | "tart"       no  =&gt; succeeds
+ | | "art"      no  =&gt; succeeds
+ | | | "rt"     no  =&gt; succeeds
+ | | | | "t"    no  =&gt; succeeds
+ | | | | | ""   no  =&gt; succeeds
+ v v v v v v
+" s t a r t "
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;Since the regex engine goes from left to right, and stops at the first place where it succeeds, overall, the match succeeds at &lt;tt&gt;"&amp;nbsp;s&lt;u&gt;&amp;nbsp;&lt;/u&gt;t&amp;nbsp;a&amp;nbsp;r&amp;nbsp;t&amp;nbsp;"&lt;/tt&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Side note: If you make the regex engine continue matching where it last left off with &lt;c&gt;/g&lt;/c&gt;, you can see the whole thing in action:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -MData::Dump
+while ( "start" =~ /(?!start)/pg ) {
+    dd ${^PREMATCH}, ${^MATCH}, ${^POSTMATCH};
+}
+__END__
+("s", "", "tart")
+("st", "", "art")
+("sta", "", "rt")
+("star", "", "t")
+("start", "", "")
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+
+&lt;/ol&gt;
+&lt;p&gt;If you could give some more complete examples of actual things you're trying to match and the actual regexes, that would probably help.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor edits for clarification.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203332</root_node>
+<parent_node field_name="parent_node">1203383</parent_node>
+<thread id="1203332">
+<node id="1203334"/>
+<node id="1203346"/>
+<node id="1203354"><node id="1203383"><node id="1203390"/>
+</node>
+</node>
+</thread></node>

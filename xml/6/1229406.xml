@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229406" title="Fastest way to sort a list of integers into 0,1,2,3,-3,-2,-1" created="2019-02-05 09:12:24" updated="2019-02-05 09:12:24" _doctext_mode="strict"><type id="115">perlquestion</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;So I was just working on this seemingly simple task, and I think there are probably a lot of ways to optimize it, but I don't have the time to look at them all, since my lists aren't too long (and the sort won't be called that often) that optimization really matters. So I thought it might be a neat little challenge: who can do the following faster? &lt;c&gt;:-)&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;The input is a list of any integers in any order, I hope the sort order is clear from the examples I've provided: &lt;c&gt;(-50..50)&lt;/c&gt; should become &lt;c&gt;(0..50,-50..-1)&lt;/c&gt;.&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Benchmark 'cmpthese';
+# to run tests first: $ DO_CHECK=1 perl sort.pl &amp;&amp; perl sort.pl
+use constant DO_CHECK =&gt; !!$ENV{DO_CHECK};
+use if DO_CHECK, 'Data::Compare', qw/Compare/;
+
+my @input = (-52,-50..50,52,0);
+my @output = (0,0..50,52,-52,-50..-1);
+use List::Util 'shuffle';
+srand 123;
+@input = shuffle @input;
+
+cmpthese(DO_CHECK ? 1 : -2, {
+	sortfirst =&gt; sub {
+		my @list = @input;
+		@list = sort {$a&lt;=&gt;$b} @list;
+		@list = ( (grep {$_&gt;=0} @list), (grep {$_&lt;0} @list) );
+		Compare(\@list,\@output) or die "@list" if DO_CHECK;
+	},
+	grepfirst =&gt; sub {
+		my @list = @input;
+		my @pos = grep {$_&gt;=0} @list;
+		my @neg = grep {$_&lt;0} @list;
+		@list = ( (sort {$a&lt;=&gt;$b} @pos), (sort {$a&lt;=&gt;$b} @neg) );
+		Compare(\@list,\@output) or die "@list" if DO_CHECK;
+	},
+	# ##### UPDATE - From the replies: #####
+	Corion =&gt; sub { # based on Corion's idea in the CB
+		my @list = @input;
+		@list = sort { $a&gt;=0&amp;&amp;$b&lt;0 ? -1
+			: ( $a&lt;0&amp;&amp;$b&gt;=0 ? 1 : $a&lt;=&gt;$b ) } @list;
+		Compare(\@list,\@output) or die "@list" if DO_CHECK;
+	},
+	choroba0 =&gt; sub { # from CB
+		my @list = @input;
+		@list = sort { (($b +.5 &lt;=&gt; 0) &lt;=&gt; ($a + .5 &lt;=&gt; 0))
+			|| ($a &lt;=&gt; $b) } @list;
+		Compare(\@list,\@output) or die "@list" if DO_CHECK;
+	},
+	choroba =&gt; sub { # https://www.perlmonks.org/?node_id=1229407
+		my @list = @input;
+		@list = sort { ((-1, 0, 1)[$a &lt;=&gt; 0] &lt;=&gt; (-1, 0, 1)[$b &lt;=&gt; 0])
+				|| ($a &lt;=&gt; $b) } @list;
+		Compare(\@list,\@output) or die "@list" if DO_CHECK;
+	},
+	choroba2 =&gt; sub { # https://www.perlmonks.org/?node_id=1229407
+		my @list = @input;
+		@list = sort { ((($a &lt;=&gt; 0) &amp; 3) &lt;=&gt; (($b &lt;=&gt; 0) &amp; 3))
+			|| ($a &lt;=&gt; $b) } @list;
+		Compare(\@list,\@output) or die "@list" if DO_CHECK;
+	},
+	johngg =&gt; sub { # https://www.perlmonks.org/?node_id=1229410
+		my @list = @input;
+		@list = map { unpack q{xl&gt;}, $_ } sort map {
+			my $neg = $_ &lt; 0 ? 1 : 0; pack q{Cl&gt;}, $neg, $_; } @list;
+		Compare(\@list,\@output) or die "@list" if DO_CHECK;
+	},
+	Tux =&gt; sub { # https://www.perlmonks.org/?node_id=1229409
+		# (johngg made a similar suggestion in the CB first)
+		my @list = @input;
+		@list = map {unpack "l&gt;", $_} sort map {pack "l&gt;", $_} @list;
+		Compare(\@list,\@output) or die "@list" if DO_CHECK;
+	},
+	pryrt =&gt; sub { # https://www.perlmonks.org/?node_id=1229408
+		my @list = @input;
+		sub sgn { $_[0]&lt;0?-1:1 }
+		@list = (sort {(sgn($b) &lt;=&gt; sgn($a)) || ($a &lt;=&gt; $b)} @list);
+		Compare(\@list,\@output) or die "@list" if DO_CHECK;
+	},
+	Eily =&gt; sub { # https://www.perlmonks.org/?node_id=1229411
+		my @list = @input;
+		@list = sort { ~$b &lt;=&gt; ~$a } @list;
+		Compare(\@list,\@output) or die "@list" if DO_CHECK;
+	},
+	vr =&gt; sub { # https://www.perlmonks.org/?node_id=1229415
+		my @list = @input;
+		@list = unpack 'i*', pack 'I*', sort { $a &lt;=&gt; $b }
+			unpack 'I*', pack 'i*', @list;
+		Compare(\@list,\@output) or die "@list" if DO_CHECK;
+	},
+	Discipulus =&gt; sub { # https://www.perlmonks.org/?node_id=1229419
+		my @list = @input;
+		@list = sort {$a&lt;=&gt;$b} @list;
+		push @list, shift @list until $list[0] &gt;= 0;
+		Compare(\@list,\@output) or die "@list" if DO_CHECK;
+	},
+	haukex3 =&gt; sub { # based on sortfirst above
+		my @list = @input;
+		@list = sort {$a&lt;=&gt;$b} @list;
+		my $i; for (0..$#list) { if($list[$_]&gt;=0){$i=$_;last} }
+		# with this module is ~5% faster:
+		#use List::MoreUtils::XS 'firstidx';
+		#my $i = firstidx { $_&gt;=0 } @list;
+		@list = (@list[$i..$#list], @list[0..$i-1]);
+		Compare(\@list,\@output) or die "@list" if DO_CHECK;
+	},
+});
+
+__END__
+
+# Results on my machine (v5.28.1 built for x86_64-linux):
+               Rate pryrt choroba0 choroba johngg choroba2 Corion  Tux Eily grepfirst sortfirst haukex3   vr Discipulus
+pryrt       10176/s    --     -36%    -42%   -58%     -59%   -66% -67% -76%      -87%      -89%    -91% -91%       -92%
+choroba0    15907/s   56%       --    -10%   -35%     -36%   -46% -49% -63%      -80%      -83%    -85% -86%       -88%
+choroba     17600/s   73%      11%      --   -28%     -29%   -40% -44% -59%      -77%      -81%    -84% -84%       -87%
+johngg      24316/s  139%      53%     38%     --      -2%   -18% -22% -44%      -69%      -74%    -77% -78%       -82%
+choroba2    24769/s  143%      56%     41%     2%       --   -16% -21% -43%      -68%      -73%    -77% -78%       -81%
+Corion      29510/s  190%      86%     68%    21%      19%     --  -5% -32%      -62%      -68%    -72% -74%       -78%
+Tux         31189/s  207%      96%     77%    28%      26%     6%   -- -28%      -60%      -66%    -71% -72%       -77%
+Eily        43216/s  325%     172%    146%    78%      74%    46%  39%   --      -44%      -53%    -60% -61%       -67%
+grepfirst   77841/s  665%     389%    342%   220%     214%   164% 150%  80%        --      -16%    -27% -30%       -41%
+sortfirst   92880/s  813%     484%    428%   282%     275%   215% 198% 115%       19%        --    -13% -17%       -30%
+haukex3    107128/s  953%     573%    509%   341%     333%   263% 243% 148%       38%       15%      --  -4%       -19%
+vr         111499/s  996%     601%    534%   359%     350%   278% 257% 158%       43%       20%      4%   --       -16%
+Discipulus 132736/s 1204%     734%    654%   446%     436%   350% 326% 207%       71%       43%     24%  19%         --
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Made ranges a bit longer so the differences become more clear. Other very minor tweaks to text.&lt;/small&gt;&lt;/p&gt;
+&lt;/readmore&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; Added code from replies so far. At the moment, on my machine [Eily]'s code is winning (&lt;c&gt;sort { ~$b &lt;=&gt; ~$a } @list&lt;/c&gt;), and thanks for everyone for the great ideas - TIMTOWTDI! &lt;c&gt;:-)&lt;/c&gt; Post more if you've got 'em, I'll add them later.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 3:&lt;/b&gt; Added code from [Corion] and [vr], made input data more representative, and it looks like [vr] has the new best time with &lt;c&gt;unpack 'i*', pack 'I*', sort { $a &lt;=&gt; $b } unpack 'I*', pack 'i*', @list&lt;/c&gt; ([Eily]'s is still shortest) &lt;c&gt;:-)&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 4:&lt;/b&gt; [Discipulus] takes the lead! (I also added my own attempt at optimizing &lt;c&gt;sortfirst&lt;/c&gt; which I happened to be working on in the meantime)&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 5:&lt;/b&gt; An interesting race between various solutions! &lt;b&gt;[id://1229492|See my update post here.]&lt;/b&gt;&lt;/p&gt;</doctext>
+<thread id="1229406">
+<node id="1229407"/>
+<node id="1229408"/>
+<node id="1229409"/>
+<node id="1229410"/>
+<node id="1229411"><node id="1229428"/>
+<node id="1229462"/>
+</node>
+<node id="1229415"><node id="1229418"/>
+<node id="1229422"/>
+<node id="1229429"/>
+<node id="1229451"><node id="1229457"><node id="1229495"/>
+</node>
+</node>
+</node>
+<node id="1229416"><node id="1229417"/>
+</node>
+<node id="1229419"><node id="1229420"><node id="1229437"/>
+<node id="1229463"><node id="1229465"/>
+</node>
+</node>
+<node id="1229458"/>
+</node>
+<node id="1229425"/>
+<node id="1229444"><node id="1229448"/>
+</node>
+<node id="1229446"><node id="1229447"><node id="1229512"/>
+</node>
+<node id="1229454"><node id="1229505"><node id="1229509"/>
+</node>
+</node>
+</node>
+<node id="1229450"><node id="1229456"/>
+<node id="1229602"/>
+</node>
+<node id="1229466"/>
+<node id="1229492"><node id="1229511"/>
+<node id="1229529"/>
+</node>
+<node id="1229493"><node id="1229496"/>
+</node>
+<node id="1229500"/>
+</thread></node>

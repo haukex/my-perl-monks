@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110616" title="Re: Debugger line numbering anomaly" created="2019-12-25 15:41:16" updated="2019-12-25 15:41:16" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Bisecting this was a bit tricky, but the results are that the regression was accidentally introduced in [https://github.com/Perl/perl5/commit/6432a58ad9a504c2dc834eb0d131a10b4b6c886b|6432a58], reported as [https://github.com/Perl/perl5/issues/16119|RT#131930], and fixed in [https://github.com/Perl/perl5/commit/823ba440369100de3f2693420a3887a645a57d28|823ba44] - the bug should therefore only exist in Perl releases v5.26.*.&lt;/p&gt;
+&lt;readmore title="bisecting script"&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Data::Dumper;
+$Data::Dumper::Useqq=1;
+
+# Run from the perl5 source tree:
+# $ ./Porting/bisect.pl --start=v5.24.0 --end=v5.26.3               -- ./perl -Ilib /path/to/this.pl
+# =&gt; 6432a58ad9a504c2dc834eb0d131a10b4b6c886b
+# $ ./Porting/bisect.pl --start=v5.26.0 --end=v5.28.2 --expect-fail -- ./perl -Ilib /path/to/this.pl
+# =&gt; 823ba440369100de3f2693420a3887a645a57d28
+
+open my $ofh, '&gt;', '/tmp/testdb.pl' or die $!;
+print $ofh &lt;&lt;'END_SCRIPT';
+#!/bin/perl -w
+use strict;
+$_ = shift // '';  # line 3
+s{a([bc])}         # 4
+ {d$1}g;           # 5
+print;             # 6
+END_SCRIPT
+close $ofh;
+
+unlink('/tmp/test.listing');
+local $ENV{PERLDB_OPTS} = "NonStop AutoTrace LineInfo=/tmp/test.listing";
+system($^X,'-Ilib','-d','/tmp/testdb.pl')==0 or die "\$?=$?";
+my $o = do { open my $fh, '&lt;', '/tmp/test.listing' or die $!; local $/; &lt;$fh&gt; };
+my $x = $o =~ /^main::\([^)]+\.pl:5\):\s+{d\$1}g;\s+#\s+5\s*$/m; # good
+my $y = $o =~ /^main::\([^)]+\.pl:6\):\s+print;\s+#\s+6\s*$/m;   # good
+my $z = $o =~ /^main::\([^)]+\.pl:5\):\s+print;\s+#\s+6\s*$/m;   # bad
+if ( $x &amp;&amp; $y &amp;&amp; !$z ) {
+	print "GOOD\n";
+	exit 0;
+}
+elsif ( !$x &amp;&amp; !$y &amp;&amp; $z ) {
+	print "BAD\n";
+	exit 1;
+}
+else {
+	print STDERR Dumper($o,$x,$y,$z);
+	die "What?";
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11110568</root_node>
+<parent_node field_name="parent_node">11110568</parent_node>
+<thread id="11110568">
+<node id="11110577"/>
+<node id="11110581"><node id="11110596"><node id="11110597"><node id="11110603"><node id="11110604"><node id="11110606"><node id="11110607"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11110593"><node id="11110594"/>
+</node>
+<node id="11110616"><node id="11110618"/>
+</node>
+<node id="11110619"><node id="11110627"/>
+</node>
+</thread></node>

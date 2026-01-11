@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227899" title="Xls reader" created="2019-01-02 01:31:59" updated="2019-01-02 01:31:59" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1227896">sainky</author>
+<doctext field_name="doctext">&lt;p&gt;
+Anonymous Monk has asked for the wisdom of the Perl Monks concerning the following question:
+Hello All, I have two excel files containing 58000 and 30000 entries respectively. I want to find out how many entries of file_1 are present in file_2. I have written below program but it is taking days to execute, Can anyone have better solution?
+&lt;/p&gt;&lt;code&gt; 
+#Modules to use
+use Cwd 'abs_path';
+use Win32::OLE;
+use Win32::OLE qw(in with);
+use Win32::OLE::Const "Microsoft Excel";
+$Win32::OLE::Warn = 3;
+
+my $start_run = time();
+
+print"[USAGE]: &lt;demoscript.pl&gt; &lt;.map file path&gt; &lt;Ouput excel path&gt;\n";
+
+print"[INFO]: Executing demoscript.pl V1.0.1.\n";
+
+
+#Global Variables
+my @longNames;
+
+my $SystemPortTracingReport = $ARGV[0];    
+my $CLEA_Family = $ARGV[1];    
+my $GlobalB_HighFeature = $ARGV[2];    
+
+
+my $Excel =Win32::OLE-&gt;new('Excel.Application');
+
+# Open Excel file
+my $Book = $Excel-&gt;Workbooks-&gt;Open($SystemPortTracingReport);
+my $Book2 = $Excel-&gt;Workbooks-&gt;Open($CLEA_Family);
+
+#Make Excel visible
+$Excel-&gt;{Visible} = 1;
+
+my $Sheet = $Book-&gt;Worksheets("GlobalB_HighFeature");
+my $Sheet2 = $Book2-&gt;Worksheets("GlobalB_HighFeature_SerialDataR");
+my $longNamecol;
+my $Signalcolumn;
+for($i=1; $i&lt;30;$i++)
+{
+        if($Sheet-&gt;Cells($startingrow, $i)-&gt;{'Value'} eq "Long Name")
+        {
+            $longNamecol = $i;
+        }
+}
+for($i=1; $i&lt;30;$i++)
+{
+        if($Sheet2-&gt;Cells($startingrow, $i)-&gt;{'Value'} eq "Long Name")
+        {
+            $Signalcolumn = $i;
+        }
+}
+print"\n$longNamecol\n";
+print"\n$Signalcolumn\n";
+
+
+my $emptyline=0;
+for(my $k=2; $k&lt;521754; $k++)
+{
+        if($Sheet-&gt;Cells($k,$longNamecol)-&gt;{'Value'} eq "")
+        {
+            $emptyline++;
+        
+        }
+        else
+        {
+            push(@longNames, $Sheet-&gt;Cells($k,$longNamecol)-&gt;{'Value'}
++);
+            # my $temp = $Sheet-&gt;Cells($k,$longNamecol)-&gt;{'Value'};
+            # print"\n $temp";
+            $count++;
+        
+        }
+
+}
+
+my $data;
+my $length;
+$length = scalar(@longNames);
+print"Length $length";
+print"Searching...........\n";
+$Book-&gt;Save; #Or $Book-&gt;SaveAs("C:\\file_name.xls");
+$Book-&gt;Close; #or $Excel-&gt;Quit;
+for(my $m=0; $m&lt;$length; $m++)
+{
+
+    for(my $l=2; $l&lt;2990; $l++)
+    {
+        if($Sheet2-&gt;Cells($l,$Signalcolumn)-&gt;{'Value'} eq "")
+        {
+            next;
+        
+        }
+        else
+        {
+            if($Sheet2-&gt;Cells($l,$Signalcolumn)-&gt;{'Value'} eq $longNam
++es[$m])
+            {
+                    $Sheet2-&gt;Cells($l,100)-&gt;{'Value'} = "matched"; 
+                    print"\n***********Matched*************\n";
+            
+            }    
+        }
+
+    }
+
+
+}
+print"\n**********finished!**************\n";
+#Save Excel file
+
+$Book2-&gt;Save; #Or $Book-&gt;SaveAs("C:\\file_name.xls");
+$Book2-&gt;Close; #or $Excel-&gt;Quit;
+
+my $end_run = time();
+my $run_time = $end_run - $start_run;
+print"\n[INFO]Timetaken: $run_time [Secs]";&lt;/code&gt;</doctext>
+<thread id="1227899">
+<node id="1227908"/>
+<node id="1227909"><node id="1227910"/>
+</node>
+<node id="1227915"/>
+</thread></node>

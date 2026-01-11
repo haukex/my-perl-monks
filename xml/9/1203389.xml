@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203389" title="Re: Regex result being defined when it shouldn't be(?)" created="2017-11-14 10:36:10" updated="2017-11-14 10:36:10" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I haven't fully evaluated or tested your code, but a couple of comments and, if I understood correctly, the answer to your question:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;For longer regexes, next to &lt;c&gt;/x&lt;/c&gt; as you're already doing, I strongly recommend using different delimiters and especially named capture groups ([doc://perlre]) and [doc://%+], as in:
+&lt;c&gt;
+my $regex = qr{
+        (?&lt;foo&gt; fo+ )
+    }msx;
+"barfooobar" =~ $regex;
+print "&lt;",$+{foo},"&gt;\n";     # prints "&lt;fooo&gt;"
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;In the regex you showed, if the overall regex matches, then &lt;c&gt;([@%\$]?)&lt;/c&gt; and &lt;c&gt;([\d]*)&lt;/c&gt; will not return &lt;c&gt;undef&lt;/c&gt; but the empty string &lt;c&gt;""&lt;/c&gt;, because those capture groups will always match at least &lt;c&gt;()&lt;/c&gt; (that is, the empty string &lt;c&gt;""&lt;/c&gt;).&lt;/li&gt;
+&lt;li&gt;Your expressions like &lt;c&gt;if( defined ($sigil = $1) eq "" )&lt;/c&gt; don't make much sense to me, because you're testing the return value of [doc://defined], a boolean value, against the empty string. If you just want to check for definedness, then write &lt;c&gt;if( defined($sigil = $1) )&lt;/c&gt;, and if you want the assignment to &lt;c&gt;$sigil&lt;/c&gt; to happen only if &lt;c&gt;$1&lt;/c&gt; is defined, then write &lt;c&gt;if( defined $1 ) { $sigil = $1; ...&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;You might be interested in my module [mod://Config::Perl] ;-)&lt;/li&gt;
+&lt;/ul&gt;</doctext>
+<root_node field_name="root_node">1203386</root_node>
+<parent_node field_name="parent_node">1203386</parent_node>
+<thread id="1203386">
+<node id="1203389"><node id="1203396"><node id="1203398"/>
+<node id="1203400"><node id="1203404"/>
+<node id="1203405"><node id="1203410"><node id="1203481"><node id="1203495"><node id="1203613"><node id="1203724"/>
+</node>
+<node id="1224565"><node id="1224568"/>
+<node id="1224592"/>
+</node>
+</node>
+<node id="1203512"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1203401"><node id="1203407"><node id="1203408"><node id="1203415"/>
+</node>
+</node>
+<node id="1203417"/>
+</node>
+</node>
+<node id="1203399"/>
+</thread></node>

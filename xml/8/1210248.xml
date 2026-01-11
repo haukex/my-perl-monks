@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1210248" title="Re: Reading text file with &lt;CR&gt; line endings" created="2018-03-02 13:49:46" updated="2018-03-02 13:49:46" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I don't think [doc://print] is the appropriate debugging tool here...&lt;/p&gt;
+&lt;c&gt;
+$ hexdump -C foo.txt 
+00000000  46 6f 6f 0d 42 61 72 0d  51 75 7a 0d              |Foo.Bar.Quz.|
+0000000c
+
+$ cat read.pl 
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Data::Dumper;
+$Data::Dumper::Useqq=1;
+
+open my $fh, '&lt;', 'foo.txt' or die $!;
+print Dumper([PerlIO::get_layers($fh)]) unless $] lt '5.008';
+while (&lt;$fh&gt;) {
+	print Dumper($_);
+}
+close $fh;
+&lt;/c&gt;
+&lt;p&gt;Output on Win 7 Strawberry Perl 5.10, 5.14, 5.20, and 5.26:&lt;/p&gt;
+&lt;c&gt;
+$VAR1 = [
+          "unix",
+          "crlf"
+        ];
+$VAR1 = "Foo\rBar\rQuz\r";
+&lt;/c&gt;
+&lt;p&gt;And on Linux, the output is as follows:&lt;/p&gt;
+&lt;c&gt;
+# 5.6.2:
+$VAR1 = "Foo\rBar\rQuz\r";
+
+# 5.8.1 and 5.8.9:
+$VAR1 = [
+          "stdio"
+        ];
+$VAR1 = "Foo\rBar\rQuz\r";
+
+# 5.10.1 thru 5.26:
+$VAR1 = [
+          "unix",
+          "perlio"
+        ];
+$VAR1 = "Foo\rBar\rQuz\r";
+&lt;/c&gt;
+&lt;p&gt;So none of the tested versions handle a CR line ending. See also [doc://open]: the default layers are &lt;c&gt;:raw&lt;/c&gt; on Unix and &lt;c&gt;:crlf&lt;/c&gt; on Windows. For details see also [doc://PerlIO] and [http://perldoc.perl.org/open.html|open] (the pragma). (&lt;i&gt;Update:&lt;/i&gt; and [LanX] provided another excellent link with [doc://perlport#Newlines|Newlines in perlport])&lt;/p&gt;
+&lt;p&gt;If the file is plain ASCII, this works across all of the above configurations:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+open my $fh, '&lt;', 'foo.txt' or die $!;
+binmode $fh;
+$/="\x0D";
+while (&lt;$fh&gt;) {
+	chomp;
+	...
+}
+close $fh;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1210242</root_node>
+<parent_node field_name="parent_node">1210242</parent_node>
+<thread id="1210242">
+<node id="1210243"><node id="1210244"><node id="1210246"/>
+</node>
+</node>
+<node id="1210245"/>
+<node id="1210247"/>
+<node id="1210248"/>
+<node id="1210275"/>
+<node id="1210350"><node id="1210373"><node id="1210394"><node id="1210425"/>
+</node>
+</node>
+</node>
+</thread></node>

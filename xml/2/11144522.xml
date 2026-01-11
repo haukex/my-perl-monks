@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11144522" title="Re: Simple web server to ingest POST" created="2022-06-08 12:22:03" updated="2022-06-08 12:22:03" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;The server doing the POST expects XML back but I keep getting errors about "protocol violation".&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You may want to trace a good request and a failing request with [http://www.wireshark.org/|Wireshark] and see where the differences lie. I don't know if this is related, but when I run the XML from your post through &lt;c&gt;xmllint&lt;/c&gt; it complains about the entity in the &lt;c&gt;payloadID&lt;/c&gt;, if I change that to a regular &lt;c&gt;@&lt;/c&gt; it doesn't complain. Anyway, here's an example with [mod://Mojolicious::Lite]:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use Mojolicious::Lite -signatures;
+use Mojo::DOM; # in case you need to parse the incoming XML
+
+sub TimeStamp { scalar gmtime } # dummy
+
+post '/toMFF' =&gt; sub ($c) {
+	my $body = $c-&gt;req-&gt;body;
+	my $dom = Mojo::DOM-&gt;new-&gt;xml(1)-&gt;parse($body); # example
+	say "[[[$dom]]]"; # just for debugging
+	$c-&gt;render('test', format =&gt; 'xml',
+		timestamp =&gt; TimeStamp=~s/\s/T/r);
+};
+ 
+app-&gt;start;
+
+__DATA__
+@@ test.xml.ep
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE cXML SYSTEM "http://xml.cXML.org/schemas/cXML/1.1.009/cXML.dtd"&gt;
+&lt;cXML payloadID="foo@ceprinter.com" xml:lang="en-US" timestamp="&lt;%= $timestamp %&gt;"&gt;
+    &lt;Response&gt;
+    &lt;Status code="200" text="OK" /&gt;
+    &lt;/Response&gt;
+&lt;/cXML&gt;
+&lt;/c&gt;
+&lt;p&gt;Run this via &lt;c&gt;morbo test.pl&lt;/c&gt;, I sent a test request via &lt;c&gt;curl -X POST http://127.0.0.1:3000/toMFF -H "Content-Type: application/xml" -d "&lt;foo&gt;&lt;bar/&gt;&lt;/foo&gt;"&lt;/c&gt; (I of course don't know if this is representative of your real-world requests), and I get the following response:&lt;/p&gt;
+&lt;c&gt;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE cXML SYSTEM "http://xml.cXML.org/schemas/cXML/1.1.009/cXML.dtd"&gt;
+&lt;cXML payloadID="foo@ceprinter.com" xml:lang="en-US" timestamp="WedTJun  8 16:20:00 2022"&gt;
+    &lt;Response&gt;
+    &lt;Status code="200" text="OK" /&gt;
+    &lt;/Response&gt;
+&lt;/cXML&gt;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11144520</root_node>
+<parent_node field_name="parent_node">11144520</parent_node>
+<thread id="11144520">
+<node id="11144522"><node id="11144525"><node id="11144526"><node id="11144527"/>
+</node>
+<node id="11144528"/>
+</node>
+</node>
+</thread></node>

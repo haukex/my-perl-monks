@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100039" title="Re^3: Better way of finding HTML tags positions in HTML string (updated)" created="2019-05-15 16:43:26" updated="2019-05-15 16:43:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;What's wrong with [doc://File::Temp]? It's a core module, and it cleans up after itself pretty reliably:&lt;/p&gt;
+&lt;c&gt;
+use File::Temp qw/tempfile/;
+
+my ($tfh,$tfn) = tempfile(UNLINK=&gt;1);
+print $tfh $contents;
+close $tfh;
+
+# File named $tfn will exist till end of program
+&lt;/c&gt;
+&lt;p&gt;And if you want to control the filename, you can do something like &lt;c&gt;tempfile( TMPDIR=&gt;1, TEMPLATE=&gt;'.something_XXXXXXXXXX', SUFFIX =&gt; '.html', UNLINK=&gt;1 )&lt;/c&gt;, or if you wanted to create the file in the same directory and based on the same name as some other file ([doc://File::Basename] is also a core module):&lt;/p&gt;
+&lt;c&gt;
+use File::Basename qw/fileparse/;
+use File::Temp qw/tempfile/;
+
+my ($fn,$dir,$ext) = fileparse($filename, qr/\.[^.]+$/);
+my ($tfh,$tfn) = tempfile(DIR=&gt;$dir, TEMPLATE=&gt;'.'.$fn.'_XXXXXXXXXX',
+	SUFFIX =&gt; $ext, UNLINK=&gt;1 );
+...
+&lt;/c&gt;
+&lt;p&gt;I also like to use something like [Corion]'s [mod://Text::CleanFragment] on the above &lt;c&gt;$fn&lt;/c&gt;, but that's not necessarily required.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Since I'm already dumping some [doc://File::Temp] snippets, here's two more that use a temporary directory instead, allowing you to keep the original file name. [doc://File::Spec] is also a core module. &lt;c&gt;tempdir&lt;/c&gt; supports the same &lt;c&gt;TEMPLATE&lt;/c&gt;, &lt;c&gt;DIR&lt;/c&gt;, and &lt;c&gt;TMPDIR&lt;/c&gt; arguments as above. Note that if you use only &lt;c&gt;TEMPLATE&lt;/c&gt; with a relative name, the resulting filename will also be relative to the current working directory, which is IMO not good, so I'd strongly recommend using an additional &lt;c&gt;TMPDIR=&gt;1&lt;/c&gt; or &lt;c&gt;DIR&lt;/c&gt; argument.&lt;/p&gt;
+&lt;c&gt;
+use File::Temp qw/tempdir/;
+use File::Basename qw/fileparse/;
+use File::Spec::Functions qw/catfile/;
+
+my $tmpdir = tempdir(CLEANUP=&gt;1);
+my $tfn = catfile($tmpdir, scalar fileparse($filename));
+...
+
+# - OR -
+
+my ($fn,$dir) = fileparse($filename);
+my $tmpdir = tempdir(DIR=&gt;$dir, TEMPLATE=&gt;'.XXXXXXXXXX', CLEANUP=&gt;1 );
+my $tfn = catfile($tmpdir, $fn);
+...
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1233750</root_node>
+<parent_node field_name="parent_node">1233757</parent_node>
+<thread id="1233750">
+<node id="1233752"><node id="1233753"/>
+</node>
+<node id="1233756"><node id="1233757"><node id="1233760"/>
+<node id="1233777"/>
+<node id="11100039"/>
+</node>
+</node>
+</thread></node>

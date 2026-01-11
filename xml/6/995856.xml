@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="995856" title="JSON parser as a single Perl Regex" created="2012-09-26 15:25:31" updated="2012-09-26 15:25:31" _doctext_mode="lenient"><type id="1042">CUFP</type>
+<author id="9073">merlyn</author>
+<doctext field_name="doctext">$client has a script that needed minimal module support, but wants to parse JSON.  Couldn't find anything like [mod://YAML::Tiny] (which I borrowed to remove the YAML dependency), so I hacked up this regex to parse and extract JSON.  Doesn't handle unicode yet, but that wasn't a client requirement.
+&lt;code&gt;
+#!/usr/bin/env perl
+
+use Data::Dumper qw(Dumper);
+
+my $FROM_JSON = qr{
+
+(?&amp;VALUE) (?{ $_ = $^R-&gt;[1] })
+
+(?(DEFINE)
+
+(?&lt;OBJECT&gt;
+  (?{ [$^R, {}] })
+  \{
+    (?: (?&amp;KV) # [[$^R, {}], $k, $v]
+      (?{ # warn Dumper { obj1 =&gt; $^R };
+	 [$^R-&gt;[0][0], {$^R-&gt;[1] =&gt; $^R-&gt;[2]}] })
+      (?: , (?&amp;KV) # [[$^R, {...}], $k, $v]
+        (?{ # warn Dumper { obj2 =&gt; $^R };
+	   [$^R-&gt;[0][0], {%{$^R-&gt;[0][1]}, $^R-&gt;[1] =&gt; $^R-&gt;[2]}] })
+      )*
+    )?
+  \}
+)
+
+(?&lt;KV&gt;
+  (?&amp;STRING) # [$^R, "string"]
+  : (?&amp;VALUE) # [[$^R, "string"], $value]
+  (?{ # warn Dumper { kv =&gt; $^R };
+     [$^R-&gt;[0][0], $^R-&gt;[0][1], $^R-&gt;[1]] })
+)
+
+(?&lt;ARRAY&gt;
+  (?{ [$^R, []] })
+  \[
+    (?: (?&amp;VALUE) (?{ [$^R-&gt;[0][0], [$^R-&gt;[1]]] })
+      (?: , (?&amp;VALUE) (?{ # warn Dumper { atwo =&gt; $^R };
+			 [$^R-&gt;[0][0], [@{$^R-&gt;[0][1]}, $^R-&gt;[1]]] })
+      )*
+    )?
+  \]
+)
+
+(?&lt;VALUE&gt;
+  \s*
+  (
+      (?&amp;STRING)
+    |
+      (?&amp;NUMBER)
+    |
+      (?&amp;OBJECT)
+    |
+      (?&amp;ARRAY)
+    |
+    true (?{ [$^R, 1] })
+  |
+    false (?{ [$^R, 0] })
+  |
+    null (?{ [$^R, undef] })
+  )
+  \s*
+)
+
+(?&lt;STRING&gt;
+  (
+    "
+    (?:
+      [^\\"]+
+    |
+      \\ ["\\/bfnrt]
+#    |
+#      \\ u [0-9a-fA-f]{4}
+    )*
+    "
+  )
+
+  (?{ [$^R, eval $^N] })
+)
+
+(?&lt;NUMBER&gt;
+  (
+    -?
+    (?: 0 | [1-9]\d* )
+    (?: \. \d+ )?
+    (?: [eE] [-+]? \d+ )?
+  )
+
+  (?{ [$^R, eval $^N] })
+)
+
+) }xms;
+
+sub from_json {
+  local $_ = shift;
+  local $^R;
+  eval { m{\A$FROM_JSON\z}; } and return $_;
+  die $@ if $@;
+  return 'no match';
+}
+
+while (&lt;&gt;) {
+  chomp;
+  print Dumper from_json($_);
+}
+
+
+
+&lt;/code&gt;
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-9073"&gt;
+&lt;p&gt;-- [http://www.stonehenge.com/merlyn/|Randal L. Schwartz, Perl hacker]
+&lt;p&gt;The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119.
+
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="995856">
+<node id="995873"/>
+<node id="995900"><node id="996012"/>
+</node>
+<node id="996090"/>
+<node id="996446"><node id="996504"/>
+</node>
+<node id="996613"><node id="998122"/>
+</node>
+<node id="998123"/>
+<node id="1058691"><node id="1058769"><node id="1058867"><node id="1059251"/>
+</node>
+</node>
+<node id="1058876"><node id="1058899"/>
+</node>
+</node>
+<node id="1058696"><node id="1058768"><node id="1058865"><node id="1058900"/>
+</node>
+</node>
+</node>
+<node id="11108520"/>
+</thread></node>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1211102" title="Perl Program to efficiently process 500000 small files in a Directory (AIX)" created="2018-03-17 02:37:00" updated="2018-03-17 02:37:00" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1211100">DenairPete</author>
+<doctext field_name="doctext">&lt;p&gt; I am at my wits end with this PERL script. Running on AIX. I am Processing a large directory every night. It accumulates around 1 Million files each night, half of which are ".txt" files that I need to process. Each ".txt" file is pipe delimited and only contains 20 records - Record #6 is the one that contains the info I need in order to determine which directory to move the file to (In this case the file would be moved to "/out/4". Example Record: A|CHNL_ID|4 (Third party software is creating these files and they didn't think of including the channel in the file name). As of now this script is processing at a rate of 80,000 files per hour. Is there any recommendations on how I could speed this up? &lt;/p&gt;
+
+&lt;code&gt;
+opendir(DIR, $dir) or die "$!\n";
+while ( defined( my $txtFile = readdir DIR ) ) {
+    next if( $txtFile !~ /.txt$/ );
+    $cnt++;
+
+    local $/;
+    open my $fh, '&lt;', $txtFile or die $!, $/;
+    my $data  = &lt;$fh&gt;;
+    my ($channel) =  $data =~ /A\|CHNL_ID\|(\d+)/i;
+    close($fh);
+
+    move ($txtFile, "$outDir/$channel") or die $!, $/;
+}
+closedir(DIR);
+&lt;/code&gt;</doctext>
+<thread id="1211102">
+<node id="1211103"><node id="1211105"><node id="1211108"/>
+</node>
+<node id="1211106"><node id="1211112"><node id="1211115"/>
+</node>
+</node>
+</node>
+<node id="1211110"><node id="1211137"><node id="1211140"><node id="1211142"/>
+<node id="1211143"/>
+<node id="1211144"/>
+</node>
+</node>
+</node>
+<node id="1211114"><node id="1211122"><node id="1211166"/>
+</node>
+</node>
+<node id="1211132"><node id="1211135"><node id="1211141"/>
+<node id="1211232"><node id="1211233"/>
+</node>
+</node>
+<node id="1211223"><node id="1211230"/>
+<node id="1211270"/>
+</node>
+</node>
+<node id="1211136"/>
+<node id="1211147"><node id="1211149"><node id="1211159"/>
+<node id="1211161"/>
+<node id="1211176"/>
+</node>
+</node>
+<node id="1211156"><node id="1211160"/>
+</node>
+<node id="1211164"/>
+<node id="1211227"/>
+<node id="1211258"><node id="1211259"/>
+</node>
+</thread></node>

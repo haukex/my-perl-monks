@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11130527" title="Getting all subpaths from a path" created="2021-03-28 16:18:38" updated="2021-03-28 16:18:38" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1210662">ovedpo15</author>
+<doctext field_name="doctext">I have a path: &lt;code&gt;/usr/vsa/pkgs/python3/3.6.3a/bin/python3.6&lt;/code&gt;. There are two links in the path:
+&lt;code&gt;
+/usr/vsa -&gt; /root/site/tools/gauv
+/usr/vsa/pkgs/python3/3.6.3a -&gt; 3.6.3
+&lt;/code&gt;
+I'm trying to get an array of all subpaths of that path, including the links. So the final array should contain:
+&lt;code&gt;
+/usr/
+/usr/vsa
+/root/
+/root/site
+/root/site/tools
+/root/site/tools/gauv
+/root/site/tools/gauv/pkgs
+/root/site/tools/gauv/python3
+/root/site/tools/gauv/python3/3.6.3a
+/root/site/tools/gauv/python3/3.6.3
+/root/site/tools/gauv/python3/3.6.3/bin
+/root/site/tools/gauv/python3/3.6.3/bin/python3.6
+&lt;/code&gt;
+What I've tried:
+&lt;code&gt;
+my @arr;
+foreach my $c (split("/", $current_path)) {
+    if ($c eq "") {
+    next;
+    }
+    $res = "$res/$c";
+    push(@arr,$res);
+}
+my @checked_links;
+while (1) {
+    my $old = "";
+    my $new = "";
+    foreach my $c (@arr) {
+        if (grep("/^$c/",@checked_links)) {
+            next;
+        }
+        if (-l $c) {
+            my $link = readlink($c);
+            my $res;
+            $old = $c;
+            if (index($link,"/") == -1) {
+                my $dirname = dirname($c);
+                my $basename = basename($c);
+                $res = "$dirname/$link";
+            } else {
+                $res = $link;
+            }
+            unshift(@arr,$res);
+            $new = $link;
+            last;
+        }
+    }
+    if ($old ne "") {
+        for (my $i = 0; $i &lt; scalar(@arr); $i++) {
+            if (@arr[$i] eq $old) {
+                next; # ignore
+            }
+            if (index(@arr[$i],$old) == -1) {
+                next;
+            }
+            $changed = 1;
+            @arr[$i] =~ s/$old/$new/;
+        }
+        push(@checked_links,$old);
+    }
+    if ($changed == 0) {
+        last;
+    }
+}
+&lt;/code&gt;
+
+The idea was to split &lt;code&gt;$current_path&lt;/code&gt; (the path) by "/" and add each subpath to the array.
+Then iterate over the array and check if the subpath is an link. If it is, I need to "fix" each path that I already have in the array. 
+That's the part that I'm having trouble with. I want to edit the array while I'm iterating through it and getting trouble with it.&lt;br&gt;
+So I will explain how I tried to approach it - I will iterate over the array of subpaths. 
+Once I came across with a new link (not in &lt;code&gt;@checked_links&lt;/code&gt;) I will add it to the array of subpaths and replace old path with new path in each path (which is not exactly equal to the path).
+I'm having problem with relative paths. I'm not sure how to handle this part. If it's only basname (does not contain /) then I tried to replace get dirname of the path and add the new basename. But what if the link is relative (for example ../../abc)?
+What would be the best way to solve it? Also, I believe I really got it complicated because I have a infinite while loop, iterating over the array again and again... Is there a better approach here?
+</doctext>
+<thread id="11130527">
+<node id="11130528"/>
+<node id="11130533"><node id="11130546"><node id="11130632"><node id="11130634"><node id="11130635"/>
+</node>
+<node id="11130636"><node id="11130638"/>
+</node>
+<node id="11130637"><node id="11130639"/>
+</node>
+</node>
+<node id="11130714"><node id="11130725"><node id="11130730"><node id="11130731"><node id="11130760"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11130736"/>
+</thread></node>

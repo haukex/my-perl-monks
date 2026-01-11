@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11130444" title="Re^3: Creating a bash script &quot;on the fly&quot;" created="2021-03-27 06:34:02" updated="2021-03-27 06:34:02" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I have bunch of paths. How do I know for example if there is a link in the path?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You won't know from just looking at the string. You'll have to check the filesystem, and for each pathname break it down into its components, using e.g. [doc://-X|&lt;c&gt;-l&lt;/c&gt;] on each one. You can break down a filename using e.g. &lt;c&gt;splitdir&lt;/c&gt; from [doc://File::Spec], or IMO a little easier, [mod://Path::Class]. Maybe something like:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Path::Class qw/file dir/;
+
+my $file = file('/tmp/foolink/bar/quz');
+
+my $prev;
+while (1) {
+	die "doesn't exist: $file" unless -e $file;
+	print $file, " is a ", -l $file ? 'link to '.readlink($file)
+		: -f $file ? 'file' : -d _ ? 'dir' : 'special', "\n";
+	$prev = $file;
+	$file = $file-&gt;parent;
+	last if $prev eq $file;
+}
+
+__END__
+
+/tmp/foolink/bar/quz is a file
+/tmp/foolink/bar is a dir
+/tmp/foolink is a link to foo
+/tmp is a dir
+/ is a dir
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Added a check to the above code to make sure the file exists in the first place.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11130389</root_node>
+<parent_node field_name="parent_node">11130443</parent_node>
+<thread id="11130389">
+<node id="11130396"><node id="11130397"><node id="11130400"/>
+</node>
+<node id="11130443"><node id="11130444"><node id="11130451"><node id="11130453"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11130402"/>
+<node id="11130499"/>
+</thread></node>

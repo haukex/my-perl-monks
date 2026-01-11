@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1171643" title="Help to monitor a PID" created="2016-09-13 05:02:43" updated="2016-09-13 05:02:43" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1106883">lsvolo</author>
+<doctext field_name="doctext">Hi,
+
+I am seeking some Perl wisdom. I have wrote a small perl script to monitor a process and output to a file for X amount of time in a Linux/Unix env. 
+
+&lt;code&gt;use warnings;
+
+
+# Some Variables
+
+$pid = `pgrep -f '[a]bc'`;
+$msg = "Alive";
+$timestamp = localtime(time);
+
+# Open file 
+
+open $fh, '&gt;&gt;' , 'file.txt'  
+	or die ( "Could not open file! $!\n" )
+	;
+
+# Loop Condition
+
+$i = 0;
+
+until ($i &gt; 60) {
+	if ($pid) {
+  	 $timestamp = localtime(time);
+   	  print $fh ("$pid , $timestamp , $msg\n");
+       $pid = `pgrep -f '[a]bc'`;
+ 	}else{
+  	 $timestamp = localtime(time);
+  	  print $fh ("No pid , $timestamp\n"); 
+	   $pid = `pgrep -f '[a]bc'`;
+     }
+$i = $i +1;
+sleep 10;
+ }
+
+print $fh ("Time over , $timestamp\n");
+
+close $fh;&lt;/code&gt;
+
+Now I face two problems that I would need your kind help if possible. 
+First is that the print outcome in the file is using two line instead of one
+
+&lt;code&gt;example:
+9910 abc
+ , Tue Sep 13 04:44:33 2016 , Alive&lt;/code&gt;
+
+Second is that when the script is in "sleep 10" if I kill the PID the next print in the file will show that is still Alive.
+
+I have used IO::Handle and $|=1 to solve this but it didn't work. I don't use perl much possibly twice a year so apologies in advance if my questions are not appropriate. Any help will be much appreciate.
+</doctext>
+<thread id="1171643">
+<node id="1171647"><node id="1171652"/>
+<node id="1173554"/>
+</node>
+<node id="1171653"><node id="1171657"/>
+</node>
+<node id="1171654"/>
+</thread></node>

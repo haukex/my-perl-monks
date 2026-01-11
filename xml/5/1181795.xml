@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1181795" title="Re: cgi / Md5sum error" created="2017-02-12 03:51:16" updated="2017-02-12 03:51:16" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [Phweda],&lt;/p&gt;
+&lt;p&gt;I would suggest not calling an external program at all. [doc://Digest::MD5] has been in the Perl core since v5.8.&lt;/p&gt;
+&lt;c&gt;
+use Digest::MD5 qw/md5_hex/;
+print md5_hex("123456"), "\n";
+__END__
+e10adc3949ba59abbe56e057f20f883e
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;(&lt;i&gt;Update:&lt;/i&gt; [Corion] was a bit quicker than me &lt;c&gt;;-)&lt;/c&gt;&amp;nbsp;)&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;Unfortunately, your code appears to have multiple &lt;b&gt;security holes&lt;/b&gt;. As unpleasant as it might be to hear, such holes are nowadays considered quite serious. If this CGI script is public-facing, or anyone untrusted is using it, I have to recommend against using this script.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;You're calling an external command with apparently unchecked user input ("&lt;c&gt;open( CLIMD, "/usr/bin/md5sum --string=\"$newhashpassword\" |");&lt;/c&gt;"). I wrote about that, and ways to avoid it, [id://1180578|here] (although in this case the solution is even simpler, not call an external program at all).&lt;/li&gt;
+&lt;li&gt;SQL injection (e.g. "&lt;c&gt;$dbh-&gt;prepare("SELECT ... WHERE ... email = '$FORM{EMAIL}'");&lt;/c&gt;"). You can read about that [http://bobby-tables.com/|here]; use DBI's [https://metacpan.org/pod/DBI#Placeholders-and-Bind-Values|placeholder] feature instead.&lt;/li&gt;
+&lt;li&gt;Your code seems to be vulnerable to a [wp://Cross-site scripting] (XSS) attack, see also [https://excess-xss.com/|this]. (&lt;i&gt;Update:&lt;/i&gt; You could use [mod://CGI]'s &lt;c&gt;escapeHTML()&lt;/c&gt; function.)&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;I am also wondering about what &lt;c&gt;sub ParseForm&lt;/c&gt; looks like. It's possible that some verification of the input might be done there that reduces the risk of the above, but until that is clear, it's better to err on the side of caution.&lt;/p&gt;
+&lt;p&gt;In regards to your question [id://1181776|here]: &lt;c&gt;F447B20A7FCBF53A5D5BE013EA0B15AF&lt;/c&gt; is the MD5 sum of the string &lt;c&gt;"123456\n"&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1181765</root_node>
+<parent_node field_name="parent_node">1181765</parent_node>
+<thread id="1181765">
+<node id="1181766"/>
+<node id="1181767"><node id="1181774"><node id="1181776"><node id="1181783"/>
+</node>
+</node>
+</node>
+<node id="1181768"/>
+<node id="1181794"/>
+<node id="1181795"><node id="1181799"/>
+<node id="1181803"/>
+</node>
+</thread></node>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227908" title="Re: Xls reader (updated)" created="2019-01-02 04:31:15" updated="2019-01-02 04:31:15" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Two things I see right off the bat: First, you've got nested loops (&lt;c&gt;for(my $m=0; $m&lt;$length; $m++) { for(my $l=2; $l&lt;2990; $l++) { ...&lt;/c&gt;) for a simple string equality search, where the outer loop could be removed and replaced by a much faster hash lookup. Second, inside the loop, you're making a ton of OLE calls with &lt;c&gt;$Sheet2-&gt;Cells($l,$Signalcolumn)-&gt;{'Value'}&lt;/c&gt; - it'd be better if you cache this in a local variable. Something like this (&lt;strike&gt;untested&lt;/strike&gt;):&lt;/p&gt;
+&lt;c&gt;
+my %longNames = map { ($_=&gt;1) } @longNames;
+for my $l (2..2990) {
+	my $v = $Sheet2-&gt;Cells($l, $Signalcolumn)-&gt;{'Value'};
+	next unless length $v;
+	if ( $longNames{$v} ) {
+		$Sheet2-&gt;Cells($l, 100)-&gt;{'Value'} = "matched"; 
+		print"\n***********Matched*************\n";
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Now tested, and I can confirm it runs much faster. Note that you really should [id://111088], you've got a couple of undeclared variables like &lt;c&gt;$startingrow&lt;/c&gt;.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1227899</root_node>
+<parent_node field_name="parent_node">1227899</parent_node>
+<thread id="1227899">
+<node id="1227908"/>
+<node id="1227909"><node id="1227910"/>
+</node>
+<node id="1227915"/>
+</thread></node>

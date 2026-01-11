@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11140835" title="Re^2: Help requested to find the cause of an &quot;uninitialized value&quot; message" created="2022-01-25 01:44:57" updated="2022-01-25 01:44:57" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11133144">andyok</author>
+<doctext field_name="doctext">Thank you for your response. I'll do my best to add more detail (without being too detailed).
+&lt;br&gt;
+So at script startup-time, the parent immediately forks the child:
+&lt;br&gt;
+&lt;code&gt;
+$socket = socketpair($child_fh, $parent_fh, .....);
+$child_fh  -&gt; autoflush();
+$parent_fh -&gt; autoflush();
+$pid = fork();
+....
+&lt;/code&gt;
+&lt;br&gt;
+So the child and parent can use these file-handles to send and receive.
+&lt;br&gt;
+In the child process:
+&lt;br&gt;
+&lt;code&gt;
+while(1)
+   { my %INFO = ();
+     .... stuff-which-populates-%INFO ...
+     my $dumped = Dumper(\%INFO);
+     print $parent_fh ":MSG:${dumped}:DONE:\n";
+     sleep 10;
+   }
+&lt;/code&gt;
+&lt;code&gt;%INFO&lt;/code&gt; will always be populated ... it will never be null.
+&lt;br&gt;
+I am mindful that &lt;code&gt;$dumped&lt;/code&gt; could be upwards of 10Kbytes.
+&lt;br&gt;
+Hence, I frame &lt;code&gt;$dumped&lt;/code&gt; with &lt;code&gt;:MSG:&lt;/code&gt; and &lt;code&gt;:DONE:&lt;/code&gt;.
+&lt;br&gt;
+&lt;br&gt;
+The parent process is a Perl/Tk GUI and so uses &lt;code&gt;fileevent()&lt;/code&gt; on &lt;code&gt;$child_fh&lt;/code&gt; to invoke a callback whenever there is activity on the file-handle.
+&lt;br&gt;
+So the call-back is of the form:
+&lt;code&gt;
+state $collected;
+$num = read($child_fh, $buf, 1e6);
+if ($num)
+   { $collected .= $buf;
+     if ($collected  =~ /:MSG:(.*):DONE:/s)
+        { $dumper = $1;
+          %info = %{ eval $dumper }
+          $collected = "";
+        }
+   }
+&lt;/code&gt;
+ 
+I make sure that the opening and closing framing text (&lt;code&gt;:MSG:&lt;/code&gt; and &lt;code&gt;:DONE:&lt;/code&gt;) is present, just in case the data is transacted in dribs-and-drabs.
+&lt;br&gt;
+As I write this, I guess it is possible that the asynchronous nature of data being collected in &lt;code&gt;$collected&lt;/code&gt; could be of the form:
+&lt;br&gt;
+&lt;code&gt;:MSG:&lt;Dumped-data-from-%INFO&gt;:DONE::MSG:&lt;Dumped-data-from-another-%INFO&gt;:DONE:&lt;/code&gt;
+&lt;br&gt;
+And therefore the pattern match will match: &lt;code&gt;&lt;Dumped-data-from-%INFO&gt;:DONE::MSG:&lt;Dumped-data-from-another-%INFO&gt;&lt;/code&gt;
+&lt;br&gt;
+which is not in the correct format for the &lt;code&gt;eval&lt;/code&gt;.
+&lt;br&gt;
+At the time, I discounted this because of the &lt;code&gt;autoflush&lt;/code&gt; ... but perhaps that is a false assumption.
+&lt;br&gt;
+&lt;br&gt;
+
+Following on from some of the tips provided, I have inserted:
+&lt;code&gt;local $SIG{__WARN__} = \&amp;WhatsWrong;&lt;/code&gt;
+and I have defined a function &lt;code&gt;WhatsWrong&lt;/code&gt; which can then print out the value of &lt;code&gt;$dumper&lt;/code&gt;.
+&lt;br&gt;
+It will take a few weeks for the problem to occur, so I will keep you updated when I have more information.
+&lt;br&gt;
+Thank you very much.
+
+ </doctext>
+<root_node field_name="root_node">11140793</root_node>
+<parent_node field_name="parent_node">11140809</parent_node>
+<thread id="11140793">
+<node id="11140794"/>
+<node id="11140799"><node id="11140849"><node id="11140862"/>
+</node>
+</node>
+<node id="11140800"/>
+<node id="11140809"><node id="11140835"><node id="11140842"><node id="11140847"><node id="11140960"/>
+</node>
+</node>
+<node id="11140887"/>
+</node>
+</node>
+<node id="11140812"/>
+<node id="11140815"><node id="11140832"><node id="11140838"/>
+<node id="11140853"/>
+</node>
+</node>
+</thread></node>

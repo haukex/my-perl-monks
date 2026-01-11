@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1226372" title="Re^4: POST array of hashes CGI" created="2018-11-26 12:36:08" updated="2018-11-26 12:36:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You need to set a &lt;c&gt;Content-Type&lt;/c&gt; header, and use the special [mod://CGI].pm parameter name &lt;c&gt;POSTDATA&lt;/c&gt; to access the body of the POST request. This works for me:&lt;/p&gt;
+&lt;p&gt;Server:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl -T
+use warnings;
+use strict;
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
+use Data::Dumper qw(Dumper);
+use JSON::MaybeXS qw/decode_json/;
+
+my $q = CGI-&gt;new();
+print $q-&gt;header;
+my $data = $q-&gt;param('POSTDATA');
+$data = decode_json($data) if $data;
+print Dumper($data);
+&lt;/c&gt;
+&lt;p&gt;Client:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+use LWP;
+use HTTP::Request::Common;
+use JSON::MaybeXS qw/encode_json/;
+
+my @AoH = (
+	{ husband =&gt; "barney", wife =&gt; "betty", son =&gt; "bamm bamm" },
+	{ husband =&gt; "george", wife =&gt; "jane",  son =&gt; "elroy" },
+	{ husband =&gt; "homer",  wife =&gt; "marge", son =&gt; "bart" } );
+
+my $data = { data =&gt; \@AoH };
+
+my $url = 'http://myurl.com/cgi-bin/memo.pl';
+my $ua  = LWP::UserAgent-&gt;new;
+my $request = POST($url, Content_Type=&gt;'application/json',
+	Content =&gt; encode_json($data) );
+my $response = $ua-&gt;request($request);
+print $response-&gt;content, "\n";
+&lt;/c&gt;
+&lt;p&gt;Output on client:&lt;/p&gt;
+&lt;c&gt;
+$VAR1 = {
+          'data' =&gt; [
+                      {
+                        'son' =&gt; 'bamm bamm',
+                        'husband' =&gt; 'barney',
+                        'wife' =&gt; 'betty'
+                      },
+                      {
+                        'son' =&gt; 'elroy',
+                        'wife' =&gt; 'jane',
+                        'husband' =&gt; 'george'
+                      },
+                      {
+                        'husband' =&gt; 'homer',
+                        'wife' =&gt; 'marge',
+                        'son' =&gt; 'bart'
+                      }
+                    ]
+        };
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1226344</root_node>
+<parent_node field_name="parent_node">1226370</parent_node>
+<thread id="1226344">
+<node id="1226352"/>
+<node id="1226353"/>
+<node id="1226366"><node id="1226369"><node id="1226370"><node id="1226372"><node id="1226375"/>
+</node>
+</node>
+</node>
+<node id="1226373"/>
+</node>
+</thread></node>

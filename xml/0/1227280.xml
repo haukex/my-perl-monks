@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227280" title="Re^2: Print text on the same line after match" created="2018-12-14 17:48:17" updated="2018-12-14 17:48:17" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1161161">periodicalcoder</author>
+<doctext field_name="doctext">Toolic, that did work, and thank you!
+&lt;p&gt;
+One detail that I forgot to mention, and I edited the original post, is that I am working on Windows with Strawberry Perl. I had some trouble integrating the command into my script and could not store the output into a variable as it just went to stdout due to the "print $1 if" portion. I tried to redirect stdout, and not using "print" at all, but I ended up creating a temp file using this code to store the resulting number in a variable:
+
+&lt;code&gt;
+use IO::Handle;
+
+# Extract the Payee ID from the file and store it into a temporary file
+my $payeeid;
+system( q(perl -ne "print $1 if /INC\*XX\*(\d+)/" cr835.txt &gt; payee.txt) );
+
+# Define a file variable and read the contents to a variable
+my $file;
+$file = path("./payee.txt");
+my $payeeid = $file-&gt;slurp;
+
+# Define the date and time for use in the new file name
+use constant DATETIME =&gt; strftime("%Y-%m-%d_%H-%M", localtime);
+
+# Define the new file name
+my $file = "CR835.txt";
+my $newfilename = "CR835-" . $payeeid . "-processed_" . DATETIME . ".txt";
+
+# Rename the file
+move $file, $newfilename;
+&lt;/code&gt;
+
+Is there a better way to store the result into the variable?
+</doctext>
+<root_node field_name="root_node">1227265</root_node>
+<parent_node field_name="parent_node">1227266</parent_node>
+<thread id="1227265">
+<node id="1227266"><node id="1227280"><node id="1227281"/>
+</node>
+</node>
+<node id="1227269"/>
+<node id="1227282"/>
+<node id="1227283"><node id="1227289"><node id="1227300"/>
+</node>
+</node>
+</thread></node>

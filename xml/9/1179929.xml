@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1179929" title="Re: [RFC] Building Regex Alternations Dynamically" created="2017-01-19 14:08:06" updated="2017-01-19 14:08:06" _doctext_mode="lenient"><type id="11">note</type>
+<author id="634253">AnomalousMonk</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+Let's say you have a list of strings, like &lt;c&gt;("abc", "def", "ghi")&lt;/C&gt; ...
+&lt;/I&gt;&lt;/BLOCKQUOTE&gt;
+
+&lt;p&gt;
+I think it's very important to highlight the fact that these strings are assumed to be literal strings or their equivalent, and cannot contain regex "operators" &lt;i&gt;per se&lt;/I&gt;. Perhaps "Let's say you have a list of &lt;i&gt;literal &lt;/I&gt; strings &lt;i&gt;or their moral equivalent&lt;/I&gt;, like ..." You make this point further on in point 3 in the first group of bullet points, but I think it should be emphasized early and often.
+&lt;/P&gt;
+
+&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;sort { length $b &lt;=&gt; length $a }  # 2.&lt;/c&gt; &lt;br&gt; 
+&lt;/I&gt;&lt;/BLOCKQUOTE&gt;
+
+&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;sort { length $b &lt;=&gt; length $a&lt;/c&gt; &lt;br&gt; 
+&lt;c&gt;       or $a cmp $b }             # 3.&lt;/c&gt; &lt;br&gt; 
+&lt;/I&gt;&lt;/BLOCKQUOTE&gt;
+
+&lt;p&gt;
+Your discussion of sorting by length in an alternation of this kind is critical. I feel the desired end can be achieved in a more uniform way, although it's a bit more tricky to explain.
+&lt;/P&gt;
+
+&lt;p&gt;
+Say we have the set &lt;c&gt; qw(ab abc abcd wx wxy wxyz) &lt;/C&gt; of &lt;i&gt;literal&lt;/I&gt; strings we wish to build into an alternation. To build a "longest match" ordered alternation, it's essential to have &lt;c&gt; abcd &lt;/C&gt; appear before &lt;c&gt; abc &lt;/C&gt; and &lt;c&gt; abc &lt;/C&gt; before &lt;c&gt; ab &lt;/C&gt; in the alternation as you've explained, but it's irrelevant where &lt;c&gt; wx wxy wxyz &lt;/C&gt; appear relative to the former subgroup. The reason is that nothing in the &lt;i&gt;literal&lt;/I&gt; &lt;c&gt; wx wxy wxyz &lt;/C&gt; subgroup can possibly match anything that the &lt;i&gt;literal&lt;/I&gt; &lt;c&gt; ab abc abcd &lt;/C&gt; subgroup matches and vice versa. So a standard &lt;br&gt;
+&lt;c&gt;    reverse sort&lt;/c&gt; &lt;br&gt; 
+expression serves in all cases.
+&lt;c&gt;
+c:\@Work\Perl\monks&gt;perl -wMstrict -le
+"my ($alt) =
+   map qr{$_}xms,
+   join '|',
+   map quotemeta,
+   reverse sort
+   qw(wx ab wxy abc wxyz abcd)
+   ;
+ print $alt;
+"
+(?^msx:wxyz|wxy|wx|abcd|abc|ab)
+&lt;/C&gt;
+Does it ever matter that members of the &lt;c&gt; wx wxy wxyz &lt;/C&gt; subgroup fall before, after, or &lt;i&gt;within&lt;/I&gt; the &lt;c&gt; ab abc abcd &lt;/C&gt; subgroup? Never. The regex &lt;br&gt;
+&lt;c&gt;    (?^msx:abcd|wxyz|wxy|abc|ab|wx)&lt;/c&gt; &lt;br&gt; 
+is functionally equivalent (in terms of longest matching) to &lt;br&gt;
+&lt;c&gt;    (?^msx:wxyz|wxy|wx|abcd|abc|ab)&lt;/c&gt; &lt;br&gt;
+&lt;/P&gt;
+
+&lt;p&gt;
+In addition, there's the whole &lt;c&gt; $b/$a &lt;/C&gt; versus &lt;c&gt; $a/$b &lt;/C&gt; issue in controlling descending versus ascending sorting. This is very easy to screw up and can be very hard to see to fix; &lt;c&gt; reverse sort &lt;/C&gt; eliminates this ambiguity.
+&lt;/P&gt;
+
+&lt;p&gt;
+A situation in which a &lt;i&gt;performance&lt;/I&gt; difference might emerge is if it were known that, e.g., &lt;c&gt; ab &lt;/C&gt; was overwhelmingly more likely to occur than &lt;c&gt; wx &lt;/C&gt; and so should be tested first (along with all its cohort) to avoid needlessly burning computrons in a heavy-duty matching situation: &lt;br&gt;
+&lt;c&gt;    (?^msx:abcd|abc|ab|wxyz|wxy|wx)&lt;/c&gt; &lt;br&gt; 
+But this is a situation that requires carefully hand-crafting a regex, and may be outside the scope of your article.
+&lt;/P&gt;
+
+&lt;p&gt;
+I tend to use a &lt;c&gt; reverse sort &lt;/C&gt; step in all cases when I'm building this type of alternation, even when all substrings to be matched are known to be mutually exclusive or when the alternation will be anchored in such a way that alternation match length is not a consideration. (Of course, if the programer wants a &lt;i&gt;shortest&lt;/I&gt; match alternation, that's an entirely different question, and also a point upon which you've touched.)
+&lt;/P&gt;
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-634253"&gt;
+&lt;hr&gt;&lt;p&gt;Give a man a fish&lt;b&gt;:&lt;/B&gt; &lt;c&gt; &lt;%-{-{-{-&lt;&lt;/C&gt;&lt;/P&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1179840</root_node>
+<parent_node field_name="parent_node">1179840</parent_node>
+<thread id="1179840">
+<node id="1179850"><node id="1179851"><node id="1179853"/>
+</node>
+<node id="1180085"><node id="1180087"/>
+</node>
+</node>
+<node id="1179864"><node id="1179870"/>
+</node>
+<node id="1179898"/>
+<node id="1179901"><node id="1179921"><node id="1179940"/>
+</node>
+</node>
+<node id="1179929"><node id="1190259"><node id="1190349"/>
+</node>
+</node>
+<node id="11116849"><node id="11116850"/>
+</node>
+<node id="11118145"/>
+</thread></node>

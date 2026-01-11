@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1189045" title="Re^3: how i capture a script error to a file ?" created="2017-04-27 10:23:54" updated="2017-04-27 10:23:54" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;compilation erros&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note this from [doc://%SIG|perlvar]:&lt;/p&gt;
+&lt;blockquote&gt;&lt;c&gt;__DIE__&lt;/c&gt;/&lt;c&gt;__WARN__&lt;/c&gt; handlers are very special in one respect: they may be called to report (probable) errors found by the parser. In such a case the parser may be in inconsistent state, so any attempt to evaluate Perl code from such a handler will probably result in a segfault. This means that warnings or errors that result from parsing Perl should be used with extreme caution...&lt;/blockquote&gt;
+&lt;p&gt;Using &lt;c&gt;$SIG{__DIE__}&lt;/c&gt; to catch runtime errors is fine, though, as well as from inside [doc://eval], despite what the above link currently says - the following is a text from the upcoming 5.26 ([https://perl5.git.perl.org/perl.git/commitdiff/4a29ab5ed|reference]):&lt;/p&gt;
+&lt;blockquote&gt;The &lt;c&gt;$SIG{__DIE__}&lt;/c&gt; hook is called even inside an &lt;c&gt;eval()&lt;/c&gt;. It was
+never intended to happen this way, but an implementation glitch made
+this possible. This used to be deprecated, as it allowed strange action
+at a distance like rewriting a pending exception in &lt;c&gt;$@&lt;/c&gt;. Plans to
+rectify this have been scrapped, as users found that rewriting a
+pending exception is actually a useful feature, and not a bug.
+Perl never issued a deprecation warning for this; the deprecation
+was by documentation policy only. But this deprecation has been 
+lifted in Perl 5.26.&lt;/blockquote&gt;
+&lt;p&gt;If you want to reliably log compilation errors, redirect &lt;c&gt;STDERR&lt;/c&gt; from outside of the script, like [shmem] [id://1189039|said]. Once the Perl script is up and running, you can use [doc://eval] as a try/catch mechanism (&lt;c&gt;eval { code here ...; 1 } or do { handle error }&lt;/c&gt;, or e.g. [mod://Try::Tiny]), or use a &lt;c&gt;$SIG{__DIE__}&lt;/c&gt; handler, however, note that the latter is only called when the program is &lt;i&gt;already dying&lt;/i&gt;, so the only thing I'd do in that handler is try to do something with the error message, like rewrite it or &lt;i&gt;attempt&lt;/i&gt; to log it to a file - keeping in mind that this may fail, which is why I said before to redirect &lt;c&gt;STDERR&lt;/c&gt; from outside of the script.&lt;/p&gt;
+&lt;p&gt;&lt;strike&gt;Oops, accidentally posted this node before finishing it.&lt;/strike&gt; &lt;b&gt;Okay,&lt;/b&gt; done working on it. &lt;small&gt;&lt;i&gt;No, really, now I am.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1189032</root_node>
+<parent_node field_name="parent_node">1189036</parent_node>
+<thread id="1189032">
+<node id="1189033"><node id="1189036"><node id="1189039"><node id="1189042"><node id="1189043"/>
+<node id="1189073"/>
+</node>
+</node>
+<node id="1189045"/>
+</node>
+</node>
+<node id="1189034"><node id="1189038"><node id="1189040"><node id="1189041"/>
+</node>
+</node>
+</node>
+<node id="1189035"/>
+<node id="1189044"/>
+<node id="1189063"/>
+<node id="1189674"/>
+</thread></node>

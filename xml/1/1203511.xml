@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203511" title="Re: Order of operations" created="2017-11-15 15:07:21" updated="2017-11-15 15:07:21" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The first message refers you to [doc://perlop#Terms-and-List-Operators-(Leftward)|"Terms and List Operators (Leftward)" in perlop], which says:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;c&gt;
+print ($foo &amp; 255) + 1, "\n";
+&lt;/c&gt;
+&lt;p&gt;probably doesn't do what you expect at first glance. The parentheses enclose the argument list for [doc://print] which is evaluated (printing the result of &lt;c&gt;$foo &amp; 255&lt;/c&gt;). Then one is added to the return value of [doc://print] (usually 1). The result is something like this:&lt;/p&gt;
+&lt;c&gt;
+1 + 1, "\n";    # Obviously not what you meant.
+&lt;/c&gt;
+&lt;p&gt;To do what you meant properly, you must write:&lt;/p&gt;
+&lt;c&gt;
+print(($foo &amp; 255) + 1, "\n");
+&lt;/c&gt;
+&lt;p&gt;See [doc://perlop#Named-Unary-Operators] for more discussion of this.&lt;/p&gt;
+&lt;p&gt;...&lt;/p&gt;
+&lt;p&gt;If any list operator (&lt;c&gt;print()&lt;/c&gt;, etc.) or any unary operator (&lt;c&gt;chdir()&lt;/c&gt;, etc.) is followed by a left parenthesis as the next token, the operator and arguments within parentheses are taken to be of highest precedence, just like a normal function call.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;You can see how Perl is interpreting your code with [doc://B::Deparse]:&lt;/p&gt;
+&lt;c&gt;
+$ perl -MO=Deparse,-p -e 'print (4-1) + 2+3 * (2*2);'
+((print(3) + 2) + 12);
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1203507</root_node>
+<parent_node field_name="parent_node">1203507</parent_node>
+<thread id="1203507">
+<node id="1203510"><node id="1203570"/>
+</node>
+<node id="1203511"/>
+<node id="1203541"><node id="1203560"><node id="1203574"><node id="1203580"/>
+</node>
+</node>
+</node>
+</thread></node>

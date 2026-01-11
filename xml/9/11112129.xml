@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112129" title="tzset and POSIX" created="2020-01-30 14:41:59" updated="2020-01-30 14:41:59" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="648867">BernieC</author>
+<doctext field_name="doctext">Summary of where I'm at: I've been on a quest for tzset.   I have been trying to install SVG::TT::Graph and when I do it bombs out with
+
+&lt;blockquote&gt;
+t/02_basic.t ........... 1/85 POSIX::tzset not implemented on this architecture at blib/lib/SVG/TT/Graph/TimeSeries.pm line 582, &lt;DATA&gt; line 593.
+# Looks like your test exited with 255 just after 72.
+&lt;/blockquote&gt;
+
+and apparently that error is correct, since I found over on stackexchange
+
+&lt;blockquote&gt;
+TL;DR: Starting with Perl v5.8.9 (released in 2011) calling tzset when changing $ENV{TZ} isn't needed anymore.
+&lt;/blockquote&gt;
+
+The actual culprit is SVG::TT::Graph::TimeSeries.  Which has
+&lt;blockquote&gt;
+Format string for presenting the X axis labels.
+The POSIX strftime() function is used for formatting
+after calling the POSIX tzset() function with the timezone
+specified in timescale_time_zone if present 
+(see strftime man pages and LC_TIME locale information).
+&lt;/blockquote&gt;
+
+Any suggestions of what the right thing to do is?  Should I contact the author of SVG::TT::Graph::TimeSeries and point out the problem?
+I don't think CPAN is like wikipedia and i can change it myself and make an updated version.
+&lt;p&gt;
+I have the .pm code here and so I suppose I could edit the offending call out of it and just install it locally.  But I don't know how version-tracking and such goes.
+
+Here's the code in SVG::TT::Graph::TimeSeries:
+&lt;blockquote&gt;
+  # Need to set the timezone in order for x-axis labels to be 
+  # formatted correctly by strftime:
+  $ENV{'TZ'} = $self-&gt;{config}-&gt;{timescale_time_zone};
+  POSIX::tzset();
+&lt;/blockquote&gt;
+one "#" edited into the file and a config and gmake and I *think* I'd have a local copy that'd work.  But what would the cpan database think?  It thinks I have v1.88, but I can't find the version number anywhere in the .pm file.  I'm just not sure what to do about this.
+</doctext>
+<thread id="11112129">
+<node id="11112130"/>
+<node id="11112181"><node id="11112185"><node id="11112194"/>
+<node id="11112213"><node id="11112214"/>
+<node id="11112259"><node id="11112336"><node id="11112337"/>
+<node id="11112573"/>
+</node>
+</node>
+<node id="11112335"/>
+</node>
+</node>
+</node>
+</thread></node>

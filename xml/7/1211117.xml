@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1211117" title="Re: open file using variable passed by form" created="2018-03-17 05:58:29" updated="2018-03-17 05:58:29" _doctext_mode="lenient"><type id="11">note</type>
+<author id="221725">poj</author>
+<doctext field_name="doctext">&lt;p&gt;The cgi script folder is normally not writeable to by the web server for security. Try adding
+&lt;c&gt;
+use CGI::Carp 'fatalsToBrowser'; # use only while debugging
+&lt;/c&gt;
+to your script to see what is causing the internal error&lt;/p&gt;
+&lt;p&gt;or try this [id://1177642|SSCCE] which writes to &lt;c&gt;/tmp&lt;/c&gt;&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use CGI qw/:standard/;
+use CGI::Carp 'fatalsToBrowser'; # use only while debugging
+use Cwd;
+
+my $cwd = getcwd(); # current working directory
+
+my $event      = param('event') || 1;
+my $newCOMMENT = param('newCOMMENT') || 'test comment';
+my $commentUID = time();
+my $path       = '/tmp';
+my $fileA      = "$path/$event.txt";
+my $fileB      = "$path/$commentUID.txt";
+
+if ($newCOMMENT ne "") {
+  open AFH, '&gt;&gt;', $fileA 
+    or die "Could not open $fileA : $!";
+  print AFH "$commentUID\n";
+  close AFH;
+    
+  open BFH, '&gt;&gt;', $fileB 
+    or die "Could not open $fileB : $!";
+  print BFH "$newCOMMENT\n";
+  close BFH ;
+}
+
+print header,start_html;
+print pre("
+cwd        : $cwd
+event      : [$event]
+newCOMMENT : [$newCOMMENT]
+commentUID : $commentUID");
+print end_html;
+&lt;/c&gt;
+poj
+</doctext>
+<root_node field_name="root_node">1211116</root_node>
+<parent_node field_name="parent_node">1211116</parent_node>
+<thread id="1211116">
+<node id="1211117"><node id="1211119"><node id="1211121"/>
+</node>
+<node id="1211225"><node id="1211229"/>
+</node>
+</node>
+<node id="1211118"><node id="1211224"><node id="1211228"/>
+</node>
+</node>
+</thread></node>

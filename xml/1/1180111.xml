@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1180111" title="Readonly references, replicating data structures" created="2017-01-22 06:37:50" updated="2017-01-22 06:37:50" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="983852">nikmit</author>
+<doctext field_name="doctext">&lt;p&gt;When I initially hit this it seemed incomprehensible... then I figured out why it's happening but not yet how to fix it - so here I am humbly asking for your wisdom.&lt;/p&gt;
+
+&lt;p&gt;I expected the below code to create a fresh copy of &lt;code&gt;@arr&lt;/code&gt; every time &lt;code&gt;gimme()&lt;/code&gt; is executed. Instead it creates a new reference for &lt;code&gt;@arr&lt;/code&gt; but reuses all of the nested references. The result is that &lt;code&gt;gimme()&lt;/code&gt; returns the last box with its content, rather than a fresh empty box which is what I want...&lt;/p&gt;
+
+&lt;p&gt;I considered using Readonly or a configuration file on disk to ensure I get an empty box every time, but both seem clunky and slow. The actual data structure is nested to 5-6 levels and while it is not huge, it will be executed often.&lt;/p&gt;
+
+&lt;p&gt;I suspect turning the data structure into an object may be the right path, but I'm yet to pick that side of perl up... What would be your advice?&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl -w
+use strict;
+use Data::Dumper;
+
+
+BEGIN {
+    my @arr = (
+                {
+                    box =&gt; {
+                                attr    =&gt; {
+                                            this    =&gt; 'that',
+                                            foo     =&gt; 'bar',
+                                           },
+                                content =&gt; {}, 
+                           },
+                },
+              );
+    sub gimme {
+        my @result = @arr;
+        return \@result;
+    }
+}
+
+my $box1_ref = gimme();
+$box1_ref-&gt;[0]-&gt;{white_box}-&gt;{content}-&gt;{apples} = 5;
+print "tracing: $box1_ref -&gt; $box1_ref-&gt;[0] -&gt; $box1_ref-&gt;[0]-&gt;{white_box} -&gt; $box1_ref-&gt;[0]-&gt;{white_box}-&gt;{content}\n";
+print Dumper $box1_ref-&gt;[0]-&gt;{white_box}-&gt;{content};
+
+my $box2_ref = gimme();
+print "tracing: $box2_ref -&gt; $box2_ref-&gt;[0] -&gt; $box2_ref-&gt;[0]-&gt;{white_box} -&gt; $box2_ref-&gt;[0]-&gt;{white_box}-&gt;{content}\n";
+print Dumper $box2_ref-&gt;[0]-&gt;{white_box}-&gt;{content};
+&lt;/code&gt;
+
+&lt;p&gt;Result of that code is:&lt;/p&gt;
+&lt;code&gt;
+tracing: ARRAY(0x20d9e70) -&gt; HASH(0x1fcf638) -&gt; HASH(0x20d9db0) -&gt; HASH(0x20d9de0)
+$VAR1 = {
+          'apples' =&gt; 5
+        };
+tracing: ARRAY(0x1fab0f0) -&gt; HASH(0x1fcf638) -&gt; HASH(0x20d9db0) -&gt; HASH(0x20d9de0)
+$VAR1 = {
+          'apples' =&gt; 5
+        };
+&lt;/code&gt;</doctext>
+<thread id="1180111">
+<node id="1180115"/>
+<node id="1180116"/>
+<node id="1180132"/>
+</thread></node>

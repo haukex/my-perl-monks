@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1212145" title="Re^2: Is there any way to ignore certain words when substituing?" created="2018-04-02 05:54:43" updated="2018-04-02 05:54:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;
+join "|", map { "\\b$_\\b" } reverse sort keys %cats;
+&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'd suggest putting a [doc://quotemeta] in there, just to play it safe. Although I agree that using a proper parser is better! [skooma]: See also [id://1179840].&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More;
+
+my %cats = (blackcat=&gt;5, whitecat=&gt;10,orangecat=&gt;20);
+
+my ($regex) = map { qr/\b($_)\b/ } join '|', map {quotemeta}
+	sort { length $b &lt;=&gt; length $a or $a cmp $b } keys %cats;
+
+diag explain $regex;
+
+sub do_replace {
+	my $input = shift;
+	$input =~ s/$regex/$cats{$1}/g;
+	return $input;
+}
+
+is do_replace("log10(blackcat)"), "log10(5)";
+is do_replace("log10(blackcat)*whitecat*(log10(orangecat))"),
+	"log10(5)*10*(log10(20))";
+
+done_testing;
+
+__END__
+
+# qr/\b(orangecat|blackcat|whitecat)\b/
+ok 1
+ok 2
+1..2
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1212142</root_node>
+<parent_node field_name="parent_node">1212143</parent_node>
+<thread id="1212142">
+<node id="1212143"><node id="1212145"/>
+</node>
+<node id="1212149"/>
+<node id="1212150"><node id="1212152"><node id="1212164"/>
+</node>
+</node>
+<node id="1212160"/>
+<node id="1212211"/>
+</thread></node>

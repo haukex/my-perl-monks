@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11103827" title="Re: Code review: Start and End markers to ensure Serial data is valid (updated)" created="2019-08-03 17:22:34" updated="2019-08-03 17:22:34" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;This is a really classic use for state machines. The more variables and code paths you introduce, the more complex your logic gets and the more cases you have to cover. Instead, the really basic state machine structure looks either like this:&lt;/p&gt;
+&lt;c&gt;
+my $state = 'idle';
+while ( my $input = &lt;&gt; ) {
+	if ( $state eq 'idle' ) {
+		if ( $input =~ /FOO/ ) {
+			$state = 'foo';
+		}
+		elsif ( $input =~ /BAR/ ) {
+			$state = 'bar';
+		}
+		elsif ( $input =~ ...
+		else { die "unknown input: $input" }
+	}
+	elsif ( $state eq 'foo' ) {
+		if ( $input =~ /FOO/ ) {
+			$state = 'foo';
+		}
+		elsif ( $input =~ ...
+		else { die "unknown input: $input" }
+	}
+	elsif ( $state eq ...
+	else { die "internal error: bad state $state" }
+}
+&lt;/c&gt;
+&lt;p&gt;Or like this:&lt;/p&gt;
+&lt;c&gt;
+my $state = 'idle';
+while ( my $input = &lt;&gt; ) {
+	if ( $input =~ /FOO/ ) {
+		if ( $state eq 'idle' ) {
+			$state = 'foo';
+		}
+		elsif ( $state eq 'foo' ) {
+			$state = 'foo';
+		}
+		elsif ( $state eq ...
+		else { die "internal error: bad state $state" }
+	}
+	elsif ( $input =~ /BAR/ ) {
+		if ( $state eq 'idle' ) {
+			$state = 'bar';
+		}
+		elsif ( $state eq ...
+		else { die "internal error: bad state $state" }
+	}
+	elsif ( $input =~ ...
+	else { die "unknown input: $input" }
+}
+&lt;/c&gt;
+&lt;p&gt;Here's a solution to parsing your example data that uses only the state variables &lt;c&gt;$state&lt;/c&gt; and &lt;c&gt;$curdata&lt;/c&gt; to hold state, with output being temporarily stored in &lt;c&gt;@outdata&lt;/c&gt;. I didn't implement the handling of the &lt;c&gt;[]3&lt;/c&gt; sequence or &lt;c&gt;!&lt;/c&gt;, since those can be implemented as extensions of this pattern.&lt;/p&gt;
+&lt;p&gt;Note that it takes a bit of discipline to stick to this pattern and to remember to cover all cases in all states. For example, if you really are making the number of opening and closing brackets variable, you'll need two more state variables: one to store the expected number of brackets, and one to count the number of seen brackets. You'll need to remember reset these variables in all the right places. &lt;small&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/small&gt; In fact, it'd be the most formal approach to always cover every input in every state (or every state with every input), and to set &lt;i&gt;all&lt;/i&gt; the state variables in &lt;i&gt;every&lt;/i&gt; branch of the code, and think about what the output should be for &lt;i&gt;every&lt;/i&gt; branch of the code. Of course, that gets quite redundant, and if a variable hasn't changed, it doesn't need to be re-set. But the takeaway here is that one at least needs to &lt;i&gt;think&lt;/i&gt; about it, and sticking with the formal structure above helps in doing so. &lt;small&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;In the following code, I've opted to make three different start states and two different end states, which may seem wasteful, but often encoding a couple of extra bits into the state is the "safer" way to code a state machine, instead of adding yet another state variable (and if you draw out a [wp://state diagram], it'll be easier to understand). If all the string comparisons bother you, then use [doc://constant]s and use integer comparisons on &lt;c&gt;$state&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More tests=&gt;2;
+
+is_deeply parse_data('x[[[hello]]]![[[world]]]ab'),
+	['hello','world'];
+is_deeply parse_data('x[y[[z[[[[[[[[[foo]1]]2]]]3'),
+	['[[[[[[foo]1]]2'];
+
+sub parse_data {
+	my @indata = split //, shift; ;
+	my $state = 'await_start1';
+	my $curdata = undef;
+	my @outdata;
+	for my $c (@indata) {
+		if ( $state eq 'await_start1' ) {
+			if ( $c eq '[' ) { $state = 'await_start2' }
+		}
+		elsif ( $state eq 'await_start2' ) {
+			if ( $c eq '[' ) { $state = 'await_start3' }
+			else { $state = 'await_start1' }
+		}
+		elsif ( $state eq 'await_start3' ) {
+			if ( $c eq '[' ) { $state = 'in_data'; $curdata = '' }
+			else { $state = 'await_start1' }
+		}
+		elsif ( $state eq 'in_data' ) {
+			if ( $c eq ']' ) { $state = 'got_end1' }
+			else { $curdata .= $c; $state='in_data' }
+		}
+		elsif ( $state eq 'got_end1' ) {
+			if ( $c eq ']' ) { $state = 'got_end2' }
+			else { $curdata .= ']'.$c; $state='in_data' }
+		}
+		elsif ( $state eq 'got_end2' ) {
+			if ( $c eq ']' ) {
+				push @outdata, $curdata;
+				$curdata = undef;
+				$state = 'await_start1';
+			}
+			else { $curdata .= ']]'.$c; $state='in_data' }
+		}
+		else { die "internal error: bad state $state" }
+	}
+	return \@outdata;
+}
+&lt;/c&gt;
+&lt;p&gt;In general, when designing serial protocols, there are two routes to take: packet-based and stream-based. Packet-based protocols usually transmit a header that often includes a fixed start sequence (so that synchronization can be reacquired if a byte is lost or inserted) plus length byte(s) (depending on the maximum packet size), and a checksum at the end. Stream-based protocols, like this one, usually just include some kind of start sequence (like your &lt;c&gt;[[[&lt;/c&gt;), an end sequence, and hopefully a checksum at the end. Personally I also include line-based protocols in this category, they're just a slight variation on the stream idea. Stream-based protocols have the issue that the start sequence and any other special bytes need to be escaped (which is probably why you've made the number of &lt;c&gt;[&lt;/c&gt;s variable?), while packet-based protocols don't have that issue - instead, they have the problem that if transmitted over a system where bytes can be dropped or inserted, reacquiring synchronization in such cases takes more code, although state machines can handle that too, of course. Note that there are of course other ways to escape data than to wrap a bunch of &lt;c&gt;[[[]]]&lt;/c&gt;s around it - think quoted strings, for example &lt;c&gt;:-)&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; &lt;small&gt;Minor edits for clarity.&lt;/small&gt; Also, if your goal, as the title says, is to ensure the data is transmitted correctly, then you really should use CRCs. For short pieces of data over mediums that are unlikely to corrupt the data, even something as simple as a [https://www.maximintegrated.com/en/app-notes/index.mvp/id/27|CRC-8] is better than nothing.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; A couple more edits in the text with some more thoughts.&lt;/p&gt; </doctext>
+<root_node field_name="root_node">11103824</root_node>
+<parent_node field_name="parent_node">11103824</parent_node>
+<thread id="11103824">
+<node id="11103827"/>
+<node id="11103871"/>
+<node id="11103892"><node id="11104058"><node id="11104061"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201438" title="Parsing HTML/XML with Regular Expressions" created="2017-10-16 07:48:50" updated="2017-10-16 07:48:50" _doctext_mode="strict"><type id="120">perlmeditation</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;small&gt;&lt;i&gt;&lt;b&gt;A followup: [id://11116478]&lt;/b&gt;&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;Your employer/interviewer/professor/teacher has given you a task with the following specification:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Given an XHTML file, find all the &lt;c&gt;&lt;div&gt;&lt;/c&gt; tags with the &lt;c&gt;class&lt;/c&gt; attribute "&lt;c&gt;data&lt;/c&gt;"&lt;sup&gt;1&lt;/sup&gt; and extract their &lt;c&gt;id&lt;/c&gt; attribute as well as their text content, or an empty string if they have no content. The text content is to be stripped of all non-word characters (&lt;c&gt;\W&lt;/c&gt;) and tags, text from nested tags is to be included in the output. There may be other &lt;c&gt;div&lt;/c&gt;s, other tags, and other attributes present anywhere, but &lt;c&gt;div&lt;/c&gt;s with the &lt;c&gt;class&lt;/c&gt; &lt;c&gt;data&lt;/c&gt; are guaranteed to have an &lt;c&gt;id&lt;/c&gt; attribute and not be nested inside each other. The output of your script is to be a single comma-separated list of the form &lt;c&gt;id=text, id=text, ...&lt;/c&gt;. You are to write your code first, and then you will be given a test file, guaranteed to be valid and standards-conforming, for which the expected output of your program is "&lt;c&gt;Zero=, One=Monday, Two=Tuesday, Three=Wednesday, Four=Thursday, Five=Friday, Six=Saturday, Seven=Sunday&lt;/c&gt;"&lt;sup&gt;2&lt;/sup&gt;.&lt;/p&gt;
+&lt;p&gt;
+&lt;small&gt;&lt;i&gt;Updates - Clarifications:&lt;/i&gt;&lt;/small&gt;&lt;br&gt;
+&lt;sup&gt;1&lt;/sup&gt; The &lt;c&gt;class&lt;/c&gt; attribute should be exactly the string &lt;c&gt;data&lt;/c&gt; (that is, ignoring the special treatment given to CSS classes). &lt;small&gt;Examples below updated accordingly.&lt;/small&gt;&lt;br&gt;
+&lt;sup&gt;2&lt;/sup&gt; Your solution should be generic enough to support any arbitrary strings for the &lt;c&gt;id&lt;/c&gt; and text content, and be easily modifiable to change the expected &lt;c&gt;class&lt;/c&gt; attribute.
+&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Ok, you think, I know Perl is a powerful text processing language and regexes are great! And you write your code and it works well for the test cases you came up with. ... But did you think of everything? Here's the test file you end up getting:&lt;/p&gt;
+&lt;spoiler&gt;
+&lt;c&gt;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"[
+&lt;!ATTLIST html
+	xmlns:xsi CDATA #FIXED "http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation CDATA #IMPLIED  &gt; ]&gt;
+&lt;html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.w3.org/1999/xhtml
+	http://www.w3.org/2002/08/xhtml/xhtml1-strict.xsd"&gt;
+&lt;head&gt;
+	&lt;meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /&gt;
+	&lt;title&gt;Hello, World&lt;/title&gt;
+	&lt;script type="text/javascript"&gt;
+//&lt;![CDATA[
+console.log(' &lt;div class="data" id="Hello"&gt;World&lt;/div&gt; ');
+//]]&gt;
+	&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class="data" id="Zero" /&gt;
+&lt;div class="data" id="One"&gt;Monday&lt;/div&gt;&lt;div class="data" id="Two"&gt;Tuesday&lt;/div&gt;
+&lt;div id="Three" class='data'&gt;Wednes&lt;div id="day"&gt;day&lt;/div&gt;&lt;/div&gt;
+&lt;div class="data" id='Four'&gt;&lt;b&gt;Thursday&lt;/b&gt;&lt;/div&gt;
+&lt;div
+class="data" id="Five"&gt;
+Friday
+&lt;/div&gt;
+&lt;div
+class
+=
+"data"
+id
+=
+"Six"
+&gt;
+&lt;div
+&gt;
+Satur
+&lt;/div
+&gt;
+day
+&lt;/div
+&gt;
+&lt;div title=" class='data' id='Foo'&gt;Bar"
+id="Seven" class="data"&gt;&amp;#xA0;Sunda&amp;#121;&lt;/div&gt;
+&lt;div class="data otherclass" id="aaa"&gt;bbb&lt;/div&gt;
+&lt;div class="otherclass" id="ccc"&gt;ddd&lt;/div&gt;
+&lt;p class="data"&gt;eee&lt;/p&gt;
+&lt;p id="fff"&gt;ggg&lt;/p&gt;
+&lt;!--
+&lt;div class="data" id="Quz"&gt;Baz&lt;/div&gt;
+--&gt;
+&lt;p&gt;&lt;![CDATA[
+&lt;div class="data" id="Bye"&gt;Bye&lt;/div&gt;
+]]&gt;&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/c&gt;
+&lt;p&gt;Fun, right? While the above happens to be XHTML, the same problems (and more) of course apply to XML, and HTML also quickly gets much worse - just to name one example, did you know about [https://www.w3.org/TR/html401/appendix/notes.html#h-B.3.7|SGML shorthand markup]? The following is perfectly valid HTML 4.01 (and even browsers may have trouble with it): &lt;c&gt;&lt;p&lt;a href="/"&gt;foo&lt;/&gt;&lt;/c&gt; &lt;small&gt;([https://www.w3.org/blog/2007/10/shorttags/|source])&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;If you're now thinking to yourself, "I've been working with this XML for a few years now and have never seen its format change", then imagine this scenario. The third party providing the XML hasn't touched their code, but decides to upgrade their OS libraries, including the one that writes the XML. Suddenly, you can no longer rely on the order of attributes, whitespace, etc., and your regex starts failing, and your bosses are on your back because they are losing money because their feeds are interrupted. Now take that thought a step further, and imagine you start working for a company where the person who wrote that regex is long gone, and you get to maintain it...&lt;/p&gt;
+&lt;p&gt;So I hope it is clear: Please, &lt;b&gt;don't try to parse arbitrary XML/HTML with regexes!&lt;/b&gt; ([https://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags/1732454#1732454|...just for fun]) Do yourself and the future maintainers of your code a favor and just use one of the many modules that are available.&lt;/p&gt;
+&lt;/spoiler&gt;
+&lt;p&gt;I encourage everyone to try and write a parser using your favorite module, be it:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;[mod://HTML::Parser] - Thank you, [fishy] and [tangent]!&lt;/li&gt;
+&lt;li&gt;[mod://HTML::TreeBuilder] / [mod://HTML::TreeBuilder::XPath] - Thank you, [tangent]!&lt;/li&gt;
+&lt;li&gt;[mod://Mojo::DOM] - see below&lt;/li&gt;
+&lt;li&gt;[mod://XML::LibXML] - Thank you, [Your Mother]!&lt;/li&gt;
+&lt;li&gt;[mod://XML::Twig] - Thank you, [Discipulus]!&lt;/li&gt;
+&lt;li&gt;[mod://XML::XSH2] - Thank you, [choroba]!&lt;/li&gt;
+&lt;li&gt;... your favorite here&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Honorable mentions: [Grimy] for a regex solution and [RonW] for a regex-based parser :-)&lt;/p&gt;
+&lt;p&gt;I'll kick things off with [mod://Mojo::DOM] (compacted somewhat, with potential for a lot more golfing or verboseness):&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use Mojo::DOM;
+my $dom = Mojo::DOM-&gt;new(
+	do { open my $fh, '&lt;', 'example.xhtml' or die $!;
+	local $/; &lt;$fh&gt; } );
+my $found = $dom-&gt;find('div[class="data"]')-&gt;map(sub {
+		( my $text = $_-&gt;all_text ) =~ s/\W//g;
+		{ id=&gt;$_-&gt;attr('id'), text=&gt;$text }
+	})-&gt;to_array;
+my $out = join ', ', map { $_-&gt;{id}.'='.$_-&gt;{text} } @$found;
+print $out,"\n";
+
+$out eq "Zero=, One=Monday, Two=Tuesday, Three=Wednesday, "
+	."Four=Thursday, Five=Friday, Six=Saturday, Seven=Sunday"
+	? print "Good!\n" : die "BAD!\n";
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;&lt;b&gt;Updates after posting:&lt;/b&gt; Minor updates to wording for clarification. Added test more cases to example file. &lt;b&gt;2017-10-17:&lt;/b&gt; Replaced &lt;c&gt;&amp;nbsp;&lt;/c&gt; as discussed in the replies. Switched from XHTML 1.0 Transitional to XHTML 1.0 Strict. Added [https://www.w3.org/TR/xhtml1-schema/#together|Schema declaration]. Added output check to Mojo::DOM example. &lt;b&gt;2017-10-20:&lt;/b&gt; A few minor updates to text.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;/readmore&gt;
+&lt;p&gt;&lt;b&gt;Update 2017-10-18:&lt;/b&gt; Thank you very much to everyone who has replied and posted their solutions so far, keep em coming! :-)&lt;/p&gt;</doctext>
+<thread id="1201438">
+<node id="1201443"><node id="1201454"><node id="1201483"><node id="1201489"/>
+</node>
+</node>
+</node>
+<node id="1201450"><node id="1201457"/>
+</node>
+<node id="1201473"><node id="1201488"><node id="1201493"><node id="1201521"><node id="1201551"/>
+</node>
+</node>
+<node id="1201633"><node id="1201689"><node id="1201709"/>
+<node id="1201716"><node id="1201740"><node id="1201776"/>
+<node id="1201933"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201490"><node id="1201529"><node id="1201612"/>
+</node>
+</node>
+</node>
+<node id="1201497"/>
+<node id="1201514"><node id="1201621"><node id="1201623"><node id="1201624"><node id="1201625"><node id="1201628"><node id="1201663"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201540"><node id="1201622"><node id="1201657"/>
+</node>
+</node>
+<node id="1201544"><node id="1201553"/>
+</node>
+<node id="1201545"><node id="1201554"/>
+</node>
+</thread></node>

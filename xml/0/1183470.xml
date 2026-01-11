@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1183470" title="Re^4: How to share a non-blocking IO::Socket::INET server/pass &quot;listening&quot; control?" created="2017-03-02 16:18:26" updated="2017-03-02 16:18:26" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1149080">ljamison</author>
+<doctext field_name="doctext">&lt;p&gt;Unfortunately, it appeared that IO::Select mechanics don't play well with this remote system. The most success I've had so far was with &lt;a href="http://search.cpan.org/dist/POE/lib/POE/Component/Server/TCP.pm"&gt;POE::Component::Server::TCP&lt;/a&gt;. After some discussion with Rocco, the author of POE, I now have a functional setup for the most part. I asked a new question and didn't continue on one of the other questions I had asked because it's not something I was able to find an answer on anywhere else and I didn't want it buried in comments.  Because the majority of the script logic is proprietary, I had to redact a lot of it but the basic idea of what I have working now using POE is:&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+#
+## *NOTE* this script is ran via terminal
+#
+#
+use strict;
+use warnings;
+use POE qw(Component::Server::TCP);
+
+# brian d foy's Modulino design pattern
+__PACKAGE__-&gt;poeServer(@ARGV) unless caller
+
+sub poeServer {
+    POE::Component::Server::TCP-&gt;new(
+        Started =&gt; sub {
+            warn "Server started!\n";
+        },
+        Port =&gt; 8000,
+        ClientConnected =&gt; sub {
+            warn "Client connected!\n";
+        },
+        ClientDisconnected =&gt; sub {
+            warn "Client disconnected!\n";
+        },
+        ClientInput =&gt; \&amp;client_input,
+        # because peer is SOCK_STREAM
+        ClientFilter =&gt; "POE::Filter::Stream",
+        Stopped =&gt; sub {
+            warn "Server stopped!\n";
+        },
+    );
+
+    POE::Kernel-&gt;run();
+    exit;
+}
+
+sub client_input {
+    my ($input) = $[ARG0];
+
+    warn "Client sent: $input\n";
+
+    my $reply = "00000";
+    # Acts as ACK to peer confirming data persisted
+    $_[HEAP]{client}-&gt;put($reply);
+}
+
+sub ADD {
+    my $handle = IO::Socket::INET-&gt;new(
+        PeerHost =&gt; "XX.XX.XX.XX", # redacted
+        PeerPort =&gt; 8001,
+        Proto    =&gt; "tcp",
+        Type     =&gt; SOCK_STREAM,
+    );
+
+    my $message = "12345ABCD";
+
+    $handle-&gt;send($message);
+
+    my $data;
+
+    $handle-&gt;recv($data, 10);
+
+    warn "Peer server responded with: $data\n";
+
+    $handle-&gt;close();
+
+    #### Need some way of being notified!
+}
+&lt;/code&gt;
+&lt;p&gt;This code works very well for accepting the messages initiated by the peer without getting hungup waiting on data..just what I wanted on that end!&lt;/p&gt;
+&lt;p&gt;Also, I am able to initiate a client-side connection to the server on port 8001 (in the example code above, the &lt;b&gt;ADD&lt;/b&gt; subroutine). &lt;b&gt;&lt;i&gt;However, once the client-side connection has sent its data and disconnected&lt;/i&gt;&lt;/b&gt;, what I need is it to somehow notify ADD with the status as it arrives. I'm certainly open to suggestions because at the moment I'm at my wit's end trying to figure out how to notify ADD when the status is sent.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1183457</root_node>
+<parent_node field_name="parent_node">1183465</parent_node>
+<thread id="1183457">
+<node id="1183458"><node id="1183460"><node id="1183465"><node id="1183470"><node id="1183633"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1186876"/>
+</thread></node>

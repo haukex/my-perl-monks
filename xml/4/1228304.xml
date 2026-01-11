@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228304" title="Re^7: Validating an XML file with multiple schemas" created="2019-01-10 06:19:22" updated="2019-01-10 06:19:22" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I've worked with XML a fair amount and written some Schemas myself, but it seems I hadn't come across something as (seemingly) complex as you're describing &lt;c&gt;:-)&lt;/c&gt; Anyway, there are of course [https://metacpan.org/search?q=xml+schema|other modules] you could try out and see if they work for you, I just don't have any experience with them. Other than that, if you do end up having to go the route of calling an external validator, then my module [mod://IPC::Run3::Shell] might be of interest. Here's an example I adapted from one of my older projects where I call an external [man://xmllint] (this was before I had figured out the [id://1228074|above] solution using [mod://XML::LibXML]):&lt;/p&gt;
+&lt;c&gt;
+use IPC::Run3::Shell ':FATAL', [ xmllint =&gt; qw/ xmllint --noout
+	--nonet --path /, $external_schemas_path, '--schema'];
+my $pass = eval { xmllint($schema, $file); $?==0 };
+print $file, ": ", $pass ? "PASS" : "FAIL", "\n";
+&lt;/c&gt;
+&lt;p&gt;The module also offers ways to capture &lt;c&gt;STDOUT&lt;/c&gt; and &lt;c&gt;STDERR&lt;/c&gt; if you want to suppress and/or inspect that.&lt;/p&gt;
+&lt;p&gt;If the external validator is Java, then I've played around with [mod://Inline::Java], and it seems to work ok too.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1228005</root_node>
+<parent_node field_name="parent_node">1228294</parent_node>
+<thread id="1228005">
+<node id="1228010"><node id="1228052"><node id="1228074"><node id="1228123"/>
+<node id="1228219"><node id="1228224"><node id="1228294"><node id="1228304"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1228330"/>
+</thread></node>

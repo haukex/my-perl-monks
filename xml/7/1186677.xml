@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1186677" title="Re: When does IPC::Open\d work on Windows, and when doesn't?" created="2017-04-01 08:05:45" updated="2017-04-01 08:05:45" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Unfortunately I don't have a Windows machine handy at the moment, so I can't answer your question directly. The [mod://IPC::Run3] docs do say this:&lt;/p&gt;
+&lt;blockquote&gt;For each redirector $stdin, $stdout, and $stderr, run3() furnishes a filehandle: if the redirector already specifies a filehandle it just uses that&lt;/blockquote&gt;
+&lt;p&gt;Running the following test on Linux with [man://strace] appears to show this is true even for Perl's in-memory filehandles:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use IPC::Run3 'run3';
+
+my $in = "Foo\nBar\n";
+my $out = "";
+# This uses temp files:
+#run3 ['/bin/cat'], \$in, \$out or die "run3";
+
+open my $infh, '&lt;', \$in or die $!;
+open my $outfh, '&gt;', \$out or die $!;
+run3 ['/bin/cat'], $infh, $outfh or die "run3";
+$?==0 or die "$?";
+&lt;/c&gt;
+&lt;p&gt;If that doesn't work, you might also want to give [mod://IPC::Run] a try.&lt;/p&gt;
+&lt;p&gt;AFAIK many IPC modules have similar issues on Windows, I think that's part of the reason why [mod://IPC::Run3] uses temporary files often - it's more reliable (just compare the CPAN Testers Matrix of [mod://IPC::Run3] with any other IPC module).&lt;/p&gt;
+&lt;p&gt;BTW, you're worried about efficiency, but haven't said what kind of a load you're expecting - are you sure this isn't premature optimization?&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1186674</root_node>
+<parent_node field_name="parent_node">1186674</parent_node>
+<thread id="1186674">
+<node id="1186677"><node id="1186684"/>
+</node>
+<node id="1186685"/>
+</thread></node>

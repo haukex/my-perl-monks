@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11122508" title="Re^3: Counting fields from database" created="2020-10-03 03:29:30" updated="2020-10-03 03:29:30" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Sorry, but your code is not runnable, and doesn't seem to be representative of the problem you're having. Please see [id://174051], [id://510718], and [id://1177642].&lt;/p&gt;
+&lt;p&gt;This is a &lt;i&gt;guess&lt;/i&gt; of what you want that I've pieced together from your various posts.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+use DBI;
+
+my $titlesperpage = 10;
+
+# set up a dummy database
+my $dbh = DBI-&gt;connect("dbi:SQLite::memory:", undef, undef,
+	{ RaiseError=&gt;1 });
+$dbh-&gt;do(&lt;&lt;'END');
+CREATE TABLE messages (
+	msgID INTEGER,
+	threadID INTEGER
+)
+END
+my $sth_i = $dbh-&gt;prepare(
+	'INSERT INTO messages (msgID, threadID) VALUES (?,?)');
+$sth_i-&gt;execute($_,$_&gt;&gt;4) for 0..127;
+
+for my $currentpage (1..5) { # simulate requests for different pages
+	
+	my $startcount = ($currentpage - 1) * $titlesperpage + 1;
+	my $stopcount = $currentpage * $titlesperpage;
+	dd $startcount, $stopcount;
+	
+	my $sth_s = $dbh-&gt;prepare('SELECT msgID, threadID FROM messages');
+	$sth_s-&gt;execute;
+	my %threadIDs;
+	my $rowcnt = 1;
+	while ( my $row = $sth_s-&gt;fetchrow_hashref ) {
+		$threadIDs{ $row-&gt;{threadID} }++;
+		if ( $rowcnt &gt;= $startcount &amp;&amp; $rowcnt &lt;= $stopcount ) {
+			dd $row-&gt;{msgID};
+		}
+	} continue { $rowcnt++ }
+	dd \%threadIDs;
+	
+}
+&lt;/c&gt;
+&lt;p&gt;But this loops through all results for every request. You can have the database do the pagination, even though you have to hit the database twice it still doesn't require you to loop through all records, only those for the current page.&lt;/p&gt;
+&lt;c&gt;
+for my $currentpage (1..5) { # simulate requests for different pages
+	
+	my $startcount = ($currentpage - 1) * $titlesperpage + 1;
+	
+	dd $dbh-&gt;selectall_arrayref(
+		'SELECT threadID, COUNT(*) FROM messages GROUP BY threadID');
+	
+	my $sth_s = $dbh-&gt;prepare('SELECT msgID, threadID FROM messages '
+		.'ORDER BY msgID LIMIT ?,?');
+	$sth_s-&gt;execute($startcount, $titlesperpage);
+	while ( my $row = $sth_s-&gt;fetchrow_hashref ) {
+		dd $row-&gt;{msgID};
+	}
+	
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11122494</root_node>
+<parent_node field_name="parent_node">11122502</parent_node>
+<thread id="11122494">
+<node id="11122495"><node id="11122500"/>
+<node id="11122502"><node id="11122508"><node id="11122522"/>
+</node>
+</node>
+</node>
+<node id="11122498"><node id="11122501"><node id="11122514"/>
+</node>
+</node>
+<node id="11122513"><node id="11122550"/>
+</node>
+</thread></node>

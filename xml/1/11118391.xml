@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118391" title="Re^2: Could SHA encode faster than MD5?" created="2020-06-23 16:18:49" updated="2020-06-23 16:18:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;memoize('Digest::MD5::add'); memoize('Digest::MD5::hexdigest');&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, this is &lt;b&gt;plain wrong&lt;/b&gt; in several ways. As per the [doc://Memoize] documentation:&lt;/p&gt;
+&lt;blockquote&gt;
+	&lt;p&gt;Memoization is not a cure-all:&lt;/p&gt;
+	&lt;ul&gt;
+		&lt;li&gt;Do not memoize a function whose behavior depends on program state other than its own arguments ...&lt;/li&gt;
+		&lt;li&gt;Do not memoize a function with side effects. ...&lt;/li&gt;
+	&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Memoizing &lt;c&gt;add&lt;/c&gt; &lt;b&gt;breaks&lt;/b&gt; the object's functionality. Memoizing &lt;c&gt;hexdigest&lt;/c&gt; is wrong because the method normally modifies the object's state, plus, since it is a method that is normally only called once per object, Memoizing it &lt;b&gt;isn't actually useful&lt;/b&gt; because the first argument to a method is a reference to the object, i.e. it will be different on every call and therefore the return value won't actually be cached across different objects.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More tests=&gt;7;
+use Digest::MD5;
+use Class::Method::Modifiers;
+
+my $cnt = 0;
+before 'Digest::MD5::hexdigest' =&gt; sub { $cnt++ };
+
+my $d1 = Digest::MD5-&gt;new;
+$d1-&gt;add("1");
+$d1-&gt;add("1");
+is $d1-&gt;hexdigest, "6512bd43d9caa6e02c990b0a82652dca";
+is $d1-&gt;hexdigest, "d41d8cd98f00b204e9800998ecf8427e";
+is $cnt, 2;
+
+use Memoize;
+memoize('Digest::MD5::add');
+memoize('Digest::MD5::hexdigest');
+
+# the *exact same* tests as above!
+my $d2 = Digest::MD5-&gt;new;
+$d2-&gt;add("1");
+$d2-&gt;add("1");
+# now we get the MD5 sum of "1" instead of "11"
+is $d2-&gt;hexdigest, "6512bd43d9caa6e02c990b0a82652dca";
+# hexdigest should reset the state of the object
+is $d2-&gt;hexdigest, "d41d8cd98f00b204e9800998ecf8427e";
+
+$cnt = 0;
+my $d3 = Digest::MD5-&gt;new;
+# "hexdigest" was memoized above, so should we get the MD5 sum of
+# "" or of "1"? Also, should $cnt be incremented or not?
+is $d3-&gt;hexdigest, "c4ca4238a0b923820dcc509a6f75849b";
+is $cnt, 0;
+
+__END__
+
+1..7
+ok 1
+ok 2
+ok 3
+not ok 4
+#   Failed test at m.pl line 27.
+#          got: 'c4ca4238a0b923820dcc509a6f75849b'
+#     expected: '6512bd43d9caa6e02c990b0a82652dca'
+not ok 5
+#   Failed test at m.pl line 29.
+#          got: 'c4ca4238a0b923820dcc509a6f75849b'
+#     expected: 'd41d8cd98f00b204e9800998ecf8427e'
+not ok 6
+#   Failed test at m.pl line 35.
+#          got: 'd41d8cd98f00b204e9800998ecf8427e'
+#     expected: 'c4ca4238a0b923820dcc509a6f75849b'
+not ok 7
+#   Failed test at m.pl line 36.
+#          got: '1'
+#     expected: '0'
+# Looks like you failed 4 tests of 7.
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Oh, and your tests prove that adding Memoize &lt;i&gt;slowed&lt;/i&gt; execution by a factor of roughly 2.2 and 13, respectively:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;
+&lt;pre&gt;
+#Benchmarking...
+#Digest::MD5	2.55
+#Benchmark: running Digest::MD5, Digest::MD5::new for at least 1 CPU seconds...
+#Digest::MD5: -1 wallclock secs ( 1.11 usr +  0.00 sys =  1.11 CPU) @ &lt;u&gt;138871.96/s&lt;/u&gt; (n=154009)
+#Digest::MD5::new:  1 wallclock secs ( 1.11 usr +  0.00 sys =  1.11 CPU) @ &lt;u&gt;69872.97/s&lt;/u&gt; (n=77559)
+#
+#Benchmarking with Memoize...
+#Digest::MD5	2.55
+#Benchmark: running Digest::MD5, Digest::MD5::new for at least 1 CPU seconds...
+#Digest::MD5:  1 wallclock secs ( 1.12 usr +  0.00 sys =  1.12 CPU) @ &lt;u&gt;61895.11/s&lt;/u&gt; (n=69632)
+#Digest::MD5::new:  1 wallclock secs ( 1.06 usr +  0.03 sys =  1.09 CPU) @ &lt;u&gt;5227.61/s&lt;/u&gt; (n=5719)
+&lt;/pre&gt;
+&lt;/i&gt;&lt;/blockquote&gt;</doctext>
+<root_node field_name="root_node">11118270</root_node>
+<parent_node field_name="parent_node">11118385</parent_node>
+<thread id="11118270">
+<node id="11118279"/>
+<node id="11118295"><node id="11118346"/>
+</node>
+<node id="11118385"><node id="11118391"/>
+</node>
+<node id="11118393"/>
+</thread></node>

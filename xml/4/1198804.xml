@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198804" title="Perl IO::Socket::INET + IO::Async::Stream reconnect to TCP server when disconnected" created="2017-09-07 01:53:20" updated="2017-09-07 01:53:20" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1198741">IruP</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;i&gt;2017-10-07 Note added by [Athanasius]:&lt;/i&gt; This node was copied from [https://stackoverflow.com/questions/46085929/perl-iosocketinet-ioasyncstream-reconnect-to-tcp-server-when-disconnec|StackOverflow]. See also [id://1198857].&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;I can't seem to figure out how to get a standard TCP socket connection to reconnect after a disconnect, particularly in the context of an IO::Async::Loop
+
+some basics:&lt;/p&gt; 
+
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Socket;
+use IO::Async::Loop;
+use IO::Async::Stream;
+use IO::Socket;
+use Time::HiRes qw(usleep);
+
+# standard event loop
+my $loop = IO::Async::Loop-&gt;new;
+
+# notification service socket connection; we only write outgoing
+my $NOTIFY = IO::Socket::INET-&gt;new(
+    PeerHost =&gt; $a_local_network_host,
+    PeerPort =&gt; $comm_port,
+    Proto =&gt; 'tcp',
+    Type =&gt; SOCK_STREAM,
+    ReuseAddr =&gt; 1,
+    Blocking =&gt; 0
+) or warn("Can't connect to NOTIFY: $!\n");
+setsockopt($NOTIFY, SOL_SOCKET, SO_KEEPALIVE, 1);
+
+# main interface element via IO::Async
+my $notifystream = IO::Async::Stream-&gt;new(
+    handle =&gt; $NOTIFY,
+    on_read =&gt; sub {
+        my ( $self, $buffref, $eof ) = @_;
+        # here's where we need to handle $eof if the remote goes away
+        if($eof) {
+            # i have tried several things here
+            usleep(200000); # give the remote service some milliseconds to start back up
+            # process fails if remote is not back up, so i know the timeout is 'good enough' for this test
+            # attempt to reconnect.  have also tried recreating from scratch
+            $NOTIFY-&gt;connect("$a_local_network_host:$comm_port");
+            # this doesn't seem to have any effect
+            $self-&gt;configure(handle=&gt;$NOTIFY);
+        }
+    }
+);
+$loop-&gt;add( $notifystream );
+
+# kickstart the event loop
+$loop-&gt;run;
+
+### -- Meanwhile, elsewhere in the code -- ###
+
+$notifystream-&gt;write("data for notification service\n");
+&lt;/code&gt;
+
+&lt;p&gt;
+In reality, there are many more things going on in the loop. i also have more sophisticated ways to test for socket closed or broken, further error handlers on the $notifystream, and a better timeout/backoff for reconnecting to the remote service, however this should show the main crux of what i'm doing.
+&lt;/p&gt; 
+&lt;p&gt;
+when the remote server goes away for any reason, i'd like to attempt to reconnect to it without disrupting the rest of the system. in most cases the remote sends eof cleanly because it's intentionally rebooting (not my choice, just something i have to deal with), but i'd also like to handle other communication errors as well.
+&lt;/p&gt; 
+&lt;p&gt;
+in practice, the above code acts as though it works, however the remote service no longer receives further write calls to the $notifystream. no errors are generated, the $notifystream happily takes further writes, but they are not delivered to the remote.
+&lt;/p&gt; 
+&lt;p&gt;
+i have a feeling i'm doing this wrong. i'm not looking to rewrite the rest of the application's event loop, so please no 'just use AnyEvent'-type responses -- really hoping to gain a better understanding of how to reconnect/reuse/recreate the variables in use here (IO::Socket::INET and IO::Async::Stream) to compensate when a remote server is temporarily unavailable.
+&lt;/p&gt; 
+&lt;p&gt;
+Any suggestions or references towards this goal are welcome. Thanks!&lt;/p&gt; </doctext>
+<thread id="1198804">
+<node id="1198865"/>
+</thread></node>

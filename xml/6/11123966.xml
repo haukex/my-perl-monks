@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11123966" title="Script fails to insert text and appends it towards the end of file." created="2020-11-21 07:40:19" updated="2020-11-21 07:40:19" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11123700">always_coys</author>
+<doctext field_name="doctext">Hi Monks,
+
+&lt;p&gt; I am trying to automate the running of a finite element program using a Perl script. It requires me to copy a block of text (each line starting with the same keyword) and insert it to a second file, at a particular line number. There is text in the second file, before and after this line number. With help from the Monks, I was able to update my script. However, I am noticing that the script is simply appending to the output file, rather than inserting the block of text to the desired line number.&lt;/p&gt; &lt;p&gt; The input file is given below. I am trying to copy the lines beginning with the keyword NODE and inserting it in the output file, at line number 37. Basically, I am trying to append to a section of the output file (to lines containing the same keyword). I have left sufficient space in the output file for inserting text from the input file.&lt;/p&gt;
+
+&lt;code&gt;
+ NODE			  32        0.00000        0.00000       -1.90000
+ NODE			  33        0.00000        0.00000       -5.50000
+ NODE			  34        0.00000        0.00000       -9.00000
+ NODE			  35        0.00000        0.00000      -15.00000
+ NODE			  36        0.00000        0.00000      -18.90000
+ NODE			  37        0.00000        0.00000      -22.40000
+ NODE			  38        0.00000        0.00000      -25.90000
+ NODE			  39        0.00000        0.00000      -29.00000
+ NODE			  40        0.00000        0.00000      -32.50000
+ NODE			  41        0.00000        0.00000      -33.90000
+ NODE			  42        0.00000        0.00000      -62.90000
+ BEAM			  26        27       26        1       14       1
+ BEAM			  27        28       27        1       13       1
+ BEAM			  28        29       28        1       12       1
+ BEAM			  29        30       29        1       11       1
+ &lt;/code&gt;
+
+&lt;p&gt;The output file is given below.&lt;/p&gt;
+
+&lt;code&gt;
+'Node ID            X              Y              Z    BC	
+ NODE			   1        4.51000        0.00000       79.00000
+ NODE 			   2        0.00000        0.00000       79.00000
+ NODE			   3        0.00000        0.00000       78.27000
+ NODE			   4       -1.88000        0.00000       78.27000
+ NODE			   5        0.00000        0.00000       76.80000
+ NODE			   6        0.00000        0.00000       74.46000
+ NODE			   7        0.00000        0.00000       71.66000
+ NODE			   8        0.00000        0.00000       68.86000
+ NODE			   9        0.00000        0.00000       66.07000
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+'Elem ID     np1      np2   material   geom    lcoor    ecc1    
+ BEAM			  1        2        1        2       36       2
+ BEAM			  2        3        2        2       36       1
+ BEAM			  3        3        4        2       36       2
+ BEAM			  4        5        3        2       36       1
+ BEAM			  5        6        5        3       35       1
+ BEAM			  6        7        6        3       34       1
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ PIPE            19       4.489       0.022
+ PIPE            20       4.488       0.021
+ PIPE            21       4.487       0.020
+ PIPE            22       4.395       0.018
+ PIPE            23       4.351       0.018
+ PIPE            24       4.261       0.017
+&lt;/code&gt;
+
+&lt;p&gt;My script below, should ideally place the block of text beginning with NODE from the input file, on line number 11 of the output file (i.e. just below another block of text that begins with NODE. However, my script is simply appending the text to the output file (after counting 11 lines from the end). Could the Monks please help me identify what went wrong?) Thanks a lot (always_coys). &lt;/p&gt;
+
+&lt;code&gt; 
+use strict;
+use warnings;
+
+# use the Tie::File option
+use Tie::File;
+
+my @records;
+
+tie @records, 'Tie::File', "output.fem";
+
+my $in_file = "fake_vals.fem";
+my $outIndex = 11; 
+
+# use three parameter open '&lt;' - read mode
+open my $in, '&lt;', "$in_file" or die "cannot open '$in_file' for reading: $!\n";
+
+while (my $line = &lt;$in&gt;) {
+    next if $line !~ /\bNODE\b/i;
+    chomp $line;
+    $records[$outIndex] = $line;
+    ++$outIndex;
+}
+
+&lt;/code&gt;</doctext>
+<thread id="11123966">
+<node id="11123970"><node id="11123977"/>
+</node>
+<node id="11123972"><node id="11123976"/>
+</node>
+<node id="11124010"><node id="11124023"><node id="11124030"><node id="11124037"/>
+</node>
+</node>
+</node>
+<node id="11124032"/>
+</thread></node>

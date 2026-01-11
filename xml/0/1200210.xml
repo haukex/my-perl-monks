@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200210" title="Re: Semantic diff for Perl code" created="2017-09-27 11:55:22" updated="2017-09-27 11:55:22" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="607703">clueless newbie</author>
+<doctext field_name="doctext">[id://1199416]
+&lt;p&gt;Here LanX states "Colleague asked me if I knew a method to compare modules where functions blocks where moved."&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/env perl
+
+# Combined Disassemble and Reassemble
+
+
+use if (-d 'C:/Users/Clueless'),lib=&gt;'C:/Users/Clueless/lib';
+use if (-d 'C:/Users/Clueless'),lib=&gt;'C:/Users/Clueless/devlib';
+
+# $ENV{DBG} -&gt; compile time; $ENV{DEBUG} -&gt; run time.
+use if ($ENV{DBG} || $ENV{DEBUG}),"Devel::UnComment","#[=]#","Keep";
+
+use Data::Dumper;
+use English '-no_match_vars';
+use File::Basename;
+use Getopt::Long;
+#use Getopt::Euclid;
+use Params::Validate(':all');
+use Perl::Tidy;
+use Pod::Usage;
+use PPI;
+use PPI::Dumper;
+use Text::Diff;
+use Try::Tiny;
+use strict;
+use warnings;
+use 5.10.0;
+
+{ # INTERNALS
+
+    # Given a file name and a list of directories returns the path of the file in the "right most" directory
+    sub use_file {
+        my ($filename_S,@directories_A)=Params::Validate::validate_pos(@_,{ type=&gt;SCALAR },({ type=&gt;SCALAR,callbacks=&gt;{ "Directory not found"=&gt; sub { -d shift() } } }) x $#_);
+
+        for (my $i=$#directories_A; $i &gt;= 0; $i--) {
+            return "$directories_A[$i]/$filename_S"
+                if (-r "$directories_A[$i]/$filename_S");
+            };
+        Carp::cluck "File '$filename_S' was never found!";
+        my ($name)=File::Basename::fileparse($filename_S, qr/\.[^.]*/);
+        return \q{sub $name { ...; }};
+        }; # use_file;
+
+    # Given a reference to a string and a string of perltidy options
+    # Returns a reference to the tidied string.
+    sub tidy {
+        my ($source_SREF,$argv_S)=Params::Validate::validate_pos(@_,{ type=&gt;SCALARREF },{ type=&gt;SCALAR });
+
+        my $error=Perl::Tidy::perltidy(
+                argv        =&gt; $argv_S,
+                source      =&gt; $source_SREF,
+                destination =&gt; \my $destination,
+                stderr      =&gt; \my $stderr,
+                errorfile   =&gt; \my $errorfile,    # ignored when -se flag is set
+                );
+
+        # Handle errors
+        if ($error) {
+            # serious error in input parameters, no tidied output
+            print {*STDERR} "\n$stderr\n";
+            Carp::croak "Exiting because of serious errors!";
+            };
+        print {*STDERR} "&lt;&lt;STDERR&gt;&gt;\n$stderr\n"
+            if ($stderr);
+        print {*STDERR} "&lt;&lt;.ERR file&gt;&gt;\n$errorfile\n"
+            if ($errorfile);
+
+        return \$destination;
+        }; #tidy:
+
+    # Given a reference to a scalar and a file name writes the scalar to the designated file:
+    sub write_to_file {
+        my ($string_SREF,$filename_S)=Params::Validate::validate_pos(@_,{ type=&gt;SCALARREF },{ type=&gt;SCALAR });
+
+        try {
+            open my $file,'&gt;',$filename_S
+               or die "Can NOT open '$filename_S' for write";
+            print {$file} $$string_SREF;
+            close $file
+               or die "Can NOT close '$filename_S' after write";
+            }
+        catch {
+            #=# WARN Carp::longmess $_;
+            Carp::confess $_;
+            };
+        }; # write_to_file; done.
+
+    }; # INTERNALS
+
+# Get options
+my $option_href={};
+Getopt::Long::GetOptions($option_href,
+        'help'
+        ,'man'
+        ,'from=s@'
+        ,'to=s'
+        )
+    or pod2usage(2);
+#=# DEBUG [ option_href=&gt;\$option_href];
+
+pod2usage(1)
+    if $option_href-&gt;{help};
+pod2usage( '-verbose' =&gt; 2 )
+    if $option_href-&gt;{man};
+
+if ($ARGV[0] &amp;&amp; -r $ARGV[0] &amp;&amp; $option_href-&gt;{to}) { # Disassmble $ARGV[0] saving its "MAIN" and its subs into $option_href-&gt;[to} as files
+    # Either empty the directory or create it
+    if (-d $option_href-&gt;{to}) { # Directory exists - flush it
+        #=# DEBUG 
+        unlink glob "$option_href-&gt;{to}/*.*";
+        }
+    elsif (mkdir $option_href-&gt;{to}) { # Made the directory
+        }
+    else { # Maybe $option_href-&gt;{to} is a file?
+        Carp::confess "We don't have the requisite directory '$option_href-&gt;{to}'! $!";
+        };
+
+    # Load the source    
+    my $source_s=do {
+        open my $FILE,'&lt;',$ARGV[0]
+            or die "Could not open '$ARGV[0]' for reading! $!";
+        local $/;
+        &lt;$FILE&gt;;
+        };
+    # Tidy it?
+
+    # Disassmble it
+    my $document=PPI::Document-&gt;new(\$source_s)
+        or die "Oops! Could not PPI::Document '$ARGV[0]'!";
+
+    # Decompose
+    for my $sub (@{$document-&gt;find('PPI::Statement::Sub') || []}) {
+        unless ($sub-&gt;forward) {
+            #=# DEBUG $sub-&gt;name;
+            # save the sub and its content
+            # THIS WORKS (as I can't get $sub-&gt;save(...) to work) BUT IS IT KOSHER?
+            write_to_file(\$sub-&gt;PPI::Document::serialize(),$option_href-&gt;{to}.'/'.$sub-&gt;name.'.sub');
+            # Create a stub by removing sub's block's children
+            my @elements=$sub-&gt;block-&gt;children;
+            for (my $i=0; $i &lt; @elements; $i++) {
+                $elements[$i]-&gt;remove;
+                };
+            };
+        };
+    # Save the stubbed out "main/package" under MAIN.
+    $document-&gt;save("$option_href-&gt;{to}/MAIN");
+    }
+elsif ($ARGV[0] &amp;&amp; $option_href-&gt;{from}) { # Reassemble $ARGV[0] from MAIN and the subs in @$option_href-&gt;{from} (scanning $# .. 0)
+    # Load "MAIN"
+    my $document=PPI::Document-&gt;new(use_file('MAIN',@{$option_href-&gt;{from}}));
+    #=# DEBUG ''.PPI::Dumper-&gt;new($document)-&gt;string;
+
+    # Find and flesh out the stubs
+    for my $stub (@{$document-&gt;find('PPI::Statement::Sub') || []}) {
+    	  unless ($stub-&gt;forward) {
+
+            # Thanks to haukex
+            # http://www.perlmonks.org/bare/?node_id=1199996
+            ## 1. store the document in its own variable
+            #my $doc=PPI::Document-&gt;new(\$sub_h{$stub-&gt;name}{content});
+            #my $sub=$doc-&gt;find_first('PPI::Statement::Sub');
+            #
+            ## 2. remove the sub element from its document
+            #$stub-&gt;insert_after($sub-&gt;remove)
+            #    or warn "Could not insert_after!";
+            ## 3. remove the stub
+            #$stub-&gt;remove
+            #    or warn "Could not -&gt;remove!";
+
+            # ... or equivalently
+            $stub-&gt;insert_after(PPI::Document-&gt;new(use_file($stub-&gt;name.q{.sub},@{$option_href-&gt;{from}}))-&gt;find_first('PPI::Statement::Sub')-&gt;remove)
+                or warn "Could not ...-&gt;insert_after(...-&gt;remove)!";
+            #=# TRACE '',PPI::Dumper-&gt;new($document,whitespace=&gt;0)-&gt;string;
+            $stub-&gt;remove
+                or warn "Could not ...-&gt;remove!";
+            #=# DEBUG '',PPI::Dumper-&gt;new($document,whitespace=&gt;0)-&gt;string;
+
+    	      };
+        };
+    #=# DEBUG '',PPI::Dumper-&gt;new($document,whitespace=&gt;0)-&gt;string;
+
+    # Write out the results (should we tidy it?)
+    $document-&gt;save($ARGV[0]);
+    }
+else {
+    pod2usage( '-verbose' =&gt; 2 )
+    };
+exit;
+__END__
+&lt;/code&gt;
+&lt;p&gt;Disassemble both source files into their own directories via "assemble.pl &lt;file of code to be disassembled&gt; -to &lt;directory to hold "main" and subs&gt;".&lt;/p&gt;
+&lt;p&gt;Compare corresponding files between the two directories.&lt;/p&gt;  
+&lt;p&gt;Reassemble via "assemble.pl &lt;file to hold reconstituted code&gt; -from &lt;directory that holds the updated "main" and subs&gt;".&lt;/p&gt;
+
+&lt;p&gt;My question: I'd like very much to make use of PPI::Document's save method to write the extracted subs but the subs are PPI::Statement::Sub. I'm able to use PPI::Document::serialize on them (thus getting the heredocs) but this just feels wrong.&lt;/p&gt;
+
+&lt;p&gt;Updated code thanks to all especially haukex&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/env perl
+
+# Combined Disassemble and Reassemble
+
+
+use if (-d 'C:/Users/clueless_newbie'),lib=&gt;'C:/Users/clueless_newbie/lib';
+use if (-d 'C:/Users/clueless_newbie'),lib=&gt;'C:/Users/clueless_newbie/devlib';
+
+# $ENV{DBG} -&gt; compile time; $ENV{DEBUG} -&gt; run time.
+use if ($ENV{DBG} || $ENV{DEBUG}),'Devel::UnComment','#[=]#','Keep';
+
+use Data::Dumper;
+use English '-no_match_vars';
+use File::Basename;
+use Getopt::Long;
+use Params::Validate(':all');
+use Pod::Usage;
+use PPI;
+use PPI::Dumper;
+use strict;
+use warnings;
+use 5.10.0;
+
+{ # INTERNALS
+
+    # Given a file name and a list of directories returns the content of the file in the "right most" directory
+    sub read_file {
+        my ($filename_S)=Params::Validate::validate_pos(@_,{ type=&gt;SCALAR });
+
+        open my $FILE,'&lt;',$ARGV[0]
+            or die "Could not open '$filename_S for reading! $OS_ERROR";
+        local $INPUT_RECORD_SEPARATOR;
+        return \&lt;$FILE&gt;;
+        }; # read_file:
+
+    # Given a file name and a list of directories returns the path of the file in the "right most" directory
+    sub which_file {
+        my ($filename_S,@directories_A)=Params::Validate::validate_pos(@_,{ type=&gt;SCALAR },({ type=&gt;SCALAR,callbacks=&gt;{ "Directory not found"=&gt; sub { -d shift } } }) x $#_);
+
+        my ($name,$directory,$extension)=File::Basename::fileparse($filename_S, qr/\.[^.]*/);
+        #=# DEBUG [ name=&gt;\$name,$directory=&gt;\$directory,extension=&gt;\$extension,directories=&gt;\@directories_A ];
+        for (my $i=$#directories_A; $i &gt;= 0; $i--) {
+            #=# TRACE [ trying=&gt;\"$directories_A[$i]/$name$extension" ];
+            return "$directories_A[$i]/$name$extension"
+                if (-r "$directories_A[$i]/$name$extension");
+            };
+        # No such file -- return a reference to a string containing a stub.
+        return \qq{sub $name {\n # NOT FOUND!!! \n}};
+        }; # which_file:
+
+    }; # INTERNALS
+
+# Get options
+my $option_href={};
+Getopt::Long::GetOptions($option_href,
+        'help'
+        ,'man'
+        ,'from=s@'
+        ,'to=s'
+        )
+    or pod2usage(2);
+#=# DEBUG [ option_href=&gt;\$option_href];
+
+pod2usage(1)
+    if $option_href-&gt;{help};
+pod2usage( '-verbose' =&gt; 2 )
+    if $option_href-&gt;{man};
+
+if ($option_href-&gt;{to} &amp;&amp; $option_href-&gt;{from}) { # WTF: Can't have both!
+    pod2usage( '-verbose' =&gt; 2 )
+    }
+elsif ($ARGV[0] &amp;&amp; -r $ARGV[0] &amp;&amp; $option_href-&gt;{to}) { # Disassmble $ARGV[0] saving its "MAIN" and its subs into $option_href-&gt;[to} as files
+    # Either empty the directory or create it
+    if (-d $option_href-&gt;{to}) { # Directory exists - flush it
+        #=# TRACE "deleting files:",
+        unlink glob "$option_href-&gt;{to}/*.*";
+        }
+    elsif (mkdir $option_href-&gt;{to}) { # Made the directory
+        }
+    else { # Maybe $option_href-&gt;{to} is a file?
+        Carp::confess "We do not have the requisite directory '$option_href-&gt;{to}'! $OS_ERROR";
+        };
+
+    my $source_sref=read_file($ARGV[0]);
+    # Tidy it?
+
+    # Disassmble it
+    my $document=PPI::Document-&gt;new($source_sref)
+        or die "Oops! Could not PPI::Document '$ARGV[0]'!";
+
+    # Decompose
+    for my $sub (@{$document-&gt;find('PPI::Statement::Sub') || []}) {
+        unless ($sub-&gt;forward) {
+            #=# DEBUG $sub-&gt;name;
+            # save the sub and its content
+            # THIS WORKS AND won't have Adam Kennedy shaking his head in disgust! Thanks to haukex
+            $sub-&gt;insert_after(PPI::Document::Fragment-&gt;new(\(q{sub }.$sub-&gt;name.q{ {...}}))-&gt;find_first(q{PPI::Statement::Sub})-&gt;remove)
+                or warn q{Could not ...-&gt;insert_after(...-&gt;remove)!};
+            my $subdoc=PPI::Document::Fragment-&gt;new()
+                or die q{Oops! Could not PPI::Document::Fragment-&gt;new!};
+            $subdoc-&gt;add_element($sub-&gt;remove);
+            # Won't need to stub by removing sub's block's children
+            $subdoc-&gt;save($option_href-&gt;{to}.q{/}.$sub-&gt;name.q{.sub});
+            };
+        };
+    # Save the stubbed out "main/package" under MAIN.
+    #=# DEBUG 'MAIN';
+    $document-&gt;save("$option_href-&gt;{to}/MAIN");
+    } # Appears to work: Check MAIN &amp; subs against ARGV[0]
+elsif ($ARGV[0] &amp;&amp; $option_href-&gt;{from}) { # Reassemble $ARGV[0] from MAIN and the subs in @$option_href-&gt;{from} (scanning $# .. 0)
+    # Load "MAIN"
+    my $document=PPI::Document-&gt;new(which_file('MAIN',@{$option_href-&gt;{from}}));
+    #=# TRACE ''.PPI::Dumper-&gt;new($document)-&gt;string;
+
+    # Buffer to hold subs required by the updated document
+    my @sub_a;
+
+    # Find and flesh out the stubs
+    for my $stub (@{$document-&gt;find('PPI::Statement::Sub') || []}) {
+        #=# DEBUG $stub-&gt;name;
+    	unless ($stub-&gt;forward) {
+            push @sub_a,PPI::Document-&gt;new(which_file($stub-&gt;name.q{.sub},@{$option_href-&gt;{from}}));
+            if ($stub-&gt;insert_before($sub_a[-1]-&gt;find_first('PPI::Statement::Sub'))) {
+                $stub-&gt;delete();
+                }
+            else {
+                warn q{... -&gt;insert_before failed!};
+                };
+            };
+        };
+    #=# DEBUG '',PPI::Dumper-&gt;new($document,whitespace=&gt;0)-&gt;string;
+
+    # Write out the results (should we tidy it?)
+    $document-&gt;save($ARGV[0]);
+    }
+else {
+    pod2usage( '-verbose' =&gt; 2 )
+    };
+exit;
+__END__
+&lt;/code&gt;</doctext>
+<thread id="1200210">
+<node id="1200211"><node id="1200220"><node id="1200221"><node id="1200222"/>
+</node>
+</node>
+</node>
+<node id="1200213"/>
+<node id="1200261"/>
+<node id="1200304"/>
+</thread></node>

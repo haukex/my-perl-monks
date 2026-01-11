@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1172414" title="Re: complex data structures" created="2016-09-23 02:33:47" updated="2016-09-23 02:33:47" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [perltux],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Now if I want to reference ... To access the value&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I think the terminology you're using is confusing the issue a bit. Could you explain with code what you are trying to do? It would also be very useful if you could show your data structure via [doc://Data::Dumper] or [mod://Data::Dump].&lt;/p&gt;
+&lt;p&gt;When you say &lt;c&gt;$AN{data}[0x16]&lt;/c&gt;, &lt;c&gt;%AN&lt;/c&gt; is of course a hash, in which the value &lt;c&gt;$AN{data}&lt;/c&gt; is a reference to an array, and you are then indexing that array with the subscript &lt;c&gt;[0x16]&lt;/c&gt; (which, as [tybalt89] already pointed out, is actually the 23rd element of the array at index 22). The only reference at this point is the one stored at &lt;c&gt;$AN{data}&lt;/c&gt;, which is the reference to the array. Note that &lt;c&gt;$AN{data}[0x16]&lt;/c&gt; is the same thing as &lt;c&gt;$AN{data}-&gt;[0x16]&lt;/c&gt;, where &lt;c&gt;-&gt;&lt;/c&gt; is the [doc://perlop#The-Arrow-Operator|arrow (dereference) operator], which is implied and optional between bracketed subscripts.&lt;/p&gt;
+&lt;p&gt;You access the &lt;b&gt;value&lt;/b&gt; stored at &lt;c&gt;$AN{data}[0x16]&lt;/c&gt; with, for example, &lt;c&gt;my $x = $AN{data}[0x16];&lt;/c&gt; and set the value with &lt;c&gt;$AN{data}[0x16] = $x;&lt;/c&gt;. That much should be obvious, but that value may also be a reference:&lt;/p&gt;
+&lt;p&gt;If you want &lt;c&gt;$AN{data}[0x16]&lt;/c&gt; to &lt;b&gt;store a reference&lt;/b&gt; to something else, then for example you need to say something like &lt;c&gt;my $val = 123; $AN{data}[0x16] = \$val;&lt;/c&gt;. Then &lt;c&gt;$AN{data}[0x16]&lt;/c&gt; contains a reference to the scalar &lt;c&gt;$val&lt;/c&gt; and you dereference that reference with &lt;c&gt;${ $AN{data}[0x16] }&lt;/c&gt;, so &lt;c&gt;${ $AN{data}[0x16] } = 456;&lt;/c&gt; will actually set &lt;c&gt;$val&lt;/c&gt; to 456. Another example is &lt;c&gt;my @foo = qw/a b c/; $AN{data}[0x17] = \@foo;&lt;/c&gt;, in which case you can access that array using the implicit dereferencing mentioned above, so &lt;c&gt;$AN{data}[0x17][2]&lt;/c&gt; accesses the value that is currently &lt;c&gt;"c"&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Note that the syntax &lt;c&gt;$$AN{data}[0x16]&lt;/c&gt; means something else: it dereferences a hash reference named &lt;c&gt;$AN&lt;/c&gt; - think of it as &lt;c&gt;${$AN} {data}[0x16]&lt;/c&gt; or &lt;c&gt;$AN-&gt;{data}-&gt;[0x16]&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;On the other hand, if you want to &lt;b&gt;take a reference to&lt;/b&gt; &lt;c&gt;$AN{data}[0x16]&lt;/c&gt;, you can say &lt;c&gt;my $r = \$AN{data}[0x16];&lt;/c&gt;, now &lt;c&gt;$r&lt;/c&gt; holds a reference to that element of the data structure. You can access that element of the data structure (get and set the value of &lt;c&gt;$AN{data}[0x16]&lt;/c&gt;) with &lt;c&gt;$$r&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;I recommend you read [doc://perlreftut], [doc://perlref], and [doc://perldsc] - that gives you just about everything you need to know about references in Perl.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Made few updates to wording and a few additions&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1172399</root_node>
+<parent_node field_name="parent_node">1172399</parent_node>
+<thread id="1172399">
+<node id="1172400"><node id="1172401"><node id="1172413"/>
+<node id="1172421"/>
+</node>
+</node>
+<node id="1172414"/>
+</thread></node>

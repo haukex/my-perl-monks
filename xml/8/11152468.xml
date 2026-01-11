@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11152468" title="IO::Socket simple server" created="2023-05-29 11:03:06" updated="2023-05-29 11:03:06" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="869699">packetstormer</author>
+<doctext field_name="doctext">&lt;p&gt;Hello&lt;/p&gt;
+&lt;p&gt;Could someone offer some advice on the code below? When I connect a client it connects and does as I would expect. However, it seems to close the socket after the first input from the client. &lt;/p&gt;
+&lt;p&gt;Is there any way to keep the server running to keep sending/receiving data to/from the client, until the client disconnects?&lt;/p&gt;
+&lt;p&gt;Ideally I'd like the client to connect, send a 99 and get a corresponding response from the server. Then, the client stays connected and at some point in the future is might send a 63 string or maybe even another 99. All of this without the server closing the connection and forcing the client to reconnect&lt;/p&gt;
+
+&lt;p&gt;Thanks!&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use feature 'say';
+
+use IO::Socket qw(AF_INET AF_UNIX SOCK_STREAM SHUT_WR);
+use Data::Dumper;
+ 
+my $server = IO::Socket-&gt;new(
+    Domain =&gt; AF_INET,
+    Type =&gt; SOCK_STREAM,
+    Proto =&gt; 'tcp',
+    LocalHost =&gt; '0.0.0.0',
+    LocalPort =&gt; 3333,
+    ReusePort =&gt; 1,
+    Listen =&gt; 5,
+) || die "Can't open socket: $IO::Socket::errstr";
+say "Waiting on 3333";
+ 
+while (1) {    
+    my $client = $server-&gt;accept();   
+    my $client_address = $client-&gt;peerhost();
+    my $client_port = $client-&gt;peerport();
+    say "Connection from $client_address:$client_port";
+ 
+    my $data;
+    $client-&gt;recv($data, 1024);
+    say "received data: $data";
+ 
+    if ($data =~ m/99/)	{
+         $data = "We've received a string starting withh 99";
+    }
+    if ($data =~ m/63/) {
+	$data = "We've received a string starting with 63";
+	}
+    $client-&gt;send($data);
+
+}
+&lt;/code&gt;
+</doctext>
+<thread id="11152468">
+<node id="11152471"/>
+<node id="11152476"/>
+<node id="11152483"/>
+<node id="11152566"/>
+</thread></node>

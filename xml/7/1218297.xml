@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1218297" title="Re: Configuring perl such that HAS_STRTOD is not defined" created="2018-07-11 05:45:18" updated="2018-07-11 05:45:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;This worked for me:&lt;/p&gt;
+&lt;c&gt;
+$ git checkout v5.28.0
+$ git clean -dxf
+$ sh Configure -des -U d_strtod
+$ grep -E '^d_strtod\b' config.sh
+d_strtod='undef'
+$ grep -E '#define.+HAS_STRTOD\b' config.h
+/*#define HAS_STRTOD	/ **/
+$ make
+$ ./perl -Ilib -MConfig -le 'print $Config{d_strtod}//"undef"'
+undef
+&lt;/c&gt;
+&lt;p&gt;Another method is to patch &lt;c&gt;config.sh&lt;/c&gt; (I've assumed you don't want &lt;c&gt;d_strtod_l&lt;/c&gt; either):&lt;/p&gt;
+&lt;c&gt;
+$ sh Configure -des
+$ perl -i.bak -pe "s/^d_strtod(?:_l)?=\K.*$/'undef'/" config.sh
+$ sh Configure -S
+$ make
+# etc.
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1218265</root_node>
+<parent_node field_name="parent_node">1218265</parent_node>
+<thread id="1218265">
+<node id="1218267"><node id="1218268"/>
+</node>
+<node id="1218297"><node id="1218302"><node id="1218304"/>
+</node>
+</node>
+</thread></node>

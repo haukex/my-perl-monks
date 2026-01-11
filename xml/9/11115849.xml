@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11115849" title="Re: DateTime days limit" created="2020-04-20 18:25:08" updated="2020-04-20 18:25:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Sounds like you want [mod://DateTime]'s &lt;c&gt;-&gt;truncate&lt;/c&gt; method:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime;
+
+my $now = DateTime-&gt;new(year=&gt;2020,month=&gt;4,day=&gt;21,hour=&gt;12);
+my @tests = (
+	DateTime-&gt;new(year=&gt;2020,month=&gt;4,day=&gt;27,hour=&gt;13),
+	DateTime-&gt;new(year=&gt;2020,month=&gt;4,day=&gt;28,hour=&gt;11),
+	DateTime-&gt;new(year=&gt;2020,month=&gt;4,day=&gt;28,hour=&gt;13),
+	DateTime-&gt;new(year=&gt;2020,month=&gt;4,day=&gt;29,hour=&gt;11)
+);
+
+for my $reservation_date (@tests) {
+	my $fc_days_limit=7;
+	if ($fc_days_limit) {
+		my $days_from_now = $now-&gt;clone-&gt;add( days=&gt;$fc_days_limit )
+			-&gt;truncate( to =&gt; 'day' );
+		my $res_date_only = $reservation_date-&gt;clone
+			-&gt;truncate( to =&gt; 'day' );
+		if ($res_date_only &gt;= $days_from_now) {
+			print "Error on $reservation_date\n";
+		}
+		else {
+			print "Reservation $reservation_date is ok\n";
+		}
+	}
+}
+
+__END__
+
+Reservation 2020-04-27T13:00:00 is ok
+Error on 2020-04-28T11:00:00
+Error on 2020-04-28T13:00:00
+Error on 2020-04-29T11:00:00
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11115846</root_node>
+<parent_node field_name="parent_node">11115846</parent_node>
+<thread id="11115846">
+<node id="11115847"><node id="11115848"/>
+</node>
+<node id="11115849"/>
+<node id="11115927"/>
+</thread></node>

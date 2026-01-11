@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227689" title="Re: Create an html like form on text tty" created="2018-12-25 06:08:36" updated="2018-12-25 06:08:36" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;there is no way to go up and make the change&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Not necessarily...&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use IO::Prompter;
+use Email::Valid;
+
+my @fields = (
+	{ name=&gt;'name', desc=&gt;'Name', prompter =&gt; { -must =&gt; { 
+		'be at least three characters' =&gt; qr{\A\w{3,}} } } },
+	{ name=&gt;'mail', desc=&gt;'EMail', prompter =&gt; { -must =&gt; {
+		'be a valid email address' =&gt;
+			sub { Email::Valid-&gt;address(shift) } } } },
+	{ name=&gt;'date', desc=&gt;'Date', prompter =&gt; { -must =&gt; {
+		'be in the format DD.MM.YYYY' =&gt;
+			qr{\A\d\d?\.\d\d?\.\d\d\d\d\z} } } },
+	{ name=&gt;'pass', desc=&gt;'Password', prompter =&gt; { -echo =&gt; '*' } },
+);
+
+my %data;
+INPUT: {
+	for my $f (@fields) {
+		my $default = '';
+		if ( defined $f-&gt;{prompter}{-default} ) {
+			if ( defined $f-&gt;{prompter}{-echo} ) {
+				$default = " [" . ( $f-&gt;{prompter}{-echo}
+					x length($f-&gt;{prompter}{-default}) ) . "]";
+			}
+			else {
+				$default = " [" . $f-&gt;{prompter}{-default} . "]";
+			}
+		}
+		my $rv = prompt( $f-&gt;{desc} . $default . ':',
+			%{ $f-&gt;{prompter} } );
+		$data{ $f-&gt;{name} } = "$rv";
+		$f-&gt;{prompter}{-default} = "$rv";
+	}
+	prompt("Is this correct?", -Y1) or redo INPUT;
+}
+
+use Data::Dump; dd \%data;
+&lt;/c&gt;
+&lt;p&gt;Although if you really want it to be like a web form, [LanX]'s [id://1227679|suggestion] is probably better for that.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1227678</root_node>
+<parent_node field_name="parent_node">1227678</parent_node>
+<thread id="1227678">
+<node id="1227679"/>
+<node id="1227689"/>
+</thread></node>

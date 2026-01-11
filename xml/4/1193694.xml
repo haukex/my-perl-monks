@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193694" title="Re^4: Escaping double quotes in complete document" created="2017-06-27 09:42:07" updated="2017-06-27 09:42:07" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I can confirm with 100% certainty that saving and loading UTF-8 characters and double quotes worked before the update.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I am unclear on this for several reasons. First, does this mean that you have both the new and the old software environment available in parallel? If so, one obvious approach to debugging it would be to pepper the script with plenty of debugging output until the differences and the origin of those differences becomes clear. Second, can you be more specific on the double quotes issue, in what way did it previously "work" compared to now? Again, showing a short but representative code snippet ([id://1177642|SSCCE]) along with sample input, the expected output and the actual output including exact error messages is most helpful here - if we can reproduce the issue locally we will be able to help much better.&lt;/p&gt;
+&lt;p&gt;While I can't say much about how Java, JBoss, or Apache plays a role in all this, I can say with a high degree of certainty that there have been no changes in Perl itself between v5.10.1 and v5.16.3 that would explain different handling of double quotes in strings interpolated into the HTML (while there has been a lot of work done on Unicode handling over the years). I would agree that based on your descriptions so far it is unlikely that the issue of Unicode/UTF-8 handling is connected to the issue of double quotes.&lt;/p&gt;
+&lt;p&gt;Code like &lt;c&gt;print qq{&lt;input type="text" name="mytext" value="$SOAPResult"/&gt;};&lt;/c&gt; would &lt;b&gt;always&lt;/b&gt; have been a problem &lt;b&gt;if&lt;/b&gt; &lt;c&gt;$SOAPResult&lt;/c&gt; contained double quotes.&lt;/p&gt;
+&lt;p&gt;Since you say the HTML is output with [doc://print] and not a module, and it sounds like there was previously no module being used to do escaping (like [mod://HTML::Entities] or [mod://CGI].pm's &lt;c&gt;escapeHTML&lt;/c&gt;), the only other possible culprit might be whatever Perl modules you are using to fetch and store the data ([mod://SOAP::Lite], or perhaps [mod://DBI]), or the source of the data itself. For example, as [huck] said, perhaps there was previously a validation of data going into the database that kept double quotes out of the database entries, or there was some layer somewhere doing escaping of the values coming out of the database. Or it's something simpler like there never was any validation, and over time you've simply accumulated more and more records in the DB that bring to light this issue which was always present.&lt;/p&gt;
+&lt;p&gt;Without more information (= code to reproduce), this is a bit of a stab in the dark, but my best guess at the moment is that you could start with looking at what [mod://SOAP::Lite] is doing, i.e. what strings it was giving your code before and after the upgrade.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1193555</root_node>
+<parent_node field_name="parent_node">1193676</parent_node>
+<thread id="1193555">
+<node id="1193559"><node id="1193562"><node id="1193565"><node id="1193658"/>
+</node>
+</node>
+</node>
+<node id="1193609"><node id="1193659"/>
+</node>
+<node id="1193612"><node id="1193657"><node id="1193662"/>
+<node id="1193663"/>
+<node id="1193676"><node id="1193694"/>
+</node>
+</node>
+</node>
+<node id="1193698"><node id="1193699"><node id="1193702"/>
+</node>
+</node>
+<node id="1193806"><node id="1193808"/>
+</node>
+</thread></node>

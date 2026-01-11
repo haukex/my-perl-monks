@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100990" title="Re^3: Cwd::abs_path or FindBin::Bin?" created="2019-06-05 04:17:57" updated="2019-06-05 04:17:57" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;But abs_path is taking care of resolving symlinks, isn't it?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, but so is [doc://FindBin], with more effort and less code in your script - you can have a look at [https://perl5.git.perl.org/perl.git/blob/fb55ce6b7596:/lib/FindBin.pm#l108|the source]. Note it's been a core module for a long time.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;So is there still an issue?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Not necessarily, if you are sure you'll always be running this script on this OS. But if you want portability, then you need to use the appropriate modules to ensure that, i.e. [doc://File::Spec] or [mod://Path::Class]. And personally I wouldn't use &lt;c&gt;..&lt;/c&gt; to remove the script's filename from the path (another advantage of &lt;c&gt;$FindBin::Bin&lt;/c&gt;).&lt;/p&gt;
+&lt;c&gt;
+# add a "lib" that is in the script's dir
+use File::Spec::Functions qw/catdir/;
+use lib catdir($FindBin::RealBin, 'lib');
+
+# add a "lib" that is in the script's parent dir
+use Path::Class qw/dir/;
+use lib dir($FindBin::RealBin)-&gt;parent-&gt;subdir('lib')-&gt;stringify;
+&lt;/c&gt;
+&lt;p&gt;You might also be interested in [mod://File::FindLib] (although because that does a search, it is less deterministic).&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11100985</root_node>
+<parent_node field_name="parent_node">11100988</parent_node>
+<thread id="11100985">
+<node id="11100987"><node id="11100988"><node id="11100990"><node id="11100998"><node id="11100999"><node id="11101000"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11101122"/>
+</thread></node>

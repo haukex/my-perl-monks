@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1160919" title="Socket programming Help" created="2016-04-19 15:39:44" updated="2016-04-19 15:39:44" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="633623">Kelicula</author>
+<doctext field_name="doctext">&lt;p&gt;
+I recently ran into a situation where I need to have many many raspberry pi's running all over the country and I need to "talk" to them from a central computer to tell them when to run a particular program I have pre-loaded on them. However the people that will be "hosting" them if you will are very very NON-computer savvy people, so I really can't have them configure their routers to set up VNC or the like connections, so I thought, I can solve this with "Sockets" right? :-) 
+
+So what I want to do is have the pi's talk to my computer and say "I'm on and running, what do you want me to do?" and then I can send back to them what to do. Problem is I can't get the dang things to connect. :-(
+
+I have my router set to forward port 7777 to my computer and I have a no-ip service that hosts a name for my router. 
+&lt;/p&gt;
+
+&lt;p&gt; But every time the connection times out and won't connect . What am I doing wrong?
+
+
+Here is my code:
+
+&lt;p&gt;Server Code&lt;/p&gt;
+&lt;code&gt;
+use IO::Socket::INET;
+ 
+# auto-flush on socket
+$| = 1;
+ 
+# creating a listening socket
+my $socket = new IO::Socket::INET (
+    LocalHost =&gt; '127.0.0.1',
+    LocalPort =&gt; '7777',
+    Proto =&gt; 'tcp',
+    Listen =&gt; 5,
+    Reuse =&gt; 1
+);
+die "cannot create socket $!\n" unless $socket;
+print "server waiting for client connection on port 7777\n";
+ 
+while(1)
+{
+    # waiting for a new client connection
+    my $client_socket = $socket-&gt;accept();
+ 
+    # get information about a newly connected client
+    my $client_address = $client_socket-&gt;peerhost();
+    my $client_port = $client_socket-&gt;peerport();
+    print "connection from $client_address:$client_port\n";
+ 
+    # read up to 1024 characters from the connected client
+    my $data = "";
+    $client_socket-&gt;recv($data, 1024);
+    print "received data: $data\n";
+ 
+    # write response data to the connected client
+    $data = "ok";
+    $client_socket-&gt;send($data);
+ 
+    # notify client that response has been sent
+    shutdown($client_socket, 1);
+}
+ 
+$socket-&gt;close();
+&lt;/code&gt;
+
+
+&lt;p&gt;Client Code&lt;/p&gt;
+&lt;code&gt;
+
+#!/usr/bin/perl
+
+use IO::Socket::INET;
+
+
+$| = 1;
+
+my $socket = new IO::Socket::INET (
+PeerHost =&gt; 'theaddressofmycomputer.com',
+PeerPort =&gt; '7777',
+Proto    =&gt; 'tcp',
+);
+die "Cannot connect to the server $!\n" unless $socket;
+print "Connected to the server!\n";
+
+my $req = "Hello World\n";
+my $size = $socket-&gt;send($req);
+print "Sent data of length $size\n";
+
+shutdown($socket, 1);
+
+my $response = "";
+$socket-&gt;recv($response, 1024);
+print "Recieved response: $response\n";
+
+$socket-&gt;close();
+
+&lt;/code&gt;
+
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-633623"&gt;
+
+~~~~~~~~~ I'm unique, just like everybody else! ~~~~~~~~~
+&lt;/div&gt;&lt;/div&gt;
+
+
+UPDATE!!!
+&lt;p&gt;OK, I got it working, thank you to everyone for all your help, it was the windows firewall. I simply had to create an inbound and outbound rule allowing communication on the port I want and it worked like a charm! &lt;/p&gt;
+
+</doctext>
+<thread id="1160919">
+<node id="1160924"><node id="1160936"><node id="1160938"/>
+<node id="1160941"/>
+</node>
+</node>
+<node id="1160933"/>
+<node id="1160945"/>
+</thread></node>

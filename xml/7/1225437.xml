@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1225437" title="What is the proper way to suppress a warning in a test file?" created="2018-11-08 12:28:08" updated="2018-11-08 12:28:08" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="66801">nysus</author>
+<doctext field_name="doctext">&lt;p&gt;I have a test file with &lt;c&gt;Test::NoWarnings&lt;/c&gt;. The module getting tested relies on other module that use XS. One of those modules throws a warning that it's "falling back to PP version". This warning causes my test to fail. I tried the following to fix the issue:
+
+&lt;c&gt;
+use strict;
+use warnings;
+use File::Path;
+use Data::Dumper qw(Dumper);
+use Test::NoWarnings;
+use Test::Output;
+use Test::Most tests =&gt; 16, 'die';
+
+BEGIN {
+  $ENV{'DANCER_ENVIRONMENT'} = 'testing';
+
+  $SIG{__WARN__} = sub {
+    my $warn = shift;
+    return if $warn =~ /fallback to PP version/;
+    warn $warn;
+  };
+}
+&lt;/c&gt;
+
+&lt;p&gt;While this does suppress the warning, it also suppresses all warnings that my test might produce making &lt;c&gt;Test::NoWarnings&lt;/c&gt; useless. As a workaround, I just comment out the &lt;c&gt;$SIG{__WARN__}&lt;/c&gt; stuff while I'm testing but I'd like to learn how to properly address this issue. I tried moving it outside the &lt;c&gt;BEGIN&lt;/c&gt; block but that didn't help. Thanks!
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-66801"&gt;
+&lt;font size=2&gt;&lt;p&gt;
+$PM = "Perl Monk's";&lt;br&gt;
+$MCF = "Most Clueless &lt;strike&gt;Friar&lt;/strike&gt; &lt;strike&gt;Abbot&lt;/strike&gt; &lt;strike&gt;Bishop&lt;/strike&gt; &lt;strike&gt;Pontiff&lt;/strike&gt; &lt;strike&gt;Deacon&lt;/strike&gt; &lt;strike&gt;Curate&lt;/strike&gt; &lt;strike&gt;Priest&lt;/strike&gt; Vicar";&lt;br&gt;
+$nysus = $PM . ' ' . $MCF;&lt;br&gt;
+&lt;a href="http://perlmonks.org/index.pl?node=Offering%20Plate"&gt;Click here if you love Perl Monks&lt;/a&gt;&lt;br&gt;&lt;/font&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1225437">
+<node id="1225441"/>
+<node id="1225442"><node id="1225448"><node id="1225451"/>
+</node>
+</node>
+</thread></node>

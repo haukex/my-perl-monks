@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116889" title="Re^3: PERL to AWS" created="2020-05-18 05:16:47" updated="2020-05-18 05:16:47" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1226468">jo37</author>
+<doctext field_name="doctext">&lt;p&gt;
+Taking a real life example, I don't see an advantage in using [mod://IPC::Run3::Shell::CLIWrapper] over [mod://AWS::CLIWrapper]:
+&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use AWS::CLIWrapper;
+use Data::Dumper;
+
+my $aws = AWS::CLIWrapper-&gt;new(profile =&gt; 'my_profile') or
+    die $AWS::CLIWrapper::Error-&gt;{Message};
+
+sub gethosts {
+    my $name = shift;
+    my $hosts = $aws-&gt;ec2('describe-instances' =&gt; {
+        filters =&gt; [{Name =&gt; 'tag:Name', Values =&gt; [$name]}],
+        query =&gt; 'Reservations[*].Instances[*].{Id:InstanceId,Addr:PrivateIpAddress,Zone:Placement.AvailabilityZone,Name:(Tags[?Key==`Name`])[0].Value}'}) or
+            die "$AWS::CLIWrapper::Error-&gt;{Message}";
+    return [map {@$_} @$hosts];
+}
+my $hosts = gethosts('*something*');
+print Dumper($hosts);
+&lt;/code&gt;
+&lt;p&gt;
+Doesn't this feel very "perlish"? :-)
+&lt;br/&gt;
+Maybe I'm missing the point.
+&lt;/p&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1226468"&gt;
+&lt;p&gt;Greetings,&lt;br/&gt;-jo&lt;/p&gt;
+&lt;tt&gt;$gryYup$d0ylprbpriprrYpkJl2xyl~rzg??P~5lp2hyl0p$&lt;/tt&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11116518</root_node>
+<parent_node field_name="parent_node">11116870</parent_node>
+<thread id="11116518">
+<node id="11116519"/>
+<node id="11116531"/>
+<node id="11116550"><node id="11116870"><node id="11116889"><node id="11116891"/>
+</node>
+</node>
+</node>
+</thread></node>

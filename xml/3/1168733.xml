@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1168733" title="Re^3: Trying to understand Perl :-)" created="2016-07-28 10:27:30" updated="2016-07-28 10:27:30" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [harangzsolt33],&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;c&gt;
+sub ccc{65}
+print "\n" . ccc.ccc.ccc.ccc;  # this evaluates to numbers
+print "\n" . 65.65.65.65.65;   # this evaluates to letters
+# Ok. It's a little weird, but it is what it is.
+&lt;/c&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Well, Perl can tell the difference (on the side, [id://663393|a fun read]), and if you know what v-strings are so can you :-) Note that whitespace is significant so that Perl can tell the difference between a v-string and numbers joined with the concat operator "&lt;c&gt;.&lt;/c&gt;": &lt;c&gt;print 65 . 65 . 65 . 65;&lt;/c&gt; prints "65656565".&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;But now, what happens to my anonymous subroutines?
+Do they simply disappear or stay in memory somewhere?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm not an expert on the internals but I believe they are subject to Perl's normal memory management, i.e. when the last reference to an anonymous sub goes away it is garbage-collected (the memory it used can be reclaimed by Perl). You normally don't need to worry about this, all you need to think about is that when you want a value to go away you make sure to discard all references to it, and that there are no circular references.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;c&gt;
+sub MY{ my $K = __SUB__; }  # Why is this giving me an error?
+&lt;/c&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;See [http://perldoc.perl.org/functions/__SUB__.html|__SUB__]: "This token is only available under &lt;c&gt;use v5.16&lt;/c&gt; or the current_sub feature. See [doc://feature]."&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;c&gt;
+sub P{(6,7,8)}       # returns an array
+&lt;/c&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;This may &lt;i&gt;seem&lt;/i&gt; nitpicky, but it's a common pitfall: that's not an array, that's a list. Note that [doc://return], including the implicit return value, passes along the context that the &lt;c&gt;sub&lt;/c&gt; was called in. Your &lt;c&gt;sub P&lt;/c&gt;, when called in list context (for example, when its return value is assigned to an array), will return the three values 6,7,8, and you won't be able to tell the difference between it and a &lt;c&gt;sub Q { my @a = (6,7,8); @a }&lt;/c&gt; called in list context.&lt;/p&gt;
+&lt;p&gt;However, you &lt;i&gt;will&lt;/i&gt; be able to tell the difference when you write &lt;c&gt;my $x = P; my $y = Q;&lt;/c&gt;: &lt;c&gt;$x&lt;/c&gt; will contain 8 (the last value from the list), and &lt;c&gt;$y&lt;/c&gt; will contain 3 (the number of items in the array)*. The reason is that &lt;c&gt;sub P&lt;/c&gt; being called in scalar context causes its return value to be evaluated in scalar context, and the [doc://perlop#Comma-Operator] in scalar context "evaluates its left argument, throws that value away, then evaluates its right argument and returns that value." In &lt;c&gt;sub Q&lt;/c&gt;, the return value &lt;c&gt;@a&lt;/c&gt; evaluated in scalar context returns the number of elements of the array, the normal behavior of an array in scalar context.&lt;/p&gt;
+&lt;p&gt;* By the way, a debugging tip: don't test code like this with arrays that contain numbers; use strings instead. You wouldn't have been able to tell the difference between &lt;c&gt;$x&lt;/c&gt; and &lt;c&gt;$y&lt;/c&gt; if the returned list had been &lt;c&gt;(1,2,3)&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1168704</root_node>
+<parent_node field_name="parent_node">1168727</parent_node>
+<thread id="1168704">
+<node id="1168709"/>
+<node id="1168711"><node id="1168727"><node id="1168728"/>
+<node id="1168733"/>
+</node>
+</node>
+<node id="1168718"/>
+<node id="1168722"/>
+</thread></node>

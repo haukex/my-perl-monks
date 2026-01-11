@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1223731" title="Filesystem and SMB/NFS share Access" created="2018-10-09 09:11:37" updated="2018-10-09 09:11:37" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1223729">PerlingAround</author>
+<doctext field_name="doctext">&lt;p&gt; Hey, first and foremost, I'd like to say hi to make sure you know this is my first post here. So please be gentle with me for now &lt;/p&gt;
+&lt;p&gt; Now, I recently started working with perl and my first big task was to write up a script to test whether or not I could access a certain Filesystem/Folder/Share and create Files, write into them and read from them. &lt;/p&gt;
+&lt;p&gt; We are using a Monitoring Tool that runs perl scripts on machines and based on their output generates events that tell us whether or not "something" was successful. What I set out to do, was create a Script, that given a path (-f) a type (-t (local, NFS, Samba/SMB(mounted and via UNC))) a Searchpattern (-s) as well as Username and Password were needed, would create the file whichs path I have provided, write the Searchpattern into it, close the handle, open the file for reading and then would be successful if what I read was equal to our pattern. The Script is also supposed to run on, at least, Windows and Linux.&lt;/p&gt;
+&lt;p&gt; My first successful script worked well on local files. But it was the easiest and pretty much most basic part. My Priority is now to check if I can access a Samba share from a Windows Machine via a UNC path. My prior research was fruitless and led me to the Filesys::smbclient module. But I am confused in how to install/use it. Installing it on my test-system led to it asking about the libsmbclient.so/h, which, some more research later, was revealed to be part of a Samba suite. I am quite new at all this, so I am certainly a bit overwhelmed here. &lt;/p&gt;
+&lt;p&gt; Since the script is supposed to handle multiple combinations of OS, Path-Formats and Shares I dont know if I can install Filesys::smbclient everwywhere. I dont know if what I want would be achievable without it, and I am quite unsure about how to proceed here. As I said, I am to prioritize accessing a SMB Share via UNC from a Windows Machine, create a file and write into and read from it. &lt;/p&gt;
+&lt;p&gt; I came here looking to see if any of you would know how to achieve this goal. &lt;/p&gt;
+
+&lt;p&gt; Having received my first reply, I was reminded, that I should state some restrictions I am under while creating this script. First, it will have to work with as few additional Modules as possible. Since we are using a perl distribution that is shipped with another software package, it would be hard to make sure that every machine we want to use it on has, or can, install additional modules. Secondly, I was told to try and find a way to do it, without temporarily mounting the share as a drive. But since I am, as I had remarked earlier, quite new at this, I don't quite know, and can't seem to find information on, how to do that.&lt;/p&gt;
+
+&lt;code&gt;
+use Getopt::Std;
+shift(@ARGV);
+
+&amp;getopts("f:t:s:u:p:");
+print "ZAXML-TXT\n";
+my $Filepfad;
+my $Volumetype;
+my $Username;
+my $Password;
+my $Searchpattern;
+print "${opt_f}";
+if ($opt_f)
+{
+        $Filepfad=$opt_f;
+}
+else
+{
+	print "CURRVALUE_STRING: a File-Path must be given\n";
+	print "RETURNID: 1\n";
+	exit 0;
+}
+if ($opt_t){
+	if ($opt_t ne "UNC" &amp;&amp; $opt_t ne "local" &amp;&amp; $opt_t ne "NFS" &amp;&amp; $opt_t ne "SMB")
+	{
+		print "CURRVALUE_STRING: Filesystem-type must be UNC, local, NFS or SMB\n";
+		print "RETURNID: 1\n";
+		exit 0;
+	}
+	elsif ($opt_t eq "SMB")
+	{
+		$Volumetype=$opt_t;
+		if ($opt_u &amp;&amp; $opt_p)
+		{
+			$Username=$opt_u;
+			$Password=$opt_s;
+		}
+			else
+		{
+			print "CURRVALUE_STRING: Username and Password are required for access to SMB-Shares\n";
+			print "RETURNID: 1\n";
+			exit 0;
+		}
+	}
+	else
+	{
+        $Volumetype=$opt_t;
+	}
+}
+else
+{
+print "CURRVALUE_STRING: Volumetype must be given\n";
+print "RETURNID: 1\n";
+exit 0;
+}	
+if ($opt_u){
+	$Username=$opt_u;
+}
+if ($opt_p){
+	$Password=$opt_p;
+}
+if($opt_s)
+{
+	$Searchpattern = $opt_s;
+}
+else
+{
+	print "CURRVALUE_STRING: a Searchpattern must be given\n";
+	print "RETURNID: 1\n";
+	exit 0;
+}
+
+my $os=$^O;
+my $last_slash; 
+if ($os eq "MSWin32" &amp;&amp; $Volumetype eq "local")
+{
+	$last_slash = rindex($Filepfad, "\\",);
+} else {
+	$last_slash = rindex($Filepfad, "/",);
+}
+my $Test_Volume=substr($Filepfad,0, $last_slash);
+
+if (!(-d $Test_Volume))
+{
+	print "CURRVALUE_STRING: Volume does not exist, isn't mounted or can't be read\n";
+	print "RETURNID: 2\n";
+	exit 0;	
+}
+
+if (-f $Filepfad)
+{
+        if ( ! unlink($Filepfad) )
+	{
+		print "CURRVALUE_STRING: can't delete existing File ${Filepfad}\n";
+		print "RETURNID: 2\n";
+		exit 0;
+	}
+}
+my $Filehandle;
+if(!(open($Filehandle, '&gt;', $Filepfad))) 
+{
+	print "CURRVALUE_STRING: can't create new file ${Filepfad} for write access \n"; 
+	print "RETURNID: 2\n";
+	exit 0;
+}
+if(!(print $Filehandle "Test"))
+{
+	print "CURRVALUE_STRING: Couldn't write into File\n";
+	print "RETURNID: 2\n";
+	exit 0;
+}
+if(!(close $Filehandle))
+{
+	print "CURRVALUE_STRING: can't close file ${Filepfad} after writing\n";
+	print "RETURNID: 2\n";
+	exit 0;
+}
+
+if(!(open($Filehandle, '&lt;', $Filepfad))) 
+{ 
+	print "CURRVALUE_STRING: can't create new file ${Filepfad} for read access \n"; 
+	print "RETURNID: 2\n"; 
+	exit 0;
+}
+while ($Content = &lt;$Filehandle&gt;)
+{
+        chomp $Content;
+        if ($Content eq $Searchpattern)
+	{
+        	print "CURRVALUE_STRING: Files can be written and read\n";
+        	print "RETURNID: 3\n";
+                exit 0;
+        } else {
+                print "CURRVALUE_STRING: File can be written but not read or file-content does not match Searchpattern\n";
+                print "RETURNID: 4\n";
+                exit 0;
+       	} #else
+}#while
+&lt;/code&gt;
+
+&lt;p&gt; Whenever I print something, it's something needed by our monitoring tool to extract whether or not my attempts where successful. Some things will clearly have to change, but this is the barebones script I came up with that works perfectly well on local directories.&lt;/p&gt;</doctext>
+<thread id="1223731">
+<node id="1223755"><node id="1223778"><node id="1224323"/>
+</node>
+</node>
+</thread></node>

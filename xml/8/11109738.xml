@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109738" title="Avoiding circular references" created="2019-12-06 05:25:26" updated="2019-12-06 05:25:26" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1091361">frazap</author>
+<doctext field_name="doctext">&lt;p&gt;I came to this [id://1204699]. Applying &lt;c&gt;find_cycle&lt;/c&gt; from [mod://Devel::Cycle] in my own script showed that I had a lot of circular references.&lt;/p&gt;
+&lt;p&gt;I realized most of them were due to storing "external" objects' reference in &lt;c&gt;$self&lt;/c&gt; current object, many of these were in fact not needed in methods call.
+But in some methods I had to use an object received in the constructor.&lt;/p&gt;
+
+&lt;p&gt;See for example the code below. The circular reference is suppress with a call to weaken (but the second call to &lt;c&gt;do_something&lt;/c&gt; fails).&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+use Devel::Cycle;
+
+package A;
+
+sub new {
+    my ( $class, $href ) = @_;
+    my $self = { dbi =&gt; $$href{dbi} };
+    $self-&gt;{helper} =
+        Helper-&gt;new( helper_function =&gt; sub { $self-&gt;this_is_from_A(@_) } );
+    bless $self, $class;
+  
+}
+
+sub do_something {
+    my $self = shift;
+    $self-&gt;{helper}-&gt;called_from_helper();
+}
+
+sub this_is_from_A {
+    my ( $self, $arg ) = @_;
+    print "$arg\nthis_is_from_A using $self-&gt;{dbi}\n";
+}
+
+package Helper;
+#use Scalar::Util qw/weaken/;
+sub new {
+    my $class = shift;
+    my %def   = ( a =&gt; "something" );
+    my %arg   = ( ref $_[0] eq "HASH" ? ( %def, %{ $_[0] } ) : ( %def, @_ ) );
+    my $self  = \%arg;
+    bless $self, $class;
+}
+
+sub called_from_helper {
+    my $self = shift;
+    print "called_from_helper\n";
+    $self-&gt;{helper_function}-&gt;("param from Helper");
+    #weaken($self-&gt;{helper_function});
+}
+
+package main;
+my $a = A-&gt;new( { dbi =&gt; "some dbi object" } );
+$a-&gt;do_something();
+$a-&gt;do_something();
+find_cycle($a);
+&lt;/c&gt;
+&lt;p&gt;Using a sub ref instead of a method calls to &lt;c&gt;this_is_from_A&lt;/c&gt; in the code ref pass with &lt;c&gt;helper_function&lt;/c&gt; eliminates the circular reference because the code can access the &lt;c&gt;$href-&gt;{dbi}&lt;/c&gt; directly.&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+
+use Devel::Cycle;
+
+package A;
+
+sub new {
+    my ( $class, $href ) = @_;
+    my $self = { dbi =&gt; $$href{dbi} }; 
+    $self-&gt;{helper} =
+        Helper-&gt;new( helper_function =&gt; sub { 
+                     print "$_[0]\nthis_is_from_A using $$href{dbi}\n";
+            } );
+    bless $self, $class;
+}
+
+sub do_something {
+    my $self = shift;
+    $self-&gt;{helper}-&gt;called_from_helper();
+}
+=for comment
+sub this_is_from_A {
+    my ($self, $arg) = @_;
+    print "$arg\nthis_is_from_A using $self-&gt;{dbi}\n";
+}
+=cut
+
+package Helper;
+
+sub new {
+    my $class = shift;
+    my %def = ( a =&gt; "something");
+    my %arg   = ( ref $_[0] eq "HASH" ? ( %def, %{ $_[0] } ) : ( %def, @_ ) );
+    my $self  = \%arg;
+    bless $self, $class;
+}
+
+sub called_from_helper {
+    my $self = shift;
+    print "called_from_helper\n";
+    $self-&gt;{helper_function}-&gt;("param from Helper");
+}
+
+package main;
+my $a = A-&gt;new( { dbi =&gt; "some dbi object" } );
+$a-&gt;do_something();
+$a-&gt;do_something();
+find_cycle($a)
+&lt;/c&gt;
+&lt;p&gt;But if the code from &lt;c&gt;this_is_from_A&lt;/c&gt; was a long and complicated thing, wouldn't it clutter &lt;c&gt;A-&gt;new&lt;/c&gt; and make it hard to understand and maintain ?
+Is there another solution ?&lt;/p&gt;
+
+&lt;p&gt;Thanks for any comment&lt;/p&gt;
+&lt;p&gt;frazap&lt;/p&gt;
+
+Update: complete the example 2 (end was missing). Update 2 with the correct lines of code.</doctext>
+<thread id="11109738">
+<node id="11109744"><node id="11109749"><node id="11109754"><node id="11109755"><node id="11109775"/>
+</node>
+</node>
+</node>
+<node id="11109779"><node id="11109781"><node id="11109782"/>
+</node>
+</node>
+</node>
+<node id="11109748"/>
+<node id="11109752"/>
+<node id="11109861"/>
+</thread></node>

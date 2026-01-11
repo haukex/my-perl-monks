@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100307" title="Re^5: processing file content as string vs array" created="2019-05-21 07:29:40" updated="2019-05-21 07:29:40" _doctext_mode="lenient"><type id="11">note</type>
+<author id="732669">Marshall</author>
+<doctext field_name="doctext">I like your code and have no problem with it!&lt;p&gt;
+
+There are a number of techniques to deal with this kind of parsing. I know how to implement several of them and I'm ok with them all. &lt;p&gt;
+
+Your example data format is unusual because it has more than one significant complicating factor. &lt;p&gt;
+
+Just for fun, I show an alternate coding that demo's some other techniques. I make no claim about "better". There is seldom a coding pattern that works "the best" in all situations. I used your regex'es as they looked fine to me. At the end of the day, all of the "states" have to be described and handled.
+&lt;c&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+$|=1;
+
+# Don't read in another line if we are still working
+# on a START line. This is caused by the
+# X START Y syntax in conjunction with the idea
+# of END absent a START in this example file format.
+
+# As a thought redefining the input separtator to
+# be 'START' could possibly be productive if the format
+# is not exactly like this?,
+
+# This format has some of the nastiest things to deal
+# with. They normally do not occur all at once!
+
+
+my @record=();
+my $line_in ='';
+
+while ( $line_in =~ /START/ or $line_in =&lt;DATA&gt;)
+{      
+    $line_in =  construct_record($line_in) if $line_in =~ /START/;
+}
+
+
+sub construct_record
+{
+    my $line = shift;
+    
+    if ( (my $x) = $line =~ /START\s+(\w+)\s*$/)
+    {
+       push @record, $x;
+    }
+
+    while (defined ($line = &lt;DATA&gt;) and ($line !~ /(START|END)/) )
+    {
+        $line =~ s/^\s*|\s*$//g;
+        push @record, $line;
+    }
+    
+    $line //= '';  #could be an EOF
+  
+    if (my ($b4end) = $line =~ /^ (?: (.+) \s+ )? END $/x)
+    {
+        push @record, $b4end if $b4end;
+        output_record();
+        return '';  # no continuation of this record
+    } 
+    if ( my ($x,$y) = $line =~ /^ (?: (.+) \s+ )? START (?: \s+ (.+) )? $/x )
+    {
+        if ($x)
+        {
+           push @record, $x; 
+           output_record();  
+        }
+        if ($y)
+        {
+            output_record();  # might be: "^START 77"?
+            return "START $y";
+        }
+     }   
+     return '';
+}
+
+sub output_record  # or process it somehow...
+{
+    print "Record: @record\n" if (@record &gt;1);
+    @record=();
+}
+
+=Prints
+Record: a b
+Record: c d e f g
+Record: h i
+Record: j k
+=cut
+
+
+__DATA__
+START
+a
+b
+START c
+d
+e
+f
+g END
+ignoreme
+START h
+i START j
+k
+END
+
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1233681</root_node>
+<parent_node field_name="parent_node">11100227</parent_node>
+<thread id="1233681">
+<node id="1233684"><node id="1233687"><node id="1233688"/>
+<node id="1233689"/>
+<node id="1233732"/>
+</node>
+</node>
+<node id="1233692"><node id="1233694"><node id="1233695"><node id="1233698"/>
+</node>
+<node id="1233755"/>
+</node>
+</node>
+<node id="11100004"><node id="11100041"><node id="11100133"><node id="11100227"><node id="11100307"><node id="11100327"><node id="11100328"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

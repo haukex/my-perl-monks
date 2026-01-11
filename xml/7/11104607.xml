@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11104607" title="Truth and Falsehood" created="2019-08-17 05:19:25" updated="2019-08-17 05:19:25" _doctext_mode="strict"><type id="120">perlmeditation</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;h1&gt;Truth and Falsehood&lt;/h1&gt;
+&lt;p&gt;In Perl, the following values are &lt;b&gt;false&lt;/b&gt; in boolean context:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The number zero (0)&lt;/li&gt;
+&lt;li&gt;The string &lt;c&gt;"0"&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;The empty string &lt;c&gt;""&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;undef&lt;/c&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;i&gt;All other values&lt;/i&gt; are &lt;b&gt;true&lt;/b&gt;. &lt;small&gt;(Two rare special cases are described below.)&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;Boolean context is a scalar context. Therefore the following things, when evaluated in boolean/scalar context, are also &lt;b&gt;false&lt;/b&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;An empty array, which evaluates to the number of elements it contains, i.e. zero (0).&lt;/li&gt;
+&lt;li&gt;An empty hash, which evaluates to a false value when it is empty.&lt;/li&gt;
+&lt;li&gt;The empty list &lt;c&gt;()&lt;/c&gt;, which evaluates to &lt;c&gt;undef&lt;/c&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;A true value negated by &lt;c&gt;!&lt;/c&gt; or &lt;c&gt;not&lt;/c&gt;, plus many of Perl's builtins/operators, return a &lt;b&gt;special false value&lt;/b&gt;: When evaluated as a string it is treated as &lt;c&gt;""&lt;/c&gt;, but as a number, it is treated as 0, without causing any warnings. &lt;small&gt;(This is &lt;i&gt;not&lt;/i&gt; the same as &lt;c&gt;undef&lt;/c&gt;: even though &lt;c&gt;undef&lt;/c&gt; is also &lt;c&gt;""&lt;/c&gt; as a string and 0 as a number, Perl's special false value is a [doc://defined] value, and &lt;c&gt;undef&lt;/c&gt; does produce [doc://warnings] when you try to use it as a string or number. &lt;c&gt;""&lt;/c&gt; also causes warnings when you try to use it as a number.)&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;When the Perl documentation says that a operator or function returns "a false value" or "a true value" (or more simply, "false" or "true"), it may return any of the above values.&lt;/p&gt;
+&lt;readmore&gt;
+&lt;h2&gt;Related Topics&lt;/h2&gt;
+&lt;h3&gt;Context&lt;/h3&gt;
+&lt;p&gt;Boolean context is provided by, for example, &lt;tt&gt;if (&lt;i&gt;bool&lt;/i&gt;) { ... }&lt;/tt&gt;, &lt;tt&gt;&lt;i&gt;bool&lt;/i&gt; ? ... : ...&lt;/tt&gt;, or &lt;tt&gt;&lt;i&gt;statement&lt;/i&gt; if &lt;i&gt;bool&lt;/i&gt;;&lt;/tt&gt;. If you are unsure about Perl's concept of context, see e.g. the [id://738558], the section "Context" in Chapter 2 of [http://shop.oreilly.com/product/9780596004927.do|the Camel], or the section [http://modernperlbooks.com/books/modern_perl_2016/01-perl-philosophy.html#Q29udGV4dA|"Context"] in [http://modernperlbooks.com/|Modern Perl].&lt;/p&gt;
+&lt;h3&gt;Definedness&lt;/h3&gt;
+&lt;p&gt;To test whether a value is &lt;c&gt;undef&lt;/c&gt; or not, use [doc://defined]. Note that "false" values like the empty string &lt;c&gt;""&lt;/c&gt; or the number 0 are still defined. Perl's special false value is [doc://defined] as well.&lt;/p&gt;
+&lt;h3&gt;Existence of Hash Keys&lt;/h3&gt;
+&lt;p&gt;To test whether a hash contains a certain key or not, use [doc://exists]. Note that a key can exist in a hash, but the value stored for that key can be &lt;c&gt;undef&lt;/c&gt;. If you attempt to access a hash key that does not exist, Perl will also return &lt;c&gt;undef&lt;/c&gt;, which is why the distinction between [doc://defined] and [doc://exists] is important, especially if you're going to be iterating over the [doc://keys] of the hash. To remove a key from a hash, use [doc://delete].&lt;/p&gt;
+&lt;h3&gt;String Length&lt;/h3&gt;
+&lt;p&gt;To get the length of a string, use [doc://length]. For example, the test &lt;c&gt;if (length $string)&lt;/c&gt; allows you to differentiate between &lt;c&gt;"0"&lt;/c&gt; and &lt;c&gt;""&lt;/c&gt;, which would otherwise both be false. Note: As of Perl 5.12, if you give the [doc://length] function an &lt;c&gt;undef&lt;/c&gt; value, it will return &lt;c&gt;undef&lt;/c&gt; without producing a warning, which is helpful in boolean tests. (In Perl versions before 5.12, [doc://length] would produce a warning when given &lt;c&gt;undef&lt;/c&gt;.)&lt;/p&gt;
+&lt;h3&gt;Hash and Array Size&lt;/h3&gt;
+&lt;p&gt;To get the size of an array, use [doc://scalar], as in &lt;c&gt;scalar @array&lt;/c&gt;, or use the array in a scalar context, for example &lt;c&gt;my $size = @array;&lt;/c&gt;. To test whether an array is empty or not, simply use it in a boolean context, such as &lt;c&gt;if (@array)&lt;/c&gt;. (Note: &lt;c&gt;$#array&lt;/c&gt; returns the index of the last element of the array, so it is not the same - see [doc://perldata#Variable-names|perldata] for details.)&lt;/p&gt;
+&lt;p&gt;If a hash is empty, using the hash in scalar/boolean context (e.g. &lt;c&gt;if (%hash)&lt;/c&gt;) will return a false value, regardless of the Perl version. To portably get the number of keys in a hash, use [doc://keys] in a scalar context, as in &lt;c&gt;scalar keys %hash&lt;/c&gt; or &lt;c&gt;my $size = keys %hash;&lt;/c&gt;. As of Perl 5.26, it is also possible to say &lt;c&gt;scalar %hash&lt;/c&gt; directly to get the number of keys (previous versions of Perl would return some internal information about the hash: the number of used buckets and the number of allocated buckets).&lt;/p&gt;
+&lt;h3&gt;Numerically Zero, But True&lt;/h3&gt;
+&lt;p&gt;In a few special cases, Perl functions may wish to return the number zero, but want to do so in a way that this value is still "true" when tested in a boolean context. For example, this could be to indicate that an operation was successful, but its return value is zero. Two common ways to do this are for the function to return the strings &lt;c&gt;"0E0"&lt;/c&gt; or &lt;c&gt;"0 but true"&lt;/c&gt;, which are both "true" under the above rules, but when used as a number, are zero. (The string &lt;c&gt;"0 but true"&lt;/c&gt; is special-cased in Perl to not produce warnings about it not looking like a number.)&lt;/p&gt;
+&lt;h3&gt;Forcing Boolean Context&lt;/h3&gt;
+&lt;p&gt;To force some value into Perl's boolean values, you can use double negation, &lt;c&gt;!!$value&lt;/c&gt;, also known as "bang bang" ([mod://perlsecret]). If you're unsure about precedence, use parentheses: &lt;c&gt;!!(...)&lt;/c&gt;.&lt;/p&gt;
+&lt;h3&gt;Special Case: Overloading&lt;/h3&gt;
+&lt;p&gt;Normally, &lt;c&gt;if ($object)&lt;/c&gt; would be true, since in the normal case a reference is a true value. However, an object may choose to change its behavior for different operations, such as boolean context. So, in the presence of [doc://overload]ing, &lt;c&gt;if ($object)&lt;/c&gt; may be false. Authors of classes are generally advised to use this feature in a way that makes the code DWIM (Do What I Mean). (You may disable overloading with [doc://overloading|&lt;c&gt;no overloading;&lt;/c&gt;], although in that form it will disable &lt;i&gt;all&lt;/i&gt; overloading.)&lt;/p&gt;
+&lt;h3&gt;Special Case: Dualvars&lt;/h3&gt;
+&lt;p&gt;Perl has a special feature where a variable may contain two different values, one string and one number, that are different. In this case, the string part of the variable is tested for truth. For example, if you use [doc://Scalar::Util]'s &lt;c&gt;dualvar&lt;/c&gt; to create a variable with a numeric part of 0 (false) and a string part of &lt;c&gt;"1"&lt;/c&gt; (true), it will test true, and a variable with a numeric part 1 and a string part &lt;c&gt;"0"&lt;/c&gt; is false. Note that this feature is rarely made use of intentionally, so you usually don't have to worry about it. To inspect a variable for this property, use [doc://Scalar::Util]'s &lt;c&gt;isdual&lt;/c&gt;, and see [doc://Devel::Peek]'s output for all the gory details. &lt;small&gt;&lt;i&gt;(Thanks to [tobyink] for this suggestion!)&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Edits:&lt;/i&gt; Minor clarifications. Added section on overloading, thanks [Tux]! Updates according to [jcb]'s reply, thanks! &lt;i&gt;2019-12-30:&lt;/i&gt; Added section on forcing boolean context. &lt;i&gt;2020-10:&lt;/i&gt; A few tiny tweaks here and there, updated and added a few more links. &lt;i&gt;2021-02-23:&lt;/i&gt; Added a bit more to the section "Context" and a bit more about &lt;c&gt;undef&lt;/c&gt;.&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;This node is to replace the "Truth and Falsehood" section that [https://perldoc.perl.org/5.26.3/perlsyn.html#Truth-and-Falsehood|used to be] in [doc://perlsyn], but was [https://perl5.git.perl.org/perl.git/commitdiff/77fae4394e3a|merged] into a much 
+longer text in [doc://perldata#Scalar-values|perldata] (and is now harder to link to explicitly, IMHO).&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;/readmore&gt;</doctext>
+<thread id="11104607">
+<node id="11104612"><node id="11104613"><node id="11104614"><node id="11104615"/>
+</node>
+</node>
+</node>
+<node id="11104622"><node id="11104635"><node id="11104637"/>
+<node id="11108240"/>
+</node>
+</node>
+<node id="11104632"><node id="11104636"/>
+<node id="11104638"><node id="11105313"/>
+</node>
+</node>
+<node id="11108236"><node id="11108238"/>
+</node>
+<node id="11110306"/>
+</thread></node>

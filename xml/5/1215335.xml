@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1215335" title="Re: Own modules and tainted mode" created="2018-05-28 12:54:38" updated="2018-05-28 12:54:38" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+use lib qw(.);
+&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I would recommend against this in a production environment, since you probably won't know what the current working directory is, and you don't want to accidentally load modules that happen to be lying around in the cwd.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+use File::Basename qw(dirname);
+use Cwd qw(abs_path);
+use lib dirname(dirname abs_path $0);
+&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You should be able to shorten this to &lt;c&gt;use FindBin; use lib $FindBin::Bin;&lt;/c&gt; (see [doc://FindBin]), although unfortunately that also won't work under taint mode. The problem with relative paths and attempting to figure out the path that the Perl script is located is that an attacker could theoretically fool your Perl script into loading a version of a module with malicious code. So I agree with [Corion] that you're probably better off just using an absolute pathname. If you need your scripts to be portable, you could consider other methods, like configuration files at known locations.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1215316</root_node>
+<parent_node field_name="parent_node">1215316</parent_node>
+<thread id="1215316">
+<node id="1215317"><node id="1215318"><node id="1215325"><node id="1215326"/>
+<node id="1215340"/>
+</node>
+</node>
+</node>
+<node id="1215335"/>
+</thread></node>

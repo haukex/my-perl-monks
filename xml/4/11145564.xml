@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11145564" title="Re^2: Filehandle in subroutine in use VRML.pm" created="2022-07-17 17:06:32" updated="2022-07-17 17:06:32" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1166936">smittypaddler</author>
+<doctext field_name="doctext">&lt;p&gt;
+None of the suggestions have worked, but I found a solution.  In my
+VRML.pm file, in any subroutine printing output, I added a myprint
+argument and where the subroutine originally invoked &amp;printout,
+I changed it to invoke \&amp;myprint, where @lines is an array of lines
+to be printed:
+&lt;/p&gt;
+
+&lt;code&gt;
+sub egg { # prints a 3d egg.
+ my %args=(myprint =&gt; \&amp;printout, xaxis =&gt; 10, ...);
+ # Produces lines of wrl output in @lines ...
+ $myprint=$args{myprint};
+ &amp;{$myprint}(\@lines);
+}
+&lt;/code&gt;
+
+&lt;p&gt;
+In DrillPressTable.pl, which uses VRML.pm, I added a global $Fh,
+and changed the invocation of mystart, and its code, and myprint's
+code as well:
+&lt;/p&gt;
+
+&lt;code&gt;
+my $Fh; # w/b set in mystart.
+&amp;mystart($LumberFile,LF);
+sub mystart {
+ my($file,$fh)=@_;
+ open($fh,"&gt; $file")
+  || die("ERROR: Unable to open $file for output");
+ $Fh=$fh;
+ my @lines=split(/\n/,&lt;&lt;END);
+#VRML V2.0 utf8
+NavigationInfo { headlight TRUE }
+...
+END
+ &amp;myprint(\@lines);
+}
+
+sub myprint {
+  my($lines)=@_;
+  foreach my $line (@{$lines}) {
+    print $Fh "$line\n";
+  }
+}
+&lt;/code&gt;
+
+&lt;p&gt;
+So now in DrillPressTable.pl I can direct lines of output to
+multiple file handles, and I don't need to change any of the 70-odd
+perl programs that use my VRML.pm.  They'll just take the default
+of &amp;printout, which prints to STDOUT, just like before.
+&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11145311</root_node>
+<parent_node field_name="parent_node">11145348</parent_node>
+<thread id="11145311">
+<node id="11145313"><node id="11145316"><node id="11145324"/>
+</node>
+</node>
+<node id="11145322"><node id="11145325"><node id="11145345"/>
+<node id="11145428"><node id="11145440"/>
+</node>
+</node>
+</node>
+<node id="11145348"><node id="11145564"><node id="11145573"/>
+<node id="11145605"/>
+</node>
+</node>
+<node id="11145353"><node id="11145380"><node id="11145386"><node id="11145398"><node id="11145399"/>
+</node>
+</node>
+<node id="11145439"/>
+</node>
+</node>
+</thread></node>

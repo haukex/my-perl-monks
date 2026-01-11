@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11104830" title="Re: interactive google earth access" created="2019-08-21 16:01:55" updated="2019-08-21 16:01:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Yes, this is possible - see [https://developers.google.com/kml/documentation/kml_tut#network-links|"Network Links" in the KML Tutorial] and the rest of the KML docs. Here is a really simple proof-of-concept, open the generated &lt;c&gt;main.kml&lt;/c&gt; and you should see the point hopping around the map while the script runs. This script is far from optimal, for example you should use a proper templating engine (e.g. [mod://Template]) or [mod://XML::LibXML] to generate the XML instead of the way I'm doing it here (regexes). You can control and adjust a lot of things in Google Earth using KML, it's too much to cover here, so see their [https://developers.google.com/kml/documentation/|documentation]. I'm using my module [mod://File::Replace] to help prevent Earth from reading the XML file while the script is writing it.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use 5.014;  # for s///r
+use File::Replace qw/replace3/;
+use utf8;
+
+my $mainkml = 'main.kml';
+my $dynkml = 'dyn.kml';
+
+open my $fh1, '&gt;:encoding(UTF-8)', $mainkml or die "$mainkml: $!";
+print $fh1 &lt;&lt;'END_KML1' =~ s/__FILENAME__/$dynkml/r;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;kml xmlns="http://www.opengis.net/kml/2.2"&gt;
+	&lt;Folder&gt;
+		&lt;name&gt;Network Links&lt;/name&gt;
+		&lt;visibility&gt;0&lt;/visibility&gt;
+		&lt;open&gt;0&lt;/open&gt;
+		&lt;NetworkLink&gt;
+			&lt;name&gt;Random Placemark&lt;/name&gt;
+			&lt;refreshVisibility&gt;0&lt;/refreshVisibility&gt;
+			&lt;visibility&gt;1&lt;/visibility&gt;
+			&lt;open&gt;1&lt;/open&gt;
+			&lt;flyToView&gt;1&lt;/flyToView&gt;
+			&lt;Link&gt;
+				&lt;refreshInterval&gt;2&lt;/refreshInterval&gt;
+				&lt;refreshMode&gt;onInterval&lt;/refreshMode&gt;
+				&lt;href&gt;__FILENAME__&lt;/href&gt;
+			&lt;/Link&gt;
+		&lt;/NetworkLink&gt;
+	&lt;/Folder&gt;
+&lt;/kml&gt;
+END_KML1
+close $fh1;
+
+print "Please open '$mainkml' in Google Earth\n";
+
+my $run = 1;
+$SIG{INT} = sub { $run=0 };
+my ($lat,$lon) = (52.514509,13.350103);
+while ($run) {
+	my (undef,$outfh,$repl) = replace3($dynkml, ':encoding(UTF-8)');
+	print $outfh &lt;&lt;'END_KML2' =~ s/__LONLAT__/sprintf('%.6f,%.6f',$lon,$lat)/er;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;kml xmlns="http://www.opengis.net/kml/2.2"&gt;
+	&lt;Placemark&gt;
+		&lt;name&gt;Random Placemark&lt;/name&gt;
+		&lt;description&gt;Hello, World!&lt;/description&gt;
+		&lt;Point&gt;
+			&lt;coordinates&gt;__LONLAT__&lt;/coordinates&gt;
+		&lt;/Point&gt;
+	&lt;/Placemark&gt;
+&lt;/kml&gt;
+END_KML2
+	$repl-&gt;finish;
+	sleep 1;
+	$lat += (rand(2)-1)/1000;
+	$lon += (rand(2)-1)/1000;
+}
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11104818</root_node>
+<parent_node field_name="parent_node">11104818</parent_node>
+<thread id="11104818">
+<node id="11104820"/>
+<node id="11104830"/>
+</thread></node>

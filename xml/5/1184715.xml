@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1184715" title="SSH and expect without module" created="2017-03-15 11:35:51" updated="2017-03-15 11:35:51" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1176777">touriste75</author>
+<doctext field_name="doctext">&lt;p&gt;Hi all
+
+Working with a linux virtual machine without the possibility to install any module, my goal is to connect in SSH to several material and without the result in STDOUT, pass in console some command.
+
+I tried  without success&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+use Data::Dumper;
+use feature 'say';
+no warnings 'uninitialized';
+ 
+my @fail;
+my @CLI;
+my $pass;
+my $mire;
+my @ip;
+my $ssh_cli = 'ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3 -l';
+ 
+print 'Login: ';
+chomp (my $login = &lt;&gt;);
+print 'Password: ';
+chomp (my $password = &lt;&gt;);
+print 'Fichier IP: ';
+chomp (my $SOURCE = &lt;&gt;);
+print 'Fichier ligne de commandes:';
+chomp (my $commande = &lt;&gt;);
+ 
+open (my $source, "&lt;", $SOURCE) or die "Can't open: $!";
+while (my $line = &lt;$source&gt;) {
+    $line =~ s/[\r\n]+//;
+    push @ip, $line;
+    }
+ 
+ 
+open (my $cli, "&lt;", $commande) or die "Can't open: $!";
+while (my $line = &lt;$cli&gt;) {
+    $line =~ s/[\r\n]+//;
+    push @CLI, $line;
+    }
+ 
+foreach my $ip (@ip) {
+	my $SSH = system "$ssh_cli $login $ip";
+ 
+if ($SSH =~ /username/i) {
+        my $pass = print "$login\n";
+        } else {
+        say "Connexion SSH $ip echec";
+        push @fail, $ip;
+        say '-' x 20;
+        next;
+        }
+ 
+    if ($SSH =~ /password/i) {
+        my $mire = print "$password\n";
+        } else {
+        say "Connexion SSH $ip echec";
+        push @fail, $ip;
+        say '-' x 20;
+        next
+        }
+ 
+    if ($SSH =~ /[&gt;]$/) {   
+    foreach (@CLI) {
+        say "$_";
+        my $resultat = print "$_\n";
+        print  "$resultat";
+            }   
+        } else {
+        say "Commande show version KO";
+        push @fail, $ip;
+        next;
+        }
+    }   
+ 
+ 
+say;   
+say '### Connexion SSH KO ###';   
+foreach (@fail) {
+    say "$_";
+    }
+&lt;/code&gt;
+
+
+&lt;p&gt;RESULT:&lt;/p&gt;
+&lt;p&gt;ZZZ@YYY:~$ perl SSH.pl&lt;/p&gt;
+&lt;p&gt;Login: TOTO&lt;/p&gt;
+&lt;p&gt;Password: TATA&lt;/p&gt;
+&lt;p&gt;Fichier IP: SSH.txt&lt;/p&gt;
+&lt;p&gt;Fichier ligne de commandes:SSH-commandes.txt&lt;/p&gt;
+
+&lt;p&gt;User Access Verification&lt;/p&gt;
+
+&lt;p&gt;Username:&lt;/p&gt;
+
+
+
+&lt;p&gt;I made another trie simpler with the module IPC::Open3 in the core to read and write the process but no more success.&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+use Data::Dumper;
+use feature 'say';
+no warnings 'uninitialized';
+
+use IPC::Open3;
+
+print 'Login: ';
+chomp (my $login = &lt;&gt;);
+print 'Password: ';
+chomp (my $password = &lt;&gt;);
+print 'Fichier IP: ';
+chomp (my $SOURCE = &lt;&gt;);
+print 'Fichier ligne de commandes:';
+chomp (my $commande = &lt;&gt;);
+my $cmd = 'ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3 -l';
+
+my $pid = open3(\*WRITER, \*READER, \*ERROR, $cmd);
+#if \*ERROR is 0, stderr goes to stdout
+
+while( my $output = &lt;READER&gt; ) {
+             print "output-&gt;$output";
+             if ($output =~ /username/i) {
+			 print WRITER "nsoc-iec\n";
+		}
+    }
+&lt;/code&gt;
+
+
+&lt;p&gt;RESULT:&lt;/p&gt;
+&lt;p&gt;ZZZ@YYY:~$ perl SSH.pl&lt;/p&gt;
+&lt;p&gt;Login: TOTO&lt;/p&gt;
+&lt;p&gt;Password: TATA&lt;/p&gt;
+&lt;p&gt;Fichier IP: SSH.txt&lt;/p&gt;
+&lt;p&gt;Fichier ligne de commandes:SSH-commandes.txt&lt;/p&gt;
+&lt;p&gt;ZZZ@YYY ~/SCRIPT&lt;/p&gt;
+&lt;p&gt;$&lt;/p&gt;
+
+
+&lt;p&gt;Someone have a lead ?&lt;/p&gt;
+
+&lt;p&gt;Thanks&lt;/p&gt;
+</doctext>
+<thread id="1184715">
+<node id="1184718"><node id="1184876"><node id="1184919"><node id="1185167"><node id="1185170"><node id="1185172"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1184723"><node id="1184770"/>
+</node>
+<node id="1184735"/>
+<node id="1184747"/>
+</thread></node>

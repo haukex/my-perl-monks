@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1208912" title="Re^3: Passing a class method" created="2018-02-10 12:47:36" updated="2018-02-10 12:47:36" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;i know about my errors i wrote the post too quickly (in a bit of a time squeeze so read it as a pseudo code)&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If you're in a hurry, the best way to get quick answers is to post well-formed questions. Forcing others to fix irrelevant errors in your code can make people less willing to help.&lt;/p&gt;
+&lt;p&gt;Anyway, I am about 80% sure I understood what you want to do :-) It sounds like the situation you are describing would probably be appropriate for dynamic method calls, but what is still a bit unclear is how you want to handle errors. I think this is relevant for two reasons: First, different functions/methods will throw errors differently - some return &lt;c&gt;undef&lt;/c&gt;, some return a negative number, some &lt;c&gt;die&lt;/c&gt;, system commands usually return 0 on success, etc. Second, personally I think that in many cases, the best place to handle errors is on the outermost layer of the program, instead of somewhere deep inside several layers - I have seen overuse of &lt;c&gt;try&lt;/c&gt;/&lt;c&gt;catch&lt;/c&gt; to suppress relevant errors too often. And you might want to consider that designing a new general dispatch mechanism is not something you want to do in a time squeeze, perhaps it's better to reach for existing tools.&lt;/p&gt;
+&lt;p&gt;If you are looking for a general exception handling mechanism, a place to start might be [mod://Try::Tiny].&lt;/p&gt;
+&lt;p&gt;If by "system command" you mean external programs, then there are several modules to do that with, one of them is my own [mod://IPC::Run3::Shell]. You can even inherit from &lt;c&gt;IPC::Run3::Shell::Autoload&lt;/c&gt;, here's an example where &lt;c&gt;cat&lt;/c&gt; is implemented by a method in the package, and any other method calls are autoloaded and turned into system commands, for example the method &lt;c&gt;tac&lt;/c&gt; calls the external program [man://tac]:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use IPC::Run3::Shell ':FATAL';
+use Try::Tiny;
+
+{
+	package Runner;
+	BEGIN { our @ISA = ('IPC::Run3::Shell::Autoload') };
+	sub new { bless {}, shift };
+	sub cat {
+		my ($self,$filename) = @_;
+		open my $fh, '&lt;', $filename or die "cat $filename: $!";
+		while (&lt;$fh&gt;) {
+			print "cat: $_";
+		}
+		close $fh;
+	}
+}
+
+my $r = Runner-&gt;new;
+$r-&gt;cat('/tmp/test.txt');
+$r-&gt;tac('/tmp/test.txt');
+try {
+	$r-&gt;cat('/tmp/notexist');
+}
+catch {
+	warn "Failed: $_";
+};
+try {
+	$r-&gt;tac('/tmp/notexist');
+}
+catch {
+	warn "Failed: $_";
+};
+
+__END__
+
+cat: Foo
+cat: Bar
+cat: Quz
+Quz
+Bar
+Foo
+Failed: cat /tmp/notexist: No such file or directory at shell.pl line 13.
+tac: failed to open ‘/tmp/notexist’ for reading: No such file or directory
+Failed: Command "tac" failed: exit status 1 at shell.pl line 31.
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1208899</root_node>
+<parent_node field_name="parent_node">1208903</parent_node>
+<thread id="1208899">
+<node id="1208900"><node id="1208903"><node id="1208912"/>
+</node>
+</node>
+<node id="1208901"/>
+</thread></node>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1171473" title="GRUB Append Parameter in-between Quotes" created="2016-09-09 12:46:38" updated="2016-09-09 12:46:38" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="713401">ephemeric</author>
+<doctext field_name="doctext">&lt;p&gt;                                                                                                                                                                                                                                            
+Hi,                                                                             
+                                                                                
+I would like to append a parameter "transparent_hugepage=never" to the below regex matched line in-between the quotes. On subsequent runs the substitution should be ignored to maintain idempotence (run as an Ansible playbook task). I tried a few things but failed as my knowledge is very limited.
+                                                                                
+Thank you for your help and pardon my poor articulation.                        
+                                                                                
+Line in question:                                                               
+&lt;/p&gt;                                                                            
+                                                                                
+&lt;code&gt;GRUB_CMDLINE_LINUX="crashkernel=auto rd.lvm.lv=centos/root rd.lvm.lv=centos/swap rhgb quiet"&lt;/code&gt;
+                                                                                
+&lt;p&gt;                                                                             
+The sed keeps appending after repeating the play as I can't get the negative lookahead assertion to work, I think that's what it is? 
+&lt;/p&gt;                                                                            
+                                                                                
+&lt;code&gt;sed '/^GRUB_CMDLINE_LINUX=.*/ s/\(.*\)"/\1 transparent_hugepage=never"/' $line&lt;/code&gt;
+                                                                                
+&lt;p&gt;                                                                             
+And this from the playbook appends after the last quote breaking the config:       
+&lt;/p&gt;                                                                            
+                                                                                
+&lt;code&gt;                                                                          
+replace:                                                                        
+backup: yes                                                                     
+dest: /etc/default/grub                                                         
+regexp: '(^GRUB_CMDLINE_LINUX(?!.*\btransparent_hugepage=never\b).*)$'          
+replace: '\1 transparent_hugepage=never"'                                       
+&lt;/code&gt;</doctext>
+<thread id="1171473">
+<node id="1171482"><node id="1171565"><node id="1171567"><node id="1172212"/>
+</node>
+</node>
+</node>
+<node id="1171483"><node id="1171494"/>
+<node id="1171566"/>
+</node>
+<node id="1171684"><node id="1172213"/>
+</node>
+</thread></node>

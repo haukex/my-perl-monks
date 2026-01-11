@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1197688" title="readdir() on a sysopen() handle?" created="2017-08-20 04:34:10" updated="2017-08-20 04:34:10" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1197685">perlhuhn</author>
+<doctext field_name="doctext">Hello Monks,
+&lt;p&gt;
+I am writing a program that needs to open directories with the O_NOFOLLOW flag. Since opendir() does not support that, I use sysopen():
+&lt;/p&gt;
+
+&lt;pre&gt;
+  sysopen my $dirh, $pathname, O_RDONLY|O_DIRECTORY|O_NOFOLLOW;
+&lt;/pre&gt;
+
+Unfortunately, readdir() does not accept the handle from sysopen:
+
+&lt;pre&gt;
+  readdir $dirh;
+
+readdir() attempted on invalid dirhandle $dirh
+&lt;/pre&gt;
+
+Is there a way to "convert" the handle from sysopen to one accepted by readdir?
+
+I have a work-around with chdir() but that's pretty ugly (error handling not included here):
+
+&lt;pre&gt;
+  my $cwd = getcwd();
+  sysopen my $dirh, $pathname, O_RDONLY|O_DIRECTORY|O_NOFOLLOW;
+  chdir $dirh;
+  opendir my $dirh2, '.';
+  my @files = readdir $dirh2;
+  closedir $dirh2;
+  chdir $cwd;
+&lt;/pre&gt;</doctext>
+<thread id="1197688">
+<node id="1197692"><node id="1197694"><node id="1197704"><node id="1197744"/>
+</node>
+<node id="1197709"><node id="1197711"/>
+</node>
+</node>
+</node>
+<node id="1197695"><node id="1197697"/>
+</node>
+<node id="1197699"><node id="1197703"><node id="1197718"><node id="1197723"><node id="1197756"><node id="1197774"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1197717"><node id="1197745"/>
+</node>
+</thread></node>

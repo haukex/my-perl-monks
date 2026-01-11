@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198948" title="Re: Parsing a Latin-1 Charset Data File" created="2017-09-08 10:58:18" updated="2017-09-08 10:58:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;When working with the "Latin" encodings it is easy to confuse things. The very common character encodings [wp://ISO/IEC 8859-1#Codepage_layout|latin1], [wp://ISO/IEC 8859-15#Codepage_layout|latin9], and [wp://Windows-1252#Character_set|CP-1252] have a lot of things in common, but also a few significant differences ([id://1198298|like the € symbol]), the same is true for some French characters, an example follows. Also, the three aforementioned encodings share their lower 128 bytes with both UTF-8 and ASCII, and since your files have only been in ASCII so far, there is a potential for confusion there. And one shouldn't confuse the common name of the character encoding "Latin-1" (ISO/IEC 8859-1) with the Unicode [wp://Latin-1 Supplement (Unicode block)|Latin-1 Supplement].&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Encode qw/encode/;
+use open qw/:std :utf8/;
+use charnames ':full';
+
+my @encodings = qw/ latin1 latin9 cp1252 UTF-8 /;
+my @strs = (
+	"\N{LATIN SMALL LETTER E WITH ACUTE}",
+	"\N{LATIN SMALL LIGATURE OE}",
+	"\N{LATIN CAPITAL LETTER Y WITH DIAERESIS}",
+	"Y\N{COMBINING DIAERESIS}",    # Unicode only
+	"e\N{COMBINING ACUTE ACCENT}", # Unicode only
+);
+
+for my $str (@strs) {
+	print "--- \"$str\" ---\n";
+	for my $encoding (@encodings) {
+		my $bytes = eval {encode($encoding,"$str",Encode::FB_CROAK)};
+		my $out = !$bytes ? "N/A" :
+			join( ' ', map { sprintf "%02X", ord } split //, $bytes);
+		print "$encoding: $out\n";
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;pre&gt;
+--- "é" ---
+latin1: E9
+latin9: E9
+cp1252: E9
+UTF-8: C3 A9
+--- "œ" ---
+latin1: N/A
+latin9: BD
+cp1252: 9C
+UTF-8: C5 93
+--- "Ÿ" ---
+latin1: N/A
+latin9: BE
+cp1252: 9F
+UTF-8: C5 B8
+--- "Y&amp;#776;" ---
+latin1: N/A
+latin9: N/A
+cp1252: N/A
+UTF-8: 59 CC 88
+--- "e&amp;#769;" ---
+latin1: N/A
+latin9: N/A
+cp1252: N/A
+UTF-8: 65 CC 81
+&lt;/pre&gt;
+&lt;/readmore&gt;
+&lt;p&gt;So my first piece of advice is to be &lt;i&gt;certain&lt;/i&gt; what your files are encoded with. If you're using a text editor, keep an eye on which encoding it uses, since it's easy to open a latin1 file, choose "Save As", and have the editor default to a different character encoding like UTF-8 or CP-1252 (sometimes labeled just "ANSI"). In addition, because of the similarities in the character sets, the editor can easily misidentify which encoding the file had in the first place!&lt;/p&gt;
+&lt;p&gt;IMO the critical part when working with different encodings is the decoding of bytes to characters and encoding of characters to bytes, so that means when reading/writing files and/or displaying things on the terminal, or, if you're working with a website and/or database with questionable Unicode support, those interfaces. If you get that part right and get your character data properly decoded into a Perl string, then you've won a major battle. So despite that what [hippo] [id://1198917|wrote] about Latin1 being the default, personally I would still suggest you explicitly specify the encoding when [doc://open]ing the files, i.e. &lt;c&gt;open my $fh, '&lt;:encoding(latin1)', $filename or die $!;&lt;/c&gt;. (Note that even though I used the [doc://Encode] module in the code above for demonstration purposes, if you're just reading files and they are properly encoded, you should never have to touch it, and if you do you might be doing something wrong.)&lt;/p&gt;
+&lt;p&gt;Once you've got your character data correctly into a Perl string, you have to worry less about it - Perl tries to mostly make transparent which internal encoding it uses, and tries its best to let you think about the string as a sequence of Unicode characters (codepoints). Perl's Unicode handling is very good, including in regexes. I would recommend using a recent version of Perl though, since there have been continuous improvements made to Unicode handling ([id://1198757|example]). (See also the [doc://perlunitut|Perl Unicode Tutorial].)&lt;/p&gt;
+&lt;p&gt;This is also the answer to your two questions: If you open the file with the right encoding, then no other changes should be necessary to your code. One exception might be if you have used explicit character ranges like &lt;c&gt;[a-zA-Z0-9_]&lt;/c&gt; instead of &lt;c&gt;\w&lt;/c&gt; - the latter should automatically [doc://perlrecharclass#Word-characters|work with Unicode].&lt;/p&gt;
+&lt;p&gt;If you want to write Unicode characters directly in the Perl source code, [doc://utf8|&lt;c&gt;use utf8;&lt;/c&gt;] and in your editor save the file with the UTF-8 encoding (just stay away from the functions provided in the [doc://utf8] module unless you really know what you are doing). Although personally, I tend to write my Perl source in ASCII and use the &lt;c&gt;\x{....}&lt;/c&gt; and &lt;c&gt;\N{...}&lt;/c&gt; sequences (for the latter see [doc://charnames]). If you want to print Unicode strings to your terminal and it supports UTF-8, you can use [http://perldoc.perl.org/open.html|&lt;c&gt;use open qw/:std :utf8/;&lt;/c&gt;], although be careful with that pragma because it changes the default encoding for [doc://open]ing files (which is another reason for my above suggestion for always being explicit about specifying the encoding).&lt;/p&gt;
+&lt;p&gt;See also [https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/|The Absolute Minimum Every Software Developer Absolutely, Positively Must Know About Unicode and Character Sets (No Excuses!)]&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1198912</root_node>
+<parent_node field_name="parent_node">1198912</parent_node>
+<thread id="1198912">
+<node id="1198917"/>
+<node id="1198948"><node id="1198981"/>
+</node>
+<node id="1199066"/>
+</thread></node>

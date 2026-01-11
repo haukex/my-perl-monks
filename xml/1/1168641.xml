@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1168641" title="Perl Code Changes Behavior if Two Subroutine definitions are swapped" created="2016-07-27 10:04:33" updated="2016-07-27 10:04:33" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1163929">rkabhi</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Perl Monks !!&lt;/p&gt;
+
+&lt;p&gt;I came across a really unexpected issue while developing a code to read a netlist file containing just few lines. I have written down system details, the code and input file and finally I describe the problem at the end&lt;/p&gt;
+
+&lt;p&gt;System and Setup Info:
+Linux RHEL6
+Perl Version 5.10.1&lt;/p&gt;
+***************************************************
+&lt;p&gt;Code:&lt;/p&gt;
+
+&lt;c&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Switch;
+
+#Common Variable Initialization
+my %DeviceList = ();
+my $netlist_file = "/home/abhishek_r/Tool_Development/Voltrace/Perl/netlist.scs";
+my @InbuiltDeviceList = ('resistor','capacitor','inductor','vsource','isource');
+my @subcktslist =       getSubcktList($netlist_file);
+print @subcktslist;
+
+TraceSubcktDevices($netlist_file);
+
+sub getSubcktList{
+    my $netlist = $_[0];
+    my @subckts = ();
+    open(READ_NETLIST, "&lt;$netlist") or die "Couldn't open netlist file for read, $!";
+
+    while(&lt;READ_NETLIST&gt;){
+        chomp;
+        s/^\s+//;       #To remove leading blanks (if any) in the line
+        #ignore line if it contains comments or initializing words for spectre
+        switch() {
+            case /^[*\/]/i  {next;}
+            case /simulator\s+lang/i {next;}
+            case /^include/i {next;}
+        }
+        if(/subckt/i) {
+            my $line = $_;
+            my @words = split(/\s+/,$line); #Split the read line in $_ with white spaces as delimiter
+            my $nameindex = 1;      #Default index where subckt name is usally found
+            if(/inline/i){          #To change name index if subckt definition includes inline
+                $nameindex = 2;
+            }
+            push @subckts,$words[$nameindex];
+        }
+    }
+    close(READ_NETLIST);
+    return @subckts;
+}
+
+sub TraceSubcktDevices{         #Input: (netlist_file, subcktname, key_init) where subcktname is the name of subckt that needs to be traced in the netlist
+    my $netlist = $_[0];
+    my $subcktname = "hello";
+    $subcktname =~ s/^\s*|\s*$//g;  #To remove all leading and training blanks from input subckt name
+    my $key_init = $_[2];
+    my $skip=0;                     #Default Skip status for netlist line. 0 indicates "don't skip" and is set for TOPLEVEL
+    if($subcktname){        #Set skip flag if input subckt name is not blank i.e. the tracing is not required at TOPLEVEL
+        $skip = 1;
+    }
+    open(READ_NETLIST, "&lt;$netlist") or die "Couldn't open netlist file for read, $!";
+    while(&lt;READ_NETLIST&gt;){
+        $skip = $skip + 1;
+        print "Hello";
+    }
+    close(READ_NETLIST);
+}
+&lt;/c&gt;
+
+&lt;p&gt;Input File: netlist.scs&lt;/p&gt;
+
+&lt;c&gt;
+// Generated for: spectre
+// Generated on: Jul 26 15:10:24 2016
+// Design library name: custom
+// Design cell name: TOPLEVEL
+// Design view name: schematic
+simulator lang=spectre
+global 0
+//--------------------------------//
+// Library name: custom
+// Cell name: inv
+// View name: schematic
+subckt inv IN OUT VDD VSS
+    M0 (OUT IN VSS VSS) nch l=60n w=200n m=1 nf=1 sd=200n ad=3.5e-14 \
+        as=3.5e-14 pd=750n ps=750n nrd=0.5 nrs=0.5 sa=175n sb=175n sca=0 \
+        scb=0 scc=0
+    M2 (OUT IN VDD VDD) pch l=60n w=200n m=1 nf=1 sd=200n ad=3.5e-14 \
+        as=3.5e-14 pd=750n ps=750n nrd=0.5 nrs=0.5 sa=175n sb=175n sca=0 \
+        scb=0 scc=0
+ends inv
+// End of subcircuit definition.
+
+// Library name: custom
+// Cell name: BUF_DELAY
+// View name: schematic
+subckt BUF_DELAY IN OUT VDD VSS
+    I1 (net11 OUT VDD VSS) inv
+    I0 (IN net11 VDD VSS) inv
+ends BUF_DELAY
+// End of subcircuit definition.
+
+// Library name: custom
+// Cell name: INV_DELAY
+// View name: schematic
+subckt INV_DELAY IN OUT VDD VSS
+    I2 (net08 OUT VDD VSS) inv
+    I1 (net11 net08 VDD VSS) inv
+    I0 (IN net11 VDD VSS) inv
+ends INV_DELAY
+// End of subcircuit definition.
+
+// Library name: custom
+// Cell name: TOPLEVEL
+// View name: schematic
+I2 (BUF_IN BUF_OUT VDD VSS) BUF_DELAY
+I3 (INV_IN INV_OUT VDD VSS) INV_DELAY
+I4 (INV_IN net8) isource type=pwl wave=[ 1u 1 2u 2 ]
+V3 (VSS 0) vsource dc=0 type=dc
+V2 (INV_IN 0) vsource dc=0 type=dc
+V1 (BUF_IN 0) vsource dc=5 type=dc
+V0 (VDD 0) vsource dc=5 type=dc
+R0 (net8 VSS) rm1w l=10u w=2u mf=1
+C0 (net8 0) capacitor c=1p
+
+//----------------- Entering Netlist Footer -------------------//
+&lt;/c&gt;
+
+&lt;p&gt;The Problem:
+In the code, there are two subroutines getSubcktList() and TraceSubcktDevices(). The former subroutine works fine. The latter subroutine (i.e. TraceSubcktDevices()) is showing a very unexpected behavior. I have listed my observations below:&lt;/p&gt;
+
+&lt;p&gt;1) If the above code is run "as is" making sure that correct path of netlist.scs file is supplied at the beginning, the code gets stuck (I use Linux command line to run the code) with no response&lt;/p&gt;
+
+&lt;p&gt;2) If I swap the subroutines, i.e. define TraceSubcktDevices() first and getSubcktList(), the code works fine printing "Hello" as many times as the number of lines in input file netlist.scs&lt;/p&gt;
+
+&lt;p&gt;Can anyone please let me know why this is unexpected behavior being observed?&lt;/p&gt;
+
+&lt;p&gt;Thanks !!&lt;/p&gt;
+&lt;p&gt;Abhishek&lt;/p&gt;
+
+&lt;p&gt;&lt;small&gt;&lt;b&gt;update:&lt;/b&gt; edited/code tags by [id://789891]&lt;/small&gt;&lt;/p&gt;
+</doctext>
+<thread id="1168641">
+<node id="1168643"><node id="1168646"><node id="1168649"><node id="1168705"/>
+<node id="1168975"><node id="1168979"><node id="1168997"><node id="1168998"><node id="1169061"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1168656"><node id="1168706"><node id="1168712"><node id="1168715"/>
+</node>
+<node id="1168971"/>
+</node>
+</node>
+</thread></node>

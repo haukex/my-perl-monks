@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100071" title="Re: Moo different parameters for constructor" created="2019-05-16 07:17:07" updated="2019-05-16 07:17:07" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;(&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; As [LanX] also [id://11100069|said] in the meantime,&lt;/small&gt;) See the documentation for &lt;c&gt;BUILDARGS&lt;/c&gt; in [mod://Moo]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+package MyDate {
+	use Moo;
+	use Types::Standard qw/ Int /;
+	use Carp;
+	use Date::Calc qw/Today/;
+	use namespace::clean;
+	has year  =&gt; ( is=&gt;'ro', required=&gt;1, isa=&gt;Int );
+	has month =&gt; ( is=&gt;'ro', required=&gt;1, isa=&gt;Int );
+	has day   =&gt; ( is=&gt;'ro', required=&gt;1, isa=&gt;Int );
+	around BUILDARGS =&gt; sub {
+		my ( $orig, $class, %args ) = @_;
+		my %newargs;
+		# NOTE: This does not handle incorrect arguments!
+		if ( keys %args ) {
+			if ( keys %args == 3 ) {
+				%newargs = %args;
+			}
+			elsif ( $args{date} ) {
+				@newargs{qw/year month day/}
+					= $args{date}=~/^(\d{4})(\d\d)(\d\d)$/
+						or croak "bad date $args{date}";
+			}
+		}
+		else {
+			my ($year,$month,$day) = Today();
+			%newargs = (year=&gt;$year, month=&gt;$month, day=&gt;$day);
+		}
+		return $class-&gt;$orig(%newargs);
+	};
+	sub ymd {
+		my $self = shift;
+		return $self-&gt;year.'-'.$self-&gt;month.'-'.$self-&gt;day;
+	}
+}
+
+print "1. ", MyDate-&gt;new()-&gt;ymd, "\n";
+print "2. ", MyDate-&gt;new(year=&gt;2019, month=&gt;5, day=&gt;14)-&gt;ymd, "\n";
+print "3. ", MyDate-&gt;new(date=&gt;20190512)-&gt;ymd, "\n";
+
+__END__
+
+1. 2019-5-16
+2. 2019-5-14
+3. 2019-05-12
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; To be clear, this is just a template (as requested), since it doesn't really do any checking of the constructor args. Personally, I also like to add &lt;c&gt;use MooX::StrictConstructor;&lt;/c&gt; after &lt;c&gt;use namespace::clean;&lt;/c&gt; to prevent typos.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11100067</root_node>
+<parent_node field_name="parent_node">11100067</parent_node>
+<thread id="11100067">
+<node id="11100069"/>
+<node id="11100071"><node id="11100100"><node id="11100103"/>
+</node>
+</node>
+<node id="11100076"/>
+<node id="11100174"/>
+</thread></node>

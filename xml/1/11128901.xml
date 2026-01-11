@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11128901" title="SQL Placeholders - clarification" created="2021-02-28 06:57:54" updated="2021-02-28 06:57:54" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11123653">Bod</author>
+<doctext field_name="doctext">&lt;p&gt;Over on [id://11128610], [hippo] pointed out the error of my ways and I have been going through some code that's being produced to implement placeholders.  Can I please check that I am now on the right lines and doing things better...&lt;/p&gt;
+
+&lt;p&gt;I had this line of code...
+&lt;code&gt;
+$dbh-&gt;do("INSERT INTO Web_Page SET template = '$request', test = '$test', source = '$data{'source'}', Visitor_idVisitor = $cookie{'_ls_visit'}") unless $$vars{'testpage'};
+&lt;/code&gt;
+All the variables are generated within the code except &lt;code&gt;$data{'source'}&lt;/code&gt; which is derived from the HTTP query string and therefore potentially unsafe.&lt;/p&gt;
+
+&lt;p&gt;I have replaced that line of code with this...
+&lt;code&gt;
+unless ($vars-&gt;{'testpage'}) {
+	my $query = $dbh-&gt;prepare("INSERT INTO Web_Page SET template = '$request', test = '$test', source = ?, Visitor_idVisitor = $cookie{'_ls_visit'}");
+	$query-&gt;execute($data{'source'});
+}
+&lt;/code&gt;
+Is that the best approach or should I be using placeholders for every variable, even those I have declared and therefore know are safe?&lt;/p&gt;</doctext>
+<thread id="11128901">
+<node id="11128902"><node id="11128903"><node id="11128934"/>
+</node>
+</node>
+<node id="11128904"/>
+<node id="11128905"/>
+<node id="11128906"><node id="11128908"><node id="11128910"><node id="11128951"/>
+</node>
+</node>
+</node>
+<node id="11128909"/>
+<node id="11128935"/>
+</thread></node>

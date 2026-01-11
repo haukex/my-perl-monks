@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1185742" title="Joining multiple lines together while parsing" created="2017-03-24 06:08:15" updated="2017-03-24 06:08:15" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1184375">Arengin</author>
+<doctext field_name="doctext">Hi.&lt;br&gt;
+&lt;br&gt;
+I have the following code:&lt;br&gt;
+&lt;code&gt;
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use Data::Dumper;
+
+#read input data:
+my @rows; 
+
+#set record separator to 3 line feeds.     
+local $/ = "\n\n\n";
+while ( &lt;&gt; ) {
+   next unless m/Dumpdata example/;
+   #map key-values out of this 'chunk'. 
+   my %row = m/\s*(\w+)\S*\s+(\S.*)/g; 
+   push @rows, \%row; 
+}
+
+#print whole data structure for debugging:
+print Dumper \@rows;
+
+#define columns and ordering for output:
+my @output_cols = qw /Info Detail Warning Spec/;
+
+#iterate rows
+foreach my $row ( @rows ) {
+    #print fields selected from output_cols. 
+   #use a 'hash slice' - look it up in perl docs. 
+   print join ";", @{$row}{@output_cols},"\n";
+}
+&lt;/code&gt;
+&lt;br&gt;
+It works just fine except for the problem, that it ends at the line end. &lt;br&gt;
+If for example Info is on 2 lines I only get the first part in the output.
+&lt;br&gt;&lt;br&gt;
+&lt;code&gt;
+Dumpdata example
+-----------------
+
+Warning bad news here 
+    Detail:              Some really nice infos these are 
+    Info:              This is a problem
+                       but there is a solution
+    Spec:              2nd of 4
+&lt;/code&gt;
+
+&lt;br&gt;
+&lt;b&gt;&amp;lt;Update&amp;gt;&lt;/b&gt;&lt;br /&gt;
+The expected output for this should be:&lt;br&gt;
+&lt;code&gt;
+
+"bad news here"; "Some really nice infos these are"; "This is a problem but there is a solution"; "2nd of 4"
+
+&lt;/code&gt;
+&lt;br&gt; 
+Thanks you haukex for reminding me to post that too.&lt;br /&gt;
+&lt;b&gt;&amp;lt;/Update&amp;gt;&lt;/b&gt;
+&lt;br&gt;&lt;br&gt;
+My above code would return &lt;b&gt;This is a problem&lt;/b&gt; but it should return &lt;b&gt;This is a problem but there is a solution&lt;/b&gt;
+&lt;br&gt;&lt;br&gt;
+Any ideas on how to get this done? 
+&lt;br&gt;&lt;br&gt;
+Thank you so much&lt;br&gt;&lt;br&gt;
+Arengin</doctext>
+<thread id="1185742">
+<node id="1185745"><node id="1185747"/>
+</node>
+<node id="1185748"><node id="1185752"><node id="1185754"><node id="1185757"><node id="1185761"/>
+</node>
+<node id="1185763"><node id="1185764"/>
+<node id="1185765"/>
+</node>
+<node id="1185766"/>
+</node>
+</node>
+</node>
+<node id="1185750"/>
+<node id="1185807"/>
+<node id="1185843"/>
+</thread></node>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11106888" title="Re: Find range in coordinates array (updated)" created="2019-09-30 15:04:50" updated="2019-09-30 15:04:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;If I understand your format correctly, that's a dangerous way to store these coordinates, as floating-point inaccuracies might possibly mess them up. Is there any way for you to change their format to at least be strings? And what is the maximum number of digits after the decimal point that you can expect?&lt;/p&gt;
+&lt;p&gt;One possible solution is normalizing the values into integers, then you can use a module such as [mod://Set::IntSpan]. The following method is fairly expensive in setup, but in exchange lookups should be fairly fast.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/b&gt; Here's a somewhat less complicated version that does pretty much the same. It doesn't overwrite the input array with the "normalized" values and convert them back after, it just keeps the original array.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use List::Util qw/max pairmap/;
+use Set::IntSpan;
+
+my @array = (1.1,1.4,5.33,6.1,7.23,7.133,10,11);
+my $input = 7.25;
+
+# check the maxmum number of digits after the decimal point
+my $maxlen = max map { length( (split /\./,$_,2)[1]//'' ) } @array;
+
+# build the set
+my $set = Set::IntSpan-&gt;new( [ pairmap { [$a,$b] }
+	map { my @x = split /\./, $_, 2;
+		sprintf "%d%0*d", $x[0], $maxlen, $x[1]//0 } @array ] );
+
+# normalize the input
+die "Input too wide" unless $input=~/\A\d+(\.\d{1,$maxlen})?\z/;
+my $innorm = do { my @x = split /\./, $input, 2;
+	sprintf "%d%0*d", $x[0], $maxlen, $x[1]//0 };
+
+# lookup
+if ( defined( my $ord = $set-&gt;span_ord( $innorm ) ) ) {
+	my ($x,$y) = @array[ $ord*2, $ord*2+1 ];
+	print "found $input in span $x-$y\n";
+}
+else { warn "did not find $input in any of the spans\n" }
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;readmore title="Original code"&gt;
+&lt;p&gt;Original code:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+use List::Util qw/max pairmap/;
+use Set::IntSpan;
+
+my @array = (1.1,1.4,5.33,6.1,7.23,7.133,10,11);
+my $input = 7.25;
+
+# "normalize" the input (could also use fixed @maxlen)
+my @maxlen = map { my $x=$_; max map { length $$_[$x] }
+	map { my @e=split /\./,$_,2; @e&gt;1 ? \@e : [@e,0] } @array } 0,1;
+my $normalize = sub {
+	my ($s) = @_;
+	die "Invalid: $s"
+		unless $s=~/\A\d{1,$maxlen[0]}(\.\d{1,$maxlen[1]})?\z/;
+	my ($x,$y) = split /\./, $s, 2;
+	0+sprintf "%*d%0*d", $maxlen[0], $x, $maxlen[1], $y//0 };
+my $denormalize = sub {
+	my ($n) = @_;
+	die "Too long: $n" if length($n)&gt;$maxlen[0]+$maxlen[1];
+	my $y = 0+substr $n, -$maxlen[1], $maxlen[1], '';
+	return (0+($n||0)).($y?".$y":'')
+};
+
+dd map { $normalize-&gt;($_) } @array; # Debug
+# =&gt; "(1001, 1004, 5033, 6001, 7023, 7133, 10000, 11000)"
+dd map { $denormalize-&gt;($normalize-&gt;($_)) } @array;
+# =&gt; "(1.1, 1.4, 5.33, 6.1, 7.23, 7.133, 10, 11)"
+$denormalize-&gt;($normalize-&gt;($_)) eq $_ or die "$_" for @array; # Test
+
+my $set = Set::IntSpan-&gt;new( [ pairmap { [$a,$b] }
+	map { $normalize-&gt;($_) } @array ] );
+print $set-&gt;run_list, "\n"; # Debug
+# =&gt; "1001-1004,5033-6001,7023-7133,10000-11000"
+
+if ( defined( my $ord = $set-&gt;span_ord( $normalize-&gt;($input) ) ) ) {
+	my $span = ($set-&gt;spans)[$ord];
+	print "found $input in span ", join( '-',
+		map { $denormalize-&gt;($_) } @$span ), "\n";
+	# =&gt; "found 7.25 in span 7.23-7.133"
+}
+else { warn "did not find $input in any of the spans\n" }
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">11106882</root_node>
+<parent_node field_name="parent_node">11106882</parent_node>
+<thread id="11106882">
+<node id="11106883"><node id="11106885"/>
+</node>
+<node id="11106884"><node id="11106886"><node id="11106925"/>
+</node>
+</node>
+<node id="11106887"><node id="11106926"/>
+</node>
+<node id="11106888"><node id="11106917"><node id="11106918"><node id="11106924"><node id="11106940"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

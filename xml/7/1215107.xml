@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1215107" title="problem with simple STDIN to UART script" created="2018-05-23 12:42:02" updated="2018-05-23 12:42:02" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1215105">CSTJr</author>
+<doctext field_name="doctext">&lt;p&gt;I've written a little keyboard to UART script as a first step to something more complex. The following code will let me send data from a PuTTY terminal over the serial connection, display it (STDOUT), and send a period back over the UART. In other words, the UART connection is working.&lt;/p&gt;
+
+&lt;p&gt;However, if I uncomment the "my $outchar=&lt;&gt;;" line, everything stops working. I suspect this is because it's blocking. I've also tried replacing the line with a "my $outchar=getc();" line. This works a little better in that the characters coming in over the serial port eventually print, but only if a couple characters are typed on STDIN. This despite the `stty cbreak` instruction.&lt;/p&gt;
+
+&lt;code&gt;
+use warnings;
+use strict;
+
+use IO::Termios ();
+
+$| = 1;
+
+my $fh = IO::Termios-&gt;open('/dev/ttyAPP4', '115200,8,n,1')
+    or die "IO::Termios-&gt;open: $!";
+
+`stty cbreak`;
+print $fh "Begin\n\r";
+
+while(1){
+    my $inchar=&lt;$fh&gt;;
+#    my $outchar=&lt;&gt;;
+    if($inchar){
+        print $inchar;
+        print $fh ".";
+    }
+#    if($outchar){
+#       print $fh $outchar;
+#    }
+}
+
+&lt;/code&gt;
+
+&lt;p&gt;Is there a non-blocking approach to doing what I'm after? I managed to get the IO:Termios module installed, though it was a little nightmarish. I dread having to add another module. :p&lt;/p&gt;
+
+&lt;p&gt;Thanks in advance for any advice!&lt;/p&gt;
+
+Calvin</doctext>
+<thread id="1215107">
+<node id="1215109"/>
+</thread></node>

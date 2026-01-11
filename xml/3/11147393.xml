@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11147393" title="Re: stat function used with linux find gives me no data" created="2022-10-13 05:28:46" updated="2022-10-13 05:28:46" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You don't need to shell out to &lt;c&gt;find&lt;/c&gt;, as Perl has the core module [doc://File::Find] - here's a starting point using core modules only. [doc://File::stat], [doc://User::pwent], and [doc://User::grent] give nice objects with accessors instead of the long lists of return values, and [doc://Time::Piece] has nice extra date/time functionality.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use File::Find 'find';
+use Fcntl qw/:mode/;
+use Cwd 'cwd';
+use File::stat;
+use Time::Piece;
+use User::pwent;
+use User::grent;
+
+my $dir = shift || cwd;
+
+find({ wanted =&gt; sub {
+	# filename (basename) is in $_,
+	# current directory is in $File::Find::dir,
+	# full name is in $File::Find::name
+	my $st = lstat($_)
+		or do { warn "failed to stat $File::Find::name: $!"; return };
+	return unless -f $st; # only regular files
+	print $File::Find::name, " dev=", $st-&gt;dev, ", ino=", $st-&gt;ino,
+		", mode=", $st-&gt;mode,
+			sprintf(" (perms=%#03o)", S_IMODE($st-&gt;mode)),
+		", nlink=", $st-&gt;nlink,
+		", uid=", $st-&gt;uid, " (", getpwuid($st-&gt;uid)-&gt;name, ")",
+		", gid=", $st-&gt;gid, " (", getgrgid($st-&gt;gid)-&gt;name, ")",
+		", rdev=", $st-&gt;rdev, ", size=", $st-&gt;size,
+		", atime=", $st-&gt;atime,
+		", mtime=", $st-&gt;mtime,
+			" (", gmtime($st-&gt;mtime)-&gt;datetime, "Z)",
+		", ctime=", $st-&gt;ctime, ", blksz=", $st-&gt;blksize,
+		", blocks=", $st-&gt;blocks, "\n";
+} }, $dir);
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11147387</root_node>
+<parent_node field_name="parent_node">11147387</parent_node>
+<thread id="11147387">
+<node id="11147389"><node id="11147398"><node id="11147402"/>
+<node id="11147417"/>
+</node>
+</node>
+<node id="11147390"/>
+<node id="11147391"><node id="11147394"/>
+</node>
+<node id="11147393"/>
+<node id="11147404"/>
+<node id="11147408"/>
+</thread></node>

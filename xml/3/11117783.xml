@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117783" title="Logic Help - Output to csv" created="2020-06-07 15:09:41" updated="2020-06-07 15:09:41" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11108807">audioboxer</author>
+<doctext field_name="doctext">Hi Everyone - 
+&lt;p&gt;
+I've been sitting here for 4 hours and can't figure out the logic to do this. I am parsing data from an XML file and need to output to a CSV. I can parse the data just fine, I just can't figure out how to write it out and then parse it to a csv file that would ultimately look like the desired output below. I certainly appreciate the help. I've tried arrays and hashes and got nowhere. 
+&lt;/p&gt;
+&lt;p&gt; &lt;b&gt;Desired output&lt;/b&gt; &lt;/p&gt;
+&lt;p&gt;
+"sku","File 1", "File 2", "File 6", "File 7"&lt;br&gt;
+"00123","www.site.com/path/to/file/file.pdf","www.site.com/path/to/file/file.pdf",,&lt;br&gt;
+"00124","www.site.com/path/to/file/file.pdf",,"www.site.com/path/to/file/file.pdf",&lt;br&gt;
+"00125",,"www.site.com/path/to/file/file.pdf",,"www.site.com/path/to/file/file.pdf"&lt;br&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Perl Script&lt;/b&gt;&lt;/p&gt;
+
+&lt;code&gt;
+use 5.010;
+use strict;
+use warnings;
+use utf8;
+
+use XML::LibXML;
+
+my $source_file = 'C:\Users\User\Files\perl\data\example\example.xml';
+my $dom = XML::LibXML-&gt;load_xml(location =&gt; $source_file);
+
+foreach my $part ($dom-&gt;findnodes('/products/product')) {
+my $sku = $part-&gt;findnodes('sku');
+my $download_item_name;
+my $download_item_name_url;
+
+foreach my $downloads($part-&gt;findnodes('downloads')){
+    foreach my $download_group($downloads-&gt;findnodes('group')){
+      foreach my $downloads_group_items($download_group-&gt;findnodes('group_items')){
+        foreach my $download_item($downloads_group_items-&gt;findnodes('item')){
+          $download_item_name = $download_item-&gt;findnodes('name');
+          $download_item_name_url = $download_item-&gt;findnodes('url');
+          print $sku . " -&gt; " . "-&gt;" . $download_item_name . "-&gt;" . $download_item_name_url . "\n";
+
+        }
+      }
+    }
+  }
+}
+&lt;/code&gt;
+&lt;p&gt;&lt;b&gt; XML Data&lt;/b&gt; &lt;/p&gt;
+&lt;code&gt;
+&lt;products&gt;
+  &lt;product&gt;
+    &lt;sku&gt;00123&lt;/sku&gt;
+    &lt;downloads&gt;
+        &lt;group&gt;
+            &lt;group_items&gt;
+                &lt;item&gt;
+                  &lt;name&gt;File 1&lt;/name&gt;
+                  &lt;url&gt;www.site.com/path/to/file/file.pdf&lt;/url&gt;
+                &lt;/item&gt;
+                &lt;item&gt;
+                  &lt;name&gt;File 2&lt;/name&gt;
+                  &lt;url&gt;www.site.com/path/to/file/file.pdf&lt;/url&gt;
+                &lt;/item&gt;
+              &lt;/group_items&gt;
+        &lt;/group&gt;
+      &lt;/downloads&gt;
+    &lt;/product&gt;
+    &lt;product&gt;
+      &lt;sku&gt;00124&lt;/sku&gt;
+      &lt;downloads&gt;
+          &lt;group&gt;
+              &lt;group_items&gt;
+                  &lt;item&gt;
+                    &lt;name&gt;File 1&lt;/name&gt;
+                    &lt;url&gt;www.site.com/path/to/file/file.pdf&lt;/url&gt;
+                  &lt;/item&gt;
+                  &lt;item&gt;
+                    &lt;name&gt;File 6&lt;/name&gt;
+                    &lt;url&gt;www.site.com/path/to/file/file.pdf&lt;/url&gt;
+                  &lt;/item&gt;
+                &lt;/group_items&gt;
+          &lt;/group&gt;
+        &lt;/downloads&gt;
+      &lt;/product&gt;
+      &lt;product&gt;
+        &lt;sku&gt;00125&lt;/sku&gt;
+        &lt;downloads&gt;
+            &lt;group&gt;
+                &lt;group_items&gt;
+                    &lt;item&gt;
+                      &lt;name&gt;File 7&lt;/name&gt;
+                      &lt;url&gt;www.site.com/path/to/file/file.pdf&lt;/url&gt;
+                    &lt;/item&gt;
+                    &lt;item&gt;
+                      &lt;name&gt;File 2&lt;/name&gt;
+                      &lt;url&gt;www.site.com/path/to/file/file.pdf&lt;/url&gt;
+                    &lt;/item&gt;
+                  &lt;/group_items&gt;
+            &lt;/group&gt;
+          &lt;/downloads&gt;
+        &lt;/product&gt;
+&lt;/products&gt;    
+&lt;/code&gt;</doctext>
+<thread id="11117783">
+<node id="11117785"><node id="11117788"/>
+</node>
+<node id="11117789"/>
+<node id="11117793"><node id="11117794"><node id="11117806"/>
+<node id="11117831"/>
+</node>
+</node>
+<node id="11117800"><node id="11117814"/>
+</node>
+</thread></node>

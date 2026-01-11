@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1197556" title="Re: match digit, followed by hyphen, followed again by digit - then add whitespaces and replace in file (updated x2)" created="2017-08-17 09:11:20" updated="2017-08-17 09:11:20" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;When I think "I need to match a number" I think of [mod://Regexp::Common::number], for example:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Regexp::Common qw/number/;
+use Data::Dump;  #Debug
+
+while (&lt;DATA&gt;) {
+	/^($RE{num}{decimal}\s*){4}$/ or die;
+	my @cols = /$RE{num}{decimal}/g;
+	dd @cols;  #Debug
+}
+
+__DATA__
+1.234 5.6789 -1.235-4
+1.234 5.6789-12.235-4
+&lt;/c&gt;
+&lt;p&gt;Which outputs:&lt;/p&gt;
+&lt;c&gt;
+(1.234, 5.6789, -1.235, -4)
+(1.234, 5.6789, -12.235, -4)
+&lt;/c&gt;
+&lt;p&gt;For an approach that is probably overkill for parsing something like this, see [id://1181540].&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; If you want to just rewrite the file, you can use the following oneliner, but note this will discard anything that doesn't match the regex! If you want to add validity checking, you could add &lt;c&gt;/^($RE{num}{decimal}\s*){4}$/ or die;&lt;/c&gt; (which I have now added to the above example to make it more robust, although it's a little less efficient now since it matches each line twice).&lt;/p&gt;
+&lt;c&gt;
+$ perl -MRegexp::Common=number -nle '$,=" ";print/$RE{num}{decimal}/g' input.txt &gt;output.txt
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; TIMTOWTDI, this inserts a space between two numbers that previously did not have a space between them (and it's a bit safer because inserting spaces should be all it does, instead of rewriting the entire lines):&lt;/p&gt;
+&lt;c&gt;
+$ perl -MRegexp::Common=number -pe 's/(?&gt;$RE{num}{decimal})\K(?=$RE{num}{decimal})/ /g' input.txt &gt;output.txt
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Sorry, this post also had a few ninja edits. OP msg'd.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1197553</root_node>
+<parent_node field_name="parent_node">1197553</parent_node>
+<thread id="1197553">
+<node id="1197555"><node id="1197557"><node id="1197559"/>
+</node>
+</node>
+<node id="1197556"><node id="1197560"><node id="1197561"/>
+</node>
+</node>
+<node id="1197591"/>
+<node id="1197601"/>
+</thread></node>

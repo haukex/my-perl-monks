@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224342" title="Solved! I would have expected a syntax error here" created="2018-10-19 12:05:26" updated="2018-10-19 12:05:26" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="533863">roboticus</author>
+<doctext field_name="doctext">&lt;p&gt;Thanks, guys!  That was a quick resolution.  Indirect Object syntax was what tripped me up.  As [haukex] suggests, I'll have to start using the Yadda, Yadda operator [doc://...] to ensure that I don't miss that in the future.&lt;/p&gt;
+&lt;p&gt;Using that operator and a comment, I can either let the program run and execute and die only if I reach unfinished code:&lt;/p&gt;
+&lt;c&gt;
+sub find_symbol {
+    ... # got to here today! (20180520)
+}
+&lt;/c&gt;
+&lt;c&gt;
+$ perl xyzzy.pl
+Foo!
+Unimplemented at xyzzy.pl line 13.
+&lt;/c&gt;
+&lt;p&gt;Or if I'd rather have the program just fail without running, I can prefix my original comment with the operator (so long as I don't use a semicolon as the first character in my comment:&lt;/p&gt;
+&lt;c&gt;
+sub find_symbol {
+    ... got to here today! (20180520)
+}
+&lt;/c&gt;
+&lt;c&gt;
+$ perl xyzzy.pl
+syntax error at xyzzy.pl line 12, near "... got to "
+Execution of xyzzy.pl aborted due to compilation errors.
+&lt;/c&gt;
+&lt;p&gt;Really, though, not &lt;i&gt;one&lt;/i&gt; Monty Python reference?  8^)&lt;/p&gt;
+&lt;p&gt;Original post follows:&lt;/p&gt;&lt;hr/&gt;
+&lt;p&gt;Hello, gang:&lt;/p&gt;
+&lt;p&gt;When I write experimental bits of code and don't get a chance to finish, I'll frequently mark my position with a few words and no comment marker with the intent that if I run the program, perl will tell me that bit(s) of my code are unfinished, and let me know where the unfinished bits are.  This morning I decided to adapt a working program I've been using all week to add some new functionality, and when I looked at the code, I saw this bit:&lt;/p&gt;
+&lt;c&gt;
+sub find_symbol {
+    got to here today! (20180520)
+}
+&lt;/c&gt;
+&lt;p&gt;What the heck?  The code is working, but that subroutine just can't be right.  So I looked over the program--It doesn't look like the code is commented out anywhere (I normally use "=h1 foo" and "=cut" to comment out blocks of code I don't want to use).  I ran:&lt;/p&gt;
+&lt;c&gt;$ perl -c LTSpice_to_graph.pl
+LTSpice_to_graph.pl syntax OK
+&lt;/c&gt;
+&lt;p&gt;OK, then, *something* has to be masking this syntax error, right?  So I copied the code to xyzzy.pl and started removing chunk after chunk, eventually coming up with:&lt;/p&gt;
+&lt;c&gt;
+$ cat xyzzy.pl
+#!env perl
+use strict;
+use warnings;
+
+find_symbol();
+
+sub find_symbol {
+    got to here today
+}
+
+$ perl -c xyzzy.pl
+xyzzy.pl syntax OK
+
+$ perl -MO=Concise xyzzy.pl
+6  &lt;@&gt; leave[1 ref] vKP/REFC -&gt;(end)
+1     &lt;0&gt; enter -&gt;2
+2     &lt;;&gt; nextstate(main 5 xyzzy.pl:5) v:*,&amp;,{,x*,x&amp;,x$,$ -&gt;3
+5     &lt;1&gt; entersub[t2] vKS/TARG,STRICT -&gt;6
+-        &lt;1&gt; ex-list K -&gt;5
+3           &lt;0&gt; pushmark s -&gt;4
+-           &lt;1&gt; ex-rv2cv sK/STRICT,1 -&gt;-
+4              &lt;#&gt; gv[*find_symbol] s/EARLYCV -&gt;5
+-     &lt;;&gt; ex-nextstate(main 7 xyzzy.pl:10) v:*,&amp;,{,x*,x&amp;,x$,$ -&gt;6
+xyzzy.pl syntax OK
+&lt;/c&gt;
+&lt;p&gt;So consider me baffled, I don't know what's going on here.  Can anyone tell me what I'm not seeing?&lt;/p&gt;
+&lt;p&gt;For the record:&lt;/p&gt;
+&lt;c&gt;
+$ perl -version
+
+This is perl 5, version 26, subversion 2 (v5.26.2) built for x86_64-cygwin-threads-multi
+(with 7 registered patches, see perl -V for more detail)
+&lt;/c&gt;
+&lt;p&gt;Interesting ... one more bit of information before I hit the preview button.  I changed the contents of the subroutine to:&lt;/p&gt;
+&lt;c&gt;
+sub find_symbol {
+    I got to here today
+}
+&lt;/c&gt;
+&lt;p&gt;and now I get what I expected to see:&lt;/p&gt;
+&lt;c&gt;
+$ perl -c xyzzy.pl
+Bareword "today" not allowed while "strict subs" in use at xyzzy.pl line 8.
+xyzzy.pl had compilation errors.
+&lt;/c&gt;
+&lt;p&gt;Does anyone know what's happening here?  My only (ill-informed) guess would be something to do with parsing the GOTO statement.&lt;/p&gt;
+&lt;p&gt;...[roboticus]&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;When your only tool is a hammer, all problems look like your thumb.&lt;/i&gt;&lt;/p&gt;</doctext>
+<thread id="1224342">
+<node id="1224343"><node id="1224347"><node id="1224349"><node id="1224351"/>
+<node id="1224355"><node id="1224356"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1224344"/>
+<node id="1224345"><node id="1224348"/>
+</node>
+<node id="1224346"/>
+<node id="1224350"><node id="1224354"><node id="1224506"/>
+</node>
+</node>
+<node id="1224370"><node id="1224385"/>
+</node>
+</thread></node>

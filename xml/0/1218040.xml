@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1218040" title="Re: read files one by one in directory and redirct output to a file (updated)" created="2018-07-06 07:43:15" updated="2018-07-06 07:43:15" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You've commented out a bunch of code, why? It's unclear what problem you're having, and unclear how which code is relevant to the question. Please take the time to read and follow [id://174051] and [id://1177642|SSCCE] - if you follow that advice, we will be able to provide help much more efficiently.&lt;/p&gt;
+&lt;p&gt;Just a guess, but perhaps [doc://readdir] is returning directories as well as just files? And as [huck] pointed out, the filenames returned by [doc://readdir] don't include the directory name. Here, I'm using &lt;c&gt;catfile&lt;/c&gt; from [doc://File::Spec] to prefix the directory name to the filename, &lt;c&gt;no_upwards&lt;/c&gt; from the same module to filter directory entries like &lt;c&gt;.&lt;/c&gt; (curdir) and &lt;c&gt;..&lt;/c&gt; (parent dir), and [doc://-X|&lt;c&gt;-f&lt;/c&gt;] to filter out only files. The [doc://sort] is optional.&lt;/p&gt;
+&lt;c&gt;
+use File::Spec::Functions qw/no_upwards catfile/;
+opendir my $dh, $dirname or die "$dirname: $!";
+my @files = grep {-f} map {catfile $dirname, $_}
+	sort +no_upwards readdir $dh;
+closedir $dh;
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Fixed: "&lt;c&gt;sort no_upwards&lt;/c&gt;" was not correct, but the &lt;c&gt;-f&lt;/c&gt; test was hiding the issue.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1218012</root_node>
+<parent_node field_name="parent_node">1218012</parent_node>
+<thread id="1218012">
+<node id="1218022"/>
+<node id="1218026"><node id="1218063"><node id="1218092"><node id="1218101"><node id="1218102"><node id="1218110"/>
+</node>
+</node>
+<node id="1218103"><node id="1218108"/>
+</node>
+<node id="1218124"/>
+</node>
+</node>
+</node>
+<node id="1218040"><node id="1218044"><node id="1218045"/>
+<node id="1218093"/>
+</node>
+</node>
+<node id="1218046"/>
+<node id="1218050"><node id="1218051"/>
+<node id="1218056"/>
+<node id="1218070"/>
+</node>
+</thread></node>

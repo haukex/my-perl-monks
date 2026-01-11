@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11151265" title="use Mojo::IOLoop::Subprocess - cannot pass argument to the subprocess" created="2023-03-27 13:16:34" updated="2023-03-27 13:16:34" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11151262">PerlDiver</author>
+<doctext field_name="doctext">Dear Perl monks,
+&lt;br /&gt;&lt;br /&gt;
+may I ask you for your wisdom about the parallel processing in Mojolicios, please?
+&lt;br /&gt;&lt;br /&gt;
+Here I am trying to understand how to implement parallel processes within a loop, set up arguments to the subprocess and get the result before the render (surely, I am using &lt;code&gt;$c-&gt;render_later&lt;/code&gt;).
+&lt;br /&gt;&lt;br /&gt;
+I was trying many different approaches and one seems to work for me, but the only thing with the argument (parameter). If I run the code below without &lt;code&gt;-&gt;($_)&lt;/code&gt; the processes work in parallel, the main sub waits for all of them to complete (which takes about 2 seconds) and then renders the page. But once I add &lt;code&gt;-&gt;($_)&lt;/code&gt; or any int, for example, the processes run in a blocking way - one by one and it takes about 12 seconds.
+&lt;br /&gt;&lt;br /&gt;
+&lt;code&gt;
+use Mojo::Base -strict, -signatures, -async_await;
+use Mojo::IOLoop::Subprocess;
+use Mojo::Promise;
+
+async sub testMethod{
+
+	$c-&gt;render_later;
+
+	show "BEFORE";
+
+	my @promises;
+
+	for(0..5){
+
+		say "(START) This is $_ loop";
+		
+		my $subprocess = Mojo::IOLoop::Subprocess-&gt;new;
+			
+			push @promises, $subprocess-&gt;run_p(
+			
+				sub {
+					my $i = shift || 1;
+					my $promise = Mojo::Promise-&gt;new;
+					say "Hello, from $i and $$!";
+					sleep 2;
+					say "Good bye, from $i and $$!";
+					
+					$promise-&gt;resolve("Done for $i");
+					return $promise;
+					#return "Done for $i";
+				}-&gt;($_)
+			)-&gt;then(sub ($_result) {
+				show $_result;
+				return $_result;
+			})-&gt;catch(sub  {
+				my $err = shift;
+				say "Subprocess error: $err";
+			});
+		$subprocess-&gt;ioloop-&gt;start unless $subprocess-&gt;ioloop-&gt;is_running;
+		say "(END) This is $_ loop";
+	}
+
+
+	my @results = await Mojo::Promise-&gt;all_settled(@promises); 
+	show @results;
+	show "AFTER";
+	return $c-&gt;render(text =&gt; "All done", status =&gt; 200);
+}
+&lt;/code&gt;
+&lt;br /&gt;&lt;br /&gt;
+
+Below is the output &lt;b&gt;with&lt;/b&gt; the parameter sent via &lt;code&gt;-&gt;($_)&lt;/code&gt;(works in a blocking way, takes about 12 secs):
+&lt;br /&gt;
+&lt;br /&gt;
+&lt;code&gt;
+
+======(  "BEFORE"  )===========[ 'Test.pm', line 189 ]======
+
+    "BEFORE"
+
+
+(START) This is 0 loop
+Hello, from 5 and 17430!
+Good bye, from 5 and 17430!
+(END) This is 0 loop
+(START) This is 1 loop
+Hello, from 5 and 17430!
+Good bye, from 5 and 17430!
+(END) This is 1 loop
+(START) This is 2 loop
+Hello, from 5 and 17430!
+Good bye, from 5 and 17430!
+(END) This is 2 loop
+(START) This is 3 loop
+Hello, from 5 and 17430!
+Good bye, from 5 and 17430!
+(END) This is 3 loop
+(START) This is 4 loop
+Hello, from 5 and 17430!
+Good bye, from 5 and 17430!
+(END) This is 4 loop
+(START) This is 5 loop
+Hello, from 5 and 17430!
+Good bye, from 5 and 17430!
+(END) This is 5 loop
+Subprocess error: Can't locate object method "Promise=HASH(0xdc0f198)" via package "Mojo" at /home/ubuntu/perl5/perlbrew/perls/perl-5.26.3/lib/site_perl/5.26.3/Mojo/IOLoop/Subprocess.pm line 53.
+
+Subprocess error: Can't locate object method "Promise=HASH(0xdc0ac00)" via package "Mojo" at /home/ubuntu/perl5/perlbrew/perls/perl-5.26.3/lib/site_perl/5.26.3/Mojo/IOLoop/Subprocess.pm line 53.
+
+Subprocess error: Can't locate object method "Promise=HASH(0xdc06310)" via package "Mojo" at /home/ubuntu/perl5/perlbrew/perls/perl-5.26.3/lib/site_perl/5.26.3/Mojo/IOLoop/Subprocess.pm line 53.
+
+Subprocess error: Can't locate object method "Promise=HASH(0xdbff708)" via package "Mojo" at /home/ubuntu/perl5/perlbrew/perls/perl-5.26.3/lib/site_perl/5.26.3/Mojo/IOLoop/Subprocess.pm line 53.
+
+Subprocess error: Can't locate object method "Promise=HASH(0xdc11650)" via package "Mojo" at /home/ubuntu/perl5/perlbrew/perls/perl-5.26.3/lib/site_perl/5.26.3/Mojo/IOLoop/Subprocess.pm line 53.
+
+Subprocess error: Can't locate object method "Promise=HASH(0xdc0fae0)" via package "Mojo" at /home/ubuntu/perl5/perlbrew/perls/perl-5.26.3/lib/site_perl/5.26.3/Mojo/IOLoop/Subprocess.pm line 53.
+
+======(  @results  )===========[ 'Test.pm', line 238 ]======
+
+    [
+      { status =&gt; "fulfilled", value =&gt; [1] },
+      { status =&gt; "fulfilled", value =&gt; [1] },
+      { status =&gt; "fulfilled", value =&gt; [1] },
+      { status =&gt; "fulfilled", value =&gt; [1] },
+      { status =&gt; "fulfilled", value =&gt; [1] },
+      { status =&gt; "fulfilled", value =&gt; [1] },
+    ]
+
+
+======(  "AFTER"  )============[ 'Test.pm', line 247 ]======
+
+    "AFTER"
+
+&lt;/code&gt;
+&lt;br /&gt;&lt;br /&gt;
+This is the output &lt;b&gt;without&lt;/b&gt; parameters sent (no &lt;/code&gt;-&gt;($_)&lt;/code&gt; construction) (works parallel, takes about 2 secs):
+&lt;br /&gt;&lt;br /&gt;
+&lt;code&gt;
+======(  "BEFORE"  )===========[ 'Test.pm', line 189 ]======
+
+    "BEFORE"
+
+
+(START) This is 0 loop
+(END) This is 0 loop
+(START) This is 1 loop
+(END) This is 1 loop
+(START) This is 2 loop
+(END) This is 2 loop
+(START) This is 3 loop
+(END) This is 3 loop
+(START) This is 4 loop
+(END) This is 4 loop
+(START) This is 5 loop
+(END) This is 5 loop
+Hello, from Mojo::IOLoop::Subprocess=HASH(0xdbfd950) and 20033!
+Hello, from Mojo::IOLoop::Subprocess=HASH(0xdc043f8) and 20034!
+Hello, from Mojo::IOLoop::Subprocess=HASH(0xdc09c00) and 20036!
+Hello, from Mojo::IOLoop::Subprocess=HASH(0xdc09528) and 20035!
+Hello, from Mojo::IOLoop::Subprocess=HASH(0xdc0a2c0) and 20037!
+Hello, from Mojo::IOLoop::Subprocess=HASH(0xdc0e570) and 20038!
+Good bye, from Mojo::IOLoop::Subprocess=HASH(0xdbfd950) and 20033!
+Good bye, from Mojo::IOLoop::Subprocess=HASH(0xdc043f8) and 20034!
+Good bye, from Mojo::IOLoop::Subprocess=HASH(0xdc09528) and 20035!
+Good bye, from Mojo::IOLoop::Subprocess=HASH(0xdc09c00) and 20036!
+Good bye, from Mojo::IOLoop::Subprocess=HASH(0xdc0a2c0) and 20037!
+Good bye, from Mojo::IOLoop::Subprocess=HASH(0xdc0e570) and 20038!
+======(  $_result  )===========[ 'Test.pm', line 213 ]======
+
+    undef
+
+
+======(  $_result  )===========[ 'Test.pm', line 213 ]======
+
+    undef
+
+
+======(  $_result  )===========[ 'Test.pm', line 213 ]======
+
+    undef
+
+
+======(  $_result  )===========[ 'Test.pm', line 213 ]======
+
+    undef
+
+
+======(  $_result  )===========[ 'Test.pm', line 213 ]======
+
+    undef
+
+
+======(  $_result  )===========[ 'Test.pm', line 213 ]======
+
+    undef
+
+
+======(  @results  )===========[ 'Test.pm', line 225 ]======
+
+    [
+      { status =&gt; "fulfilled", value =&gt; [undef] },
+      { status =&gt; "fulfilled", value =&gt; [undef] },
+      { status =&gt; "fulfilled", value =&gt; [undef] },
+      { status =&gt; "fulfilled", value =&gt; [undef] },
+      { status =&gt; "fulfilled", value =&gt; [undef] },
+      { status =&gt; "fulfilled", value =&gt; [undef] },
+    ]
+
+
+======(  "AFTER"  )============[ 'Test.pm', line 234 ]======
+
+    "AFTER"
+&lt;/code&gt;
+&lt;br /&gt;&lt;br /&gt;
+
+Another option I have tried:
+&lt;br /&gt;&lt;br /&gt;
+&lt;code&gt;
+sub {
+	my $sp = shift; # $subprocess
+	my $i = shift || 3;
+	#my $promise = Mojo::Promise-&gt;new;
+	
+	say "Hello, from $i and $$!";
+	sleep 2;
+	say "Goodbye, from $i and $$!";
+	
+	#$promise-&gt;resolve("Done for $i");
+	#return $promise;
+	return "Done for $i";
+#}-&gt;($_)
+}
+
+&lt;/code&gt;&lt;br /&gt;&lt;br /&gt;
+This gives the next output (works parallel, takes about 2 secs):&lt;br /&gt;&lt;br /&gt;
+&lt;code&gt;
+======(  "BEFORE"  )===========[ 'Test.pm', line 189 ]======
+
+    "BEFORE"
+
+
+(START) This is 0 loop
+(END) This is 0 loop
+(START) This is 1 loop
+(END) This is 1 loop
+(START) This is 2 loop
+(END) This is 2 loop
+(START) This is 3 loop
+(END) This is 3 loop
+(START) This is 4 loop
+(END) This is 4 loop
+(START) This is 5 loop
+(END) This is 5 loop
+Hello, from 3 and 20608!
+Hello, from 3 and 20609!
+Hello, from 3 and 20610!
+Hello, from 3 and 20611!
+Hello, from 3 and 20612!
+Hello, from 3 and 20613!
+Good bye, from 3 and 20608!
+Good bye, from 3 and 20611!
+Good bye, from 3 and 20609!
+Good bye, from 3 and 20610!
+Good bye, from 3 and 20612!
+Good bye, from 3 and 20613!
+======(  $_result  )===========[ 'Test.pm', line 216 ]======
+
+    "Done for 3"
+
+
+======(  $_result  )===========[ 'Test.pm', line 216 ]======
+
+    "Done for 3"
+
+
+======(  $_result  )===========[ 'Test.pm', line 216 ]======
+
+    "Done for 3"
+
+
+======(  $_result  )===========[ 'Test.pm', line 216 ]======
+
+    "Done for 3"
+
+
+======(  $_result  )===========[ 'Test.pm', line 216 ]======
+
+    "Done for 3"
+
+
+======(  $_result  )===========[ 'Test.pm', line 216 ]======
+
+    "Done for 3"
+
+
+======(  @results  )===========[ 'Test.pm', line 228 ]======
+
+    [
+      { status =&gt; "fulfilled", value =&gt; ["Done for 3"] },
+      { status =&gt; "fulfilled", value =&gt; ["Done for 3"] },
+      { status =&gt; "fulfilled", value =&gt; ["Done for 3"] },
+      { status =&gt; "fulfilled", value =&gt; ["Done for 3"] },
+      { status =&gt; "fulfilled", value =&gt; ["Done for 3"] },
+      { status =&gt; "fulfilled", value =&gt; ["Done for 3"] },
+    ]
+
+
+======(  "AFTER"  )============[ 'Test.pm', line 237 ]======
+
+    "AFTER"
+
+&lt;/code&gt;
+Dear monks, I spent 3 days on my own trying to get this working, but cannot.
+I need to run parallel processes with a custom parameter for each process, all processes run from the loop (or a recursive sub), wait until they all are done, and then have a result from each completed process and finally render the page.
+&lt;br /&gt;&lt;br /&gt;
+Please, help me with this.
+&lt;br /&gt;&lt;br /&gt;
+I want to get an idea of what I do wrong and how to make it work, please!
+&lt;br /&gt;&lt;br /&gt;
+Thank you in advance!
+&lt;br /&gt;
+Peace!
+</doctext>
+<thread id="11151265">
+<node id="11151267"/>
+<node id="11151319"><node id="11151450"/>
+</node>
+</thread></node>

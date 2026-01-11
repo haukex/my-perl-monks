@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201624" title="Re^4: Parsing HTML/XML with Regular Expressions" created="2017-10-18 18:05:55" updated="2017-10-18 18:05:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Could it just be a version issue? The code you posted works fine for me:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+
+my $XML = &lt;&lt;'_END_XML_';
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE html [ &lt;!ENTITY atad "data"&gt; ] &gt;
+&lt;html xmlns="http://www.w3.org/1999/xhtml"&gt;
+&lt;div class="&amp;atad;" id="Hello" /&gt;
+&lt;div class="&amp;atad;" id="World" /&gt;
+&lt;/html&gt;
+_END_XML_
+
+print $XML::LibXML::VERSION, " ",
+	XML::LibXML::LIBXML_DOTTED_VERSION, " ",
+	XML::LibXML::LIBXML_VERSION, " ",
+	XML::LibXML::LIBXML_RUNTIME_VERSION, "\n";
+my $dom = XML::LibXML-&gt;load_xml(string=&gt;$XML);
+my $xpc = XML::LibXML::XPathContext-&gt;new;
+$xpc-&gt;registerNs(xh =&gt; 'http://www.w3.org/1999/xhtml');
+for my $div ($xpc-&gt;findnodes('//xh:div[@class="data"]', $dom)) {
+	print "1:", $div-&gt;{id}, "\n"
+}
+for my $div ($xpc-&gt;findnodes('//xh:div', $dom)) {
+	print "2:", $div-&gt;{id}, " ", $div-&gt;{class}, "\n"
+}
+
+__END__
+
+2.0129 2.9.1 20901 20901
+1:Hello
+1:World
+2:Hello data
+2:World data
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1201438</root_node>
+<parent_node field_name="parent_node">1201623</parent_node>
+<thread id="1201438">
+<node id="1201443"><node id="1201454"><node id="1201483"><node id="1201489"/>
+</node>
+</node>
+</node>
+<node id="1201450"><node id="1201457"/>
+</node>
+<node id="1201473"><node id="1201488"><node id="1201493"><node id="1201521"><node id="1201551"/>
+</node>
+</node>
+<node id="1201633"><node id="1201689"><node id="1201709"/>
+<node id="1201716"><node id="1201740"><node id="1201776"/>
+<node id="1201933"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201490"><node id="1201529"><node id="1201612"/>
+</node>
+</node>
+</node>
+<node id="1201497"/>
+<node id="1201514"><node id="1201621"><node id="1201623"><node id="1201624"><node id="1201625"><node id="1201628"><node id="1201663"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201540"><node id="1201622"><node id="1201657"/>
+</node>
+</node>
+<node id="1201544"><node id="1201553"/>
+</node>
+<node id="1201545"><node id="1201554"/>
+</node>
+</thread></node>

@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1172826" title="How to Debug my perl script?" created="2016-09-28 06:36:29" updated="2016-09-28 06:36:29" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1170687">ankit.tayal560</author>
+<doctext field_name="doctext">&lt;code&gt;use strict;
+#use warnings;
+use Data::Dumper;
+use XML::DOM;
+
+
+my $parser=new XML::DOM::Parser;
+my $doc = $parser-&gt;parsefile('C:\perl\perl_tests\AirbgICIndPer2.xml')or die$!;
+my $root=$doc-&gt;getDocumentElement();
+
+
+print("Enter the number of flags which needs to be removed...\n\n");
+my $num2=&lt;STDIN&gt;;
+if($num2&gt;0)
+{
+    for(my $p=0;$p&lt;$num2;$p++)
+    {
+    print("type the signal id for which flags need to be removed..\n\n");
+    my $sig_id=&lt;STDIN&gt;;
+    print("type the flag name which needs to be removed according to the instructions\n\n");
+    print("State on flag remove : type StateOn\n");
+    print("Indication Function remove : type IndicationFunctions\n");
+    print("First value flags remove : type FirstValueFlags\n");
+    print("timeout notification flag remove : type TimeoutFlags\n\n");
+    my $flag_to_be_modified=&lt;STDIN&gt;;
+    print("processing geny file data\n");
+    ClearSignalAttribute($sig_id,$flag_to_be_modified);
+	}
+
+        sub ClearSignalAttribute($$)
+        {
+        my $sigid=$_[0];
+        my $attribute=$_[1];
+        my $sigattributes;
+        my $sig;
+        my @attributes;
+        my @signals;
+        my $signal_id;
+		
+	    $sig=$root-&gt;getElementsByTagName("signal")-&gt;item(0);
+	    $signal_id=$sig-&gt;getAttribute("sigid");
+		print("the input signal id is : $sigid\n");
+		print("the other signal id is : $signal_id\n");
+		        if($sigid==$signal_id)
+	            {
+			        print("signal id matched\n");
+					if($sig-&gt;getElementsByTagName("attributes"))
+			        {
+			        $sigattributes=$sig-&gt;getElementsByTagName("attributes")-&gt;item(0);
+				    @attributes=$sigattributes-&gt;getElementsByTagName("attribute");
+					print("got the attributes\n");
+	                }
+                        foreach my $attr(@attributes)
+                        {							  
+						    my $a=$attr-&gt;getAttribute("name");
+							print("into the attribute array: $a\n");
+							my $c="VIlRx".$attribute;
+							print("the target is : $c\n");
+							#if($attr-&gt;getAttribute("name") eq "VIlRx".$attribute)
+	                        if($a eq $c)
+							{
+								print("attribute matched:$a\n");
+								if(my $temp1=$attr-&gt;getElementsByTagName("item")-&gt;item(0))
+	                            {
+	                                print("got the item element\n");
+									if(my $temp2=$temp1-&gt;getElementsByTagName("data")-&gt;item(0))
+									{
+      									print("got the data element\n");
+										if ($temp1-&gt;getAttribute("used")=='1')
+	                                    {
+										$b=$temp1-&gt;getAttribute("used");
+										print("Attribute-&gt;used : $b\n");
+										$temp1-&gt;setAttribute("used","0");
+										$temp1-&gt;setAttribute("order","-1");
+										$temp2-&gt;setAttribute("flags","4");
+										my $w=$temp1-&gt;getAttribute("used");
+							            my $x=$temp1-&gt;getAttribute("order");
+							            my $y=$temp2-&gt;getAttribute("flags");
+							            print("used : $w\n");
+							            print("order : $x\n");
+							            print("flags : $y\n");
+										}
+			                        }
+		                        }
+	                        }				  
+                        }
+                }	 
+	    }
+#$doc-&gt;setXMLDecl($doc-&gt;createXMLDecl('1.0','UTF-8'));
+#$doc-&gt;printToFile("C:/perl/perl_tests/AirbgICIndPer2.xml");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+XML FILE : 
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;ecuconfig id="1" name="ECU: IPC_LS" FrameworkVersion="1.4.48.0" CompatibleVersion="1.4.0.0"&gt;
+&lt;signal sigid="3464" id="3490"&gt;
+&lt;attributes&gt;
+&lt;creator name="Il_Vector_Gm"&gt;
+&lt;attribute name="Il_Vector_Gm_StateOn" typeid="3" value="1"/&gt;
+&lt;/creator&gt;
+&lt;creator name="VectorIL"&gt;
+&lt;attribute name="VIlRxSigType" typeid="4" flags="4" set="0" value=""/&gt;
+&lt;attribute name="VIlRxSet" typeid="3" flags="1"/&gt;
+&lt;attribute name="VIlRxGet" typeid="3" flags="1"/&gt;
+&lt;attribute name="VIlRxRDS" typeid="3" flags="4" set="0" value="0"&gt;
+&lt;sharing flags="7" value="0"/&gt;
+&lt;textinfos&gt;
+&lt;textinfo fromid="3"&gt;
+This attribute has been disabled by IL_Vector component.&lt;/textinfo&gt;
+&lt;/textinfos&gt;
+&lt;/attribute&gt;
+&lt;attribute name="VIlRxTimeoutTime" typeid="2" flags="4" set="0" value="0"/&gt;
+&lt;attribute name="VIlRxIndicationFlags" typeid="12" set="0"&gt;
+&lt;item index="0" order="-1" used="0"&gt;
+&lt;data typeid="4" flags="4" value="AirbgICIndPer"/&gt;
+&lt;/item&gt;
+&lt;/attribute&gt;
+&lt;attribute name="VIlRxIndicationFunctions" typeid="12" set="0"&gt;
+&lt;item index="0" order="0" used="1"&gt;
+&lt;data typeid="4" value="AirbgICIndPer"/&gt;
+&lt;/item&gt;
+&lt;/attribute&gt;
+&lt;attribute name="VIlRxFirstValueFlags" typeid="12" set="0"&gt;
+&lt;item index="0" order="0" used="1"&gt;
+&lt;data typeid="4" value="AirbgICIndPer"/&gt;
+&lt;/item&gt;
+&lt;/attribute&gt;
+&lt;attribute name="VIlRxDataChangedFlags" typeid="12" set="0"&gt;
+&lt;item index="0" order="-1" used="0"&gt;
+&lt;data typeid="4" flags="4" value="AirbgICIndPer"/&gt;
+&lt;/item&gt;
+&lt;/attribute&gt;
+&lt;attribute name="VIlRxTimeoutFlags" typeid="12" set="0"&gt;
+&lt;item index="0" order="0" used="1"&gt;
+&lt;data typeid="4" value="AirbgICIndPer"/&gt;
+&lt;/item&gt;
+&lt;item index="1" order="1" used="1"&gt;
+&lt;data typeid="4" value="AirbgICIndPer_1"/&gt;
+&lt;/item&gt;
+&lt;/attribute&gt;
+&lt;attribute name="VIlRxTimeoutFunctions" typeid="12" set="0"&gt;
+&lt;item index="0" order="-1" used="0"&gt;
+&lt;data typeid="4" flags="4" value="AirbgICIndPer"/&gt;
+&lt;/item&gt;
+&lt;/attribute&gt;
+&lt;attribute name="VIlRxInitFunction" typeid="4" value=""/&gt;
+&lt;attribute name="VIlRxStartFunction" typeid="4" value=""/&gt;
+&lt;attribute name="VIlRxStopFunction" typeid="4" value=""/&gt;
+&lt;attribute name="VIlRxInitDefault" typeid="3" flags="1"/&gt;
+&lt;attribute name="VIlRxStartDefault" typeid="3" value="0"/&gt;
+&lt;attribute name="VIlRxStopDefault" typeid="3" value="0"/&gt;
+&lt;attribute name="VIlRxDefaultValue" typeid="4" flags="1"/&gt;
+&lt;attribute name="VIlRxTimeoutDefault" typeid="3" set="0" value="0"/&gt;
+&lt;attribute name="VIlRxTimeoutDefaultValue" typeid="4" flags="5"/&gt;
+&lt;attribute name="VIlRxTimeoutDynamicApi" typeid="3" flags="2" set="0" value="0"&gt;
+&lt;sharing flags="7" value="0"/&gt;
+&lt;/attribute&gt;
+&lt;attribute name="VIlRxRouting" typeid="3" flags="1"/&gt;
+&lt;attribute name="VIlRxTimeoutSupervisor" typeid="6" flags="4" orefid="1306"/&gt;
+&lt;/creator&gt;
+&lt;/attributes&gt;
+&lt;sources&gt;
+&lt;source srcid="19264"/&gt;
+&lt;/sources&gt;
+&lt;/signal&gt;
+&lt;/ecuconfig&gt;
+&lt;/code&gt;
+&lt;p&gt;I've written the above script to modify the various attributes of "item" and "data" element. when I try to run this script it is not showing any error but not performing the required actions. it is not going inside the loop "if($a eq $c)" and simply printing all the names ignoring this loop . any suggestions about what is the bug in this script and how I can handle it?:&lt;/p&gt;</doctext>
+<thread id="1172826">
+<node id="1172828"><node id="1172829"/>
+</node>
+</thread></node>

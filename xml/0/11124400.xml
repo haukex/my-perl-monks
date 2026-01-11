@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11124400" title="A readline + -e oddity: readline opens files even with -e --- need &quot;readline STDIN&quot; to read from console" created="2020-11-30 10:32:26" updated="2020-11-30 10:32:26" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="11100694">cxw</author>
+<doctext field_name="doctext">&lt;p&gt;(This is my first meditation.  I am posting in hopes it will help someone down the line!  I can't find another node about this, but that doesn't mean there isn't one :) .)&lt;/p&gt;
+
+&lt;p&gt;I needed to run a program and then wait for the user to hit Enter.  I tried this:
+
+&lt;code&gt;
+$ perl -e 'system(@ARGV); readline' echo foo
+foo
+Can't open echo: No such file or directory at -e line 1.
+Can't open foo: No such file or directory at -e line 1.
+&lt;/code&gt;
+
+Not what I expected!&lt;/p&gt;
+
+&lt;readmore&gt;
+
+&lt;p&gt;After all, [doc://perlrun] says that:
+
+&lt;blockquote&gt;If &lt;c&gt;-e&lt;/c&gt; is given, Perl will not look for a filename in the argument list.&lt;/blockquote&gt;&lt;/p&gt;
+
+&lt;p&gt;What I was missing is that [doc://readline] &lt;i&gt;does&lt;/i&gt; look at the argument list.  Readline:
+
+&lt;blockquote&gt;reads ...from *ARGV if EXPR is not provided&lt;/blockquote&gt;&lt;/p&gt;
+
+&lt;p&gt;So what I needed was to expressly read from STDIN to get my keypress:
+
+&lt;code&gt;
+                                 # vvvvv
+$ perl -e 'system(@ARGV); readline STDIN' echo foo
+foo
+    (&lt;=== waited here for me to press Enter)
+&lt;/code&gt;
+&lt;/p&gt;
+&lt;/readmore&gt;</doctext>
+<thread id="11124400">
+<node id="11124403"/>
+<node id="11124404"/>
+<node id="11124416"><node id="11124454"/>
+<node id="11124459"/>
+</node>
+<node id="11124435"/>
+</thread></node>

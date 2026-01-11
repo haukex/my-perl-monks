@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110159" title="Re: Assembly language" created="2019-12-14 17:50:03" updated="2019-12-14 17:50:03" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;What is assembly language useful for?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'd say:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;On a modern machine, understanding at least roughly how assembly / machine instructions* work helps you understand how some code you wrote in a compiled language such as C will be translated. For example, your typical C program is structured into various functions you've written yourself, library functions etc., but assembly is just a linear list of instructions; understanding how one is translated to the other will give you a deeper understanding of what you are actually telling the processor to do when you write your code.&lt;/li&gt;
+&lt;li&gt;You &lt;i&gt;could&lt;/i&gt; use it to program small 8 or 16-bit microcontrollers; however, nowadays there are C compilers for most microcontrollers.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;If your goal is to just get a deeper understanding of how compilations and processors work, I actually &lt;i&gt;wouldn't&lt;/i&gt; recommend trying to learn modern x86 - the list of instructions has grown [wp://x86 instruction listings|ludicrously long]. So unless you have some specific reason for needing to know x86 assembly, like you're trying to debug something at that level, you're looking at &lt;i&gt;very&lt;/i&gt; specific optimizations, etc., I'd suggest looking at a much simpler microcontroller, such as a [https://www.microchip.com/design-centers/8-bit|Microchip 8-bit PIC], or for example the [https://www.microchip.com/wwwproducts/en/ATmega328|Atmel ATmega328] (now owned by Microchip as well). The latter is the basis of the [https://store.arduino.cc/arduino-uno-rev3|Arduino Uno], it's got an [http://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-0856-AVR-Instruction-Set-Manual.pdf|instruction set&lt;small&gt;&lt;sup&gt;PDF&lt;/sup&gt;&lt;/small&gt;] that's not too huge.&lt;/p&gt;
+&lt;p&gt;Modern hardware has grown pretty complex, which is why learning the &lt;i&gt;concepts&lt;/i&gt; on a simpler embedded system is IMHO helpful: How a processor stores its instructions, fetches them, executes them, reading and writing from/to RAM to do so, interrupts, various buses, low-level "peripherals" (like UART controllers), and so on. All of these concepts translate (more or less) to modern machines, except that they are much more complex there. But the basic building blocks of how a CPU communicates with the rest of the hardware in the system are the same.&lt;/p&gt;
+&lt;p&gt;* Note: Many people use the term "assembly" interchangeably with "machine instructions", and in many cases this is true, assembly is often just a textual 1-to-1 representation of the actual binary instructions the processor will directly execute. But to translate that textual representation into a binary format requires a translator program, and often these add a few features that actually mean that the "assembly" is not &lt;i&gt;exactly&lt;/i&gt; the same as the machine instructions. But they're close enough that this distinction often doesn't matter.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;How could it relate to Perl?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Perl is several steps away from assembly. The &lt;c&gt;perl&lt;/c&gt; interpreter, which parses your Perl code into an intermediate representation and executes that, is itself written in C, which of course is compiled to machine instructions. So it's not like Perl code is directly translated to machine code - &lt;c&gt;perl&lt;/c&gt; is an [wp://Interpreter (computing)|interpreter].&lt;/p&gt;
+&lt;p&gt;From your node [id://11110142|here]:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;If assembly is fundamental, and machine code is the most fundamental, why would I have to download a program to run it? I do not want to download a program to be able to run it. There should be a way to access the processor directly (possibly through terminal) where I could write "000 101 100 ..." and have it output "101 001" (these numbers do not mean anything real)&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The reason it's not that simple is that on a modern machine there are tons of of intermediate steps and layers. Take the "Hello, World" examples from this [http://asm.sourceforge.net/intro/hello.html|Introduction to UNIX assembly programming] or this [https://cs.lmu.edu/~ray/notes/nasmtutorial/|NASM Tutorial]:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;You need to edit and store the textual assembly program, which requires pretty much all components of the computer and OS (on modern machines and modern OSes, trying to learn to input binary assembly would be a gargantuan task).&lt;/li&gt;
+&lt;li&gt;You need to install the program that will take your textual assembly program and translate it to binary representation (e.g. [wp://GNU Assembler] or [wp://Netwide Assembler|NASM], or others for Windows), plus the step of [wp://Linker (computing)|linking].&lt;/li&gt;
+&lt;li&gt;Something as seemingly simple as running a binary is already a pretty complex topic: The OS needs to find the binary on the hard disk (a complex interaction in itself), load that into RAM, and ask the processor to run that; the processor then needs to fetch the instructions it is to run. (Compare this to a small microcontroller, where the program memory and RAM are contained entirely on the same chip and are directly accessible to the CPU.)&lt;/li&gt;
+&lt;li&gt;You need to consider that your assembly program can't "just take" something from the command line or standard input and "just output" something - all of these tasks require you to interact with the operating system, which provides and abstracts these I/O services. Your suggestion of &lt;i&gt;"access&amp;#91;ing&amp;#93; the processor directly"&lt;/i&gt; will not really work due to security restrictions of the OS and processor. (If you wanted something as simple as you seem to be asking about, then you could consider something like the [https://www.arduino.cc/en/Tutorial/Button|Arduino Button Tutorial] as the basis for how to actually do &lt;i&gt;really&lt;/i&gt; raw I/O with a processor - maybe wish for an [https://store.arduino.cc/genuino-starter-kit|Arduino Starter Kit] for Christmas? &lt;c&gt;;-)&lt;/c&gt;&amp;nbsp;)&lt;/li&gt;
+&lt;li&gt;Once your assembly program has been compiled to a binary, then yes, you don't necessarily need to download anything other than the binary itself, &lt;i&gt;however&lt;/i&gt;, that binary will be specific to the processor architecture, OS, and libraries it was compiled for. (If your goal is to write code that gets compiled down to binary machine instructions, then there are much better ways to do so than assembly, such as C, which is still very close to the hardware and machine code, but much nicer to code in relative to assembly.)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;It's all these layers that make your question pretty broad and hard to answer better without knowing more about why you're asking - I could suggest you could get a degree in Computer Engineering, then you'd learn about all of the above topics, but perhaps you're looking for something more specific?&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11110125</root_node>
+<parent_node field_name="parent_node">11110125</parent_node>
+<thread id="11110125">
+<node id="11110126"><node id="11110128"><node id="11110136"><node id="11110137"><node id="11110141"><node id="11110185"/>
+<node id="11110186"/>
+</node>
+</node>
+<node id="11110164"/>
+</node>
+</node>
+<node id="11110130"><node id="11110132"><node id="11110167"><node id="11110257"/>
+</node>
+</node>
+<node id="11110138"><node id="11110139"/>
+<node id="11110142"><node id="11110143"><node id="11110144"><node id="11110206"/>
+</node>
+<node id="11110148"/>
+</node>
+<node id="11110183"><node id="11110213"><node id="11110244"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11110131"/>
+<node id="11110134"><node id="11110166"><node id="11110176"><node id="11110192"><node id="11110199"/>
+</node>
+</node>
+<node id="11110181"/>
+</node>
+</node>
+</node>
+<node id="11110127"><node id="11110129"/>
+</node>
+<node id="11110135"/>
+<node id="11110145"/>
+<node id="11110159"><node id="11110179"/>
+</node>
+<node id="11110161"><node id="11110196"><node id="11110211"><node id="11110258"/>
+<node id="11110307"><node id="11110323"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11110169"/>
+<node id="11110207"><node id="11110208"><node id="11110259"><node id="11110272"/>
+</node>
+</node>
+</node>
+<node id="11110317"/>
+<node id="11110497"/>
+</thread></node>

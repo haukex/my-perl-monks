@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1204118" title="Re^2: hashref with(out) arrays" created="2017-11-23 04:16:53" updated="2017-11-23 04:16:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;In my rules, do I refer to this tag as "ns2:Height" or as "Height" somehow accounting for the namespace?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You can assign namespace prefixes using the &lt;c&gt;namespaces&lt;/c&gt; option, for example &lt;c&gt;namespaces =&gt; { 'http://www.example.com/foo' =&gt; 'ns2' }&lt;/c&gt;, and then use the &lt;c&gt;ns2:&lt;/c&gt; prefix in your rules. Or, you can use the same option to map different namespaces to the same prefix, if that is acceptable in your application (!), in the way I showed below (in that case the empty prefix).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Can I have rules that just deal with Height, Length, Width, Weight, etc?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, you can specify multiple tag names for a rule with &lt;c&gt;|&lt;/c&gt;. You can also use regexes to specify rules, as in &lt;c&gt;'/foo/' =&gt; ...&lt;/c&gt; (although I don't think the two can be combined). Here's an example:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::Rules;
+use Data::Dump;
+
+my $parser = XML::Rules-&gt;new(
+	stripspaces =&gt; 3|4, warnoverwrite =&gt; 1,
+	namespaces =&gt; {
+		'http://www.example.com/foo' =&gt; '',
+		'http://www.example.com/bar' =&gt; '',
+		'*' =&gt; 'die' }, # don't allow other namespaces
+	rules =&gt; [
+		'Height|Length|Width|Weight' =&gt;
+			sub { lc $_[0] =&gt; $_[1]-&gt;{_content} },
+		'root' =&gt; 'pass',
+		_default =&gt; sub { die "Unknown tag $_[0]" },
+	] );
+
+dd $parser-&gt;parse(&lt;&lt;'END_XML');
+&lt;root xmlns="http://www.example.com/bar"
+	xmlns:foo="http://www.example.com/foo" &gt;
+	&lt;foo:Height Units="inches"&gt;1.00&lt;/foo:Height&gt;
+	&lt;foo:Length Units="inches"&gt;1.00&lt;/foo:Length&gt;
+	&lt;foo:Width Units="inches"&gt;1.00&lt;/foo:Width&gt;
+	&lt;foo:Weight Units="pounds"&gt;0.01&lt;/foo:Weight&gt;
+&lt;/root&gt;
+END_XML
+
+__END__
+
+{ height =&gt; "1.00", length =&gt; "1.00",
+	weight =&gt; 0.01, width =&gt; "1.00" }
+&lt;/c&gt;
+&lt;p&gt;In this code, I've made the &lt;c&gt;_default&lt;/c&gt; rule be to [doc://die], that way I can make sure during development that I haven't overlooked a tag in the input XML. But you can of course also specify any &lt;c&gt;_default&lt;/c&gt; rule you like.&lt;/p&gt;
+&lt;p&gt;By the way, since these questions are going a bit off topic from the original post, it might be best to start a new thread on your questions about [mod://XML::Rules], showing your code, enough example input to reproduce, etc. ([id://1177642]).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203846</root_node>
+<parent_node field_name="parent_node">1204054</parent_node>
+<thread id="1203846">
+<node id="1203848"/>
+<node id="1203851"/>
+<node id="1203852"/>
+<node id="1203856"/>
+<node id="1203871"/>
+<node id="1203891"><node id="1203896"><node id="1204327"/>
+</node>
+</node>
+<node id="1203903"/>
+<node id="1203932"/>
+<node id="1204054"><node id="1204118"><node id="1204158"/>
+</node>
+</node>
+</thread></node>

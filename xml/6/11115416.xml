@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11115416" title="Difficulty with UTF-8 and file contents" created="2020-04-13 01:01:20" updated="2020-04-13 01:01:20" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1129327">mldvx4</author>
+<doctext field_name="doctext">&lt;p&gt;
+I have two questions.  
+&lt;/p&gt;
+&lt;p&gt;
+The first is how to get \*DATA, &lt;DATA&gt;, __DATA__ or whatever into the &lt;code&gt;open()&lt;/code&gt; function below.  I think I need that in order to illustrate the real problem which might be with the &lt;code&gt;open()&lt;/code&gt; function.  Or it might not be.
+&lt;/p&gt;
+
+&lt;p&gt;
+The real question is that the final result from &lt;code&gt;print $xhtml-&gt;as_XML_indented;&lt;/code&gt; in the script below is showing mangled text and not presenting it as UTF-8.  Whether that is happening during reading or printing I do not know and ask your collective wisdom on how to get the script to produce UTF-8 in its final result.  It should show "smart" quotes around the "Def" string.  
+&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+
+use utf8;
+use HTML::TreeBuilder::XPath;
+
+use warnings;
+use strict;
+
+
+my $xhtml = HTML::TreeBuilder::XPath-&gt;new;
+$xhtml-&gt;implicit_tags(1);
+$xhtml-&gt;no_space_compacting(1);
+
+my $filehandle;
+ open ($filehandle, "&lt; :encoding(UTF-8)", \*DATA)
+    or die("Could not open file 'DATA' : error: $!\n");
+
+# parse UTF-8
+$xhtml-&gt;parse_file($filehandle)
+    or die("Could not parse file handle for 'DATA' : $!\n");
+
+close ($filehandle);
+
+print $xhtml-&gt;as_XML_indented;
+$xhtml-&gt;delete;
+
+exit(0);
+
+
+__DATA__
+
+&lt;html xmlns="http://www.w3.org/1999/xhtml"&gt;
+  &lt;head&gt;
+    &lt;title&gt;Foo&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;p&gt;&lt;a href="https://example.com/3/"&gt;Abc
+      â&amp;#128;&amp;#152;Defâ&amp;#128;&amp;#153; (GHI)&lt;/a&gt;&lt;/p&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+&lt;/code&gt;</doctext>
+<thread id="11115416">
+<node id="11115420"><node id="11115423"><node id="11115444"><node id="11115477"/>
+</node>
+</node>
+<node id="11115427"/>
+</node>
+<node id="11115431"/>
+<node id="11115454"><node id="11115495"/>
+</node>
+<node id="11115570"/>
+</thread></node>

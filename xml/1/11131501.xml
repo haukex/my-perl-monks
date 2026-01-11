@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11131501" title="Re: How do I get a list in a perl hash generated from an XML?" created="2021-04-20 01:56:59" updated="2021-04-20 01:56:59" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I &lt;i&gt;very&lt;/i&gt; strongly recommend against XML::Simple! A good replacement for reading XML is [mod://XML::Rules], its output is &lt;i&gt;much&lt;/i&gt; more customizable. &lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; If you want &lt;c&gt;func&lt;/c&gt; to be an arrayref, just replace &lt;c&gt;'as is'&lt;/c&gt; by &lt;c&gt;'as array'&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::Rules;
+use Data::Dump;
+
+my $parser = XML::Rules-&gt;new(
+	stripspaces =&gt; 3|4,
+	rules =&gt; [
+		root=&gt;'pass',
+		config=&gt;'', build=&gt;'',
+		ref=&gt;'by name', func=&gt;'as is',
+		_default =&gt; sub { die "Unknown tag $_[0]" }
+	] );
+my $data = $parser-&gt;parse(&lt;&lt;'END_XML');
+&lt;root&gt;
+	&lt;config&gt;
+		&lt;build host="https://cpzdomain.local"/&gt;
+	&lt;/config&gt;
+	&lt;ref name="abc_sia_%version1.ref%"&gt;
+		&lt;func envname = "test01" objectdir = "/home/pv66" 
+			base="default_771"/&gt;
+	&lt;/ref&gt;
+&lt;/root&gt;
+END_XML
+dd $data;
+
+__END__
+
+{
+  "abc_sia_%version1.ref%" =&gt; {
+    func =&gt; { base =&gt; "default_771", envname =&gt; "test01",
+      objectdir =&gt; "/home/pv66" },
+  },
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11131461</root_node>
+<parent_node field_name="parent_node">11131461</parent_node>
+<thread id="11131461">
+<node id="11131462"><node id="11131463"/>
+</node>
+<node id="11131501"/>
+<node id="11131464"><node id="11131474"><node id="11131475"/>
+</node>
+<node id="11131469"><node id="11131509"/>
+</node>
+</node>
+<node id="11131600"/>
+</thread></node>

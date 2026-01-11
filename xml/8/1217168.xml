@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217168" title="Re: How to print data between tags from file sequentially?" created="2018-06-22 04:09:05" updated="2018-06-22 04:09:05" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I have a text file&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Are you sure it's a text file? It looks like XML (or maybe HTML?) to me. Even if just a section of a longer text file contains XML data, I would strongly recommend extracting that section of text and using a proper module to parse it (see e.g. [id://1201438] for why). [mod://Mojo::DOM] has a nice interface, and it handles even this case of the XML not having a root node:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Mojo::DOM;
+
+my $html = &lt;&lt;'END_HTML';
+&lt;Answer type="string"&gt;ServerName&lt;/Answer&gt;
+&lt;Answer type="string"&gt;10.10.10.11&lt;/Answer&gt;
+&lt;Answer type="string"&gt;Windows Server 2012&lt;/Answer&gt;
+END_HTML
+
+# note: -&gt;xml(1) turns on case sensitivity
+my $dom = Mojo::DOM-&gt;new-&gt;xml(1)-&gt;parse($html);
+my $values = $dom-&gt;find('Answer')-&gt;map('all_text');
+
+print "Computer: $values-&gt;[0]\n";
+print "IP Address: $values-&gt;[1]\n";
+print "OS: $values-&gt;[2]\n";
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor edits&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1217156</root_node>
+<parent_node field_name="parent_node">1217156</parent_node>
+<thread id="1217156">
+<node id="1217157"><node id="1217229"/>
+</node>
+<node id="1217165"><node id="1217227"><node id="1217260"/>
+</node>
+</node>
+<node id="1217168"><node id="1217173"/>
+<node id="1217228"><node id="1217235"><node id="1217246"/>
+</node>
+</node>
+</node>
+<node id="1217189"/>
+<node id="1217322"/>
+</thread></node>

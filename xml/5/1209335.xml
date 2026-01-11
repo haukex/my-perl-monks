@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1209335" title="Re: including variables" created="2018-02-16 15:59:16" updated="2018-02-16 15:59:16" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1166559">harangzsolt33</author>
+<doctext field_name="doctext">What would you guys say about this solution?:
+
+This file is called : "include.pl"
+
+&lt;code&gt;
+
+use strict;
+use warnings;
+
+include('test.pl') &gt; 2 or die('Couldnt include important file!');
+
+# This sub returns the number of bytes read
+# or a negative number if there was an error...
+sub include
+{
+  my $FILE = shift;
+  -e $FILE or return -1;      # File doesn't exist
+  -f $FILE or return -2;      # not a plain file
+  my $SIZE = -s $FILE;
+  $SIZE &gt; 2 or return $SIZE;  # File is basically empty
+  my $CONTENT; my $F;
+  open $F, '&lt;:raw', $FILE or return -3;  # Can't open file
+  binmode $F;
+  sysread($F, $CONTENT, $SIZE) == $SIZE or return -4;  # Can't read
+  close $F;
+  eval($CONTENT);
+  return $SIZE;
+}
+
+ShowMessage();
+ChangeMessage('Whats up!');
+ShowMessage();
+exit;
+
+&lt;/code&gt;
+
+and this file is called "test.pl" :
+
+&lt;code&gt;
+
+my $MESSAGE = 'Hello World!!!';
+
+# This sub displays the $MESSAGE:
+sub ShowMessage  { print "$MESSAGE\n"; }
+
+sub ChangeMessage { $MESSAGE = shift; }
+
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">1209317</root_node>
+<parent_node field_name="parent_node">1209317</parent_node>
+<thread id="1209317">
+<node id="1209318"/>
+<node id="1209335"><node id="1209343"/>
+<node id="1209378"/>
+</node>
+<node id="1209347"/>
+<node id="1209357"/>
+<node id="1209386"/>
+<node id="1209388"><node id="1209400"/>
+<node id="1209402"/>
+<node id="1209403"><node id="1209457"/>
+</node>
+</node>
+</thread></node>

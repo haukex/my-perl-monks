@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1172535" title="Re: calculate length of day as function of space at onset of fall" created="2016-09-24 07:01:03" updated="2016-09-24 07:01:03" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [Datz_cozee75],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;When did fall begin? Is there only one answer to that question?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;A quick reading of Wikipedia leads me to believe that there are plenty of different definitions of the beginnings and ends of the seasons, depending on region and culture. But apparently in North America (aside from the simpler meteorological definitions based on calendar months), it's the March &amp;amp; September equinoxes and the June &amp;amp; December solstices. That also seems to match with your definition, &lt;i&gt;"fall occurs exactly when the sun sets in the west"&lt;/i&gt;.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;how long was the day today?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;A bit more research, and CPAN comes to the rescue. First, the output:&lt;/p&gt;
+&lt;c&gt;
+At 21.3N 157.816667W:
+ In 2016:
+  Spring begins on the March equinox at 2016-03-19 18:29:48 HST.
+   Sunrise is at 06:32:58 HST, sunset is at 18:40:50 HST,
+   and the day is 12 hours, 7 minutes, and 52 seconds long.
+  Summer begins on the June solstice at 2016-06-20 12:33:55 HST.
+   Sunrise is at 05:48:34 HST, sunset is at 19:14:27 HST,
+   and the day is 13 hours, 25 minutes, and 53 seconds long.
+  Fall begins on the September equinox at 2016-09-22 04:20:41 HST.
+   Sunrise is at 06:18:46 HST, sunset is at 18:24:11 HST,
+   and the day is 12 hours, 5 minutes, and 25 seconds long.
+  Winter begins on the December solstice at 2016-12-21 00:44:00 HST.
+   Sunrise is at 07:03:22 HST, sunset is at 17:53:41 HST,
+   and the day is 10 hours, 50 minutes, and 19 seconds long.
+ In 2017:
+  Spring begins on the March equinox at 2017-03-20 00:28:31 HST.
+   Sunrise is at 06:32:16 HST, sunset is at 18:41:04 HST,
+   and the day is 12 hours, 8 minutes, and 48 seconds long.
+  Summer begins on the June solstice at 2017-06-20 18:23:42 HST.
+   Sunrise is at 05:48:31 HST, sunset is at 19:14:24 HST,
+   and the day is 13 hours, 25 minutes, and 53 seconds long.
+  Fall begins on the September equinox at 2017-09-22 10:01:07 HST.
+   Sunrise is at 06:18:43 HST, sunset is at 18:24:25 HST,
+   and the day is 12 hours, 5 minutes, and 42 seconds long.
+  Winter begins on the December solstice at 2017-12-21 06:27:50 HST.
+   Sunrise is at 07:03:15 HST, sunset is at 17:53:33 HST,
+   and the day is 10 hours, 50 minutes, and 18 seconds long.
+&lt;/c&gt;
+&lt;p&gt;And the code:&lt;/p&gt;
+&lt;spoiler&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+use Astro::Utils;
+use DateTime;
+use DateTime::Event::Sunrise;
+use DateTime::Format::Strptime;
+use DateTime::Format::Human::Duration;
+
+my $LONG = -157.816667; # E = +, W = -
+my $LAT  =   21.3;      # N = +, S = -
+my $ZONE = 'Pacific/Honolulu';
+
+my $sun = DateTime::Event::Sunrise-&gt;new( precise=&gt;1,
+	longitude =&gt; $LONG, latitude =&gt; $LAT );
+my $strp = DateTime::Format::Strptime-&gt;new(
+	pattern =&gt; '%Y-%m-%d %H:%M:%S', time_zone=&gt;'UTC',
+	on_error=&gt;'croak');
+my $durfmt = DateTime::Format::Human::Duration-&gt;new();
+
+print "At ".abs($LAT).($LAT&gt;0?"N":"S")
+	." ".abs($LONG).($LONG&gt;0?"E":"W").":\n";
+my $now_year = DateTime-&gt;now-&gt;year;
+for my $year ($now_year, $now_year+1) {
+	print " In $year:\n";
+	my @seas = (
+		[ 'Spring', 'March equinox',
+		  calculate_equinox ('mar', 'utc', $year) ],
+		[ 'Summer', 'June solstice',
+		  calculate_solstice('jun', 'utc', $year) ],
+		[ 'Fall',   'September equinox',
+		  calculate_equinox ('sep', 'utc', $year) ],
+		[ 'Winter', 'December solstice',
+		  calculate_solstice('dec', 'utc', $year) ], );
+	for my $seas (@seas) {
+		my ($sname,$when,$start) = @$seas;
+		$start = $strp-&gt;parse_datetime($start);
+		$start-&gt;set_time_zone($ZONE);
+		my $rise = $sun-&gt;sunrise_datetime($start);
+		my $set = $sun-&gt;sunset_datetime($start);
+		my $dur = $durfmt-&gt;format_duration_between($rise, $set);
+		print "  $sname begins on the $when at ",
+			$start-&gt;strftime('%Y-%m-%d %H:%M:%S %Z'),".\n";
+		print "   Sunrise is at ",$rise-&gt;strftime('%H:%M:%S %Z'),
+			", sunset is at ",$set-&gt;strftime('%H:%M:%S %Z'),",\n";
+		print "   and the day is $dur long.\n";
+	}
+}
+&lt;/c&gt;
+&lt;/spoiler&gt;
+&lt;p&gt;I know this doesn't address the "as function of space" part of the question, but still, a fun little weekend project :-)&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Perhaps [mod://Astro::Coord::ECI::Sun] could be useful?&lt;/p&gt;
+&lt;p&gt;Regards,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1172523</root_node>
+<parent_node field_name="parent_node">1172523</parent_node>
+<thread id="1172523">
+<node id="1172527"><node id="1172616"><node id="1172746"/>
+</node>
+</node>
+<node id="1172535"><node id="1172808"/>
+</node>
+<node id="1172663"><node id="1172827"/>
+</node>
+<node id="1174935"/>
+</thread></node>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1191528" title="Re: Add child hash to hash of hashes." created="2017-05-29 14:10:21" updated="2017-05-29 14:10:21" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Here is a working sample script&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, not quite - for it to work, &lt;c&gt;keys %file_tests&lt;/c&gt; should probably be &lt;c&gt;keys %HoH&lt;/c&gt; instead. This is why it's a good idea to always [id://111088]!&lt;/p&gt;
+&lt;p&gt;Anyway, I am not sure if you are asking a question, or just want to provide this information - if it's the latter, then this post is probably better suited to [id://480] (don't repost it though, someone can move it for you).&lt;/p&gt;
+&lt;p&gt;While the code you showed works, note that &lt;c&gt;sub new_hash&lt;/c&gt; returns a list of values (the key/value pairs of &lt;c&gt;%hash&lt;/c&gt;), this causes this list of values to be copied, which isn't necessary. Inside of &lt;c&gt;sub new_hash&lt;/c&gt;, you could create a new anonymous hash by saying &lt;c&gt;my $hash = { keyname =&gt; ... }; return $hash;&lt;/c&gt;, and then &lt;c&gt;$hash&lt;/c&gt; holds a reference to this anonymous hash, which you can treat just like a regular scalar, meaning you can say things like &lt;c&gt;my $child_hash = new_hash(); $HoH{ $child_hash-&gt;{keyname} } = $child_hash;&lt;/c&gt;, and all that gets copied over is the reference to the anonymous hash, while the data inside the anonymous hash doesn't get copied. (An alternative is &lt;c&gt;sub new_hash { my %hash = ( ... ); return \%hash }&lt;/c&gt;.)&lt;/p&gt;
+&lt;p&gt;As for your two suggestions, note that &lt;c&gt;$HoH{$key} = {%child_hash};&lt;/c&gt; causes the key/value pairs in the hash to be copied one more time, which could be considered a bit wasteful. So if you have a hash &lt;c&gt;%child_hash&lt;/c&gt;, personally I'd recommend the &lt;c&gt;$HoH{$key} = \%child_hash;&lt;/c&gt; version, since then what you are storing is a reference to &lt;c&gt;%child_hash&lt;/c&gt;, which doesn't require the contents of the hash to be copied. The only thing to keep in mind is that because we're talking about references, any changes to &lt;c&gt;%child_hash&lt;/c&gt; afterwards will be reflected in &lt;c&gt;$HoH{$key}&lt;/c&gt; and vice versa!&lt;/p&gt;
+&lt;p&gt;(Also, whenever I'm talking about copies above, note these are shallow copies, which means that if any of the values in the hash we are talking about are references, the copies of the hash will refer to the &lt;i&gt;same&lt;/i&gt; data sub-structures.)&lt;/p&gt;
+&lt;p&gt;See also [doc://perlreftut], [doc://perlref] and [doc://perldsc].&lt;/p&gt;
+&lt;p&gt;Also, in regards to your post [id://1191523|here], see [id://17557]&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1191522</root_node>
+<parent_node field_name="parent_node">1191522</parent_node>
+<thread id="1191522">
+<node id="1191523"/>
+<node id="1191528"/>
+</thread></node>

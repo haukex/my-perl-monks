@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11127516" title="Re^5: What defines the output format of a Postgres Timestamp" created="2021-01-27 09:10:59" updated="2021-01-27 09:10:59" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;My program does not expect any order. That's what "hashes" are made for.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, to continue down this avenue of argumentation: If you're using hashes, then isn't it also likely that you know all the names of the keys in advance? Then you could do &lt;c&gt;$db-&gt;select( my_table =&gt; ['price',...] )-&gt;hashes&lt;/c&gt;. Then you wouldn't be getting more columns than necessary when your table definition changes, you'd get hard failures instead of unexplained &lt;c&gt;undef&lt;/c&gt;s when your column names change, and so on. I know that listing all columns feels tedious, but I tend to agree that &lt;c&gt;SELECT *&lt;/c&gt; is brittle, and IMHO one solution is having the column names in Perl variables and then building the queries instead of hard-coding the SQL.&lt;/p&gt;
+&lt;p&gt;Plus, query building with [mod://SQL::Abstract] means you can do fun things on the Perl side like using [doc://map] to easily apply the &lt;c&gt;TO_CHAR&lt;/c&gt; function to multiple columns, something like &lt;c&gt;$db-&gt;select( my_table =&gt; [ map { \["TO_CHAR(?,'YYYY-MM-DDTHH24:MI:SS') AS ?",$_,$_] } @datetime_columns ] )&lt;/c&gt; &lt;small&gt;(untested)&lt;/small&gt;.&lt;/p&gt;
+&lt;p&gt;Yet another idea might be to look at extending [mod://Mojo::Pg::Results]'s &lt;c&gt;expand&lt;/c&gt; method, which already processes JSON columns, you could use this to convert date/time columns to [mod://DateTime] objects automatically. The "advantage" of this solution would be that you could continue using &lt;c&gt;SELECT *&lt;/c&gt;...&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11127460</root_node>
+<parent_node field_name="parent_node">11127510</parent_node>
+<thread id="11127460">
+<node id="11127464"><node id="11127471"/>
+</node>
+<node id="11127466"><node id="11127473"><node id="11127475"/>
+<node id="11127503"><node id="11127510"><node id="11127516"><node id="11127565"><node id="11127582"/>
+</node>
+</node>
+</node>
+<node id="11127515"><node id="11127517"><node id="11127518"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11127482"/>
+<node id="11127484"/>
+</thread></node>

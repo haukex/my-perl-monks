@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203614" title="Re^4: Unexpected interaction between decode_entities() and lc()" created="2017-11-16 14:00:26" updated="2017-11-16 14:00:26" _doctext_mode="lenient"><type id="11">note</type>
+<author id="381608">ikegami</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;p&gt;&lt;i&gt;First, I would strongly recommend against using any of the functions from the utf8 module, since these are really only meant for use if one knows the inner workings of how Perl handles Unicode and non-Unicode strings.&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;That's not true.
+
+&lt;dl&gt;
+&lt;dt&gt;&lt;c&gt;utf8::encode&lt;/c&gt; and &lt;c&gt;utf8::decode&lt;/c&gt;&lt;/dt&gt;
+&lt;dd&gt;Safe. Used for efficient encoding and decoding.&lt;/dd&gt;
+
+&lt;dt&gt;&lt;c&gt;utf8::upgrade&lt;/c&gt; and &lt;c&gt;utf8::downgrade&lt;/c&gt;&lt;/dt&gt;
+&lt;dd&gt;Safe. Used for working around &lt;i&gt;The Unicode Bug&lt;/i&gt;.&lt;/dd&gt;
+
+&lt;dt&gt;&lt;c&gt;utf8::is_utf8&lt;/c&gt;&lt;/dt&gt;
+&lt;dd&gt;AVOID. Only useful when checking code for &lt;i&gt;The Unicode Bug&lt;/i&gt;. Any use outside of debugging suffers from &lt;i&gt;The Unicode Bug&lt;/i&gt; by definition. Use one of the previously-named functions instead.&lt;/dd&gt;
+
+&lt;dt&gt;&lt;c&gt;utf8::valid&lt;/c&gt;&lt;/dt&gt;
+&lt;dd&gt;Safe, but extremely limited use (as it checks if scalars are well-formed).&lt;/dd&gt;
+&lt;/dl&gt;
+
+&lt;p&gt;It's actually [mod://Encode] that has the subs you should avoid.
+
+&lt;dl&gt;
+&lt;dt&gt;&lt;c&gt;Encode::encode&lt;/c&gt; and &lt;c&gt;Encode::decode&lt;/c&gt;&lt;/dt&gt;
+&lt;dd&gt;Safe. Used for encoding and decoding.&lt;/dd&gt;
+
+&lt;dt&gt;&lt;c&gt;Encode::is_utf8&lt;/c&gt;&lt;/dt&gt;
+&lt;dd&gt;AVOID. Only useful when checking code for &lt;i&gt;The Unicode Bug&lt;/i&gt;. Any use outside of debugging suffers from &lt;i&gt;The Unicode Bug&lt;/i&gt; by definition.&lt;/dd&gt;
+
+&lt;dt&gt;&lt;c&gt;Encode::_utf8_on&lt;/c&gt; and &lt;c&gt;Encode::_utf8_off&lt;/c&gt;&lt;/dt&gt;
+&lt;dd&gt;UNSAFE. There are no reason to ever use these, so NEVER use these. Use one of the utf8:: functions instead.
+&lt;br&gt;&lt;c&gt;Encode::_utf8_on($s)&lt;/c&gt; is short for &lt;c&gt;utf8::decode($s) if !utf8::is_utf8($s);&lt;/c&gt;, which suffers from &lt;i&gt;The Unicode Bug&lt;/i&gt; by definition.
+&lt;br&gt;&lt;c&gt;Encode::_utf8_off($s)&lt;/c&gt; is short for &lt;c&gt;utf8::encode($s) if utf8::is_utf8($s);&lt;/c&gt;, which suffers from &lt;i&gt;The Unicode Bug&lt;/i&gt; by definition.
+&lt;/dd&gt;
+
+&lt;/dl&gt;
+
+&lt;p&gt;&lt;i&gt;The Unicode Bug&lt;/i&gt; refers to code whose behaviour depends on the internal storage format of a string (i.e. the value returned by &lt;c&gt;utf8::is_utf8&lt;/c&gt; and &lt;c&gt;Encode::is_utf8&lt;/c&gt;).
+</doctext>
+<root_node field_name="root_node">1203368</root_node>
+<parent_node field_name="parent_node">1203392</parent_node>
+<thread id="1203368">
+<node id="1203370"><node id="1203371"><node id="1203379"/>
+</node>
+</node>
+<node id="1203375"><node id="1203387"><node id="1203391"><node id="1203393"><node id="1203403"/>
+</node>
+</node>
+<node id="1203392"><node id="1203614"><node id="1203617"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1203402"><node id="1203423"/>
+<node id="1203452"><node id="1203457"/>
+</node>
+</node>
+</thread></node>

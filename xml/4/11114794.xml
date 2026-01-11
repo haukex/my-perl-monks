@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11114794" title="Re: i2c bus contention" created="2020-03-30 03:44:00" updated="2020-03-30 03:44:00" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I considered having a lock file that each script accesses, to control access to the i2c bus, but that seems like a lot of overhead, probably worse that my time slot solution.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Taking a brief look at [https://metacpan.org/source/MDOOTSON/HiPi-0.80/I2C.xs#L235|the code], it appears that what [mod://HiPi::Device::I2C] is doing is an [doc://ioctl] on the &lt;c&gt;/dev/i2c*&lt;/c&gt; device file, and my guess would be that the Linux kernel doesn't guarantee those to be atomic when there are multiple writers. But I also don't see your issue with a lock file, since I2C writes should be pretty quick - why not just [doc://flock] the object's filehandle? I don't have an RPi with an I2C device handy to test, but I'd suggest just trying something like this:&lt;/p&gt;
+&lt;c&gt;
+use Fcntl qw/:flock/;
+...
+my $i2c = HiPi::Device::I2C-&gt;new(...);
+...
+flock($i2c-&gt;fh, LOCK_EX) or die "flock: $!";
+$i2c-&gt;bus_write(...);
+flock($i2c-&gt;fh, LOCK_UN) or die "flock: $!";
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11114782</root_node>
+<parent_node field_name="parent_node">11114782</parent_node>
+<thread id="11114782">
+<node id="11114783"><node id="11114784"/>
+<node id="11114804"/>
+</node>
+<node id="11114786"><node id="11114790"><node id="11114791"><node id="11114823"/>
+</node>
+<node id="11114797"/>
+</node>
+<node id="11114796"/>
+<node id="11114799"><node id="11114805"/>
+</node>
+</node>
+<node id="11114794"><node id="11114798"/>
+<node id="11114956"/>
+</node>
+</thread></node>

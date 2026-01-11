@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1208945" title="Re^2: Code Works But Not Sure How" created="2018-02-11 06:42:46" updated="2018-02-11 06:42:46" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;The main issue is that your array is not passed to the subroutine, since you give no arguments in the call.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;[RichHamilton]: I just wanted to highlight this since it is the first thing that jumped out at me when I skimmed your code.&lt;/p&gt;
+&lt;p&gt;Inside &lt;c&gt;new&lt;/c&gt;, you call &lt;c&gt;make_menu_items();&lt;/c&gt;, without arguments and not as a method call, so Perl won't pass &lt;c&gt;$self&lt;/c&gt; as the first argument. One way to change this is by [doc://bless]ing the object first, i.e. &lt;c&gt;bless $self, $class; $self-&gt;make_menu_items();&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;So in the code you showed, in the call to &lt;c&gt;sub make_menu_items&lt;/c&gt;, &lt;c&gt;$self&lt;/c&gt; starts out as &lt;c&gt;undef&lt;/c&gt;. The reason the code doesn't fail is &lt;i&gt;autovivification&lt;/i&gt; (here's [id://691557|one thread] of several on that). As [1nickt] said, if you dump &lt;c&gt;$self&lt;/c&gt;, you'll see that before the line "&lt;c&gt;my $items = $#{$self-&gt;{menu_items}};&lt;/c&gt;" it is &lt;c&gt;undef&lt;/c&gt;, but after that line it magically becomes &lt;c&gt;{ menu_items =&gt; [] }&lt;/c&gt;, because you first accessed it as a hashref with &lt;c&gt;$self-&gt;{...}&lt;/c&gt;, and then accessed the hash key &lt;c&gt;menu_items&lt;/c&gt; as an array reference with &lt;c&gt;$#{...}&lt;/c&gt;.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1208937</root_node>
+<parent_node field_name="parent_node">1208938</parent_node>
+<thread id="1208937">
+<node id="1208938"><node id="1208945"><node id="1208953"/>
+</node>
+<node id="1208948"><node id="1208950"><node id="1208955"><node id="1208961"/>
+</node>
+</node>
+<node id="1208951"><node id="1208956"/>
+</node>
+</node>
+<node id="1208952"/>
+</node>
+<node id="1208941"/>
+<node id="1208946"><node id="1208957"/>
+</node>
+</thread></node>

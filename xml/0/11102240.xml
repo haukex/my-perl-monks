@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11102240" title="Re^3: Exiting eval via next: is that so bad?" created="2019-07-01 10:50:59" updated="2019-07-01 10:50:59" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1076581">SimonSaysCake</author>
+<doctext field_name="doctext">&lt;p&gt;
+Sorry, I can see why my example is confusing. Here's a slightly better one, more true to the production code:
+&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Scalar::Util qw(looks_like_number);
+
+my @times = (2, 4, 3, 1, 3.5, 2, 5);
+
+select((select(STDOUT), $|=1)[0]);
+
+TIME: for my $time_to_wait (@times) {
+    print "Time to wait is: $time_to_wait\n";
+
+    local $@;
+    eval {
+        # Skip even numbers.
+        die '__NOT_FATAL__' if !($time_to_wait % 2);
+
+        verify_number($time_to_wait);
+
+        # Skip numbers less than 3.
+        die '__NOT_FATAL__' if ($time_to_wait &lt; 3);
+
+        verify_time($time_to_wait);
+        1;
+    }
+    or do {
+        if($@ &amp;&amp; $@ =~ /__NOT_FATAL__/) {
+            next TIME;
+        }
+
+        print "Something went boom! ($@)\n";
+    };
+
+    print "Sleeping for $time_to_wait seconds ... ";
+    sleep $time_to_wait;
+    print "Done.\n";
+}
+
+exit 0;
+
+sub verify_number {
+    my ($arg) = @_;
+    die "We died!" if !defined $arg;
+    looks_like_number($arg) or die "We died!";
+    return;
+}
+
+sub verify_time {
+    my ($arg) = @_;
+    die "We died!" if !defined $arg;
+    # Floats not allowed.
+    int($arg) == ($arg / 1) or die "We died!";
+    return;
+}
+&lt;/code&gt;
+&lt;p&gt;
+Now imagine several more "verify" type calls within that same eval. Granted, it could be re-written to use a bunch more separate eval calls thus potentially allowing next calls outside/between them but in production those function calls are all very related and would die in similar ways. So I feel it comes down to what's more simple, cleaner? I think I might give the undermentioned Syntax::Keyword::Try package a try (swidt) since it does seem to support exiting via "next" calls.
+&lt;/p&gt;
+-s1m0n-</doctext>
+<root_node field_name="root_node">104789</root_node>
+<parent_node field_name="parent_node">11102146</parent_node>
+<thread id="104789">
+<node id="104794"/>
+<node id="104801"><node id="927610"><node id="927634"><node id="932005"><node id="932110"/>
+<node id="969006"><node id="969023"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="104810"/>
+<node id="11101996"><node id="11102025"/>
+<node id="11102046"/>
+<node id="11102146"><node id="11102240"><node id="11102243"/>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11145668" title="Re: Regex: remove non-adjacent duplicate hashtags" created="2022-07-23 09:36:18" updated="2022-07-23 09:36:18" _doctext_mode="lenient"><type id="11">note</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">&lt;I&gt;&amp;gt; What am I doing wrong?&lt;/I&gt;&lt;P&gt;
+
+you have multiple issues
+&lt;UL&gt;
+&lt;LI&gt; use \1 instead of $1 on the match side
+&lt;LI&gt; /g moves your start [DOC://pos|&lt;tt&gt;pos&lt;/tt&gt;] where the last match stopped, so you either need to use a lookahead &lt;C&gt;(?=)&lt;/C&gt; or &lt;C&gt;\K&lt;/C&gt; to keep the position after the first group
+&lt;LI&gt; your $1 will include whitespaces in the end and won't match at &lt;C&gt;\n&lt;/C&gt;
+&lt;/UL&gt;&lt;P&gt;
+
+
+here a demo with &lt;C&gt;perl -dE0&lt;/C&gt;&lt;P&gt;
+
+&lt;c&gt;
+ DB&lt;70&gt; $r = " #1 #2 #3 #1 #3 #2 #3 #2"
+
+ DB&lt;72&gt; $_=$r; s/(#\S+\s?)(.+$1)(?{say "$_ ($1) - ($2) pos:",pos($_)})/$2/g ;say "fin: $_"
+#1 #2 #3 #1 #3 #2 #3 #2 (#1 ) - (#2 #3 #1 #3 #2 #3 #2) pos:24
+fin:  #2 #3 #1 #3 #2 #3 #2                                                                                                                               
+&lt;/c&gt;&lt;P&gt;
+
+you can use this as template to experiment and debug with &lt;C&gt;(?{...})&lt;/C&gt;&lt;P&gt;
+
+
+&lt;H5&gt; update&lt;/H5&gt;&lt;P&gt;
+
+like using &lt;C&gt;\K&lt;/C&gt;
+&lt;c&gt;
+  DB&lt;73&gt; $_=$r; s/(#\S+\s?)\K(.+\1)(?{say "$_ ($1) - ($2) pos:",pos($_)})//g ;say                                             
+#1 #2 #3 #1 #3 #2 #3 #2 (#1 ) - (#2 #3 #1 ) pos:13                                                                           
+#1 #2 #3 #1 #3 #2 #3 #2 (#3 ) - (#2 #3 ) pos:22                                                                              
+#1 #3 #2
+&lt;/c&gt;&lt;P&gt;
+
+&lt;H5&gt; update&lt;/H5&gt;&lt;P&gt;
+
+like using &lt;C&gt;(?=...)&lt;/C&gt;
+&lt;c&gt;
+  DB&lt;81&gt; sub DEB {say "$_ ($1) - ($2) pos:",pos($_)}
+
+  DB&lt;82&gt; $_=$r; s/(#\S+\s?)(?=(.+\1))(?{DEB})//g ;say "fin: $_"                                                               
+#1 #2 #3 #1 #3 #2 #3 #2 (#1 ) - (#2 #3 #1 ) pos:4                                                                            
+#1 #2 #3 #1 #3 #2 #3 #2 (#2 ) - (#3 #1 #3 #2 ) pos:7                                                                         
+#1 #2 #3 #1 #3 #2 #3 #2 (#3 ) - (#1 #3 #2 #3 ) pos:10                                                                        
+#1 #2 #3 #1 #3 #2 #3 #2 (#3 ) - (#2 #3 ) pos:16                                                                              
+#1 #2 #3 #1 #3 #2 #3 #2 (#2) - ( #3 #2) pos:18                                                                              
+fin:  #1  #3 #2                                                                                                                                                                                                                                             
+
+DB&lt;83&gt;                                                                                                                                                                                                                                       
+&lt;/c&gt;                                                                                                                      &lt;P&gt;
+
+&lt;H5&gt; update&lt;/H5&gt;&lt;P&gt;
+
+as you can see in the debug was \K not the best idea, but YMMV&lt;P&gt;
+
+&lt;H5&gt; update &lt;/H5&gt;&lt;P&gt;
+
+you still need to fix the whitespace issue ...&lt;P&gt;
+
+... and IIRC there was a meta  to keep the pos (\g or \G ?), please check [DOC://perlre|&lt;tt&gt;perlre&lt;/tt&gt;] (I might misremember tho)&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;!--nowiki--&gt;&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;/sub&gt; 
+&lt;!--nowiki--&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.161} --&gt;</doctext>
+<root_node field_name="root_node">11145665</root_node>
+<parent_node field_name="parent_node">11145665</parent_node>
+<thread id="11145665">
+<node id="11145666"><node id="11145667"/>
+</node>
+<node id="11145668"/>
+<node id="11145669"/>
+<node id="11145671"/>
+<node id="11145680"><node id="11145681"><node id="11145734"><node id="11145740"/>
+</node>
+</node>
+</node>
+</thread></node>

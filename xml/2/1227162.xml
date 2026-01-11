@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227162" title="Re: grep beginning of string (updated)" created="2018-12-12 12:46:49" updated="2018-12-12 12:46:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Works for me...&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dumper;
+
+my $line = "X\tN";
+my @tags = split /\t/, $line;
+my @Definition=("A", "NN", "B", "NNS", "YN", "ZX");
+my @out = grep($_ =~ /^$tags[1]/, @Definition);
+print Dumper(\@out);
+
+__END__
+
+$VAR1 = [
+          'NN',
+          'NNS'
+        ];
+&lt;/c&gt;
+&lt;p&gt;Could you show an [id://1177642|SSCCE] where it fails for you? Just an idea, you might want to check for stray whitespace in &lt;c&gt;@tags&lt;/c&gt; (see [id://745674]).&lt;/p&gt;
+&lt;p&gt;By the way, the match against &lt;c&gt;$_&lt;/c&gt; is implicit, and you probably want to use &lt;c&gt;\Q...\E&lt;/c&gt; to have regex metacharacters match literally (see e.g. [id://1156540]). Also, I prefer the &lt;c&gt;{BLOCK}&lt;/c&gt; form of [doc://grep] - I would have written &lt;c&gt;grep {/^\Q$tags[1]\E/} @Definition&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor ninja edits.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; If you instead mean that you want to check if &lt;c&gt;$tags[1]&lt;/c&gt; begins with one of the strings in &lt;c&gt;@Definition&lt;/c&gt;, then one way to do that is described in [id://1179840]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dumper;
+
+my @Definition=("NN", "NNS");
+my ($defs) = map { qr/$_/ } join '|', map {quotemeta}
+	sort { length $b &lt;=&gt; length $a } @Definition;
+
+for my $str ( "ABC", "NXY", "NNF", "NNSX" ) {
+	print "$str: ", $str=~/^$defs/ ? "yes!\n" : "no\n";
+}
+
+__END__
+
+ABC: no
+NXY: no
+NNF: yes!
+NNSX: yes!
+&lt;/c&gt;
+&lt;p&gt;(Although &lt;c&gt;("NN", "NNS")&lt;/c&gt; is kind of redundant, &lt;c&gt;("NN")&lt;/c&gt; is enough.)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1227161</root_node>
+<parent_node field_name="parent_node">1227161</parent_node>
+<thread id="1227161">
+<node id="1227162"/>
+<node id="1227202"/>
+</thread></node>

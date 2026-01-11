@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1218253" title="Re: DateTime Invalid local time for date in time zone (updated)" created="2018-07-10 14:07:36" updated="2018-07-10 14:07:36" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;It does seem that, at least according to [mod://DateTime], the time 13th March 2016 2 a.m. does not exist:&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime;
+use DateTime::Format::Strptime;
+
+my $str = "03/13/2016 09:59:59";
+
+my $strp = DateTime::Format::Strptime-&gt;new(
+	pattern =&gt; '%m/%d/%Y %H:%M:%S',
+	time_zone=&gt;'UTC', on_error=&gt;'croak');
+
+my $dt = $strp-&gt;parse_datetime($str);
+
+print $dt-&gt;strftime('%Y-%m-%d %H:%M:%S %Z')," is ",
+	$dt-&gt;clone-&gt;set_time_zone('America/Los_Angeles')
+	-&gt;strftime('%Y-%m-%d %H:%M:%S %Z'),"\n";
+
+$dt-&gt;add(seconds=&gt;1);
+
+print $dt-&gt;strftime('%Y-%m-%d %H:%M:%S %Z')," is ",
+	$dt-&gt;clone-&gt;set_time_zone('America/Los_Angeles')
+	-&gt;strftime('%Y-%m-%d %H:%M:%S %Z'),"\n";
+
+__END__
+
+2016-03-13 09:59:59 UTC is 2016-03-13 01:59:59 PST
+2016-03-13 10:00:00 UTC is 2016-03-13 03:00:00 PDT
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;blockquote&gt;&lt;i&gt;I am converting it to UTC I encounter an error when run the time 03/113/2016 00:02:00. 13th March 2016 2Am is daylight saving.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Do you know how this time was recorded? Do you have any other times from 2:00am through 2:59am? Because if you do, I think you might have a bigger problem. I would strongly recommend looking at fixing the source of the data first.&lt;/p&gt;
+&lt;p&gt;I'm also confused: according to your [doc://substr], is your time format really &lt;strike&gt;&lt;i&gt;SS:MM:HH&lt;/i&gt;&lt;/strike&gt; &lt;b&gt;&lt;i&gt;SS:HH:MM&lt;/i&gt;??&lt;/b&gt; In any case, I'd recommend using a "proper" parser like [mod://DateTime::Format::Strptime].&lt;/p&gt;
+&lt;p&gt;But if it's only 2016-03-13T02:00:00 that is incorrect, then I'd suggest "patching" this manually. Parse the date in the "floating" time zone, "fix" the time*, and then set the time zone. (If you have lots of incorrect date/time values like this, this might cumbersome, hence my above suggestion to fix it at the source instead.)&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime;
+use DateTime::Format::Strptime;
+
+my $str = "03/13/2016 02:00:00";
+
+my $strp = DateTime::Format::Strptime-&gt;new(
+	pattern =&gt; '%m/%d/%Y %H:%M:%S',
+	time_zone=&gt;'floating', on_error=&gt;'croak');
+
+my $dt = $strp-&gt;parse_datetime($str);
+
+if ($dt-&gt;year==2016 &amp;&amp; $dt-&gt;month==3 &amp;&amp; $dt-&gt;day==13
+    &amp;&amp; $dt-&gt;hour==2) { # any minute and second
+	$dt-&gt;add(hours=&gt;1);
+}
+$dt-&gt;set_time_zone('America/Los_Angeles');
+
+print $dt-&gt;strftime('%Y-%m-%d %H:%M:%S %Z'),"\n";
+
+__END__
+
+2016-03-13 03:00:00 PDT
+&lt;/c&gt;
+&lt;p&gt;* &lt;b&gt;Update: However,&lt;/b&gt; If you have records, for example, at 2:15am and 3:15am, the above code will make them look like the same time! That's why I said above that this only makes sense if you only have 02:00:00 as a time to fix. For example, I imagine it's possible the software that wrote these records makes the DST jump incorrectly from 02:00:59 to 03:01:00, which means there shouldn't be any records between those times.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1218252</root_node>
+<parent_node field_name="parent_node">1218252</parent_node>
+<thread id="1218252">
+<node id="1218253"><node id="1218254"><node id="1218290"><node id="1218295"><node id="1218346"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1218266"><node id="1218327"><node id="1218337"><node id="1218345"/>
+</node>
+</node>
+</node>
+<node id="1218291"><node id="1218344"/>
+</node>
+<node id="11119654"/>
+</thread></node>

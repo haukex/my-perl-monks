@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230763" title="Re: require in script breaks module" created="2019-03-02 11:58:38" updated="2019-03-02 11:58:38" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;What's going on is that the &lt;c&gt;sys/ioctl.ph&lt;/c&gt; file (at least the one on my system) defines a bunch of &lt;c&gt;sub&lt;/c&gt;s, however, it does not use something like [doc://Exporter] to do so, it just defines them in whatever the current package happens to be. Also, [doc://require] only loads a file once: if you have &lt;c&gt;require 'sys/ioctl.ph'&lt;/c&gt; in your &lt;c&gt;package main&lt;/c&gt; (i.e. &lt;c&gt;test.pl&lt;/c&gt;) that gets called first, then the &lt;c&gt;require 'sys/ioctl.ph'&lt;/c&gt; in &lt;c&gt;package funnybusiness&lt;/c&gt; has no effect, and therefore, the &lt;c&gt;sub funnybusiness::FIONREAD&lt;/c&gt; never gets defined.&lt;/p&gt;
+&lt;p&gt;There are several possible solutions, which one is most "elegant" depends... One possible solution might be to use [doc://do] instead of [doc://require], because it always runs the file, no matter how many times it's been run before, but keeping in mind the error checking described in [doc://do|the documentation of &lt;c&gt;do&lt;/c&gt;]. Also, I'd move that &lt;c&gt;do&lt;/c&gt; outside of the &lt;c&gt;sub s1&lt;/c&gt;, there's no need for the file to get loaded every time the &lt;c&gt;sub&lt;/c&gt; is called. As an alternative to &lt;c&gt;do&lt;/c&gt;, one could do &lt;c&gt;delete $INC{'sys/ioctl.ph'}; require 'sys/ioctl.ph';&lt;/c&gt; to make sure the [doc://require] loads the file (see [doc://%INC]).&lt;/p&gt;
+&lt;p&gt;Yet another solution might be to do the following in one of the library files:&lt;/p&gt;
+&lt;c&gt;
+{
+	package Sys::Ioctl;
+	BEGIN {
+		delete $INC{'sys/ioctl.ph'};
+		require 'sys/ioctl.ph';
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;And then to use &lt;c&gt;Sys::Ioctl::FIONREAD()&lt;/c&gt; everywhere. This could also be separated out into its own &lt;c&gt;Sys/Ioctl.pm&lt;/c&gt; file, which could in turn use [doc://Exporter] to get those definitions exported in the usual manner. This is probably the solution I would favor in a larger application.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1230761</root_node>
+<parent_node field_name="parent_node">1230761</parent_node>
+<thread id="1230761">
+<node id="1230762"/>
+<node id="1230763"><node id="1230821"><node id="1230872"/>
+</node>
+</node>
+</thread></node>

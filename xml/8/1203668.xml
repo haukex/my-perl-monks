@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203668" title="Re: Can I have a hard stop on a match" created="2017-11-17 09:04:51" updated="2017-11-17 09:04:51" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1039428">Eily</author>
+<doctext field_name="doctext">&lt;p&gt;Edit: actually I think [holli]'s [id://1203667|answer] is better. It's just easier to use a tool designed specifically for SQL rather than try to parse the request and try to think of all the edge cases.&lt;/p&gt;
+&lt;p&gt;&lt;strike&gt;You should switch to Ruby and use the [id://1185762|(?~ ) construct] which makes solving your problem easier&lt;/strike&gt;. While it is possible to solve your problem in a single regex, using more advanced features, there's also the simpler solution of dividing the problem in more simple steps. For example you could first extract the string between INSERT and either ( or SELECT, and then search for DOC in that substring.
+&lt;c&gt;# Untested
+my $ScanString =~ /
+                       (                         # start of capture      
+                         INSERT
+                         .*?                     # the ? after * means the shortest possible match
+                       )                         # end of capture
+                       (?:\(|values|select|;)      # (?: thing ) groups without capturing
+                     /six; # s allows .* to match across several lines. x allows spaces and comments in the regex
+my $substring = $1;
+
+my $found_doc = $substring =~ /\b doc \b/ix; # \b means boundary, so beginning or end of a word&lt;/c&gt;
+
+By the way, &lt;c&gt;[\(|values|select]&lt;/c&gt; means "either (, or | or v, or a, or l, or u, or e, or s, or | or s....", grouping is done with parentheses.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203661</root_node>
+<parent_node field_name="parent_node">1203661</parent_node>
+<thread id="1203661">
+<node id="1203665"/>
+<node id="1203666"/>
+<node id="1203667"><node id="1203670"/>
+</node>
+<node id="1203668"/>
+<node id="1203669"/>
+<node id="1203678"/>
+</thread></node>

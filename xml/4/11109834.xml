@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109834" title="Re: Perl script compressor" created="2019-12-08 03:14:04" updated="2019-12-08 03:14:04" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I am not even sure what kind of complicated code patterns may exist in a perl script.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;[id://44722|Classic] example of "only &lt;c&gt;perl&lt;/c&gt; can parse Perl" (based heavily on [tye]'s example [id://663416|here]):&lt;/p&gt;
+&lt;c&gt;
+BEGIN { eval( rand&gt;0.5 ? 'sub foo () {}' : 'sub foo {}' ) }
+foo / # /;
+42;
+&lt;/c&gt;
+&lt;p&gt;That's perfectly valid Perl code even under [doc://strict]. Run that though [doc://B::Deparse] a few times, and sometimes you'll get&lt;/p&gt;
+&lt;c&gt;
+foo(/ # /);
+'???';
+&lt;/c&gt;
+&lt;p&gt;and sometimes&lt;/p&gt;
+&lt;c&gt;
+&amp;foo() / 42;
+&lt;/c&gt;
+&lt;p&gt;In other words, sometimes it's a function call to which the result of a regex is being passed followed by a constant (that gets optimized away), and sometimes it's the return value of a function call, followed by a division operator, a comment, and the divisor. Which it is depends entirely on a random number that changes from run to run, and the result can't be known until the &lt;c&gt;perl&lt;/c&gt; binary executes the first line of Perl code; doing the same with a static parse (without executing code) is impossible.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I need to come up with a logic that can interpret a line of complex perl code and remove comments and spaces in such a way that it won't break the code.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;[id://663393]&lt;/p&gt;
+&lt;p&gt;The closest thing to a static Perl parser is [mod://PPI] (and perhaps [mod://PPR]; &lt;small&gt;&lt;i&gt;Update 2:&lt;/i&gt;&lt;/small&gt; and new: [mod://Guacamole]), and [marto] already pointed you to one module based on it; see also [mod://Perl::Squish]. &lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; You could also look at [mod://Perl::Tidy]. &lt;small&gt;&lt;i&gt;Update 3:&lt;/i&gt;&lt;/small&gt; I &lt;i&gt;think&lt;/i&gt; [http://rperl.org|RPerl] also implements its own parser.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11109831</root_node>
+<parent_node field_name="parent_node">11109831</parent_node>
+<thread id="11109831">
+<node id="11109833"/>
+<node id="11109834"/>
+<node id="11109839"><node id="11109849"><node id="11109851"><node id="11109853"/>
+<node id="11109869"><node id="11109888"><node id="11109892"><node id="11109896"><node id="11109899"/>
+</node>
+<node id="11109900"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11109842"><node id="11109844"><node id="11109859"><node id="11109860"><node id="11109865"/>
+<node id="11109875"/>
+</node>
+</node>
+</node>
+<node id="11109845"><node id="11109847"/>
+<node id="11109850"/>
+<node id="11109857"/>
+</node>
+</node>
+</thread></node>

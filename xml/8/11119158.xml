@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11119158" title="Expression form of map or grep" created="2020-07-10 15:47:14" updated="2020-07-10 15:47:14" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="161890">Lady_Aleena</author>
+<doctext field_name="doctext">&lt;p&gt;As you might know, I have been using Perl::Critic on my code over the last several days. After I finished checking my code on the gentle setting, I kicked it up a notch and used stern. Well, Perl::Critic set on stern gave me screens full of problems, and the biggest one is I use the expression form of &lt;c&gt;map&lt;/c&gt; and &lt;c&gt;grep&lt;/c&gt;. I looked around the web to find out why.&lt;/p&gt;
+&lt;p&gt;Here is my opinion that could be &lt;i&gt;very&lt;/i&gt; wrong.&lt;/p&gt;
+&lt;p&gt;All of the examples I found of the expression form of &lt;c&gt;map&lt;/c&gt; and &lt;c&gt;grep&lt;/c&gt; would lead to inevitable problems, and I can see why the writers of those examples would jump on using the block form for both. However, the one thing all of the examples had in common is the disuse of parentheses. I feel that if the expression form of a &lt;c&gt;map&lt;/c&gt; or &lt;c&gt;grep&lt;/c&gt; is used with parentheses, it is contained within them.&lt;/p&gt;
+&lt;p&gt;The &lt;c&gt;map&lt;/c&gt; below would lead to problems, since there is nothing containing the expression or on which list(s) the &lt;c&gt;map&lt;/c&gt; is being applied.&lt;/p&gt;
+&lt;code&gt;
+my @colors = qw(red yellow green cyan blue magenta);
+my @grey_scale = qw(white grey black);
+
+my @list = map "$_ beads", @colors, @grey_scale;
+&lt;/code&gt;
+&lt;p&gt;However, I do not think this needs a block form to contain the map and list if parentheses are used.&lt;/p&gt;
+&lt;code&gt;
+my @list = map( "$_ beads", @colors ), @grey_scale;
+&lt;/code&gt;
+&lt;p&gt;Now the map is contained within parentheses, and &lt;c&gt;@grey_scale&lt;/c&gt; does not get &lt;c&gt;beads&lt;/c&gt; mapped to it. However, if one must use the block form, parentheses would still be needed to contain the mapped items.&lt;/p&gt;
+&lt;code&gt;
+my @list = ( map { "$_ beads" } @colors ), @grey_scale;
+&lt;/code&gt;
+&lt;p&gt;I think the expression form with parentheses is easier on the eyes, but it is just my opinion. I can understand using the block form if the map were more complex, however, I think I would write a separate subroutine instead of loading the block with more than two or three modifications and use the expression form.&lt;/p&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+sub make_beads {
+  my $color = shift;
+
+  if ($color =~ /red|green|blue/) {
+    $color .= ' sparkley';
+  }
+  else {
+    $color .= ' shiny';
+  }
+
+  $color .= ' beads';
+
+  return $color;
+}
+
+my @list = map( make_beads($_), @colors), @grey_scale;
+&lt;/code&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Converting from expression to block form is also problematic as it is not always as simple as the above would suggest, especially with &lt;c&gt;grep&lt;/c&gt;. I have also found the expression form of &lt;c&gt;grep&lt;/c&gt; to be easier to use, in one case (I can not remember the specifics) I could not get the block form of &lt;c&gt;grep&lt;/c&gt; to work.&lt;/p&gt;
+&lt;p&gt;If I use &lt;c&gt;sort&lt;/c&gt; with &lt;c&gt;map&lt;/c&gt; and/or &lt;c&gt;grep&lt;/c&gt; on the same list, I will wrestle the block forms until I get the results I want, because in that case, it is easier on my eyes than trying to mix expression forms with the block of &lt;c&gt;sort&lt;/c&gt;.&lt;/p&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+my @list = (
+  map  { make_beads($_} }
+  sort { $a cmp $b }
+  grep { &lt;something&gt; }
+  @colors
+), @grey_scale;
+&lt;/code&gt;
+&lt;/readmore&gt;
+&lt;p&gt;I know I can ignore Perl::Critic's results on this and other issues, however, I do want code that is more acceptable by the community. So, I am trying to decide if I want to start wrestling with Perl on this or not. (I ran Perl::Critic on all of my modules, and it found 330 lines where I used the expression forms of &lt;c&gt;map&lt;/c&gt; and &lt;c&gt;grep&lt;/c&gt;, so this is fairly big to me.)&lt;/p&gt;
+&lt;p&gt;I hope I am not &lt;i&gt;too&lt;/i&gt; wrong about this.&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-161890"&gt;
+&lt;p&gt;&lt;small&gt;My OS is Debian 10 (Buster); my perl versions are 5.28.1 local and 5.16.3 or 5.30.0 on web host depending on the shebang.&lt;/small&gt;&lt;/p&gt;
+&lt;div&gt;&lt;strong&gt;No matter how hysterical I get, my problems are &lt;em&gt;not&lt;/em&gt; time sensitive. So, relax, have a [id://1026423|cookie], and a very nice day!&lt;/strong&gt;&lt;/div&gt;
+&lt;div&gt;&lt;em&gt;Lady Aleena&lt;/em&gt;&lt;/div&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="11119158">
+<node id="11119159"/>
+<node id="11119163"/>
+<node id="11119190"><node id="11119192"/>
+<node id="11119207"><node id="11119235"><node id="11119246"><node id="11119282"><node id="11119299"><node id="11119326"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11119196"/>
+<node id="11119227"/>
+<node id="11119239"/>
+<node id="11119269"><node id="11119352"/>
+</node>
+</thread></node>

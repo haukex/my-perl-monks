@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11131886" title="Re^2: /ee -&gt; Use of uninitialized value in substitution iterator (without back references)" created="2021-04-29 13:50:13" updated="2021-04-29 13:50:13" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1112908">karlberry</author>
+<doctext field_name="doctext">&lt;p&gt;Thanks to both of you for your replies. That all makes sense. It was the "substitution iterator" that threw me off the track. I should have thought to check $@ ...&lt;/p&gt;
+
+&lt;p&gt;As for why /ee. I agree it's unusual. I'd used Perl for some 30 years before I had occasion to do so, and there may well be a better way to do it. My goal is to specify regexp substitutions in an external file, but just as strings, not Perl code to be executed, for consistency with other parts of the program and also so I could track whether a given substitution was performed. For example, I need to remove braces from around strings (I'm not concerned about unmatched braces), so the data file has this line, separating lhs and rhs with || (arbitrary):&lt;/p&gt;
+
+&lt;pre&gt;
+\{(.*?)\}||$1
+&lt;/pre&gt;
+
+&lt;p&gt;I read the data file, split each line into the lhs and rhs, add to lists @lhs and @rhs. Then, to apply the substitutions to the input, I loop through the lists:&lt;/p&gt;
+
+&lt;pre&gt;
+$str = "whatever input";
+...
+for (my $i = 0; $i &lt; @$lhs; $i++) {
+  my $lhs = $lhs-&gt;[$i];
+  my $rhs = $rhs-&gt;[$i];
+  eval { $str =~ s/$lhs/$rhs/eeg; }; # yet one more eval!
+  $@ &amp;&amp; die "eval(s/$lhs/$rhs/eeg) failed: $@";
+  # ... more irrelevant stuff ...
+}
+&lt;/pre&gt;
+
+&lt;p&gt;This crazy "triple eval" was only way I found to apply the substitution with lhs and rhs stored in variables. From what we've already discussed, I guess adding single quotes will change things. Anyway, if a simpler way in general comes to mind, I'd be glad to hear about it. Thanks.&lt;/p&gt;
+
+&lt;p&gt;P.S. I see now that I should also be checking $@ inside the eval, to see if there were errors from the /ee.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11131877</root_node>
+<parent_node field_name="parent_node">11131880</parent_node>
+<thread id="11131877">
+<node id="11131880"><node id="11131886"><node id="11131888"/>
+</node>
+</node>
+<node id="11131879"/>
+</thread></node>

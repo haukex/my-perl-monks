@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11135703" title="Re^4: Printing POD info to terminal window without exiting" created="2021-08-08 14:28:51" updated="2021-08-08 14:28:51" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Pod::Usage seems to rely on underlying "formatters", including perldoc.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;What's your point here? If you think [doc://Pod::Usage] is running an external command, you're mistaken. Oversimplifying a bit, the family of Pod::* modules in the core do &lt;c&gt;use&lt;/c&gt; each other, so that [doc://Pod::Usage] and [doc://Pod::Perldoc] can use the same parser and formatters (see [doc://Pod::Simple]), but when just converting some POD to text there is no need to call external commands.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Explain to me your objection. ... Does your object rely simply on ...&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I already named almost all of my objections to your suggestion, and so I feel I might be being trolled, but for the sake of explanation:&lt;/p&gt;
+&lt;p&gt;&lt;c&gt;system(qq{perldoc $0});&lt;/c&gt;&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;... is brittle because:
+	&lt;ul&gt;
+		&lt;li&gt;it relies on &lt;c&gt;perldoc&lt;/c&gt; being installed in the first place (and writing code to test for its installation, as you suggested, adds a lot of complexity that is unnecessary because you can just write &lt;c&gt;use Pod::Usage;&lt;/c&gt; instead and get immediate, compile-time feedback in case the core modules happen to be missing),&lt;/li&gt;
+		&lt;li&gt;it relies on &lt;c&gt;perldoc&lt;/c&gt; being in the &lt;c&gt;PATH&lt;/c&gt;,&lt;/li&gt;
+		&lt;li&gt;it relies on the value of [doc://$0], which the user may have modified, and IIRC there are other cases where &lt;c&gt;$0&lt;/c&gt; is unreliable.&lt;/li&gt;
+		&lt;li&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; Plus: &lt;c&gt;$0&lt;/c&gt; is not being quoted and will fail with whitespace or other shell metacharacters in the filename.&lt;/li&gt;
+	&lt;/ul&gt;
+	&lt;/li&gt;
+	&lt;li&gt;... is insecure because it is using the single-argument [doc://system] with a variable being interpolated into the string (I've linked you to [id://1180578] twice).&lt;/li&gt;
+	&lt;li&gt;... is not directly a solution to the OP's question because its output is different from that of [doc://Pod::Usage].&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Add to that the facts that calling an external program is fairly wasteful and that the solution was already found using modules that have been in the Perl core for over 20 years, that rounds out the reasons why I objected.&lt;/p&gt;
+&lt;p&gt;Remember that this is all in the context of providing help to others, so if you've been using this in your own code then you're free to do so, but it's not something I would recommend to anyone else.&lt;/p&gt;
+&lt;p&gt;&lt;c&gt;perldoc&lt;/c&gt; is just a Perl script, and [id://11130701|here] you said:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I swear, "shelling-out" to actual Perl scripts from a Perl script is one of the most offensive things I can see in Perl code. All the wasted cycles, dead electrons, PIDs, (oh the horror!) and server fan RPMs that are consumed for no reason&lt;/i&gt;&lt;/blockquote&gt;</doctext>
+<root_node field_name="root_node">11135611</root_node>
+<parent_node field_name="parent_node">11135696</parent_node>
+<thread id="11135611">
+<node id="11135616"/>
+<node id="11135619"/>
+<node id="11135674"><node id="11135682"><node id="11135696"><node id="11135703"><node id="11135719"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

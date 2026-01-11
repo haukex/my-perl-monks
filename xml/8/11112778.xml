@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112778" title="Sometimes undef is initialized and sometimes not when hash values are fed to grep" created="2020-02-11 11:21:36" updated="2020-02-11 11:21:36" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1164259">leszekdubiel</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Perl Monks! &lt;/p&gt;
+&lt;p&gt;In perl5 there is a strange behaviour that hash values are sometimes initialized to undef and sometimes not. See this example: &lt;/p&gt; 
+&lt;code&gt; 
+#!/usr/bin/perl -CSDA
+
+use utf8;
+use Modern::Perl;
+no warnings qw{uninitialized numeric};
+use Data::Dumper;
+
+my %h = (a =&gt; 'alfa', b =&gt; 'beta'); 
+
+print "\n\nfirst try:\n";
+print "\t&gt;&gt;$h{a}&lt;&lt;\n";
+print "\t&gt;&gt;$h{XXX}&lt;&lt;\n";
+print "\t&gt;&gt;$h{b}&lt;&lt;\n";
+print "after first:\n", Dumper(\%h); 
+
+print "\n\nsecond try:\n";
+print map { "\t&gt;&gt;$_&lt;&lt;\n" } $h{a}, "mytext" . $h{YYY} . "after", $h{b};
+print "after second:\n", Dumper(\%h); 
+
+
+print "\n\nthird try:\n";
+print map { "\t&gt;&gt;$_&lt;&lt;\n" } $h{a}, $h{ZZZ}, $h{b}; 
+print "after third:\n", Dumper(\%h); 
+
+
+
+=====================
+
+OUTPUT: 
+
+
+
+first try:
+	&gt;&gt;alfa&lt;&lt;
+	&gt;&gt;&lt;&lt;
+	&gt;&gt;beta&lt;&lt;
+after first:
+$VAR1 = {
+          'a' =&gt; 'alfa',
+          'b' =&gt; 'beta'
+        };
+
+
+second try:
+	&gt;&gt;alfa&lt;&lt;
+	&gt;&gt;mytextafter&lt;&lt;
+	&gt;&gt;beta&lt;&lt;
+after second:
+$VAR1 = {
+          'a' =&gt; 'alfa',
+          'b' =&gt; 'beta'
+        };
+
+
+third try:
+	&gt;&gt;alfa&lt;&lt;
+	&gt;&gt;&lt;&lt;
+	&gt;&gt;beta&lt;&lt;
+after third:
+$VAR1 = {
+          'b' =&gt; 'beta',
+          'ZZZ' =&gt; undef,             &lt;&lt;&lt;&lt;&lt;&lt;------------ ?????? 
+          'a' =&gt; 'alfa'
+        };
+
+&lt;/code&gt;
+
+&lt;p&gt;Hash values are only used to form strings. Why sometimes they got initialized to "undef" and sometimes not? Does Raku (Perl6) has similiar behaviour?&lt;/p&gt; 
+
+
+&lt;p&gt;This is what I asked in autovivification context: &lt;a href="https://www.perlmonks.org/?node_id=11110437"&gt;https://www.perlmonks.org/?node_id=11110437&lt;/a&gt;. &lt;/p&gt;</doctext>
+<thread id="11112778">
+<node id="11112782"><node id="11112786"><node id="11112788"><node id="11112790"/>
+</node>
+</node>
+</node>
+<node id="11112784"><node id="11112787"/>
+</node>
+<node id="11112816"><node id="11112863"/>
+</node>
+</thread></node>

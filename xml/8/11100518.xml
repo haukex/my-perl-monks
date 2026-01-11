@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100518" title="r/w attached infrared head on /dev/ttyUSB0" created="2019-05-25 11:43:10" updated="2019-05-25 11:43:10" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11100516">stoerti</author>
+<doctext field_name="doctext">Hi there. 
+
+I tried thousand ways the last weeks and I am desparing.&lt;br&gt;
+
+I need to write and read to /dev/ttyUSB0 where a infrared head is attached to read an electric meter.&lt;br&gt;&lt;br&gt;
+
+The settings are 300 baud 7E1, no handshake&lt;br&gt;
+
+If I do this from shell in that way: &lt;br&gt;
+
+&lt;c&gt;
+1. cat /dev/ttyUSB0&amp;amp
+2. stty -F /dev/ttyUSB0 300 -parodd cs7 -cstopb parenb -ixoff -crtscts -hupcl -ixon -opost -onlcr -isig -icanon -iexten -echo -echoe -echoctl -echoke
+3. echo -n -e '\x2F\x3F\x21\x0D\x0A' &amp;gt; /dev/ttyUSB0
+4. echo -n -e '\x06\x30\x30\x30\x0D\x0A' &amp;gt; /dev/ttyUSB0
+&lt;/c&gt;
+I get an answer as expected:&lt;br&gt;
+&lt;br&gt;
+&lt;c&gt;
+/LOG4LK13BD202015
+C.1.0(06091772)
+0.0.0(001LOG0006091772)
+F.F(0000)
+1.8.0(021183.342*kWh)
+C.7.1(00000000)
+C.7.2(00000001)
+C.7.3(00000002)
+0.2.1(ver.02, 150228, 671A)
+C.2.1(1510121019)
+C.2.9(1510121019)
+&lt;/c&gt;
+&lt;br&gt;
+Now I try to realize in perl to catch this output but all ways I have gone, nothing comes back to perl.&lt;br&gt;
+Only using Device::SerialPort I receive the first line "/LOG4LK13BD202015" but not more.&lt;br&gt;
+&lt;br&gt;
+One of many examples: &lt;br&gt;&lt;br&gt;
+
+&lt;c&gt;
+open( com, "+&amp;lt;","/dev/ttyUSB0" ) || die "Cannot open serial port : $!\n";
+my $raw = "\x2F\x3F\x21\x0D\x0A";
+print com $raw;
+my $raw = "\x06\x30\x30\x30\x0D\x0A";
+print com $raw;
+
+while( 1 )
+{
+    my $in = &lt;com&amp;gt;; 
+    print "$in\n";
+}
+&lt;/c&gt;
+
+gives me:&lt;br&gt;
+
+&lt;c&gt;
+/?!
+000
+/LOG4LK13BD202015
+&lt;/c&gt;
+
+Finish!&lt;br&gt;&lt;br&gt;
+
+I tried system calls in different way, different ways to open an file handle on the device, some perl modules - nothing worked for me.&lt;br&gt;
+Has anyone an idea or realized something like that in the past and can give me some help?&lt;br&gt;
+
+&lt;p&gt;&lt;small&gt;&lt;i&gt;2019-05-28 [Athanasius] added code tags&lt;/small&gt;&lt;/p&gt;
+</doctext>
+<thread id="11100518">
+<node id="11100520"><node id="11100535"><node id="11100538"><node id="11100542"><node id="11100543"/>
+</node>
+</node>
+<node id="11100541"><node id="11100548"><node id="11100550"><node id="11100553"><node id="11100558"><node id="11100596"><node id="11100600"/>
+</node>
+</node>
+<node id="11100622"/>
+</node>
+</node>
+<node id="11100707"><node id="11100713"><node id="11100717"/>
+<node id="11100729"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

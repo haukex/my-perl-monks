@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1179901" title="Re: [RFC] Building Regex Alternations Dynamically" created="2017-01-19 05:11:13" updated="2017-01-19 05:11:13" _doctext_mode="lenient"><type id="11">note</type>
+<author id="861371">kcott</author>
+<doctext field_name="doctext">&lt;p&gt;G'day [id://830549|Hauke],&lt;/p&gt;
+
+&lt;p&gt;
+&lt;strong&gt;++&lt;/strong&gt;
+This looks like a very good start; 
+seems reasonably complete; 
+and covers most of the points I might have made.
+I have comments on two areas, as follows.
+&lt;/p&gt;
+
+&lt;p&gt;
+With any sort of tutorial, those reading it 
+&amp;mdash; to learn about the subject, rather than for reviewing, proof-reading, etc. &amp;mdash;
+probably start with limited knowledge.
+Accordingly, any terms used should be unambiguous;
+unfortunately, you've used &lt;c&gt;$regex&lt;/c&gt; to mean two different things:
+&lt;/p&gt;
+&lt;code&gt;
+$regex = join ...
+$regex = qr/...
+&lt;/code&gt;
+
+&lt;p&gt;
+I'm familiar with both the subject matter and the technique, so this posed no problem for me;
+however, for someone learning this, it may do.
+While it's reasonably obvious in the short code example, half a page later, in the middle of descriptive text,
+the appearance of &lt;c&gt;$regex&lt;/c&gt; might not be as obvious to the student as it is to you or I.
+Consider renaming those; purely as a suggestion:
+&lt;/p&gt;
+&lt;code&gt;
+$regex_base_str = join ...
+$regex_compiled = qr/...
+&lt;/code&gt;
+
+
+&lt;p&gt;
+In points (4) &amp;amp; (5), in the first list, you show grouping.
+To resolve the same issue in both, 
+you use explicit capture grouping in (4),
+and implicit non-capture grouping in (5).
+&lt;/p&gt;
+
+&lt;p&gt;
+Regex &lt;em&gt;pieces&lt;/em&gt; used for alternation often occur as part of a larger regex;
+in fact, I suspect that's the more usual case.
+This may be as simple as the anchor assertions you show in (4), or could be a lot more complex.
+I'd suggest adding explicit non-capturing grouping to &lt;c&gt;$regex_base_str&lt;/c&gt; (or whatever you call it)
+as part of the normal technique.
+To demonstrate:
+&lt;/p&gt;
+
+&lt;code&gt;
+# Simple case: OK - matches "a" or "b"
+$ perl -E 'my $re = "a|b"; $re = qr{$re}; say $re'
+(?^u:a|b)
+
+# Complex case: NOT OK - matches "Xa" or "bY"
+$ perl -E 'my $re = "a|b"; $re = qr{X${re}Y}; say $re'
+(?^u:Xa|bY)
+
+# Complex case: OK - matches "a" or "b" [fixed with "(?:...)"]
+$ perl -E 'my $re = "(?:a|b)"; $re = qr{X${re}Y}; say $re'
+(?^u:X(?:a|b)Y)
+&lt;/code&gt;
+
+&lt;p&gt;&lt;/p&gt;
+
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-861371"&gt;
+&lt;p&gt;&amp;mdash; Ken&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1179840</root_node>
+<parent_node field_name="parent_node">1179840</parent_node>
+<thread id="1179840">
+<node id="1179850"><node id="1179851"><node id="1179853"/>
+</node>
+<node id="1180085"><node id="1180087"/>
+</node>
+</node>
+<node id="1179864"><node id="1179870"/>
+</node>
+<node id="1179898"/>
+<node id="1179901"><node id="1179921"><node id="1179940"/>
+</node>
+</node>
+<node id="1179929"><node id="1190259"><node id="1190349"/>
+</node>
+</node>
+<node id="11116849"><node id="11116850"/>
+</node>
+<node id="11118145"/>
+</thread></node>

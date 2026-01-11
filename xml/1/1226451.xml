@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1226451" title="Re^3: curious behavior: why does it do this?" created="2018-11-28 10:12:02" updated="2018-11-28 10:12:02" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I'm puzzled (in an idle sort of way) as to why &lt;c&gt;print for "1" .. "-1";&lt;/c&gt; doesn't output the numbers 1 through to 99.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That is indeed quite strange, and I can't make sense of it at the moment... seems like a bug to me.&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -MData::Dump -e' dd "0".."-1" '
+(0 .. 99)
+$ perl -wMstrict -MData::Dump -e' dd "1".."-1" '
+()
+$ perl -wMstrict -MData::Dump -e' dd "01".."-1" '
+("01", "02", "03", "04", "05", "06", "07", "08", "09", 10 .. 99)
+$ perl -wMstrict -MData::Dump -e' dd "90".."-1" '
+()
+$ perl -wMstrict -MData::Dump -e' dd "1".."xx" '
+(1 .. 99)
+$ perl -wMstrict -MData::Dump -e' dd "11".."xx" '
+(11 .. 99)
+$ perl -wMstrict -MData::Dump -e' dd "90".."xx" '
+(90 .. 99)
+$ perl -wMstrict -MData::Dump -e' dd "-1".."xx" '
+-1
+$ perl -wMstrict -MData::Dump -e' dd "0".." -1 " '
+(0 .. 9999)
+$ perl -wMstrict -MData::Dump -e' dd " 0 ".." -1 " '
+()
+$ perl -wMstrict -MData::Dump -e' dd " 11 ".." -1 " '
+()
+$ perl -wMstrict -MData::Dump -e' dd "0.0".."-1.0" '
+"0.0"
+$ perl -wMstrict -MData::Dump -e' dd " 0.0 ".." -1.0 " '
+()
+$ perl -wMstrict -MData::Dump -e' dd "0.0".." 1.0 " '
+"0.0"
+$ perl -wMstrict -MData::Dump -e' dd " 0.0 ".."1.0" '
+(0, 1)
+&lt;/c&gt;
+&lt;p&gt;Maybe there's some kind of heuristic going wrong... for example, maybe the intention is that if both sides &lt;c&gt;looks_like_number&lt;/c&gt;, then treat them as numbers instead of strings - but several of the cases above don't work like that. I dunno at the moment, this may need some digging in the sources. (I ran a bisect earlier, and it seems that at least the &lt;c&gt;"1".."-1"&lt;/c&gt; case has always returned the empty list.)&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Reported as [https://rt.perl.org/Ticket/Display.html?id=133695|Bug #133695]&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2019-08-27:&lt;/b&gt; See [id://1226535|this node], which documents the behavior, as well as the change in the behavior as of Perl v5.32.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1226434</root_node>
+<parent_node field_name="parent_node">1226438</parent_node>
+<thread id="1226434">
+<node id="1226435"><node id="1226440"/>
+</node>
+<node id="1226437"><node id="1226438"><node id="1226439"/>
+<node id="1226443"/>
+<node id="1226451"><node id="1226464"><node id="1226478"><node id="1226532"/>
+</node>
+</node>
+<node id="1226474"/>
+</node>
+</node>
+<node id="1226446"/>
+</node>
+<node id="1226535"/>
+<node id="11109891"><node id="11109898"/>
+</node>
+</thread></node>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224067" title="Re: how to get Config values into a hash" created="2018-10-15 17:15:43" updated="2018-10-15 17:15:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Note that [doc://Config] is not a module that reads configuration files, nor is it the base of the [cpan://Config::] namespace, the latter being the CPAN modules that typically do read configuration files, like [mod://Config::Tiny].&lt;/p&gt;
+&lt;p&gt;[doc://Config] is "all the information that was available to the &lt;c&gt;Configure&lt;/c&gt; program at Perl build time ... Shell variables from the &lt;c&gt;config.sh&lt;/c&gt; file (written by Configure) are stored in the readonly-variable &lt;c&gt;%Config&lt;/c&gt;, indexed by their names." So in other words, it's the &lt;c&gt;perl&lt;/c&gt; build configuration, which is fixed for each build of Perl at compile time.&lt;/p&gt;
+&lt;p&gt;The four functions (not methods) that you mention, &lt;c&gt;myconfig&lt;/c&gt;, &lt;c&gt;config_sh&lt;/c&gt;, &lt;c&gt;config_vars&lt;/c&gt;, and &lt;c&gt;config_re&lt;/c&gt;, are basically just alternate ways to get information out of [doc://Config]. In the example code you showed, &lt;c&gt;my $archname = $Config{'archname'};&lt;/c&gt; does not work because you're only requesting those four functions to be exported from [doc://Config], but not the &lt;c&gt;%Config&lt;/c&gt; hash. So you don't need to &lt;i&gt;"import the values from the myconfig() method into a hash"&lt;/i&gt;, that's &lt;c&gt;%Config&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;You can either just use the module in the basic fashion, where &lt;c&gt;%Config&lt;/c&gt; is exported by default:&lt;/p&gt;
+&lt;c&gt;
+use Config;
+my $archname = $Config{'archname'};
+print "&lt;$archname&gt;\n";
+&lt;/c&gt;
+&lt;p&gt;Or, if you do want to export functions from the module, you need to request the export of &lt;c&gt;%Config&lt;/c&gt; explicitly:&lt;/p&gt;
+&lt;c&gt;
+use Config qw/%Config config_vars/;
+my $archname = $Config{'archname'};
+print "&lt;$archname&gt;\n";
+config_vars("archname","version");
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1224063</root_node>
+<parent_node field_name="parent_node">1224063</parent_node>
+<thread id="1224063">
+<node id="1224067"><node id="1224132"><node id="1224204"><node id="1224211"/>
+</node>
+<node id="1224332"><node id="1224644"/>
+</node>
+</node>
+</node>
+</thread></node>

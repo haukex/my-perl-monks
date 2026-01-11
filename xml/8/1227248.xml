@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227248" title="Re: perl: we package API -- oneliner" created="2018-12-14 05:24:59" updated="2018-12-14 05:24:59" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1165397">bliako</author>
+<doctext field_name="doctext">&lt;pre&gt;
+Trick #8: $ENV{}
+
+    When you're writing a one-liner using -e in the shell, you generally want to quote it with ', so that dollar signs inside the one-liner aren't expanded by the shell. But that makes it annoying to use a ' inside your one-liner, since you can't escape a single quote inside of single quotes, in the shell.
+
+    Let's suppose we wanted to print the username of anyone in /etc/passwd whose name included an apostrophe. One option would be to use a standard shell-quoting trick to include the ':
+
+    perl -F: -lane 'print $F[0] if $F[4] =~ /'"'"'/' /etc/passwd
+
+    But counting apostrophes and backslashes gets old fast. A better option, in my opinion, is to use the environment to pass the regex into perl, which lets you dodge a layer of parsing entirely:
+
+    env re="'" perl -F: -lane 'print $F[0] if $F[4] =~ /$ENV{re}/' /etc/passwd
+
+    We use the env command to place the regex in a variable called re, which we can then refer to from the perl script through the %ENV hash. This way is slightly longer, but I find the savings in counting backslashes or quotes to be worth it, especially if you need to end up embedding strings with more than a single metacharacter.
+&lt;/pre&gt;
+
+&lt;p&gt;from https://blogs.oracle.com/linux/the-top-10-tricks-of-perl-one-liners-v2&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1226880</root_node>
+<parent_node field_name="parent_node">1226880</parent_node>
+<thread id="1226880">
+<node id="1226885"/>
+<node id="1227248"><node id="1227251"/>
+</node>
+</thread></node>

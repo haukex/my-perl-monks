@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11120897" title="Downloading only new files added to a local path with Perl (FTP)" created="2020-08-19 09:01:11" updated="2020-08-19 09:01:11" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11116695">SaraMirabi</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Dears,&lt;/p&gt;
+I want to download all files that have been loaded to a directory with FTP automatically with the below code. the code can run but with below error:
+&lt;p&gt;Can't call method "mtime" on an undefined value at -e line 1.&lt;/p&gt;
+&lt;p&gt;Also, however it gets above error it downloads all the files in the path, not only added newly added files. I really appreciate if you help me.&lt;/p&gt;
+I want to schedule this Perl code to be run at a specific time, so every day I don't need to get the files manually.
+&lt;code&gt;
+#!/bin/bash
+
+
+use strict;
+use warnings;
+use diagnostics;
+
+# Login credentials
+
+user='*****' #Do not forget to enclose inside single or double quotes
+
+pass='*****'
+
+directory='Remoredirectory'
+
+host='RemoteIP'
+
+
+
+# Set time
+
+# perl -e 'print time' will return the current time in Unix epoch format
+
+# So if you substract 43200, that should give you the current time minus 30 minutes in Unix epoch format:
+
+time=$(perl -e 'print time-43200')
+
+
+
+# Connect to host and download the listing of the remote directory
+
+ftp -n $host &lt;&lt;END_GET_LIST
+
+        quote USER $user
+
+        quote PASS $pass
+
+        cd $directory
+
+        ls -l /Localdirectory/ftpList.txt
+
+        quit
+
+END_GET_LIST
+
+# Disconnect from remote host
+
+
+
+# Save the 6th, 7th, and 8th field of the directory listing (i.e. Aug 15 5:15) of each line into file Dates.txt
+
+awk -F ' ' '{print $6,$7,$8}'/Localdirectory/ftpList.txt &gt; /Localdirectory/'Dates.txt'
+
+
+
+# Save the 9th field of the directory listing (file name) of each line into file Files.txt
+
+awk -F ' ' '{print $9}' /Localdirectory/ftpList.txt &gt; /Localdirectory/'Files.txt'
+
+
+
+linenum=0 #Auxiliary variable for sed.
+
+
+
+while read list; do
+
+        linenum=$((linenum+1))
+
+        #Convert the modification datetime of each file to Unix's epoch
+
+        epoch=$(perl -MFile::stat -e "print stat('$list')-&gt;mtime")
+
+        if [ $epoch -gt $time ] ; then
+
+                file=$(sed -n "${linenum}p" Files.txt)  #If the condition is satisfied, use sed to get the name of the file
+
+                 #in the same line of Files.txt.
+
+#Connect again and download file when the condition above has been satisfied.
+
+                ftp -n $host &lt;&lt;END_RETRIEVE
+
+                        quote USER $user
+
+                        quote PASS $pass
+
+                        cd $directory
+
+                        binary
+                        
+                        get $file
+
+                        quit
+
+END_RETRIEVE
+
+        fi
+
+done &lt; /Localdirectory/'Dates.txt'
+&lt;/code&gt;</doctext>
+<thread id="11120897">
+<node id="11120898"/>
+<node id="11120900"/>
+<node id="11120903"/>
+<node id="11120912"/>
+<node id="11120913"/>
+<node id="11120917"/>
+</thread></node>

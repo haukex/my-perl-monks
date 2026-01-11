@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1222887" title="Re^2: LWP vs ExtUtils::Installed vs libwww::perl vs Module::Metadata" created="2018-09-23 06:12:32" updated="2018-09-23 06:12:32" _doctext_mode="lenient"><type id="11">note</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&gt; You haven't said if/why you need this?
+&lt;p&gt;
+I'm analyzing Perl and have discovered 4 distributions 
+out of about 1000 CPAN installations where [cpan://ExtUtils::Installed] and 
+[cpan://Module::Metadata] don't agree:
+&lt;p&gt;
+1. [cpan://LWP]  (or libwww::perl) [1222878]&lt;br&gt;
+2. [cpan://MIDI] (or MIDI-Perl) [1222886]&lt;br&gt;
+3. [cpan://Astro] (Namespace appears as a module to ExtUtils::Installed-&gt;modules())&lt;br&gt;
+4. [cpan://Role::Identifiable] (doesn't really exist)&lt;br&gt;
+&lt;pre&gt;
+
+perl -MExtUtils::Installed -le 'print join "\n", grep /astro/i, ExtUtils::Installed-&gt;modules()'
+
+Astro
+Astro::Constants
+Astro::Coord::ECI
+Astro::Coords
+Astro::FITS::Header
+Astro::MapProjection
+Astro::MoonPhase
+Astro::PAL
+Astro::Sunrise
+Astro::Telescope
+Astro::Time::HJD
+Astro::Units
+Astro::WaveBand
+DateTime::Astro
+
+perl -MExtUtils::Installed -le 'print join "\n", ExtUtils::Installed-&gt;files("Astro")'
+
+/perl-5.26.2/lib/site_perl/5.26.2/Astro/Coord.pm
+/perl-5.26.2/lib/site_perl/5.26.2/Astro/Misc.pm
+/perl-5.26.2/man/man3/Astro::Time.3
+/perl-5.26.2/lib/site_perl/5.26.2/Astro/Time.pm
+/perl-5.26.2/man/man3/Astro::Coord.3
+/perl-5.26.2/man/man3/Astro::Misc.3
+
+perl -MModule::Metadata -MData::Dumper -le 'print(Dumper(Module::Metadata-&gt;new_from_module("Astro")))'
+
+$VAR1 = undef;
+
+&lt;/pre&gt;
+Finally:
+&lt;pre&gt;
+
+perl -MExtUtils::Installed -le 'print join "\n", grep /identifiable/i, ExtUtils::Installed-&gt;modules()'
+
+Role::Identifiable
+
+perl -MExtUtils::Installed -le 'print join "\n", ExtUtils::Installed-&gt;files("Role::Identifiable")'
+
+/perl-5.26.2/man/man3/Role::Identifiable::HasIdent.3
+/perl-5.26.2/lib/site_perl/5.26.2/Role/Identifiable/HasTags.pm
+/perl-5.26.2/lib/site_perl/5.26.2/Role/Identifiable/HasIdent.pm
+/perl-5.26.2/man/man3/Role::Identifiable::HasTags.3
+
+perl -MModule::Metadata -MData::Dumper -le 'print(Dumper(Module::Metadata-&gt;new_from_module("Role::Identifiable")))'
+
+$VAR1 = undef;
+
+&lt;/pre&gt;
+
+
+</doctext>
+<root_node field_name="root_node">1222878</root_node>
+<parent_node field_name="parent_node">1222879</parent_node>
+<reputation field_name="reputation">8</reputation>
+<thread id="1222878">
+<node id="1222879"><node id="1222885"/>
+<node id="1222887"><node id="1222904"/>
+</node>
+</node>
+<node id="1222886"/>
+<node id="1222913"><node id="1222932"/>
+</node>
+</thread></node>

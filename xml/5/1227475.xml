@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227475" title="Re^5: Uncompress streaming gzip on the fly in LWP::UserAgent/WWW::Mechanize" created="2018-12-19 12:17:16" updated="2018-12-19 12:17:16" _doctext_mode="lenient"><type id="11">note</type>
+<author id="818961">pmqs</author>
+<doctext field_name="doctext">If you have concatenated the chunks received &amp; could uncompress the composite buffer, it sounds like the sub that gets triggered in the add_header is being passed a part of the same gzipped data stream every time it is invoked.
+
+You can push the compressed data a buffer at a time through Compress::Zlib. Something like this
+
+&lt;code&gt;
+use Compress::Zlib;
+
+my $gunzip = inflateInit(WindowBits =&gt; 16 + MAX_WBITS)
+       or die "Cannot create a inflation stream\n" ;
+...
+    $mech-&gt;add_handler( response_data =&gt; sub {
+      my ( $response, $ua, $h, $data ) = @_;
+      my ($buffer, $status) = $gunzip-&gt;inflate($data);
+      # uncompressed data in $buffer
+
+      # return true to get called again for same response.
+      1; 
+    } ;
+
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">1227435</root_node>
+<parent_node field_name="parent_node">1227471</parent_node>
+<thread id="1227435">
+<node id="1227437"><node id="1227463"><node id="1227466"><node id="1227471"><node id="1227475"/>
+<node id="1227483"><node id="1227488"><node id="1227493"><node id="1227525"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1227490"><node id="1227496"><node id="1227531"/>
+</node>
+</node>
+</node>
+<node id="1227519"/>
+</thread></node>

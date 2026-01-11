@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116888" title="Re^3: removing perldata , hashref from XML file (updated)" created="2020-05-18 04:26:30" updated="2020-05-18 04:26:30" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;Can't handle Math::BigInt=HASH(0x22bcc10) (yet) at DECODEi.pl line 90407.&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This error message is surprising in that [doc://Math::BigInt] overloads stringification, and the error message should not be showing the object name like that. You'd have to show a [id://1177642|SSCCE] that reproduces this issue to investigate further.*&lt;/p&gt;
+&lt;p&gt;Given this, I don't know if the following will work in your case, but my code can be extended to support objects that overload stringification by adding the following to the top of the file, just under the other &lt;c&gt;use&lt;/c&gt; statements:&lt;/p&gt;
+&lt;c&gt;
+use Scalar::Util qw/blessed/;
+use overload ();
+&lt;/c&gt;
+&lt;p&gt;And this just before the line "&lt;c&gt;elsif ( ref $data ) { die "Can't handle $data (yet)" }&lt;/c&gt;":&lt;/p&gt;
+&lt;c&gt;
+	elsif ( blessed($data) &amp;&amp; overload::Overloaded($data)
+		&amp;&amp; overload::Method($data,'""') )
+			{ newel($parent, @args)-&gt;appendText("$data") }
+&lt;/c&gt;
+&lt;p&gt;* &lt;b&gt;Update:&lt;/b&gt; It can be explained if you're reading a dump of a Perl data structure into a script that doesn't load the corresponding module. In this case, my code above won't work either unless you load the module.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11116740</root_node>
+<parent_node field_name="parent_node">11116885</parent_node>
+<thread id="11116740">
+<node id="11116742"><node id="11116748"><node id="11116749"><node id="11116830"><node id="11116833"><node id="11116834"/>
+</node>
+<node id="11116835"><node id="11116836"/>
+</node>
+</node>
+</node>
+<node id="11116750"><node id="11116831"/>
+</node>
+</node>
+<node id="11116885"><node id="11116888"/>
+</node>
+</node>
+<node id="11116768"><node id="11116832"/>
+</node>
+<node id="11116845"/>
+</thread></node>

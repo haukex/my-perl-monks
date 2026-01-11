@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1219530" title="Re: redacting from config hash" created="2018-07-31 01:52:30" updated="2018-07-31 01:52:30" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;The first thing I intend to do is to make a copy of config2.pm in a temporary directory without the values in the hash.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I would actually suggest going the other way around - removing sensitive data is more brittle than not including it in the first place. One common approach is to package a template configuration file with dummy values as placeholders along with everything else, and then have the actual configuration file reside only locally, for example in the user's home directory, or on *NIXish machines in &lt;c&gt;/etc&lt;/c&gt;. That way, when you bundle up your application, you won't accidentally package up your sensitive data as well. Or at the very least, keep a &lt;c&gt;config2.pm.templ&lt;/c&gt; template file for packaging, and make sure not to package up your actual &lt;c&gt;config2.pm&lt;/c&gt;.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Can you "use" a lexical variable?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If you mean accessing a &lt;c&gt;my&lt;/c&gt; variable in &lt;c&gt;config2.pm&lt;/c&gt; that's loaded via &lt;c&gt;use config2;&lt;/c&gt;? No, at least not without a little bit of trickery, which is why typically package variables ([doc://our]) are used for that kind of thing.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;what is a good choice for compression software?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'd suggest ZIP, it's a common cross-platform format. As for support in Perl, there's the core modules [doc://IO::Compress::Zip] and [doc://IO::Uncompress::Unzip], and the CPAN module [mod://Archive::Zip].&lt;/p&gt;
+&lt;p&gt;Having said all that, here's one way to produce a template file for the example data you showed. I'm using [doc://do] to load it, which means that you &lt;b&gt;must&lt;/b&gt; trust the contents of this file as it will be executed.&lt;/p&gt;
+&lt;p&gt;Input (&lt;c&gt;config2.pm&lt;/c&gt;):&lt;/p&gt;
+&lt;c&gt;
+$CONFIG = {
+            my_github =&gt; {
+                           email =&gt; "me\@example.com",
+                           password =&gt; "PaSsWoRd"
+                         },
+            my_sftp =&gt; {
+                         domain =&gt; "example.com",
+                         password =&gt; "PaSsWoRd",
+                         username =&gt; "sftpuser"
+                       }
+          };
+&lt;/c&gt;
+&lt;p&gt;Code:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dumper;
+
+my $file = '/path/to/config2.pm';
+my $templ = '/path/to/config2.pm.templ';
+our $CONFIG;
+if (not my $return = do $file) {
+	die "couldn't parse $file: $@" if $@;
+	die "couldn't do $file: $!" unless defined $return;
+	die "couldn't run $file" unless $return;
+}
+
+for my $hash (values %$CONFIG) {
+	for my $val (values %$hash) {
+		$val = 'redacted';
+	}
+}
+
+open my $fh, '&gt;', $templ or die "$templ: $!";
+print {$fh} Data::Dumper-&gt;new([$CONFIG],['$CONFIG'])
+	-&gt;Useqq(1)-&gt;Sortkeys(1)-&gt;Quotekeys(0)-&gt;Dump;
+close $fh;
+&lt;/c&gt;
+&lt;p&gt;Output (&lt;c&gt;config2.pm.templ&lt;/c&gt;):&lt;/p&gt;
+&lt;c&gt;
+$CONFIG = {
+            my_github =&gt; {
+                           email =&gt; "redacted",
+                           password =&gt; "redacted"
+                         },
+            my_sftp =&gt; {
+                         domain =&gt; "redacted",
+                         password =&gt; "redacted",
+                         username =&gt; "redacted"
+                       }
+          };
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1219523</root_node>
+<parent_node field_name="parent_node">1219523</parent_node>
+<thread id="1219523">
+<node id="1219530"><node id="1219540"/>
+<node id="1219612"><node id="1219636"><node id="1219747"><node id="1219776"><node id="1219963"/>
+</node>
+<node id="1219777"><node id="1219962"/>
+</node>
+</node>
+</node>
+<node id="1219643"><node id="1219681"/>
+</node>
+</node>
+</node>
+</thread></node>

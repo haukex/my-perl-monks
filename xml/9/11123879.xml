@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11123879" title="Fastest way to &quot;pick without replacement&quot;" created="2020-11-20 05:14:23" updated="2020-11-20 05:14:23" _doctext_mode="strict"><type id="115">perlquestion</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Today's post "[id://11123870]" got me wondering about this: what's the "best" (= fastest, most memory-efficient, etc.) way to implement a (typically recursive) "pick without replacement" algorithm like this? Here's an example with [doc://splice], plus [doc://grep]ping the indicies, as [choroba] used [id://11123877|here]. Who has more ideas?&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Benchmark qw/cmpthese/;
+
+my @numbers = ( 0..20 );
+my $index = 3;
+my @expect = ( 0..2,4..20 );
+use constant TEST =&gt; 0;
+
+cmpthese(-2, {
+	splice =&gt; sub {
+		my @output = @numbers;
+		splice @output, $index, 1;
+		join("\0", @output) eq join("\0", @expect) or die if TEST;
+	},
+	grep =&gt; sub { # https://www.perlmonks.org/?node_id=11123877
+		my @output = @numbers[ grep $_ != $index, 0 .. $#numbers ];
+		join("\0", @output) eq join("\0", @expect) or die if TEST;
+	},
+});
+
+__END__
+
+            Rate   grep splice
+grep    835107/s     --   -68%
+splice 2575950/s   208%     --
+&lt;/c&gt;</doctext>
+<thread id="11123879">
+<node id="11123881"/>
+<node id="11123884"><node id="11123941"><node id="11123949"/>
+<node id="11123958"/>
+</node>
+<node id="11123952"/>
+</node>
+<node id="11123885"><node id="11123927"><node id="11123986"/>
+</node>
+</node>
+<node id="11123905"/>
+<node id="11123963"><node id="11123965"><node id="11123973"><node id="11124019"><node id="11124034"/>
+</node>
+</node>
+<node id="11124041"/>
+</node>
+</node>
+</thread></node>

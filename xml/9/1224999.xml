@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224999" title="Re: passing a hash ref in a sub" created="2018-10-31 11:19:19" updated="2018-10-31 11:19:19" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Simplifying a bit, references point to a memory location of a data structure. In your first piece of code, &lt;c&gt;my $result_hr;&lt;/c&gt; will be &lt;c&gt;undef&lt;/c&gt; because it isn't initialized. In your &lt;c&gt;sub&lt;/c&gt;, you &lt;i&gt;copy&lt;/i&gt; the elements of &lt;c&gt;@_&lt;/c&gt; into &lt;c&gt;$raw_hr&lt;/c&gt; and &lt;c&gt;$res_hr&lt;/c&gt;, so now &lt;c&gt;$res_hr&lt;/c&gt; is just a copy of the original &lt;c&gt;undef&lt;/c&gt;. In other words, it doesn't point anywhere! And &lt;c&gt;$res_hr&lt;/c&gt; has no way to affect &lt;c&gt;$result_hr&lt;/c&gt;. There is a hash being autovivified, but it is restricted to the scope of the &lt;c&gt;sub&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;When you write &lt;c&gt;my $result_hr={};&lt;/c&gt;, now what is being passed into the &lt;c&gt;sub&lt;/c&gt; is a reference that points to an anonymous hash. The reference still gets copied into &lt;c&gt;$res_hr&lt;/c&gt;, but the result of that is just two references pointing at the same data structure. The hash isn't being autovivified in &lt;c&gt;sub&lt;/c&gt;, instead the &lt;c&gt;sub&lt;/c&gt; is modifying the anonymous hash pointed to by both &lt;c&gt;$result_hr&lt;/c&gt; and &lt;c&gt;$res_hr&lt;/c&gt;. When the &lt;c&gt;sub&lt;/c&gt; returns, your main code still has access to the anonymous hash via the reference stored in &lt;c&gt;$result_hr&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Note that there is a way to modify &lt;c&gt;$result_hr&lt;/c&gt; from within the &lt;c&gt;sub&lt;/c&gt;: use &lt;c&gt;$_[1]&lt;/c&gt; directly, instead of &lt;c&gt;$res_hr&lt;/c&gt;, because the elements of [doc://@_] are aliases to the original arguments. &lt;i&gt;However,&lt;/i&gt; I wouldn't normally recommend this way of modifying arguments, because that they are in effect return values can be confusing to users of the API. It's more common to handle this via regular [doc://return] values.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;(&lt;i&gt;Update before posting:&lt;/i&gt; I see [davido] has [id://1224997|explained] the same thing, with different wording - TIMTOWTDI &lt;c&gt;:-)&lt;/c&gt; )&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1224994</root_node>
+<parent_node field_name="parent_node">1224994</parent_node>
+<thread id="1224994">
+<node id="1224996"/>
+<node id="1224997"><node id="1225064"/>
+</node>
+<node id="1224999"><node id="1225000"><node id="1225002"><node id="1225003"/>
+</node>
+</node>
+</node>
+<node id="1225004"/>
+<node id="1225055"/>
+<node id="1225083"/>
+</thread></node>

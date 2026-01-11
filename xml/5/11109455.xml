@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109455" title="Re: Best way to a parse a big binary file" created="2019-11-29 16:40:14" updated="2019-11-29 16:40:14" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;As always TIMTOWTDI, but personally I'd implement it as if I was reading a stream, i.e. with [doc://read]. Either you give each class the ability to parse the binary representation of itself, or you implement the reading as a single function that just constructs objects of the corresponding class (this would make it easier if the sections aren't entirely independent of each other, like if you've got a checksum over multiple sections). I've chosen the latter here:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use 5.012; # for "package BLOCK" syntax
+
+package MainHeader {
+	use Moo;
+	has foo =&gt; ( is =&gt; 'ro' );
+}
+package ExtHeader {
+	use Moo;
+	has bar =&gt; ( is =&gt; 'ro' );
+}
+package Section {
+	use Moo;
+	has type =&gt; ( is =&gt; 'ro' );
+	has quz =&gt; ( is =&gt; 'ro' );
+}
+
+my $binfile =
+	 "\x01\x06Hello\0"
+	."\x02\x04\0\x12\x34\x56"
+	."\x13\x02\xBE\xEF";
+
+sub binread { # helper function for read+unpack
+	my ($fh, $bytes, $templ) = @_;
+	read($fh, my $data, $bytes) == $bytes
+		or die "failed to read $bytes bytes";
+	return unpack($templ, $data);
+}
+
+open my $fh, '&lt;:raw', \$binfile or die $!;
+my @packets;
+while (!eof($fh)) {
+	my ($type, $length) = binread($fh, 2, "CC");
+	if ($type == 0x01) {
+		my ($foo) = binread($fh, $length, 'Z*');
+		my $hdr = MainHeader-&gt;new( foo =&gt; $foo );
+		push @packets, $hdr;
+	}
+	elsif ($type == 0x02) {
+		my ($bar) = binread($fh, $length, 'N');
+		my $exthdr = ExtHeader-&gt;new( bar =&gt; $bar );
+		push @packets, $exthdr;
+	}
+	elsif ($type == 0x13) {
+		my ($quz) = binread($fh, $length, 'n');
+		my $sect = Section-&gt;new( type =&gt; $type, quz =&gt; $quz );
+		push @packets, $sect;
+	}
+	else { die "Unknown packet type $type" }
+}
+close $fh;
+
+use Data::Dump;
+dd @packets;
+__END__
+(
+  bless({ foo =&gt; "Hello" }, "MainHeader"),
+  bless({ bar =&gt; 1193046 }, "ExtHeader"),
+  bless({ quz =&gt; 48879, type =&gt; 19 }, "Section"),
+)
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11109453</root_node>
+<parent_node field_name="parent_node">11109453</parent_node>
+<thread id="11109453">
+<node id="11109455"><node id="11109488"><node id="11109492"><node id="11109974"/>
+</node>
+</node>
+</node>
+<node id="11109469"/>
+<node id="11109533"/>
+</thread></node>

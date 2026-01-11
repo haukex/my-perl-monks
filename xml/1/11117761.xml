@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117761" title="Re: Recommend an asynchronous HTTP server CPAN modules? (updated)" created="2020-06-06 10:08:52" updated="2020-06-06 10:08:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I've been doing a lot of work with [mod://Mojolicious] lately and I've been liking it. It provides [mod://Mojo::IOLoop::Subprocess] to fork off a subprocess so that one doesn't block the server.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use Mojolicious::Lite -signatures;
+use Mojo::IOLoop;
+
+get '/' =&gt; sub ($c) {
+	$c-&gt;render(template =&gt; 'index');
+} =&gt; 'index';
+
+post '/doit' =&gt; sub ($c) {
+	$c-&gt;render_later;
+	Mojo::IOLoop-&gt;subprocess-&gt;run_p(sub {
+		# this code is actually running in a subprocess!
+		sleep 10;
+		return "I did the thing!";
+	})-&gt;then(sub (@results) {
+		$c-&gt;render(text =&gt; "@results");
+	})-&gt;catch(sub ($err) {
+		$c-&gt;reply-&gt;exception($err);
+	});
+} =&gt; 'doit';
+
+app-&gt;start;
+
+__DATA__
+
+@@ index.html.ep
+% layout 'main', title =&gt; 'Hello, World!';
+&lt;div&gt;
+%= form_for doit =&gt; ( method=&gt;'post' ) =&gt; begin
+%= submit_button 'Do the thing'
+%= end
+&lt;/div&gt;
+
+@@ layouts/main.html.ep
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+%= content
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/c&gt;
+&lt;p&gt;You could combine this with e.g. aychnronous AJAX form submission like I showed [id://11114417|here], or one could probably even send progress messages (a feature provided by [mod://Mojo::IOLoop::Subprocess]) to the browser using something like Javascript's EventSource API, which I included an example of [id://11114488|here].&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2022-04-07:&lt;/b&gt; I've now posted an example of just that [id://11142798|here].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11117744</root_node>
+<parent_node field_name="parent_node">11117744</parent_node>
+<thread id="11117744">
+<node id="11117747"/>
+<node id="11117750"/>
+<node id="11117751"><node id="11117753"/>
+</node>
+<node id="11117754"><node id="11117756"/>
+</node>
+<node id="11117759"/>
+<node id="11117761"/>
+<node id="11117848"/>
+<node id="11128514"/>
+</thread></node>

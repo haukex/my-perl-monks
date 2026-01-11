@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11103159" title="Re: Print the line with the largest number from standard input" created="2019-07-22 15:08:51" updated="2019-07-22 15:08:51" _doctext_mode="lenient"><type id="11">note</type>
+<author id="533863">roboticus</author>
+<doctext field_name="doctext">&lt;p&gt;[SSSufe]:&lt;/p&gt;
+&lt;p&gt;Sorry for the length of this thing, it's one of my occasional ramble-on nodes.  Essentially I'm running and fixing the code incrementally with commentary.  If you want to see it in its excruciating detail ....&lt;/p&gt;
+&lt;readmore&gt;
+&lt;p&gt;The first thing I do when programming perl is to add the lines:&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+&lt;/c&gt;
+&lt;p&gt;to the top of my scripts.  It helps you avoid many common errors.  When I did so and ran your code, it said:&lt;/p&gt;
+&lt;c&gt;
+$ perl pm_11103133.pl &lt;xy.data
+Global symbol "$lines" requires explicit package name (did you forget to declare "my $lines"?) at pm_11103133.pl line 3.
+Global symbol "@input" requires explicit package name (did you forget to declare "my @input"?) at pm_11103133.pl line 4.
+Global symbol "$lines" requires explicit package name (did you forget to declare "my $lines"?) at pm_11103133.pl line 4.
+Global symbol "@largest_number" requires explicit package name (did you forget to declare "my @largest_number"?) at pm_11103133.pl line 5.
+Global symbol "$input" requires explicit package name (did you forget to declare "my $input"?) at pm_11103133.pl line 5.
+Global symbol "$lines" requires explicit package name (did you forget to declare "my $lines"?) at pm_11103133.pl line 6.
+Execution of pm_11103133.pl aborted due to compilation errors.
+&lt;/c&gt;
+&lt;p&gt;It's a bunch of complaints about no variable declarations.  So I then added variable declarations to the script, like so:&lt;/p&gt;
+&lt;c&gt;
+#!env perl
+use strict;
+use warnings;
+
+while (my $lines = &lt;STDIN&gt;){
+    my @input = $lines =~ /\d+/g;
+    my @largest_number = sort {$a &lt;=&gt; $b} @$input;
+    print "$lines\n";
+}
+&lt;/c&gt;
+&lt;p&gt;Running it again gave the result:&lt;/p&gt;
+&lt;c&gt;
+$ perl pm_11103133.pl &lt;xy.data
+Global symbol "$input" requires explicit package name (did you forget to declare "my $input"?) at pm_11103133.pl line 7.
+Execution of pm_11103133.pl aborted due to compilation errors.
+&lt;/c&gt;
+&lt;p&gt;Ah, I declared the array &lt;c&gt;@input&lt;/c&gt;.  But the code is also using the scalar variable &lt;c&gt;$input&lt;/c&gt; although it's never assigned a value.  So the first error I see in your code is that you're mixing up some variables.  Since your code is pretty simple, it's relatively obvious that what you really wanted is to use &lt;c&gt;@input&lt;/c&gt; instead of trying to convert the unused scalar variable &lt;c&gt;$input&lt;/c&gt; into a list.  So a quick fix is to change &lt;c&gt;@$input&lt;/c&gt; to &lt;c&gt;@input&lt;/c&gt; at the end of the line containing &lt;c&gt;sort&lt;/c&gt;.  Running it again gives:&lt;/p&gt;
+&lt;c&gt;
+$ perl pm_11103133.pl &lt;xy.data
+Hello, I'm 18
+
+1 this year is 2019 1
+
+1 2 3 - 4
+&lt;/c&gt;
+&lt;p&gt;This is obviously not what you want.  Looking at the code, it's pretty simple to see why:  You're *always* printing &lt;c&gt;$line&lt;/c&gt; for every iteration of the loop.  That'll never work, since you want only the line with the greatest value in it.&lt;/p&gt;
+&lt;p&gt;From the code you've got, it seems that you're collecting all the numbers into &lt;c&gt;@input&lt;/c&gt; and then sorting them.  That looks like a good start.  But you need to do a couple of things:&lt;/p&gt;
+&lt;ul&gt;
+ &lt;li&gt;You only want to print the line if it has the largest number found.&lt;/li&gt;
+ &lt;li&gt;You need to have some history so you can keep track of the largest number you've found so far.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;So we'll add that to your script like this:&lt;/p&gt;
+&lt;c&gt;
+#!env perl
+use strict;
+use warnings;
+
+# Keep track of the largest number we've found so far
+my $largest_number_so_far = 0;
+
+while (my $lines = &lt;STDIN&gt;){
+    my @input = $lines =~ /\d+/g;
+    my @largest_number = sort {$a &lt;=&gt; $b} @input;
+
+    if ($largest_number[0] &gt; $largest_number_so_far) {
+        # We found a bigger number!
+        print "$lines\n";
+        $largest_number_so_far = $largest_number[0];
+    }
+}
+&lt;/c&gt;
+&lt;p&gt;When we run it, we get the result:&lt;/p&gt;
+&lt;c&gt;
+$ perl pm_11103133.pl &lt;xy.data
+Hello, I'm 18
+
+Use of uninitialized value in numeric gt (&gt;) at pm_11103133.pl line 13, &lt;STDIN&gt; line 4.
+&lt;/c&gt;
+&lt;p&gt;Hmmm ... we have two problems.  First, we're printing the wrong line.  Obviously 18 is less than 2019 so why are we printing that line and not printing the line containing 2019?  Secondly, why are we getting the "Use of uninitialized value" warning?&lt;/p&gt;
+&lt;p&gt;We need to figure out what the program is "thinking", so we'll add some debugging print statements to show what values the code is looking at, like this:&lt;/p&gt;
+&lt;c&gt;
+#!env perl
+use strict;
+use warnings;
+
+# Keep track of the largest number we've found so far
+my $largest_number_so_far = 0;
+
+while (my $lines = &lt;STDIN&gt;){
+    my @input = $lines =~ /\d+/g;
+    my @largest_number = sort {$a &lt;=&gt; $b} @input;
+
+    print "CURRENT LINE: &lt;$lines&gt;\n";
+    print "NUMBERS FOUND IN LINE: ", join(", ", @largest_number), "\n";
+    print "LARGEST IS: $largest_number[0]\n";
+
+    if ($largest_number[0] &gt; $largest_number_so_far) {
+        # We found a bigger number!
+        print "$lines\n";
+        $largest_number_so_far = $largest_number[0];
+    }
+}
+&lt;/c&gt;
+&lt;p&gt;Now, when we run the code, we get this:&lt;/p&gt;
+&lt;c&gt;
+$ perl pm_11103133.pl &lt;xy.data
+CURRENT LINE: &lt;Hello, I'm 18
+&gt;
+NUMBERS FOUND IN LINE: 18
+LARGEST IS: 18
+Hello, I'm 18
+
+CURRENT LINE: &lt;1 this year is 2019 1
+&gt;
+NUMBERS FOUND IN LINE: 1, 1, 2019
+LARGEST IS: 1
+CURRENT LINE: &lt;1 2 3 - 4
+&gt;
+NUMBERS FOUND IN LINE: 1, 2, 3, 4
+LARGEST IS: 1
+CURRENT LINE: &lt;
+&gt;
+NUMBERS FOUND IN LINE:
+Use of uninitialized value $largest_number[0] in concatenation (.) or string at pm_11103133.pl line 14, &lt;STDIN&gt; line 4.
+LARGEST IS:
+Use of uninitialized value in numeric gt (&gt;) at pm_11103133.pl line 16, &lt;STDIN&gt; line 4.
+&lt;/c&gt;
+&lt;p&gt;OK, for the first line the program thinks the largest number is 18.  That looks just fine.  For the next line, though, the code thinks that the largest number is 1.  That's clearly wrong!  The sort function is sorting the numbers such that the smallest number is first and the largest number is last.  There are several ways we could handle this:&lt;/p&gt;
+&lt;ul&gt;
+ &lt;li&gt;We could reverse the sort order by changing the sort function like this:&lt;br/&gt;
+     &lt;c&gt;my @largest_number = sort {$b &lt;=&gt; $a} @input;&lt;/c&gt;&lt;/li&gt;
+ &lt;li&gt;Or we could use the reverse function to reverse the list:&lt;br/&gt;
+     &lt;c&gt;my @largest_number = reverse sort {$a &lt;=&gt; $b} @input;&lt;/c&gt;&lt;/li&gt;
+ &lt;li&gt;Or we could take the largest number from the other end of the list by using &lt;c&gt;$largest_number[-1]&lt;/c&gt; instead of &lt;c&gt;$largest_number[0]&lt;/c&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The other thing we see is that the "Use of uninitialized value" comes from the blank line at the end.  While you &lt;i&gt;could&lt;/i&gt; just notice that there's a blank line and ignore it, that's the wrong way to fix it in this case.  If you look a little more carefully, the reason for the message is that there are *no* numbers found on that line, which could be normal for your data.  So rather than just ignoring a blank line, we'll ignore any line that doesn't have any numbers in it.  (Note:  You'll notice that we now get the "Use of uninitialized value" twice instead of once.  That's to be expected as one of our debug print statements tries to print the value that doesn't exist.)&lt;/p&gt;
+&lt;p&gt;So we'll make a couple changes to the code, and we get:&lt;/p&gt;
+&lt;c&gt;
+$ cat pm_11103133.pl
+#!env perl
+use strict;
+use warnings;
+
+# Keep track of the largest number we've found so far
+my $largest_number_so_far = 0;
+
+while (my $lines = &lt;STDIN&gt;){
+    my @input = $lines =~ /\d+/g;
+    my @largest_number = sort {$b &lt;=&gt; $a} @input;
+
+    print "CURRENT LINE: &lt;$lines&gt;\n";
+    print "NUMBERS FOUND IN LINE: ", join(", ", @largest_number), "\n";
+    print "LARGEST IS: $largest_number[0]\n";
+
+    if (@largest_number) {
+        # We found some numbers on the line!
+
+        if ($largest_number[0] &gt; $largest_number_so_far) {
+            # We found a bigger number!
+            print "$lines\n";
+            $largest_number_so_far = $largest_number[0];
+        }
+    }
+}
+&lt;/c&gt;
+&lt;p&gt;When we run it, the results look better:&lt;/p&gt;
+&lt;c&gt;
+$ perl pm_11103133.pl &lt;xy.data
+CURRENT LINE: &lt;Hello, I'm 18
+&gt;
+NUMBERS FOUND IN LINE: 18
+LARGEST IS: 18
+Hello, I'm 18
+
+CURRENT LINE: &lt;1 this year is 2019 1
+&gt;
+NUMBERS FOUND IN LINE: 2019, 1, 1
+LARGEST IS: 2019
+1 this year is 2019 1
+
+CURRENT LINE: &lt;1 2 3 - 4
+&gt;
+NUMBERS FOUND IN LINE: 4, 3, 2, 1
+LARGEST IS: 4
+CURRENT LINE: &lt;
+&gt;
+NUMBERS FOUND IN LINE:
+Use of uninitialized value $largest_number[0] in concatenation (.) or string at pm_11103133.pl line 14, &lt;STDIN&gt; line 4.
+LARGEST IS:
+&lt;/c&gt;
+&lt;p&gt;OK, this is much better.  We're printing the line with 2019 in it, and we got rid of one of the "use of uninitialized value" lines.  We can take out our debugging statements now that they've done their job, and run it again.  After doing so, we get:&lt;/p&gt;
+&lt;c&gt;
+$ perl pm_11103133.pl &lt;xy.data
+Hello, I'm 18
+
+1 this year is 2019 1
+&lt;/c&gt;
+&lt;p&gt;OK, now *that's* much better.  But there's still a problem.  We're printing out too many lines!  We only wanted to print out the line with 2019, but we got the line with 18 in it too.&lt;/p&gt;
+&lt;p&gt;The problem is that we're trying to decide whether to print the line too soon.  We can't decide to print any particular line until we scan through the entire file, because we never know if a later line will contain a larger number.&lt;/p&gt;
+&lt;p&gt;To solve that problem, we'll add another history variable to hold the contents of the line that contains the largest number so far.  Then only after processing the entire file will we bother to print the line containing the largest number:&lt;/p&gt;
+&lt;c&gt;
+$ cat pm_11103133.pl
+#!env perl
+use strict;
+use warnings;
+
+# Keep track of the largest number we've found so far
+my $largest_number_so_far = 0;
+my $line_with_largest_number;
+
+while (my $lines = &lt;STDIN&gt;){
+    my @input = $lines =~ /\d+/g;
+    my @largest_number = sort {$b &lt;=&gt; $a} @input;
+
+
+    if (@largest_number) {
+        # We found some numbers on the line!
+
+        if ($largest_number[0] &gt; $largest_number_so_far) {
+            # We found a bigger number!
+            $line_with_largest_number = $lines;
+            $largest_number_so_far = $largest_number[0];
+        }
+    }
+}
+
+print "$line_with_largest_number\n";
+&lt;/c&gt;
+&lt;p&gt;When we run it this time, we get the result:&lt;/p&gt;
+&lt;c&gt;
+$ perl pm_11103133.pl &lt;xy.data
+1 this year is 2019 1
+&lt;/c&gt;
+&lt;p&gt;When learning how to program, you eventually develop a feel for what your program is actually doing.  You'll get that feel by running your code under the debugger and/or by adding print statements to tell you what the program actually sees.  Even after 30 years of programming, I'll still add debug statements to my code to ensure that my understanding of what the code is doing is correct.&lt;/p&gt;
+&lt;p&gt;Using the debugger is a valuable skill and will help you when your code and/or data gets complicated.  You should learn how to use the debugger if you want to learn how to program well. For simple things, print statements are just fine.  If you want to see an example of using the debugger, check out [id://1038623|this node] I did for someone a while ago.&lt;/p&gt; 
+&lt;/readmore&gt;
+&lt;p&gt;...[roboticus]&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;When your only tool is a hammer, all problems look like your thumb.&lt;/i&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11103133</root_node>
+<parent_node field_name="parent_node">11103133</parent_node>
+<thread id="11103133">
+<node id="11103135"><node id="11103152"/>
+<node id="11103187"/>
+</node>
+<node id="11103136"><node id="11103220"/>
+</node>
+<node id="11103137"><node id="11103139"><node id="11103140"/>
+<node id="11103141"/>
+</node>
+</node>
+<node id="11103146"/>
+<node id="11103147"/>
+<node id="11103159"/>
+<node id="11103251"><node id="11103393"/>
+</node>
+<node id="11103378"><node id="11103391"><node id="11103624"><node id="11103628"><node id="11103902"><node id="11103918"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

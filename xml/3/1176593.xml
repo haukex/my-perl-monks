@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1176593" title="Re: Perl Beginner" created="2016-11-26 04:53:06" updated="2016-11-26 04:53:06" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [Rasha],&lt;/p&gt;
+&lt;p&gt;You've already gotten an answer, but in case you want to debug this issue or similar ones in the future yourself, have a look at the [id://745674], in this case especially items 3 and 4 on that list. Also, I find [doc://Data::Dumper]'s &lt;c&gt;Useqq&lt;/c&gt; option helpful:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dumper;
+$Data::Dumper::Useqq = 1;
+
+print "Enter something: ";
+my $char = &lt;&gt;;
+print Dumper($char);
+&lt;/c&gt;
+&lt;p&gt;If I enter "3", this prints &lt;c&gt;$VAR1 = "3\n";&lt;/c&gt;, which shows you there's a newline character (&lt;c&gt;\n&lt;/c&gt;) at the end of the string, which you need to [doc://chomp] off.&lt;/p&gt;
+&lt;p&gt;For getting user input, there are modules that can help you, such as the core module [doc://Term::ReadLine], and there are several good modules on [cpan://prompt|CPAN]. Or, even though this is a little overkill, there's the &lt;c&gt;prompt&lt;/c&gt; function from the module [doc://ExtUtils::MakeMaker] - that isn't a user input module, it has a whole different function, but its &lt;c&gt;prompt&lt;/c&gt; function comes in handy, it's a core module that should almost always be available, and it supports a default input.&lt;/p&gt;
+&lt;c&gt;
+use Term::ReadLine;
+my $term = Term::ReadLine-&gt;new;
+my $line = $term-&gt;readline("Enter something: ");
+print Dumper($line);
+
+use ExtUtils::MakeMaker 'prompt';
+my $value = prompt("Enter something:","default");
+print Dumper($value);
+&lt;/c&gt;
+&lt;p&gt;For reading single keypresses, there's [mod://Term::ReadKey], but that has the disadvantage that it will also return keypresses like F1 or backspace.&lt;/p&gt;
+&lt;c&gt;
+use Term::ReadKey qw/ReadMode ReadKey/;
+print "Press a key\n";
+ReadMode 'cbreak';
+my $key = ReadKey(0);
+ReadMode 'restore';
+print Dumper($key);
+&lt;/c&gt;
+&lt;p&gt;Lastly, as a beginner, beginning each script with &lt;c&gt;use warnings; use strict; use diagnostics;&lt;/c&gt; should be very helpful to you - see also [id://111088].&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1176572</root_node>
+<parent_node field_name="parent_node">1176572</parent_node>
+<thread id="1176572">
+<node id="1176573"/>
+<node id="1176574"/>
+<node id="1176575"/>
+<node id="1176593"/>
+<node id="1176623"/>
+</thread></node>

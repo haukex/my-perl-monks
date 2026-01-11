@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203495" title="Re^7: Regex result being defined when it shouldn't be(?)" created="2017-11-15 11:53:01" updated="2017-11-15 11:53:01" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1158292">pryrt</author>
+<doctext field_name="doctext">&lt;p&gt;I'm wondering if, by focusing on the &lt;c&gt;sysseek&lt;/c&gt; aside, you've missed the point about the return value of &lt;c&gt;defined()&lt;/c&gt; itself.  It returns something that is indistinguishable from the return value of the &lt;c&gt;==&lt;/c&gt; operator.  See below.&lt;/p&gt;
+
+&lt;readmore&gt;&lt;code&gt;#!/usr/bin/perl -l
+use strict;
+use warnings;
+use Devel::Peek;
+
+sub display {
+    my $text = shift;
+    my $result = shift;
+    my $ans = ($result) ? 'TRUE' : 'FALSE';
+    print STDERR "$text =&gt; CONDITIONAL WAS $ans";
+    Dump $result;
+    print STDERR '-'x20, "\n";
+}
+
+my @results;
+push @results, ['1==1', 1==1];
+push @results, ['defined("x")', defined 'x'];
+push @results, ['defined("x")==1', defined('x')==1];
+push @results, ['defined("x")eq"1"', defined('x')eq"1"];
+push @results, ['1==0', 1==0];
+push @results, ['defined(undef)', defined undef];
+push @results, ['!defined(undef)', !defined undef];
+push @results, ['defined(undef)==0', defined(undef)==0];
+push @results, ['defined(undef)eq""', defined(undef)eq""];
+display(@$_) for ( @results );
+
+__END__
+1==1 =&gt; CONDITIONAL WAS TRUE
+SV = PVNV(0x5de5c8) at 0x479ab8
+  REFCNT = 1
+  FLAGS = (IOK,NOK,POK,pIOK,pNOK,pPOK)
+  IV = 1
+  NV = 1
+  PV = 0x47c3e8 "1"\0
+  CUR = 1
+  LEN = 10
+--------------------
+
+defined("x") =&gt; CONDITIONAL WAS TRUE
+SV = PVNV(0x5de5c8) at 0x479ab8
+  REFCNT = 1
+  FLAGS = (IOK,NOK,POK,pIOK,pNOK,pPOK)
+  IV = 1
+  NV = 1
+  PV = 0x47c3e8 "1"\0
+  CUR = 1
+  LEN = 10
+--------------------
+
+defined("x")==1 =&gt; CONDITIONAL WAS TRUE
+SV = PVNV(0x5de5c8) at 0x479ab8
+  REFCNT = 1
+  FLAGS = (IOK,NOK,POK,pIOK,pNOK,pPOK)
+  IV = 1
+  NV = 1
+  PV = 0x47c3e8 "1"\0
+  CUR = 1
+  LEN = 10
+--------------------
+
+defined("x")eq"1" =&gt; CONDITIONAL WAS TRUE
+SV = PVNV(0x5de5c8) at 0x479ab8
+  REFCNT = 1
+  FLAGS = (IOK,NOK,POK,pIOK,pNOK,pPOK)
+  IV = 1
+  NV = 1
+  PV = 0x47c3e8 "1"\0
+  CUR = 1
+  LEN = 10
+--------------------
+
+1==0 =&gt; CONDITIONAL WAS FALSE
+SV = PVNV(0x5de5c8) at 0x479ab8
+  REFCNT = 1
+  FLAGS = (IOK,NOK,POK,pIOK,pNOK,pPOK)
+  IV = 0
+  NV = 0
+  PV = 0x47c3e8 ""\0
+  CUR = 0
+  LEN = 10
+--------------------
+
+defined(undef) =&gt; CONDITIONAL WAS FALSE
+SV = PVNV(0x5de5c8) at 0x479ab8
+  REFCNT = 1
+  FLAGS = (IOK,NOK,POK,pIOK,pNOK,pPOK)
+  IV = 0
+  NV = 0
+  PV = 0x47c3e8 ""\0
+  CUR = 0
+  LEN = 10
+--------------------
+
+!defined(undef) =&gt; CONDITIONAL WAS TRUE
+SV = PVNV(0x5de5c8) at 0x479ab8
+  REFCNT = 1
+  FLAGS = (IOK,NOK,POK,pIOK,pNOK,pPOK)
+  IV = 1
+  NV = 1
+  PV = 0x47c3e8 "1"\0
+  CUR = 1
+  LEN = 10
+--------------------
+
+defined(undef)==0 =&gt; CONDITIONAL WAS TRUE
+SV = PVNV(0x5de5c8) at 0x479ab8
+  REFCNT = 1
+  FLAGS = (IOK,NOK,POK,pIOK,pNOK,pPOK)
+  IV = 1
+  NV = 1
+  PV = 0x47c3e8 "1"\0
+  CUR = 1
+  LEN = 10
+--------------------
+
+defined(undef)eq"" =&gt; CONDITIONAL WAS TRUE
+SV = PVNV(0x5de5c8) at 0x479ab8
+  REFCNT = 1
+  FLAGS = (IOK,NOK,POK,pIOK,pNOK,pPOK)
+  IV = 1
+  NV = 1
+  PV = 0x47c3e8 "1"\0
+  CUR = 1
+  LEN = 10
+--------------------
+&lt;/code&gt;&lt;/readmore&gt;
+
+&lt;p&gt;By doing an explicit test against a single value, rather than leaving &lt;c&gt;defined()&lt;/c&gt; to return a "truthy" value itself, future readers would be well within their rights to infer that &lt;c&gt;defined()&lt;/c&gt; may return one of many integers (~4billion in 32bit world, ~18 billion billion in 64bit world, ...) or one of an infinitude of possible strings, and that compared value of 0 or "" is somehow [wp://Magic_number_(programming)|magically important], without any indication that the importance comes because the function is returning a Boolean (or at least something that can be interpreted in a truthy manner).  On the other hand, if you left &lt;c&gt;!defined($var)&lt;/c&gt; as the sole element of the conditional, you would show you expect the return from &lt;c&gt;defined()&lt;/c&gt; function to be truthy (Boolean), and are using it as such.  To me, this is more clear than the comparison to the magic number (or magic string).  But if you're the only person who will ever read your code, and you are 100% certain that perl will never change the false return to be 0|"0" instead of 0|"", then continue as you want.  In which case, I'd recommend the &lt;c&gt;defined($var)==0&lt;/c&gt; rather than &lt;c&gt;defined($var) eq ''&lt;/c&gt;, because it seems more future proof, and programmers from other languages are possibly more accustomed to integers being mildly truthy (for example, c's &lt;c&gt;if(5)&lt;/c&gt; evaluating true) than they would be to strings evaluating true.&lt;/p&gt;
+
+&lt;p&gt;(BTW: Sorry about my use of -1 in an earlier post: I had misremembered that c defaulted to -1 for TRUE... But before making this post, I did a quickie in gcc, and saw that &lt;c&gt;1==1&lt;/c&gt; really did return 1.  Maybe I'm remembering some ancient compiler I used 20+ years ago.  Or my memory is making this up.)&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1203386</root_node>
+<parent_node field_name="parent_node">1203481</parent_node>
+<thread id="1203386">
+<node id="1203389"><node id="1203396"><node id="1203398"/>
+<node id="1203400"><node id="1203404"/>
+<node id="1203405"><node id="1203410"><node id="1203481"><node id="1203495"><node id="1203613"><node id="1203724"/>
+</node>
+<node id="1224565"><node id="1224568"/>
+<node id="1224592"/>
+</node>
+</node>
+<node id="1203512"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1203401"><node id="1203407"><node id="1203408"><node id="1203415"/>
+</node>
+</node>
+<node id="1203417"/>
+</node>
+</node>
+<node id="1203399"/>
+</thread></node>

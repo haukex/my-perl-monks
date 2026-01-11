@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11103281" title="Using SIG{ALRM} within while loop." created="2019-07-24 05:07:57" updated="2019-07-24 05:07:57" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11103274">evroom</author>
+<doctext field_name="doctext">Hi,
+
+&lt;p&gt;I would like to achieve the following:&lt;/p&gt;
+&lt;p&gt;Run a command and capture its output.
+While waiting for output, run a subroutine every 10 seconds.
+So, I do not want to escape from the while loop, like in most other examples.&lt;/p&gt;
+&lt;p&gt;In this example, the timer is set off, but it ends the program. I tried positioning the eval block on various places (e.g. outside the while loop), but to no avail. Perhaps it cannot be done and I need to dive into working with threads.&lt;/p&gt;
+&lt;p&gt;The sleep 120 in this code is only to simulate no response from command.&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Time::Local;
+use Time::HiRes qw[ time ];
+use POSIX ":sys_wait_h";
+
+my $ReturnValue = 0;
+
+sub MainSub()
+{
+my $Sub = "MainSub";
+my $SubReturnValue = 0;
+
+my $CommandLine;
+my $Command = qq(echo 'Hallo, sleeping for 120 seconds ...'; sleep 120 2&gt;&amp;1);
+open (COMMAND, '-|', "$Command");
+while (&lt;COMMAND&gt;) {
+	eval {
+		local $SIG{ALRM} = sub { die("TimerTriggerStatus\n"); };
+		alarm(10);
+		printf "%s : %s\n", scalar localtime(), "$Sub - timer set to 10 seconds";
+		
+		chomp;
+		$CommandLine = $_;
+		printf "%s : %s\n", scalar localtime(), "$Sub - CommandLine received:\n$CommandLine";
+	};
+
+	if ( $@ eq "TimerTriggerStatus\n" ) {
+		printf "%s : %s\n", scalar localtime(), "$Sub - timer triggered";
+		&amp;TimerHandler;
+	};
+}
+close (COMMAND);
+
+return ($SubReturnValue);
+} # end of sub MainSub
+
+
+sub TimerHandler() {
+my $Sub = "TimerHandler";
+my $SubReturnValue = 0;
+
+printf "%s : %s\n", scalar localtime(), "$Sub - timer expired";
+
+alarm(10);
+printf "%s : %s\n", scalar localtime(), "$Sub - timer set to 10 seconds";
+
+return ($SubReturnValue);
+
+} # end of sub TimerHandler
+
+
+sub TimerSub() {
+my $Sub = "TimerSub";
+my $SubReturnValue = 0;
+
+printf "%s : %s\n", scalar localtime(), "$Sub - run after timer interrupt";
+
+alarm(10);
+printf "%s : %s\n", scalar localtime(), "$Sub - timer set to 10 seconds";
+
+return ($SubReturnValue);
+
+} # end of sub TimerSub
+
+#### MAIN ####
+printf "%s : %s\n", scalar localtime(), "BEGIN - MAIN";
+($ReturnValue) = &amp;MainSub;
+printf "%s : %s\n", scalar localtime(), "END - MAIN";
+&lt;/code&gt;
+&lt;p&gt;Output when run:&lt;/p&gt;
+&lt;code&gt;
+# time ./TestSigalrm.pl
+Wed Jul 24 08:38:20 2019 : BEGIN - MAIN
+Wed Jul 24 08:38:20 2019 : MainSub - timer set to 10 seconds
+Wed Jul 24 08:38:20 2019 : MainSub - CommandLine received:
+Hallo, sleeping for 120 seconds ...
+Alarm clock
+
+real    0m10.018s
+user    0m0.014s
+sys     0m0.002s
+&lt;/code&gt;
+</doctext>
+<thread id="11103281">
+<node id="11103283"><node id="11103290"/>
+</node>
+<node id="11103288"><node id="11103289"><node id="11103293"/>
+</node>
+</node>
+<node id="11103294"><node id="11103295"/>
+<node id="11103299"><node id="11103301"/>
+</node>
+</node>
+<node id="11103298"/>
+<node id="11103300"/>
+<node id="11103321"/>
+</thread></node>

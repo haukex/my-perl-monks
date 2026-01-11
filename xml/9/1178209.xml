@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1178209" title="Re: Simple (I thought) time comparison?" created="2016-12-20 09:08:11" updated="2016-12-20 09:08:11" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [sjessie],&lt;/p&gt;
+&lt;p&gt;As [hippo] and [davido] have already identified, the issue is with time zones. Personally, I like to use the [mod://DateTime] module since it includes a lot of functionality, including time zones. (Because of that it's a little more heavyweight, but that should only be noticeable if your script does a &lt;i&gt;lot&lt;/i&gt; of date/time calculations, so personally I just throw all of my date/time stuff at the [mod://DateTime] suite because it can handle it all, and only consider using other modules as an optimization if necessary.)&lt;/p&gt;
+&lt;p&gt;Anyway, here are two methods that work. Note that this handles time zones properly, for example try changing the first "America/New_York" to "America/Chicago". &lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; Just to emphasize this, the key is that all the [mod://DateTime] objects involved in the calculations and comparisons need to have their time zones set properly.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use DateTime;
+use DateTime::Format::Strptime;
+
+my $old_str = 'Dec 19 17:01:00 2016';
+# normally, $now = DateTime-&gt;now
+my $now = DateTime-&gt;new(year=&gt;2016,month=&gt;12,day=&gt;19,
+	hour=&gt;17,minute=&gt;7,second=&gt;6,time_zone=&gt;'America/New_York');
+print "now=", $now-&gt;strftime('%Y-%m-%d-%H-%M-%S %Z'), "\n";
+
+my $strp = DateTime::Format::Strptime-&gt;new(
+	on_error=&gt;'croak', pattern =&gt; '%b %d %T %Y',
+	time_zone=&gt;'America/New_York' );
+my $old = $strp-&gt;parse_datetime($old_str);
+print "old=", $old-&gt;strftime('%Y-%m-%d-%H-%M-%S %Z'), "\n";
+
+# approach one: difference
+my $diff_sec = $now-&gt;subtract_datetime_absolute($old)
+	-&gt;in_units('seconds');
+print "diff_sec: $diff_sec (",
+	sprintf("%.1f",$diff_sec/60), " minutes)\n";
+
+# approach two: compare to another DateTime
+my $halfago = $now-&gt;clone-&gt;subtract(minutes=&gt;30);
+print "halfago=", $halfago-&gt;strftime('%Y-%m-%d-%H-%M-%S %Z'), "\n";
+# note comparators are overloaded for DateTime objects
+print "halfago ", ($halfago&gt;$old?'&gt;':'&lt;='), " old\n";
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1178137</root_node>
+<parent_node field_name="parent_node">1178137</parent_node>
+<thread id="1178137">
+<node id="1178142"/>
+<node id="1178143"><node id="1178147"><node id="1178148"><node id="1178149"><node id="1178178"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1178144"><node id="1178145"><node id="1178146"/>
+</node>
+</node>
+<node id="1178209"/>
+<node id="1178219"/>
+</thread></node>

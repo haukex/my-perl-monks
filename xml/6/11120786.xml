@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11120786" title="Two meanings of undef" created="2020-08-15 14:21:41" updated="2020-08-15 14:21:41" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1203274">likbez</author>
+<doctext field_name="doctext">&lt;p&gt;The system function &lt;tt class="inlinecode"&gt;undef&lt;/tt&gt;&amp;nbsp;can be used on the right side of split function or array assignment to skip 
+values that you do not need. For example:
+&lt;pre&gt;$current_time='14:30:05'
+(undef, $min, $sec)=$current_time
+&lt;/pre&gt;
+&lt;p&gt;In this role it is similar to &lt;tt class="inlinecode"&gt;/dev/null&lt;/tt&gt;&amp;nbsp;in Unix.
+
+&lt;p&gt;But if used on the right side this function deletes the variable from the symbol table, For example&lt;/p&gt;
+
+&lt;pre&gt;$line=undef; say &amp;quot;Does not exists&amp;quot; unless(defined($line));&lt;/pre&gt;
+&lt;p&gt;Is this correct understanding?
+&lt;p&gt;&lt;b&gt;Edited:&lt;/b&gt;
+&lt;blockquote&gt;
+&lt;p&gt;A clarification: 
+&lt;p&gt;In FAT if you delete a file from the directory it is still present but marked as deleted.
+
+&lt;p&gt;So the fact that that the item still present in symbol table but has a special value does not change the fact that semantically it is deleted and its memory can be now reused. 
+
+&lt;p&gt;In other words, if the item in a Perl symbol table has value undef for all practical purposes is it that same as deleted item in FAT and should be treated by interpreter developers in the same way as "not found" item.
+
+Implementation is is not flawless though. With the use warnings statement "uninitialized value" warnings are not produced for operations like $i+4  or  $i++:
+&lt;pre&gt;
+[0]  # cat undef_test.pl
+#!usr/bin/perl
+use warnings;
+use strict;
+my ($i,$l,$m);
+my $j=$i;
+my $k=$l++;
+print "m=$m;j=$j,k=$k\n";
+
+[0]  # perl  undef_test.pl
+Use of uninitialized value $m in concatenation (.) or string at undef_test.pl line 7.
+Use of uninitialized value $j in concatenation (.) or string at undef_test.pl line 7.
+m=;j=,k=0
+&lt;/pre&gt;
+&lt;p&gt;NOTE: 
+&lt;blockquote&gt;I think &lt;tt&gt;undef&lt;/tt&gt; is not a value, as many here assume, but a function, So
+&lt;pre&gt;$X=undef;&lt;/pre&gt;
+actually means in Perl: 
+&lt;pre&gt;$X=undef();&lt;/pre&gt;
+and is equivalent to 
+&lt;pre&gt;undef $X;&lt;/pre&gt;
+&lt;/blockquote&gt;
+&lt;/blockquote&gt;</doctext>
+<thread id="11120786">
+<node id="11120787"/>
+<node id="11120788"><node id="11120794"><node id="11120795"/>
+<node id="11120796"/>
+<node id="11120797"/>
+<node id="11120799"><node id="11120800"><node id="11120802"><node id="11120803"><node id="11120804"/>
+<node id="11120809"/>
+</node>
+</node>
+<node id="11120808"/>
+<node id="11120810"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11120791"/>
+<node id="11120792"/>
+<node id="11120801"/>
+<node id="11120816"><node id="11120818"/>
+</node>
+</thread></node>

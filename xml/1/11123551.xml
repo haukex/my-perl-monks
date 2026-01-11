@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11123551" title="Re^4: Escape newlines in POD / (Selectively) don't generate space characters instead" created="2020-11-10 00:05:15" updated="2020-11-10 00:05:15" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11123488">Ionic</author>
+<doctext field_name="doctext">&lt;p&gt;
+  &lt;blockquote&gt;&lt;i&gt;I think Pod::Simple is pretty complex &amp;#91;&amp;hellip;&amp;#93; I'm not sure if changes like that are easy to implement and test, especially given the huge amount of POD out in the wild.&lt;/i&gt;&lt;/blockquote&gt;
+
+  Well, I don't care about old documents anyway!
+  &lt;br /&gt;
+  Jokes aside, I took the time and [https://github.com/Perl/perl5/issues/18305|created a new bug report] for this. In there, I tried to verbosely explain the problem, the unsatisfactory workarounds that aren't really working universally anyway, and, crucially, ask for new &lt;em&gt;formatter code&lt;/em&gt; called &lt;c&gt;M&lt;&gt;&lt;/c&gt; to be introduced, that just eats any data/text passed to it. It could also be called &lt;c&gt;H&lt;&gt;&lt;/c&gt; for &amp;quot;hide&amp;quot;, but these are just specifics. I believe that this is a good option for several reasons:
+  &lt;ul&gt;
+    &lt;li&gt;It doesn't change any previous behavior or markup. That's the main reason why I didn't ask for extending the spec of &lt;c&gt;Z&lt;&gt;&lt;/c&gt; to be more lenient and take any text while just consuming it - the behavior of the &lt;c&gt;Z&lt;&gt;&lt;/c&gt; formatting code would differ between Perl versions and that can be a real pain.&lt;/li&gt;
+    &lt;li&gt;Parsing formatting codes is already implemented, introducing a new one should be relatively easy. The only exception to that is that, theoretically, any text wrapped in &lt;c&gt;M&lt;&gt;&lt;/c&gt; would need to be taken verbatim and not POD-interpreted, but I don't see this as a huge implementation issue.&lt;/li&gt;
+    &lt;li&gt;The documentation for the &lt;c&gt;L&lt;&gt;&lt;/c&gt; formatting code can easily be extended to show line-breaking capabilities with the new &lt;c&gt;M&lt;&gt;&lt;/c&gt; code.&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/p&gt;
+&lt;p&gt;
+  &lt;blockquote&gt;&lt;i&gt;Yes, I agree, and if you don't mind formatting your POD in a &lt;c&gt;*roff&lt;/c&gt;-friendly way &amp;#91;&amp;hellip;&amp;#93; then that's probably the best solution.&lt;/i&gt;&lt;/blockquote&gt;
+  &lt;blockquote&gt;&lt;i&gt;But if you don't mind doing this, then the nice thing about it is your docs will look consistent no matter if read via &lt;c&gt;man&lt;/c&gt;, &lt;c&gt;perldoc&lt;/c&gt;, or HTML.&lt;/i&gt;&lt;/blockquote&gt;
+  I did that for the documentation I've written yesterday and it really hasn't been a big deal. Now, all generated documentation is consistent. &lt;c&gt;man&lt;/c&gt; pages have two spaces after each sentence, all the other formats just show up normally. Pretty nice.
+  &lt;br /&gt;
+  I should probably change the &lt;c&gt;perldoc&lt;/c&gt;/&lt;c&gt;perldocspec&lt;/c&gt; documentation to add this as a recommendation. That won't help &amp;quot;other&amp;quot; people/older documentation to be more consistent, unless they re-read the changed parts, but at least new developers/documentation could benefit.
+&lt;/p&gt;
+&lt;p&gt;
+  &lt;blockquote&gt;&lt;i&gt;Personally, I wouldn't put in the effort to do this, because I don't use &lt;c&gt;man&lt;/c&gt; to read Perl docs, I always use &lt;c&gt;perldoc&lt;/c&gt;, which doesn't do the double space after sentences.&lt;/i&gt;&lt;/blockquote&gt;
+  To be honest, I avoid the &lt;c&gt;perldoc&lt;/c&gt; command like the plague. So far, whenever I tried it, it just generated plain text, broken at 80 chars per line, with control characters replaced by plain ASCII characters like &lt;c&gt;*&lt;/c&gt; and &lt;c&gt;_&lt;/c&gt;.
+  &lt;br /&gt;
+  There seem to be multiple weirdnesses:
+  &lt;ul&gt;
+    &lt;li&gt;It seems to default to the &lt;c&gt;Pod::Perldoc::ToText&lt;/c&gt; formatter, even though I'm using a capable terminal on a Linux system. This seems to have been introduced in [https://github.com/Perl/perl5/commit/f2ee4cb897ec9dd3338abcd0e9a42cb41ce9a173|5.27.5].&lt;/li&gt;
+    &lt;li&gt;Overriding the default formatter via &lt;c&gt;-o man&lt;/c&gt; makes it pick the &lt;c&gt;Pod::Perldoc::ToMan&lt;/c&gt; formatter, which generates the man page internally and then renders it out as plain text (with a bit of control characters). I'd rather like to get &lt;c&gt;*roff&lt;/c&gt; output, though, to pass it to &lt;c&gt;man&lt;/c&gt; &amp;hellip;&lt;/li&gt;
+    &lt;li&gt;Forcing the &lt;c&gt;Pod::Man&lt;/c&gt; formatter via &lt;c&gt;-M Pod::Man&lt;/c&gt; actually generates &lt;c&gt;*roff&lt;/c&gt;, yay! However, it then goes ahead to call &lt;c&gt;manpager&lt;/c&gt; (likely because my environment says &lt;c&gt;MANPAGER=manpager&lt;/c&gt;, a Gentoo-specific wrapper to &amp;quot;enable colored man output&amp;quot; and which really just calls &lt;c&gt;$PAGER&lt;/c&gt;/&lt;c&gt;less&lt;/c&gt;). While &lt;c&gt;GNU less&lt;/c&gt; can parse &lt;c&gt;*roff&lt;/c&gt; nowadays, I don't want that either &amp;hellip;&lt;/li&gt;
+    &lt;li&gt;Finally, I can enforce the usage of &lt;c&gt;man&lt;/c&gt; via &lt;c&gt;PERLDOC_PAGER='man -l -'&lt;/c&gt;. So, to get the output I'd like, I'd have to replace &lt;c&gt;perldoc&lt;/c&gt; with a shell function calling &lt;c&gt;PERLDOC_PAGER='man -l -' perldoc -M 'Pod::Man' "${@}"&lt;/c&gt; but that also disables all its internal magic &amp;hellip;&lt;/li&gt;
+  &lt;/ul&gt;
+  I guess I'll just stick to &lt;c&gt;man&lt;/c&gt; itself. :)
+&lt;/p&gt;
+&lt;p&gt;
+  &lt;blockquote&gt;&lt;i&gt;&amp;#91;&amp;hellip;&amp;#93; but you could also access the XML version via the link at the top of the page under the title to get to the original markup.&lt;/i&gt;&lt;/blockquote&gt;
+  D'oh, thanks. I tried doing so, but used the XML link while writing the reply, which naturally gave me a pretty empty &lt;c&gt;doctext&lt;/c&gt; entry. I should have used it on the parent's node page &amp;hellip;
+&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11123491</root_node>
+<parent_node field_name="parent_node">11123542</parent_node>
+<thread id="11123491">
+<node id="11123499"><node id="11123509"><node id="11123510"><node id="11123512"/>
+</node>
+<node id="11123542"><node id="11123551"><node id="11123622"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11123501"><node id="11123505"/>
+<node id="11123511"/>
+</node>
+<node id="11123516"><node id="11123519"><node id="11123520"><node id="11123570"/>
+</node>
+</node>
+</node>
+<node id="11123533"/>
+</thread></node>

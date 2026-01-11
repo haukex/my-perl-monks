@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229585" title="Re: Creating reverse dictionary" created="2019-02-07 20:53:07" updated="2019-02-07 20:53:07" _doctext_mode="lenient"><type id="11">note</type>
+<author id="461912">GrandFather</author>
+<doctext field_name="doctext">&lt;p&gt;Perl needs to know that you are dealing with Unicode characters. Consider:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use utf8;
+
+my $str = "ö123
+å456
+å789";
+
+open my $inFileUTF, '&lt;:utf8', \$str;
+
+my @lines = &lt;$inFileUTF&gt;;
+chomp @lines;
+@lines = map {scalar reverse} @lines;
+print "Using utf8\n";
+print "$_\n" for @lines;
+
+open my $inFile, '&lt;', \$str;
+
+@lines = &lt;$inFile&gt;;
+chomp @lines;
+@lines = map {scalar reverse} @lines;
+print "\nUsing default file I/O\n";
+print "$_\n" for @lines;
+&lt;/c&gt;
+&lt;p&gt;Prints:&lt;/p&gt;
+&lt;c&gt;
+Using utf8
+321ö
+654å
+987å
+
+Using default file I/O
+321¶Ã
+654¥Ã
+987¥Ã
+&lt;/c&gt;
+&lt;p&gt;Note the use of both strict and warnings. Always use strictures.&lt;/p&gt;
+&lt;p&gt;Note the use of three parameter open and lexical file handles (usual file checking omitted because of the string trick).&lt;/p&gt;
+&lt;p&gt;The &lt;c&gt;\$str&lt;/c&gt; syntax lets me open the string as though it were a file. Very useful here to provide the data in the same "file" as the script.&lt;/p&gt;
+&lt;p&gt;See [doc://PerlIO] for a description of the open custom layer options - the :utf8 bit.&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-461912"&gt;
+Optimising for fewest key strokes only makes sense transmitting to Pluto or beyond
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1229579</root_node>
+<parent_node field_name="parent_node">1229579</parent_node>
+<thread id="1229579">
+<node id="1229583"/>
+<node id="1229585"/>
+<node id="1229596"/>
+<node id="1229607"/>
+</thread></node>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101996" title="Re: Exiting eval via next: is that so bad?" created="2019-06-26 17:12:29" updated="2019-06-26 17:12:29" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1076581">SimonSaysCake</author>
+<doctext field_name="doctext">&lt;p&gt;
+I happen to have a use case (and you can argue that it might be best refactored and I may just agree with you but for now, it has to be this way) where we have a couple eval closures within a larger loop and there are times we want to call "next" but within the "eval"s.
+&lt;/p&gt;
+&lt;p&gt;
+I was getting the same error as the OP when I found this question/thread. I then tried the double curly version of "eval" but it doesn't seem to handle $@ the way I want/expect so I tried something else:
+&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+my @times = (2, 4, 3, 1, 2, 5);
+
+select((select(STDOUT), $|=1)[0]);
+
+TIME: for my $time_to_wait (@times) {
+    print "Time to wait is: $time_to_wait\n";
+
+    local $@;
+    eval {
+        # Don't handle even numbers.
+        die '__NOT_FATAL__' if !($time_to_wait % 2);
+
+        this_will_die_if_true($time_to_wait);
+        1;
+    }
+    or do {
+        if($@ &amp;&amp; $@ =~ /__NOT_FATAL__/) {
+            next TIME;
+        }
+
+        print "Something went boom! ($@)\n";
+    };
+
+    print "Sleeping for $time_to_wait seconds ... ";
+    sleep $time_to_wait;
+    print "Done.\n";
+}
+
+exit 0;
+
+sub this_will_die_if_true {
+    my ($arg) = @_;
+    $arg //= 0;
+    $arg &amp;&amp; die "We died!";
+    return;
+}
+&lt;/code&gt;
+&lt;p&gt;
+This does not produce the dreaded "Exiting eval via next at test.pl line 17." type errors and works the way I want but I'm reluctant to use this in production as it just seems, well...icky somehow. Thoughts?
+&lt;/p&gt;
+
+-s1m0n-</doctext>
+<root_node field_name="root_node">104789</root_node>
+<parent_node field_name="parent_node">104789</parent_node>
+<thread id="104789">
+<node id="104794"/>
+<node id="104801"><node id="927610"><node id="927634"><node id="932005"><node id="932110"/>
+<node id="969006"><node id="969023"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="104810"/>
+<node id="11101996"><node id="11102025"/>
+<node id="11102046"/>
+<node id="11102146"><node id="11102240"><node id="11102243"/>
+</node>
+</node>
+</node>
+</thread></node>

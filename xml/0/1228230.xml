@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228230" title="use of already eval()ed module (from string)" created="2019-01-08 15:54:55" updated="2019-01-08 15:54:55" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1165397">bliako</author>
+<doctext field_name="doctext">&lt;p&gt;Dear Monks,&lt;/p&gt;
+
+&lt;p&gt;I have come across a situation where I have a module and a test script which &lt;c&gt;use&lt;/c&gt;s it and all is fine when done using the perl interpreter from the command line. However, when I read the module file into a string and the test script into another string with the intend to &lt;c&gt;eval()&lt;/c&gt; the strings one after the other, the operation collapses at the &lt;c&gt;eval()&lt;/c&gt; of the test script string.&lt;/p&gt;
+
+&lt;p&gt;After some time, I realised why I was getting the error &lt;c&gt;Can't locate Module.pm in @INC&lt;/c&gt; at the second eval which indeed has a &lt;c&gt;use Module;&lt;/c&gt; statement. Obviously &lt;c&gt;Module.pm&lt;/c&gt; is not in &lt;c&gt;@INC&lt;/c&gt; and any &lt;c&gt;use&lt;/c&gt; statement for it will fail even if said module has already been eval'ed successfully.
+&lt;/p&gt;
+
+&lt;p&gt;So, I am asking whether there is an easier solution to this kind of problem than analysing each script with [mod://PPI] and removing &lt;c&gt;use/require&lt;/c&gt; statements ONLY of modules already eval'ed. Because obviously there will be some &lt;c&gt;use/require&lt;/c&gt; statements in there which must remain as they refer to modules which should be in &lt;c&gt;@INC&lt;/c&gt;. I am doing the [mod://PPI] way right now but I hope there is a more natural way.&lt;/p&gt;
+
+&lt;p&gt;Here is a test which demonstrates the problem when the marked statements uncomment:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+sub     load_modules {
+        my $mod1 = &lt;&lt;'EOM';
+package Test::Module::Hello::Hello;
+our $VERSION = 0.1;
+use strict;
+use warnings;
+
+sub     go {
+        return "Hi iam ".__PACKAGE__
+}
+1;
+__END__
+EOM
+        my $mod2 = &lt;&lt;'EOM';
+package Test::Module::Hello::Goodbye;
+our $VERSION = 0.1;
+use strict;
+use warnings;
+
+# &gt;&gt;&gt; This will kill the eval if uncommented
+#use Test::Module::Hello::Hello;
+
+sub     go {
+        return "Hi iam ".__PACKAGE__
+}
+1;
+__END__
+EOM
+
+        eval($mod1) or die "$mod1\n\neval failed $@\n";
+        eval($mod2) or die "$mod2\n\neval failed $@\n";
+}
+
+load_modules();
+
+my $testscript = '
+# &gt;&gt;&gt; Following use/require will kill the eval
+#use Test::Module::Hello::Hello;
+require Test::Module::Hello::Goodbye;
+
+my $ret = Test::Module::Hello::Hello::go();
+print "ret=$ret\n";
+$ret = Test::Module::Hello::Goodbye::go();
+print "ret=$ret\n";
+';
+eval($testscript) or die "eval failed, $@";
+&lt;/c&gt;
+
+&lt;p&gt;thanks, bliako&lt;/p&gt;</doctext>
+<thread id="1228230">
+<node id="1228231"><node id="1228233"><node id="1228238"/>
+</node>
+</node>
+<node id="1228232"><node id="1228235"><node id="1228237"><node id="1228246"><node id="1228250"><node id="1228539"><node id="1228542"/>
+<node id="1228544"><node id="1228587"><node id="1228588"><node id="1228590"><node id="1228591"><node id="1228592"><node id="1228596"><node id="1228665"><node id="1228670"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1228576"><node id="1228584"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1228248"><node id="1228306"/>
+</node>
+</thread></node>

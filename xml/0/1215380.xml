@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1215380" title="Re^3: difference in regex" created="2018-05-29 10:30:25" updated="2018-05-29 10:30:25" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Although personally I'd still use a conditional, of course it's possible to do it all in one regex. One way is by making the comma optional by putting a &lt;c&gt;?&lt;/c&gt; on a group, in this case I'm using a non-capturing &lt;c&gt;(?:...)&lt;/c&gt; group, and I had to make the first part of the regex non-greedy so that it doesn't swallow an existing comma:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More;
+
+my $regex = qr/ ^ (.*?) (?: , ([^,]*) )? $ /x;
+
+ok "abc"=~$regex;
+is $1, "abc";
+is $2, undef;
+
+ok "abc,5"=~$regex;
+is $1, "abc";
+is $2, 5;
+
+ok "a,b,c,5"=~$regex;
+is $1, "a,b,c";
+is $2, 5;
+
+done_testing;
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; An alternative that says a little more explicitly: either match a string with &lt;i&gt;no&lt;/i&gt; commas in it, &lt;i&gt;or&lt;/i&gt;, if there are commas, I want to match the thing after the last one: &lt;c&gt;/^ (?| ([^,]*) | (.*) , ([^,]*) ) $/x&lt;/c&gt; &lt;i&gt;Update 2:&lt;/i&gt; And it turns out this regex is much faster than the above! (try using it in [id://1215457|this benchmark])&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1215361</root_node>
+<parent_node field_name="parent_node">1215377</parent_node>
+<thread id="1215361">
+<node id="1215364"/>
+<node id="1215367"><node id="1215372"><node id="1215376"/>
+<node id="1215378"/>
+</node>
+</node>
+<node id="1215370"/>
+<node id="1215371"/>
+<node id="1215373"><node id="1215377"><node id="1215380"/>
+</node>
+</node>
+<node id="1215379"><node id="1215404"><node id="1215412"/>
+</node>
+<node id="1215457"/>
+</node>
+<node id="1215441"/>
+<node id="1215459"/>
+</thread></node>

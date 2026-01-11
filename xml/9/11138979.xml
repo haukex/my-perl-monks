@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11138979" title="Re^2: Problem with regex is a bug? or my regex (updated)" created="2021-11-20 09:31:59" updated="2021-11-20 09:31:59" _doctext_mode="lenient"><type id="11">note</type>
+<author id="887721">hanspr</author>
+<doctext field_name="doctext">Thank you for your guide,&lt;br&gt;
+&lt;br&gt;
+I managed to create a self contained example that reproduces the problem.&lt;br&gt;
+&lt;br&gt;
+Now, I ran your test and it works on both perl versions, as you said.&lt;br&gt;
+&lt;br&gt;
+But running the regex inside Expect.pm fails.&lt;br&gt;
+&lt;br&gt;
+So the bug is in the expect package?&lt;br&gt;
+&lt;br&gt;
+chain.txt&lt;br&gt;
+&lt;br&gt;
+&lt;code&gt;
+##############################################################################\r\n# This system is a restricted access system.                               #\r\n# If collected security information reveals possible criminal activity that  #\r\n# exceeds privileges, evidence of such activity may be provided to the rele- #\r\n# vantauthorities for further action. By continuing past this point, you #\r\n# expressly consent to this security monitoring.              #\r\n##############################################################################\r\n\r\nhostname: ~# 
+&lt;/code&gt;
+
+test.pl
+
+&lt;code&gt;
+use strict;
+use Expect;
+
+my $re1 = '(([#%:&gt;~\$\] ])(?!\2)){3,4}|([\w\-\.]*)\$ *$|(\w[@\/]\w|sftp).*?[#%&gt;~\$\]]|^[#%\$&gt;\:]~] *$';
+my $test;
+
+open($test,"&lt;","chain.txt");
+
+my $exp = Expect-&gt;exp_init($test);
+
+$exp-&gt;expect(1,
+	[ $re1 =&gt; sub {
+		my $exp = shift;
+		print "Match before : ",$exp-&gt;before(),"\n";
+		print "Match        : ",$exp-&gt;match(),"\n";
+		print "Match after  : ",$exp-&gt;after(),"\n";
+	}]
+);
+
+close $test;
+&lt;/code&gt;
+&lt;br&gt;
+&lt;hr&gt;
+&lt;br&gt;
+&lt;br&gt;
+&lt;code&gt;
+hans@hans-desktop  ~  perl -v
+This is perl 5, version 30, subversion 0 (v5.30.0) built for x86_64-linux-gnu-thread-multi
+hans@hans-desktop ~ perl -MExpect -e 'print $Expect::VERSION ."\n";'
+1.21
+
+perl test.pl
+Match before : ##############################################################################\r\n# This system is a restricted access system.                               #\r\n# If collected security information reveals possible criminal activity that  #\r\n# exceeds privileges, evidence of such activity may be provided to the rele- #\r\n# vantauthorities for further action. By continuing past this point, you #\r\n# expressly consent to this security monitoring.              #\r\n##############################################################################\r\n\r\nhostname
+Match        : : ~#
+Match after  :  
+&lt;/code&gt;
+&lt;br&gt;
+&lt;hr&gt;
+&lt;br&gt;
+&lt;code&gt;
+[hans@fedora ~]$ perl -v
+This is perl 5, version 34, subversion 0 (v5.34.0) built for x86_64-linux-thread-multi
+[hans@fedora ~]$ perl -MExpect -e 'print $Expect::VERSION ."\n";'
+1.35
+
+[hans@fedora ~]$ perl test.pl 
+Match before : ##############################################################################\r\n# This system is a restricted access system.                             
+Match        :   #
+Match after  : \r\n# If collected security information reveals possible criminal activity that  #\r\n# exceeds privileges, evidence of such activity may be provided to the rele- #\r\n# vantauthorities for further action. By continuing past this point, you #\r\n# expressly consent to this security monitoring.              #\r\n##############################################################################\r\n\r\nhostname: ~# 
+&lt;/code&gt;
+</doctext>
+<root_node field_name="root_node">11138966</root_node>
+<parent_node field_name="parent_node">11138972</parent_node>
+<thread id="11138966">
+<node id="11138971"/>
+<node id="11138972"><node id="11138979"><node id="11138980"><node id="11138984"><node id="11138985"><node id="11138994"/>
+</node>
+</node>
+</node>
+<node id="11138983"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203387" title="Re^2: Unexpected interaction between decode_entities() and lc()" created="2017-11-14 10:23:48" updated="2017-11-14 10:23:48" _doctext_mode="lenient"><type id="11">note</type>
+<author id="940203">kurisuto</author>
+<doctext field_name="doctext">&lt;p&gt;
+My real intent is to read from a file, and that's where I first noticed the problem.  I made the script above to test and illustrate the problem.  You said you're assuming that my script source file is UTF-8 encoded, and yes, that's the case.&lt;/p&gt;
+
+&lt;p&gt;
+Following is a tiny script which reads from a file and which has the same problem:
+&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl5.16.3                                                                                            
+
+use strict;
+use HTML::Entities;
+
+binmode STDIN, ':encoding(UTF-8)';
+binmode STDOUT, ':encoding(UTF-8)';
+
+while(&lt;&gt;) {
+    utf8::decode($_);
+    chomp;
+
+    $_ = decode_entities($_);
+    $_ = lc($_);
+
+    print $_, "\n";
+}
+&lt;/code&gt;
+
+&lt;p&gt;
+Here are the contents of my test input file:
+&lt;/p&gt;
+
+&lt;pre&gt;
+Édition limitée.
+&amp;amp;Eacute;dition limit&amp;eacute;e.
+&lt;/pre&gt;
+
+&lt;p&gt;
+&amp;amp;Eacute; still ends up as É, not é as intended.  I think I'm doing what I'm supposed to do in terms of enabling the UTF-8 flag on $_, but please let me know if I've missed something.
+&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1203368</root_node>
+<parent_node field_name="parent_node">1203375</parent_node>
+<thread id="1203368">
+<node id="1203370"><node id="1203371"><node id="1203379"/>
+</node>
+</node>
+<node id="1203375"><node id="1203387"><node id="1203391"><node id="1203393"><node id="1203403"/>
+</node>
+</node>
+<node id="1203392"><node id="1203614"><node id="1203617"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1203402"><node id="1203423"/>
+<node id="1203452"><node id="1203457"/>
+</node>
+</node>
+</thread></node>

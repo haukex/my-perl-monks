@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198010" title="Re^2: deconstructing tinydns(djbdns) SRV records" created="2017-08-25 06:49:58" updated="2017-08-25 06:49:58" _doctext_mode="lenient"><type id="11">note</type>
+<author id="749850">VinsWorldcom</author>
+<doctext field_name="doctext">&lt;p&gt;I believe that is the "raw" format as it would go over the wire, but it's only the SRV record part, not the whole packet or whole DNS layer.  Your solution above requires at least the whole DNS layer (if using $offset = 0) - at least that's they way I interpret it and according to a quick test, seems likely:&lt;/p&gt;
+
+&lt;c&gt;
+corrupt wire-format data at C:/Strawberry/perl/vendor/lib/Net/DNS/RR.pm line 241.
+&lt;/c&gt;
+
+&lt;p&gt;You can try the [cpan://Net::Frame::Layer::DNS] module and it's NFL::DNS::RR::SRV sub module - you'll need the [cpan://Net::Frame] and [cpan://Net::Frame::Simple] modules as well (they will auto-install if you do a 'cpan Net::Frame::Layer::DNS' install as they are listed as dependencies) and they have dependencies themselves - so it may get a bit bigger than you need, but this works:&lt;/p&gt;
+
+&lt;c&gt;
+#!perl
+
+use strict;
+use warnings;
+
+use Net::Frame::Simple;
+
+my $data = "\000\012\000\144\023\304\003pbx\007example\003com\000";
+
+my $info = Net::Frame::Simple-&gt;new(
+        raw        =&gt; $data,
+        firstLayer =&gt; 'DNS::RR::SRV',
+);
+print $info-&gt;print;
+&lt;/c&gt;
+
+Output:
+
+&lt;c&gt;
+DNS::RR::SRV: priority:10  weight:100  port:5060
+DNS::RR::SRV: target:pbx.example.com
+&lt;/c&gt;
+
+&lt;p&gt;&lt;B&gt;UPDATE:&lt;/b&gt; Note the ':3600' is *not* part of the of the SRV rdata.  It is part of the DNS Answer section so the $data in the OP isn't exactly the raw wire format.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1198003</root_node>
+<parent_node field_name="parent_node">1198005</parent_node>
+<thread id="1198003">
+<node id="1198005"><node id="1198008"><node id="1198009"/>
+</node>
+<node id="1198010"/>
+</node>
+<node id="1198007"><node id="1198011"/>
+</node>
+<node id="1198012"/>
+</thread></node>

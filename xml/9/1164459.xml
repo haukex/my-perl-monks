@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1164459" title="Re^3: Mojo::DOM find tag after another tag" created="2016-05-29 15:54:45" updated="2016-05-29 15:54:45" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [luxs],&lt;/p&gt;
+&lt;p&gt;Since I'm guessing the &lt;c&gt;&lt;img&gt;&lt;/c&gt; tags can be nested arbitrarily deep, the CSS selector &lt;c&gt;"img, h1"&lt;/c&gt; was going to be my next suggestion.&lt;/p&gt;
+&lt;p&gt;There are many other ways to write the logic, here's one:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Mojo::DOM;
+
+my $data = &lt;&lt;'ENDDATA';
+yada...yada...yada..
+&lt;img src="111"&gt;
+yada...yada...yada..
+&lt;img src="222"&gt;
+yada...yada...yada..
+&lt;h1&gt;Some title&lt;/h1&gt;
+yada...yada...yada..
+&lt;a href="444444"&gt;
+&lt;img src="333"&gt;
+yada...yada...yada..
+&lt;img src="444"&gt;
+ENDDATA
+
+my $dom = Mojo::DOM-&gt;new($data);
+my (@imgs,$seen_h1);
+for my $tag ( $dom-&gt;find('h1, img')-&gt;each ) {
+	if ($seen_h1 &amp;&amp; $tag-&gt;tag eq 'img' &amp;&amp; length $tag-&gt;attr('src'))
+		{ push @imgs, $tag }
+	elsif ($tag-&gt;tag eq 'h1')
+		{ $seen_h1 = 'true' }
+}
+print $_-&gt;attr('src'),"\n" for @imgs;
+
+__END__
+
+333
+444
+&lt;/c&gt;
+&lt;p&gt;You don't even need the intermediate &lt;c&gt;@imgs&lt;/c&gt; array and can [doc://print] directly from the first loop if you like.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1164401</root_node>
+<parent_node field_name="parent_node">1164457</parent_node>
+<thread id="1164401">
+<node id="1164402"><node id="1164457"><node id="1164459"><node id="1164461"/>
+</node>
+</node>
+</node>
+<node id="1164422"><node id="1164424"><node id="1164456"/>
+</node>
+</node>
+</thread></node>

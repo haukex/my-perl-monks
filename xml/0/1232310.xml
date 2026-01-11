@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1232310" title="Re: Easy way to check if a file is open needed." created="2019-04-08 15:09:50" updated="2019-04-08 15:09:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Welcome to Perl and the Monastery, [Apt_Addiction]!&lt;/p&gt;
+&lt;p&gt;AFAIK, you should be able to rename files even if they're open on Mac OS X, although if you're going to do a mass rename in a directory tree, you probably don't want to be doing any other operations on that tree in the meantime, and therefore exit any programs that might be using it. What problems are you worried about here?&lt;/p&gt;
+&lt;p&gt;As for the code, a couple of notes: You don't check the return values of [doc://rename] or [doc://open] for errors, as in &lt;c&gt;rename($_, $txt) or die "rename('$_','$txt'): $!";&lt;/c&gt; and &lt;c&gt;open(my $fh, '&gt;&gt;', $filename) or die "$filename: $!";&lt;/c&gt;. And if you're worried that other processes might be writing to the directory while you're doing your rename, note your code has a race condition: It's possible the file with the name &lt;c&gt;$txt&lt;/c&gt; might be created in between the &lt;c&gt;-e $txt&lt;/c&gt; and &lt;c&gt;rename($_, $txt)&lt;/c&gt; (hence my above recommendation to try and ensure that your script is the only one working on the directory).&lt;/p&gt;
+&lt;p&gt;As for the dot files, I assume that's what you're trying to do with &lt;c&gt;-f != m/^\./&lt;/c&gt;? Note that [doc://-X|&lt;c&gt;-f&lt;/c&gt;] only checks if &lt;c&gt;$_&lt;/c&gt; is a regular file (or is a symbolic link that points to a regular file) and returns a true/false value, so doing an &lt;c&gt;!=&lt;/c&gt; on its return value doesn't really make sense. I guess you might have meant &lt;c&gt;$_ !~ m/^\./&lt;/c&gt;, which evaluates to true if &lt;c&gt;$_&lt;/c&gt; doesn't match the regex - that's written more briefly as &lt;c&gt;!/^\./&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Another improvement might be to not open your log file on every rename, but only open it once at the start of the program, that would be more efficient.&lt;/p&gt;
+&lt;p&gt;In general, you should [id://111088], and you might be interested in [Corion]'s [mod://Text::CleanFragment], which does a thorough cleanup of strings, although it might do too much for your purposes.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1232306</root_node>
+<parent_node field_name="parent_node">1232306</parent_node>
+<thread id="1232306">
+<node id="1232309"><node id="1232332"><node id="1232336"/>
+</node>
+<node id="1232346"/>
+</node>
+<node id="1232310"/>
+<node id="1232315"><node id="1232317"><node id="1232320"><node id="1232341"/>
+</node>
+</node>
+</node>
+</thread></node>

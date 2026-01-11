@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1182976" title="Re: Converting Uniprot File to a Fasta File in Perl" created="2017-02-27 11:24:39" updated="2017-02-27 11:24:39" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Your regex uses the alternation operator &lt;c&gt;|&lt;/c&gt; to match one of multiple patterns, so for each line, only one of the five capture groups will capture something, the others will be &lt;c&gt;undef&lt;/c&gt;, which is why you're getting that warning. Here's one way to get closer to what you want:&lt;/p&gt;
+&lt;c&gt;
+while (defined( my $line = &lt;UNIPROT&gt; )) {
+	if ($line =~ /^(AC|OS|OX|ID|GN)\s+(.*)/) {
+		print "&lt;$1&gt; $2\n";
+	}
+}
+
+__END__
+
+&lt;ID&gt; ARF1_PLAFA              Reviewed;         181 AA.
+&lt;AC&gt; Q94650; O02502; O02593;
+&lt;GN&gt; Name=ARF1; Synonyms=ARF, PLARF;
+&lt;OS&gt; Plasmodium falciparum.
+&lt;OX&gt; NCBI_TaxID=5833;
+&lt;/c&gt;
+&lt;p&gt;Since the file is processed line-by-line, I've renamed your variable from &lt;c&gt;$lines&lt;/c&gt; to &lt;c&gt;$line&lt;/c&gt;. If I were writing this code, here's how I might have written it:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+my $filename = "uniprotfile";
+open my $ufh, "&lt;", $filename
+	or die "open $filename: $!";
+
+while (&lt;$ufh&gt;) {
+	chomp;
+	my ($id,$content) = /^(AC|OS|OX|ID|GN)\s+(.*)/
+		or next;
+	if ($id eq 'AC') {
+		my ($first) = $content=~/^([^;]+)/
+			or die "couldn't parse '$content'";
+		print "AC: $first\n";
+		...
+	}
+	elsif ($id eq 'OS') {
+		...
+	}
+	...
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1182973</root_node>
+<parent_node field_name="parent_node">1182973</parent_node>
+<thread id="1182973">
+<node id="1182975"/>
+<node id="1182976"><node id="1183000"><node id="1183001"><node id="1183038"/>
+<node id="1183040"><node id="1183048"/>
+<node id="1183067"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1183023"/>
+<node id="1183122"/>
+<node id="1183150"/>
+</thread></node>

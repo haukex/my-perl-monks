@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217665" title="Re^3: using Path::Tiny and reformating result" created="2018-06-30 16:10:03" updated="2018-06-30 16:10:03" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;attempting again to use pre tags successfully; using them in conjunction with code tags seems not to display wide characters properly&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, the issue with &lt;c&gt;&lt;code&gt;&lt;/c&gt; vs. &lt;c&gt;&lt;pre&gt;&lt;/c&gt; tags and Unicode characters only working in the latter is a known issue on PerlMonks.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I'm still fishing for how I format this into homogenous-looking paragraphs.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Have a look at the core module [doc://Text::Wrap]. Here's one way, I'm using the "paragraph mode" supported by [doc://$/] to read the file:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use open qw/:std :utf8/;
+use Text::Wrap 'wrap';
+
+open my $fh, '&lt;:raw:encoding(UTF-8)', '1.promises.txt' or die $!;
+local $/ = '';
+local $Text::Wrap::columns = 71;
+while (&lt;$fh&gt;) {
+	s/^\s+|\s+$//mg;
+	if (/\A\w+\z/) {
+		print ' ' x int( (71-length)/2 ), $_, "\n";
+		next;
+	}
+	s/\n|\s{2,}/ /g;
+	print wrap(' 'x5, '', $_), "\n";
+}
+close $fh;
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;pre&gt;
+                               O&amp;#1073;&amp;#1077;&amp;#1097;&amp;#1072;&amp;#1085;&amp;#1080;&amp;#1103;
+     &amp;#1045;&amp;#1089;&amp;#1083;&amp;#1080; &amp;#1101;&amp;#1090;&amp;#1072; &amp;#1092;&amp;#1072;&amp;#1079;&amp;#1072; &amp;#1085;&amp;#1072;&amp;#1096;&amp;#1077;&amp;#1075;&amp;#1086; &amp;#1088;&amp;#1072;&amp;#1079;&amp;#1074;&amp;#1080;&amp;#1090;&amp;#1080;&amp;#1103; &amp;#1073;&amp;#1086;&amp;#1083;&amp;#1077;&amp;#1079;&amp;#1085;&amp;#1077;&amp;#1085;&amp;#1085;&amp;#1072; &amp;#1076;&amp;#1083;&amp;#1103; &amp;#1085;&amp;#1072;&amp;#1089;, &amp;#1084;&amp;#1099; &amp;#1073;&amp;#1091;&amp;#1076;&amp;#1077;&amp;#1084;
+&amp;#1091;&amp;#1076;&amp;#1080;&amp;#1074;&amp;#1083;&amp;#1077;&amp;#1085;&amp;#1099;, &amp;#1082;&amp;#1086;&amp;#1075;&amp;#1076;&amp;#1072; &amp;#1087;&amp;#1086;&amp;#1083;&amp;#1086;&amp;#1074;&amp;#1080;&amp;#1085;&amp;#1072; &amp;#1087;&amp;#1091;&amp;#1090;&amp;#1080; &amp;#1086;&amp;#1082;&amp;#1072;&amp;#1078;&amp;#1077;&amp;#1090;&amp;#1089;&amp;#1103; &amp;#1087;&amp;#1086;&amp;#1079;&amp;#1072;&amp;#1076;&amp;#1080;. &amp;#1052;&amp;#1099; &amp;#1087;&amp;#1086;&amp;#1079;&amp;#1085;á&amp;#1077;&amp;#1084; &amp;#1085;&amp;#1086;&amp;#1074;&amp;#1091;&amp;#1102;
+&amp;#1089;&amp;#1074;&amp;#1086;&amp;#1073;&amp;#1086;&amp;#1076;&amp;#1091; &amp;#1080; &amp;#1085;&amp;#1086;&amp;#1074;&amp;#1086;&amp;#1077; &amp;#1089;&amp;#1095;&amp;#1072;&amp;#1089;&amp;#1090;&amp;#1100;&amp;#1077;. &amp;#1052;&amp;#1099; &amp;#1085;&amp;#1077; &amp;#1073;&amp;#1091;&amp;#1076;&amp;#1077;&amp;#1084; &amp;#1089;&amp;#1086;&amp;#1078;&amp;#1072;&amp;#1083;&amp;#1077;&amp;#1090;&amp;#1100; &amp;#1086; &amp;#1085;&amp;#1072;&amp;#1096;&amp;#1077;&amp;#1084; &amp;#1087;&amp;#1088;&amp;#1086;&amp;#1096;&amp;#1083;&amp;#1086;&amp;#1084; &amp;#1080; &amp;#1074;&amp;#1084;&amp;#1077;&amp;#1089;&amp;#1090;&amp;#1077;
+&amp;#1089; &amp;#1090;&amp;#1077;&amp;#1084; &amp;#1085;&amp;#1077; &amp;#1079;&amp;#1072;&amp;#1093;&amp;#1086;&amp;#1090;&amp;#1080;&amp;#1084; &amp;#1087;&amp;#1086;&amp;#1083;&amp;#1085;&amp;#1086;&amp;#1089;&amp;#1090;&amp;#1100;&amp;#1102; &amp;#1079;&amp;#1072;&amp;#1073;&amp;#1099;&amp;#1074;&amp;#1072;&amp;#1090;&amp;#1100; &amp;#1086; &amp;#1085;&amp;#1077;&amp;#1084;. &amp;#1052;&amp;#1099; &amp;#1091;&amp;#1079;&amp;#1085;&amp;#1072;&amp;#1077;&amp;#1084;, &amp;#1095;&amp;#1090;&amp;#1086; &amp;#1090;&amp;#1072;&amp;#1082;&amp;#1086;&amp;#1077;
+&amp;#1095;&amp;#1080;&amp;#1089;&amp;#1090;&amp;#1086;&amp;#1090;&amp;#1072;, &amp;#1103;&amp;#1089;&amp;#1085;&amp;#1086;&amp;#1089;&amp;#1090;&amp;#1100;, &amp;#1087;&amp;#1086;&amp;#1082;&amp;#1086;&amp;#1081;. &amp;#1050;&amp;#1072;&amp;#1082; &amp;#1073;&amp;#1099; &amp;#1085;&amp;#1080;&amp;#1079;&amp;#1082;&amp;#1086; &amp;#1084;&amp;#1099; &amp;#1085;&amp;#1080; &amp;#1087;&amp;#1072;&amp;#1083;&amp;#1080; &amp;#1074; &amp;#1087;&amp;#1088;&amp;#1086;&amp;#1096;&amp;#1083;&amp;#1086;&amp;#1084;, &amp;#1084;&amp;#1099; &amp;#1087;&amp;#1086;&amp;#1081;&amp;#1084;&amp;#1077;&amp;#1084;,
+&amp;#1095;&amp;#1090;&amp;#1086; &amp;#1085;&amp;#1072;&amp;#1096; &amp;#1086;&amp;#1087;&amp;#1099;&amp;#1090; &amp;#1084;&amp;#1086;&amp;#1078;&amp;#1077;&amp;#1090; &amp;#1073;&amp;#1099;&amp;#1090;&amp;#1100; &amp;#1087;&amp;#1086;&amp;#1083;&amp;#1077;&amp;#1079;&amp;#1077;&amp;#1085; &amp;#1076;&amp;#1088;&amp;#1091;&amp;#1075;&amp;#1080;&amp;#1084;. &amp;#1048;&amp;#1089;&amp;#1095;&amp;#1077;&amp;#1079;&amp;#1085;&amp;#1091;&amp;#1090; &amp;#1086;&amp;#1097;&amp;#1091;&amp;#1097;&amp;#1077;&amp;#1085;&amp;#1080;&amp;#1103; &amp;#1085;&amp;#1077;&amp;#1085;&amp;#1091;&amp;#1078;&amp;#1085;&amp;#1086;&amp;#1089;&amp;#1090;&amp;#1080; &amp;#1080;
+&amp;#1078;&amp;#1072;&amp;#1083;&amp;#1086;&amp;#1089;&amp;#1090;&amp;#1080; &amp;#1082; &amp;#1089;&amp;#1077;&amp;#1073;&amp;#1077;. &amp;#1052;&amp;#1099; &amp;#1087;&amp;#1086;&amp;#1090;&amp;#1077;&amp;#1088;&amp;#1103;&amp;#1077;&amp;#1084; &amp;#1080;&amp;#1085;&amp;#1090;&amp;#1077;&amp;#1088;&amp;#1077;&amp;#1089; &amp;#1082; &amp;#1074;&amp;#1077;&amp;#1097;&amp;#1072;&amp;#1084;, &amp;#1082;&amp;#1086;&amp;#1090;&amp;#1086;&amp;#1088;&amp;#1099;&amp;#1077; &amp;#1087;&amp;#1086;&amp;#1076;&amp;#1086;&amp;#1075;&amp;#1088;&amp;#1077;&amp;#1074;&amp;#1072;&amp;#1102;&amp;#1090; &amp;#1085;&amp;#1072;&amp;#1096;&amp;#1077;
+&amp;#1089;&amp;#1072;&amp;#1084;&amp;#1086;&amp;#1083;&amp;#1102;&amp;#1073;&amp;#1080;&amp;#1077;, &amp;#1080; &amp;#1074; &amp;#1085;&amp;#1072;&amp;#1089; &amp;#1091;&amp;#1089;&amp;#1080;&amp;#1083;&amp;#1080;&amp;#1090;&amp;#1089;&amp;#1103; &amp;#1080;&amp;#1085;&amp;#1090;&amp;#1077;&amp;#1088;&amp;#1077;&amp;#1089; &amp;#1082; &amp;#1076;&amp;#1088;&amp;#1091;&amp;#1075;&amp;#1080;&amp;#1084; &amp;#1083;&amp;#1102;&amp;#1076;&amp;#1103;&amp;#1084;. &amp;#1052;&amp;#1099; &amp;#1086;&amp;#1089;&amp;#1074;&amp;#1086;&amp;#1073;&amp;#1086;&amp;#1076;&amp;#1080;&amp;#1084;&amp;#1089;&amp;#1103; &amp;#1086;&amp;#1090;
+&amp;#1101;&amp;#1075;&amp;#1086;&amp;#1080;&amp;#1079;&amp;#1084;&amp;#1072;. &amp;#1048;&amp;#1079;&amp;#1084;&amp;#1077;&amp;#1085;&amp;#1080;&amp;#1090;&amp;#1089;&amp;#1103; &amp;#1085;&amp;#1072;&amp;#1096;&amp;#1077; &amp;#1084;&amp;#1080;&amp;#1088;&amp;#1086;&amp;#1074;&amp;#1086;&amp;#1079;&amp;#1079;&amp;#1088;&amp;#1077;&amp;#1085;&amp;#1080;&amp;#1077;, &amp;#1080;&amp;#1089;&amp;#1095;&amp;#1077;&amp;#1079;&amp;#1085;&amp;#1091;&amp;#1090; &amp;#1089;&amp;#1090;&amp;#1088;&amp;#1072;&amp;#1093; &amp;#1087;&amp;#1077;&amp;#1088;&amp;#1077;&amp;#1076; &amp;#1083;&amp;#1102;&amp;#1076;&amp;#1100;&amp;#1084;&amp;#1080; &amp;#1080;
+&amp;#1085;&amp;#1077;&amp;#1091;&amp;#1074;&amp;#1077;&amp;#1088;&amp;#1077;&amp;#1085;&amp;#1085;&amp;#1086;&amp;#1089;&amp;#1090;&amp;#1100; &amp;#1074; &amp;#1101;&amp;#1082;&amp;#1086;&amp;#1085;&amp;#1086;&amp;#1084;&amp;#1080;&amp;#1095;&amp;#1077;&amp;#1089;&amp;#1082;&amp;#1086;&amp;#1084; &amp;#1073;&amp;#1083;&amp;#1072;&amp;#1075;&amp;#1086;&amp;#1087;&amp;#1086;&amp;#1083;&amp;#1091;&amp;#1095;&amp;#1080;&amp;#1080;. &amp;#1052;&amp;#1099; &amp;#1080;&amp;#1085;&amp;#1090;&amp;#1091;&amp;#1080;&amp;#1090;&amp;#1080;&amp;#1074;&amp;#1085;&amp;#1086; &amp;#1073;&amp;#1091;&amp;#1076;&amp;#1077;&amp;#1084; &amp;#1079;&amp;#1085;&amp;#1072;&amp;#1090;&amp;#1100;,
+&amp;#1082;&amp;#1072;&amp;#1082; &amp;#1074;&amp;#1077;&amp;#1089;&amp;#1090;&amp;#1080; &amp;#1089;&amp;#1077;&amp;#1073;&amp;#1103; &amp;#1074; &amp;#1089;&amp;#1080;&amp;#1090;&amp;#1091;&amp;#1072;&amp;#1094;&amp;#1080;&amp;#1103;&amp;#1093;, &amp;#1082;&amp;#1086;&amp;#1090;&amp;#1086;&amp;#1088;&amp;#1099;&amp;#1077; &amp;#1088;&amp;#1072;&amp;#1085;&amp;#1100;&amp;#1096;&amp;#1077; &amp;#1085;&amp;#1072;&amp;#1089; &amp;#1086;&amp;#1079;&amp;#1072;&amp;#1076;&amp;#1072;&amp;#1095;&amp;#1080;&amp;#1074;&amp;#1072;&amp;#1083;&amp;#1080;. &amp;#1052;&amp;#1099; &amp;#1087;&amp;#1086;&amp;#1081;&amp;#1084;&amp;#1077;&amp;#1084;,
+&amp;#1095;&amp;#1090;&amp;#1086; &amp;#1041;&amp;#1086;&amp;#1075; &amp;#1076;&amp;#1077;&amp;#1083;&amp;#1072;&amp;#1077;&amp;#1090; &amp;#1076;&amp;#1083;&amp;#1103; &amp;#1085;&amp;#1072;&amp;#1089; &amp;#1090;&amp;#1086;, &amp;#1095;&amp;#1090;&amp;#1086; &amp;#1084;&amp;#1099; &amp;#1085;&amp;#1077; &amp;#1089;&amp;#1084;&amp;#1086;&amp;#1075;&amp;#1083;&amp;#1080; &amp;#1089;&amp;#1072;&amp;#1084;&amp;#1080; &amp;#1089;&amp;#1076;&amp;#1077;&amp;#1083;&amp;#1072;&amp;#1090;&amp;#1100; &amp;#1076;&amp;#1083;&amp;#1103; &amp;#1089;&amp;#1077;&amp;#1073;&amp;#1103;.
+     &amp;#1053;&amp;#1077; &amp;#1089;&amp;#1083;&amp;#1080;&amp;#1096;&amp;#1082;&amp;#1086;&amp;#1084; &amp;#1083;&amp;#1080; &amp;#1101;&amp;#1090;&amp;#1086; &amp;#1079;&amp;#1074;&amp;#1091;&amp;#1095;&amp;#1080;&amp;#1090; &amp;#1084;&amp;#1085;&amp;#1086;&amp;#1075;&amp;#1086;&amp;#1086;&amp;#1073;&amp;#1077;&amp;#1097;&amp;#1072;&amp;#1102;&amp;#1097;&amp;#1077;? &amp;#1053;&amp;#1077;&amp;#1090;. &amp;#1042;&amp;#1089;&amp;#1077; &amp;#1101;&amp;#1090;&amp;#1086; &amp;#1087;&amp;#1088;&amp;#1086;&amp;#1080;&amp;#1079;&amp;#1086;&amp;#1096;&amp;#1083;&amp;#1086; &amp;#1089;&amp;#1086;
+&amp;#1084;&amp;#1085;&amp;#1086;&amp;#1075;&amp;#1080;&amp;#1084;&amp;#1080; &amp;#1080;&amp;#1079; &amp;#1085;&amp;#1072;&amp;#1089;, &amp;#1089; &amp;#1086;&amp;#1076;&amp;#1085;&amp;#1080;&amp;#1084;&amp;#1080; &amp;#1088;&amp;#1072;&amp;#1085;&amp;#1100;&amp;#1096;&amp;#1077;, &amp;#1089; &amp;#1076;&amp;#1088;&amp;#1091;&amp;#1075;&amp;#1080;&amp;#1084;&amp;#1080; &amp;#1087;&amp;#1086;&amp;#1079;&amp;#1078;&amp;#1077;. &amp;#1042;&amp;#1089;&amp;#1077; &amp;#1101;&amp;#1090;&amp;#1086; &amp;#1089;&amp;#1090;&amp;#1072;&amp;#1085;&amp;#1086;&amp;#1074;&amp;#1080;&amp;#1090;&amp;#1089;&amp;#1103;
+&amp;#1103;&amp;#1074;&amp;#1100;&amp;#1102;, &amp;#1077;&amp;#1089;&amp;#1083;&amp;#1080; &amp;#1087;&amp;#1088;&amp;#1080;&amp;#1083;&amp;#1086;&amp;#1078;&amp;#1080;&amp;#1090;&amp;#1100; &amp;#1091;&amp;#1089;&amp;#1080;&amp;#1083;&amp;#1080;&amp;#1103;.
+                               Promises
+     If we are painstaking about this phase of our development, we
+will be amazed before half through! We are going to know a new freedom
+and happiness. We will not regret the past nor wish to shut the door
+on it. We will comprehend the word serenity and know peace. No matter
+how far down the scale we have gone, we will see how our experience
+can benefit others. That feeling of use- lessness and self-pity will
+disappear. We will lose interest in selfish things and gain interest
+in our fellows. Self-seeking will slip away. Our whole attitude and
+outlook upon life will change. Fear of people and of economic
+insecurity will leave us. We will intuitively know how to handle
+situations which used to baffle us. We will suddenly realize that God
+is doing for us what we could not do for ourselves.
+     Are these extravagant promises? We think not. They are being
+fulfilled among us—sometimes quickly, sometimes slowly. They will
+always materialize if we work for them.
+&lt;/pre&gt;</doctext>
+<root_node field_name="root_node">1217455</root_node>
+<parent_node field_name="parent_node">1217473</parent_node>
+<thread id="1217455">
+<node id="1217461"><node id="1217473"><node id="1217665"><node id="1217787"><node id="1217788"><node id="1217907"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1217478"/>
+</thread></node>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1186719" title="Re: Reference to return value of a subroutine" created="2017-04-02 10:25:15" updated="2017-04-02 10:25:15" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;the array (0, 1)&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I think this might be the misunderstanding here: &lt;c&gt;(0, 1)&lt;/c&gt; isn't an array, in this form it's a literal list. While you obviously use lists to populate arrays, arrays and literal lists behave differently in different contexts. For example, an array in scalar context returns its size, whereas a list returns its last value, and taking a reference to an array creates an arrayref, while taking a reference to a list works as follows.&lt;/p&gt;
+&lt;p&gt;What is going on here is that your &lt;c&gt;sub foo&lt;/c&gt; is returning the list &lt;c&gt;(0, 1)&lt;/c&gt;, and the &lt;c&gt;\&lt;/c&gt; (backslash) referencing operator is "distributive" when applied to lists, meaning that &lt;c&gt;\(0, 1)&lt;/c&gt; is the same thing as &lt;c&gt;(\0, \1)&lt;/c&gt;. So your assignment basically becomes &lt;c&gt;my $var = (\0, \1);&lt;/c&gt;. Then, the [doc://perlop#Comma-Operator] in scalar context "evaluates its left argument, throws that value away, then evaluates its right argument and returns that value", which is why &lt;c&gt;$var&lt;/c&gt; is being assigned &lt;c&gt;\1&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;You could do several things, as the other monks have shown: &lt;c&gt;[foo()]&lt;/c&gt;, &lt;c&gt;return [0, 1]&lt;/c&gt;, or also possible would be &lt;c&gt;return \@array&lt;/c&gt;. However, note that &lt;c&gt;\&lt;/c&gt; has a special-case behavior which means that &lt;c&gt;sub foo { my @array = (0,1); return @array }; my $var = \(foo());&lt;/c&gt; would &lt;i&gt;not&lt;/i&gt; work, as "&lt;c&gt;\(@foo)&lt;/c&gt; returns a list of references to the contents of &lt;c&gt;@foo&lt;/c&gt;, not a reference to &lt;c&gt;@foo&lt;/c&gt; itself." ([doc://perlref]). &lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; See also [id://1186591|this recent thread], the FAQ [doc://perlfaq4#What-is-the-difference-between-a-list-and-an-array?], and perhaps one or two other PerlMonks threads such as [id://130861].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1186714</root_node>
+<parent_node field_name="parent_node">1186714</parent_node>
+<thread id="1186714">
+<node id="1186715"/>
+<node id="1186716"/>
+<node id="1186718"/>
+<node id="1186719"/>
+<node id="1186730"><node id="1186788"/>
+</node>
+</thread></node>

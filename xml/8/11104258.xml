@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11104258" title="Re^3: running a backticks command behaves different in command line and browser" created="2019-08-10 07:37:14" updated="2019-08-10 07:37:14" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Glad to hear it worked out. I just wanted to add that backticks, unless &lt;i&gt;properly&lt;/i&gt; used, can very easily introduce security holes, which I wrote about [id://1180578|here], where I also show some alternatives. In this case, since you want to also capture &lt;c&gt;STDERR&lt;/c&gt;, I might recommend [mod://IPC::Run3]. You should also be able to unset that environment variable using &lt;c&gt;delete $ENV{LD_LIBRARY_PATH}&lt;/c&gt; instead of the &lt;c&gt;unset&lt;/c&gt; command, and if you want that change to only be temporary while you run the command, you can use &lt;c&gt;{ delete local $ENV{LD_LIBRARY_PATH}; run_command_here }&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+use IPC::Run3 'run3';
+
+my @command = ('/path/to/python3.7','/path/to/script.py');
+
+my $ret = do {
+	delete local $ENV{LD_LIBRARY_PATH};
+	my $r;
+	run3 \@command, undef, \$r, \$r or die "run3 failed";
+	die "command failed, \$?=$?" if $?;
+	$r };
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11104237</root_node>
+<parent_node field_name="parent_node">11104256</parent_node>
+<thread id="11104237">
+<node id="11104252"><node id="11104256"><node id="11104258"/>
+<node id="11104265"><node id="11104297"><node id="11104300"><node id="11104325"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

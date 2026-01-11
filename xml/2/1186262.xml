@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1186262" title="Re: Need help copying &quot;logs&quot; to another file." created="2017-03-28 11:19:46" updated="2017-03-28 11:19:46" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Normally, this isn't a code writing service, but since what you're asking about is fairly basic, I'll give you some skeleton code for going through a set of files and picking lines out of those files. Please take the time to &lt;b&gt;read [doc://perlintro] and [doc://perlrequick]&lt;/b&gt; (also [doc://perlretut]), they aren't too long or complicated, and will explain almost everything in the following code. I used [doc://glob] instead of [doc://readdir] because it's easier to use. Feel free to use and adapt this code for your purposes - if you run into trouble or more questions, see the [id://745674], and if you have trouble and would like to ask questions here, please see the guidelines in [id://174051] and [id://1177642|SSCCE].&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+my @files = glob '/path/*.log';
+my $out_filename = 'output.txt';
+
+open my $out_fh, '&gt;', $out_filename
+	or die "open $out_filename: $!";
+for my $filename (@files) {
+	next if $filename =~ /regex to exclude undesired filenames/;
+	open my $fh, '&lt;', $filename
+		or die "open $filename: $!";
+	while (&lt;$fh&gt;) {
+		next unless /regex to match desired lines/;
+		print {$out_fh} $_;
+	}
+	close $fh;
+}
+close $out_fh;
+&lt;/c&gt;
+&lt;p&gt;Note that the code above is doing roughly the same as:&lt;/p&gt;
+&lt;c&gt;
+$ ls /path/*.log | grep -v filename_exclude_pat
+  | xargs grep -h line_include_pat &gt;output.txt
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1186260</root_node>
+<parent_node field_name="parent_node">1186260</parent_node>
+<thread id="1186260">
+<node id="1186262"><node id="1186358"><node id="1186376"/>
+</node>
+</node>
+<node id="1186279"/>
+</thread></node>

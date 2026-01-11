@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229987" title="Re: Function::Parameters, Types::Standard, and Perl::Critic" created="2019-02-16 01:59:39" updated="2019-02-16 01:59:39" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;At least for the first part of your question, I guess it's because [mod://PPI], which [mod://Perl::Critic] uses internally, no longer recognizes the code as a &lt;c&gt;sub&lt;/c&gt; and so those policies don't apply.&lt;/p&gt;
+&lt;readmore title="PPI Output"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use PPI;
+use PPI::Dumper;
+
+my $Document = PPI::Document-&gt;new(\&lt;&lt;'END');
+use Function::Parameters;
+use Types::Standard qw( Num );
+
+fun foo (Num $x) {
+    $x + 1
+}
+END
+
+my $Dumper = PPI::Dumper-&gt;new( $Document );
+$Dumper-&gt;print;
+
+__END__
+
+PPI::Document
+  PPI::Statement::Include
+    PPI::Token::Word  	'use'
+    PPI::Token::Whitespace  	' '
+    PPI::Token::Word  	'Function::Parameters'
+    PPI::Token::Structure  	';'
+  PPI::Token::Whitespace  	'\n'
+  PPI::Statement::Include
+    PPI::Token::Word  	'use'
+    PPI::Token::Whitespace  	' '
+    PPI::Token::Word  	'Types::Standard'
+    PPI::Token::Whitespace  	' '
+    PPI::Token::QuoteLike::Words  	'qw( Num )'
+    PPI::Token::Structure  	';'
+  PPI::Token::Whitespace  	'\n'
+  PPI::Token::Whitespace  	'\n'
+  PPI::Statement
+    PPI::Token::Word  	'fun'
+    PPI::Token::Whitespace  	' '
+    PPI::Token::Word  	'foo'
+    PPI::Token::Whitespace  	' '
+    PPI::Structure::List  	( ... )
+      PPI::Statement::Expression
+        PPI::Token::Word  	'Num'
+        PPI::Token::Whitespace  	' '
+        PPI::Token::Symbol  	'$x'
+    PPI::Token::Whitespace  	' '
+    PPI::Structure::Block  	{ ... }
+      PPI::Token::Whitespace  	'\n'
+      PPI::Token::Whitespace  	'    '
+      PPI::Statement
+        PPI::Token::Symbol  	'$x'
+        PPI::Token::Whitespace  	' '
+        PPI::Token::Operator  	'+'
+        PPI::Token::Whitespace  	' '
+        PPI::Token::Number  	'1'
+      PPI::Token::Whitespace  	'\n'
+  PPI::Token::Whitespace  	'\n'
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;For the second part, I can confirm the same behavior, but I can't say in which of the modules this is a bug...&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1229979</root_node>
+<parent_node field_name="parent_node">1229979</parent_node>
+<thread id="1229979">
+<node id="1229987"/>
+<node id="1230011"><node id="1230039"/>
+</node>
+</thread></node>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203130" title="Re: Variable Scope (updated)" created="2017-11-10 11:55:42" updated="2017-11-10 11:55:42" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;From [doc://perlsyn#Statement-Modifiers|perlsyn]:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;b&gt;NOTE:&lt;/b&gt; The behaviour of a &lt;c&gt;my&lt;/c&gt;, &lt;c&gt;state&lt;/c&gt;, or &lt;c&gt;our&lt;/c&gt; modified with a statement modifier conditional or loop construct (for example, &lt;c&gt;my $x if ...&lt;/c&gt;) is &lt;b&gt;undefined&lt;/b&gt;. The value of the &lt;c&gt;my&lt;/c&gt; variable may be &lt;c&gt;undef&lt;/c&gt;, any previously assigned value, or possibly anything else. Don't rely on it. Future versions of perl might do something different from the version of perl you try it out on. Here be dragons.
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Heh, [Eily] and I posted within 4 seconds of another ;-)&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; Historically, sometimes this "feature/bug" was (ab)used to make variables "&lt;c&gt;static&lt;/c&gt;", just two references of many found with a quick search: [id://95940], [id://449078]. The better ways to do this are described in [doc://perlsub#Persistent-Private-Variables]:&lt;/p&gt;
+&lt;c&gt;
+BEGIN {
+    my $static_val = 0;
+    sub gimme_another {
+        return ++$static_val;
+    }
+}
+
+# - OR - in Perl &gt;=5.10:
+
+use feature 'state';
+sub gimme_another {
+    state $static_val = 0;
+    return ++$static_val;
+}
+&lt;/c&gt;
+&lt;p&gt;But nowadays, anywhere you see the pattern, it should be considered a bug, see [doc://perldeprecation#Using-my()-in-false-conditional.|"Using my() in false conditional" in perldeprecation]. On Perl 5.26:&lt;/p&gt;
+&lt;c&gt;
+$ perl -e 'my $x if 0'
+Deprecated use of my() in false conditional. This will be a fatal error in Perl 5.30 at -e line 1.
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update 3:&lt;/i&gt;&lt;/small&gt; Apparently, the warning "&lt;c&gt;Deprecated use of my() in false conditional&lt;/c&gt;" first showed up in Perl 5.10 and became a default warning in 5.12. Note that your Perl 5.10.1 is now more than eight years old, and you should upgrade. Also, you should generally &lt;c&gt;use warnings;&lt;/c&gt; ([id://111088]).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203128</root_node>
+<parent_node field_name="parent_node">1203128</parent_node>
+<thread id="1203128">
+<node id="1203129"/>
+<node id="1203130"/>
+<node id="1203131"/>
+</thread></node>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1214611" title="Re: printing out users without home directories" created="2018-05-16 02:28:36" updated="2018-05-16 02:28:36" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Perl has built-in functions for that, you don't need to shell out. You can find the documentation either via &lt;c&gt;perldoc -f getpwent&lt;/c&gt; at the command line, or on [http://perldoc.perl.org] under [doc://endservent] (because it splits the functions up a little too much). I took &lt;i&gt;"without /home directories"&lt;/i&gt; to mean "with directories that aren't underneath &lt;c&gt;/home&lt;/c&gt;" and I've incorporated the [doc://-X|&lt;c&gt;-d&lt;/c&gt;] check suggested by [syphilis] to additionally show users who have a &lt;c&gt;/home&lt;/c&gt; home directory that doesn't exist.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+#use Data::Dumper; # Debug
+
+while (my @pwent = getpwent) {
+	#print Dumper(\@pwent); # Debug
+	my ($name,$uid,$home) = @pwent[0,2,7];
+	print "$name $uid $home\n"
+		if $home !~ m{^/home/} || ! -d $home;
+}
+&lt;/c&gt;
+&lt;p&gt;Or, with a nicer interface, there's [doc://User::pwent]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use User::pwent;
+
+while (my $pwent = getpwent) {
+	print $pwent-&gt;name," ",$pwent-&gt;uid," ",$pwent-&gt;dir,"\n"
+		if $pwent-&gt;dir !~ m{^/home/} || ! -d $pwent-&gt;dir;
+}
+&lt;/c&gt;
+&lt;p&gt;If by &lt;i&gt;"without /home directories"&lt;/i&gt; you meant that the field is blank, then you can change the condition to &lt;c&gt;unless length $pwent-&gt;dir&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Normally I'd also recommend using a module like [mod://Path::Class] for the pathname handling, but I assumed you're on a *NIX system. Since I'm already at it, here's an example, with a little variation to the method calls, just because TIMTOWTDI:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use User::pwent;
+use Path::Class qw/dir/;
+
+my $home = dir('/home');
+while (my $pwent = getpwent) {
+	print join(' ', map {$pwent-&gt;$_} qw/name uid dir/ ),"\n"
+		unless $home-&gt;subsumes( dir($pwent-&gt;dir) );
+}
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1214597</root_node>
+<parent_node field_name="parent_node">1214597</parent_node>
+<thread id="1214597">
+<node id="1214602"><node id="1214613"><node id="1214616"/>
+</node>
+</node>
+<node id="1214605"/>
+<node id="1214611"/>
+</thread></node>

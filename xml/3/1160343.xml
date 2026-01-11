@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1160343" title="Re: Extending a class (updated x2)" created="2016-04-13 16:17:28" updated="2016-04-13 16:17:28" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [betacentauri],&lt;/p&gt;
+&lt;p&gt;In &lt;c&gt;sub Bar&lt;/c&gt;, you're calling &lt;c&gt;$g-&gt;Foo&lt;/c&gt;, where &lt;c&gt;$g&lt;/c&gt; is the return value of &lt;c&gt;$self-&gt;group&lt;/c&gt;. Looking at the code of [mod://SVG::Element], that's a &lt;c&gt;new SVG::Element&lt;/c&gt;. [mod://SVG::Element] doesn't have a &lt;c&gt;sub Foo&lt;/c&gt;, which is why the call fails.&lt;/p&gt;
+&lt;p&gt;As suggested by the AM, one solution is to patch the methods into [mod://SVG::Element] by defining them as &lt;c&gt;sub SVG::Element::Foo { ... }&lt;/c&gt;, &lt;c&gt;MyPackage&lt;/c&gt; isn't necessary in that case. (Note however that a &lt;c&gt;new&lt;/c&gt; constructor for &lt;c&gt;MyPackage&lt;/c&gt; is not required, as the AM seems to be saying; the constructor is indeed inherited from [mod://SVG], which in turn calls its parent constructor in [mod://SVG::Element], but since they are coded appropriately they give you an object of type &lt;c&gt;MyPackage&lt;/c&gt;.) It's kind of inelegant but it works. If you're only adding a few methods, it might be an acceptable solution.&lt;/p&gt;
+&lt;p&gt;Other than that, since &lt;c&gt;SVG::Element::tag()&lt;/c&gt; is hardcoded to return a new object of type &lt;c&gt;SVG::Element&lt;/c&gt;, I can't at the moment think of a solution that doesn't involve either updating the [mod://SVG] package itself, or some kind of inelegant hacking/patching (perhaps another monk has another alternative handy).&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; You can also fix the immediate problem by writing &lt;c&gt;return $g-&gt;MyPackage::Foo("g$barArg");&lt;/c&gt; in &lt;c&gt;Bar&lt;/c&gt;. This doesn't stop &lt;c&gt;Foo&lt;/c&gt; and &lt;c&gt;Bar&lt;/c&gt; from returning objects of type &lt;c&gt;SVG::Element&lt;/c&gt;, but at least it gets your example code working... now I'm out of ideas for tonight. (I also tried re[doc://bless]ing the return values, but that caused the SVG to be missing elements, &lt;strike&gt;which I haven't looked into yet.&lt;/strike&gt;)&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; [mod://SVG::Element] uses the code &lt;c&gt;if ( ref($k) =~ /^SVG::Element/ )&lt;/c&gt; (instead of [doc://UNIVERSAL|isa]) to check whether objects are of its type. I'd say this and the above make it too difficult to do normal subclassing.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1160328</root_node>
+<parent_node field_name="parent_node">1160328</parent_node>
+<thread id="1160328">
+<node id="1160329"><node id="1160330"><node id="1160333"><node id="1160347"><node id="1160348"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1160342"/>
+<node id="1160343"><node id="1160353"><node id="1160359"/>
+<node id="1160377"/>
+</node>
+</node>
+</thread></node>

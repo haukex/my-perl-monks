@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1172434" title="Implementing methods in a subclass or providing in-place callback: Is it overengineered?" created="2016-09-23 05:12:29" updated="2016-09-23 05:12:29" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="826278">Dallaylaen</author>
+<doctext field_name="doctext">&lt;p&gt;Hello, dear esteemed monks!&lt;/p&gt;
+
+&lt;p&gt;I just wrote the following in my module. The idea is as follows: allow user to override default methods by &lt;i&gt;either&lt;/i&gt; subclassing, or providing a callback. So a subclass with &lt;b&gt;do_foo&lt;/b&gt; &lt;i&gt;method&lt;/i&gt; and an instance of base class with &lt;b&gt;on_foo&lt;/b&gt; &lt;i&gt;member&lt;/i&gt; will behave exactly the same.&lt;/p&gt;
+
+&lt;p&gt;However, looking at this again, I suspect it's being overengineered. Should I just provide default do_foo methods in subclass that search for a callback and croak if none found? This will still allow for both ad-hoc overriding and subclassing.&lt;/p&gt;
+
+&lt;p&gt;Should I just go with normal OO and leave do_foo() alone?
+&lt;/p&gt;
+
+&lt;p&gt;Guess there's no single correct answer after all, but I'd like to hear your opinions and make up my own.&lt;/p&gt;
+
+&lt;code&gt;sub backend_call {
+    my $self = shift;
+    my $method = shift;
+
+    my $todo = $self-&gt;{"on_$method"} || $self-&gt;can("do_$method");
+    if (!$todo) {
+        my $sub = [caller(1)]-&gt;[3];
+        $sub =~ s/.*:://;
+        croak join "", (ref $self || $self),"-&gt;",$sub,
+            ": no backend found for $method";
+    };
+
+    return $todo-&gt;($self, @_);
+};
+&lt;/code&gt;
+
+&lt;p&gt;Thank you!&lt;/p&gt;</doctext>
+<thread id="1172434">
+<node id="1172441"><node id="1172483"/>
+</node>
+<node id="1172459"/>
+</thread></node>

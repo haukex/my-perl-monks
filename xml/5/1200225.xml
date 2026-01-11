@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200225" title="Re: IPC::SharedMem::stat using Class::Struct (UPDATED)" created="2017-09-27 16:15:12" updated="2017-09-27 16:15:12" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1069339">thanos1983</author>
+<doctext field_name="doctext">&lt;p&gt;Hello [id://732723|sprinter],&lt;/p&gt;
+&lt;p&gt;Welcome to the Monastery. I am not sure where you got the source code that you have posted because it is a bit different than from the CPAN [http://cpansearch.perl.org/src/NWCLARK/perl-5.8.9/ext/IPC/SysV/lib/IPC/SharedMem.pm|IPC::SharedMem/source].&lt;/p&gt;
+
+&lt;p&gt;To answer your question, no the module does not have a separate pack and unpack method. See source code on the link above or sample below:&lt;/p&gt;
+&lt;code&gt;
+
+sub read
+{
+  @_ == 3 or croak '$shm-&gt;read(POS, SIZE)';
+  my($self, $pos, $size) = @_;
+  my $buf = '';
+  if (defined $self-&gt;addr) {
+    memread($self-&gt;addr, $buf, $pos, $size) or return undef;
+  }
+  else {
+    shmread($self-&gt;id, $buf, $pos, $size) or return undef;
+  }
+  $buf;
+}
+
+sub write
+{
+  @_ == 4 or croak '$shm-&gt;write(STRING, POS, SIZE)';
+  my($self, $str, $pos, $size) = @_;
+  if (defined $self-&gt;addr) {
+    return memwrite($self-&gt;addr, $str, $pos, $size);
+  }
+  else {
+    return shmwrite($self-&gt;id, $str, $pos, $size);
+  }
+}
+&lt;/code&gt;
+
+&lt;p&gt;From the documentation [https://perldoc.perl.org/IPC/SharedMem.html#METHODS|IPC::SharedMem/methods], it also mentioned:&lt;/p&gt;
+&lt;code&gt;
+read ( POS, SIZE )
+
+Read SIZE bytes from the shared memory segment at POS . Returns the string read, or undef if there was an error. The return value becomes tainted. See shmread.
+write ( STRING, POS, SIZE )
+
+Write SIZE bytes to the shared memory segment at POS . Returns true if successful, or false if there is an error. See shmwrite.
+&lt;/code&gt;
+
+&lt;p&gt;&lt;strong&gt;Update: &lt;/strong&gt;Forgot to add from the Synopsis of the module:&lt;/p&gt;
+&lt;code&gt;
+$shm-&gt;write(pack("S", 4711), 2, 2);
+&lt;/code&gt;
+
+&lt;p&gt;If you see [https://perldoc.perl.org/functions/pack.html|pack] documentation for S:&lt;/p&gt;
+&lt;code&gt;
+S  An unsigned short value.
+&lt;/code&gt;
+
+&lt;p&gt;So in conclusion it is just the memory position that you read and write. I assume that the copy of the code that you post was from an earlier version but on latest version is clear that the module is using the core pack and unpack of Perl&lt;/p&gt;
+
+&lt;p&gt;Hope this helps, unless I did not understand your question.&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1069339"&gt;
+Seeking for Perl wisdom...on the process of learning...not there...yet!
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1200199</root_node>
+<parent_node field_name="parent_node">1200199</parent_node>
+<thread id="1200199">
+<node id="1200217"/>
+<node id="1200225"><node id="1200360"><node id="1200378"/>
+</node>
+</node>
+<node id="1200267"/>
+</thread></node>

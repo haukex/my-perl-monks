@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108716" title="Re^3: Correct Perl settings for sending zipfile to browser" created="2019-11-15 02:38:28" updated="2019-11-15 02:38:28" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;the browser gives an Internal Server Error&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The code I showed isn't a complete CGI example, since it doesn't output the headers, so those would need to be added back in. Since in the original code those are being written by hand, I'd suggest at least upgrading to one of the CGI modules, such as e.g. [mod://CGI::Simple], to generate those for you.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Wide character in IO::Compress::Zip::write&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That would mean that there's Unicode in your &lt;c&gt;@lines&lt;/c&gt;. (Although I don't see an encoding being set on &lt;c&gt;TARGET&lt;/c&gt; in the original code, so I think it would have the same issue?) Anyway, although [doc://IO::Compress::Zip] provides a filehandle-like interface, it looks like it doesn't (yet?) support encoding layers. A manual encoding with [doc://Encode] does work though:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use IO::Compress::Zip qw/$ZipError/;
+use Encode qw/encode/;
+
+my @lines = (qw/ Hello World Foo Bar /, "\N{U+1F42A}");
+my $eol = "\r\n";
+my $encoding = "UTF-8"; # or maybe "CP1252" for Windows
+
+binmode STDOUT;  # just to play it safe
+my $z = IO::Compress::Zip-&gt;new('-', # STDOUT
+	Name =&gt; "Filename.txt" )
+		or die "zip failed: $ZipError\n";
+for my $line (@lines) {
+	$z-&gt;print( encode($encoding, $line.$eol,
+		Encode::FB_CROAK|Encode::LEAVE_SRC) );
+}
+$z-&gt;close();
+&lt;/c&gt;
+&lt;p&gt;Note: For encodings such as UTF-16, it seems &lt;c&gt;encode&lt;/c&gt; adds a Byte Order Mark for every string it encodes, and I don't see an option in the module to disable that. One way to get rid of them is to remove them manually, but an alternative might be to replace the &lt;c&gt;for&lt;/c&gt; loop with this, at the expense of higher memory usage: &lt;c&gt;$z-&gt;print( encode($encoding, join('', map {$_.$eol} @lines), Encode::FB_CROAK|Encode::LEAVE_SRC) );&lt;/c&gt; - or just stick to UTF-8, as that's pretty ubiquitous.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I remove the $CRLF from the lines&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You can leave that in and remove my &lt;c&gt;$eol&lt;/c&gt;, as they're the same thing (I missed that on my first read of the original source, sorry).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11108658</root_node>
+<parent_node field_name="parent_node">11108714</parent_node>
+<thread id="11108658">
+<node id="11108660"/>
+<node id="11108663"><node id="11108712"><node id="11108713"><node id="11108715"/>
+</node>
+<node id="11108761"/>
+</node>
+</node>
+<node id="11108666"><node id="11108710"><node id="11108726"/>
+</node>
+</node>
+<node id="11108673"/>
+<node id="11108692"><node id="11108714"><node id="11108716"><node id="11108722"><node id="11108732"><node id="11108832"><node id="11108833"><node id="11108836"><node id="11108837"/>
+</node>
+</node>
+<node id="11108856"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

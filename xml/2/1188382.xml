@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1188382" title="Re: one liner question" created="2017-04-20 05:51:12" updated="2017-04-20 05:51:12" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;c&gt;
+$ tac /var/log/rsync.log | perl -lane 'if(/received/){ print "$F[0] $F[1]"; exit }'
+# Update 2017-04-21: compacting that a little bit:
+$ tac /var/log/rsync.log | perl -lane 'if(/received/){print"@F[0,1]";exit}'
+&lt;/c&gt;
+&lt;p&gt;Script (using [mod://File::ReadBackwards]):&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use File::ReadBackwards;
+
+die "Usage: $0 LOGFILE\n" unless @ARGV==1;
+my $FILE = shift @ARGV;
+
+my $bw = File::ReadBackwards-&gt;new($FILE)
+	or die "Can't read $FILE: $!" ;
+LINE: while(defined( my $line = $bw-&gt;readline )) {
+	chomp($line);
+	if ( $line =~ /received/ ) {
+		my ($dt) = $line =~ /^([\d\/]+\s+[\d\:]+)\b/
+			or die "Failed to parse date from: $line\n";
+		print "$dt\n";
+		last LINE;
+	}
+}
+$bw-&gt;close;
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Credit to [Discipulus] for the inspiration of the first one-liner. Here's another one that scans the file forwards, like your original code does, but of course it'll be less efficient on larger files. For an explanation of &lt;c&gt;}{&lt;/c&gt; see the "Eskimo greeting" in [mod://perlsecret].&lt;/p&gt;
+&lt;c&gt;
+$ perl -lane '/received/ and $a="$F[0] $F[1]"}{print $a' /var/log/rsync.log
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1188377</root_node>
+<parent_node field_name="parent_node">1188377</parent_node>
+<thread id="1188377">
+<node id="1188379"/>
+<node id="1188380"/>
+<node id="1188382"/>
+<node id="1188452"><node id="1188586"/>
+</node>
+<node id="1188546"><node id="1188551"/>
+</node>
+</thread></node>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1231236" title="Re^7: PAR::Packer generated EXE that was detected as a trojan..." created="2019-03-13 18:46:31" updated="2019-03-13 18:46:31" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Very nice, thank you! I'm not sure why you're getting different checksums, maybe something in the pipeline is uncompressing the gzipped files? I didn't have that problem with [mod://HTTP::Tiny].&lt;/p&gt;
+&lt;p&gt;Here's my version, that tries to cover pretty much all the bases (except maybe FTP). Using it, I verified that all the CPAN mirrors I could reach are serving the same &lt;c&gt;PAR-Packer-1.047.tar.gz&lt;/c&gt; file.&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use feature 'state';
+use URI;
+use HTTP::Tiny;
+use Path::Class qw/dir file/;
+use CPAN::Mirrors;
+use Digest::SHA;
+use Config::Perl;
+use MetaCPAN::Client;
+use Regexp::Common qw/balanced/;
+
+# ### User Vars ###
+my $MODULE = 'PAR::Packer';
+my $WORKDIR = dir('/tmp/mirrorcheck');
+# Control how the files are downloaded from the mirrors:
+# "force"  = delete the local file first, forcing a re-download
+# "always" = always try to mirror the file
+# "maybe"  = if file exists locally, don't try to mirror it
+# "never"  = never go out to the net
+my $FETCHMODE = 'maybe';
+# ###
+$WORKDIR-&gt;mkpath(1);
+
+my $MODURL = URI-&gt;new(
+	MetaCPAN::Client-&gt;new-&gt;module($MODULE)-&gt;download_url );
+my @MODURL_SEG = $MODURL-&gt;path_segments;
+my $MOD_FN = (@MODURL_SEG)[-1];
+
+my $orig_hash = do { # download the original file and checksum it
+	my $f_uri = URI-&gt;new('https://www.cpan.org');
+	$f_uri-&gt;path_segments(@MODURL_SEG);
+	my $fn = $WORKDIR-&gt;file($MOD_FN);
+	$FETCHMODE eq 'force' and $fn-&gt;remove;
+	mirror($f_uri, $fn, 1);
+	Digest::SHA-&gt;new('SHA-256')-&gt;addfile("$fn")-&gt;hexdigest };
+
+my $cksum_hash = do { # get the CHECKSUMS file entry
+	my $ck_uri = URI-&gt;new('https://www.cpan.org');
+	$ck_uri-&gt;path_segments( @MODURL_SEG[0..$#MODURL_SEG-1],
+		'CHECKSUMS' );
+	my $ckf = $WORKDIR-&gt;file('CHECKSUMS');
+	$FETCHMODE eq 'force' and $ckf-&gt;remove;
+	mirror($ck_uri, $ckf, 1);
+	my $dat = $ckf-&gt;slurp;
+	$dat =~ /\$cksum\s*=\s*$RE{balanced}{-parens=&gt;'{}'}\s*;/
+		or die "failed to parse CHECKSUMS";
+	my $hash = Config::Perl-&gt;new-&gt;parse_or_die(\$1)-&gt;{_}[0];
+	die "file not found in $ck_uri" unless $hash-&gt;{$MOD_FN};
+	$hash-&gt;{$MOD_FN}{sha256} };
+
+die "checksum of original $MOD_FN ($orig_hash) does not match"
+	." CHECKSUMS ($cksum_hash)" unless $cksum_hash eq $orig_hash;
+
+my $mir_fn = $WORKDIR-&gt;file('MIRRORED.BY');
+$FETCHMODE eq 'force' and $mir_fn-&gt;remove;
+mirror('https://www.cpan.org/MIRRORED.BY', $mir_fn, 1);
+my $mirrors = CPAN::Mirrors-&gt;new("$mir_fn");
+my @mirrors = sort keys %{{ map {$_=&gt;1} grep {defined}
+	map {$_-&gt;{http}} $mirrors-&gt;mirrors }};
+
+my $cnt=0;
+foreach my $cpan (@mirrors) {
+	my $uri = URI-&gt;new($cpan);
+	$uri-&gt;path_segments( grep {length} $uri-&gt;path_segments,
+		@MODURL_SEG );
+	my $fn = $WORKDIR-&gt;file($uri-&gt;host.'_'.$MOD_FN);
+	$FETCHMODE eq 'force' and $fn-&gt;remove;
+	mirror($uri, $fn, 0)
+		if $FETCHMODE eq 'force' || $FETCHMODE eq 'always'
+		|| $FETCHMODE eq 'maybe' &amp;&amp; !-e $fn;
+	next unless -e $fn;
+	my $hash = Digest::SHA-&gt;new('SHA-256')-&gt;addfile("$fn")-&gt;hexdigest;
+	$cnt++;
+	print "WARNING: Checksum mismatch on $uri: expected $orig_hash,"
+		." got $hash\n" if $hash ne $orig_hash;
+}
+print "Done, checked $cnt mirrors\n";
+
+sub mirror {
+	my ($url, $file, $strict) = @_;
+	state $http = HTTP::Tiny-&gt;new(timeout=&gt;30);
+	$|=1; print "$url: ";
+	my $resp = $http-&gt;mirror($url, $file);
+	my $msg = "$resp-&gt;{status} $resp-&gt;{reason}";
+	chomp( $msg = $resp-&gt;{content} ) if $resp-&gt;{status}==599;
+	if ($strict &amp;&amp; !$resp-&gt;{success}) { die "$msg, ABORT\n" }
+	else { print $msg, $resp-&gt;{success}?" =&gt; $file":"", "\n" }
+	return $resp-&gt;{success};
+}
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1222404</root_node>
+<parent_node field_name="parent_node">1231173</parent_node>
+<thread id="1222404">
+<node id="1222406"><node id="1222409"><node id="1222411"><node id="1222414"/>
+<node id="1231138"><node id="1231155"><node id="1231173"><node id="1231236"><node id="1231310"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1222407"><node id="1222408"/>
+</node>
+<node id="1222413"><node id="1222415"><node id="1222446"/>
+</node>
+</node>
+</thread></node>

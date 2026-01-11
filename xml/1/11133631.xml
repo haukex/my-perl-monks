@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11133631" title="Hash Manipulation" created="2021-06-07 13:45:03" updated="2021-06-07 13:45:03" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11132088">JusaEngineer</author>
+<doctext field_name="doctext">&lt;p&gt;I know what I want to do but I can't find the right syntax to accomplish it. I get pieces of the puzzle, but I can't solve all of them to put them together. So I'll give an example hash of what I have, and the End result I'm looking for, and some pieces that I have solved. I tried to get some answers to single questions but there seem to be so many ways to accomplish them, I don't know how to take the answer and use it to what I understand how to solve my problem. So Here goes, I'm going to try to be as detailed as possible so I'm sorry if it gets long. To get this data I'm parsing a XML file and printing to a .tex file. &lt;br /&gt;&lt;br /&gt; My goal is to pars an XML file and pull out all the different types of buttons and numeric entries and collect them in a hash (I know how to do this), Then I need to create a document that will have this data sorted in columns to display on a table. I need to be able to count 14 max per page while going through screens with varying numbers of buttons. At the end of each button that is not the last button I need a partial line "\cline{2-11}". At the end of all buttons of one screen I need a full horizontal Line "\hline". At the end of the page(14lines) I need to enter"\hline\pagebreak". I'm going to change the 14 Line for this to 5 so that not as much data is needed.&lt;/p&gt;
+&lt;br /&gt;
+&lt;p&gt; Here is my example Hash&lt;/p&gt;
+&lt;code&gt;
+use warnings;
+use strict;
+use Data::Dumper;
+
+
+my %hash = (
+          'Alarms.Alarm Acknowledge' =&gt; {
+                     'ScreenName' =&gt; 'Alarms',
+                     'Description' =&gt; 'Alarm Acknowledge',
+					 'Type' =&gt; 'On/Off'
+		  },
+		  'Flow Diagram.Sequence Hold' =&gt; {
+                     'ScreenName' =&gt; 'Flow Diagram',
+                     'Description' =&gt; 'Sequence Hold',
+					 'Type' =&gt; 'Momentary'
+		  },
+		  'Flow Diagram.Sequence Advance' =&gt; {
+                     'ScreenName' =&gt; 'Flow Diagram',
+                     'Description' =&gt; 'Sequence Advance',
+					 'Type' =&gt; 'Momentary'
+		  },
+		  'Flow Diagram.Sanitize Enable/Disable' =&gt; {
+                     'ScreenName' =&gt; 'Flow Diagram',
+                     'Description' =&gt; 'Sanitize Enable/Disable',
+					 'Type' =&gt; 'On/Off'
+		  },
+		  'Trend to USB.Start/Stop Trend Toggle' =&gt; {
+                     'ScreenName' =&gt; 'Trend to USB',
+                     'Description' =&gt; 'Start/Stop Trend Toggle',
+					 'Type' =&gt; 'On/Off'
+		  },
+          'Alarms.Alarm Reset' =&gt; {
+                     'ScreenName' =&gt; 'Alarms',
+                     'Description' =&gt; 'Alarm Reset',
+					 'Type' =&gt; 'On/Off'
+		  },
+		  'Alarms.Alarm Trigger' =&gt; {
+                     'ScreenName' =&gt; 'Alarms',
+                     'Description' =&gt; 'Alarm Trigger',
+					 'Type' =&gt; 'Momentary'
+		  },
+		  );
+
+print Dumper(%hash);
+
+print "\n\n\n";
+
+
+
+my %ScreenNameCount;
+$ScreenNameCount{$hash{$_}{ScreenName}}++ foreach keys %hash;
+
+my %HashCount;
+my $Screenkey = 'New';
+my $ScreenkeyOld = 'Old';
+my @List;
+my $i = 1;
+foreach my $key (sort keys %hash) {
+	my $Screenkey = $hash{$key}{'ScreenName'};
+	my $Description = $hash{$key}{'Description'};
+	my $Type = $hash{$key}{'Type'};
+
+	$HashCount{$Screenkey} = $Screenkey;
+	$HashCount{$Screenkey}= {0 =&gt;  $ScreenNameCount{$Screenkey}};
+
+		if ($Screenkey eq $ScreenkeyOld) {
+	$HashCount{$Screenkey} = {$i =&gt; "\\t \\t \\t \\t\&amp; \\mytabhead{$Description} \\t\&amp; $Type \\t\\\\ \\hline \\n $i - $Screenkey - $ScreenkeyOld"};
+	$i++;
+} else {
+	$HashCount{$Screenkey} = {$i =&gt; "\\mytabhead{$Screenkey} \\t\&amp; \\mytabhead{$Description} \\t\&amp; $Type \\t\\\\ \\hline \\n $i - $Screenkey - $ScreenkeyOld"};
+	$i=1;
+}
+	$ScreenkeyOld = $Screenkey;
+
+	
+}
+print "\n\n\n";
+print Dumper(%HashCount);
+print "\n\n\n";
+print Dumper \%ScreenNameCount;
+print "\n\n\n";
+&lt;/code&gt;
+&lt;br /&gt;
+&lt;p&gt;
+The .tex file should look what is below. "Trend to USB" has one button, so since the first button is the last it needs to end with \hline. "Alarms" has three and they all fit on the same page so the first 2 buttons end in \cline {2-11} and the last end in \hline. "Flow Diagram" has three buttons also but there is only room for one more button on the page. So the first button will end in \hline \pagebreak thus ending the page and restarting the count to 5. The next two buttons follow the same format, First button on the new page (the Second Flow Diagram Button) will end in \Cline{2-11}, and the last will end in \hline. The first button on the page must also start with "\\mytabhead{Flow Diagram}" verses the three tabs.&lt;/p&gt;&lt;br/&gt;
+&lt;code&gt;
+\multirow{1}{0.85in}{\mytabhead{Trend to USB}} 	&amp; \mytabhead{Start/Stop Trend Toggle} 	&amp; On/Off  \hline	
+\multirow{3}{0.85in}{\mytabhead{Alarms}} 		&amp; \mytabhead{Alarm Trigger} 			&amp;  Momentary \cline{2-11}
+												&amp; \mytabhead{Alarm Acknowledge} 		&amp; On/Off \cline{2-11}
+												&amp; \mytabhead{Alarm Reset} 				&amp; On/Off \hline
+\multirow{1}{0.85in}{\mytabhead{Alarms}} 		&amp; \mytabhead{Sequence Advance} 			&amp;  Momentary \hline\pagebreak
+\multirow{2}{0.85in}{\mytabhead{Alarms}} 		&amp; \mytabhead{Sequence Hold} 			&amp; On/Off \cline{2-11}
+												&amp; \mytabhead{Sanitize Enable/Disable} 	&amp; On/Off \hline
+&lt;/code&gt;
+&lt;br/&gt;
+&lt;p&gt;I'm able to get the hash to look like this with the code above:&lt;/p&gt;&lt;br /&gt;
+&lt;code&gt;
+$VAR1 = 'Trend to USB';
+$VAR2 = {
+          '3' =&gt; '\\mytabhead{Trend to USB} \\t&amp; \\mytabhead{Start/Stop Trend Toggle} \\t&amp; On/Off \\t\\\\ \\hline \\n 3 - Trend to USB - Flow Diagram'
+        };
+$VAR3 = 'Alarms';
+$VAR4 = {
+          '2' =&gt; '\\t \\t \\t \\t&amp; \\mytabhead{Alarm Trigger} \\t&amp; Momentary \\t\\\\ \\hline \\n 2 - Alarms - Alarms'
+        };
+$VAR5 = 'Flow Diagram';
+$VAR6 = {
+          '2' =&gt; '\\t \\t \\t \\t&amp; \\mytabhead{Sequence Hold} \\t&amp; Momentary \\t\\\\ \\hline \\n 2 - Flow Diagram - Flow Diagram'
+        };
+&lt;/code&gt;
+&lt;br /&gt;
+&lt;p&gt; When I want it to look like this:&lt;/p&gt;&lt;br/&gt;
+&lt;code&gt;
+$VAR1 = 'Trend to USB';
+$VAR2 = {
+          '0' =&gt; 1,
+          '1' =&gt; '\\mytabhead{Trend to USB} \\t&amp; \\mytabhead{Start/Stop Trend Toggle} \\t&amp; On/Off \\t\\\\ \\hline \\n 1 - Trend to USB - Old'
+        };
+$VAR3 = 'Alarms';
+$VAR4 = {
+          '0' =&gt; 3,
+		  '1' =&gt; '\\mytabhead{Alarms}  \\t&amp; \\mytabhead{Alarm Trigger} \\t&amp; Momentary \\t\\\\ \\hline \\n 1 - Alarms - Trend to USB'
+		  '2' =&gt; '\\t \\t \\t \\t&amp; \\mytabhead{Alarm Acknowledge} \\t&amp; On/Off \\t\\\\ \\hline \\n 2 - Alarms - Alarms'
+		  '3' =&gt; '\\t \\t \\t \\t&amp; \\mytabhead{Alarm Reset} \\t&amp; On/Off \\t\\\\ \\hline \\n 3 - Alarms - Alarms'
+        };
+$VAR5 = 'Flow Diagram';
+$VAR6 = {
+		  '0' =&gt; 3,
+		  '1' =&gt; '\\mytabhead{Flow Diagram}  \\t&amp; \\mytabhead{Sequence Advance} \\t&amp; Momentary \\t\\\\ \\hline \\n 1 - Flow Diagram - Alarms'
+          '2' =&gt; '\\t \\t \\t \\t&amp; \\mytabhead{Sequence Hold} \\t&amp; Momentary \\t\\\\ \\hline \\n 2 - Flow Diagram - Flow Diagram'
+		  '3' =&gt; '\\t \\t \\t \\t&amp; \\mytabhead{Sanitize Enable/Disable} \\t&amp; On/Off \\t\\\\ \\hline \\n 3 - Flow Diagram - Flow Diagram'
+        };
+&lt;/code&gt;&lt;br/&gt;
+&lt;br/&gt;
+&lt;p&gt; From here my thought was to use the button count ($hash{ScreenName}{0}) for each button to fill in the number on the .tex file (\multirow{???}) and count up to the Button count while also tracking buttons per page and somehow splitting the remaining and putting on the next page.&lt;/p&gt;&lt;br/&gt;
+
+&lt;p&gt; I know now I'm in way over my head lol please help me get further in this task. I don't want to have to do this manually in a word document. Thanks you for any help.&lt;br/&gt;&lt;br/&gt;Mel&lt;/p&gt;</doctext>
+<thread id="11133631">
+<node id="11133635"><node id="11133661"/>
+</node>
+<node id="11133647"><node id="11133660"><node id="11133664"/>
+</node>
+</node>
+</thread></node>

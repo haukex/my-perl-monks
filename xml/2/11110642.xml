@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110642" title="Printing large numbers with commas to show thousands groups." created="2019-12-26 20:13:50" updated="2019-12-26 20:13:50" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="1199630">jnorden</author>
+<doctext field_name="doctext">Here is yet another answer to this ancient and oft-asked question (for linux at least).
+
+&lt;p&gt;
+The standard advice is found in
+[doc://perlfaq5#How-can-I-output-my-numbers-with-commas-added%3f | perlfaq5],
+on [id://110137 | perlmonks], and 
+&lt;A href="https://stackoverflow.com/questions/33442240/"&gt;
+elsewhere&lt;/A&gt;.
+Using Number::Format or a commify() sub works well, but isn't very convenient
+for modifying existing code that was written with printf.  It seems unlikely
+that perl's printf will ever support %'d and friends
+(see &lt;A href="http://man7.org/linux/man-pages/man3/printf.3.html#DESCRIPTION"&gt;
+printf(3)&lt;/A&gt;, scroll to "Flag Characters").
+&lt;/p&gt;&lt;p&gt;
+
+However, almost any linux system has a /usr/bin/printf command with %'
+support. So, the simple definition
+
+&lt;code&gt;
+  sub cprintf {system('/usr/bin/printf', @_)}
+&lt;/code&gt;
+
+will let you use
+&lt;code&gt;
+ cprintf("There are at least %'d ways to do it!\n", 42e6)
+&lt;/code&gt;
+to print:
+&lt;em&gt;There are at least 42,000,000 ways to do it!&lt;/em&gt;
+
+&lt;/p&gt;&lt;p&gt;
+
+For this to work, your LC_NUMERIC environment variable should be set to a
+locale that has a "thousands separator", such as en_US.UTF-8.  It seems to
+work quite well, at least for simple cases.  To modify existing code, just
+change your printf's to cprintf's and add apostrophe's to the formats as
+needed.  Less work than wrapping each argument with a subroutine call and
+changing each format to %s.  It also helps keep things clear and readable.
+&lt;/p&gt;&lt;p&gt;
+
+It's tempting to override the builtin printf, but that's not easy to
+do.  The 
+[doc://CORE]
+documentation lists printf as a special keyword.  (Playing with tied
+file-handles or other tricks might work, but doesn't seem worth it too me.)
+&lt;/p&gt;&lt;p&gt;
+
+On the other hand, if you want to auto-magically commify *all* your %d's, you
+could use:
+&lt;code&gt;
+  sub cprintf {
+    my($fmt)= shift;
+    $fmt=~s/%(-?\d*)d/%'$1d/g;
+    system('/usr/bin/printf', $fmt, @_)
+  }
+&lt;/code&gt;
+And then &lt;c&gt; cprintf("%d", 42e6) &lt;/c&gt; will print 42,000,000.
+&lt;/p&gt;&lt;p&gt;
+
+&lt;readmore&gt;
+
+Of course, there are plenty of potential pitfalls to this simple approach,
+including:
+&lt;ol&gt;
+&lt;li&gt; 
+Every cprintf execs a new process.  You probably don't want to call cprintf()
+42,000,000 times.
+&lt;/li&gt;&lt;li&gt;
+You can't use perl's %v format, and perl can't check for missing or extra args
+to cprintf like it does for printf.
+&lt;/li&gt;&lt;li&gt;
+Runtime errors from /usr/bin/printf may be hard to catch or diagnose.
+&lt;/li&gt;&lt;li&gt;
+To print to a file, you have to re-direct stdout.  Commified printing to a
+string (sprintf) in this way would be tricky.  Backtics invoke the shell,
+which would be fraught with danger. You'd need
+[mod://IPC::System::Simple] or something similar.
+&lt;/li&gt;&lt;li&gt;
+/usr/bin/printf has some unique features (some might be useful).  See the
+&lt;A href="https://www.gnu.org/software/coreutils/manual/html_node/printf-invocation.html"&gt;
+gnu coreutils &lt;/A&gt; docs, or try 'info coreutils printf' ('man printf' isn't very
+complete).
+&lt;/li&gt;&lt;/ol&gt;
+
+PS: To emphasize the caution above about backticks, do &lt;b&gt;not&lt;/b&gt; use
+&lt;code&gt; sub {system("/usr/bin/printf @_")}&lt;/code&gt; as your definition, since then
+system() might invoke a shell as well.  For example,
+
+&lt;code&gt;
+  system('/usr/bin/printf', 
+         'Bash uses backtics for cmd substitution, eg: %s',
+         '`ls *`')
+&lt;/code&gt;
+
+will print
+
+&lt;code&gt;
+  Bash uses backtics for cmd substitution, eg: `ls *`
+&lt;/code&gt;
+
+This works because perl puts two strings into **argv and then directly execs
+/usr/bin/printf.  But,
+
+&lt;code&gt;
+   system(
+'/bin/printf "Bash uses backtics for cmd substitution, eg: %s" `ls *`'
+           )
+&lt;/code&gt;
+
+will do something quite different, since perl will pass the single string to a
+shell, which will then execute ls.  Replace 'ls' with 'rm' (or, horrors,
+'rm&amp;nbsp;-rf') and you've got a disaster on your hands!
+
+&lt;/readmore&gt;
+&lt;hr&gt;
+Happy Holidays, and best wishes for the new year!
+&lt;br&gt;
+-Jeff
+&lt;/p&gt;
+</doctext>
+<thread id="11110642">
+<node id="11110659"><node id="11110671"><node id="11110676"><node id="11110778"/>
+</node>
+</node>
+</node>
+<node id="11110708"/>
+<node id="11110803"/>
+<node id="11163421"/>
+</thread></node>

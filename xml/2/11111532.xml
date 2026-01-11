@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111532" title="Re: Architecture advice, proxy or rebroadcast websocket" created="2020-01-17 11:31:36" updated="2020-01-17 11:31:36" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Personally, I'd implement your second suggestion (a multiplexer in Mojo), with the &lt;del&gt;third&lt;/del&gt;&lt;ins&gt;fourth&lt;/ins&gt; suggestion (DB) in second place, and the other two sound too complicated for my tastes &lt;c&gt;;-)&lt;/c&gt; Here's how I might have implemented the second option, with the sample server and client based on your code in [11110853]:&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;h3&gt;&lt;c&gt;serv.pl&lt;/c&gt;:&lt;/h3&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use Mojolicious::Lite -signatures;
+use Data::Dump qw/dd pp/;
+
+# morbo --listen='http://localhost:3000' serv.pl
+# This code assumes a single thread / no forking!
+
+my $single_client;
+websocket '/' =&gt; sub ($c) {
+	if ( defined $single_client ) {
+		$c-&gt;app-&gt;log-&gt;debug('WebSocket opened, rejecting');
+		$c-&gt;send("Too many client connections");
+		$c-&gt;tx-&gt;finish;
+		return;
+	}
+	$c-&gt;app-&gt;log-&gt;debug('WebSocket opened');
+	$c-&gt;inactivity_timeout(45);
+	$single_client = $c-&gt;tx;
+	my $timer_id;
+	$c-&gt;on(message =&gt; sub ($c, $msg) {
+		if ( uc $msg eq "RUN" ) {
+			if ( !defined $timer_id ) {
+				$c-&gt;send("Starting to run");
+				$timer_id = Mojo::IOLoop-&gt;recurring( 1 =&gt; sub {
+					# pretend to be a fragile server
+					if ( rand &gt; 0.97 ) {
+						$c-&gt;app-&gt;log-&gt;warn('Oops, disconnecting!');
+						$single_client-&gt;finish;
+					}
+					elsif ( rand &gt; 0.95 ) {
+						$c-&gt;app-&gt;log-&gt;warn('Oops, freezing!');
+						Mojo::IOLoop-&gt;remove($timer_id);
+					}
+					else { $c-&gt;send("Running ".(time-$^T)) }
+				} );
+			}
+			else { $c-&gt;send("Already running") }
+		}
+		elsif ( uc $msg eq "STOP" ) {
+			if ( defined $timer_id ) {
+				$c-&gt;send("Stopping...");
+				Mojo::IOLoop-&gt;remove($timer_id);
+				$timer_id = undef;
+			}
+			else { $c-&gt;send("Not running") }
+		}
+		elsif ( uc $msg eq "HEARTBEAT" ) { }
+		else { $c-&gt;send("Unknown command: $msg") }
+	});
+	$c-&gt;on(finish =&gt; sub ($c, $code, $reason=undef) {
+		$c-&gt;app-&gt;log-&gt;debug("WebSocket closed ".pp($code, $reason));
+		Mojo::IOLoop-&gt;remove($timer_id);
+		$single_client = undef;
+	});
+	$c-&gt;send("Connected... RUN|STOP");
+};
+app-&gt;start
+&lt;/c&gt;
+&lt;h3&gt;&lt;c&gt;cli.pl&lt;/c&gt;:&lt;/h3&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use Mojo::Base -strict, -signatures;
+use Mojo::UserAgent;
+use Mojo::IOLoop;
+use Data::Dump qw/dd pp/;
+
+# To connect to mux.pl: perl cli.pl ws://localhost:3001
+my $ADDR = @ARGV ? $ARGV[0] : 'ws://localhost:3000';
+
+say "Opening WebSocket...";
+my $ua = Mojo::UserAgent-&gt;new;
+$ua-&gt;inactivity_timeout(10); # must be more than mux's timeout
+$ua-&gt;websocket($ADDR =&gt; sub ($ua, $tx) {
+	die 'WebSocket handshake failed!'.pp($tx)
+		unless $tx-&gt;is_websocket;
+	my $timer_id = Mojo::IOLoop-&gt;recurring( 30 =&gt; sub {
+		say "Sending heartbeat";
+		$tx-&gt;send('HEARTBEAT');
+	} );
+	$tx-&gt;on(finish =&gt; sub ($tx, $code, $reason=undef) {
+		say "WebSocket closed ".pp($code, $reason);
+		Mojo::IOLoop-&gt;remove($timer_id);
+	});
+	$tx-&gt;on(message =&gt; sub ($tx, $msg) {
+		say "RX: ".pp($msg);
+	});
+	$tx-&gt;send('RUN');
+});
+
+Mojo::IOLoop-&gt;start unless Mojo::IOLoop-&gt;is_running;
+&lt;/c&gt;
+&lt;h3&gt;&lt;c&gt;mux.pl&lt;/c&gt;:&lt;/h3&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use Mojolicious::Lite -signatures;
+use Mojo::UserAgent;
+use Mojo::EventEmitter;
+use Data::Dump qw/dd pp/;
+
+# morbo --listen='http://localhost:3001' mux.pl
+# This code assumes a single thread / no forking!
+
+my $event = Mojo::EventEmitter-&gt;new;
+
+sub open_server_conn {
+	state $ua = Mojo::UserAgent-&gt;new;
+	$ua-&gt;inactivity_timeout(5); # must be less than client's timeout
+	app-&gt;log-&gt;debug("Opening WebSocket to server...");
+	$ua-&gt;websocket('ws://localhost:3000' =&gt; sub ($ua, $tx) {
+		die 'WebSocket handshake failed!'.pp($tx)
+			unless $tx-&gt;is_websocket;
+		my $timer_id = Mojo::IOLoop-&gt;recurring( 30 =&gt; sub {
+			app-&gt;log-&gt;debug("Sending heartbeat");
+			$tx-&gt;send('HEARTBEAT');
+		} );
+		$tx-&gt;on(finish =&gt; sub ($tx, $code, $reason=undef) {
+			app-&gt;log-&gt;debug("Server WebSocket closed "
+				.pp($code, $reason));
+			Mojo::IOLoop-&gt;remove($timer_id);
+			open_server_conn(); # reopen
+		});
+		$tx-&gt;on(message =&gt; sub ($tx, $msg) { # message from server
+			return if $msg=~/^Connected\b|^Starting\b/;
+			return unless $event-&gt;has_subscribers('message');
+			app-&gt;log-&gt;debug("Relaying ".pp($msg));
+			$event-&gt;emit( message =&gt; $msg );
+		});
+		$tx-&gt;send('RUN');
+	});
+}
+Mojo::IOLoop-&gt;next_tick(\&amp;open_server_conn);
+
+websocket '/' =&gt; sub ($c) { # client connections
+	$c-&gt;app-&gt;log-&gt;debug('Client connected');
+	$c-&gt;inactivity_timeout(45);
+	my $tx = $c-&gt;tx; # client transaction
+	my $cb = $event-&gt;on(message =&gt; sub ($e,$msg) { $tx-&gt;send($msg) });
+	$c-&gt;on(message =&gt; sub ($c, $msg) { # message from client
+		if ( uc $msg eq "RUN" ) { } # ignore client messages (for now)
+		elsif ( uc $msg eq "STOP" ) { }
+		elsif ( uc $msg eq "HEARTBEAT" ) { }
+		else { $tx-&gt;send("Unknown command: $msg") }
+	});
+	$c-&gt;on(finish =&gt; sub ($c, $code, $reason=undef) {
+		$c-&gt;app-&gt;log-&gt;debug("Client disconn ".pp($code, $reason));
+		$event-&gt;unsubscribe(message =&gt; $cb);
+		($tx,$cb) = ();
+	});
+	$c-&gt;send("Connected... RUN|STOP");
+};
+app-&gt;start
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Note how in the multiplexer, I'm using a [mod://Mojo::EventEmitter] to decouple the server messages from the client connections. Of course the code has a few assumptions that you are free to adapt, like whether you want to ignore or forward messages coming from each client to the server (in the latter case, you could also relay them via the event emitter using a different event name, for example), or and more generally how transparent you want to multiplexer to be (or not).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11111462</root_node>
+<parent_node field_name="parent_node">11111462</parent_node>
+<thread id="11111462">
+<node id="11111469"><node id="11111470"><node id="11111484"/>
+</node>
+</node>
+<node id="11111485"><node id="11111487"/>
+</node>
+<node id="11111532"><node id="11111538"/>
+</node>
+</thread></node>

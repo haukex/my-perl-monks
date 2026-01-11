@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11165030" title="wrap abbreviations in XML element" created="2025-05-16 05:06:50" updated="2025-05-16 05:06:50" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11162600">LexPl</author>
+<doctext field_name="doctext">&lt;p&gt;I have got a highly complex, nested XML document in encoding ISO-8859-1 which contains abbreviations.&lt;/p&gt;
+
+&lt;p&gt;Each abbreviation has two to three letters and each letter is directly followed by a full stop. The separator between each letter plus full stop might be&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;!!!emsp14;&lt;/li&gt;
+&lt;li&gt;!!!hairsp;&lt;/li&gt;
+&lt;li&gt;\s&lt;/li&gt;
+&lt;li&gt;&lt;i&gt;nothing!&lt;/i&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;You could define this as a regex: [a-zA-Z]\.((!!!emsp14;|!!!hairsp;|\s)?[a-zA-Z])+&lt;/p&gt;
+
+&lt;p&gt;I would like to wrap each abbreviation into an element &lt;abbrev&gt; and unify the separator whitespace to "!!!hairsp;"&lt;/p&gt;
+
+&lt;p&gt;This looks pretty easy, but there are some nasty &lt;b&gt;pitfalls&lt;/b&gt;: &lt;br/&gt; If two abbreviations are adjacent to each other, the problem of proper segmentation pops up. For example the string "a. A. z. B." could lead to &lt;code&gt;&lt;abbrev&gt;a.!!!hairsp;A.!!!hairsp;z.&lt;/abbrev&gt;&lt;/code&gt; which doesn't exist. The correct solution would be &lt;code&gt;&lt;abbrev&gt;a.!!!hairsp;A.&lt;/abbrev&gt;_&lt;abbrev&gt;z.!!!hairsp;B.&lt;/abbrev&gt;&lt;/code&gt; where the underscore stands for a space.&lt;/p&gt;
+
+&lt;p&gt;Another issue is the full stop at the end of a sentence and a following abbreviation: &lt;br/&gt; &lt;i&gt;"Hier müssen die richtigen Regeln einbezogen werde&lt;b&gt;n. Z.B.&lt;/b&gt; ist hier § 42 ..."&lt;/i&gt;. Of course, there exists no abbreviation "n. Z.B.", but the proper tagging would be: &lt;i&gt;"Hier müssen die richtigen Regeln einbezogen werde&lt;b&gt;n. &lt;abbrev&gt;Z.!!!hairsp;B.&lt;/abbrev&gt;&lt;/b&gt; ist hier § 42 ..."&lt;/i&gt;.&lt;/p&gt;
+
+&lt;p&gt;As the regex captures abbreviations with 2 letters and with 3 letters, it has to be taken care that a 3 letter abbreviation such as "m.w.N." won't be split into a two letter abbreviation "m.w." followed by "N."&lt;/p&gt;
+
+&lt;p&gt;I suppose that you will need a kind of knowledge base in your script for the proper segmentation, but I don't know how to do that.&lt;/p&gt;
+
+&lt;p&gt;The easy solution would be a bunch of changes:&lt;/p&gt;
+&lt;code&gt;
+!/usr/bin/perl
+use warnings;
+use strict;
+
+
+# for interactive mode
+my $infile = $ARGV[0];
+my $outfile = $ARGV[1];  
+
+open(IN, '&lt;' .  $infile) or die $!;
+open(OUT, '&gt;' . $outfile) or die $!;
+
+while(&lt;IN&gt;)
+{
+    
+    # wrap "a.A."
+    $_ =~ s[a\.!!!hairsp;A\.](&lt;abbrev n='2'&gt;a.!!!hairsp;A.&lt;/abbrev&gt;)g;
+    $_ =~ s[a\.!!!emsp14;A\.](&lt;abbrev n='2'&gt;a.!!!hairsp;A.&lt;/abbrev&gt;)g;   
+    $_ =~ s[a\.\sA\.](&lt;abbrev n='2'&gt;a.!!!hairsp;A.&lt;/abbrev&gt;)g;
+    $_ =~ s[a\.A\.](&lt;abbrev n='2'&gt;a.!!!hairsp;A.&lt;/abbrev&gt;)g;
+    # wrap "a.F."
+    $_ =~ s[a\.!!!hairsp;F\.](&lt;abbrev n='2'&gt;a.!!!hairsp;F.&lt;/abbrev&gt;)g;
+    $_ =~ s[a\.!!!emsp14;F\.](&lt;abbrev n='2'&gt;a.!!!hairsp;F.&lt;/abbrev&gt;)g;   
+    $_ =~ s[a\.\sF\.](&lt;abbrev n='2'&gt;a.!!!hairsp;F.&lt;/abbrev&gt;)g;
+    $_ =~ s[a\.F\.](&lt;abbrev n='2'&gt;a.!!!hairsp;F.&lt;/abbrev&gt;)g;
+    # wrap "d.h."
+    $_ =~ s[d\.!!!hairsp;h\.](&lt;abbrev n='2'&gt;d.!!!hairsp;h.&lt;/abbrev&gt;)g;
+    $_ =~ s[d\.!!!emsp14;h\.](&lt;abbrev n='2'&gt;d.!!!hairsp;h.&lt;/abbrev&gt;)g;   
+    $_ =~ s[d\.\sh\.](&lt;abbrev n='2'&gt;d.!!!hairsp;h.&lt;/abbrev&gt;)g;
+    $_ =~ s[d\.h\.](&lt;abbrev n='2'&gt;d.!!!hairsp;h.&lt;/abbrev&gt;)g;
+    # wrap "D.h."
+    $_ =~ s[D\.!!!hairsp;h\.](&lt;abbrev n='2'&gt;D.!!!hairsp;h.&lt;/abbrev&gt;)g;
+    $_ =~ s[D\.!!!emsp14;h\.](&lt;abbrev n='2'&gt;D.!!!hairsp;h.&lt;/abbrev&gt;)g;   
+    $_ =~ s[D\.\sh\.](&lt;abbrev n='2'&gt;D.!!!hairsp;h.&lt;/abbrev&gt;)g;
+    $_ =~ s[D\.h\.](&lt;abbrev n='2'&gt;D.!!!hairsp;h.&lt;/abbrev&gt;)g;
+    
+    print OUT $_;
+}
+
+close(IN);
+close(OUT);
+
+
+&lt;/code&gt;
+
+&lt;p&gt;Do you see a more efficient solution? And if yes, could you kindly show me how this would look like?&lt;/p&gt;</doctext>
+<thread id="11165030">
+<node id="11165031"><node id="11165032"><node id="11165033"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11165437" title="Re: Obtain the full path of a json key" created="2025-06-22 03:46:15" updated="2025-06-22 03:46:15" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I've tried many ways to obtain this info but failed. I'm using the library JSON::PP and function decode_json.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It would be best if you showed us what you tried and how it failed ([id://1177642|SSCCE]), because otherwise we can't tell if you're just asking us do your homework for you or (ab)using us as a code writing service. But since this was a nice little excercise, here's a freebie...&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use JSON::PP qw/decode_json/;
+
+# search a data structure recursively for a specific hash key
+# and return its "path" as a string if it is found
+sub get_path_by_key {
+    my ($data, $search_key) = @_;
+    # an array of the data items left to search, each being a hash
+    # with keys "d" for the data item and "p" for the item's path:
+    my @to_search = ( { d=&gt;$data, p=&gt;[] } );
+    while (@to_search) {
+        # get the item we're currently inspecting:
+        my $cur = shift @to_search;
+        if ( ref $$cur{d} eq 'ARRAY' ) {
+            # if the data item is an array, go through its indices
+            for my $i ( 0 .. $#{$$cur{d}} ) {
+                # skip any array values that aren't nested data:
+                next unless ref $cur-&gt;{d}[$i];
+                # put each of the array's values on the search list
+                push @to_search, { d=&gt;$cur-&gt;{d}[$i],
+                    # this means the output won't include indices:
+                    p=&gt;$$cur{p} };
+                    # this would be one way to include indices:
+                    #p=&gt;[ @{$$cur{p}}, "[$i]" ] };
+            }
+        }
+        elsif ( ref $$cur{d} eq 'HASH' ) {
+            # if the current data item is a hash,
+            # first check if it contains the search key:
+            if ( exists $cur-&gt;{d}{$search_key} ) {
+                # this builds the return value string:
+                return join '.', @{$$cur{p}}, $search_key;
+            }
+            # otherwise, go through the hash's keys:
+            for my $k ( sort keys %{$$cur{d}} ) {
+                # skip any hash values that aren't nested data:
+                next unless ref $cur-&gt;{d}{$k};
+                # put each of the hash's values on the search list
+                push @to_search, { d=&gt;$cur-&gt;{d}{$k},
+                    p=&gt;[ @{$$cur{p}}, $k ] };
+            }
+        }
+    }
+    return  # return nothing in case the key isn't found
+}
+
+# this is just an idiom to read the whole __DATA__ section:
+my $json = do { local $/; &lt;DATA&gt; };
+# decode the JSON string into a Perl data structure:
+my $data = decode_json($json);
+# use our function:
+my $path = get_path_by_key($data, 'Obj11AttributesObj1Key1');
+print "path=$path\n";
+
+__DATA__
+[ {
+    "Obj1": [ {
+        "Obj11Id": "Id11",
+        "Obj11Version": "v1",
+        "Obj11Attributes": {
+            "Obj11AttributesObj1": {
+                "Obj11AttributesObj1Key1": "1",
+                "Obj11AttributesObj1Key2": "3"
+            },
+            "Obj11AttributesObj2": {
+                "Obj11AttributesObj2Key1": "9"
+            }
+        }
+    }, {
+        "Obj12Id": "Id12",
+        "Obj12Version": "v1",
+        "Obj12Attributes": {
+            "Obj12AttributesObj1": {
+                "Obj12AttributesObj1Key1": "2",
+                "Obj12AttributesObj1Key2": "4"
+            },
+            "Obj12AttributesObj2": {
+                "Obj12AttributesObj2Key1": "8"
+            },
+            "Obj12AttributesArray1": [ {
+                "Obj12AttributesArray1Obj1Key1": 1
+            } ]
+        }
+    } ]
+}, {
+    "Obj2": [ {
+        "Obj21Id": "Id21",
+        "Obj21Version": "v1",
+        "Obj21Attributes": {
+            "Obj21AttributesObj1": {
+                "Obj21AttributesObj1Key1": "3",
+                "Obj21AttributesObj1Key2": "5"
+            },
+            "Obj21AttributesObj2": {
+                "Obj21AttributesObj2Key1": "7"
+            }
+        }
+    }, {
+        "Obj22Id": "Id22",
+        "Obj22Version": "v1",
+        "Obj22Attributes": {
+            "Obj22AttributesObj1": {
+                "Obj22AttributesObj1Key1": "4",
+                "Obj22AttributesObj1Key2": "6"
+            },
+            "Obj22AttributesObj2": {
+                "Obj22AttributesObj2Key1": "0"
+            },
+            "Obj22AttributesArray1": [ {
+                "Obj22AttributesArray1Obj1Key1": 1
+            } ]
+        }
+    } ]
+} ]
+&lt;/c&gt;
+&lt;p&gt;If you're new to Perl you'll probably need [doc://perlreftut] to understand much of the code.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11165436</root_node>
+<parent_node field_name="parent_node">11165436</parent_node>
+<thread id="11165436">
+<node id="11165437"/>
+<node id="11165438"/>
+<node id="11165439"/>
+<node id="11165440"><node id="11165449"><node id="11165451"/>
+</node>
+</node>
+</thread></node>

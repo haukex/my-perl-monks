@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1188409" title="Re: [OT] What is best practice for 'git reset'? (updated)" created="2017-04-20 09:46:14" updated="2017-04-20 09:46:14" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Not a git expert, but a quick test seemed to show me that &lt;c&gt;git reset --soft 2.12_002&lt;/c&gt; will leave the changes from the newer versions in the index, I don't think that's what you want, because a commit afterwards would put those changes back into the repo.&lt;/p&gt;
+&lt;p&gt;If you want to begin your work with a commit that undoes all the changes since 2.12_002, the following seems to work, even directly on master.&lt;/p&gt;
+&lt;c&gt;
+git revert --no-commit 2.12_002..
+git commit -m "Rewind to tag 2.12_002"
+# continue work here
+&lt;/c&gt;
+&lt;p&gt;Another approach might be to base the new branch on 2.12_002 and then later merge that branch back into master, &lt;strike&gt;clobbering all the changes in master at the same time&lt;/strike&gt; auto-resolving all conflicting hunks by favoring the start-anew branch. (&lt;b&gt;Update 2:&lt;/b&gt; Changed wording of the previous sentence after re-reading the [https://git-scm.com/docs/git-merge#git-merge-recursive|git-merge] docs. This is a &lt;b&gt;significant&lt;/b&gt; difference because changes in the master branch that don't conflict will still be reflected into the merge result! Perhaps the "ours" instead of "recursive" merge strategy might be better for clobbering, untested. If in doubt, use the above solution instead!)&lt;/p&gt;
+&lt;c&gt;
+git checkout -b start-anew 2.12_002
+# - make edits here -
+git checkout master
+git merge -s recursive -X theirs \
+  -m 'Merge branch "start-anew" (based on 2.12_002)' \
+  start-anew
+git branch -d start-anew
+git log --oneline --decorate --graph
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Here's how I generated the fake repo for testing:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+git init
+echo -e "Hello, World\n---" &gt;foo.txt
+git add foo.txt
+git commit -m 'Initial commit'
+for VER in 001 002 003 004
+do
+	VER="2.12_$VER"
+	echo -e "Added in $VER\n---" &gt;&gt;foo.txt
+	git commit -am "Edit for $VER"
+	git tag $VER
+done
+&lt;/c&gt;
+&lt;p&gt;And similarly the fake edit:&lt;/p&gt;
+&lt;c&gt;
+echo -e "Added in 2.12_005\n---" &gt;&gt;foo.txt
+git commit -am "Edit for 2.12_005"
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;&lt;i&gt;Update 2017-04-21:&lt;/i&gt; Just noticed this [http://www.nntp.perl.org/group/perl.module-authors/2017/04/msg10895.html|cross-posting to perl.module-authors]. Also, it appears we're talking about [mod://File::Path] version 2.12_004 ([https://github.com/jkeenan/File-Path|GitHub]).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1188388</root_node>
+<parent_node field_name="parent_node">1188388</parent_node>
+<thread id="1188388">
+<node id="1188389"/>
+<node id="1188409"/>
+<node id="1188553"/>
+</thread></node>

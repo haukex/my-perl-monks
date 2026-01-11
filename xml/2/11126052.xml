@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11126052" title="Re: Delete Lines Across Multiple Files" created="2020-12-31 12:16:50" updated="2020-12-31 12:16:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;It looks to me like the pieces of code relating to &lt;c&gt;$process_file&lt;/c&gt; and &lt;c&gt;$process_file2&lt;/c&gt; are basically identical, which means you can simply do the same thing in a loop. Note you've got a stray &lt;c&gt;.&lt;/c&gt; on the second-to-last line of your code, and the multiple &lt;c&gt;close $process_file&lt;/c&gt; statements don't make sense, as those variables hold the file names, not handles.&lt;/p&gt;
+&lt;c&gt;
+for my $process_file ($rrconfig::locodata, $rrconfig::availlocodata) {
+	open(my $data_file_handle, '&lt;', $process_file) or die("$process_file: $!");
+	my @data = &lt;$data_file_handle&gt;;
+	close($data_file_handle);
+	chomp(@data);
+	open(my $out_file_handle, '&gt;', $process_file) or die("$process_file: $!");
+	foreach my $line_from_file ( @data ) {
+		my @field = split( /\:/, $line_from_file );
+		next if( ($field[1] eq $delroad) &amp;&amp; ($field[2] == $delnumber) );
+		print $out_file_handle $line_from_file, "\n";
+	}
+	close $out_file_handle;
+}
+&lt;/c&gt;
+&lt;p&gt;Although I feel like I've been plugging it pretty often lately, note this code can be simplified using inplace editing, using either [doc://$^I] ([id://1216313|an example], but note that &lt;c&gt;-i&lt;/c&gt; has a few caveats like in some cases only issuing a warning when something goes wrong, instead of dying), or my module [mod://File::Replace]. This has the advantage of not having to load the entire file into memory, like the code above does.&lt;/p&gt;
+&lt;c&gt;
+use File::Replace 'replace3';
+
+for my $process_file ($rrconfig::locodata, $rrconfig::availlocodata) {
+	my ($infh, $outfh, $repl) = replace3($process_file);
+	while ( my $line = &lt;$infh&gt; ) {
+		chomp($line);
+		my @field = split( /\:/, $line );
+		next if ($field[1] eq $delroad) &amp;&amp; ($field[2] == $delnumber);
+		print $outfh $line, "\n";
+	}
+	$repl-&gt;finish;
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11126051</root_node>
+<parent_node field_name="parent_node">11126051</parent_node>
+<thread id="11126051">
+<node id="11126052"><node id="11126053"><node id="11126054"/>
+</node>
+</node>
+<node id="11126063"/>
+<node id="11126081"/>
+<node id="11126183"/>
+</thread></node>

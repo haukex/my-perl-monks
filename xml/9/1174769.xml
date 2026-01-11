@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1174769" title="Re^3: why are hex values not numbers?" created="2016-10-26 07:43:28" updated="2016-10-26 07:43:28" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [perl-diddler],&lt;/p&gt;
+&lt;p&gt;I think [BrowserUk] made a good point, I just wanted to expand on that: numeric literals really are different from strings. Numeric literals are numbers; the literal &lt;c&gt;0xAA&lt;/c&gt; means the number &lt;c&gt;170&lt;/c&gt;. In this example, note especially the last item in the list:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -le '$,=", "; print 42, 0xFF, 0b1111, 42 + 0xFF + 0b1111, 42 . 0xFF . 0b1111'
+42, 255, 15, 312, 4225515
+&lt;/c&gt;
+&lt;p&gt;Perl converts the literals internally before doing anything else with them.&lt;/p&gt;
+&lt;p&gt;Consider that there are limits on the size of integers that you can normally store in memory:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -le 'print 0xFFFFFFFF'
+4294967295
+$ perl -wMstrict -le 'print 0xFFFFFFFFF'
+Hexadecimal number &gt; 0xffffffff non-portable at -e line 1.
+68719476735
+$ perl -wMstrict -le 'print 0xFFFFFFFFFFFFFFFFF'
+Integer overflow in hexadecimal number at -e line 1.
+Hexadecimal number &gt; 0xffffffff non-portable at -e line 1.
+2.95147905179353e+20
+&lt;/c&gt;
+&lt;p&gt;Note that in each of the above examples, the results are exactly the same if you put a &lt;c&gt;hex("...")&lt;/c&gt; around the literals.&lt;/p&gt;
+&lt;p&gt;Next, consider that there isn't a similar limit on the size of strings:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -le 'print hex( "0x".("F" x 2**29) )'
+Integer overflow in hexadecimal number at -e line 1.
+Hexadecimal number &gt; 0xffffffff non-portable at -e line 1.
+Inf
+&lt;/c&gt;
+&lt;p&gt;That string, which is over 500MB, is much more likely to be some kind of data than a number - does it make sense that it should be converted to &lt;c&gt;Inf&lt;/c&gt; or some other floating-point number if the user accidentally uses it in numeric context? (Note even [doc://Math::BigInt] can't handle interpreting a hex number that big on my system!)&lt;/p&gt;
+&lt;p&gt;Now, &lt;i&gt;in theory,&lt;/i&gt; Perl could convert hexadecimal strings that are "small enough" to numbers automagically. But in such a theoretical solution, would it make sense that &lt;c&gt;0+"0xFFFFFFFF" eq "4294967295"&lt;/c&gt;, but &lt;c&gt;0+"0x1FFFFFFFF" eq "0"&lt;/c&gt;? Where does one draw the line which numbers are "small enough", and won't such a division cause confusion for the users? (Let's ignore for now the potential performance impact of adding the code to check for hexadecimal to Perl's &lt;c&gt;grok_number_flags&lt;/c&gt;.)&lt;/p&gt;
+&lt;p&gt;Instead, the design choice that literal numbers are fundamentally different from strings makes things much more consistent. Sure, one will have to call [doc://hex] and [doc://oct] a few times, but on the other hand, the argument can be made that calling those functions explicitly gives the code more clarity.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1172666</root_node>
+<parent_node field_name="parent_node">1174044</parent_node>
+<thread id="1172666">
+<node id="1172667"><node id="1172675"><node id="1172682"/>
+</node>
+</node>
+<node id="1172670"><node id="1172678"/>
+</node>
+<node id="1172671"><node id="1172680"><node id="1172681"><node id="1172712"/>
+</node>
+<node id="1172687"><node id="1172711"><node id="1172714"><node id="1172751"><node id="1172752"><node id="1172765"><node id="1172769"><node id="1172777"><node id="1172779"><node id="1172890"><node id="1172891"><node id="1173104"><node id="1173109"><node id="1173116"><node id="1173137"><node id="1173143"/>
+</node>
+</node>
+<node id="1173150"><node id="1173173"/>
+</node>
+<node id="1173169"><node id="1173170"><node id="1173211"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1172753"><node id="1172766"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1172726"><node id="1174044"><node id="1174049"/>
+<node id="1174769"/>
+</node>
+</node>
+<node id="1172764"><node id="1172768"/>
+</node>
+<node id="1172782"/>
+<node id="1172789"><node id="1172821"/>
+<node id="1172824"><node id="1172836"/>
+</node>
+</node>
+</thread></node>

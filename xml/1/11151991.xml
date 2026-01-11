@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11151991" title="IO::Select woes" created="2023-05-04 11:11:25" updated="2023-05-04 11:11:25" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;Dear Monks,&lt;/p&gt;
+I have a script which dumps a table.  When I pipe it to the same script, I use IO::Select and can_read() to check for input on STDOUT.  My script
+works fine when I run it through the debugger, but sadly can_read() fails to detect anything when I don't.  I tried writing a test script to see if I can reproduce
+the issue, but unfortunately the script works fine either way.
+
+&lt;p&gt;Interestingly, when I put a print statement (marked HERE) in my script, the can_read() seems to work.&lt;/p&gt;
+&lt;p&gt;Any ideas ?   Thank you very much for your time !!! &lt;/p&gt;
+
+
+
+&lt;code&gt;
+#!usr/bin/perl5.26.1
+use strict;
+use IO::Select;
+use Text::ASCIITable;
+
+$|=1;
+
+my $t = Text::ASCIITable-&gt;new({ headingText =&gt; 'Basket' });
+  
+$t-&gt;setCols('Id','Name','Price');
+$t-&gt;addRow(1,'Dummy product 1',24.4);
+$t-&gt;addRow(2,'Dummy product 2',21.2);
+$t-&gt;addRow(3,'Dummy product 3',12.3);
+$t-&gt;addRowLine();
+$t-&gt;addRow('','Total',57.9);
+
+print STDOUT $t ."\n";
+
+
+### print "checking pipe\n";  #&lt;====  HERE
+my $s = IO::Select-&gt;new();
+$s-&gt;add(\*STDIN);
+
+if ($s-&gt;can_read(.5)) {
+     print STDOUT "reading from pipe data\n";
+}
+&lt;/code&gt;
+
+
+
+&lt;code&gt;
+#
+# TEST RUN
+#
+# perl test.pl
+.------------------------------.
+|            Basket            |
++----+-----------------+-------+
+| Id | Name            | Price |
++----+-----------------+-------+
+|  1 | Dummy product 1 |  24.4 |
+|  2 | Dummy product 2 |  21.2 |
+|  3 | Dummy product 3 |  12.3 |
++----+-----------------+-------+
+|    | Total           |  57.9 |
+'----+-----------------+-------'
+
+
+# perl test.pl | perl test.pl
+.------------------------------.
+|            Basket            |
++----+-----------------+-------+
+| Id | Name            | Price |
++----+-----------------+-------+
+|  1 | Dummy product 1 |  24.4 |
+|  2 | Dummy product 2 |  21.2 |
+|  3 | Dummy product 3 |  12.3 |
++----+-----------------+-------+
+|    | Total           |  57.9 |
+'----+-----------------+-------'
+reading from pipe data
+&lt;/code&gt;</doctext>
+<reputation field_name="reputation">8</reputation>
+<thread id="11151991">
+<node id="11151992"><node id="11151993"/>
+</node>
+<node id="11151994"><node id="11151996"/>
+</node>
+<node id="11151995"><node id="11151999"/>
+<node id="11152005"/>
+</node>
+<node id="11151998"/>
+<node id="11152001"><node id="11152002"><node id="11152004"/>
+</node>
+<node id="11152003"/>
+</node>
+<node id="11152009"/>
+<node id="11152011"><node id="11152012"><node id="11152059"/>
+</node>
+</node>
+<node id="11152013"/>
+<node id="11152184"><node id="11152197"/>
+</node>
+</thread></node>

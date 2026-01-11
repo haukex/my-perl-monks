@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11135683" title="Re^3: How to test for empty hash?" created="2021-08-08 04:07:21" updated="2021-08-08 04:07:21" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;With all this talk of scalar, I had to look it up because, despite using Perl heavily for twenty years, I've never actually used it! Which reminded me that I have employed the equivalent "secret" version, namely the infamous inchworm ~~ secret operator&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Just a little nitpick: the "inchworm" isn't exactly equivalent, as it doesn't pass through lvalue context, which [doc://scalar] does [id://1201611|as of 5.22].&lt;/p&gt;
+&lt;c&gt;
+$ perlbrew exec perl -e 'for(scalar($#foo)) { $_=3 } warn "$] ".@foo."\n"' &gt;/dev/null
+5.034000 4
+5.032001 4
+5.030003 4
+5.028003 4
+5.026003 4
+5.024004 4
+5.022004 4
+5.020003 0
+5.018004 0
+$ perlbrew exec perl -e 'for(~~$#foo) { $_=3 } warn "$] ".@foo."\n"' &gt;/dev/null
+5.034000 0
+5.032001 0
+5.030003 0
+5.028003 0
+5.026003 0
+5.024004 0
+5.022004 0
+5.020003 0
+5.018004 0
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; The example above is one of the exceptions for when &lt;c&gt;~~&lt;/c&gt; is not equivalent to [doc://scalar] anyway:&lt;/p&gt;
+&lt;c&gt;
+$ perl -le 'print scalar($#foo)'
+-1
+$ perl -le 'print ~~$#foo'
+18446744073709551615
+&lt;/c&gt;
+&lt;p&gt;... but the point still stands (though interestingly, &lt;c&gt;my $foo="x"; for(scalar($foo)) {$_.="y"}&lt;/c&gt; worked even before 5.22).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11135626</root_node>
+<parent_node field_name="parent_node">11135680</parent_node>
+<thread id="11135626">
+<node id="11135629"/>
+<node id="11135630"><node id="11135632"/>
+<node id="11135646"/>
+</node>
+<node id="11135634"><node id="11135644"><node id="11135648"><node id="11135651"/>
+</node>
+</node>
+<node id="11135645"><node id="11135647"/>
+</node>
+</node>
+<node id="11135638"/>
+<node id="11135639"><node id="11135659"><node id="11135668"/>
+</node>
+</node>
+<node id="11135675"><node id="11135679"/>
+<node id="11135680"><node id="11135683"><node id="11135692"><node id="11135705"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

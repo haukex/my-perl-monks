@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1187530" title="Re: Tool to record subroutine calls &amp; return values" created="2017-04-09 14:37:34" updated="2017-04-09 14:37:34" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;A quick search on CPAN brought me to [mod://Devel::CallTrace], which ties into the Perl debugger mechanism, but doesn't provide arguments and return values (although the code seems short enough that I guess it could probably be extended). Then there's [mod://Debug::Trace], which works by simply wrapping the requested &lt;c&gt;sub&lt;/c&gt;s with code that prints their arguments and return values:&lt;/p&gt;
+&lt;c&gt;
+$ cat foo.pl 
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+sub foo { bar($_[0] x 3)."-".quz(ord($_[0])) }
+
+sub bar { $_[0].length($_[0]) }
+
+sub quz { $_[0].$_[0] }
+
+print foo($_), "\n" for 'a'..'b';
+
+$ perl -MDebug::Trace=foo,bar,quz foo.pl
+TRACE:	main::foo("a") called at foo.pl line 11 package main
+TRACE:	main::bar("aaa") called at foo.pl line 5 sub main::foo
+TRACE:	main::bar() returned: "aaa3"
+TRACE:	main::quz(97) called at foo.pl line 5 sub main::foo
+TRACE:	main::quz() returned: 9797
+TRACE:	main::foo() returned: ("aaa3-9797")
+aaa3-9797
+TRACE:	main::foo("b") called at foo.pl line 11 package main
+TRACE:	main::bar("bbb") called at foo.pl line 5 sub main::foo
+TRACE:	main::bar() returned: "bbb3"
+TRACE:	main::quz(98) called at foo.pl line 5 sub main::foo
+TRACE:	main::quz() returned: 9898
+TRACE:	main::foo() returned: ("bbb3-9898")
+bbb3-9898
+&lt;/c&gt;
+&lt;p&gt;At the bottom of the [mod://Devel::CallTrace] doc, there are a few more references to other modules.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Minor updates to wording.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1187528</root_node>
+<parent_node field_name="parent_node">1187528</parent_node>
+<thread id="1187528">
+<node id="1187529"><node id="1187533"><node id="1187536"/>
+<node id="1187539"/>
+</node>
+</node>
+<node id="1187530"/>
+<node id="1187532"/>
+<node id="1187534"/>
+<node id="1187564"/>
+</thread></node>

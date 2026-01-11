@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108385" title="Re^5: Batch file renaming - on identical name, keep only most recent file, based on dates" created="2019-11-06 12:27:02" updated="2019-11-06 12:27:02" _doctext_mode="lenient"><type id="11">note</type>
+<author id="922586">Lotus1</author>
+<doctext field_name="doctext">&lt;p&gt;I didn't notice that detail. Those dates in the example code seem to be something that was just typed in by the OP whereas the filenames seemed to be pasted in so I paid more attention to the filenames. My comment about &lt;c&gt;HH_mm_ss&lt;/c&gt; was referring to the actual filenames. If the OP were to provide an example that shows a format such as &lt;c&gt;?H_?m_?s&lt;/c&gt; then I would add a quick fix-it function to normalize those into a sane format and then sort. I still think my approach is a good one, especially for new Perl programmers. Some of my work needs to be supported by folks with limited programming experience or by people with limited Perl knowledge.&lt;/p&gt;
+
+&lt;p&gt;&lt;blockquote&gt;&lt;I&gt;IMHO that's also a very dangerous assumption to make.&lt;/I&gt;&lt;/blockquote&gt;
+
+I'm just doing this for fun and it's the OP's responsibility to check his work. The OP didn't provide much to go by. In my own work I do a lot of validation with logging so that files that don't meet my expectations are skipped. I start with a solution that works for a small data set and then run it on the full set of files and inspect the log. 
+
+&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Here is a version that pads the time stamps with zeros so they sort correctly.&lt;/p&gt;
+
+&lt;c&gt;
+use warnings;
+use strict;
+#use File::Copy;
+
+foreach( sort map { chomp;s/_(\d)_/_0$1_/g;s/_(\d)_/_0$1_/g;$_ } grep {/^\d+_\d\d\d\d_\d+_\d+_\d+_\d+_\d+_Table/} &lt;DATA&gt; ){
+
+    my $newname = $_;
+    
+    $newname =~ s/^[0-9_]+//;
+    printf "%38s%38s\n",$_,$newname;
+    
+    ## rename here.
+    #move $_, $newname or print "Error renaming &lt;$_&gt; $!\n";
+}
+
+__DATA__
+Test file names
+8_2007_5_22_15_34_23_Table_-_2007522_XYZ_W3.pdf
+8_2007_5_22_22_34_12_Table_-_2007522_XYZ_W3.pdf
+8_2007_5_2_15_34_23_Table_-_200752_XYZ_W3.pdf
+8_2007_5_2_22_34_12_Table_-_200752_XYZ_W3.pdf
+8_2007_5_2_5_34_23_Table_-_200752_XYZ_W3.pdf
+8_2007_5_2_2_34_12_Table_-_200752_XYZ_W3.pdf
+7_2007_5_22_16_35_23_Table_-_2007522_XYZ_W3.pdf
+7_2007_5_22_23_36_12_Table_-_2007522_XYZ_W3.pdf
+
+blanks and other things
+0
+8_3007
+ &amp;#8993;&amp;#9675;{§}&amp;#9562;
+
+&lt;/c&gt;
+&lt;p&gt;The output looks like this:&lt;/p&gt;
+&lt;c&gt;
+7_2007_05_22_16_35_23_Table_-_2007522_XYZ_W3.pdf            Table_-_2007522_XYZ_W3.pdf
+7_2007_05_22_23_36_12_Table_-_2007522_XYZ_W3.pdf            Table_-_2007522_XYZ_W3.pdf
+8_2007_05_02_02_34_12_Table_-_200752_XYZ_W3.pdf             Table_-_200752_XYZ_W3.pdf
+8_2007_05_02_05_34_23_Table_-_200752_XYZ_W3.pdf             Table_-_200752_XYZ_W3.pdf
+8_2007_05_02_15_34_23_Table_-_200752_XYZ_W3.pdf             Table_-_200752_XYZ_W3.pdf
+8_2007_05_02_22_34_12_Table_-_200752_XYZ_W3.pdf             Table_-_200752_XYZ_W3.pdf
+8_2007_05_22_15_34_23_Table_-_2007522_XYZ_W3.pdf            Table_-_2007522_XYZ_W3.pdf
+8_2007_05_22_22_34_12_Table_-_2007522_XYZ_W3.pdf            Table_-_2007522_XYZ_W3.pdf
+
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11108322</root_node>
+<parent_node field_name="parent_node">11108383</parent_node>
+<thread id="11108322">
+<node id="11108323"/>
+<node id="11108326"><node id="11108327"/>
+</node>
+<node id="11108328"/>
+<node id="11108332"/>
+<node id="11108345"/>
+<node id="11108347"><node id="11108357"><node id="11108382"><node id="11108383"><node id="11108385"><node id="11108392"><node id="11108395"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11108406"><node id="11108430"><node id="11108453"/>
+</node>
+</node>
+<node id="11110370"/>
+</thread></node>

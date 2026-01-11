@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230821" title="Re^2: require in script breaks module" created="2019-03-04 03:13:29" updated="2019-03-04 03:13:29" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1211656">chrstphrchvz</author>
+<doctext field_name="doctext">&lt;p&gt;Thanks for the reply and suggesting possible workarounds.&lt;/p&gt;
+
+&lt;p&gt;Peeking inside the .ph file on my machines, it's mostly just more &lt;tt&gt;require&lt;/tt&gt;s. So unfortunately neither &lt;tt&gt;do 'sys/ioctl.ph'&lt;/tt&gt; nor &lt;tt&gt;delete $INC{'sys/ioctl.ph'}; require 'sys/ioctl.ph'&lt;/tt&gt; alone yield any improvement.&lt;/p&gt;
+
+&lt;p&gt;I ended up moving the &lt;tt&gt;require&lt;/tt&gt; to where it would be run once during the module's import, only nested in an &lt;tt&gt;eval&lt;/tt&gt; so that any error is saved to a package variable. Then, when the feature requiring &lt;tt&gt;ioctl&lt;/tt&gt; is used, any error will be &lt;tt&gt;croak&lt;/tt&gt;ed; and tests can check the package variable to know whether to skip. Here's the implementation: &lt;a href="https://github.com/chrstphrchvz/perl-tcl-ptk/commit/75abce83f7"&gt;https://github.com/chrstphrchvz/perl-tcl-ptk/commit/75abce83f7&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Maybe there is something more elaborate that resists the effects of &lt;tt&gt;require&lt;/tt&gt; appearing in "user" code, but because this particular feature in the module is due for replacement (likely by something written in C/XS), I've opted for something low-effort and less invasive as it were.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1230761</root_node>
+<parent_node field_name="parent_node">1230763</parent_node>
+<thread id="1230761">
+<node id="1230762"/>
+<node id="1230763"><node id="1230821"><node id="1230872"/>
+</node>
+</node>
+</thread></node>

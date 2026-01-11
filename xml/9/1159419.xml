@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1159419" title="Re: LWP not POSTING (400 Bad Request)" created="2016-04-03 07:01:20" updated="2016-04-03 07:01:20" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [HollyWould],&lt;/p&gt;
+&lt;p&gt;From your example log message, it looks to me like the parameters &lt;c&gt;key&lt;/c&gt;, &lt;c&gt;source&lt;/c&gt; and &lt;c&gt;format&lt;/c&gt; are supposed to be encoded into the URI - whether or not they're also part of the POST body I can't tell, you'd have to take a look at the traffic (e.g. [https://www.wireshark.org/|Wireshark]) and tell us more about that.&lt;/p&gt;
+&lt;p&gt;It's been a while since I used raw LWP, so I might be forgetting an easier way, but one way to get those parameters onto the URI is with [mod://URI]:&lt;/p&gt;
+&lt;c&gt;
+# ...
+use URI;
+my $uri = URI-&gt;new($server_endpoint);
+$uri-&gt;query_form(
+    key    =&gt; $server_api_key,
+    source =&gt; $encoded,
+    format =&gt; "json",
+);
+my $req = HTTP::Request-&gt;new(POST =&gt; $uri);
+# ...
+&lt;/c&gt;
+&lt;p&gt;This gets me the URL query string &lt;c&gt;...?key=xxxx&amp;source=http%3A%2F%2Fphotos.mysite.com%2F128.jpg&amp;format=json&lt;/c&gt; which looks like what you want.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1159412</root_node>
+<parent_node field_name="parent_node">1159412</parent_node>
+<thread id="1159412">
+<node id="1159416"><node id="1159420"/>
+</node>
+<node id="1159419"><node id="1159421"/>
+</node>
+</thread></node>

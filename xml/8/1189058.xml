@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1189058" title="Re: Array of variables" created="2017-04-27 12:01:26" updated="2017-04-27 12:01:26" _doctext_mode="lenient"><type id="11">note</type>
+<author id="832495">choroba</author>
+<doctext field_name="doctext">@Variable and @Variables are two different... well... variables.
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+use feature qw{ say };
+
+my $Map_Request_Date  = 'Jan 1 2017 12:00';
+my $Map_Due_Date      = 'Jan 31 2017 12:00';
+my $Map_Cutover_Date  = 'Feb 28 2017 23:59';
+my $Map_Complete_Date = 'Mar 1 2017 12:01';
+my $Map_Approved_Date = 'Dec 31 1999 0:01';
+
+my @Variables = ($Map_Request_Date, $Map_Due_Date, $Map_Cutover_Date,
+                 $Map_Complete_Date, $Map_Approved_Date);
+
+my $X = 0;
+for my $Date_Ref (@Variables) {
+    say $Date_Ref;
+    $Date_Ref =~ s/ +/ /; #When day is a single digit it creates two white spaces
+    my ($Month, $Day, $Year, $Time) = split / /, $Date_Ref, 4;
+    my %Months = ( Jan =&gt; '01',  Feb =&gt; '02',  Mar =&gt; '03', Apr =&gt; '04',
+                   May =&gt; '05',  Jun =&gt; '06',  Jul =&gt; '07', Aug =&gt; '08',
+                   Sep =&gt; '09',  Oct =&gt; '10',  Nov =&gt; '11', Dec =&gt; '12'  );
+
+    $Day = "0$Day" if 1 == length $Day;
+    $Variables[$X++] = "$Year-$Months{$Month}-$Day";
+}
+say for @Variables;
+&lt;/c&gt;&lt;P&gt;
+
+&lt;C&gt;for&lt;/C&gt; (same as &lt;C&gt;foreach&lt;/C&gt; ) aliases the values it iterates over, so you don't need the array at all:
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+use feature qw{ say };
+
+my $Map_Request_Date  = 'Jan 1 2017 12:00';
+my $Map_Due_Date      = 'Jan 31 2017 12:00';
+my $Map_Cutover_Date  = 'Feb 28 2017 23:59';
+my $Map_Complete_Date = 'Mar 1 2017 12:01';
+my $Map_Approved_Date = 'Dec 31 1999 0:01';
+
+for my $Date_Ref ($Map_Request_Date, $Map_Due_Date, $Map_Cutover_Date,
+                  $Map_Complete_Date, $Map_Approved_Date
+) {
+    say $Date_Ref;
+    $Date_Ref =~ s/ +/ /;
+    my ($Month, $Day, $Year, $Time) = split / /, $Date_Ref, 4;
+    my %Months = ( Jan =&gt; '01',  Feb =&gt; '02',  Mar =&gt; '03', Apr =&gt; '04',
+                   May =&gt; '05',  Jun =&gt; '06',  Jul =&gt; '07', Aug =&gt; '08',
+                   Sep =&gt; '09',  Oct =&gt; '10',  Nov =&gt; '11', Dec =&gt; '12'  );
+
+    $Day = sprintf '%02d', $Day;
+    $Date_Ref = "$Year-$Months{$Month}-$Day";
+}
+say for $Map_Request_Date, $Map_Due_Date, $Map_Cutover_Date,
+        $Map_Complete_Date, $Map_Approved_Date;
+&lt;/c&gt;&lt;P&gt;
+
+Note the usage of [doc://sprintf] to format the day.&lt;P&gt;
+
+But it's even easier when you use [METAMOD://Time::Piece] :
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+use feature qw{ say };
+
+use Time::Piece;
+
+my $Map_Request_Date  = 'Jan  1 2017 12:00';
+my $Map_Due_Date      = 'Jan 31 2017 12:00';
+my $Map_Cutover_Date  = 'Feb 28 2017 23:59';
+my $Map_Complete_Date = 'Mar  1 2017 12:01';
+my $Map_Approved_Date = 'Dec 31 1999 0:01';
+
+for my $Date_Ref ($Map_Request_Date, $Map_Due_Date, $Map_Cutover_Date,
+                  $Map_Complete_Date, $Map_Approved_Date
+) {
+    say $Date_Ref;
+    my $tp = 'Time::Piece'-&gt;strptime($Date_Ref, '%b %d %Y %H:%M');
+    $Date_Ref = $tp-&gt;ymd;
+}
+say for $Map_Request_Date, $Map_Due_Date, $Map_Cutover_Date,
+        $Map_Complete_Date, $Map_Approved_Date;
+&lt;/c&gt;&lt;P&gt;
+
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-832495"&gt;
+&lt;c&gt;($q=q:Sq=~/;[c](.)(.)/;chr(-||-|5+lengthSq)`"S|oS2"`map{chr |+ord
+}map{substrSq`S_+|`|}3E|-|`7**2-3:)=~y+S|`+$1,++print+eval$q,q,a,&lt;/c&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.1416} --&gt;</doctext>
+<root_node field_name="root_node">1189054</root_node>
+<parent_node field_name="parent_node">1189054</parent_node>
+<thread id="1189054">
+<node id="1189056"><node id="1189060"><node id="1189061"/>
+</node>
+</node>
+<node id="1189057"/>
+<node id="1189058"><node id="1189062"/>
+<node id="1189068"/>
+<node id="1189072"/>
+</node>
+<node id="1189059"/>
+<node id="1189085"/>
+<node id="1189106"/>
+<node id="1189110"/>
+<node id="11139620"><node id="11139626"><node id="11139628"/>
+</node>
+<node id="11139629"><node id="11139630"><node id="11139644"><node id="11139648"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

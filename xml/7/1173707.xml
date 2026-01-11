@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1173707" title="Re^3: Data::Dumper with unicode" created="2016-10-11 05:53:20" updated="2016-10-11 05:53:20" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [bash],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Only for debugging So data should be human readable.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I think that's a tricky situation, because if you're debugging, it may be important to be able to see the differences between, for example, various Unicode whitespace characters. I suspect you only want to prevent certain characters from being escaped? That means you'd have to pick and choose.&lt;/p&gt;
+&lt;p&gt;Personally I don't find [mod://Data::Printer]'s dependency tree to be too bad. But just in case you're looking for something else, it might be possible to roll your own with [mod://Data::Dump::Filtered]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use open qw/:std :utf8/;
+
+my $str = "\$\x{2142}\x{1D1A}\x{018E}\x{0500}\x{2003}\"";
+
+use Data::Dump 'pp';
+use Data::Dump::Filtered qw/add_dump_filter/;
+
+add_dump_filter( sub {
+        my ($ctx, $objref) = @_;
+        if ($ctx-&gt;is_scalar) {
+            #TODO: this doesn't escape, not really that great!
+            return { dump =&gt; "\"$$objref\"" };
+        }
+        return; # normal dumping
+    } );
+
+print '$str=',pp($str),";\n";
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1173700</root_node>
+<parent_node field_name="parent_node">1173706</parent_node>
+<thread id="1173700">
+<node id="1173702"><node id="1173706"><node id="1173707"><node id="1173717"/>
+</node>
+</node>
+</node>
+</thread></node>

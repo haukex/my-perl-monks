@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11119656" title="Re^2: Split does not behave like a subroutine" created="2020-07-22 10:35:39" updated="2020-07-22 10:35:39" _doctext_mode="lenient"><type id="11">note</type>
+<author id="907297">bojinlund</author>
+<doctext field_name="doctext">&lt;p&gt;Thanks [haukex] for the answer!r&lt;/p&gt;
+
+&lt;h4&gt;Sometimes there are contradictions. ... &lt;i&gt;Can you show some examples?&lt;/i&gt;&lt;/h4&gt;
+
+&lt;p&gt;My original problem was to understand the way
+from the subroutine call in the script source code (the list of expressions)
+to the list of parameters (formal argument) in the definition of the subroutine.
+&lt;/p&gt;
+
+&lt;blockquote&gt;
+LISTs do automatic interpolation of sublists. That is, when a LIST is evaluated, each element of the list is evaluated in list context, and the resulting list value is interpolated into LIST just as if each individual element were a member of LIST (from [doc://perldata#List-value-constructors])
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+Like the flattened incoming parameter list, the return list is also flattened on return.
+(from [doc://perlsub])
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+The Perl model for function call and return values is simple:
+all functions are passed as parameters one single flat list of scalars,
+and all functions likewise return to their caller one single flat list of scalars.
+Any arrays or hashes in these call and return lists will collapse, losing their identities
+--but you may always use pass-by-reference instead to avoid this.
+Both call and return lists may contain as many or as few scalar elements as you'd like.
+(from [doc://perlsub])
+&lt;/blockquote&gt;
+
+&lt;p&gt;Based on those quotes, learning a little about the Perl interpreter and using [DOC://B::Deparse] and [METAMOD://B::Concise],
+I have learnt a more perlish way of thinking.
+&lt;ul&gt;
+&lt;li&gt;
+LIST is a list of expressions in the source code.
+&lt;/li&gt;&lt;li&gt;
+When LIST is evaluated the result is stored on the argument stack in the interpreter.
+During this evaluation the result is flatten.
+&lt;/li&gt;&lt;li&gt;
+This is the argument list, the input to the subroutine.
+This list contains references to the argument values.
+&lt;/li&gt;&lt;li&gt;
+The argument values can be accessed from the subroutine definition by using @_ and $_[n].
+@_ is the list of argument values. $_[n] is the value of argument n.
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/p&gt;
+
+&lt;p&gt;I have several times reread the parts of the documentation which cover the subroutine call.
+Have still problems to understand everything.
+I do not understand it so well that I can say there are contradictions&lt;/p&gt;
+
+&lt;p&gt;Probably I am still thinking that the text describes what you see in the source and not the result after evaluation.
+&lt;/p&gt;
+
+&lt;p&gt;The word "list" is  often used. Often it is not clear to which list it refers.
+The word list is also part of the term "list value". Is "list values" many "list value" or is it the values in a list?&lt;/p&gt;
+
+
+&lt;h4&gt;Interface to split&lt;/h4&gt;
+
+&lt;p&gt;How or where can you find the restrictions on the arguments to split?&lt;/p&gt;
+
+&lt;p&gt;This &lt;c&gt;split $_[0], $_[1], $_[2];&lt;/c&gt; and this &lt;c&gt;split $_[0], @_[1,2];&lt;/c&gt;
+should have given the same result ("a", "b", "c")!&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+use 5.010;
+
+use Path::Tiny qw( path );
+use Data::Dump qw(dump dd ddx);
+use B::Concise qw(set_style add_callback walk_output);
+
+sub concise {
+    my $case = shift;
+    my $fh;
+    say '';
+    my $walker = B::Concise::compile( '-src', '-basic', $case );
+    $fh = path( 'split_call_' . $case )-&gt;openw_utf8;
+    #walk_output($fh);
+    $walker-&gt;();
+    say '';
+    $walker = B::Concise::compile( '-src', '-exec', $case );
+    $walker-&gt;();
+}
+
+my $pat   = ':';
+my $str   = 'a:b:c';
+my $limit = -1;
+my @par   = ( $pat, $str, $limit );
+
+if (1) {
+    sub splitC {
+        my @rv = split $_[0], $_[1], $_[2];
+        return \@rv;
+    }
+
+    ddx splitC(@par);
+
+    concise('splitC');
+}
+
+if (1) {
+    sub splitC1 {
+        my @rv = split $_[0], @_[1,2];
+        return \@rv;
+    }
+
+    ddx splitC1(@par);
+
+    concise('splitC1');
+}
+
+__DATA__
+
+Part of output:
+
+# split_call.pl:34: ["a", "b", "c"]
+
+main::splitC:
+8  &lt;1&gt; leavesub[1 ref] K/REFC,1 -&gt;(end)
+-     &lt;@&gt; lineseq KP -&gt;8
+# 30:         my @rv = split $_[0], $_[1], $_[2];
+1        &lt;;&gt; nextstate(main 3 split_call.pl:30) v:*,&amp;,{,x*,x&amp;,x$,$,fea=1 -&gt;2
+4        &lt;/&gt; split(/":"/ =&gt; @rv:3,4)[t5] vK/LVINTRO,ASSIGN,LEX -&gt;5
+3           &lt;|&gt; regcomp(other-&gt;4) sK -&gt;9
+-              &lt;1&gt; ex-aelem sK/2 -&gt;3
+-                 &lt;1&gt; ex-rv2av sKR/STRICT,1 -&gt;-
+2                    &lt;#&gt; aelemfast[*_] s -&gt;3
+-                 &lt;0&gt; ex-const s -&gt;-
+-           &lt;1&gt; ex-aelem sK/2 -&gt;a
+-              &lt;1&gt; ex-rv2av sKR/STRICT,1 -&gt;-
+9                 &lt;#&gt; aelemfast[*_] s/key=1 -&gt;a
+-              &lt;0&gt; ex-const s -&gt;-
+-           &lt;1&gt; ex-aelem sK/2 -&gt;4
+-              &lt;1&gt; ex-rv2av sKR/STRICT,1 -&gt;-
+a                 &lt;#&gt; aelemfast[*_] s/key=2 -&gt;4
+-              &lt;0&gt; ex-const s -&gt;-
+# 31:         return \@rv;
+5        &lt;;&gt; nextstate(main 4 split_call.pl:31) v:*,&amp;,{,x*,x&amp;,x$,$,fea=1 -&gt;6
+-        &lt;@&gt; return K -&gt;-
+-           &lt;0&gt; pushmark s -&gt;6
+7           &lt;1&gt; srefgen sK/1 -&gt;8
+-              &lt;1&gt; ex-list lKRM -&gt;7
+6                 &lt;0&gt; padav[@rv:3,4] lRM -&gt;7
+
+# split_call.pl:45: [-1]
+
+main::splitC1:
+i  &lt;1&gt; leavesub[1 ref] K/REFC,1 -&gt;(end)
+-     &lt;@&gt; lineseq KP -&gt;i
+# 41:         my @rv = split $_[0], @_[1,2];
+b        &lt;;&gt; nextstate(main 10 split_call.pl:41) v:*,&amp;,{,x*,x&amp;,x$,$,fea=1 -&gt;c
+e        &lt;/&gt; split(/":"/ =&gt; @rv:10,11)[t5] vK/LVINTRO,ASSIGN,LEX,IMPLIM -&gt;f
+d           &lt;|&gt; regcomp(other-&gt;e) sK -&gt;j
+-              &lt;1&gt; ex-aelem sK/2 -&gt;d
+-                 &lt;1&gt; ex-rv2av sKR/STRICT,1 -&gt;-
+c                    &lt;#&gt; aelemfast[*_] s -&gt;d
+-                 &lt;0&gt; ex-const s -&gt;-
+o           &lt;@&gt; aslice sK -&gt;p
+j              &lt;0&gt; pushmark s -&gt;k
+-              &lt;1&gt; ex-list lK -&gt;m
+-                 &lt;0&gt; ex-pushmark s -&gt;k
+k                 &lt;$&gt; const[IV 1] s -&gt;l
+l                 &lt;$&gt; const[IV 2] s -&gt;m
+n              &lt;1&gt; rv2av[t4] sKR/STRICT,1 -&gt;o
+m                 &lt;#&gt; gv[*_] s -&gt;n
+p           &lt;$&gt; const[IV 0] s -&gt;e
+# 42:         return \@rv;
+f        &lt;;&gt; nextstate(main 11 split_call.pl:42) v:*,&amp;,{,x*,x&amp;,x$,$,fea=1 -&gt;g
+-        &lt;@&gt; return K -&gt;-
+-           &lt;0&gt; pushmark s -&gt;g
+h           &lt;1&gt; srefgen sK/1 -&gt;i
+-              &lt;1&gt; ex-list lKRM -&gt;h
+g                 &lt;0&gt; padav[@rv:10,11] lRM -&gt;h
+
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11119478</root_node>
+<parent_node field_name="parent_node">11119482</parent_node>
+<thread id="11119478">
+<node id="11119479"><node id="11119512"><node id="11119521"/>
+<node id="11119527"><node id="11119621"><node id="11119641"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11119482"><node id="11119495"><node id="11119503"><node id="11119504"/>
+</node>
+</node>
+<node id="11119656"><node id="11119672"/>
+<node id="11119675"/>
+</node>
+</node>
+<node id="11119489"/>
+</thread></node>

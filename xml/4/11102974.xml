@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11102974" title="Re: Unable to retain the format in copying from one excel file to another" created="2019-07-18 09:39:26" updated="2019-07-18 09:39:26" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11101248">nemadepsn</author>
+<doctext field_name="doctext">&lt;p&gt; I have posted the solution on stackoverflow &lt;/p&gt;
+&lt;p&gt;Please see the below link &lt;/p&gt;
+&lt;p&gt; [https://stackoverflow.com/questions/56545694/unable-to-retain-the-format-in-copying-from-one-excel-file-to-another/57095816#57095816] &lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use Spreadsheet::ParseExcel;
+use Spreadsheet::WriteExcel;
+use Spreadsheet::ParseExcel::SaveParser;
+
+print "FILE 1 $ARGV[0]"."\n";
+my $parser1   = Spreadsheet::ParseExcel::SaveParser-&gt;new();
+my $template1 = $parser1-&gt;Parse($ARGV[0])  or die "Unable to open first xls file";
+
+my $func_worksheet_count = $template1-&gt;worksheet_count();
+
+my $parser2   = Spreadsheet::ParseExcel::SaveParser-&gt;new();
+my $template2 = $parser2-&gt;Parse($ARGV[1])  or die "Unable to open second xls file";
+
+my $test_worksheet_count = $template2-&gt;worksheet_count();
+
+print "FILE 2 $ARGV[1]"."\n";
+
+
+my $worksheet22;
+my $worksheet11;
+my $sheet_name;
+
+ for (my $i = 0; $i &lt; $test_worksheet_count; $i++) {
+    $worksheet22 = $template2-&gt;worksheet($i);
+    $sheet_name = $worksheet22-&gt;get_name();
+        print $sheet_name."\n";
+    $template1-&gt;AddWorksheet($sheet_name);
+ } 
+
+ my $font;
+ my $AlignH;
+ my $AlignV; 
+ my $Indent;
+ my $Wrap;
+ my $Shrink;
+ my $Rotate;
+ my $JustLast;
+ my $ReadDir;
+ my $BdrStyle;
+ my $BdrColor;
+ my $BdrDiag;
+ my $Fill;
+ my $Lock;
+ my $Hidden;
+ my $Style;
+
+ my $iFmt;
+ my $format;
+my $iF1;
+
+
+
+
+
+ for (my $k = 0; $k &lt; $test_worksheet_count; $k++) {
+
+    $worksheet22 = $template2-&gt;worksheet($k);
+    $worksheet11 = $template1-&gt;worksheet($func_worksheet_count+$k); 
+
+
+    my $cellz; my $valua;my $format_number;
+    for (my $i = 0; $i &lt; 1000; $i++) {
+        for (my $j = 0; $j &lt; 30; $j++) {
+            $cellz = $worksheet22-&gt;get_cell( $i, $j );
+            if($cellz){
+                $valua = $cellz-&gt;value(); $format_number = $cellz-&gt;{FormatNo};
+                $format = $cellz-&gt;get_format(); 
+                 $font = $format-&gt;{Font};
+                 $AlignH = $format-&gt;{AlignH};
+                 $AlignV = $format-&gt;{AlignV}; 
+                 $Indent = $format-&gt;{Indent};
+                 $Wrap = $format-&gt;{Wrap};
+                 $Shrink = $format-&gt;{Shrink};
+                 $Rotate = $format-&gt;{Rotate};
+                 $JustLast = $format-&gt;{JustLast};
+                 $ReadDir = $format-&gt;{ReadDir};
+                 $BdrStyle = $format-&gt;{BdrStyle};
+                 $BdrColor = $format-&gt;{BdrColor};
+                 $BdrDiag = $format-&gt;{BdrDiag};
+                 $Fill = $format-&gt;{Fill};
+                 $Lock = $format-&gt;{Lock};
+                 $Hidden = $format-&gt;{Hidden};
+                 $Style = $format-&gt;{Style};
+
+
+                 $iFmt =
+                $template1-&gt;AddFormat(
+                    Font =&gt; $font,
+                    AlignH =&gt; $AlignH,
+                    AlignV =&gt; $AlignV,
+                    Indent =&gt; $Indent,
+                    Wrap =&gt; $Wrap,
+                    Shrink =&gt; $Shrink,
+                    Rotate =&gt; $Rotate,
+                    JustLast =&gt; $JustLast,
+                    ReadDir =&gt; $ReadDir,
+                    BdrStyle =&gt; $BdrStyle,
+                    BdrColor =&gt; $BdrColor,
+                    BdrDiag =&gt; $BdrDiag,
+                    Fill =&gt; $Fill,
+                    Lock =&gt; $Lock,
+                    Hidden =&gt; $Hidden,
+                    Style     =&gt;  $Style,
+                );
+
+
+                $worksheet11-&gt;AddCell($i, $j, $valua, $iFmt);
+            }
+        }   
+    }
+ }
+
+
+
+my $workbook3 = $template1-&gt;SaveAs("testing.xls"); 
+&lt;/code&gt;
+
+&lt;p&gt;&lt;small&gt;&lt;i&gt;2019-07-28 [Athanasius] linkified the link&lt;/small&gt;&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11101251</root_node>
+<parent_node field_name="parent_node">11101251</parent_node>
+<thread id="11101251">
+<node id="11101253"><node id="11101260"/>
+</node>
+<node id="11101317"/>
+<node id="11102974"><node id="11102984"><node id="11103002"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101588" title="Re: What is the most efficient way to split a long string (see body for details/constraints)?" created="2019-06-19 14:36:17" updated="2019-06-19 14:36:17" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;[doc://split] is [id://1194593|pretty darn fast]. But if in doubt, a benchmark confirms this:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use List::Util qw/max/;
+use Benchmark qw/cmpthese/;
+use constant WITHTEST =&gt; 0;
+
+my $cols = 32;
+my $row = join "\t", map { sprintf("%02d",$_) x 16 } 0..($cols-1);
+my $data = ( $row . "\n" ) x 100;
+open my $fh, '&lt;', \$data or die $!;
+
+my @wanted = (2,3,12..18,25..28,31);
+#my @wanted = (2,3,10..15);
+my $wanted_max = max @wanted;
+my @wanted2 = (0) x $cols;
+@wanted2[@wanted] = (1) x @wanted;
+my ($wanted_re) = map { qr/\A$_\n?\z/ } join '\t',
+	map { $_?'([^\t\n]++)':'[^\t\n]++' } @wanted2;
+my $expect = join "\t", map { sprintf("%02d",$_) x 16 } @wanted;
+
+cmpthese(-2, {
+	split =&gt; sub {
+		seek $fh, 0, 0 or die;
+		while (&lt;$fh&gt;) {
+			chomp;
+			my @sel = (split /\t/, $_, $cols)[@wanted];
+			if (WITHTEST) { die "@sel\n$expect\n"
+				unless join("\t",@sel) eq $expect }
+		}
+	},
+	scan =&gt; sub {
+		seek $fh, 0, 0 or die;
+		while (&lt;$fh&gt;) {
+			chomp;
+			my ($pos,$i,$prevpos,@sel)=(0,0);
+			while ( $pos&gt;=0 &amp;&amp; $i&lt;=$wanted_max ) {
+				$prevpos = $pos;
+				$pos = index($_, "\t", $pos+1);
+				push @sel, substr($_, $prevpos+1,
+					($pos&lt;0 ? length : $pos)-$prevpos-1 )
+						if $wanted2[$i++];
+			}
+			if (WITHTEST) { die "@sel\n$expect\n"
+				unless join("\t",@sel) eq $expect }
+		}
+	},
+	regex =&gt; sub {
+		seek $fh, 0, 0 or die;
+		while (&lt;$fh&gt;) {
+			my @sel = /$wanted_re/ or die $_;
+			if (WITHTEST) { die "@sel\n$expect\n"
+				unless join("\t",@sel) eq $expect }
+		}
+	},
+	fh =&gt; sub {
+		seek $fh, 0, 0 or die;
+		while ( my $line = &lt;$fh&gt; ) {
+			chomp($line);
+			open my $fh2, '&lt;', \$line or die $!;
+			local $/ = "\t";
+			my @sel;
+			for my $i (0..$wanted_max) {
+				my $d = &lt;$fh2&gt;;
+				next unless $wanted2[$i];
+				chomp $d;
+				push @sel, $d;
+			}
+			close $fh2;
+			if (WITHTEST) { die "@sel\n$expect\n"
+				unless join("\t",@sel) eq $expect }
+		}
+	},
+});
+
+__END__
+
+        Rate regex    fh  scan split
+regex 1456/s    --  -11%  -13%  -68%
+fh    1643/s   13%    --   -1%  -64%
+scan  1665/s   14%    1%    --  -64%
+split 4586/s  215%  179%  175%    --
+&lt;/c&gt;
+&lt;p&gt;Remember that [doc://split] is implemented internally in C, while the above &lt;c&gt;scan&lt;/c&gt; is implemented in Perl. You could probably gain more speed than [doc://split] if you implemented something like this in C, but then again, whether that's worth the effort depends on how much more speed you need. &lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; For the sake of completeness:&lt;/small&gt; I'm not surprised the &lt;c&gt;regex&lt;/c&gt; solution is slower, regexes are very powerful but working with fixed strings often outperforms them, and I added the &lt;c&gt;fh&lt;/c&gt; solution because it was the fastest in the [id://1194593|thread] I linked to above.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11101571</root_node>
+<parent_node field_name="parent_node">11101571</parent_node>
+<thread id="11101571">
+<node id="11101577"/>
+<node id="11101578"><node id="11101582"/>
+</node>
+<node id="11101579"><node id="11101581"/>
+</node>
+<node id="11101580"/>
+<node id="11101586"><node id="11101680"/>
+</node>
+<node id="11101588"><node id="11101679"><node id="11101683"><node id="11101684"/>
+</node>
+</node>
+<node id="11101685"><node id="11101698"/>
+</node>
+</node>
+<node id="11101596"/>
+<node id="11101604"/>
+<node id="11101605"><node id="11101682"/>
+</node>
+</thread></node>

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224558" title="Cleaning HTML Fragments with open tags" created="2018-10-23 14:04:06" updated="2018-10-23 14:04:06" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="885027">learnedbyerror</author>
+<doctext field_name="doctext">&lt;p&gt;Oh learned monks,&lt;/p&gt;
+&lt;p&gt;I return with another question who's answer eludes me.&lt;/p&gt;
+&lt;p&gt;I have a corpus of over 22,000,000 html fragments where each fragment is a post in a discussion forum.  I desire to create a web page that aggregates all of the posts of one user into a single simple html page to be served from a static web site. The logic for doing this is complete and overall works well. What doesn't work well is where some number of posts have open tags that are not closed in the original fragment.  For the most part, the resulting change in colors, fonts, font style ... is just noise.  There are some number of cases though where the fragment contains open tags that render the page unreadable after that point.  As such, the noise become a problem.&lt;/p&gt;
+
+&lt;p&gt;I was able to use the [mod://HTML::Tidy] and quickly add code to detect problems with the parse and messages method and then call clean to resolve the problems and then grab the comments in the body for further use.  Functionally, this works perfectly.  The problem is the run time increased from 7 mins to 78 mins.  Given that updates usually don't occur more than once a day, I can live with this if I must&lt;/p&gt;
+
+&lt;p&gt;My question to you if must I?.  I did a small proof of concept using regex to detect the problem with the font tag and the impact to run time was minimal.  I can extend that manual, explicit pattern, but I would prefer not to do that.  I'm hoping that someone has already develop a wise way to do address this problem in a more performant manner.&lt;/p&gt;
+
+&lt;p&gt;Thank you in advance for your consideration and advice!&lt;/p&gt;
+&lt;p&gt;lbe &lt;/p&gt;
+
+&lt;p&gt;Code example using HTML::Tidy&lt;/P&gt;
+&lt;code&gt;
+use HTML::Tidy
+
+Inside a Moo Object:
+
+has tidy =&gt; (
+    is      =&gt; 'rw',
+    lazy    =&gt; 1,
+    builder =&gt; '_build_tidy',
+    isa  =&gt; InstanceOf ["HTML::Tidy"],
+);
+
+sub _build_tidy {
+    my $self = shift;
+    my $tidy = HTML::Tidy-&gt;new( 
+        {
+            #doctype      =&gt; 'omit',
+            output_xhtml =&gt; 1,
+            tidy_mark    =&gt; 0,
+        }
+    );
+    $tidy-&gt;ignore( 
+        text =&gt; 'missing &lt;!DOCTYPE&gt; declaration',
+        text =&gt; 'inserting implicit &lt;body&gt;',
+        text =&gt; 'inserting missing \'title\' element',
+        text =&gt; 'missing &lt;/font&gt;',
+        text =&gt; '&lt;blink&gt; is not approved by W3C',
+        text =&gt; 'plain text isn\'t allowed in &lt;head&gt; elements',
+        text =&gt; '&lt;head&gt; previously mentioned',
+    );
+    return( $tidy );
+ }
+
+
+sub _clean_html {
+    my ( $self, $html ) = @_;
+
+    $self-&gt;tidy-&gt;clear_messages(); 
+    $self-&gt;tidy-&gt;parse( "1", $html );
+
+    if ( $self-&gt;tidy-&gt;messages ) {
+        $html = $self-&gt;tidy-&gt;clean( $html );
+        $html =~ m/&lt;body&gt;\n(.*)\n&lt;\/body&gt;/msgix;
+        $html = $1;
+    }
+
+    return $html;
+}
+&lt;/code&gt;
+
+&lt;p&gt;I call $object-&gt;_clean_html( $html ) where $html contains the html fragment in question and returns the cleansed html&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;Update 1: 2018/10/28&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;As I looked into modifying the code as I described in my earlier response, I realized that I would need to change several modules.  So I turned back to my original approach. Using [mod://HTML::Tidy] on every fragment is a non-starter for the reasons mentioned in my original post.  I returned to CPAN to do some more research.  I remembered a past project where I had used [mod://XML::LibXML] to parse html and knew it could be configured to throw and error if the html was not well formed.  I quickly got this working, but it was almost as slow as [mod://HTML::Tidy].  I started looking for other modules that might be faster.  &lt;/p&gt;
+&lt;p&gt;I found [mod://XML::Fast] and wrote a small proof of concept with it.  It worked; however I couldn't find a way to keep it from emitting verbose error messages to the console.  I would need to use something like [mod://Capture::Tiny] to keep that from happening.  The overhead of forking every call would slow things down too much.&lt;/p&gt;
+&lt;p&gt;I moved on to [mod::XML::Bare] and thought I had a winner. It was very fast and seemed to work.  It was not until I threw a full set of questionable examples at it that I realized it was tolerating some unclosed flags, like &lt;code&gt;&lt;font&gt;&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;I decided to take an all to TIMTOWDI approach and use regexes. Please hold all flames!  Yes, I know parsing html with regex is an accident waiting to happen. However, I also know from time to time that I have had to do it for one reason or another.  In most of those cases, I needed to extract something from a html format that was well known and consistent, unlike my current corpus.  But after a bit of effort, I have something that works for every test case that I have thrown at it and is +/- 150 times faster than calling [mod://HTML::Tidy] &lt;code&gt;clean&lt;/code&gt; on every fragment.  My solution, slightly reworked for here, is: &lt;/p&gt;
+&lt;code&gt;
+sub _is_html_clean {
+    # create state variable contain hash of unbalanced tags
+    # that will persist across calls
+    state $is_unbalanced = {
+        area       =&gt; 1,
+        base       =&gt; 1,
+        basefont   =&gt; 1,
+        bgsound    =&gt; 1,
+        br         =&gt; 1,
+        col        =&gt; 1,
+        colgroup   =&gt; 1,
+        embed      =&gt; 1,
+        frame      =&gt; 1,
+        hr         =&gt; 1,
+        img        =&gt; 1,
+        input      =&gt; 1,
+        isindex    =&gt; 1,
+        li         =&gt; 1,
+        link       =&gt; 1,
+        marquee    =&gt; 1,
+        meta       =&gt; 1,
+        p          =&gt; 1,
+        '!doctype' =&gt; 1,
+    };
+
+    # remove self closing tags
+    $_[0] =~ s/(.*)&lt;.+?\/&gt;/$1/g;
+
+    # remove commented sections
+    $_[0] =~ s/&lt;!--.+?--&gt;//msg;
+
+    # load tag names in array
+    my (@a) = ( $_[0] =~ m/&lt;(\S+?)[ &gt;]/msg );
+
+    # process each tag counting the open and closes and
+    # then increment or decrement a counter for that tag
+    my %h;
+    foreach (@a) {
+        if (m[^/]) {     # closing tag
+            substr( $_, 0, 1 ) = "";     # remove the /
+            $h{$_}--;
+        }
+        else {
+            $h{$_}++;
+        }
+    }
+
+    foreach ( keys %h ) {
+        if (m/[A-Z]/) {
+            # combine keys in case insensitive manner
+            $h{ lc($_) } += $h{$_};
+            delete $h{$_};
+        }
+    }
+
+    foreach ( sort keys %h ) {
+        next if ( $is_unbalanced-&gt;{$_} ); # ignore if tag is in the is unbalanced hash
+        if ( $h{$_} != 0 ) {
+            return 0;     # return as soon as an non-paired tag is found
+        }
+    }
+
+    return 1;     # return if all is good
+}
+
+
+&lt;/code&gt;
+&lt;p&gt;I call &lt;code&gt;is_html_clean&lt;/code&gt; for each fragment.  If it fails, I call [mod://HTML::Tidy] &lt;code&gt;clean&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;This approach is effective for me for my current project.  If I needed this functionality in a full production solution, I would likely write a state engine in a systems language and consume it via XS or FFI. It would be great if that functionality would be added to tidyp; however, given the intent of tidyp, it probably would not be added.&lt;/p&gt;
+&lt;p&gt;I hope that someone will find update beneficial.&lt;/p&gt;
+&lt;p&gt;Cheers, lbe&lt;/p&gt;</doctext>
+<thread id="1224558">
+<node id="1224559"><node id="1224566"/>
+</node>
+</thread></node>

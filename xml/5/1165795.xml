@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1165795" title="Re: Creating a whitelist" created="2016-06-15 17:19:08" updated="2016-06-15 17:19:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [htmanning],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;This triggers the error on every sign up.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I can't reproduce that. If I set &lt;c&gt;$good_orgs="abc\ndef";&lt;/c&gt; and &lt;c&gt;$organization="abc";&lt;/c&gt; then the error is not triggered (&lt;i&gt;Update:&lt;/i&gt; same goes for &lt;c&gt;$good_orgs="First\nNational\nBank"; $organization="National Bank";&lt;/c&gt; from your node [id://1165793|here] - &lt;b&gt;do your variables contain what you think they contain?&lt;/b&gt; For example, is &lt;c&gt;$good_orgs&lt;/c&gt; a list separated by newlines, like your code indicates by using &lt;c&gt;split /\n/&lt;/c&gt;, or is it separated by commas?). There is probably something else going on, so have a look at the [id://745674] to try and figure out what it might be. It also looks like you're coding without [doc://strict] and [doc://warnings], and while those don't directly influence your current code, it's a &lt;i&gt;very&lt;/i&gt; good habit to get into, see [id://111088].&lt;/p&gt;
+&lt;p&gt;It would be very helpful if you could provide some more example information, for example what &lt;c&gt;$good_orgs&lt;/c&gt; might look like, and some sample values for &lt;c&gt;$organization&lt;/c&gt;, and whether your function should accept them or not. The reason I ask is that your requirements are unclear: If the list of allowed words contains "legal", then your current implementation will also accept an organization named "Illegal Exports".&lt;/p&gt;
+&lt;p&gt;Note that if &lt;c&gt;$good_orgs&lt;/c&gt; contains strings that should be matched literally, and not regular expressions, you should be using &lt;c&gt;/\Q$good_orgs\E/&lt;/c&gt; as explained in, for example, [id://1156540].&lt;/p&gt;
+&lt;p&gt;I'm going to wager a guess that &lt;c&gt;$organization&lt;/c&gt; may &lt;i&gt;only&lt;/i&gt; contain "allowed" words. In that case, here's one way of several that you could do something like that. Note that I'm also making some more assumptions, like that &lt;c&gt;$organization&lt;/c&gt; is a comma and/or whitespace separated list, like you seem to be hinting.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $good_orgs = "First\nNational\nBank\nCompany\nLLC\nlegal";
+my %good_orgs = map {lc()=&gt;1} split /\n/, $good_orgs;
+sub is_good_org {
+	my $organization = shift;
+	my @parts = grep {length} split /[\s;,]+/, $organization;
+	for my $org (@parts) {
+		return unless exists $good_orgs{lc $org};
+	}
+	return 1;
+}
+
+print is_good_org("LLC")            ?"yes":"no", "\n"; # "yes"
+print is_good_org("Company, LLC")   ?"yes":"no", "\n"; # "yes"
+print is_good_org("National Bank")  ?"yes":"no", "\n"; # "yes"
+print is_good_org("legal company")  ?"yes":"no", "\n"; # "yes"
+print is_good_org("National Bunk")  ?"yes":"no", "\n"; # "no"
+print is_good_org("Illegal Exports")?"yes":"no", "\n"; # "no"
+print is_good_org("Test LLC")       ?"yes":"no", "\n"; # "no"
+&lt;/c&gt;
+&lt;p&gt;Note that despite my use of [doc://lc], there are some strange cases in Unicode where that isn't actually a case-insensitive comparison. Newer versions of Perl offer the [doc://fc] function if that's a concern to you.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Updated&lt;/i&gt; my code with your example input from [id://1165793|here]. &lt;i&gt;Update 2:&lt;/i&gt; Added the &lt;c&gt;grep {length}&lt;/c&gt; in case [doc://split] leaves some empty elements behind, as would be the case in &lt;c&gt;is_good_org(" LLC")&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1165790</root_node>
+<parent_node field_name="parent_node">1165790</parent_node>
+<thread id="1165790">
+<node id="1165792"><node id="1165793"><node id="1165796"><node id="1165869"><node id="1165921"><node id="1165926"><node id="1165992"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1165795"/>
+<node id="1165850"><node id="1165858"/>
+</node>
+</thread></node>

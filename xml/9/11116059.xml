@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116059" title="Re: iterator w/ wantarray()" created="2020-04-25 15:17:49" updated="2020-04-25 15:17:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Put [doc://print] statements into your &lt;c&gt;sub&lt;/c&gt;s ([id://745674]), and you'll see that &lt;c&gt;$value&lt;/c&gt; will never change, since all that that &lt;c&gt;sub&lt;/c&gt; is returning is &lt;c&gt;$from+$step&lt;/c&gt; every time it's called. You have to move the &lt;c&gt;my $value=$from;&lt;/c&gt; outside of that &lt;c&gt;sub&lt;/c&gt; so that it will close over it ([wp://Closure (computer programming)|closures]).&lt;/p&gt;
+&lt;p&gt;By the way, [mod://Want] seems to mess with the internals, and it has several open bugs in regards to segfaults. The typical approach to iterators is to have them return &lt;c&gt;undef&lt;/c&gt; at the end of the sequence, and you can also [doc://overload] the &lt;c&gt;&lt;&gt;&lt;/c&gt; operator, as I did in [https://metacpan.org/release/Algorithm-Odometer-Tiny/source/lib/Algorithm/Odometer/Tiny.pm|Algorithm::Odometer::Tiny] (note that overloading &lt;c&gt;&lt;&gt;&lt;/c&gt; in list context only works on Perl 5.18 and up). By the way, the book [https://hop.perl.plover.com/book/|Higher-Order Perl] is an &lt;i&gt;excellent&lt;/i&gt; read in regards to iterators and all the things you can do with them.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Want 'howmany';
+
+sub multi_iterator {
+	my ($iterator) = @_;
+	return sub {
+		my $context = wantarray();
+		print "multi_iterator called, &lt;$context&gt;\n";
+		return unless defined $context;
+		return $iterator-&gt;() unless $context;
+		return map { $iterator-&gt;() } 1 .. howmany();
+	};
+}
+
+sub counter {
+	my ($from, $to, $step) = @_;
+	$step ||= 1;
+	my $value = $from;
+	return sub {
+		print STDERR "counter called, $from / $to / $step / $value\n";
+		return if $value &gt; $to;
+		my $v = $value;
+		$value += $step;
+		return $v;
+	};
+}
+
+my $counter = counter(1, 10, 3);
+my $iterator = multi_iterator($counter);
+my ($un, $deux) = $iterator-&gt;();
+my $trois = $iterator-&gt;();
+print "Hack-27 ",  $un, ",", $deux, ",", $trois, "\n";
+
+__END__
+
+multi_iterator called, &lt;1&gt;
+counter called, 1 / 10 / 3 / 1
+counter called, 1 / 10 / 3 / 4
+multi_iterator called, &lt;&gt;
+counter called, 1 / 10 / 3 / 7
+Hack-27 1,4,7
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11116056</root_node>
+<parent_node field_name="parent_node">11116056</parent_node>
+<thread id="11116056">
+<node id="11116057"><node id="11116060"><node id="11116067"><node id="11116073"><node id="11116089"><node id="11116090"><node id="11116091"><node id="11116093"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11116059"><node id="11116066"><node id="11116108"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1206863" title="Re^2: Using constants as hash keys" created="2018-01-07 15:01:52" updated="2018-01-07 15:01:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;it really doesn't have the notion of a "compile-time constant,"&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I have to say this is incorrect. Perl has [doc://perlsub#Constant-Functions] and their effect is compile-time, note how &lt;c&gt;print "foo"&lt;/c&gt; is optimized away completely  (edited slightly for brevity):&lt;/p&gt;
+&lt;c&gt;
+$ perl -MO=Deparse
+use constant DOFOO =&gt; 0;
+my $DOBAR = 0;
+print "foo" if  DOFOO;
+print "bar" if $DOBAR;
+__END__
+use constant ('DOFOO', 0);
+my $DOBAR = 0;
+'???';
+print 'bar' if $DOBAR;
+&lt;/c&gt;
+
+&lt;blockquote&gt;&lt;i&gt;But, in so doing, they became misleading. You might well not actually know the implementation or the behavior of the language-constructs that you are looking at.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I find this misleading because it makes it sound like there is some undefined behavior here. Whether or not a function was inlined or not should be transparent to the user. And what [choroba] is writing about has more to do with the autoquoting happening on the LHS of the fat comma, which is also [doc://perlop#Comma-Operator|well defined] and has nothing to do with whether it's a constant function:&lt;/p&gt;
+&lt;c&gt;
+use Data::Dump;
+use constant FOO =&gt; 123;
+my $x = 455;
+sub BAR { ++$x }
+my %h = (
+         FOO  =&gt; "A",
+         BAR  =&gt; "B",
+        (FOO) =&gt; "C",
+        (BAR) =&gt; "D",
+);
+dd \%h;
+__END__
+{ 123 =&gt; "C", 456 =&gt; "D", BAR =&gt; "B", FOO =&gt; "A" }
+&lt;/c&gt;
+
+&lt;blockquote&gt;&lt;i&gt;The semantics were "grafted on,"&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Constant functions have been around for something like 20 years, at least as far as I can tell from [https://perl5.git.perl.org/perl.git/blobdiff/b2a07c1c241ec86f010fc0ea3bfa54c8ec28be90..b88f04ff2985d0899964b90ae56789d88f6b353e:/pod/perlsub.pod|a quick look at the documentation]. I'm willing to concede a couple points: 1.&amp;nbsp;constant, or rather readonly, &lt;i&gt;variables&lt;/i&gt; aren't easily usable without somewhat obscure syntax (&lt;c&gt;*PI=\3.14;&lt;/c&gt;, see [doc://perlmod#Symbol-Tables]) or a module like [mod://Readonly], 2.&amp;nbsp;readonly variables don't have the same compile-time effect, and 3.&amp;nbsp;constant functions require disambiguation when used as hash keys. However, taking the post as a whole, I'm sorry but IMO it is more FUD than fact.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1206712</root_node>
+<parent_node field_name="parent_node">1206816</parent_node>
+<thread id="1206712">
+<node id="1206752"><node id="1206759"><node id="1206760"/>
+</node>
+</node>
+<node id="1206753"/>
+<node id="1206816"><node id="1206863"><node id="1206907"><node id="1206920"/>
+<node id="1207010"/>
+</node>
+</node>
+</node>
+</thread></node>

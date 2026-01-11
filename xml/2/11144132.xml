@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11144132" title="Re: Purpose of =~ and = in this statement" created="2022-05-23 13:40:28" updated="2022-05-23 13:40:28" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;( $chapter =~ /5/ )  and ( $chapter = 5 );&lt;/c&gt; The second part of the "and" seems to be assigning "5" to $chapter but I'm normally used to the first part as being "If $chapter matches 5 then do something".&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, your interpretation is correct. Perl's [doc://perlop#Logical-And|low-precedence boolean operators] &lt;c&gt;and&lt;/c&gt;/&lt;c&gt;or&lt;/c&gt;/etc. can be used in place of &lt;c&gt;if&lt;/c&gt; conditionals; the statement you showed is the equivalent of &lt;c&gt;if ( $chapter =~ /5/ ) { $chapter = 5 }&lt;/c&gt; (and could arguably be written this way for better readability*). &lt;c&gt;=~&lt;/c&gt; is the [doc://perlop#Binding-Operators|binding operator] in this case saying to match the regex on its right to the string on its left, and &lt;c&gt;=&lt;/c&gt; is a simple [doc://perlop#Assignment-Operators|assignment].&lt;/p&gt;
+&lt;p&gt;* Yet another way to write that is using [doc://perlsyn#Statement-Modifiers]: &lt;c&gt;$chapter = 5 if $chapter =~ /5/;&lt;/c&gt;, if you find that more readable. In fact, this is what Perl optimizes the above statement to:&lt;/p&gt;
+&lt;c&gt;
+$ perl -MO=Deparse -e '( $chapter =~ /5/ ) and ( $chapter = 5 );'
+$chapter = 5 if $chapter =~ /5/;
+&lt;/c&gt;
+&lt;p&gt;Note that I'd say the only difference between the statements being discussed here is readability, so since you had to ask about the syntax, you may prefer to rewrite the statement in one of the above forms if that helps you to be able to read the code more easily.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11144131</root_node>
+<parent_node field_name="parent_node">11144131</parent_node>
+<thread id="11144131">
+<node id="11144132"><node id="11144133"><node id="11144134"/>
+<node id="11144186"><node id="11144189"><node id="11144210"><node id="11144212"><node id="11144215"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11144138"/>
+</node>
+</thread></node>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11149038" title="Re^6: Encoding problem with function in C library" created="2022-12-22 08:54:57" updated="2022-12-22 08:54:57" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Ah, I think I see what's going on, [https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/chcp|&lt;c&gt;chcp&lt;/c&gt;] apparently &lt;i&gt;sets&lt;/i&gt; both the input ([https://learn.microsoft.com/en-us/windows/console/setconsolecp|SetConsoleCP]) and output ([https://learn.microsoft.com/en-us/windows/console/setconsoleoutputcp|SetConsoleOutputCP]) code pages, but when used to report the current code page, it apparently reports only the input code page, which is why I thought the changes don't persist.&lt;/p&gt;
+&lt;c&gt;
+C:\Temp&gt;type test.pl
+#!perl
+use warnings;
+use strict;
+use open qw/:std :encoding(UTF-8)/;
+use Win32;
+
+print "GetConsoleCP: ", Win32::GetConsoleCP(), "\n";
+print "GetConsoleOutputCP: ", Win32::GetConsoleOutputCP(), "\n";
+print "chcp: "; system("chcp");
+
+Win32::SetConsoleOutputCP(65001);
+Win32::SetConsoleCP(65001) if @ARGV;
+
+C:\Temp&gt;perl test.pl
+GetConsoleCP: 850
+GetConsoleOutputCP: 850
+chcp: Active Codepage: 850.
+
+C:\Temp&gt;perl test.pl x
+GetConsoleCP: 850
+GetConsoleOutputCP: 65001
+chcp: Active Codepage: 850.
+
+C:\Temp&gt;perl test.pl x
+GetConsoleCP: 65001
+GetConsoleOutputCP: 65001
+chcp: Active Codepage: 65001.
+
+C:\Temp&gt;chcp 850
+Active Codepage: 850.
+
+C:\Temp&gt;perl test.pl
+GetConsoleCP: 850
+GetConsoleOutputCP: 850
+chcp: Active Codepage: 850.
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11149013</root_node>
+<parent_node field_name="parent_node">11149037</parent_node>
+<thread id="11149013">
+<node id="11149017"><node id="11149018"/>
+</node>
+<node id="11149019"/>
+<node id="11149023"><node id="11149032"><node id="11149033"/>
+<node id="11149034"><node id="11149036"><node id="11149037"><node id="11149038"/>
+</node>
+</node>
+</node>
+<node id="11149035"><node id="11149039"><node id="11149043"><node id="11149047"/>
+</node>
+<node id="11149045"><node id="11149046"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11149031"/>
+</thread></node>

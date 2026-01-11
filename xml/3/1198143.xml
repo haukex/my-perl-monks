@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198143" title="Re^3: Parse a text file with oneliner (updated)" created="2017-08-28 06:20:12" updated="2017-08-28 06:20:12" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The switches &lt;c&gt;-lanF:&lt;/c&gt; basically add some code to the oneliner provided with &lt;c&gt;-e&lt;/c&gt;, this is described in [doc://perlrun], but you can also use [doc://B::Deparse] to turn the oneliner into a script to see it:&lt;/p&gt;
+&lt;c&gt;
+$ perl -MO=Deparse -F: -lane 'push @x, $F[0] if /^[A-Z]/}{print for sort @x'
+
+BEGIN { $/ = "\n"; $\ = "\n"; }
+LINE: while (defined($_ = readline ARGV)) {
+    chomp $_;
+    our @F = split(/:/, $_, 0);
+    push @x, $F[0] if /^[A-Z]/;
+}
+{
+    print $_ foreach (sort @x);
+}
+&lt;/c&gt;
+&lt;p&gt;Which shows you that the script is:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Setting the input record separator [doc://$/] and the output record separator [doc://$\] to a newline &lt;c&gt;"\n"&lt;/c&gt; (the &lt;c&gt;-l&lt;/c&gt; switch), in this case this is mainly useful for not having to add a newline when [doc://print]ing output&lt;/li&gt;
+&lt;li&gt;Reading the input line-by-line in a &lt;c&gt;while&lt;/c&gt; loop (the &lt;c&gt;-n&lt;/c&gt; switch), and for each line:
+&lt;ol type="a"&gt;
+&lt;li&gt;Removing the input record separator (newline) with [doc://chomp] (the &lt;c&gt;-l&lt;/c&gt; switch)&lt;/li&gt;
+&lt;li&gt;[doc://split]ting the line on the character &lt;c&gt;:&lt;/c&gt; into the array &lt;c&gt;@F&lt;/c&gt; (the &lt;c&gt;-aF:&lt;/c&gt; switches)&lt;/li&gt;
+&lt;li&gt;[doc://push]ing the first element of the array, &lt;c&gt;$F[0]&lt;/c&gt;, onto the array &lt;c&gt;@x&lt;/c&gt;, &lt;c&gt;if&lt;/c&gt; the input line &lt;c&gt;$_&lt;/c&gt; matches &lt;c&gt;/^[A-Z]/&lt;/c&gt; (the code from the &lt;c&gt;-e&lt;/c&gt; switch)&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;After that loop,&lt;/li&gt;
+&lt;li&gt;Loop over the [doc://sort]ed elements of &lt;c&gt;@x&lt;/c&gt;, [doc://print]ing each one. (also the &lt;c&gt;-e&lt;/c&gt; switch, after the &lt;c&gt;}{&lt;/c&gt;)&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Cleaning up the above code gives you this script:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+my @out;
+while (&lt;&gt;) {
+    chomp;
+    my @fields = split /:/;
+    push @out, $fields[0] if /^[A-Z]/;
+}
+print "$_\n" for sort @out;
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;b&gt;Update:&lt;/b&gt; Added references to the corresponding switches to the above list and expanded explanation of &lt;c&gt;-l&lt;/c&gt;.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1198140</root_node>
+<parent_node field_name="parent_node">1198142</parent_node>
+<thread id="1198140">
+<node id="1198141"><node id="1198142"><node id="1198143"><node id="1198151"/>
+</node>
+</node>
+<node id="1198166"/>
+</node>
+</thread></node>

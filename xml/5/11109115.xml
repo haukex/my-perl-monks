@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109115" title="Re^4: Converting to number doesn't always work..." created="2019-11-23 11:42:48" updated="2019-11-23 11:42:48" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;That's definitely a strange behavior, here's a fairly short way to reproduce it:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -MDevel::Peek -le 'my $x="11a"; $SIG{__WARN__}
+       = sub{$x="99"}; print "num: ",$x+0,", str: $x"; Dump($x)'
+
+num: 11, str: 99
+SV = PVNV(0x59efe266a440) at 0x59efe2692648
+  REFCNT = 2
+  FLAGS = (POK,IsCOW,pIOK,pNOK,pPOK)
+  IV = 11
+  NV = 11
+  PV = 0x59efe26d3ae0 "99"\0
+  CUR = 2
+  LEN = 10
+  COW_REFCNT = 1
+&lt;/c&gt;
+&lt;p&gt;My guess is it's the signal handler: I am guessing it gets called &lt;i&gt;during&lt;/i&gt; the &lt;c&gt;$n+0&lt;/c&gt; operation which produces the warning, and so an assignment to the string component of the variable during that operation leaves it in a state where the string and numeric components differ. So it's very similar to:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -MDevel::Peek -MScalar::Util=dualvar
+                 -e 'my $x=dualvar(11,"99"); Dump($x)'
+&lt;/c&gt;
+&lt;p&gt;I'm not sure if this is worth a bug report or not.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11109035</root_node>
+<parent_node field_name="parent_node">11109101</parent_node>
+<thread id="11109035">
+<node id="11109043"><node id="11109046"/>
+</node>
+<node id="11109044"/>
+<node id="11109047"><node id="11109052"><node id="11109054"><node id="11109061"><node id="11109063"><node id="11109065"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11109057"/>
+</node>
+<node id="11109070"/>
+<node id="11109080"><node id="11109085"><node id="11109101"><node id="11109105"/>
+<node id="11109115"><node id="11109192"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

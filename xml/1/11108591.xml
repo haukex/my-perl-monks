@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108591" title="Re^2: Pick k numbers at random" created="2019-11-12 10:20:45" updated="2019-11-12 10:20:45" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Shuffling an array and then picking the first k elements would do what I want, but that's still linear in n. The "sample" module seems to be efficient, though.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If you're worried about efficiency, you should measure first.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Math::Prime::Util qw/randperm/;
+use List::Util qw/shuffle/;
+use Algorithm::Numerical::Sample qw/sample/;
+use Benchmark qw/cmpthese/;
+
+die "Usage: $0 N K\n" unless @ARGV==2;
+my ($N,$K) = @ARGV;
+
+cmpthese(-2, {
+	mpu =&gt; sub {
+		my @range = randperm($N, $K);
+	},
+	shuf =&gt; sub {
+		my @range = (shuffle 0 .. $N-1)[0 .. $K - 1];
+	},
+	samp =&gt; sub {
+		my @range = sample (-set =&gt; [0 .. $N-1], -sample_size =&gt; $K);
+	},
+});
+__END__
+
+$ perl bench.pl 10 5
+          Rate samp shuf  mpu
+samp  326934/s   -- -86% -91%
+shuf 2388541/s 631%   -- -31%
+mpu  3456068/s 957%  45%   --
+
+$ perl bench.pl 100 5
+          Rate  samp  shuf   mpu
+samp   76377/s    --  -86%  -98%
+shuf  539280/s  606%    --  -86%
+mpu  3744910/s 4803%  594%    --
+
+$ perl bench.pl 10000 5
+          Rate    samp    shuf     mpu
+samp     835/s      --    -86%   -100%
+shuf    5885/s    605%      --   -100%
+mpu  3719610/s 445489%  63101%      --
+
+$ perl bench.pl 100000 5000
+       Rate  samp  shuf   mpu
+samp 72.2/s    --  -87%  -99%
+shuf  562/s  678%    --  -91%
+mpu  6544/s 8958% 1064%    --
+&lt;/c&gt;
+&lt;p&gt;Not surprising, since [mod://Math::Prime::Util]'s &lt;c&gt;randperm&lt;/c&gt; is implemented in C, and has a bunch of different methods for picking K of N depending on set sizes. [https://metacpan.org/source/DANAJ/Math-Prime-Util-0.73/util.c#L3098|See the source.]&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11108583</root_node>
+<parent_node field_name="parent_node">11108588</parent_node>
+<thread id="11108583">
+<node id="11108584"/>
+<node id="11108585"/>
+<node id="11108588"><node id="11108591"><node id="11108594"><node id="11108598"><node id="11108604"><node id="11108616"/>
+<node id="11108636"/>
+</node>
+</node>
+</node>
+<node id="11108688"/>
+</node>
+<node id="11108618"/>
+</node>
+<node id="11108601"><node id="11108758"/>
+</node>
+</thread></node>

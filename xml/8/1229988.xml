@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229988" title="Re: Perl to C problem" created="2019-02-16 02:09:03" updated="2019-02-16 02:09:03" _doctext_mode="lenient"><type id="11">note</type>
+<author id="968231">Athanasius</author>
+<doctext field_name="doctext">&lt;p&gt;Hello [lbrandewie], and welcome to the Monastery!&lt;/p&gt;
+
+&lt;p&gt;Have a look at [doc://perlport#Newlines|perlport#Newlines]. &lt;c&gt;\n&lt;/c&gt; is Perl&amp;rsquo;s &lt;i&gt;logical&lt;/i&gt; newline, so when reading from a file on the Windows platform, the 2-character sequence &lt;c&gt;\x0D\x0A&lt;/c&gt; (represented here in hexadecimal) is translated to &lt;c&gt;\n&lt;/c&gt;; and when writing to a file, &lt;c&gt;\n&lt;/c&gt; is translated to &lt;c&gt;\x0D\x0A&lt;/c&gt;.&lt;/p&gt;
+
+&lt;p&gt;If you want to distinguish between &lt;c&gt;\x0A&lt;/c&gt; (Unix) and &lt;c&gt;\x0D\x0A&lt;/c&gt; (Windows) &lt;i&gt;in your input files&lt;/i&gt;, then you can read using the &lt;c&gt;:raw&lt;/c&gt; layer:&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+use autodie;
+
+my $file = '1977_SoPW.txt';
+
+open(my $fh, '&lt;:raw', $file);
+my @test = &lt;$fh&gt;;
+close $fh;
+
+for my $line (@test)
+{
+    print ord(substr($line, -2, 1)), "\t";
+    print ord(substr($line, -1, 1)), "\n";
+}
+
+print "\n";
+&lt;/code&gt;
+
+&lt;p&gt;Output (where the input file &amp;ldquo;1977_SoPW.txt&amp;rdquo; contains 3 sentences, the first and third terminated by &lt;c&gt;\x0D\x0A&lt;/c&gt;, the second by just &lt;c&gt;\x0A&lt;/c&gt;):&lt;/p&gt;
+
+&lt;code&gt;
+16:51 &gt;perl 1977_SoPW.pl
+13      10
+46      10
+13      10
+
+
+16:51 &gt;
+&lt;/code&gt;
+
+&lt;p&gt;(46 is the decimal code for ASCII character &lt;c&gt;.&lt;/c&gt;, the full stop or period, which happened to be the last text character in the line.)&lt;/p&gt;
+
+&lt;p&gt;On the other hand, if you want to distinguish between different newline representations &lt;i&gt;in your code&lt;/i&gt;, then you should either use literal rather than logical characters:&lt;/p&gt;
+
+&lt;code&gt;
+my $test = "\x0D\x0A\x0D\x0A\x0D\x0A\x0D\x0A\x0D\x0A";
+&lt;/code&gt;
+
+&lt;p&gt;or add &lt;c&gt;\r&lt;/c&gt; as [haukex] says [id://1229986|above]:&lt;/p&gt;
+
+&lt;code&gt;
+my $test = "\r\n\r\n\r\n\r\n\r\n";
+&lt;/code&gt;
+
+&lt;p&gt;Hope that helps,&lt;/p&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-968231"&gt;
+&lt;p&gt;
+&lt;table width="100%"&gt;
+&lt;tr&gt;
+  &lt;td align="left"&gt;
+    Athanasius&amp;emsp;&lt;font color="#008000"&gt;&amp;lt;&lt;/font&gt;[href://http://www.biblegateway.com/passage/?search=John%203:16&amp;version=NLV|&lt;font color="#008000"&gt;&amp;deg;&lt;/font&gt;]&lt;font color="#008000"&gt;(((&amp;gt;&amp;lt;&lt;/font&gt;&amp;emsp;&lt;i&gt;contra mundum&lt;/i&gt;
+  &lt;/td&gt;
+  &lt;td align="right"&gt;
+    [href://http://translate.google.com.au/#la/en/Iustus%20alius%20egestas%20vitae%2C%20eros%20Piratica%2C|&lt;b&gt;Iustus alius egestas vitae, eros Piratica,&lt;/b&gt;]
+  &lt;/td&gt;
+&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1229985</root_node>
+<parent_node field_name="parent_node">1229985</parent_node>
+<thread id="1229985">
+<node id="1229986"/>
+<node id="1229988"><node id="1229998"/>
+</node>
+</thread></node>

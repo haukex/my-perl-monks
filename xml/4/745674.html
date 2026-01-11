@@ -1,0 +1,206 @@
+<html lang="en" style="color-scheme: light dark;">
+  <head>
+    <base href="https://perlmonks.org/"/>
+    <title>
+      Basic debugging checklist
+    </title>
+  </head>
+  <body>
+    <div id="header">
+      <div class="title">
+        Basic debugging checklist
+      </div>
+      <div class="subtitle">
+        by <span id="author">toolic</span> on <span id="created">Feb 23, 2009 at 00:06&nbsp;UTC</span> (<a href="?replies=1;displaytype=print;node_id=745674">replies</a>)
+      </div>
+    </div>
+    <div id="url">
+        http://perlmonks.org?node_id=745674
+    </div>
+
+    <div id="content">
+      <p><div class="doctext" id="writeup"><!-- anonymonk cant vote -->
+<!-- [{parselinks,}] -->
+Are you new to Perl?  Is your program misbehaving? Not sure where or how to begin debugging? Well, here is a concise <b>checklist</b> of tips and techniques to get you started.
+
+<p>This list is meant for debugging some of the most common Perl programming problems; it assumes no prior working experience with the Perl debugger (<a href="http://perldoc.perl.org/perldebtut.html">perldebtut</a>). Think of it as a First Aid kit, rather than a fully-staffed state-of-the-art operating room.
+
+<p>These tips are meant to act as a guide to help you answer the following questions:
+
+<ul>
+<li>Are you sure your data is what you think it is?
+<li>Are you sure your <i>code</i> is what you think it is?
+<li>Are you inadvertently ignoring error and warning messages?
+</ul>
+
+<div class="readmore">
+
+<ol>
+
+<li>Add the "stricture" pragmas (<a href="?node_id=111088">Use strict and warnings</a>)</li>
+<pre class="code"><div class='codeblock'><tt class='codetext'>use strict;
+use warnings;
+use diagnostics;
+</tt></div><div class='embed-code-dl'><a href="?displaytype=displaycode;node_id=745674;abspart=1;part=1">&#91;download&#93;</a></div></pre>
+
+
+<li>Display the contents of variables using <a href="http://perldoc.perl.org/functions/print.html">print</a> or <a href="http://perldoc.perl.org/functions/warn.html">warn</a></li>
+<pre class="code"><div class='codeblock'><tt class='codetext'>warn &quot;$var\n&quot;;
+print &quot;@things\n&quot;;   # array with spaces between elements
+</tt></div><div class='embed-code-dl'><a href="?abspart=1;node_id=745674;displaytype=displaycode;part=2">&#91;download&#93;</a></div></pre>
+
+
+<li>Check for unexpected whitespace</li>
+<ul>
+<li>a) <a href="http://perldoc.perl.org/functions/chomp.html"><tt class='inlinecode'>chomp</tt></a>, then <a href="http://perldoc.perl.org/functions/print.html"><tt class='inlinecode'>print</tt></a> with delimiters of your choice, such as colons or balanced brackets, for visibility
+<pre class="code"><div class='codeblock'><tt class='codetext'>chomp $var;
+print &quot;&gt;&gt;&gt;$var&lt;&lt;&lt;\n&quot;;
+</tt></div><div class='embed-code-dl'><a href="?part=5;node_id=745674;abspart=1;displaytype=displaycode">&#91;download&#93;</a></div></pre>
+
+</li>
+
+<li>
+b) Check for unprintable characters by converting them into their ASCII hex codes using <a href="http://perldoc.perl.org/functions/ord.html"><tt class='inlinecode'>ord</tt></a>
+<pre class="code"><div class='codeblock'><tt class='codetext'>my $copy = $str;
+$copy =~ s/(&#91;^\x20-\x7E&#93;)/sprintf &#39;\x{%02x}&#39;, ord $1/eg;
+print &quot;:$copy:\n&quot;;
+</tt></div><div class='embed-code-dl'><a href="?part=7;displaytype=displaycode;node_id=745674;abspart=1">&#91;download&#93;</a></div></pre>
+
+</li>
+</ul>
+
+<li>
+<a href="http://perldoc.perl.org/Data/Dumper.html">Dump</a> arrays, hashes and arbitrarily complex data structures. You can get started using the core module <a href="http://perldoc.perl.org/Data/Dumper.html">Data::Dumper</a>. Should the output prove to be unsuitable to you, other alternatives can be downloaded from CPAN, such as <a href="https://metacpan.org/pod/Data%3A%3ADump">Data::Dump</a>, <a href="https://metacpan.org/pod/YAML">YAML</a>, or <a href="https://metacpan.org/pod/JSON">JSON</a>. See also <a href="?node_id=481745">How can I visualize my complex data structure?</a>
+</li>
+
+<pre class="code"><div class='codeblock'><tt class='codetext'>use Data::Dumper;
+print Dumper(\%hash);
+print Dumper($ref);
+</tt></div><div class='embed-code-dl'><a href="?abspart=1;node_id=745674;displaytype=displaycode;part=8">&#91;download&#93;</a></div></pre>
+
+
+<li>
+If you were expecting a <a href="http://perldoc.perl.org/functions/ref.html"><tt class='inlinecode'>ref</tt></a>erence, make sure it is the right kind (ARRAY, HASH, etc.)
+</li>
+<pre class="code"><div class='codeblock'><tt class='codetext'>print ref $ref, &quot;\n&quot;;
+</tt></div><div class='embed-code-dl'><a href="?displaytype=displaycode;node_id=745674;abspart=1;part=10">&#91;download&#93;</a></div></pre>
+
+
+
+<li>
+<p>Check to see if your code is what you thought it was: <a href="http://perldoc.perl.org/B/Deparse.html"><tt class='inlinecode'>B::Deparse</tt></a>
+</li>
+
+<pre class="code"><div class='codeblock'><tt class='codetext'>$ perl -MO=Deparse -p program.pl
+</tt></div><div class='embed-code-dl'><a href="?displaytype=displaycode;node_id=745674;abspart=1;part=12">&#91;download&#93;</a></div></pre>
+
+
+<li>
+<p>
+Check the return (<a href="http://perldoc.perl.org/perlvar.html#Error-Variables">error</a>) status of your commands
+</li>
+
+<ul>
+<li>
+<a href="http://perldoc.perl.org/functions/open.html"><tt class='inlinecode'>open</tt></a> with <a href="http://perldoc.perl.org/perlvar.html#%24%21"><tt class='inlinecode'>$!</tt></a>
+<pre class="code"><div class='codeblock'><tt class='codetext'>open my $fh, &#39;&lt;&#39;, &#39;foo.txt&#39; or die &quot;can not open foo.txt: $!&quot;;
+</tt></div><div class='embed-code-dl'><a href="?node_id=745674;abspart=1;displaytype=displaycode;part=15">&#91;download&#93;</a></div></pre>
+
+</li>
+
+<li>
+<a href="http://perldoc.perl.org/functions/system.html"><tt class='inlinecode'>system</tt></a> and backticks (<a href="http://perldoc.perl.org/functions/qx.html"><tt class='inlinecode'>qx</tt></a>) with <a href="http://perldoc.perl.org/perlvar.html#%24%3F"><tt class='inlinecode'>$?</tt></a>
+<pre class="code"><div class='codeblock'><tt class='codetext'>if (system $cmd) {
+    print &quot;Error: $? for command $cmd&quot;
+}
+else {
+    print &quot;Command $cmd is OK&quot;
+}
+$out = `$cmd`; print $? if $?;
+</tt></div><div class='embed-code-dl'><a href="?part=19;abspart=1;node_id=745674;displaytype=displaycode">&#91;download&#93;</a></div></pre>
+
+</li>
+
+<li>
+<a href="http://perldoc.perl.org/functions/eval.html"><tt class='inlinecode'>eval</tt></a> with <a href="http://perldoc.perl.org/perlvar.html#%24%40"><tt class='inlinecode'>$@</tt></a>
+<pre class="code"><div class='codeblock'><tt class='codetext'>eval { do_something() }; warn $@ if $@;
+</tt></div><div class='embed-code-dl'><a href="?displaytype=displaycode;abspart=1;node_id=745674;part=22">&#91;download&#93;</a></div></pre>
+
+</li>
+</ul>
+
+<li>
+Use <a href="http://perldoc.perl.org/Carp.html">Carp</a> to display variables with a stack trace of module names and function calls.
+</li>
+
+<pre class="code"><div class='codeblock'><tt class='codetext'>use Carp qw(cluck);
+cluck(&quot;var is ($var)&quot;);
+</tt></div><div class='embed-code-dl'><a href="?part=23;displaytype=displaycode;abspart=1;node_id=745674">&#91;download&#93;</a></div></pre>
+
+
+<p>Better yet, install and use the <a href="https://metacpan.org/pod/Carp%3A%3AAlways"><tt class='inlinecode'>Carp::Always</tt></a>
+ CPAN module to make your existing <a href="http://perldoc.perl.org/functions/warn.html"><tt class='inlinecode'>warn</tt></a>/<a href="http://perldoc.perl.org/functions/die.html"><tt class='inlinecode'>die</tt></a> complain with a stack trace:
+
+<pre class="code"><div class='codeblock'><tt class='codetext'>$ perl -MCarp::Always program.pl
+</tt></div><div class='embed-code-dl'><a href="?displaytype=displaycode;node_id=745674;abspart=1;part=27">&#91;download&#93;</a></div></pre>
+
+
+
+<li>
+Demystify regular expressions by installing and using the CPAN module <a href="https://metacpan.org/pod/YAPE%3A%3ARegex%3A%3AExplain"><tt class='inlinecode'>YAPE::Regex::Explain</tt></a>
+</li>
+
+<pre class="code"><div class='codeblock'><tt class='codetext'># what the heck does /^\s+$/ mean?
+use YAPE::Regex::Explain;
+print YAPE::Regex::Explain-&gt;new(&#39;/^\s+$/&#39;)-&gt;explain();
+</tt></div><div class='embed-code-dl'><a href="?abspart=1;node_id=745674;displaytype=displaycode;part=29">&#91;download&#93;</a></div></pre>
+
+
+<li>
+Neaten up your code by installing and using the CPAN script <a href="https://metacpan.org/pod/perltidy">perltidy</a>.  Poor indentation can often obscure problems.
+</li>
+
+<p>
+
+<li>
+Checklist for debugging when using CPAN modules:
+</li>
+
+<ul>
+<li>
+Check the Bug List by following the module's "View Bugs" link.
+</li>
+<li>
+Is your installed version the latest version? If not, check the change log by following the "Changes" link. Also follow the "Other Tools" link to "Diff" and "Grep" the release.
+</li>
+<li>
+If a module provides status methods, check them in your code as you would check return status of built-in functions:
+<pre class="code"><div class='codeblock'><tt class='codetext'>use WWW::Mechanize;
+if ($mech-&gt;success()) { ... }
+</tt></div><div class='embed-code-dl'><a href="?node_id=745674;abspart=1;displaytype=displaycode;part=30">&#91;download&#93;</a></div></pre>
+
+</ul>
+
+</ol>
+
+What's next? If you are not already doing so, use an editor that understands Perl syntax (such as vim or emacs), a GUI debugger (such as <a href="https://metacpan.org/pod/Devel%3A%3Aptkdb">Devel::ptkdb</a>) or use a full-blown IDE. Lastly, use a version control system so that you can fearlessly make these temporary hacks to your code without trashing the real thing.
+
+<p>For more relevant discussions, refer to the initial Meditation post: <a href="?node_id=744845">RFC: Basic debugging checklist</a>
+
+
+<p><small>
+<b>Updated:</b> Sep 8, 2009: 
+Added CPAN Diff/Grep tip.
+<br />
+<b>Updated:</b> Jan 11, 2011: 
+Added Carp::Always.
+</small>
+
+</div>
+</div></p><p><div class="link-back back-to">
+Back to
+<a href="?node=Tutorials">Tutorials</a>
+</div></p>
+    </div>
+  </body>
+</html>

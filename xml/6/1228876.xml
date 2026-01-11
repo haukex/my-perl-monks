@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228876" title="Get only attachment Mail without .html and .txt" created="2019-01-23 11:18:15" updated="2019-01-23 11:18:15" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1228874">Red_Developper</author>
+<doctext field_name="doctext">&lt;p&gt;I need help to have a script that allows to recover the attachment (.pdf or .xls) of the unread mail from INBOX, the attachments will be deposited in a folder 'X' of the local disk with UID of the mail like name.
+
+for example: in the mail box to browse, there are two new unread mails (mail1 and mail2) in mail1 i have attachment "pj1.pdf" and in mail2 i have attachment "pj2.pdf" (or .xls), the question is how to recover pj1.pdf and pj2.pdf(or .xls) from mail1 and mail2 in a local disk folder : / documents / X and renaming it to /documents/X/attachment1.pdf and /documents/X/attachmen2.pdf
+
+I use the following modules :
+
+Mail::IMAPClient and MIME::Parser;
+
+&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+use Mail::IMAPClient;
+use Date::Format;
+use Date::Parse;
+use MIME::Parser;
+use IO::Socket::SSL;
+use File::Path;
+use Carp;
+use warnings;
+
+
+
+#Recuperer le nombre des messages dans INBOX
+my $nm=$imap-&gt;unseen_count("INBOX") ;
+# Select INBOX dossier
+$imap-&gt;select("INBOX");
+#Recuperer la liste des messages non lu dans un objet liste @message
+
+my @messages = $imap-&gt;unseen;
+die "$0: search: $@" if defined $@;
+
+
+# parcourir les message INBOX non lu
+ for(my $id = 1; $id &lt;= $nm; $id++){
+my $id = pop @messages;
+
+       my $msg = $imap-&gt;message_string($id)
+  or die "Could not message_string: $@\n";
+        # my $fh = $imap-&gt;getfh( $msg );
+ #my ($
+
+    parser) = new MIME::Parser;
+     my $parser   = MIME::Parser-&gt;new( );
+        #$parser-&gt;output_under($dossier_output);
+        # Création des dossiers UID MAIL
+        $parser-&gt;output_under($dossier_output, DirName=&gt;"$id");;
+
+    # toutes les PJ dans un même d`enter code here`ossier
+
+        # $parser-&gt;output_dir("mailsPJ");
+
+
+    my $message = $parser-&gt;parse_data($msg)
+
+};
+$imap-&gt;logout
+    or die "Logout error: ", $imap-&gt;LastError, "\n";
+&lt;/code&gt;</doctext>
+<thread id="1228876">
+<node id="1228877"/>
+</thread></node>

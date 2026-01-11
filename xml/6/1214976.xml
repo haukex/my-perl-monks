@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1214976" title="Re: Multiline replace regexp." created="2018-05-21 09:16:16" updated="2018-05-21 09:16:16" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You haven't shown your expected output, but I think I understand what you're asking. I see several issues:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;The dot (&lt;c&gt;.&lt;/c&gt;) loses its special meaning inside a &lt;c&gt;[]&lt;/c&gt; character class, that is, &lt;c&gt;[.]&lt;/c&gt; matches only a literal dot.&lt;/li&gt;
+&lt;li&gt;I think what you're trying to say with &lt;c&gt;[.\n]&lt;/c&gt; is probably that you want to match &lt;i&gt;everything&lt;/i&gt;, since the dot &lt;c&gt;.&lt;/c&gt; doesn't match &lt;c&gt;\n&lt;/c&gt; by default. This is actually achieved by the [doc://perlre#Modifiers|&lt;c&gt;/s&lt;/c&gt; modifier].&lt;/li&gt;
+&lt;li&gt;You probably should be explicit in that you want to match starting at the beginning of the string by using the &lt;c&gt;\A&lt;/c&gt; anchor.&lt;/li&gt;
+&lt;li&gt;You may want to avoid the interpretation of any regex metacharacters in &lt;c&gt;$a&lt;/c&gt; by using &lt;c&gt;\Q...\E&lt;/c&gt; - see [doc://quotemeta] and [id://1156540]&lt;/li&gt;
+&lt;li&gt;Avoid the variable names &lt;c&gt;$a&lt;/c&gt; and &lt;c&gt;$b&lt;/c&gt;, as these are used by [doc://sort] and may cause confusion when used elsewhere in the code.&lt;/li&gt;
+&lt;li&gt;You haven't specified what would happen if the search string doesn't appear exactly once in &lt;c&gt;$q&lt;/c&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;[id://1177642]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $str='qqqweqwe
+asdasdasd
+zxczxczxc
+tyutyutyi
+';
+my $find='zxczxczxc';
+$str=~s#\A.*\Q$find\E##s;
+
+print "&lt;&lt;$str&gt;&gt;\n";
+
+__END__
+
+&lt;&lt;
+tyutyutyi
+&gt;&gt;
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Note the above isn't aware of the concept of lines at all. If you want the string &lt;c&gt;'zxczxczxc'&lt;/c&gt; to be matched only when it appears on a line by itself, you need to specify that.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1214971</root_node>
+<parent_node field_name="parent_node">1214971</parent_node>
+<thread id="1214971">
+<node id="1214973"/>
+<node id="1214974"><node id="1214975"><node id="1214978"><node id="1214979"/>
+</node>
+</node>
+</node>
+<node id="1214976"/>
+</thread></node>

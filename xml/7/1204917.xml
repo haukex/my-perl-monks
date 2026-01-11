@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1204917" title="Use a perl script to empty a file and then replace it with data from a web form" created="2017-12-04 22:00:13" updated="2017-12-04 22:00:13" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="883656">Jesse Smith</author>
+<doctext field_name="doctext">How do you use a perl script to empty a text file and then replace it with data from a web form? Here I first get the data from the file, then I use the web form to update it. The delete old data part works, but the new data doesn't get added to the file. $FORM{'content2'} doesn't get registered when editing it.
+
+&lt;code&gt;
+#!/usr/bin/perl
+###################
+
+use CGI ':standard';
+use CGI qw(:standard);  # then only CGI.pm defines a head()
+
+$page = param('page');
+#/cgi-bin/edit.cgi?page=edit
+
+print header();
+if ($page eq 'edit') {
+
+#This part creates a form with the content from the edit.shtml file.
+use LWP::Simple;
+$content = get ('http://www.domain.com/edit.shtml');
+print &lt;&lt;EOM;
+&lt;title&gt;Test&lt;/title&gt;
+&lt;meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"&gt;
+&lt;META HTTP-EQUIV="Expires" CONTENT="-1"&gt;
+&lt;HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE"&gt;
+&lt;FORM METHOD=POST ACTION="http://www.domain.com/cgi-bin/edit.cgi" name="myForm"&gt;
+&lt;textarea title="Content (optional)" name="content2" cols="100" rows="50"&gt;$content&lt;/textarea&gt;
+&lt;BR&gt;&lt;input type="submit" value="SUBMIT"/&gt;&lt;/form&gt;
+EOM
+}
+else {
+
+$database = "/home/site139/public_html/edit.shtml";
+
+# Get the input
+read(STDIN, $buffer, $ENV{'CONTENT_LENGTH'});
+
+# Split the name-value pairs
+@pairs = split(/&amp;/, $buffer);
+
+foreach $pair (@pairs) {
+   ($name, $value) = split(/=/, $pair);
+
+   $value =~ tr/+/ /;
+   $value =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+   $FORM{$name} = $value;
+}
+
+{
+#Here I delete the edit.shtml page.
+open my $empty_the_file, "&gt; /home/site139/public_html/edit.shtml" or die "Can not write file:
+edit.shtml $!" ;
+close $empty_the_file;
+
+#Here I try to put in the data from the form but $FORM{'content2'} doesn't get registered.
+
+    open (DATABASE,"&gt;&gt;$database");
+    print DATABASE "$FORM{'content2'}\n";
+    close(DATABASE);
+}
+print &lt;&lt;EOM;
+&lt;HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE"&gt;
+Page edited.
+&lt;P&gt;
+$FORM{'content2'}
+EOM
+   exit;
+}
+&lt;/code&gt;</doctext>
+<thread id="1204917">
+<node id="1204918"/>
+<node id="1204919"/>
+<node id="1204927"/>
+</thread></node>

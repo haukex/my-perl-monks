@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118419" title="Re^2: substr on UTF-8 strings" created="2020-06-24 08:32:28" updated="2020-06-24 08:32:28" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1162917">rdiez</author>
+<doctext field_name="doctext">&lt;p&gt; I am finding Unicode support in Perl hard. Most of my strings are ASCII, so there usually is no trouble. But then a Unicode character comes up, and suddenly writing text to stdout produces garbage characters and Perl issues a warning about it. &lt;/p&gt;
+
+&lt;p&gt; So I have come up with an assert strategy: during development, I enable my "UTF-8 asserts", so that I verify that strings are flagged as native or as UTF-8 at the places where they should be. This has helped me prevent errors. And that is how I realised that substr() behaves differently. &lt;/p&gt;
+
+&lt;p&gt; If I capture those trailing slashes with a regular expression, the (UTF-8/native) flag is preserved. I think I will code the removal of trailing slashes with a regular expression, as that should respect the flag. &lt;/p&gt;
+
+&lt;p&gt; Say substr sees that all sliced characters are ASCII and sets the "native string" flag. Say my code slices some other path components, some of which do have Unicode characters, so that those strings remain flagged as UTF-8. Let's assume that all those strings are concatenated together afterwards. &lt;/p&gt;
+
+&lt;p&gt; Perl will then have a mixture of 'native' and 'UTF-8' strings to concatenate. How does that work? Even if there are no characters above 127, Perl will have to scan all 'native' strings, if only to issue a warning for high characters. Is that right? If all strings were flagged as UTF-8, concatenation should be faster, shouldn't it? &lt;/p&gt;
+
+&lt;p&gt; In any case, is there a good reason why substr should take a 'UTF-8 string' and return a 'native string'? I have heard that other routines do respect the flag. &lt;/p&gt;</doctext>
+<root_node field_name="root_node">11118415</root_node>
+<parent_node field_name="parent_node">11118418</parent_node>
+<thread id="11118415">
+<node id="11118417"/>
+<node id="11118418"><node id="11118419"><node id="11118421"><node id="11118427"><node id="11118428"/>
+<node id="11118585"/>
+</node>
+<node id="11118581"/>
+</node>
+<node id="11118580"/>
+<node id="11118584"/>
+</node>
+</node>
+<node id="11118432"/>
+<node id="11118578"><node id="11118583"/>
+</node>
+</thread></node>

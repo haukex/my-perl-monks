@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1167119" title="Re: Unable to reuse STDIN" created="2016-07-04 03:47:59" updated="2016-07-04 03:47:59" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [fireblood],&lt;/p&gt;
+&lt;p&gt;There's a few issues here:&lt;/p&gt;
+&lt;p&gt;First, the piece of documentation you quoted refers to &lt;i&gt;re-using&lt;/i&gt; &lt;c&gt;&lt;&gt;&lt;/c&gt;, but your program doesn't do that, it only uses &lt;c&gt;&lt;&gt;&lt;/c&gt; once. Note that the documentation you quoted is referring specifically to the magic &lt;c&gt;&lt;&gt;&lt;/c&gt; operator with no filehandle, not to the &lt;c&gt;&lt;...&gt;&lt;/c&gt; operator in general.&lt;/p&gt;
+&lt;p&gt;Second, I think [BillKSmith] [id://1167101|is right]: in your example, your &lt;c&gt;STDIN&lt;/c&gt; is being fed from [man://echo]'s output &lt;i&gt;by the shell&lt;/i&gt;, i.e. the redirection of &lt;c&gt;STDIN&lt;/c&gt; is external to your program.&lt;/p&gt;
+&lt;p&gt;Here's something that works for me (Linux):&lt;/p&gt;
+&lt;c&gt;
+use Term::ReadLine;
+my $term = Term::ReadLine-&gt;new;
+while(&lt;&gt;) {
+	chomp;
+	print "Got line: \"$_\"\n";
+}
+my $in = $term-&gt;readline("Input: ");
+print "Got input: \"$in\"\n";
+&lt;/c&gt;
+&lt;p&gt;Example session (I'm typing "test" at the prompt):&lt;/p&gt;
+&lt;c&gt;
+$ echo -e "Hello\nWorld" | perl in.pl 
+Got line: "Hello"
+Got line: "World"
+
+Input: test
+Got input: "test"
+&lt;/c&gt;
+&lt;p&gt;But I'd also ask what the bigger picture is? I think you'd have more choices as to how to handle your input if you didn't rely on the shell's pipe, instead you could have the shell write the output of the previous program to a file and have your script read that, or have your script run the command as a child and read its output (there are many modules to help you with that - I listed some of them [id://1165204|here]).&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1167099</root_node>
+<parent_node field_name="parent_node">1167099</parent_node>
+<thread id="1167099">
+<node id="1167100"/>
+<node id="1167101"/>
+<node id="1167119"/>
+<node id="1167277"/>
+</thread></node>

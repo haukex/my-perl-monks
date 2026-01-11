@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117861" title="Substitute some Unicodes with their escapes" created="2020-06-09 06:57:26" updated="2020-06-09 06:57:26" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1129446">jjmoka</author>
+<doctext field_name="doctext">I've received some old code which was running on Perl &lt;code&gt;5.8&lt;/code&gt; but stopped to work on &lt;code&gt;5.10&lt;/code&gt;. (both old, so Unicode support is anyhow limited, ie. no &lt;code&gt;use feature ':5.12'&lt;/code&gt;)  as preamble)
+&lt;p&gt;
+This code should substitute every Unicode/UTF-8 in received (very long) strings (UTF-8) with some escapes listed in a separate file.
+This 'dictionary' file is sourced into a hash where the keys are the UTF-8 char while the values are the escaped strings:&lt;/p&gt;
+&lt;code&gt;
+     ex. $_table{'Ö'}; # gives '&amp;Ouml;'
+&lt;/code&gt;
+A builtin &lt;code&gt;?&lt;/code&gt; is returned for the Unicodes missing in that hash.
+The current implementation goes with the approach to convert the strings into bytes:
+&lt;code&gt;
+my $bytes = pack( "C*", unpack( "U0C*", $$sgml_r ));
+&lt;/code&gt;
+move into the bytes world 
+&lt;code&gt;
+   use bytes;
+    ....         #all will happen wrapped here
+   no bytes;
+&lt;/code&gt;
+
+In this context, it searches for not ASCII bytes (out of the range space/tilde)
+&lt;code&gt;
+   $bytes =~ s/([^\ -\~]+.*)/$self-&gt;_fixup($1)/ego;
+&lt;/code&gt;
+the  &lt;code&gt;_fixup&lt;/code&gt; function will perform a check on the length of the non-ASCII sequence (5,4,3,2 bytes) (yes, 6 not considered), looking up in the hash and RECURSIVELY goes through the remaining sequence of bytes. (All the used functions &lt;code&gt;length/substr/concatenation(.)&lt;/code&gt; are then occurring in &lt;code&gt;bytes&lt;/code&gt; context)
+
+I could try to see what exactly went wrong between &lt;code&gt;v5.8&lt;/code&gt; and &lt;code&gt;v5.10&lt;/code&gt;, but I'm wondering if this approach isn't right in the first place.
+There are some good ideas probably, but I spot many steps which are considered and documented as bad practice when working with Unicode in Perl.
+
+I've successfully tested a simple solution which just checks every single Unicode character:
+&lt;code&gt;
+    $$sgml_r =~ s/(.)/$self-&gt;_mapchar($1)/eg;
+&lt;/code&gt;
+
+where &lt;code&gt;_mapchar&lt;/code&gt; is the function which performs the lookup with conversion for non-ASCII chars
+&lt;code&gt;
+sub _mapchar {
+   my ($char) = @_;
+   if ( $char !~ /[\r\n\s]/) {
+        my $nbytes = length encode_utf8($char);
+        if ($nbytes &gt; 1) {
+            $char = exists $_table{$char} ? $_table{$char} : '?';
+        }
+   }
+   return $char;
+}      
+&lt;/code&gt;
+
+Apart from further testing it, this solution is going to check EVERY char which really doesn't seem good practice too. The rate of strings to process is high and each isn't also that short. Moreover every string could not even have a Unicode out of the ASCII space, or maybe just a few.
+
+&lt;p&gt;Both solutions don't seem fine. Interested to any Perlish consideration from the experts, to better figure out what surely avoid&lt;/p&gt;
+
+</doctext>
+<thread id="11117861">
+<node id="11117862"><node id="11117864"><node id="11117866"><node id="11117871"/>
+</node>
+<node id="11117888"><node id="11117889"/>
+</node>
+</node>
+</node>
+<node id="11117867"><node id="11117872"/>
+<node id="11117873"/>
+</node>
+</thread></node>

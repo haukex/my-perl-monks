@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200649" title="Re^5: Killing a child process (updated)" created="2017-10-04 06:50:56" updated="2017-10-04 06:50:56" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I wonder if there's any way to check that the sound file is still playing?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I would guess that the sound not playing anymore would normally be closely associated with the process terminating. There are probably exceptions, e.g. if the audio data is buffered or something, but personally I would probably first go with the aforementioned assumption, and only investigate further if problems arise (or if this application needs to be ported to a lot of different machines). So as far as I can tell, &lt;c&gt;-&gt;finish&lt;/c&gt; calls [doc://waitpid] under the hood, which means that it should return when the process ends, and hopefully when audio file is done playing. The following test seems to confirm it - at least on my machine the sound stops playing right when the process terminates:&lt;/p&gt;
+&lt;c&gt;
+use IPC::Run qw/start/;
+use Time::HiRes qw/gettimeofday tv_interval/;
+
+my $t0 = [gettimeofday];
+my $h = start ['play','-q','/home/myname/soundfile.wav',
+    'trim','0','5'];
+printf " start: %.03f s\n", tv_interval($t0);
+$h-&gt;finish;
+printf "finish: %.03f s\n", tv_interval($t0);
+
+__END__
+
+ start: 0.001 s
+finish: 5.143 s
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Other than [doc://waitpid] for children, a generic way to see if another process is reachable is [doc://kill|&lt;c&gt;kill 'ZERO', $pid&lt;/c&gt;]:&lt;/p&gt;
+&lt;blockquote&gt;
+If SIGNAL is either the number 0 or the string &lt;c&gt;ZERO&lt;/c&gt; (or &lt;c&gt;SIGZERO&lt;/c&gt;), no signal is sent to the process, but kill checks whether it's possible to send a signal to it (that means, to be brief, that the process is owned by the same user, or we are the super-user). This is useful to check that a child process is still alive (even if only as a zombie) and hasn't changed its UID. See [doc://perlport] for notes on the portability of this construct.
+&lt;/blockquote&gt;</doctext>
+<root_node field_name="root_node">1200577</root_node>
+<parent_node field_name="parent_node">1200647</parent_node>
+<thread id="1200577">
+<node id="1200579"><node id="1200581"><node id="1200582"><node id="1200588"><node id="1200592"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1200587"><node id="1200590"><node id="1200593"><node id="1200647"><node id="1200649"/>
+</node>
+<node id="1200655"><node id="1200658"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1200594"><node id="1200617"/>
+</node>
+</thread></node>

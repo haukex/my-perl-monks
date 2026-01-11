@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1175816" title="Passing the logger's object" created="2016-11-13 10:24:56" updated="2016-11-13 10:24:56" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1087432">v_melnik</author>
+<doctext field_name="doctext">&lt;p&gt;Dear Monks,&lt;/p&gt;
+
+&lt;p&gt;I would like you to share your opinions on the matter of passing the reference to a common object between a library components.&lt;/p&gt;
+
+&lt;p&gt;Let's imagine that we have a complex library that consists of a bunch of classes. There is the &lt;code&gt;Library::Logger&lt;/code&gt; class that is being used by other components (e.g. the initialization method of &lt;code&gt;Library&lt;/code&gt; initializes an object of the &lt;code&gt;Library::Logger&lt;/code&gt; class and then the &lt;code&gt;Library&lt;/code&gt;-based object uses the &lt;code&gt;Library::Logger&lt;/code&gt;-based object to call the logging methods.&lt;/p&gt;
+
+&lt;p&gt;There are many other sub-classes that needs to use the same object too: &lt;code&gt;Library::Foo&lt;/code&gt;, &lt;code&gt;Library::Bar&lt;/code&gt;, &lt;code&gt;Library::Baz&lt;/code&gt;. Moreover, there are &lt;code&gt;Library::Foo::Schmoo&lt;/code&gt;, &lt;code&gt;Library::Bar::Schmar&lt;/code&gt; and &lt;code&gt;Library::Baz::Schmaz&lt;/code&gt; sub-classes, there are dozens of classes. The question is: how to let them all have the reference to the logger that had been initialized once by the &lt;code&gt;Library&lt;/code&gt;-based object?&lt;/p&gt;
+
+&lt;p&gt;I see the following ways to acheive it:
+&lt;ol&gt;
+&lt;li&gt;When a &lt;code&gt;Library&lt;/code&gt;-based object initializes the &lt;code&gt;Library::Foo&lt;/code&gt;-based object, it passes the link to the logger to the newly-created object: &lt;code&gt;$obj = Library::Foo-&gt;new(logger =&gt; $self-&gt;_get_logger);&lt;/code&gt;. So the &lt;code&gt;Library::Foo&lt;/code&gt;-based object could get the logger as &lt;code&gt;$logger = $self-&gt;_get_logger&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;When a &lt;code&gt;Library&lt;/code&gt;-based object initializes the &lt;code&gt;Library::Foo&lt;/code&gt;-based object, it passes the link to itself to the newly-created object: &lt;code&gt;$obj = Library::Foo-&gt;new(papa =&gt; $self);&lt;/code&gt;. So the &lt;code&gt;Library::Foo&lt;/code&gt;-based object could get the logger as &lt;code&gt;$logger = $self-&gt;_get_papa-&gt;_get_logger&lt;/code&gt;. It breaks encapsulation, but it lets the &lt;code&gt;Library::Foo&lt;/code&gt;-based object to get many other things from its "papa".&lt;/li&gt;
+&lt;li&gt;Use a singleton (as &lt;code&gt;MooseX::Singleton&lt;/code&gt;) or a global variable (as &lt;code&gt;$Library::_logger&lt;/code&gt;) which seems to be even worse.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/p&gt;
+
+&lt;p&gt;What do you think, which way seems to be better? What way would you propose? How do you solve this problem for yourself?&lt;/p&gt;
+
+&lt;p&gt;Many thanks in advance!&lt;/p&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1087432"&gt;
+V.Melnik
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1175816">
+<node id="1175817"><node id="1175839"><node id="1175841"/>
+</node>
+</node>
+<node id="1175821"><node id="1175838"><node id="1175842"/>
+<node id="1175868"/>
+</node>
+</node>
+<node id="1175843"/>
+</thread></node>

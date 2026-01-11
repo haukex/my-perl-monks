@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110265" title="Re: backticks execution &quot;inside&quot; variable (string)" created="2019-12-17 01:33:15" updated="2019-12-17 01:33:15" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;It depends:&lt;/p&gt;
+&lt;p&gt;Is it only ever going to be the date/time that you want to interpolate? Then I'd strongly recommend having the user provide a string in &lt;c&gt;strftime&lt;/c&gt; format - either the core module [doc://Time::Piece], or perhaps [mod://DateTime] (or even from [doc://POSIX]).&lt;/p&gt;
+&lt;p&gt;Do you care about the [id://1180578|potential security issues] of your Perl script executing an arbitrary user-supplied command? If not, here's how I might have done it (I'm explicitly calling &lt;c&gt;/bin/bash&lt;/c&gt; because of [id://1205217]):&lt;/p&gt;
+&lt;c&gt;
+use IPC::System::Simple qw/capturex/;
+my $str = q{"filename_`date +%d%m%Y`.log"};
+my $out = capturex('/bin/bash','-c',"echo -n $str");
+&lt;/c&gt;
+&lt;p&gt;Another potentially very risky (!) way to do it, if you want to execute arbitrary Perl code instead of the shell's syntax, is [doc://eval].&lt;/p&gt;
+&lt;p&gt;Otherwise, there might be CPAN modules to do interpolation and execution of commands in the same way the shell does, but I don't know of any off the top of my head. The AM post mentions templates, which might also be a potential generalized solution, depending on what kind of stuff you want to interpolate (typically, templates use some other characters instead of backticks for interpolation, but that's usually configurable).&lt;/p&gt;
+&lt;p&gt;Side notes:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;it was just the first successful try how to force Perl not cutting filename after &lt;c&gt;date&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That's the shell doing that, not Perl. Also, in regards to your sample piece of code, see the caveats in [id://1206848], and see [id://11102684].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11110263</root_node>
+<parent_node field_name="parent_node">11110263</parent_node>
+<thread id="11110263">
+<node id="11110264"/>
+<node id="11110265"><node id="11110429"/>
+</node>
+<node id="11110266"><node id="11110269"/>
+<node id="11110430"/>
+</node>
+<node id="11110267"><node id="11110431"><node id="11110450"/>
+<node id="11110464"><node id="11110470"/>
+</node>
+</node>
+</node>
+<node id="11110270"><node id="11110433"><node id="11110439"/>
+</node>
+</node>
+</thread></node>

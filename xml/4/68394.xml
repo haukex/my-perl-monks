@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="68394" title="Re: How do I do a natural sort on an array?" created="2001-03-30 14:19:25" updated="2005-08-13 01:06:20" _doctext_mode="lenient"><type id="11">note</type>
+<author id="3737">Dominus</author>
+<doctext field_name="doctext">I'm not exactly sure what you want (it would have helped if you had provided an
+example) but here's what I use:
+
+&lt;code&gt;
+sub byfile {
+  my @a = split /(\d+)/, $a;
+  my @b = split /(\d+)/, $b;
+  my $M = @a &gt; @b ? @a : @b;
+  my $res = 0;
+  for (my $i = 0; $i &lt; $M; $i++) {
+    return -1 if ! defined $a[$i];
+    return 1 if  ! defined $b[$i];
+    if ($a[$i] =~ /\d/) {
+      $res = $a[$i] &lt;=&gt; $b[$i];
+    } else {
+      $res = $a[$i] cmp $b[$i];
+    }
+    last if $res;
+  }
+  $res;
+}
+&lt;/code&gt;
+
+This may be more complicated than you need.  Given the following:
+&lt;code&gt;
+53 7 119 53red
+red5 red6 red7 red67 red6.jpg red12.jpg
+green4.jpg
+blue2.jpg blue1000.jpg blue2.jpg58
+&lt;/code&gt;
+
+it produces the following output:
+&lt;code&gt;
+7
+53
+53red
+119
+blue2.jpg
+blue2.jpg58
+blue1000.jpg
+green4.jpg
+red5
+red6
+red6.jpg
+red7
+red12.jpg
+red67
+&lt;/code&gt;
+
+Lucs St. Louis also suggests:
+&lt;code&gt;
+ while (defined (my $A = shift @a) and defined (my $B = shift @b)) {
+   $res = ($A =~ /\d/) ? $A &lt;=&gt; $B : $A cmp $B;
+   return $res if $res;
+ }
+ return defined $A ? -1 : 1;
+&lt;/code&gt;
+
+Hope this helps.
+</doctext>
+<root_node field_name="root_node">68185</root_node>
+<parent_node field_name="parent_node">68185</parent_node>
+<thread id="68185">
+<node id="68189"/>
+<node id="68202"/>
+<node id="68205"/>
+<node id="68394"/>
+<node id="366277"/>
+<node id="411403"/>
+<node id="552448"/>
+</thread></node>

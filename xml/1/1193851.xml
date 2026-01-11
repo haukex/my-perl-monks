@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193851" title="Turning a questionable string into a number" created="2017-06-29 13:43:21" updated="2017-06-29 13:43:21" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="273627">bradcathey</author>
+<doctext field_name="doctext">&lt;p&gt;I'm reading in a tab delimited text file exported from Excel. The 12th "position" contains a simple 3 or 4 digit number.
+For some reason that number is coming in as a string, or something I'm not familiar with, and unusable as a number. This is from Dumper:&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;code&gt;
+$VAR1 = [
+          '1130',
+&lt;/code&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;My database query was returning zip so I tested for the veracity of the uniq_id in line 78. The error is:&lt;/p&gt;
+&lt;blockquote&gt;&lt;code&gt;
+Argument "\01\01\03\00\0" isn't numeric in multiplication (*) at ./maptobuildforums.pl line 78.
+&lt;/code&gt;&lt;/blockquote&gt;
+&lt;p&gt;I did a hex dump and the number looks fine:&lt;/p&gt;
+&lt;blockquote&gt;&lt;code&gt;1130 = 31 31 33 30&lt;/code&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;Here's the code:&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;code&gt;
+...
+use List::MoreUtils qw(uniq);
+
+open($fh, '&lt;', 'filetoparse.txt') or die "error $!";
+    chomp(my @lines = &lt;$fh&gt;);
+close $fh;
+
+my @old_ids;
+foreach my $line (@lines) {
+    @data = split(/\t/, $line);
+    push @old_ids, $data[12];
+}  
+
+my @uniq_ids = uniq (@old_ids); #get unique ids
+    
+#step through unique ids for new id using old ids
+for my $i (0..$#uniq_ids) {
+    
+    print $uniq_ids[$i] * 1;  #line 78 of my code to test for a number
+    
+    my $stmt = "SELECT * FROM temp_topics WHERE old_id = ?";
+    my $topic = $dbh-&gt;selectrow_hashref($stmt, undef, $uniq_id[$i]);
+    
+    etc.
+}
+&lt;/code&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;Thoughts on how to handle this?&lt;/p&gt;
+    	
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-273627"&gt;
+&amp;mdash;Brad&lt;br /&gt;&lt;small&gt;&lt;i&gt;"The important work of moving the world forward does not wait to be done by perfect men."&lt;/i&gt;  George Eliot&lt;/small&gt;&lt;br&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1193851">
+<node id="1193862"/>
+<node id="1193863"/>
+<node id="1193865"><node id="1193866"><node id="1193867"><node id="1193868"/>
+</node>
+</node>
+</node>
+<node id="1193881"><node id="1193883"/>
+<node id="1194037"><node id="1194038"><node id="1194045"><node id="1194047"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

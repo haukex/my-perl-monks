@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1226425" title="Getting hash key tree" created="2018-11-27 15:37:12" updated="2018-11-27 15:37:12" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="903011">jhisey</author>
+<doctext field_name="doctext">I have a MySQL database with data in it that I'll call rules. It's basically a map for a perl program that finds a rule based on the results of the previous rule. For example, rule 1 is run and based on the output (return) and the stages, the table is used to determine the next rule to run and stages to "be in." Here is a very simple example of the table:
+
+&lt;pre&gt;
+* return * rule * stage1 * stage2 * next_rule * next_stage1 * next_stage2 *
+***************************************************************************
+*   ret1 *    1 *     A  *     00 *         2 *           B *          10 *
+*   ret2 *    1 *     A  *     00 *         5 *           D *          23 *
+*   bob1 *    2 *     B  *     10 *         5 *           D *          23 *
+*   bob2 *    2 *     B  *     10 *         6 *           E *          44 *
+*   dog1 *    3 *     B  *     10 *         6 *           E *          44 *
+*   dog2 *    4 *     C  *     10 *         6 *           E *          44 *
+*   cat1 *    5 *     D  *     23 *         7 *           F *          55 *
+*   cat2 *    5 *     D  *     23 *         7 *           F *          56 *
+*   cat3 *    5 *     D  *     23 *         7 *           F *          57 *
+*   hit1 *    6 *     E  *     44 *         7 *           G *          55 *
+*   hit1 *    6 *     K  *     14 *         7 *           H *          55 *
+*   hit2 *    6 *     E  *     44 *         7 *           G *          56 *
+*   etc.
+***************************************************************************
+&lt;/pre&gt;
+
+What I'd like to do is create a representation of the tree and the different possible paths. I was thinking I could use a hash and each set of possible returns would be another level in the hash. Let's say I start off running rule 1 in stage1 A and stage2 00. This is the hash I'm trying to get to:
+&lt;pre&gt;
+$hash{ret1}             = { rule =&gt; '1', stage1 =&gt; 'A', stage2 =&gt; '00', next_rule =&gt; '2', next_stage1 =&gt; 'B', next_stage2 =&gt; '10' };
+$hash{ret1}{bob1}       = { rule =&gt; '2', stage1 =&gt; 'B', stage2 =&gt; '10', next_rule =&gt; '5', next_stage1 =&gt; 'D', next_stage2 =&gt; '23' };
+$hash{ret1}{bob1}{cat1} = { rule =&gt; '5', stage1 =&gt; 'D', stage2 =&gt; '23', next_rule =&gt; '7', next_stage1 =&gt; 'F', next_stage2 =&gt; '55' };
+$hash{ret1}{bob1}{cat2} = { rule =&gt; '5', stage1 =&gt; 'D', stage2 =&gt; '23', next_rule =&gt; '7', next_stage1 =&gt; 'F', next_stage2 =&gt; '56' };
+$hash{ret1}{bob1}{cat3} = { rule =&gt; '5', stage1 =&gt; 'D', stage2 =&gt; '23', next_rule =&gt; '7', next_stage1 =&gt; 'F', next_stage2 =&gt; '57' };
+$hash{ret1}{bob2}       = { rule =&gt; '2', stage1 =&gt; 'B', stage2 =&gt; '10', next_rule =&gt; '6', next_stage1 =&gt; 'E', next_stage2 =&gt; '44' };
+$hash{ret1}{bob2}{hit1} = { rule =&gt; '6', stage1 =&gt; 'E', stage2 =&gt; '44', next_rule =&gt; '7', next_stage1 =&gt; 'G', next_stage2 =&gt; '55' };
+$hash{ret1}{bob2}{hit2} = { rule =&gt; '6', stage1 =&gt; 'E', stage2 =&gt; '44', next_rule =&gt; '7', next_stage1 =&gt; 'G', next_stage2 =&gt; '56' };
+$hash{ret2}             = { rule =&gt; '1', stage1 =&gt; 'A', stage2 =&gt; '00', next_rule =&gt; '5', next_stage1 =&gt; 'D', next_stage2 =&gt; '23' };
+$hash{ret2}{cat1}       = { rule =&gt; '5', stage1 =&gt; 'D', stage2 =&gt; '23', next_rule =&gt; '7', next_stage1 =&gt; 'F', next_stage2 =&gt; '55' };
+$hash{ret2}{cat2}       = { rule =&gt; '5', stage1 =&gt; 'D', stage2 =&gt; '23', next_rule =&gt; '7', next_stage1 =&gt; 'F', next_stage2 =&gt; '56' };
+$hash{ret2}{cat3}       = { rule =&gt; '5', stage1 =&gt; 'D', stage2 =&gt; '23', next_rule =&gt; '7', next_stage1 =&gt; 'F', next_stage2 =&gt; '57' };
+&lt;/pre&gt;
+These trees will get up to 20 elements deep. I was thinking I could just keep going through the last set of keys, grab the rows from the table and append the next set of keys. The problem is I can't figure out how to use that last set.  If I've traversed down to $hash{ret1}{bob1}, I'll select from my table all rows where rule =&gt; '5', stage1 =&gt; 'D', and stage2 =&gt; '23' and get cat1, cat2, and cat3. How do I say "ok, now create $hash{ret1}{bob1}{cat1}, $hash{ret1}{bob1}{cat2}, and $hash{ret1}{bob1}{cat3}?&lt;br&gt;
+&lt;br&gt;
+Hopefully what I'm trying to do makes sense. If you have a better way to create a structure of this data that I can then use to print or diagram with, that's great too. This is just the way I thought the result would make for an easily traversed "tree" when done.</doctext>
+<thread id="1226425">
+<node id="1226426"/>
+<node id="1226465"/>
+<node id="1226466"/>
+</thread></node>

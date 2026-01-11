@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1232774" title="Re: Execute command" created="2019-04-18 14:31:47" updated="2019-04-18 14:31:47" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Most likely your web server is providing a different environment to the scripts it runs. If you check the web server's configuration, you may be able to find its settings on that environment, including &lt;c&gt;PATH&lt;/c&gt;. However, it's usually best to use absolute pathnames, as already mentioned by [hippo].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;my $output = qx "php -l -d log_errors=0 $pName";&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;What is &lt;c&gt;$pName&lt;/c&gt;? If it's anything derived from user input, then this is a &lt;i&gt;massive&lt;/i&gt; security hole, see my post about this [id://1180578|here]. Even if it's not user input, it should be escaped properly to avoid potential issues with shell metacharacters. Since you say this is Windows, I would at the very least use [mod://Win32::ShellQuote] to quote that command! For example:&lt;/p&gt;
+&lt;c&gt;
+use Win32::ShellQuote qw/quote_system_string/;
+my $output = readpipe(quote_system_string("php","-l","-d","log_errors=0",$pName));
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1232761</root_node>
+<parent_node field_name="parent_node">1232761</parent_node>
+<thread id="1232761">
+<node id="1232762"/>
+<node id="1232763"/>
+<node id="1232774"/>
+</thread></node>

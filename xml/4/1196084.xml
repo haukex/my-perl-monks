@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1196084" title="Re: How to Check Hashes for Missing Items when Keys can be Values and vice versa" created="2017-07-26 04:35:43" updated="2017-07-26 04:35:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Personally I would probably build a [doc://perldsc#HASHES-OF-HASHES|hash of hashes], plus its inverse (no problem if the input data isn't too big):&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my (%sites,%dsks);
+while (&lt;DATA&gt;) {
+	my ($site, $buf) = split /,/;
+	for (split /:/, $buf) {
+		for my $dsk (grep {$_!=0} /([0-9]+)!([0-9]+)!$/) {
+			$sites{$site}{$dsk}++;
+			$dsks{$dsk}{$site}++;
+		}
+	}
+}
+
+for my $dsk (sort {$a&lt;=&gt;$b} keys %dsks) {
+	print "Dsk $dsk: ", join(", ",
+		sort {$a&lt;=&gt;$b} keys %{ $dsks{$dsk} } ), "\n";
+}
+
+for my $site (sort {$a&lt;=&gt;$b} keys %sites) {
+	print "Site $site: ", join(", ",
+		sort {$a&lt;=&gt;$b} keys %{ $sites{$site} } ), "\n";
+}
+&lt;/c&gt;
+&lt;p&gt;As for your question about missing values, that's definitely a case of TIMTOWTDI. See for example the FAQ [doc://perlfaq4#How-do-I-compute-the-difference-of-two-arrays?-How-do-I-compute-the-intersection-of-two-arrays?] You can also just iterate over the list of expected keys and check their existence in the target hash via [doc://exists], but that's the brute force method. There's also a [id://1161692|trick] I sometimes like to use that involves [doc://delete]ing a hash [doc://perldata#Slices|slice] (again, only if the input data isn't too big, because it's not the most efficient method), here I'll demonstrate by listing the "dsk"s (disks?) that are missing from each site:&lt;/p&gt;
+&lt;c&gt;
+my %alldsks = map {$_=&gt;1} keys %dsks;
+for my $site (sort {$a&lt;=&gt;$b} keys %sites) {
+	my @sitedsks = keys %{ $sites{$site} };
+	my %missingdsks = %alldsks;
+	delete @missingdsks{@sitedsks};
+	print "Site $site MISSING: ", join(", ",
+		sort {$a&lt;=&gt;$b} keys %missingdsks), "\n";
+}
+__END__
+Site 377 MISSING: 70, 71, 90, 91, 92, 93, 189, 190, 204, 205, 206, 207, 550, 551, 554
+Site 512 MISSING: 71, 96, 97, 204, 205, 206, 207, 550, 551, 554
+Site 587 MISSING: 70, 71, 90, 91, 92, 93, 96, 97, 189, 190, 204, 205, 206, 207
+Site 1108 MISSING: 90, 91, 92, 93, 96, 97, 189, 190, 550, 551, 554
+&lt;/c&gt;
+&lt;p&gt;I'd also recommend you play it safer and [id://111088].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1196078</root_node>
+<parent_node field_name="parent_node">1196078</parent_node>
+<thread id="1196078">
+<node id="1196084"/>
+<node id="1196085"/>
+<node id="1196093"/>
+<node id="1196096"><node id="1196097"/>
+<node id="1196099"/>
+<node id="1196102"/>
+</node>
+<node id="1196103"/>
+<node id="1196322"/>
+</thread></node>

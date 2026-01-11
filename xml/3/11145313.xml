@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11145313" title="Re: Filehandle in subroutine in use VRML.pm" created="2022-07-06 17:03:41" updated="2022-07-06 17:03:41" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Thank you for providing enough code to reproduce your issue!&lt;/p&gt;
+&lt;p&gt;The problem is that because you're not using [doc://strict|&lt;c&gt;strict "refs"&lt;/c&gt;] (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; and &lt;c&gt;strict "subs"&lt;/c&gt;), there is some funky symbolic reference stuff going on here. It's unclear to me why you even need to pass the parameter &lt;c&gt;LF&lt;/c&gt; in &lt;c&gt;&amp;mystart($LumberFile,LF);&lt;/c&gt;, but AFAICT what is going on here is that that call is actually being interpreted as &lt;c&gt;&amp;mystart($LumberFile,"LF");&lt;/c&gt;, and then inside &lt;c&gt;VRML.pm&lt;/c&gt; there is no filehandle named &lt;c&gt;LF&lt;/c&gt; because that was opened in the &lt;c&gt;main&lt;/c&gt; package.&lt;/p&gt;
+&lt;p&gt;The best thing to do is to rewrite your code so that it works under [doc://strict] and [doc://warnings]. The minimum changes I would recommend is to change the definition and call of &lt;c&gt;mystart&lt;/c&gt; as follows:&lt;/p&gt;
+&lt;c&gt;
+mystart($LumberFile);
+sub mystart {
+    my ($file) = @_;
+    open( my $fh, "&gt; $file" ) or die ...
+&lt;/c&gt;
+&lt;p&gt;If you need the &lt;c&gt;$fh&lt;/c&gt; parameter to &lt;c&gt;mystart&lt;/c&gt;, you need to show us more context as to how it gets used for us to make a recommendation for a useful replacement (&lt;i&gt;Update:&lt;/i&gt; [id://11145345]).&lt;/p&gt;
+&lt;p&gt;However, I see several other older code styles in your sample code, for example using the &lt;c&gt;-w&lt;/c&gt; shebang switch ([doc://warnings#What's-wrong-with-w-and-$^W|What's wrong with &lt;c&gt;-w&lt;/c&gt; and &lt;c&gt;$^W&lt;/c&gt;]), using the old ampersand-style &lt;c&gt;sub&lt;/c&gt; calls ([doc://perlsub]), and the two-argument open ([id://11102684]). So here's your sample code updated to modern Perl, I strongly suggest you adopt this style for all your code:&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+use VRML;
+
+my $Dir        = "vrmlstuff";
+my $Subdir     = "DrillPressTable";
+my $LumberFile = "$Dir/$Subdir/lumber.wrl";
+
+mystart($LumberFile);
+
+sub mystart {
+	my ($file) = @_;
+	open my $fh, '&gt;', $file
+		or die "ERROR: Unable to open $file for output";
+	my @lines = split /\n/, &lt;&lt;END;
+#VRML V2.0 utf8
+NavigationInfo { headlight TRUE }
+DirectionalLight { # First child
+ direction 0 0 -1 # Light illuminating the scene
+}
+END
+	my $i = 0;
+	if ( $i == 0 ) {
+		for my $line (@lines) {
+			print $fh "$line\n";
+		}
+	}
+	elsif ( $i == 1 ) {
+		myprint( \@lines, $fh );
+	}
+	elsif ( $i == 2 ) {
+		printout( \@lines, $fh );
+	}
+}
+
+sub myprint {
+	my ($lines, $fh) = @_;
+	for my $line ( @{$lines} ) {
+		print $fh "$line\n";
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;c&gt;VRML.pm&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+package VRML;
+use warnings;
+use strict;
+use Exporter 'import';
+our @EXPORT = qw/printout/;
+
+sub printout {
+	my ($lines, $fh) = @_;
+	$fh = *STDOUT unless $fh;
+	for my $line ( @{$lines} ) {
+		print $fh "$line\n";
+	}
+}
+
+1;
+&lt;/c&gt;
+&lt;spoiler&gt;
+&lt;p&gt;&lt;b&gt;Warning:&lt;/b&gt; &lt;strike&gt;Do not do this if you want to keep your sanity, but the two ways to make the code you showed work with the absolute minimal changes to the code are &lt;c&gt;&amp;mystart($LumberFile,*LF);&lt;/c&gt; and &lt;c&gt;&amp;mystart($LumberFile,'main::LF');&lt;/c&gt;. But &lt;b&gt;don't do this&lt;/b&gt;.&lt;/strike&gt; &lt;i&gt;Update:&lt;/i&gt; For a slightly saner minimal approach see my node [id://11145345|here].&lt;/p&gt;
+&lt;/spoiler&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">11145311</root_node>
+<parent_node field_name="parent_node">11145311</parent_node>
+<thread id="11145311">
+<node id="11145313"><node id="11145316"><node id="11145324"/>
+</node>
+</node>
+<node id="11145322"><node id="11145325"><node id="11145345"/>
+<node id="11145428"><node id="11145440"/>
+</node>
+</node>
+</node>
+<node id="11145348"><node id="11145564"><node id="11145573"/>
+<node id="11145605"/>
+</node>
+</node>
+<node id="11145353"><node id="11145380"><node id="11145386"><node id="11145398"><node id="11145399"/>
+</node>
+</node>
+<node id="11145439"/>
+</node>
+</node>
+</thread></node>

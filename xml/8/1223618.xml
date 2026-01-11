@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1223618" title="Re^4: Problem with perlcritic when using Moose object" created="2018-10-06 05:42:09" updated="2018-10-06 05:42:09" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;$hashref-&gt;{-option}&lt;/c&gt; reliably interpreted as &lt;c&gt;$hashref-&gt;{'-option'}&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Interestingly, the former is actually interpreted as an expression (note the "&lt;c&gt;negate&lt;/c&gt;" below), but the because of the [doc://perlop#Symbolic-Unary-Operators|properties of unary &lt;c&gt;-&lt;/c&gt;], &lt;c&gt;-bareword&lt;/c&gt; is the same as &lt;c&gt;"-bareword"&lt;/c&gt;. [doc://perl5260delta#Performance-Enhancements|As of v5.26,] "Bareword constant strings are now permitted to take part in constant folding."&lt;/p&gt;
+&lt;c&gt;
+$ perlbrew exec --with 5.24.4,5.26.2 perl -MO=Concise -wMstrict -e 'my %hash; print $hash{-foo}'
+
+perl-5.24.4
+==========
+b  &lt;@&gt; leave[1 ref] vKP/REFC -&gt;(end)
+1     &lt;0&gt; enter -&gt;2
+2     &lt;;&gt; nextstate(main 2 -e:1) v:*,&amp;,{,x*,x&amp;,x$,$ -&gt;3
+3     &lt;0&gt; padhv[%hash:2,3] vM/LVINTRO -&gt;4
+4     &lt;;&gt; nextstate(main 3 -e:1) v:*,&amp;,{,x*,x&amp;,x$,$ -&gt;5
+a     &lt;@&gt; print vK -&gt;b
+5        &lt;0&gt; pushmark s -&gt;6
+9        &lt;2&gt; helem sK/2 -&gt;a
+6           &lt;0&gt; padhv[%hash:2,3] sR -&gt;7
+8           &lt;1&gt; negate[t2] sK/1 -&gt;9
+7              &lt;$&gt; const(PV "foo") s/BARE -&gt;8
+-e syntax OK
+
+
+perl-5.26.2
+==========
+8  &lt;@&gt; leave[1 ref] vKP/REFC -&gt;(end)
+1     &lt;0&gt; enter -&gt;2
+2     &lt;;&gt; nextstate(main 2 -e:1) v:*,&amp;,{,x*,x&amp;,x$,$ -&gt;3
+3     &lt;0&gt; padhv[%hash:2,3] vM/LVINTRO -&gt;4
+4     &lt;;&gt; nextstate(main 3 -e:1) v:*,&amp;,{,x*,x&amp;,x$,$ -&gt;5
+7     &lt;@&gt; print vK -&gt;8
+5        &lt;0&gt; pushmark s -&gt;6
+-        &lt;1&gt; ex-helem sK/2 -&gt;7
+6           &lt;+&gt; multideref($hash{"-foo"}) sK -&gt;7
+-              &lt;0&gt; ex-padhv sR -&gt;6
+-e syntax OK
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1223518</root_node>
+<parent_node field_name="parent_node">1223617</parent_node>
+<thread id="1223518">
+<node id="1223525"><node id="1223527"/>
+</node>
+<node id="1223534"><node id="1223536"/>
+</node>
+<node id="1223537"/>
+<node id="1223539"><node id="1223581"><node id="1223617"><node id="1223618"><node id="1223624"/>
+</node>
+</node>
+</node>
+<node id="1223591"/>
+</node>
+<node id="1223552"><node id="1223606"/>
+</node>
+<node id="1223554"/>
+<node id="1223605"><node id="1223609"/>
+</node>
+<node id="1223607"><node id="1223608"/>
+</node>
+</thread></node>

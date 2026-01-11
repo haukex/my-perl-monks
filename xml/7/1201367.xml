@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201367" title="Re^5: modular file scoping" created="2017-10-14 03:29:10" updated="2017-10-14 03:29:10" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;'..inaccessible from outside.. EXCEPT IF REFERRED TO BY AN EXPORTED SUB!'&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, I think that's what the first part of the sentence is trying to say: "They are available to all functions in that same file declared below them". Perhaps this helps: "inaccessible" does not mean "have gone out of scope" or "have stopped existing":&lt;/p&gt;
+&lt;c&gt;
+foo();
+sub foo {
+	my $foo = "foo";
+	bar();
+	print $foo;
+}
+sub bar {
+	print $foo;  # doesn't work!
+}
+&lt;/c&gt;
+&lt;p&gt;Here, I hope it's obvious that &lt;c&gt;$foo&lt;/c&gt; is very much alive and well during the call to &lt;c&gt;bar()&lt;/c&gt;, it is also still in scope &lt;i&gt;inside&lt;/i&gt; &lt;c&gt;sub foo&lt;/c&gt;, but &lt;c&gt;sub bar&lt;/c&gt; has no way of accessing it!&lt;sup&gt;1&lt;/sup&gt; Think of &lt;c&gt;sub foo&lt;/c&gt; and &lt;c&gt;sub bar&lt;/c&gt; as being two different files (remember "file scope" is basically just another lexical scope), and I hope then the meaning of "but are inaccessible from outside" becomes clear.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;So my explanation to myself now goes along the lines: "by referring to its own file-scoped lexicals, a module's exported subs become agents to the persisting state of those lexicals, available to any importer of those subs". Would you agree?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, that's a good way to put it, keeping in mind the above distinction between "available/inaccessible" vs. having gone out of scope. Personally, I think it's easiest to think about it in terms of references, although in this case not the hard references described in [doc://perlref], but instead the "references" described in [doc://perlsub] that I quoted before: "If something more permanent is still aware of the lexical, it will stick around." Since the &lt;c&gt;sub&lt;/c&gt;s in &lt;c&gt;DataBank.pm&lt;/c&gt; refer to &lt;c&gt;%webpaths&lt;/c&gt;, it is kept around.&lt;/p&gt;
+&lt;p&gt;(Note: Conceptually, this is like [wp://Closure_(computer_programming)|closures].)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Importer ... some of that oblique wizardry we referred to earlier&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I wrote a bit about the export/import mechanism [id://1198421|here]: "... the mechanisms that Perl uses for modules and pragmas are actually relatively transparent in that there isn't a ton of magic involved, and one can see all the moving parts." (most of that thread is a little OT to this one since it's about the lexical effect of pragmas, but perhaps the simplified description of export-/importing in that node is helpful).&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;sup&gt;1&lt;/sup&gt; Ok, this is Perl, which likes to give you enough rope to shoot yourself in the foot if you want it, so every rule has an [mod://PadWalker|exception], &lt;b&gt;but&lt;/b&gt; using that module should be considered dark magic to be used for debugging only.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1201062</root_node>
+<parent_node field_name="parent_node">1201358</parent_node>
+<thread id="1201062">
+<node id="1201066"><node id="1201112"/>
+<node id="1201286"><node id="1201299"><node id="1201358"><node id="1201367"><node id="1201378"><node id="1201416"/>
+</node>
+<node id="1201415"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

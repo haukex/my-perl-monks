@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198443" title="Re: How to get data to an array?" created="2017-08-31 13:14:00" updated="2017-08-31 13:14:00" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;it does not work, because it is taking the elements of @histofeld as a string&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It is unclear to me what the relationship between your different variables &lt;c&gt;@data&lt;/c&gt;, &lt;c&gt;@histofeld&lt;/c&gt; and &lt;c&gt;@input&lt;/c&gt; is. Could you please provide a short piece of code that we can run that demonstrates the problem, along with sample input and the expected output for that input? See [id://1177642] and [id://174051]&lt;/p&gt;
+&lt;p&gt;At the moment I can only guess that you might be trying to build an "array of arrays", which is shown (with sample code) in [doc://perldsc].&lt;/p&gt;
+&lt;p&gt;Since your data appears to be comma-separated, you should probably use the proper module for that, [mod://Text::CSV] (also install [mod://Text::CSV_XS] for speed):&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Text::CSV;
+
+my $csv = Text::CSV-&gt;new({ binary=&gt;1, auto_diag=&gt;2 });
+open my $fh, '&lt;', 'inputfilename' or die $!;
+my @data;
+while ( my $row = $csv-&gt;getline($fh) ) {
+	push @data, $row;
+}
+$csv-&gt;eof or $csv-&gt;error_diag;
+close $fh;
+
+use Data::Dumper;
+print Dumper(\@data);
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1198439</root_node>
+<parent_node field_name="parent_node">1198439</parent_node>
+<thread id="1198439">
+<node id="1198443"/>
+<node id="1198453"><node id="1198479"><node id="1199253"/>
+</node>
+</node>
+<node id="1198469"><node id="1198480"><node id="1198501"/>
+</node>
+</node>
+<node id="1198478"/>
+</thread></node>

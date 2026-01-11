@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11105281" title="Memory leak in unicode substitution" created="2019-08-29 21:25:41" updated="2019-08-29 21:25:41" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11105279">am12345</author>
+<doctext field_name="doctext">&lt;p&gt;I was trying to trace a memory leak in a reasonably large code base we have. In the end I traced it to a very innocuous looking text substitution like this:&lt;/p&gt;
+
+&lt;code&gt;
+    $text =~ s/\x{2122}/(TM)/sg;
+&lt;/code&gt;
+
+&lt;p&gt;
+I distilled this into a simple test case and it seems to really be a pretty heavy memory leak. I even went as far as trying a number of perl docker images from 5.10.1 to 5.30 and it resulted in a memory leak in each one I tried.
+&lt;/p&gt;
+
+&lt;p&gt;
+How can something so simple be leaking and not be noticed by anyone? I must be missing something.
+&lt;/p&gt;
+
+&lt;p&gt;Here is a no-dependencies test case I tried it with. The wtf_leak() leaks memory, and wtf_noleak() does not. The difference is that one operates on characters and the other on bytes.
+&lt;/p&gt;
+
+&lt;code&gt;
+root@bbe78e26dc1f:~/rsh# cat memtest-u2a.pl 
+
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Encode;
+
+my $mem_initial=psmem();
+my $mem_last=$mem_initial;
+
+print "INITIAL: $mem_initial\n";
+
+foreach my $cycle (0..($ARGV[0] || 200)) {
+    foreach my $i (0..100) {
+        my $u="x";
+
+        wtf_leak($u);
+        ### wtf_noleak($u);
+
+        ### $u =~ s/\x{2122}/(TM)/sg;
+        ### $u =~ s/b/(TM)/sg;
+    }
+
+    my $mem=psmem();
+    my $usage_total=$mem - $mem_initial;
+    my $usage_last=$mem - $mem_last;
+
+    if($usage_last &gt; 0) {
+        print "---------------- CYCLE: $cycle, since-last $usage_last, total $usage_total, initial $mem_initial, current $mem\n";
+    }
+
+    $mem_last=$mem;
+}
+
+my $mem=psmem();
+my $usage_total=$mem - $mem_initial;
+print "FINAL: $mem, LEAKED $usage_total\n";
+
+exit 0;
+
+##############################################################
+
+sub psmem {
+    ### chomp(my $mem=`ps -h -o rss -p $$`);
+    chomp(my $mem=`ps -h -o vsz -p $$`);
+    ### dprint "mem=$mem";
+    return 0 + $mem;
+}
+
+# Leaks memory!
+#
+sub wtf_leak {
+    my $text=shift;
+
+    $text =~ s/\x{2122}/(TM)/sg;
+
+    return $text;
+}
+
+# DOES NOT leak memory!
+#
+my $retm;
+
+sub wtf_noleak {
+    my $text=shift;
+
+    $retm||=Encode::encode('utf8',"\x{2122}");
+
+    my $blob=Encode::encode('utf8',$text);
+    $blob=~s/$retm/(TM)/sg;
+    my $ntext = Encode::decode('utf8',$blob);
+
+    ### print ".... |$text| =&gt; |$ntext|\n";
+
+    return $ntext;
+}
+
+root@bbe78e26dc1f:~/rsh# perl memtest-u2a.pl 
+
+INITIAL: 9900
+---------------- CYCLE: 9, since-last 136, total 136, initial 9900, current 10036
+---------------- CYCLE: 22, since-last 132, total 260, initial 9900, current 10160
+---------------- CYCLE: 34, since-last 132, total 392, initial 9900, current 10292
+---------------- CYCLE: 46, since-last 132, total 516, initial 9900, current 10416
+---------------- CYCLE: 58, since-last 136, total 644, initial 9900, current 10544
+---------------- CYCLE: 71, since-last 136, total 772, initial 9900, current 10672
+---------------- CYCLE: 83, since-last 132, total 896, initial 9900, current 10796
+---------------- CYCLE: 95, since-last 132, total 1020, initial 9900, current 10920
+---------------- CYCLE: 108, since-last 136, total 1156, initial 9900, current 11056
+---------------- CYCLE: 120, since-last 136, total 1284, initial 9900, current 11184
+---------------- CYCLE: 132, since-last 132, total 1408, initial 9900, current 11308
+---------------- CYCLE: 145, since-last 132, total 1532, initial 9900, current 11432
+---------------- CYCLE: 157, since-last 136, total 1668, initial 9900, current 11568
+---------------- CYCLE: 170, since-last 136, total 1796, initial 9900, current 11696
+---------------- CYCLE: 182, since-last 132, total 1920, initial 9900, current 11820
+---------------- CYCLE: 194, since-last 136, total 2048, initial 9900, current 11948
+FINAL: 11940, LEAKED 2040
+
+root@bbe78e26dc1f:~/rsh# perl -v
+
+This is perl 5, version 30, subversion 0 (v5.30.0) built for x86_64-linux-gnu
+
+Copyright 1987-2019, Larry Wall
+
+Perl may be copied only under the terms of either the Artistic License or the
+GNU General Public License, which may be found in the Perl 5 source kit.
+
+Complete documentation for Perl, including FAQ lists, should be found on
+this system using "man perl" or "perldoc perl".  If you have access to the
+Internet, point your browser at http://www.perl.org/, the Perl Home Page.
+&lt;/code&gt;</doctext>
+<thread id="11105281">
+<node id="11105292"><node id="11105302"/>
+</node>
+<node id="11105294"/>
+<node id="11105298"><node id="11105315"><node id="11105316"/>
+</node>
+</node>
+</thread></node>

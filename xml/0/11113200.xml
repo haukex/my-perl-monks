@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11113200" title="Re: Using eval: $@ isn't returning the error I expect" created="2020-02-19 18:05:41" updated="2020-02-19 18:05:41" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1158292">pryrt</author>
+<doctext field_name="doctext">This might help:&lt;P&gt;
+
+&lt;code&gt;
+$ perl -le 'eval { "use gobbledygook;" }; print "ok"'
+ok
+$ perl -le 'eval { use gobbledygook; }; print "ok"'
+Can't locate gobbledygook.pm in @INC ...
+$  perl -le 'eval "use gobbledygook;"; print "msg = ($@)" if $@; print "ok"'
+msg = (Can't locate gobbledygook.pm in @INC ...)
+ok
+&lt;/code&gt;&lt;P&gt;
+
+What you were doing was evaluating the code (the braces make it a code block) that contains a non-empty string; the non "0", non-empty string evaluates true, and the eval block doesn't error, so $@ doesn't get set.  What you need to do is either evaluate block of real code in braces, or evaluate a string, not evaluate a string inside a block of code.  The second and third in my example both try to use the module; the first (equivalent to your code) does not try to load the module.&lt;!-- Wiki2Monks {"version":1.16} --&gt;</doctext>
+<root_node field_name="root_node">11113193</root_node>
+<parent_node field_name="parent_node">11113193</parent_node>
+<thread id="11113193">
+<node id="11113196"><node id="11113205"><node id="11113209"><node id="11113212"/>
+</node>
+</node>
+</node>
+<node id="11113198"><node id="11113201"><node id="11113208"><node id="11113230"/>
+</node>
+</node>
+</node>
+<node id="11113200"><node id="11113202"><node id="11113207"><node id="11113215"/>
+</node>
+</node>
+</node>
+<node id="11113206"><node id="11113210"><node id="11113213"><node id="11113214"/>
+</node>
+</node>
+<node id="11113219"><node id="11113228"/>
+</node>
+</node>
+<node id="11113216"><node id="11113232"><node id="11113276"/>
+</node>
+</node>
+</thread></node>

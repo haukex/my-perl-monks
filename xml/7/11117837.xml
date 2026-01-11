@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117837" title="Re^5: perl indication of end of string already matched" created="2020-06-08 18:37:21" updated="2020-06-08 18:37:21" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;How does the engine know that it has already succeeded with the fourth regex (when pos is already 3)? There must be some mechanism that records that internally in the regex engine.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It might be informative to look at [doc://re] debugging (although the particular state you're asking about isn't displayed, unfortunately):&lt;/p&gt;
+&lt;c&gt;
+use re 'debug';
+my $str = "abc";
+$str =~ m/.|$/g for 1..5;
+
+__END__
+
+Compiling REx ".|$"
+Final program:
+   1: BRANCH (3)
+   2:   REG_ANY (5)
+   3: BRANCH (FAIL)
+   4:   SEOL (5)
+   5: END (0)
+minlen 0 
+Matching REx ".|$" against "abc"
+   0 &lt;&gt; &lt;abc&gt;                |   0| 1:BRANCH(3)
+   0 &lt;&gt; &lt;abc&gt;                |   1|  2:REG_ANY(5)
+   1 &lt;a&gt; &lt;bc&gt;                |   1|  5:END(0)
+Match successful!
+Matching REx ".|$" against "bc"
+   1 &lt;a&gt; &lt;bc&gt;                |   0| 1:BRANCH(3)
+   1 &lt;a&gt; &lt;bc&gt;                |   1|  2:REG_ANY(5)
+   2 &lt;ab&gt; &lt;c&gt;                |   1|  5:END(0)
+Match successful!
+Matching REx ".|$" against "c"
+   2 &lt;ab&gt; &lt;c&gt;                |   0| 1:BRANCH(3)
+   2 &lt;ab&gt; &lt;c&gt;                |   1|  2:REG_ANY(5)
+   3 &lt;abc&gt; &lt;&gt;                |   1|  5:END(0)
+Match successful!
+Matching REx ".|$" against ""
+   3 &lt;abc&gt; &lt;&gt;                |   0| 1:BRANCH(3)
+   3 &lt;abc&gt; &lt;&gt;                |   1|  2:REG_ANY(5)
+                             |   1|  failed...
+   3 &lt;abc&gt; &lt;&gt;                |   0| 3:BRANCH(5)
+   3 &lt;abc&gt; &lt;&gt;                |   1|  4:SEOL(5)
+   3 &lt;abc&gt; &lt;&gt;                |   1|  5:END(0)
+Match successful!
+Matching REx ".|$" against ""
+   3 &lt;abc&gt; &lt;&gt;                |   0| 1:BRANCH(3)
+   3 &lt;abc&gt; &lt;&gt;                |   1|  2:REG_ANY(5)
+                             |   1|  failed...
+   3 &lt;abc&gt; &lt;&gt;                |   0| 3:BRANCH(5)
+   3 &lt;abc&gt; &lt;&gt;                |   1|  4:SEOL(5)
+   3 &lt;abc&gt; &lt;&gt;                |   1|  5:END(0)
+END: Match possible, but length=0 is smaller than requested=1, failing!
+                             |   0| BRANCH failed...
+Match failed
+Freeing REx: ".|$"
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;my question is whether the state that regex uses to determine whether $ was already matched is available to me? ... I would like to understand if the internal structure that has this information ($ matched) is accessible&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I have the same question as the others: &lt;i&gt;Why?&lt;/i&gt; The regex engine seems to be DWIMing just fine...&lt;/p&gt;
+&lt;p&gt;I don't know of a way to get at the internal information you're asking about. You can of course simply ask the engine to tell you what it matched, e.g.:&lt;/p&gt;
+&lt;c&gt;
+my $str = "abc";
+print $str =~ m/(.)|$/g ? "matched! ".($1//'$') : 'no match', "\n"
+	for 1..5;
+
+__END__
+
+matched! a
+matched! b
+matched! c
+matched! $
+no match
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11117822</root_node>
+<parent_node field_name="parent_node">11117833</parent_node>
+<thread id="11117822">
+<node id="11117824"><node id="11117827"><node id="11117830"><node id="11117833"><node id="11117837"/>
+<node id="11117845"><node id="11117857"/>
+</node>
+</node>
+</node>
+<node id="11118130"/>
+</node>
+</node>
+<node id="11117825"/>
+<node id="11117832"/>
+<node id="11117846"/>
+<node id="11118131"/>
+</thread></node>

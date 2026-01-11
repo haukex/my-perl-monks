@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11136849" title="Re^2: why is $1 cleared at end of an inline sub?" created="2021-09-17 16:27:48" updated="2021-09-17 16:27:48" _doctext_mode="lenient"><type id="11">note</type>
+<author id="438862">perl-diddler</author>
+<doctext field_name="doctext">Both of these answers ignored that the sub was an 'anonymous'/'inline' sub that would have access to surrounding local variables in the same scope, including regex vars.
+&lt;p&gt;
+I find it surprising that '$1' is affected in this way by an anonymous sub.
+&lt;p&gt;
+I wouldn't find it surprising that a normal sub would auto-save context to not 
+completely disrupt callers (even though '$_' needs to be explicitly saved with local).
+&lt;p&gt;
+To re-ask, why is an inline-sub which I thought was designed to have access
+to local vars (in same context) restoring '$1'.  If it was accessing or changing
+'$_[1]', it would access the copy of the sub it was in.  I had supposed that the
+'$1' would stay constant until another regex and that an inline/anon sub wouldn't
+treat '$1' differently from '$_[1]'.  
+&lt;p&gt;
+I was really more wondering what the rational might be for treating them differently
+in an anon/inline sub.
+&lt;p&gt;
+In the same way I find that '$1', and '$2' are cleared coming out of a 'do' block
+to be strange --  I would have thought only another regex would change them.
+&lt;pre&gt;
+my $s="abcdefg";
+$_=$s;
+my @res=do { m{abc(de)(fg)}; };
+P "nres=%s 1=%s, 2=%s", 0+@res, $1, $2;
+'
+nres=2 1=&amp;#8708;, 2=&amp;#8708;
+&lt;/pre&gt;</doctext>
+<root_node field_name="root_node">11136826</root_node>
+<parent_node field_name="parent_node">11136828</parent_node>
+<thread id="11136826">
+<node id="11136828"><node id="11136849"><node id="11136850"/>
+<node id="11136852"/>
+<node id="11136853"/>
+<node id="11136854"/>
+</node>
+</node>
+<node id="11136829"/>
+<node id="11136851"/>
+</thread></node>

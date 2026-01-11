@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217236" title="Re^2: dealing with cyrillic characters" created="2018-06-22 13:43:55" updated="2018-06-22 13:43:55" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;p&gt;Wow, thanks, it was that simple a fix. I got everything I wanted by setting the binmode to utf8 on File::Slurp. I looked on gedit to see what encoding the underlying text files might have and was unable to ascertain it. That I can read the cyrillic makes me think it is indeed utf8. Relevant code:&lt;/p&gt;
+
+&lt;readmore&gt;&lt;c&gt;
+sub get_rus_text {
+use 5.010;
+use File::Basename;
+use Cwd;
+use HTML::FromText;
+use File::Slurp;
+use Path::Class;
+
+my $rvars = shift;
+my %vars = %$rvars;
+my %content;
+my $refc = \%content;
+opendir my $eh, $vars{"rus_captions"} or die "dead  $!\n";
+while (defined ($_ = readdir($eh))){
+next if m/~$/;
+next if -d;
+### revision for better russian use 7/18
+# set binmode for File::Slurp
+# run cyrillic through HTML::FromText
+if (m/txt$/){
+   my $file = file($vars{"rus_captions"},$_);
+   my $string = read_file($file, binmode =&gt; ':utf8' );
+   #say "string is $string";
+   my $temp = text2html(
+      $string,
+      urls  =&gt; 1,
+      email =&gt; 1,
+      paras =&gt; 1,
+     
+   );
+   # surround by divs
+   my $oitop = read_file($vars{"oitop"});
+   my $oibottom = read_file($vars{"oibottom"});
+   my $text = $oitop.$temp.$oibottom;
+   #say "text is $text";
+   $content{$_} = $text;
+   }
+}
+closedir $eh;
+#important to sort
+my @return;
+foreach my $key (sort keys %content) {
+    print $content{$key} . "\n";
+    push @return, $content{$key};
+}
+return \@return;
+}
+&lt;/c&gt;&lt;/readmore&gt;
+
+&lt;p&gt;[http://merrillpjensen.com/pages/1.unicode3.html|improved page] I budgeted all day to figure this out, so I'm gonna go form some concrete. &amp;#1073;&amp;#1086;&amp;#1083;&amp;#1100;&amp;#1096;&amp;#1086;&amp;#1077; &amp;#1089;&amp;#1087;&amp;#1072;&amp;#1089;&amp;#1080;&amp;#1073;&amp;#1086; &amp;#1089;&amp;#1085;&amp;#1086;&amp;#1074;&amp;#1072;.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1217142</root_node>
+<parent_node field_name="parent_node">1217150</parent_node>
+<thread id="1217142">
+<node id="1217150"><node id="1217236"><node id="1217273"/>
+</node>
+</node>
+<node id="1217154"><node id="1217261"/>
+</node>
+</thread></node>

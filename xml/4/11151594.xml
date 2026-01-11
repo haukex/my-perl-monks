@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11151594" title="Re: $BASETIME (^T) inaccurate?" created="2023-04-11 02:59:46" updated="2023-04-11 02:59:46" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;It's running on an rPi4&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Raspberry Pis don't have a Real-Time Clock with a backup battery, meaning on boot they have no idea what time it actually is, and they need to set the system time from an external source like an NTP server every time. [doc://time] will change based on adjustments to the system time; if you're starting your script on boot or the system clock drifts and is adjusted by NTP during its runtime the measurement will be affected. If you want to know how long your script has actually been running in real-world time, independently of changes to the system clock, one way to do that is:&lt;/p&gt;
+&lt;c&gt;
+use Time::HiRes qw/clock_gettime CLOCK_MONOTONIC/;
+my $start_time_s = clock_gettime(CLOCK_MONOTONIC);
+...
+my $run_time_s = clock_gettime(CLOCK_MONOTONIC) - $start_time_s;
+&lt;/c&gt;
+&lt;p&gt;See the documentation of [https://manpages.ubuntu.com/manpages/jammy/en/man2/clock_gettime.2.html|clock_gettime] for details - you may even want to use &lt;c&gt;CLOCK_MONOTONIC_RAW&lt;/c&gt; depending on your requirements.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Edit:&lt;/i&gt; Better link to manpage&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11151591</root_node>
+<parent_node field_name="parent_node">11151591</parent_node>
+<thread id="11151591">
+<node id="11151592"/>
+<node id="11151594"/>
+<node id="11151603"/>
+<node id="11151606"><node id="11151609"/>
+<node id="11151629"/>
+</node>
+<node id="11151610"><node id="11151611"/>
+</node>
+<node id="11152279"><node id="11152282"><node id="11154131"/>
+</node>
+</node>
+</thread></node>

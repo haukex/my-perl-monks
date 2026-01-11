@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108692" title="Re: Correct Perl settings for sending zipfile to browser" created="2019-11-14 14:00:21" updated="2019-11-14 14:00:21" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Personally, I would go about this differently: Instead of writing a file to disk, zipping it, and then re-reading it for download, you can do it all on the fly*. (If you &lt;i&gt;did&lt;/i&gt; want to do it via temporary files like in your current script, please read my nodes on [id://11100039|File::Temp examples] and [id://1180578|running external programs], as there are potential security and concurrency issues with your current script.)&lt;/p&gt;
+&lt;p&gt;[doc://IO::Compress::Zip] is a core module, and you can use it to generate and output a ZIP file on the fly (see its docs for details):&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use IO::Compress::Zip qw/$ZipError/;
+
+my @lines = (qw/ Hello World Foo Bar /);
+my $eol = "\r\n";
+
+binmode STDOUT;  # just to play it safe
+my $z = IO::Compress::Zip-&gt;new('-', # STDOUT
+	Name =&gt; "Filename.txt" )
+		or die "zip failed: $ZipError\n";
+for my $line (@lines) {
+	$z-&gt;print($line, $eol);
+}
+$z-&gt;close();
+&lt;/c&gt;
+&lt;p&gt;It's also possible to write the ZIP file to a scalar, e.g. if you need to know its length before writing it out, although that of course increases the memory usage. At the very least, you don't need to buffer the output lines like you're doing in your current script with &lt;c&gt;@resp&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;* OTOH, I agree with [cavac] that if these files are going to be unchanged across multiple downloads, it'd certainly be more efficient to &lt;i&gt;not&lt;/i&gt; re-generate them on every request and use appropriate HTTP caching methods instead.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Minor edits.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11108658</root_node>
+<parent_node field_name="parent_node">11108658</parent_node>
+<thread id="11108658">
+<node id="11108660"/>
+<node id="11108663"><node id="11108712"><node id="11108713"><node id="11108715"/>
+</node>
+<node id="11108761"/>
+</node>
+</node>
+<node id="11108666"><node id="11108710"><node id="11108726"/>
+</node>
+</node>
+<node id="11108673"/>
+<node id="11108692"><node id="11108714"><node id="11108716"><node id="11108722"><node id="11108732"><node id="11108832"><node id="11108833"><node id="11108836"><node id="11108837"/>
+</node>
+</node>
+<node id="11108856"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

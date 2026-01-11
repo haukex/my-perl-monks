@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11122502" title="Re^2: Counting fields from database (updated)" created="2020-10-02 21:31:02" updated="2020-10-02 21:31:02" _doctext_mode="lenient"><type id="11">note</type>
+<author id="445135">htmanning</author>
+<doctext field_name="doctext">I think my logic is flawed.  This is a better example of what I'm doing:
+&lt;p&gt;
+This is the query of the database:
+&lt;code&gt;
+Select * from messages where (username='$username' or toname='$username') and message!='' order by dateadded desc, ID desc
+&lt;/code&gt;
+
+This follows:
+
+&lt;code&gt;
+		$titlesperpage = 10;
+		$currentpage = 1;
+        $startcount = ($currentpage - 1) * $titlesperpage + 1;
+        $stopcount = $currentpage * $titlesperpage;
+        $current_count = 0;
+		$threadcount=0;
+		$threadIDlist = "";
+         while ($pointer3 = $sth3-&gt;fetchrow_hashref){
+            $current_count++;
+			$threadID = $pointer3-&gt;{'threadID'};
+			$threads{$pointer3-&gt;{'threadID'}}++; 
+			
+			
+				if ($threadIDlist !~ /$threadID/) {
+					$threadIDlist=$threadID . "," . $threadIDlist;
+					$current_count--;
+					$threadcount++;	
+ 				}
+				 
+		   }
+&lt;/code&gt;
+
+I try to only print 10 records per page.  It works perfectly for the first page, but when I come back to print the second page it duplicates some threadIDs because they are not yet in the $threadIDlist var.  The second page is called with this query_string:
+&lt;code&gt;
+?currentpage=2
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">11122494</root_node>
+<parent_node field_name="parent_node">11122495</parent_node>
+<thread id="11122494">
+<node id="11122495"><node id="11122500"/>
+<node id="11122502"><node id="11122508"><node id="11122522"/>
+</node>
+</node>
+</node>
+<node id="11122498"><node id="11122501"><node id="11122514"/>
+</node>
+</node>
+<node id="11122513"><node id="11122550"/>
+</node>
+</thread></node>

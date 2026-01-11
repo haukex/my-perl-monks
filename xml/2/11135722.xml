@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11135722" title="Regex bug? matching multiple newline with /m" created="2021-08-09 04:15:04" updated="2021-08-09 04:15:04" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1218269">NERDVANA</author>
+<doctext field_name="doctext">Hi, I ran across a strange behavior and I'm wondering if it is a bug, or some obscure documented behavior I should keep in mind.
+
+&lt;p&gt;These match:
+
+&lt;code&gt;
+# (not using 'say' because I wanted to try it on old perl versions)
+perl -e 'printf "%s\n", "ab\nab\n" =~ /^ab$ab$/m'
+perl -e 'printf "%s\n", "ab\nab\n" =~ /^(ab$ab$)/m'
+perl -e 'printf "%s\n", "ab\nab\n" =~ /^(ab$ab)$/m'
+perl -e 'printf "%s\n", "ab\nab\n" =~ /^(ab)$ab$/m'
+perl -e 'printf "%s\n", "ab\nab\n" =~ /^(a)b$ab$/m'
+&lt;/code&gt;
+
+&lt;p&gt;(with '$' consuming a "\n" because it is /m mode)
+
+&lt;p&gt;These do not match:
+
+&lt;code&gt;
+perl -e 'printf "%s\n", "ab\nab\n" =~ /^(ab$a)b$/m'
+perl -e 'printf "%s\n", "ab\nab\n" =~ /^(ab$)ab$/m'
+perl -e 'printf "%s\n", "ab\nab\n" =~ /^ab$(ab)$/m'
+perl -e 'printf "%s\n", "ab\nab\n" =~ /^(ab$){2}/m'
+perl -e 'printf "%s\n", "ab\nab\n" =~ /(ab$){2}/m'
+perl -e 'printf "%s\n", "ab\nab\n" =~ /(?^:^(?^m:(ab$){2}))/m'
+&lt;/code&gt;
+
+&lt;p&gt;This is greedy but only matches one line
+
+&lt;code&gt;
+perl -e 'printf "%s\n", "ab\nab\n" =~ /^((?:ab$)+)/m'
+&lt;/code&gt;
+
+&lt;p&gt;and it seems to me that all of them should match.  This appears to happen as old as 5.8.9 and as new as 5.32.1
+
+&lt;p&gt;Any insights?</doctext>
+<thread id="11135722">
+<node id="11135723"><node id="11135728"><node id="11135731"/>
+<node id="11135844"/>
+</node>
+</node>
+<node id="11135724"/>
+<node id="11135740"/>
+</thread></node>

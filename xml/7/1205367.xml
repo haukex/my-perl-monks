@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1205367" title="Simple indentation. Does it need improvement?" created="2017-12-12 15:07:31" updated="2017-12-12 15:07:31" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1200083">siberia-man</author>
+<doctext field_name="doctext">Hi all again,
+
+
+Some time ago I came back to Perl world. Today I'd like to discuss some stuff. It has to do with output formatting, generation of the indentation literally. I tried to implement the module the simple as much as possible. of course, I know there is a lot of modules with the same functionality (for example, [metamod://Text::Indent], [metamod://Print::Indented] or [metamod://String::Indent]). Most probably, those modules more powerful and more flexible than mine. But I needed:
+
+&lt;p&gt;&lt;/p&gt;
+
+-- simplicity &lt;p&gt;&lt;/p&gt;
+-- easiness &lt;p&gt;&lt;/p&gt;
+-- immediate effect &lt;p&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;/p&gt;
+
+Completing this module, I guess achieved the main goals. It is quite easy in use, clear and effective. It doesn't support buffering or formatting to a string and doesn't support printing to other streams. 
+
+&lt;p&gt;&lt;/p&gt;
+
+Example of usage:
+&lt;code&gt;
+# use 4 spaces indents and automatic line ending
+use indent indent_size =&gt; 4, indent_eol =&gt; 1;
+indent::new;
+indent::printf "Hello, world!";
+indent::new;
+indent::printf "Hello, world!";
+indent::back;
+indent::printf "Hello, world!";
+indent::back;
+&lt;/code&gt;
+
+&lt;p&gt;&lt;/p&gt;
+
+The resulting output is as follows:
+&lt;code&gt;
+    Hello, world!
+        Hello, world!
+    Hello, world!
+&lt;/code&gt;
+
+&lt;p&gt;&lt;/p&gt;
+
+The full source of the module is below:
+&lt;code&gt;
+package indent;
+
+use strict;
+use warnings;
+
+our $INDENT = " " x 4;
+our $EOL = $\;
+
+sub import {
+	shift;
+	goto &amp;config;
+}
+
+sub config {
+	my %opts = @_;
+
+	if ( $opts{indent_tab} ) {
+		$INDENT = "\t";
+	} elsif ( 
+		defined $opts{indent_size} 
+		&amp;&amp; $opts{indent_size} =~ /^\d+$/ 
+	) {
+		$INDENT = " " x $opts{indent_size};
+	}
+
+	if ( defined $opts{indent_eol} ) {
+		$EOL = $opts{indent_eol} ? "\n" : $\;
+	}
+}
+
+my @indent = ( "" );
+
+sub reset {
+	@indent = $indent[0];
+}
+
+sub current {
+	$indent[-1];
+}
+
+sub new {
+	push @indent, current . $INDENT;
+}
+
+sub back {
+	pop @indent if @indent &gt; 1;
+}
+
+sub print {
+	local $\ = $EOL;
+	CORE::print current, @_;
+}
+
+sub vprint {
+	local $\ = $EOL;
+	CORE::print current, $_ for ( @_ );
+}
+
+sub printf {
+	indent::print sprintf(( shift || "" ), @_);
+}
+
+1;
+&lt;/code&gt;</doctext>
+<thread id="1205367">
+<node id="1205372"><node id="1205373"/>
+<node id="1205378"/>
+</node>
+<node id="1205375"><node id="1205392"/>
+</node>
+<node id="1205376"/>
+<node id="1205415"/>
+<node id="1205744"/>
+</thread></node>

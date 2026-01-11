@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1177697" title="Re: error handling by pm initialization" created="2016-12-13 05:35:05" updated="2016-12-13 05:35:05" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [homeveg],&lt;/p&gt;
+&lt;p&gt;One way to optionally load a module is using stringy [doc://eval], which is often abused and can lead to security issues, but can be acceptable with fixed strings:&lt;/p&gt;
+&lt;c&gt;
+if ($useGZ) {
+	eval q{ use IO::Compress::Gzip; 1 }
+		or die "IO::Compress::Gzip is NOT available: $@";
+	print "IO::Compress::Gzip is available\n";
+}
+&lt;/c&gt;
+&lt;p&gt;Note that since loading of the module is deferred to runtime, there are some side effects: the obvious one is that errors are deferred until runtime, but the possibly more subtle one is that in the case where the module is not loaded, any imports from the module are not available to the entire script, which might lead to compile-time errors. Or worse, hard to detect differences in how Perl interprets your code, for example, in the following, Perl will think that &lt;c&gt;print Dumper $x;&lt;/c&gt; is &lt;c&gt;print FILEHANDLE $x;&lt;/c&gt;, because it doesn't yet know about the function &lt;c&gt;Dumper()&lt;/c&gt;, leading to the confusing warning message "&lt;c&gt;print() on unopened filehandle Dumper&lt;/c&gt;". In general, parentheses on optionally imported functions will be required.&lt;/p&gt;
+&lt;c&gt;
+eval 'use Data::Dumper; 1' or die $@;
+print Dumper $x;   # WON'T work, confusing warning message
+print Dumper($x);  # will work
+&lt;/c&gt;
+&lt;p&gt;Also, you'll have to refer to &lt;c&gt;$GzipError&lt;/c&gt; as &lt;c&gt;$IO::Compress::Gzip::GzipError&lt;/c&gt; instead, since that variable is also no longer imported at compile time.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;&lt;b&gt;Updates:&lt;/b&gt; Added sentence about the interpretation of code and the confusing warning message, and the note on stringy eval.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1177694</root_node>
+<parent_node field_name="parent_node">1177694</parent_node>
+<thread id="1177694">
+<node id="1177695"><node id="1177703"/>
+</node>
+<node id="1177696"><node id="1177706"/>
+</node>
+<node id="1177697"><node id="1177704"/>
+</node>
+<node id="1177698"><node id="1177699"><node id="1177700"/>
+</node>
+</node>
+<node id="1177701"><node id="1177702"><node id="1177705"><node id="1177707"><node id="1177749"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1177832"/>
+</thread></node>

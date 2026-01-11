@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227298" title="Re: create clone script for utf8 encoding" created="2018-12-15 08:29:26" updated="2018-12-15 08:29:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You've already gotten some good answers, I just wanted to pick up on a couple more points. In general, you might want to have a look at [https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/|The Absolute Minimum Every Software Developer Absolutely, Positively Must Know About Unicode and Character Sets (No Excuses!)], as well as [doc://perluniintro] and [doc://perlunicode].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;when I touch a file into existence, it is us-ascii&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;[man://touch] creates an empty file, and it doesn't have any encoding - a file's encoding is not some kind of metadata attribute secretly attached to a file. A file just contains bytes, and it is up to the reading and writing programs to interpret that sequence of bytes to and from the more abstract concept of "characters" (I am using that term loosely here) on reading and writing. Many software packages have defaults for such encodings, such as [wp://Latin-1], [wp://CP1252], [wp://UTF-8], or [wp://UTF-16], but the software packages often don't agree. And of those four examples, only the latter two allow you to encode all valid Unicode [wp://Code point|code points]. As for [wp://ASCII], it is a &lt;i&gt;subset&lt;/i&gt; of many different character encodings (such as [wp://Latin-1], [wp://CP1252], and [wp://UTF-8]), and it only covers bytes with values 0 to 127 (the lower 7 bits of the byte), so it encodes even fewer characters:&lt;/p&gt;
+&lt;readmore title="ASCII table"&gt;
+&lt;pre&gt;
++-Dec-Hex-Oct----+-Dec-Hex-Oct----+-Dec-Hex-Oct----+-Dec-Hex-Oct----+
+|   0  00 000 &amp;#9216;  |  32  20 040 &amp;#9248;  |  64  40 100 @  |  96  60 140 `  |
+|   1  01 001 &amp;#9217;  |  33  21 041 !  |  65  41 101 A  |  97  61 141 a  |
+|   2  02 002 &amp;#9218;  |  34  22 042 "  |  66  42 102 B  |  98  62 142 b  |
+|   3  03 003 &amp;#9219;  |  35  23 043 #  |  67  43 103 C  |  99  63 143 c  |
+|   4  04 004 &amp;#9220;  |  36  24 044 $  |  68  44 104 D  | 100  64 144 d  |
+|   5  05 005 &amp;#9221;  |  37  25 045 %  |  69  45 105 E  | 101  65 145 e  |
+|   6  06 006 &amp;#9222;  |  38  26 046 &amp;amp;  |  70  46 106 F  | 102  66 146 f  |
+|   7  07 007 &amp;#9223;  |  39  27 047 '  |  71  47 107 G  | 103  67 147 g  |
+|   8  08 010 &amp;#9224;  |  40  28 050 (  |  72  48 110 H  | 104  68 150 h  |
+|   9  09 011 &amp;#9225;  |  41  29 051 )  |  73  49 111 I  | 105  69 151 i  |
+|  10  0A 012 &amp;#9226;  |  42  2A 052 *  |  74  4A 112 J  | 106  6A 152 j  |
+|  11  0B 013 &amp;#9227;  |  43  2B 053 +  |  75  4B 113 K  | 107  6B 153 k  |
+|  12  0C 014 &amp;#9228;  |  44  2C 054 ,  |  76  4C 114 L  | 108  6C 154 l  |
+|  13  0D 015 &amp;#9229;  |  45  2D 055 -  |  77  4D 115 M  | 109  6D 155 m  |
+|  14  0E 016 &amp;#9230;  |  46  2E 056 .  |  78  4E 116 N  | 110  6E 156 n  |
+|  15  0F 017 &amp;#9231;  |  47  2F 057 /  |  79  4F 117 O  | 111  6F 157 o  |
+|  16  10 020 &amp;#9232;  |  48  30 060 0  |  80  50 120 P  | 112  70 160 p  |
+|  17  11 021 &amp;#9233;  |  49  31 061 1  |  81  51 121 Q  | 113  71 161 q  |
+|  18  12 022 &amp;#9234;  |  50  32 062 2  |  82  52 122 R  | 114  72 162 r  |
+|  19  13 023 &amp;#9235;  |  51  33 063 3  |  83  53 123 S  | 115  73 163 s  |
+|  20  14 024 &amp;#9236;  |  52  34 064 4  |  84  54 124 T  | 116  74 164 t  |
+|  21  15 025 &amp;#9237;  |  53  35 065 5  |  85  55 125 U  | 117  75 165 u  |
+|  22  16 026 &amp;#9238;  |  54  36 066 6  |  86  56 126 V  | 118  76 166 v  |
+|  23  17 027 &amp;#9239;  |  55  37 067 7  |  87  57 127 W  | 119  77 167 w  |
+|  24  18 030 &amp;#9240;  |  56  38 070 8  |  88  58 130 X  | 120  78 170 x  |
+|  25  19 031 &amp;#9241;  |  57  39 071 9  |  89  59 131 Y  | 121  79 171 y  |
+|  26  1A 032 &amp;#9242;  |  58  3A 072 :  |  90  5A 132 Z  | 122  7A 172 z  |
+|  27  1B 033 &amp;#9243;  |  59  3B 073 ;  |  91  5B 133 &amp;#91;  | 123  7B 173 {  |
+|  28  1C 034 &amp;#9244;  |  60  3C 074 &amp;lt;  |  92  5C 134 \  | 124  7C 174 |  |
+|  29  1D 035 &amp;#9245;  |  61  3D 075 =  |  93  5D 135 &amp;#93;  | 125  7D 175 }  |
+|  30  1E 036 &amp;#9246;  |  62  3E 076 &amp;gt;  |  94  5E 136 ^  | 126  7E 176 ~  |
+|  31  1F 037 &amp;#9247;  |  63  3F 077 ?  |  95  5F 137 _  | 127  7F 177 &amp;#9249;  |
++----------------+----------------+----------------+----------------+
+&lt;/pre&gt;
+&lt;p&gt;Code I used to generate that table:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use open qw/:std :utf8/;
+
+print "+", "-Dec-Hex-Oct----+"x4, "\n";
+for my $y (0..0x1F) {
+	print "|";
+	for my $c (map {$y|$_} 0x00,0x20,0x40,0x60) {
+		printf " %3d  %02X %03o %s  |", $c, $c, $c,
+			chr( $c&lt;0x21 ? 0x2400+$c : $c==0x7F ? 0x2421 : $c );
+	}
+	print "\n";
+}
+print "+", (("-"x16)."+")x4, "\n";
+&lt;/c&gt;
+&lt;p&gt;(For display, I'm using the Unicode [https://www.unicode.org/charts/PDF/U2400.pdf|Control Pictures] in the &lt;c&gt;U+2400&lt;/c&gt; range to represent the nonprintable characters &lt;c&gt;0x00-0x20&lt;/c&gt; and &lt;c&gt;0x7F&lt;/c&gt;.)&lt;/p&gt;
+&lt;/readmore&gt;
+&lt;p&gt;For example, the Euro symbol € (&lt;c&gt;"\x{20AC}"&lt;/c&gt; or &lt;c&gt;"\N{U+20AC}"&lt;/c&gt; in Perl) is:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Not representable in [wp://ASCII#Character_set|ASCII] or [wp://ISO/IEC_8859-1#Code_page_layout|Latin1 (aka ISO/IEC 8859-1)]&lt;/li&gt;
+&lt;li&gt;In [wp://ISO/IEC_8859-15#Codepage_layout|Latin-9 (aka ISO/IEC 8859-15)] it is the byte &lt;c&gt;0xA4&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;In [wp://Windows-1252#Character_set|Windows-1252 (aka CP-1252 and sometimes aka "ANSI")] it is the byte &lt;c&gt;0x80&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;In [wp://Mac_OS_Roman#Codepage_layout|MacRoman] it is the byte &lt;c&gt;0xDB&lt;/c&gt; (at least Mac OS &amp;gt;=8.5)&lt;/li&gt;
+&lt;li&gt;In [wp://UTF-8] it is the bytes &lt;c&gt;0xE2, 0x82, 0xAC&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;In [wp://UTF-16] it is &lt;c&gt;0x20AC&lt;/c&gt; - depending on endianness, bytes &lt;c&gt;0x20, 0xAC&lt;/c&gt; in UTF-16-BE, or &lt;c&gt;0xAC, 0x20&lt;/c&gt; in UTF-16-LE&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;small&gt;(Copied from my post [id://1198298|here].)&lt;/small&gt; I wrote some more about the whole topic [id://1198948|here].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;files that are formed from redirecting STDOUT begin their lives as us-ascii on this platform.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;As the AM post explained, that's unlikely here, since "Ü" is not representable in ASCII (which is also what &lt;c&gt;iconv&lt;/c&gt; is telling you with its error) - most likely it's UTF-8, but you can check by piping the output to e.g. &lt;c&gt;hexdump&lt;/c&gt; - for example, on my terminal &lt;tt&gt;echo -n "€" | hexdump -C&lt;/tt&gt; shows the bytes &lt;c&gt;e2 82 ac&lt;/c&gt;, and as I showed above, that's the UTF-8 encoding. If you're really unsure of a file's encoding, there's [doc://Encode::Guess] (I showed an example [id://1198033|here]), keeping in mind that it's just &lt;i&gt;guessing&lt;/i&gt;.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I'd like to write a perl equivalent that would give me freedom to choose the underlying encoding.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If you're talking about the Perl source code itself, IMHO really the only two useful choices are plain ASCII, or UTF-8, and in the latter case, you have to tell Perl by adding &lt;c&gt;use utf8;&lt;/c&gt; at the top of your file (see [doc://utf8]). If your Perl source code is in ASCII, you can still represent Unicode characters in strings and regexes using escapes like &lt;c&gt;"\x{...}"&lt;/c&gt; and &lt;c&gt;"\N{...}"&lt;/c&gt; (see also [doc://charnames]). And since ASCII is a subset of UTF-8, if you stick to those two encodings for your Perl source, your "clone" script doesn't have anything to worry about, it can just [man://cp] the files, all you need to do is add the &lt;c&gt;use utf8;&lt;/c&gt; when appropriate. Just make sure that whatever editor you're using to work on your Perl scripts uses UTF-8 when it saves the files.&lt;/p&gt;
+&lt;p&gt;If you're talking about files that your Perl program is reading and writing, you'd specify those encodings with the three-argument [doc://open] (which I'd recommend), with [doc://binmode], or set defaults with the [http://perldoc.perl.org/open.html|open] pragma (the latter is useful for changing the encoding of the &lt;c&gt;STDIN/OUT/ERR&lt;/c&gt; streams as well). For en-/decoding strings of bytes you've already got in Perl, there's the [doc://Encode] family of modules, plus for UTF-8, &lt;c&gt;utf8::encode()&lt;/c&gt; and &lt;c&gt;utf8::decode()&lt;/c&gt;. There's also the &lt;c&gt;-C&lt;/c&gt; command-line switch (which I'd mostly only use for oneliners) and the &lt;c&gt;PERLIO&lt;/c&gt; environment variable (which I've almost never had a need for), see [doc://perlrun].&lt;/p&gt;
+&lt;p&gt;BTW, you can do the same thing as [man://iconv] with Perl:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+# iconv -f UTF-8 utf8.txt -t Latin9 -o latin9.txt
+my ($ifile, $ienc) = ("utf8.txt",   "UTF-8");
+my ($ofile, $oenc) = ("latin9.txt", "Latin9");
+open my $ifh, "&lt;:raw:encoding($ienc)", $ifile or die "$ifile: $!";
+open my $ofh, "&gt;:raw:encoding($oenc)", $ofile or die "$ofile: $!";
+print $ofh do { local $/; &lt;$ifh&gt; };
+close $ifh;
+close $ofh;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1227290</root_node>
+<parent_node field_name="parent_node">1227290</parent_node>
+<thread id="1227290">
+<node id="1227291"/>
+<node id="1227292"><node id="1227332"><node id="1227333"><node id="1227371"><node id="1227379"><node id="1227539"/>
+</node>
+</node>
+</node>
+<node id="1227342"/>
+</node>
+</node>
+<node id="1227295"><node id="1227439"><node id="1227445"><node id="1227535"><node id="1227553"/>
+<node id="1227951"/>
+</node>
+<node id="1227541"/>
+</node>
+</node>
+</node>
+<node id="1227298"><node id="1227438"><node id="1227451"><node id="1227487"/>
+</node>
+</node>
+</node>
+<node id="1227314"/>
+<node id="1227373"/>
+<node id="1227696"><node id="1227697"><node id="1227962"/>
+</node>
+</node>
+</thread></node>

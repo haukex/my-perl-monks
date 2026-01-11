@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11121147" title="Re^6: Split tab-separated file into separate files, based on column name (open on demand) (updated)" created="2020-08-28 10:00:33" updated="2020-08-28 10:00:33" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;... do the work in less time than Perl needs for startup/shutdown overhead. Perl is more flexible and powerful, but that power does come at a cost ...&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If that really was the point you were trying to make here, then it probably would have been better if you'd benchmarked and shown a solution that's actually faster than Perl. On a longer input file (OP never specified file length, but the fact that the number of columns grew from 3 to 20 is a hint), this pure Perl solution I whipped up is twice as fast as the &lt;c&gt;awk&lt;/c&gt; code you showed:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my @cols = split /\t/, &lt;&gt;;
+chomp($cols[-1]);
+my @fh = map { open my $fh, '&gt;', $_ or die $!; $fh } @cols;
+while ( my $line = &lt;&gt; ) {
+	chomp($line);
+	my @row = split /\t/, $line;
+	print {$fh[$_]} $row[$_], "\n" for 0..$#row;
+}
+&lt;/c&gt;
+&lt;readmore title="Benchmark"&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use FindBin;
+use File::Spec::Functions qw/catfile/;
+use File::Temp qw/tempfile tempdir/;
+use IPC::System::Simple qw/systemx/;
+
+my $COLS = 20;
+my $ROWS = 1_000_000;
+
+my $AWKSCRIPT = catfile($FindBin::Bin,'11121118.awk');
+my $PERLSCRIPT = catfile($FindBin::Bin,'example.pl');
+
+my $expdir = tempdir(CLEANUP=&gt;1);
+my ($tmpinfh, $infn) = tempfile(UNLINK=&gt;1);
+{
+	warn "Generating data...\n";
+	chdir $expdir or die $!;
+	my $c = 'a';
+	my @cols = map { $c++ } 1..$COLS;
+	print $tmpinfh join("\t", @cols), "\n";
+	my %fh;
+	open $fh{$_}, '&gt;', $_ or die $! for @cols;
+	for ( 1..$ROWS ) {
+		my @row = map { int rand 1000 } 1..$COLS;
+		print $tmpinfh join("\t", @row), "\n";
+		print {$fh{$cols[$_]}} $row[$_] ,"\n" for 0..$COLS-1;
+	}
+	close $fh{$_} for @cols;
+	close $tmpinfh;
+}
+{
+	warn "Running awk...\n";
+	my $workdir = tempdir(CLEANUP=&gt;1);
+	chdir $workdir or die $!;
+	systemx('/usr/bin/time', 'awk', '-f', $AWKSCRIPT, $infn);
+	systemx('diff','-rq',$expdir,$workdir);
+}
+{
+	warn "Running perl...\n";
+	my $workdir = tempdir(CLEANUP=&gt;1);
+	chdir $workdir or die $!;
+	systemx('/usr/bin/time','perl',$PERLSCRIPT,$infn);
+	systemx('diff','-rq',$expdir,$workdir);
+}
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;blockquote&gt;&lt;i&gt;I firmly believe that every Perl programmer should learn Awk because learning Awk will make you a better Perl programmer.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sure, in general, the more programming languages a programmer is exposed to, the better they (usually) become. And yet, there are other situations:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Some time ago I suggested to another questioner to either use &lt;c&gt;sed&lt;/c&gt; in his shell script ...&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;And I once showed someone who was writing an installer shell script how to use a oneliner to do a search and replace to change a configuration variable. And what happened? As the installation script grew, the oneliner just got called over and over again for different variables. While you, I, and the OP may know there are better solutions (as you said yourself, &lt;i&gt;"rewrite the entire script in Perl"&lt;/i&gt;), these posts are public and may be read by people who may not know better, and in particular in comparison to &lt;c&gt;awk&lt;/c&gt;, I disagree with an unqualified &lt;i&gt;"Sometimes Perl is not the best tool for the job."&lt;/i&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update&lt;/b&gt; - I also wanted to mention: In environments where there are several programmers on a team, most of whom are only focused on one language, having a product consist of code written in several different languages is more likely to cause maintenance problems. These are the reasons I said "throwing yet another new language into the mix" isn't necessarily a good thing. (Also, just in case there's any confusion with non-native speakers, the definition of "unqualified" I was using is &lt;i&gt;"not modified or restricted by reservations"&lt;/i&gt;, as in an "unqualified statement", and &lt;i&gt;not&lt;/i&gt; &lt;i&gt;"not having requisite qualifications"&lt;/i&gt;, as in an "unqualified person".)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11121090</root_node>
+<parent_node field_name="parent_node">11121136</parent_node>
+<thread id="11121090">
+<node id="11121091"/>
+<node id="11121092"><node id="11121093"><node id="11121094"/>
+</node>
+</node>
+<node id="11121096"><node id="11121104"><node id="11121105"><node id="11121106"/>
+<node id="11121109"><node id="11121110"><node id="11121119"><node id="11121125"><node id="11121126"><node id="11121127"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11121130"><node id="11121152"/>
+</node>
+</node>
+<node id="11121118"><node id="11121121"/>
+<node id="11121123"/>
+<node id="11121132"><node id="11121134"><node id="11121146"/>
+</node>
+<node id="11121136"><node id="11121141"><node id="11121165"><node id="11121184"><node id="11121192"/>
+</node>
+</node>
+</node>
+<node id="11121147"><node id="11121151"><node id="11121153"><node id="11121156"/>
+<node id="11121160"><node id="11121170"><node id="11121183"/>
+</node>
+<node id="11121178"/>
+</node>
+<node id="11121190"><node id="11121224"/>
+<node id="11121259"/>
+</node>
+</node>
+<node id="11121169"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11121097"/>
+<node id="11121100"/>
+<node id="11121128"><node id="11121129"><node id="11121135"><node id="11121140"><node id="11121166"><node id="11121173"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

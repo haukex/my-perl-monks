@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1159379" title="Re^5: Warning in objImageMagick" created="2016-04-02 13:59:16" updated="2016-04-02 13:59:16" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Anonymous,&lt;/p&gt;
+&lt;p&gt;Actually there's still a bug in there, you'll still get the same "Argument ... isn't numeric in addition" warning when &lt;c&gt;Read&lt;/c&gt; fails. &lt;c&gt;warn "message... ".0+$obj_temp&lt;/c&gt; is interpreted by Perl as &lt;c&gt;warn "message... 0" + $obj_temp;&lt;/c&gt; (i.e. the concatenation happens first) instead of what you want, &lt;c&gt;warn "message... ".(0+$obj_temp)&lt;/c&gt;. Try it yourself: &lt;c&gt;perl -MO=Deparse,-p -e 'warn "message... ".0+$obj_temp'&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;The reason is the operators &lt;c&gt;+&lt;/c&gt; and &lt;c&gt;.&lt;/c&gt; have the same [doc://perlop#Operator-Precedence-and-Associativity|precedence] but are [wp://Operator associativity|left associative] (compare the output of the aforementioned Deparse with this: &lt;c&gt;perl -MO=Deparse,-p -e 'warn 0+$obj_temp."message... "'&lt;/c&gt;). You should use parentheses to set the precedence and for clarity.&lt;/p&gt;
+&lt;p&gt;Regards,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1159371</root_node>
+<parent_node field_name="parent_node">1159378</parent_node>
+<thread id="1159371">
+<node id="1159373"><node id="1159375"><node id="1159377"><node id="1159378"><node id="1159379"><node id="1159383"><node id="1159385"><node id="1159388"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1159376"/>
+</thread></node>

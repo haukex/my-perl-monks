@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1162936" title="Re^4: searching two pattern sequentially from one file" created="2016-05-13 07:24:13" updated="2016-05-13 07:24:13" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1131453">mrityunjaynath</author>
+<doctext field_name="doctext">&lt;p&gt;
+i have tried ur links and put some debug but it seem the second if doesnt encounter. only n times display of "into the second loop .." 
+please fine the full code
+&lt;code&gt;
+#! C:/perl/bin/perl.exe
+
+use strict;
+use warnings;
+use File::Copy;
+use File::Basename;
+use Cwd;
+use Data::Dumper;
+use File::Copy::Recursive qw(dircopy) ;
+
+my $fullpath = cwd();
+my $value = 0;
+my $file = basename($fullpath);
+my $dir = dirname($fullpath);
+print("$fullpath, $file, $dir");
+
+opendir(my $pathindex, $dir ) or die "Couldn't read index : $!\n";
+while (my $currentfile = readdir($pathindex)) {
+	     print "\nCurrent Directory File $value\t";
+    	 print "$currentfile","\n";
+     $value++;
+}
+
+print "\nENTER THE PROJECT NAME FROM ABOVE LIST\n";
+my $projectdir = &lt;STDIN&gt;;
+chop($projectdir);
+my $projectdirpath = "/"."$projectdir";
+my $workingdirectory = ($dir.$projectdirpath);
+chdir($workingdirectory."/trunk"); 
+my $newpath = cwd();
+
+my $source_dirrtl;
+my $target_dirrtl ;            # = ("$newpath"."/rtl2");
+opendir(my $index, $newpath ) or die "Couldn't read index : $!\n";
+while (my $file = readdir($index)) {
+       if ($file eq "rtl" ) {
+		 if(chdir($newpath."/rtl")) {
+		  my $currentworkingdir = cwd();
+		  $source_dirrtl = $currentworkingdir;
+		  $target_dirrtl = ("$newpath"."/rtl2"); 
+	  }
+		 last;
+	 }	 
+
+	 elsif ($file eq "vhdl") {
+		 if(chdir($newpath."/vhdl")) {
+		  my $currentworkingdir = cwd();
+		  $source_dirrtl =   $currentworkingdir;
+          $target_dirrtl = ("$newpath"."/vhdl2"); 
+	  }
+		 last;
+	 }
+}
+closedir($index);
+my $configdirc = $newpath."/configdir";
+chdir($configdirc);
+opendir( my $indexconfig,$configdirc ) or die "Couldn't enter config directory: $!\n";
+          print("\nCONFIGURATION FILES IN THE CONFIG DIRECTORY \n");
+		  my @rtlfilelist = glob "*.icfg";
+		  print ("\n@rtlfilelist \n");
+
+closedir($indexconfig);
+
+my $cChipId;
+my $cSubVersId;
+my %data_ids;
+my $readline;
+my $toplevelentity;
+my $ivariant_name;
+print "\nENTER THE CONFIGURATION FILE NAME FROM THE ABOVE LIST \n";
+my $configfile = &lt;STDIN&gt;;
+open (my $CFILE,$configfile ) || die "couldnt open file: $!";  
+   while ($readline = &lt;$CFILE&gt;) {
+	   chomp $readline;
+	   my ($key , $value) = (split /::/, $readline);
+	   $data_ids{$key} = $value if $key;
+	   next if $readline =~ /^ $/;
+   }
+   close($CFILE); 
+   for my $key (keys %data_ids) {
+	   $cChipId = $data_ids{'chipid'};
+	   $cSubVersId = $data_ids{'subversid'};
+	   $toplevelentity = $data_ids{'Top_level_entity'};
+	   $ivariant_name = $data_ids{'Variant_Name'};
+   }
+
+
+my $source_dirsim = ("$newpath"."/sim");
+my $target_dirsim1 = ("$newpath"."/sim2");
+
+
+my $source_dirsynth;
+my $target_dirsynth1 ;
+opendir(my $indexs, $newpath ) or die "Couldn't read indexs : $!\n";
+while (my $file = readdir($indexs)) {
+       if ($file eq "par" ) {
+		 if(chdir($newpath."/par")) {
+		  my $currentworkingdir = cwd();
+		  $source_dirsynth = $currentworkingdir;
+		  $target_dirsynth1 = ("$newpath"."/par2"); 
+	  }
+		 last;
+	 }	 
+
+	 elsif ($file eq "synth") {
+		 if(chdir($newpath."/synth")) {
+		  my $currentworkingdir = cwd();
+		  $source_dirsynth =   $currentworkingdir;
+          $target_dirsynth1 = ("$newpath"."/synth2"); 
+	  }
+		 last;
+	 }
+}
+closedir($indexs);
+
+
+
+
+mkdir($target_dirrtl,0777);
+mkdir($target_dirsim1,0777);
+mkdir($target_dirsynth1,0777);
+
+
+
+
+my $filertl = dircopy($source_dirrtl, $target_dirrtl);
+my $filesim = dircopy($source_dirsim, $target_dirsim1);
+my $filesynth = dircopy($source_dirsynth, $target_dirsynth1);
+
+
+
+opendir $source_dirsynth: $!";
+
+chdir("$target_dirrtl");
+my $m4file = "$projectdir".".m4";
+open(MYFILE,"&gt;&gt;$m4file"); 
+  print MYFILE ("define(`m4_cChipId',`16#$cChipId#,16')\n");
+  print MYFILE ("define(`m4_cSubVersId',`16#$cSubVersId#,16')\n");
+  print MYFILE ("define(`m4_$projectdir',`1')\n");
+  print MYFILE ("define(`m4_$ivariant_name',`1')\n");
+  print MYFILE ("define(`m4_rtl',`rtl2')\n");
+  if(my $output1 = `test.bat`){
+		print("\n succesfully executed\n");	
+ } 
+
+chdir("$target_dirsynth1");
+####################################################################################################################
+#added on 13/5/2016
+opendir( my $synthdir,$target_dirsynth1) or die "Couldn't enter config directory: $!\n";
+          print("\nSYNTHESIS INPUT FILES IN CURRENT DIRECTORY \n");
+		  my $synthfilelist = glob "*.qsf";
+		  print ("\n$synthfilelist \n");
+
+#closedir($target_dirsynth1);
+
+	   my $originalquartus ;
+	   my $latestquartus ;
+	   my $readlineqo;
+	   my $readlineql ;
+#print "\nENTER THE CONFIGURATION FILE NAME FROM THE ABOVE LIST \n";
+#my $configfile = &lt;STDIN&gt;;
+open (my $OFILE,$synthfilelist) || die "couldnt open file: $!";  
+   while ($readlineqo = &lt;$OFILE&gt;) {
+	   chomp $readlineqo;
+	   if ($readlineqo =~ /ORIGINAL_QUARTUS_VERSION/) { 
+	   my @originalqarray = (split / +/ , $readlineqo);
+	   $originalquartus = $originalqarray[3];
+	   print "\nthe original quartus $originalquartus\n";
+         }
+#next if $readlineqo =~ /^ $/;
+#       }
+#  close($OFILE); 
+
+#open (my $LFILE,$synthfilelist) || die "couldnt open file: $!";  
+#  while ($readlineql = &lt;$LFILE&gt;) {
+#	   chomp $readlineql;
+	   print "into the second loop $readlineqo\n";
+	   if ($readlineqo =~ /LAST_QUARTUS_VERSION/) {
+	   my @latestqarray = (split / +/ , $readlineqo);
+	   $latestquartus = $latestqarray[3];
+	   print "\nthe latest quartus $latestquartus\n";
+       }
+     next if $readlineqo =~ /^ $/;
+    }	   
+   close($OFILE); 
+
+closedir($target_dirsynth1);
+####################################################################################################################
+print("\n Enter y or n to continue with synthesis \n");
+my $choice = &lt;STDIN&gt;;
+chop($choice);
+if ($choice eq "y") {
+  system ("qcmd.bat $toplevelentity");
+}
+else {
+	print "continue manually with synthesis\n";
+}
+&lt;/code&gt;
+
+block that is causing problem is inside #line with date of today. the whole code is running and even the last print statement also comes but after n times print of "into the second loop..". 
+&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1162928</root_node>
+<parent_node field_name="parent_node">1162933</parent_node>
+<thread id="1162928">
+<node id="1162930"><node id="1162932"><node id="1162933"><node id="1162936"><node id="1162939"><node id="1163118"><node id="1163119"/>
+<node id="1163120"/>
+</node>
+</node>
+<node id="1162943"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

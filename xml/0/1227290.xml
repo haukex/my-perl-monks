@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227290" title="create clone script for utf8 encoding" created="2018-12-15 02:34:24" updated="2018-12-15 02:34:24" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">
+&lt;p&gt;Just as soon as [ikegami] made me aware that us-ascii is my default encoding, I seem to be developing problems with it. These problems are in the variety of my computer not behaving the way I expect it to.&lt;/p&gt;
+
+&lt;p&gt;I'm running ubuntu with bash, and when I touch a file into existence, it is us-ascii. Likewise, files that are formed from redirecting STDOUT begin their lives as us-ascii on this platform. Where is this determined on POSIX systems?&lt;/p&gt;
+
+
+&lt;p&gt;So this is a day in the life, where I use this nifty software: [https://www.soimort.org/translate-shell/|translate shell]&lt;/p&gt;
+
+&lt;c&gt;$ trans :de -brief "over" &gt;2.ascii.de.txt
+$ trans :de -brief "He must." &gt;&gt;2.ascii.de.txt
+$ cat 2.ascii.de.txt 
+Über
+Er muss.
+$ iconv -f us-ascii -t UTF-8 2.ascii.de.txt -o 2.de.utf8.txt
+iconv: illegal input sequence at position 0
+$ 
+&lt;/c&gt;
+
+&lt;p&gt;On STDOUT for me, I get Ü as the zeroth character. Does ascii have a representation for Ü? &lt;/p&gt;
+
+&lt;p&gt;Then I keep trying to get an iconv command to do something for me, but an effective syntax eludes me. Why is Ü illegal in the iconv command?&lt;/p&gt;
+
+&lt;p&gt;If I'm going to have source that has utf8 characters in it, doesn't it make sense to change the underlying encoding to utf8 or create it that way from the git-go?&lt;/p&gt;
+
+&lt;p&gt;After I've touched a file into existence, I use a bash script to clone the next version of a script. All of my scripts have a taxonomy of a positive integer followed by a period, followed by a word. The cloned script is incremented, given execute privileges, and has its name written to a manifest. There isn't any language in it for determining the underlying encoding. I've gotten a lot of mileage out of this script, but I think it's time that I need to replace it with shiny new, lexical perl. I'll put it in readmore tags for being somewhat OT:&lt;/p&gt;
+&lt;readmore&gt;&lt;c&gt;$ cat 2.create.bash 
+#!/bin/bash
+
+# which bash version?
+
+echo "The shebang is specifying bash"
+if [ -z "${BASH_VERSION}" ]; then
+        echo "Not using bash but dash"
+else
+        echo "Using bash ${BASH_VERSION}"
+fi 
+#get the the first number from $1
+#c=$(("$1" : '\([0-9]*\).*$')) didn't work
+c=$(expr "$1" : '\([0-9]*\).*$') 
+echo $c
+f=$1
+
+#integer addition
+d=$(expr $c + 1)
+echo $d
+
+#munge new file, no clobber
+t="$d"
+q=${f#*.}
+s=$t.$q
+echo $s
+cp -n $f $s
+chmod +x $s
+echo $s &gt;&gt; 1.manifest
+
+ls -lh $s
+gedit $s &amp;
+$ 
+&lt;/c&gt;&lt;/readmore&gt;
+
+
+&lt;p&gt;I'd like to write a perl equivalent that would give me freedom to choose the underlying encoding. I'd show previous attempts, but they look awful.&lt;/p&gt;
+
+&lt;p&gt;Finally, what makes any of these en_**.utf8 encodings different from another?&lt;/p&gt;
+
+
+&lt;c&gt;$ locale charmap
+UTF-8
+$ locale -a
+C
+C.UTF-8
+en_AG
+en_AG.utf8
+en_AU.utf8
+en_BW.utf8
+en_CA.utf8
+en_DK.utf8
+en_GB.utf8
+en_HK.utf8
+en_IE.utf8
+en_IL
+en_IL.utf8
+en_IN
+en_IN.utf8
+en_NG
+en_NG.utf8
+en_NZ.utf8
+en_PH.utf8
+en_SG.utf8
+en_US.utf8
+en_ZA.utf8
+en_ZM
+en_ZM.utf8
+en_ZW.utf8
+POSIX
+ru_RU.utf8
+ru_UA.utf8
+$ locale -m
+ANSI_X3.110-1983
+ANSI_X3.4-1968
+...
+UTF-8
+VIDEOTEX-SUPPL
+VISCII
+WIN-SAMI-2
+WINDOWS-31J
+$ 
+&lt;/c&gt;
+
+&lt;p&gt;Thanks for your comment&lt;/p&gt;
+</doctext>
+<thread id="1227290">
+<node id="1227291"/>
+<node id="1227292"><node id="1227332"><node id="1227333"><node id="1227371"><node id="1227379"><node id="1227539"/>
+</node>
+</node>
+</node>
+<node id="1227342"/>
+</node>
+</node>
+<node id="1227295"><node id="1227439"><node id="1227445"><node id="1227535"><node id="1227553"/>
+<node id="1227951"/>
+</node>
+<node id="1227541"/>
+</node>
+</node>
+</node>
+<node id="1227298"><node id="1227438"><node id="1227451"><node id="1227487"/>
+</node>
+</node>
+</node>
+<node id="1227314"/>
+<node id="1227373"/>
+<node id="1227696"><node id="1227697"><node id="1227962"/>
+</node>
+</node>
+</thread></node>

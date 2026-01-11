@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1190788" title="Experimental push on scalar now forbidden" created="2017-05-21 04:35:19" updated="2017-05-21 04:35:19" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="763894">gsd4me</author>
+<doctext field_name="doctext">&lt;p&gt;
+Sorry to interrupt your tonsure creating dear monks but some advice please. It appears that Perl has adapted itself and has thrown our system's operation, established during a small routine change to our code.
+&lt;/p&gt;
+&lt;p&gt;
+The code creates several data types from definitions in a package, and stores them as a series of joined records - so one record holds the data pointer of another etc. (I have simplified the code to show you below) (It was so much easier to use address manipulations in 'C' but Perl's list manipulation was one of the original reasons why we went with Perl over 'C'). The trouble is that the code that was working before has now seemingly been banned as being anti- the Perl Spanish Inquisition's latest thinking on purity. Obviously a code rewrite/redesign is *not* desired at this stage so is there a better/newer/easier way of simply pushing the element onto the list held by the 'root' structure?
+&lt;/p&gt;
+&lt;p&gt;
+The error being given is:&lt;/p&gt;
+&lt;p&gt;
+Experimental push on scalar is now forbidden at C:\crap\adbtest.pl line 40, near "$rohan1;"
+&lt;/p&gt;
+&lt;p&gt;
+Experimental push on scalar is now forbidden at C:\Users\Alan\Documents\crap\adbtest.pl line 46, near "$rohan4;"
+Many thanks - ADB
+&lt;/p&gt;
+&lt;code&gt;
+
+Package/data sources
+
+package rohanType1;
+    sub new
+    {
+        my $self = {};
+        # Discard the class name
+        shift;
+        $self-&gt;{'field11'} = undef;
+        bless ($self);
+        return $self;
+    }
+    return 1;
+
+package rohanType2;
+    sub new
+    {
+        my $self = {};
+        shift;
+        $self-&gt;{'field21'} = 0;
+        bless ($self);
+        return $self;
+    }
+    return 1;
+
+package rohanType3;
+    sub new
+    {
+        my $self = {};
+        shift;
+        # Pointer to rohanType1
+        $self-&gt;{'field31'} = undef;
+        # Pointer to rohanType2
+        $self-&gt;{'field32'} = undef;
+        bless ($self);
+        return $self;
+    }
+    return 1;
+
+
+# Now the data structures used globally to store information used by the whole analysis, which holds
+# data types as defined above
+package rohanData;
+    sub new
+    {
+        my $self = ();
+        shift;
+        $self-&gt;{'rohan1'} = undef;
+        $self-&gt;{'rohan2'} = ();
+        bless ($self);
+        return $self;
+    }
+    
+    return 1;
+=======================
+Code
+    my $rohanRoot;
+    my $rohan1;
+    my $rohan2;
+    my $rohan3;
+    my $rohan4;
+
+    $rohanRoot = rohanData-&gt;new();
+
+    $rohan1 = rohanType1-&gt;new();
+    $rohan2 = rohanType2-&gt;new();
+
+    $rohan1-&gt;{'field11'} = $rohan2;
+
+    $rohanRoot-&gt;{'rohan1'} = $rohan1;  # my debug helper to see if addresses are correct - not part of code
+    push $rohanRoot-&gt;{'rohan2'}, $rohan1; # Interpreter/debugger objects to this ...
+
+    $rohan3 = rohanType1-&gt;new();
+    $rohan4 = rohanType2-&gt;new();
+
+    $rohan3-&gt;{'field11'} = $rohan4; 
+    push $rohanRoot-&gt;{'rohan2'}, $rohan3; # ... and this
+
+&lt;/code&gt;</doctext>
+<thread id="1190788">
+<node id="1190789"><node id="1190810"/>
+</node>
+<node id="1190790"><node id="1190809"><node id="1190811"><node id="1190812"><node id="1190815"><node id="1190818"/>
+<node id="1190820"/>
+</node>
+</node>
+</node>
+<node id="1190816"><node id="1190817"/>
+<node id="1190819"/>
+</node>
+</node>
+</node>
+<node id="1190872"><node id="1190874"><node id="1190934"/>
+</node>
+</node>
+</thread></node>

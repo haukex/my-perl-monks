@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229450" title="Re: Fastest way to sort a list of integers into 0,1,2,3,-3,-2,-1" created="2019-02-05 22:25:39" updated="2019-02-05 22:25:39" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1166559">harangzsolt33</author>
+<doctext field_name="doctext">In QBASIC and JavaScript, the QSort algorithm is by far the fastest. It is even faster than the builtin sort() algorithm in JS. I tried to rewrite it to Perl, but I am not sure how to precisely measure its speed in Perl. The algorithm is designed to sort numbers:
+
+&lt;P&gt;&lt;CODE&gt;
+
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+
+print "Quick Sort algorithm ported from QBASIC to Perl.\n\n";
+
+my @SAMPLE = (
+  384, 12, 44, 847, 66, -324, 217, 550, -3, 18302, 136, 255,
+  441, 4.5, -5, 77, 101, -2, 12, 74, 3, 933, 50, -7, 61, 52,
+  902, 74, -23, 8, 32, 31, 32, 81, 22, -9, 65, 258, 71, -33,
+  433, 985, 164, -19, 0, 1, 0.2, 783, 92, 10, 343, 195, -1);
+
+PrintList("Unsorted list", @SAMPLE);
+my $START_TIME = time;
+
+QSort(@SAMPLE);    # Sort list
+
+my $END_TIME = time;
+
+PrintList("Sorted List", @SAMPLE);
+print "This operation took ", ($END_TIME - $START_TIME), " second(s)\n";
+exit;
+
+
+sub PrintList
+{
+  print shift, ":\n";
+  print '-' x 78 . "\n";
+  my $N;
+  for (my $i = 1; @_; $i++)
+  {
+    $N = shift;
+    print $N . "\t";
+    if (($i % 9) == 0) { print "\n"; }
+  }
+  print "\n", '-' x 78, "\n";
+}
+
+#
+# QuickSort algorithm ported from QBASIC to Perl.
+#
+# Usage: QSort(ARRAY_OF_NUMBERS)
+#
+sub QSort
+{
+  @_ or return;
+
+  my $First = 0;
+  my $Last = @_ - 1;
+  my @QStack;
+  my $StackPtr = 0;
+  my $temp;
+  my $i;
+  my $j;
+
+  for (;;)
+  {
+    do
+    {
+      $temp = $_[int(($Last + $First) / 2)];
+      $i = $First;
+      $j = $Last;
+
+      do
+      {
+        while ($_[$i] &lt; $temp) { $i++; }
+        while ($_[$j] &gt; $temp) { $j--; }
+        if ($i &lt; $j) { @_[$i, $j] = @_[$j, $i]; }
+        if ($i &lt;= $j) { $i++; $j--; }
+      }
+      while ($i &lt;= $j);
+
+      if ($i &lt; $Last)
+      {
+        $QStack[$StackPtr++] = $i;
+        $QStack[$StackPtr++] = $Last;
+      }
+      $Last = $j;
+    }
+    while ($First &lt; $Last);
+
+    $StackPtr or return;
+    $Last = $QStack[--$StackPtr];
+    $First = $QStack[--$StackPtr];
+  }
+}
+
+&lt;/CODE&gt;</doctext>
+<root_node field_name="root_node">1229406</root_node>
+<parent_node field_name="parent_node">1229406</parent_node>
+<thread id="1229406">
+<node id="1229407"/>
+<node id="1229408"/>
+<node id="1229409"/>
+<node id="1229410"/>
+<node id="1229411"><node id="1229428"/>
+<node id="1229462"/>
+</node>
+<node id="1229415"><node id="1229418"/>
+<node id="1229422"/>
+<node id="1229429"/>
+<node id="1229451"><node id="1229457"><node id="1229495"/>
+</node>
+</node>
+</node>
+<node id="1229416"><node id="1229417"/>
+</node>
+<node id="1229419"><node id="1229420"><node id="1229437"/>
+<node id="1229463"><node id="1229465"/>
+</node>
+</node>
+<node id="1229458"/>
+</node>
+<node id="1229425"/>
+<node id="1229444"><node id="1229448"/>
+</node>
+<node id="1229446"><node id="1229447"><node id="1229512"/>
+</node>
+<node id="1229454"><node id="1229505"><node id="1229509"/>
+</node>
+</node>
+</node>
+<node id="1229450"><node id="1229456"/>
+<node id="1229602"/>
+</node>
+<node id="1229466"/>
+<node id="1229492"><node id="1229511"/>
+<node id="1229529"/>
+</node>
+<node id="1229493"><node id="1229496"/>
+</node>
+<node id="1229500"/>
+</thread></node>

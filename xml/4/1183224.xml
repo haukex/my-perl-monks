@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1183224" title="Regex with two strings from files" created="2017-02-28 20:15:06" updated="2017-02-28 20:15:06" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;Hello monks who always prove to be smarter than me! I have a folder with several text files. In those test files I have lines that I'm trying to match and extract. Here is an example of some of the lines from one of the files:
+
+&lt;c&gt;
+/search/detail/1164321
+1.html
+/rsearch/detail/1164327
+1.html
+/search/detail/1164639
+1.html
+/search/detail/1164903
+1.html
+/search/detail/1165763
+1.html
+/search/detail/1191549
+1.html
+/search/detail/1195169
+1.html
+/search/detail/1195781
+1.html
+/search/detail/1196405
+1.html
+/search/detail/1196439
+&lt;/c&gt;
+
+I have two files that my script references, parse1.txt and parse2.txt to get the strings to match. They currently look like this:
+
+&lt;p&gt;Parse1&lt;/p&gt;
+
+&lt;c&gt;
+http
+https
+&lt;/c&gt;
+
+Parse2
+
+&lt;c&gt;
+.com
+.gov
+.edu
+&lt;/c&gt;
+
+I'm trying to use this bit of code to match the '/search/detail/1196439' where before I was just looking to match valid webpages that started with http or https and ended with .com or .gov or .edu. The problem is that the leading '/' is messing me up. Here's my code:&lt;/p&gt;
+&lt;code&gt;
+ my $calls_dir2 = "$response/Bing/1Parsed/Html";
+    
+    my $parsed_dir = "$response/Bing/1Parsed/Html2";
+    unless ( -d $parsed_dir  ) {
+        make_path( $parsed_dir , { verbose =&gt; 1, mode =&gt; 0755 } );
+    }
+
+    open( my $fh2, '&lt;', $parse1file ) or die $!;
+    chomp( my @parse_terms1 = &lt;$fh2&gt; );
+    close($fh2);
+
+    open( $fh2, '&lt;', $parse2file ) or die $!;
+    
+    print "parse1file=$parse1file\n";
+    print "parse2file=$parse2file\n";
+
+    for my $parse1 (@parse_terms1) {
+        seek( $fh2, 0, 0 );
+
+        while ( my $parse2 = &lt;$fh2&gt; ) {
+            chomp($parse2);
+            print "$parse1 $parse2\n";
+
+            my $wanted = $parse1 . $parse2;
+
+            my @files = glob "$calls_dir2/*.txt";
+
+            printf "Got %d files\n", scalar @files;
+
+            for my $file (@files) {
+
+                open my $in_fh, '&lt;', $file;
+                my $basename = fileparse($file);
+                my ($prefix) = $basename =~ /^(.{9})/;
+                my $rnumber  = rand(1999);
+                print $prefix, "\n";
+
+                my @matches;
+                while (&lt;$in_fh&gt;) {
+
+                    #push @matches, $_ if /^.*?(?:\b|_)$parse1(?:\b|_).*?(?:\b|_)$parse2(?:\b|_).*?$/m;
+                    
+                    push @matches, $_ if /^.*?(?:|_)$parse1(?:|_).*?(?:|_)$parse2(?:|_).*?$/m;
+                    
+                    #push @matches, $_ if m/^($parse1)$/i;
+                    #push @matches, $_ if m/^'$parse1'$/i;
+                    #m/^yes$/i
+                    
+                }
+
+                if ( scalar @matches ) {
+                    make_path($parsed_dir);
+                    open my $out_fh, '&gt;',
+                        "$parsed_dir/${basename}.$wanted.$rnumber.txt" or die $!;
+                    $out_fh-&gt;autoflush(1);
+                    print $out_fh $_ for @matches;
+                    print "$out_fh \n";
+                    close $out_fh;
+                }
+            }
+        }
+    }
+&lt;/code&gt;
+&lt;p&gt;
+Please let me know if you have enough info now. If not I'm more than happy to provide mode. Thanks in advance for the assistance!
+
+&lt;/p&gt;</doctext>
+<reputation field_name="reputation">1</reputation>
+<thread id="1183224">
+<node id="1183227"><node id="1183233"><node id="1183237"/>
+</node>
+</node>
+<node id="1183239"/>
+<node id="1183248"/>
+<node id="1183312"/>
+</thread></node>

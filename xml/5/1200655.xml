@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200655" title="Re^4: Killing a child process" created="2017-10-04 10:01:20" updated="2017-10-04 10:01:20" _doctext_mode="lenient"><type id="11">note</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;i&gt;(This is a reply to Re^5)&lt;/i&gt;&lt;/p&gt;
+
+&lt;p&gt;Your suggestions have provided the right answer! Here are two scripts; the first hangs until the sound file stops playing, and then displays a confirmation message.
+
+&lt;code&gt;#!/usr/bin/perl
+
+use strict;
+use diagnostics;
+use warnings;
+
+use IPC::Run qw/start/;
+use POSIX ":sys_wait_h";
+
+my ($h, $pid, $result);
+
+# Play the sound file
+$h = start ['play','-q','/home/ra/Desktop/trek3.mp3'];
+
+# Get the process ID (there's only one)
+foreach my $kid (@{ $h-&gt;{KIDS} }) {
+
+    $pid = $kid-&gt;{PID};
+}
+
+# Wait for the sound file to stop playing, and then display a message
+
+# Option 1: scripts hangs, and then correctly displays a message 
+#   as soon as the sound file stops playing
+sleep 5;
+waitpid($pid, 0);
+print "finished!\n";
+
+# Tidy up
+$h-&gt;signal('INT');
+$h-&gt;finish;
+&lt;/code&gt;
+
+&lt;p&gt;The second checks once a second, and prints a confirmation message within a second of the sound file stopping.&lt;/p&gt;
+
+&lt;code&gt;#!/usr/bin/perl
+
+use strict;
+use diagnostics;
+use warnings;
+
+use IPC::Run qw/start/;
+use POSIX ":sys_wait_h";
+
+my ($h, $pid, $result);
+
+# Play the sound file
+$h = start ['play','-q','/home/ra/Desktop/trek3.mp3'];
+
+# Get the process ID (there's only one)
+foreach my $kid (@{ $h-&gt;{KIDS} }) {
+
+    $pid = $kid-&gt;{PID};
+}
+
+# Wait for the sound file to stop playing, and then display a message
+
+# Option 2: correctly displays a message within a second of the sound 
+#   file stopping playing
+do {
+    sleep 1;
+    waitpid($pid, WNOHANG);
+    print "waiting...\n";
+} until (! (kill 0, $pid));
+print "finished!\n";
+
+# Tidy up
+$h-&gt;signal('INT');
+$h-&gt;finish;
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">1200577</root_node>
+<parent_node field_name="parent_node">1200593</parent_node>
+<reputation field_name="reputation">2</reputation>
+<thread id="1200577">
+<node id="1200579"><node id="1200581"><node id="1200582"><node id="1200588"><node id="1200592"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1200587"><node id="1200590"><node id="1200593"><node id="1200647"><node id="1200649"/>
+</node>
+<node id="1200655"><node id="1200658"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1200594"><node id="1200617"/>
+</node>
+</thread></node>

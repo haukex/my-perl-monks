@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201806" title="Re: Regex: matching character which happens exactly once" created="2017-10-21 13:34:22" updated="2017-10-21 13:34:22" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Just to make sure I understand the question, you're looking for a regex that does the equivalent of the following regex, but without &lt;c&gt;(?{ })&lt;/c&gt; or &lt;c&gt;(??{ })&lt;/c&gt;? (Anything else that's not allowed?) Personally, I don't find this particular &lt;c&gt;(??{ })&lt;/c&gt; construct too terrible...&lt;/p&gt;
+&lt;p&gt;I played around a bit with recursion but then I was banging my head against the string &lt;c&gt;'abacbc'&lt;/c&gt;, now I have to stop for today.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Algorithm::Combinatorics 'variations_with_repetition';
+use Test::More;
+
+my $re = qr{ \A
+		( .* )
+		( (??{ length $1 ? "[^".quotemeta($1)."]" : "." }) )
+		( (?: (?! \2 ) . )* )
+	\z }msx;
+
+for my $len (1..7) {
+	my $iter = variations_with_repetition([qw/a b c/], $len);
+	while ( my $c = $iter-&gt;next ) {
+		my $str = join '', @$c;
+		my $exp = do {
+			my %h; $h{$_}++ for @$c;
+			my %r = reverse %h;
+			exists $r{1} };
+		is $str=~$re, $exp, $str.($exp?' =~':' !~').' re'
+			or diag explain
+				[ \%-, map [ $-[$_], eval "\$$_", $+[$_] ], 1..@+ ];
+	}
+}
+
+done_testing;
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; A bit of research on variable-width lookbehind: [id://924643], [id://936151], [id://253322]&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1201795</root_node>
+<parent_node field_name="parent_node">1201795</parent_node>
+<thread id="1201795">
+<node id="1201796"><node id="1201799"/>
+</node>
+<node id="1201806"><node id="1201807"><node id="1201924"><node id="1201940"/>
+</node>
+</node>
+</node>
+<node id="1201823"><node id="1201849"><node id="1201853"><node id="1201863"/>
+</node>
+</node>
+<node id="1201850"/>
+</node>
+<node id="1201894"/>
+<node id="1201896"><node id="1201899"><node id="1201900"><node id="1201903"><node id="1201911"><node id="1201921"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1201938"><node id="1201951"><node id="1201972"/>
+</node>
+</node>
+</node>
+<node id="1201912"><node id="1201920"><node id="1201950"/>
+</node>
+</node>
+<node id="1201958"><node id="1201959"/>
+<node id="1203237"/>
+</node>
+</thread></node>

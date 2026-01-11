@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112496" title="Iterating over an hash while removing keys" created="2020-02-06 11:40:48" updated="2020-02-06 11:40:48" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1039428">Eily</author>
+<doctext field_name="doctext">&lt;p&gt;Again, some of you might have seen the question on the CB already. (And again, I came up with a solution just because asking made me see things clear enough). I am wondering about iterating over an hash while removing some of its keys (the current one, and several connected ones). Actually, to explain my problem on the CB I said I'd like to be able to do this:
+&lt;c&gt;while (my ($k,$v) = first %hash)
+{
+  delete $hash{$_} for $k, @$v;
+}&lt;/c&gt; where first does the same as [doc://each], but with a new iterator (ie, from the start). Long story short, this led to this:
+&lt;c&gt;use strict;
+use warnings;
+use feature 'say';
+use Data::Dump qw( pp );
+
+sub first (\%)
+{
+  my $hash = shift;
+  scalar(keys %$hash); # Force reset
+  each %$hash;
+}
+
+my %hash = 
+(
+  1 =&gt; [2..7],
+  8 =&gt; [ 9 ],
+  9 =&gt; [ 8 ],
+  (map { $_ =&gt; [ 1 ] } 2..7),
+);
+
+say "Input hash:", pp \%hash;
+say "";
+
+say "Try first then each twice in a row to check that the iteration is restarted";
+say pp [first %hash], [each %hash] for 1..2;
+say "";
+
+# Delete a key and all the keys contained in the value array
+sub rec_delete(\%$);
+sub rec_delete(\%$) 
+{
+  my ($hash, $key) = @_;
+  my $array = delete $hash-&gt;{$key};
+  return unless $array;
+  say "     Removing $key -&gt; [ @$array ]";
+  rec_delete %$hash =&gt; $_ for @$array;
+}
+
+while (my ($k,$v) = first %hash)
+{
+  say "Starting from $k -&gt; [ @$v ]";
+  rec_delete %hash =&gt; $k;
+}&lt;/c&gt;
+&lt;c&gt;Input hash:{ 1 =&gt; [2 .. 7], 2 =&gt; [1], 3 =&gt; [1], 4 =&gt; [1], 5 =&gt; [1], 6 =&gt; [1], 7 =&gt; [1], 8 =&gt; [9], 9 =&gt; [8] }
+
+Try first then each twice in a row to check that the iteration is restarted
+([8, [9]], [5, [1]])
+([8, [9]], [5, [1]])
+
+Starting from 8 -&gt; [ 9 ]
+     Removing 8 -&gt; [ 9 ]
+     Removing 9 -&gt; [ 8 ]
+Starting from 5 -&gt; [ 1 ]
+     Removing 5 -&gt; [ 1 ]
+     Removing 1 -&gt; [ 2 3 4 5 6 7 ]
+     Removing 2 -&gt; [ 1 ]
+     Removing 3 -&gt; [ 1 ]
+     Removing 4 -&gt; [ 1 ]
+     Removing 6 -&gt; [ 1 ]
+     Removing 7 -&gt; [ 1 ]&lt;/c&gt;
+This works just fine. But I'm curious about other ways to do the same (because this seems like it could be a normal enough use of hashes?). So the exercise is:
+&lt;c&gt;While the hash isn't empty
+  Take one key (at random) from the hash
+    Delete that key and all connected keys
+&lt;/c&gt; Without expanding the whole list of keys (let's pretend there's an awful lot of them, or the hash is tied, and it's harder to find an existing key than fetch a value). So &lt;c&gt;@keys = keys %hash; for my $key (@keys) { recursive_delete(\%hash, $key); } &lt;/c&gt; isn't valid.&lt;/p&gt;
+&lt;p&gt;NB: the output of my example is actually random, so you might get a different cycle by trying it.&lt;/p&gt;</doctext>
+<thread id="11112496">
+<node id="11112495"><node id="11112502"><node id="11112503"><node id="11112504"><node id="11112506"><node id="11112507"><node id="11112557"><node id="11112564"><node id="11112566"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11112500"><node id="11112501"/>
+</node>
+<node id="11112513"><node id="11112517"/>
+<node id="11112548"/>
+</node>
+</thread></node>

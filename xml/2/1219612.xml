@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1219612" title="Re^2: redacting from config hash" created="2018-07-31 21:53:01" updated="2018-07-31 21:53:01" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;p&gt;I'm very grateful for 2 excellent responses. I've coded toward both [haukex]'s and [soonix]'s suggestions, and I haven't completely disentangled ideas that are still crowding out the good ones here. I think I can lay out what I've done, state a better specification, and outline the things that cause trouble.&lt;/p&gt;
+
+&lt;p&gt;I looked also at config1.pm and realized that my claim that I only had sensitive values in one file per workspace was false. My new specification for the copy to the temp directory is that any file that matches "config", then a number, a dot, and a "pm" shall not be copied. Meanwhile, I have a created a template file, config3.tmpl, that is of the form it needs to be less the definition of the hash, which is to be templated in. I don't see why Text::Template wouldn't be fine. The longer arc of my question is how to both to populate and depopulate such hashes. What makes it very difficult is that we seem to be acting on perl syntax itself.&lt;/p&gt;
+
+&lt;p&gt;If we look [haukex]'s output, the hash begins&lt;/p&gt;
+&lt;c&gt;$CONFIG = {
+            my_github =&gt; {&lt;/c&gt;
+
+&lt;p&gt;, yet if we're to imitate the syntax in my source it begins:&lt;/p&gt;
+&lt;c&gt;our %config = (
+     my_sftp =&gt;  {&lt;/c&gt;
+
+&lt;p&gt;I'm more than a little confused about what seem to be competing definitions of a hash.&lt;/p&gt;
+&lt;readmore&gt;&lt;c&gt;
+$ cat config3.tmpl
+package config3;
+use Exporter	qw(import);
+our @EXPORT =	qw(%config);
+{$config_hash}
+1;
+
+----------
+$ cat util2.pm
+package utils2;
+require Exporter;
+
+use utils1;
+
+our @ISA = qw(Exporter);
+our @EXPORT = qw( redact make_ini);
+
+sub redact{
+use strict;
+use warnings;
+use 5.010;
+use Path::Tiny;
+
+my $file = shift;
+#use $file;  resulted in error
+use config2;
+
+
+my $sub_hash = "my_github";
+my $email = $config{$sub_hash}-&gt;{'email'};
+my $password = $config{$sub_hash}-&gt;{'password'};
+
+my $tempdir = Path::Tiny-&gt;tempdir('backup_XXXXXX');
+say "temp dir is $tempdir"; 
+
+my $scratch_file = $tempdir-&gt;child('batch_01', '1.manifest.txt')-&gt;touchpath;
+say "scratch_file is $scratch_file";
+my $parent = $scratch_file-&gt;parent;
+say "parent is $parent";
+ 
+
+chdir $tempdir unless $tempdir-&gt;subsumes(Path::Tiny-&gt;cwd);
+system("pwd");
+
+
+use Data::Dumper;
+print Dumper \%config;
+my $b = "dummy";
+return $b;
+}
+
+sub make_ini{
+use strict;
+use warnings;
+use 5.010;
+use Path::Tiny;
+
+my $file = shift;
+use config2;
+use Config::Tiny;
+use Data::Dumper;
+
+
+my $path = shift;
+say "path is $path";
+
+say "is the stuff here?";
+print Dumper \%config;
+
+$config-&gt;write( $path, 'utf8' ); #this line draws error
+chdir "/home/bob/Documents";
+system("cat *.ini");
+
+my $b = "dummy";
+return $b;
+}
+
+1;
+
+&lt;/c&gt;&lt;/readmore&gt;
+&lt;p&gt;What I tried to do was extend what I have now to create a [Config::Tiny] ini file. I think the install went well, and judging by how quickly it went, it truly seems tiny:&lt;/p&gt;
+
+
+
+
+&lt;c&gt;
+All tests successful.
+Files=5, Tests=49,  3 wallclock secs ( 0.06 usr  0.01 sys +  0.45 cusr  0.10 csys =  0.62 CPU)
+Result: PASS
+  RSAVAGE/Config-Tiny-2.23.tgz
+  /usr/bin/make test -- OK
+Running make install
+Manifying 1 pod document
+Installing /usr/local/share/perl/5.26.1/Config/Tiny.pm
+Installing /usr/local/man/man3/Config::Tiny.3pm
+Appending installation info to /usr/local/lib/x86_64-linux-gnu/perl/5.26.1/perllocal.pod
+  RSAVAGE/Config-Tiny-2.23.tgz
+  /usr/bin/make install  -- OK
+
+cpan[2]&gt; q
+Terminal does not support GetHistory.
+Lockfile removed.
+$ man Config::Tiny 
+$ ./1.redact.pl 
+Variable "$config" is not imported at template_stuff/utils2.pm line 61.
+Global symbol "$config" requires explicit package name (did you forget to declare "my $config"?) at template_stuff/utils2.pm line 61.
+Compilation failed in require at ./1.redact.pl line 6.
+BEGIN failed--compilation aborted at ./1.redact.pl line 6.
+
+&lt;/c&gt;
+&lt;c&gt;$ cat config2.pm 
+package config2;
+use Exporter	qw(import);
+our @EXPORT =	qw(%config);
+our %config = (
+     my_sftp =&gt;  {
+           domain   =&gt;  '',
+           username =&gt;  '',
+           password =&gt;  '',
+          },
+     my_github =&gt;  {
+        
+           email    =&gt;  '',
+           password =&gt;  '',
+          },
+     );
+1;
+$ 
+&lt;/c&gt;
+&lt;p&gt;I don't seem to be sharing is the "our" on the definition of "our %config". Why is my syntax on the config hash clashing with that provided by man Config::Tiny and [haukex]?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1219523</root_node>
+<parent_node field_name="parent_node">1219530</parent_node>
+<thread id="1219523">
+<node id="1219530"><node id="1219540"/>
+<node id="1219612"><node id="1219636"><node id="1219747"><node id="1219776"><node id="1219963"/>
+</node>
+<node id="1219777"><node id="1219962"/>
+</node>
+</node>
+</node>
+<node id="1219643"><node id="1219681"/>
+</node>
+</node>
+</node>
+</thread></node>

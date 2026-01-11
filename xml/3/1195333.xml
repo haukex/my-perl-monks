@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1195333" title="Re^2: HMAC Sha256 Help! (updated)" created="2017-07-18 08:29:11" updated="2017-07-18 08:29:11" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1195300">ribble</author>
+<doctext field_name="doctext">&lt;p&gt; thanks for the reply. Well I don' really know what the expected output should be either, thats my issue really.&lt;/p&gt;
+&lt;p&gt;I tried with the pack function to get the hex key into bytes but with no success either. &lt;/p&gt;
+&lt;p&gt; as for using hmac_sha256_hex, thanks for the information. I have now changed to hmac_sha256 instead, still no joy but I think thats now the correct hashing mechanism &lt;/p&gt;
+&lt;p&gt; I really appreciate the assistance thanks.&lt;/p&gt;
+
+&lt;p&gt; the full instructions to build the authorization header are:&lt;/p&gt;
+&lt;p&gt;For GET endpoint:&lt;/p&gt;
+&lt;p&gt;1. Build a string based on the request
+METHOD (GET)
+DATE/TIME
+APPLICATION ID
+PATH (API endpoint, e.g. /xxxxxxxxx/api/v1/users/&lt;userID&gt;/factors)&lt;/p&gt;
+&lt;p&gt;2. Create an HMAC SHA256 hash of step 1 using the Application Key
+This step is executed by calling the HMAC and producing the hash value&lt;/p&gt;
+&lt;p&gt;3. Encode the HMAC SHA256 hash from step 2 in Base64&lt;/p&gt;
+&lt;p&gt;4. Concatenate the "Application ID", ":", and the "Base64 encoded HMAC SHA256 hash" from step 3
+ApplicationID:Base64EncodedHMACSHA256Hash&lt;/p&gt;
+&lt;p&gt;5. Encode the value from step 4 in Base64&lt;/p&gt;
+&lt;p&gt;6. Concatenate "Basic " and the "Value of Step 5"&lt;/p&gt;
+
+&lt;p&gt;the encoding is all ok, its the creation of the HMAC that seems to be my issue.&lt;/p&gt;
+
+&lt;p&gt;currently I have it as&lt;/p&gt;
+
+
+&lt;code&gt;
+#lets check the time
+$datestring = strftime "%a, %e %b %Y %H:%M:%S GMT", gmtime;
+
+#set the strings
+$method="GET";
+$appid="d6468df6c1e8419fb5ec50f62be9a28b";
+$appkey="15c7a6e1a5bd73500db29dffd0e19b6c6228b044c64348a6f5d6d470c54fc208";
+$path="/xxxxxxxxxxxx/xxxxxxx/api/v1/users/xxxxx/factors";
+
+#build the hash string
+$step1="$method\\n$datestring\\n$appid\\n$path";
+
+
+#hmac sha256hash the string
+
+
+$step2a= encode_base64(hmac_sha256($step1, pack("H*",$appkey)));
+
+
+$step4="$appid:$step2a";
+
+
+
+#encode value from step 4 into base 64
+$step5 = encode_base64($step4);
+
+
+#now add Basic and the value from step 5
+$step6 = ("Basic $step5");
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">1195303</root_node>
+<parent_node field_name="parent_node">1195306</parent_node>
+<thread id="1195303">
+<node id="1195304"><node id="1195328"/>
+</node>
+<node id="1195306"><node id="1195333"><node id="1195352"><node id="1195363"><node id="1195377"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1195350"><node id="1195365"/>
+</node>
+</thread></node>

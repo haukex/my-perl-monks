@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112820" title="Re: Mojo database routing" created="2020-02-11 16:45:52" updated="2020-02-11 16:45:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;How to get form parameters and placeholders is covered in [mod://Mojolicious::Guides::Tutorial]. I see you've commented out [mod://Mojo::SQLite], but I personally like these Mojo-style DB adapters.&lt;/p&gt;
+&lt;p&gt;Form parameters don't normally get put in the URL in the way you seem to be hoping. One possible solution would be JavaScript, but here is a solution without it: the HTML form gets submitted to a handler at &lt;c&gt;/search&lt;/c&gt;, which then just redirects to the corresponding URL. Note I'm generating the form via [mod://Mojolicious::Plugin::TagHelpers].&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use Mojolicious::Lite;
+use Mojo::SQLite;
+
+helper sqlite =&gt;
+	sub { state $sql = Mojo::SQLite-&gt;new('sqlite:mydb.db') };
+
+# disable template cache when running under morbo
+app-&gt;renderer-&gt;cache-&gt;max_keys(0) if app-&gt;mode eq 'development';
+
+app-&gt;sqlite-&gt;migrations-&gt;from_string(&lt;&lt;'END_MIGR')-&gt;migrate;
+-- 1 up
+CREATE TABLE contacts (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name TEXT,
+	department TEXT
+);
+INSERT INTO contacts (name,department) VALUES ('John Doe','Perl');
+-- 1 down
+DROP TABLE IF EXISTS contacts;
+END_MIGR
+
+get '/' =&gt; sub {
+	my $c = shift;
+	$c-&gt;render('main');
+} =&gt; 'index';
+
+post '/search' =&gt; sub {
+	my $c = shift;
+	$c-&gt;redirect_to(
+		$c-&gt;url_for('name_query', query =&gt; $c-&gt;param('name') ) );
+} =&gt; 'search';
+
+get '/name/:query' =&gt; sub {
+	my $c = shift;
+	$c-&gt;stash( rows =&gt;
+		$c-&gt;sqlite-&gt;db-&gt;select(
+			'contacts',
+			['id','name','department'],
+			{ name =&gt; $c-&gt;stash('query') }
+		)-&gt;arrays );
+	$c-&gt;render('main');
+} =&gt; 'name_query';
+
+app-&gt;start;
+
+__DATA__
+
+@@ main.html.ep
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;Hello Mojo!&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+
+&lt;div&gt;
+%= form_for search =&gt; ( method =&gt; 'post' ) =&gt; begin
+%= label_for name =&gt; 'Name'
+%= text_field 'name', required=&gt;'required';
+%= submit_button 'Query'
+%= end
+&lt;/div&gt;
+
+% if ( my $rows = stash 'rows' ) {
+	% if (@$rows) {
+		&lt;div&gt;&lt;table border="1"&gt;
+		&lt;tr&gt;
+			&lt;th&gt;id&lt;/th&gt;
+			&lt;th&gt;name&lt;/th&gt;
+			&lt;th&gt;department&lt;/th&gt;
+		&lt;/tr&gt;
+		% foreach my $row (@$rows) {
+			&lt;tr&gt;
+			% foreach my $text (@$row) {
+				&lt;td&gt;&lt;%= $text %&gt;&lt;/td&gt;
+			% }
+			&lt;/tr&gt;
+		% }
+		&lt;/table&gt;&lt;/div&gt;
+	% } else {
+		&lt;div&gt;&lt;b&gt;No records found!&lt;/b&gt;&lt;/div&gt;
+	% }
+% }
+
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11112802</root_node>
+<parent_node field_name="parent_node">11112802</parent_node>
+<thread id="11112802">
+<node id="11112820"><node id="11113325"><node id="11113340"/>
+</node>
+</node>
+</thread></node>

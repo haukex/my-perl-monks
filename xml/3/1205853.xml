@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1205853" title="Re: Opening multiple output files within a loop" created="2017-12-19 06:52:25" updated="2017-12-19 06:52:25" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;c&gt;
+use warnings;
+use strict;
+
+my @labels = qw/ foo bar quz /;
+
+my %fh;
+for my $label (@labels) {
+	my $filename = "out_${label}.txt";
+	open $fh{$label}, '&gt;', $filename or die "$filename: $!";
+}
+
+while (&lt;DATA&gt;) {
+	# or whatever condition you like, just a demo here
+	if (/lbl_(foo|bar|quz)/) {
+		print { $fh{$1} } $_; # how to print to one of these handles
+	}
+	else { print $_ } # just a default action, adjust as needed
+}
+
+close $_ for values %fh;
+
+__DATA__
+Hello lbl_foo
+lbl_bar World
+Test lbl_quz
+lbl_foo A
+No label here
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1205851</root_node>
+<parent_node field_name="parent_node">1205851</parent_node>
+<thread id="1205851">
+<node id="1205852"/>
+<node id="1205853"/>
+<node id="1205859"/>
+<node id="1205875"><node id="1205881"/>
+</node>
+</thread></node>

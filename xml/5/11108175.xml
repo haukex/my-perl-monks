@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108175" title="inconsistent eval timeout" created="2019-10-31 10:43:32" updated="2019-10-31 10:43:32" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="495406">Sanjay</author>
+<doctext field_name="doctext">&lt;p&gt;eval timeout varies by activity in Perl on Windows.&lt;/p&gt; 
+&lt;p&gt;When OPTION1 in the code below is un-commented, then it times out in 10 seconds every time. Even when run simultaneously in different windows.&lt;/p&gt;
+&lt;p&gt;OPTION2 is a system call to run a program. It times out in 179 to 182 seconds. When run simultaneously, it times out in 240 to 260 seconds.&lt;/p&gt;
+&lt;p&gt;All the while the system is (almost) doing nothing apart from this.&lt;/p&gt;
+&lt;p&gt;CPU &amp; memory both below 100% all through.&lt;/p&gt;
+&lt;p&gt;I want to have a predictable timeout. A few seconds off is tolerable.  An order of magnitude is a severe problem.&lt;/p&gt;
+&lt;p&gt;Any help appreciated.&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+
+my $v_bg_tm = time();        # Just before eval call
+
+eval {
+  local %SIG;
+  $SIG{ALRM} = sub { die "Timeout after 10 seconds!\n"; };
+  alarm 10;
+
+# sleep 20;                            # OPTION 1 - Timeout in 10 seconds
+# `lp_solve lp_Gnrtd-470-Hdr_32.lp`;   # OPTION 2 - Timeout in 180+ seconds
+
+  alarm 0;
+};
+
+print time() - $v_bg_tm , " seconds used against timeout of 10 seconds\n";
+&lt;/code&gt;
+</doctext>
+<thread id="11108175">
+<node id="11108179"/>
+<node id="11108191"><node id="11108302"><node id="11108319"/>
+</node>
+</node>
+<node id="11108216"/>
+<node id="11108244"><node id="11108301"/>
+</node>
+</thread></node>

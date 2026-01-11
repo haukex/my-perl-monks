@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11140754" title="Dumping opaque objects" created="2022-01-23 17:52:45" updated="2022-01-23 17:52:45" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="209409">hv</author>
+<doctext field_name="doctext">&lt;p&gt;A bit too often I write some code, have a problem, stick in a temporary Data::Dumper call, and see something like this:&lt;/p&gt;
+&lt;code&gt;
+  sub munge_data {
+    my($data) = @_;
+  # temp hack
+  use Data::Dumper; warn Dumper($data);
+    ... # do munging
+  }
+  ...
+$VAR1 = [
+          bless( do{\(my $o = 63036880)}, 'Math::GMP' ),
+          bless( do{\(my $o = 63024960)}, 'Math::GMP' ),
+          bless( do{\(my $o = 63021408)}, 'Math::GMP' )
+        ],
+&lt;/code&gt;
+
+&lt;p&gt;Now Data::Dumper has the Freezer interface, which provides a way to modify the object before dumping - useful if the object caches a bunch of verbose but uninteresting stuff which will automatically be recreated when needed.&lt;/p&gt;
+
+&lt;p&gt;What Data::Dumper doesn't seem to provide is a way to say "call this method/function to get the _actual string_ this object should dump as". For this case it would be ideal to represent a GMP object $z as something like "z$z", taking advantage of its existing stringification overload - despite Data::Dumper's stated purpose, I hardly ever care about evalling the output to recreate the data structure.&lt;/p&gt;
+
+&lt;p&gt;Does anyone know of a recommended (or remotely usable) way to achieve such a thing? Ideal would be a per-class override, but even a global one would nearly always be as useful to me.&lt;/p&gt;
+
+&lt;p&gt;Update: I'm perfectly happy to use a module other than Data::Dumper, clearly that wasn't clear.&lt;/p&gt;
+
+&lt;p&gt;Update: I've managed to make some progress with [metamod://Data::Printer] after a few false starts. I'm going to spend some time seeing if I can learn to live with its output format (which has lots of options, but not necessarily the ones I'd want), but I like that I can throw almost everything in a config file so there's minimal boilerplate when I use it:&lt;/p&gt;
+
+&lt;c&gt;% cat ~/.dataprinter
+use_prototypes = 0
+index = 0
+align_hash = 0
+hash_separator = ' =&gt; '
+colored = 0
+begin filter Math::GMP
+    $ddp-&gt;unsee($obj); "z_$obj";
+end filter
+
+% perl -MDDP -MMath::GMP -we '
+  $val = 1;
+  $zval = Math::GMP-&gt;new(1);
+  p [$val, $val, $zval, $zval];
+'
+[
+    1,
+    1,
+    z_1,
+    z_1
+]
+% 
+&lt;/c&gt;
+
+&lt;p&gt;The hardest bit was avoiding its handling of duplicate references, which was making the last line of output show &lt;c&gt;var[2]&lt;/c&gt; instead of &lt;c&gt;z_1&lt;/c&gt;. That's what the unsee() call is fixing for me.&lt;/p&gt;</doctext>
+<thread id="11140754">
+<node id="11140757"><node id="11140762"><node id="11140787"><node id="11140804"><node id="11140844"><node id="11140848"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11140814"><node id="11140819"/>
+<node id="11140823"/>
+</node>
+</thread></node>

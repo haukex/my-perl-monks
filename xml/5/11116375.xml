@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116375" title="[Free Nodelet Hack] CodeMirror" created="2020-05-03 05:48:33" updated="2020-05-03 05:48:33" _doctext_mode="strict"><type id="1036">monkdiscuss</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You need to be logged in, then enable the Free Nodelet in your [id://25185], turn &lt;i&gt;on&lt;/i&gt; the option "Code Wrapping Off" in your [id://450961], and in your [id://492700], paste the following, and all textareas and code blocks will become [https://codemirror.net/|CodeMirror] editors with syntax highlighting, line numbers, etc. For code blocks, the syntax highlighter is Perl (which doesn't appear to mess up the syntax highlighting on non-Perl source too much), and for text areas, the syntax highlighting is HTML, with support for JavaScript in &lt;c&gt;&lt;script&gt;&lt;/c&gt; tags and CSS in &lt;c&gt;&lt;style&gt;&lt;/c&gt; tags, as well as for Perl in &lt;tt&gt;&amp;lt;c&amp;gt;&lt;/tt&gt; tags (not &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags for now, because those are actually valid HTML5 tags; I'm open for suggestions otherwise).&lt;/p&gt;
+&lt;c&gt;
+&lt;link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.53.2/codemirror.min.css"
+  integrity="sha256-vZ3SaLOjnKO/gGvcUWegySoDU6ff33CS5i9ot8J9Czk=" crossorigin="anonymous" /&gt;
+&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.53.2/codemirror.min.js"
+  integrity="sha256-sRwcFCKzBvYiAJfddXlx1Ld5+hAxpYzCM+drX/GHMKE=" crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.53.2/mode/xml/xml.min.js"
+  integrity="sha256-Lfk8z6WUsBN6YiCaMpH6bxBHyRqkPK4O2QbQHFNUS40=" crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.53.2/mode/javascript/javascript.min.js"
+  integrity="sha256-tnhIfKT2keR1i4Y7lQL70BBfwnxp10ywUpnXjSjIlH4=" crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.53.2/mode/css/css.min.js"
+  integrity="sha256-Np6VKUByekB6pozOOgM2TcmhyGX46hnWr9TpJbUXpyo=" crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.53.2/mode/htmlmixed/htmlmixed.min.js"
+  integrity="sha256-9Dta/idKg17o/o0a3PEsL6JjkYvijj9UMh3Z86HhUcg=" crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.53.2/mode/perl/perl.min.js"
+  integrity="sha256-fQeGcgwNMEHlEqr9CCAoDsorVyJXm1mDMq1E/rB1wiQ=" crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script src="https://code.jquery.com/jquery-3.5.0.min.js"
+  integrity="sha256-xNzN2a4ltkB44Mc/Jz3pT4iU1cmeR0FkXs4pru/JxaQ="
+  crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script src="/?node_id=11116375;displaytype=displaycode;part=2"
+  type="text/javascript"&gt;&lt;/script&gt;
+&lt;/c&gt;
+&lt;p&gt;(If you've already got jQuery loaded from another nodelet hack, you don't need to put that &lt;c&gt;&lt;script&gt;&lt;/c&gt; tag twice, of course.)&lt;/p&gt;
+&lt;p&gt;Note: If something goes wrong in your browser, and suddenly the text areas break, you need to disable JavaScript to be able to edit your [id://492700|Free Nodelet] to disable this hack. And of course let me know, with OS and browser version, and best would be the error messages from your browser's JS console too.&lt;/p&gt;
+&lt;p&gt;Since this code isn't particularly long, if you'd like to customize any of the CodeMirror settings (like indentation), you can also copy the below code into your [id://492700|Free Nodelet] directly (inside &lt;c&gt;&lt;script&gt;&lt;/c&gt; tags, and omit the final &lt;c&gt;&lt;script&gt;&lt;/c&gt; tag above).&lt;/p&gt;
+&lt;p&gt;There is support for [https://codemirror.net/demo/theme.html|CodeMirror Themes]: add the desired stylesheet to the Free Nodelet (e.g. &lt;c&gt;&lt;link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.53.2/theme/lesser-dark.min.css" integrity="sha256-kRDm75ZpAk6HEGxwszCLc7vt79azRsrfybbL4llVXBw=" crossorigin="anonymous" /&gt;&lt;/c&gt;) and then add &lt;c&gt;&lt;script&gt; CM_THEME="lesser-dark"; &lt;/script&gt;&lt;/c&gt;.&lt;/p&gt;
+&lt;readmore title="the code"&gt;
+&lt;p&gt;I've created [https://gist.github.com/haukex/33da4e0d4f3c7a1e2be8d1cffe75dc76#file-pm_codemirror-js|a Gist] to version-control this code. I'll consider this particular node a "living document", as in I'm not going to add an "&lt;small&gt;&lt;b&gt;Updated&lt;/b&gt;&lt;/small&gt;" tag every time I make a change - if you want the version history, see [https://gist.github.com/haukex/33da4e0d4f3c7a1e2be8d1cffe75dc76/revisions|the Gist].&lt;/p&gt;
+&lt;c&gt;
+"use strict";
+$(function () {
+	$("&lt;style type='text/css'&gt; .CodeMirror { border: 1px solid lightgrey; height: auto; resize: both; } &lt;/style&gt;")
+		.appendTo("body");
+	var opts = {
+		lineNumbers: true, indentWithTabs: true, tabSize: 4, indentUnit: 4,
+		viewportMargin: Infinity, lineWrapping: true,
+		mode: {
+			name: "htmlmixed", // text/html
+			tags: {
+				style: [ ["type", /^text\/(x-)?scss$/, "text/x-scss"],
+					[null, null, "css"] ],
+				script: [[null, null, "text/javascript"]],
+				c: [[null, null, "text/x-perl"]]
+			}
+		}
+	};
+	if ( window["CM_THEME"] ) opts.theme = window.CM_THEME;
+	var opts_codeblock = JSON.parse(JSON.stringify(opts)); // deep copy
+	opts_codeblock['readOnly'] = true;
+	opts_codeblock['mode'] = 'text/x-perl';
+	$('textarea').each(function () {
+		var myCodeMirror = CodeMirror.fromTextArea(this, opts);
+	});
+	$('.codeblock:has(.codetext)').each(function () {
+		var div = this;
+		var text = $(div).text().trimEnd();
+		var myCodeMirror = CodeMirror( function(elt) {
+			div.parentNode.replaceChild(elt, div);
+		}, opts_codeblock);
+		myCodeMirror.setValue(text);
+	});
+});
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<thread id="11116375">
+</thread></node>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11154680" title="Re: Testing with Test::Mock::HTTP::Tiny" created="2023-09-27 04:06:06" updated="2023-09-27 04:06:06" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1165397">bliako</author>
+<doctext field_name="doctext">&lt;p&gt;[Test::Mock::HTTP::Tiny]'s &lt;c&gt;set_mocked_data()&lt;/c&gt; expects an arrayref or a hashref. You are providing it with a scalar (string).&lt;/p&gt;
+
+&lt;p&gt;The captured data is indeed an arrayref as &lt;c&gt;Test::Mock::HTTP::Tiny-&gt;captured_data_dump&lt;/c&gt; shows. But what you save to a file is a text representation of a Perl data structure. What you get when you read that data back from file is a scalar string. And that's what you pass to [Test::Mock::HTTP::Tiny]'s &lt;c&gt;set_mocked_data()&lt;/c&gt; which silently ignores you!&lt;/p&gt;
+
+&lt;p&gt;You need to "undump" the file contents somehow and resurrect the Perl data structure you started with. The simplest way to achieve this is by &lt;c&gt;eval()&lt;/c&gt;'ing the text representation minus the &lt;c&gt;$VAR1 = &lt;/c&gt; at the beginning of the string (placed there by [Data::Dumper]) (&lt;b&gt;see the warnings at the end of this post&lt;/b&gt;):&lt;/p&gt;
+
+&lt;c&gt;
+$replay =~ s/^\$VAR1\s*=\s*//;
+$replay = eval $replay; 
+print "ref: ".ref($replay)."\n";
+Test::Mock::HTTP::Tiny-&gt;set_mocked_data($replay);
+&lt;/c&gt;
+
+&lt;p&gt;You were unlucky in debugging -- in the source code of [mod://Test::Mock::HTTP::Tiny] I see this:&lt;/p&gt;
+
+&lt;c&gt;
+    if (ref($new_mocked_data) eq 'ARRAY') {
+      ...
+    elsif (ref($new_mocked_data) eq 'HASH') {
+      ...
+    else {
+        # TODO: error
+    }
+&lt;/c&gt;
+
+&lt;p&gt;Apropos HTTP mocking, [https://blogs.perl.org/users/e_choroba/2016/01/post.html] by [choroba] presents an alternative.&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;WARNING&lt;/b&gt;: Be warned that &lt;c&gt;eval()&lt;/c&gt;'ing things from files is a huge security hole. An alternative would be to use [mod://Storable] to dump/freeze and resurrect/thaw a Perl data structure. But it too has [https://metacpan.org/pod/Storable#SECURITY-WARNING|boldface security warnings]:&lt;/p&gt;
+&lt;c&gt;
+my $mocked_data = Test::Mock::HTTP::Tiny-&gt;mocked_data();
+store $mocked_data, 'mock_html.dat';
+...
+my $replay = retrieve 'mock_html.dat';
+print "ref: ".ref($replay)."\n";
+Test::Mock::HTTP::Tiny-&gt;set_mocked_data($replay);
+&lt;/c&gt;
+
+&lt;p&gt;bw, bliako&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11154671</root_node>
+<parent_node field_name="parent_node">11154671</parent_node>
+<thread id="11154671">
+<node id="11154680"><node id="11154685"><node id="11154688"><node id="11154701"><node id="11154717"><node id="11154721"/>
+</node>
+</node>
+<node id="11154713"><node id="11154718"><node id="11154720"><node id="11154747"><node id="11154753"><node id="11154757"><node id="11154760"/>
+</node>
+</node>
+<node id="11154755"/>
+</node>
+</node>
+<node id="11154756"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11154699"/>
+<node id="11154700"/>
+</node>
+<node id="11154692"><node id="11154712"/>
+</node>
+</thread></node>

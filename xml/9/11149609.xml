@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11149609" title="globbing arguments on windows" created="2023-01-16 06:18:31" updated="2023-01-16 06:18:31" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11148283">WithABeard</author>
+<doctext field_name="doctext">&lt;p&gt;It seems that perl doesn't glob arguments on windows. &lt;/p&gt;
+
+&lt;p&gt;Output in windows command prompt: 
+&lt;code&gt;
+c:\scratch&gt;dir /B
+file1
+file2
+file3
+
+c:\scratch&gt;perl -wnl -e "BEGIN{ print qq(Arguments: @ARGV); exit; }" *
+Arguments: *
+
+c:\scratch&gt;|
+&lt;/code&gt;
+&lt;/p&gt;
+
+&lt;p&gt;compared to output in a linux shell: 
+&lt;code&gt;
+Linux &gt; ls
+file1  file2  file3
+Linux &gt; perl -wnl -e 'BEGIN { print "Arguments: @ARGV"; exit; }' *
+Arguments: file1 file2 file3
+Linux &gt; |
+&lt;/code&gt;
+&lt;/p&gt;
+
+&lt;p&gt;A little annoying when I want to use my scripts on both linux and windows. &lt;/p&gt;
+
+&lt;p&gt;I solved it with a tiny module in my home directory: 
+&lt;code&gt;
+package Glob::Auto;
+use strict;
+
+BEGIN {
+    @ARGV or return;                            # done if no arguments
+    @ARGV = map { -e ? $_ : glob $_ } @ARGV;    # glob anything that doesn't exist
+}
+
+1;
+&lt;/code&gt;
+&lt;/p&gt;
+
+&lt;p&gt;So I simply add &lt;em&gt;use Glob::Auto;&lt;/em&gt; to my script, and it works the same on windows as on linux. &lt;/p&gt;
+
+&lt;p&gt;Has anyone experienced the same? Any other solutions? &lt;/p&gt;
+
+&lt;p&gt;Could it be a bug? I am using Strawberry Perl version 5.32 &lt;/p&gt;</doctext>
+<thread id="11149609">
+<node id="11149610"/>
+<node id="11149611"/>
+<node id="11149613"><node id="11149614"><node id="11149615"/>
+</node>
+</node>
+</thread></node>

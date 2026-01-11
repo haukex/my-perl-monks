@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1187516" title="Re: Is there any cache mechanism for running perl script" created="2017-04-09 05:33:24" updated="2017-04-09 05:33:24" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;such as any cache mechanism. so I can re run it fast for debug?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, there are several ways to do this. Which data structure would you like to cache? Since in my tests, using the assumption I showed below, I was able to regenerate &lt;c&gt;@arr_abundant&lt;/c&gt; very quickly, I'm guessing it would make sense to cache &lt;c&gt;@arr_sum_two_abundant_numbers&lt;/c&gt;? Since both are simple arrays of integers, you could write either of them to a file, each integer on a line. Or, you could use one of the many serialization formats like [mod://JSON::MaybeXS|JSON], YAML, XML, etc. There's also the core module [doc://Storable], which reads and writes Perl data structures in a binary format, but it does have one possibly very important caveat, which is that such files are often not compatible between different versions of the module. If you're just using it for temporary caching on one machine, it's fine, but it's &lt;i&gt;not&lt;/i&gt; the right solution for long-term storage or sharing between machines. Here, I've shown both the "plain file" method (using [mod://Path::Class] to simplify the reading/writing, although it could easily be done in plain Perl), as well as [doc://Storable], commented out.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Math::Prime::Util::GMP qw/sigma/;
+use Path::Class qw/file/;
+#OR: use Storable qw/store retrieve/;
+
+my $cache_file = '/tmp/abundant_sums_cache';
+my @arr_sum_two_abundant_numbers;
+if (-e $cache_file) {
+	@arr_sum_two_abundant_numbers = file($cache_file)-&gt;slurp(chomp=&gt;1);
+	#OR: @arr_sum_two_abundant_numbers = @{ retrieve($cache_file) };
+}
+if (!@arr_sum_two_abundant_numbers) {
+	print "regenerating \@arr_sum_two_abundant_numbers...\n";
+	my @arr_abundant = grep { sigma($_)&gt;2*$_ } 12 .. 28123;
+	my %hash;
+	foreach my $i (@arr_abundant) {
+		foreach my $j (@arr_abundant) {
+			my $positive = $i + $j;
+			next if $positive &gt; 28123;
+			$hash{$positive}++;
+		}
+	}
+	@arr_sum_two_abundant_numbers = sort {$a &lt;=&gt; $b} keys %hash;
+	file($cache_file)-&gt;spew_lines(\@arr_sum_two_abundant_numbers);
+	#OR: store(\@arr_sum_two_abundant_numbers, $cache_file);
+}
+else { print "loaded \@arr_sum_two_abundant_numbers from $cache_file\n" }
+
+my $sum_total;
+my $n = 1;
+foreach my $key (@arr_sum_two_abundant_numbers) {
+	for ( my $i=$n ; $i &lt; $key ; $i++) {
+		$sum_total += $i;
+	}
+	$n = $key +1;
+}
+print "$sum_total\n";
+&lt;/c&gt;
+&lt;p&gt;Because your question seems to be more about the caching, and because you don't show your data structures, explain what &lt;c&gt;prob23_type_of_number&lt;/c&gt; is  (no Google results other than this node*), or show the expected output, I haven't yet spent a lot of time on understanding your algorithm or whether it can be optimized. However, I did notice one thing:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;an array named "@arr_abundant" which contain nearly 30000 elements.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I am guessing/assuming these are [wp://Abundant number]s ([https://oeis.org/A005101|OEIS A005101]), then as far as I can tell there are 6965 such numbers from 12 to 28123:&lt;/p&gt;
+&lt;c&gt;
+use Math::Prime::Util::GMP qw/sigma/;
+print grep( { sigma($_)&gt;2*$_ } 12 .. 28123 )."\n";
+__END__
+6965
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Updated wording, a few minor additions to explanation.&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;* &lt;b&gt;Update 2:&lt;/b&gt; Is this [https://projecteuler.net/problem=23|Project Euler Problem 23]? &lt;small&gt;&lt;i&gt;Final Update:&lt;/i&gt;&lt;/small&gt; Since the output of my code matches that of other solutions I found, I guess it is :-)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1187512</root_node>
+<parent_node field_name="parent_node">1187512</parent_node>
+<thread id="1187512">
+<node id="1187516"><node id="1188212"/>
+</node>
+<node id="1187517"><node id="1187804"/>
+<node id="1188213"/>
+</node>
+</thread></node>

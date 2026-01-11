@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11143073" title="Re: Trouble with time zones and Sun rise/set" created="2022-04-19 02:03:41" updated="2022-04-19 02:03:41" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Expected:  Rise: 2022-04-01T06:12:04   Set: 2022-04-01T18:34:16 (Pacific/Auckland)&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I am wondering where you're getting these from, since they don't seem to match any information I could find. My results below do match those from [https://www.timeanddate.com/sun/new-zealand/wellington?month=4&amp;year=2022|timeanddate.com]. Even if you fiddle with [mod://DateTime::Event::Sunrise]'s &lt;c&gt;altitude&lt;/c&gt; parameter as per "Sun Height" in its documentation, I don't get the same times. For [mod://Astro::Coords], the only reference to time zones in its documentation is "A copy of the input argument is created, guaranteeing a UTC representation." - so I figured it's best to just work with UTC inside the module, and only convert to local time zone once one gets the results. I think the slight deviation between the two modules could be because [mod://Astro::Coords] takes the altitude into account, or some other minor inaccuracy.&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+use Astro::Coords;
+use Astro::Telescope;
+use DateTime::Event::Sunrise;
+use DateTime;
+
+my %params = ( year =&gt; 2022, month =&gt; 4, day =&gt; 1,
+	hour =&gt; 0, minute =&gt; 1, second =&gt; 0,
+	time_zone =&gt; 'Pacific/Auckland' );
+my $obsDate = DateTime-&gt;new(%params);
+$obsDate-&gt;set_time_zone('UTC');
+
+my $tel = Astro::Telescope-&gt;new('485');
+print "Lat=", $tel-&gt;lat('d'), " Lon=", $tel-&gt;long('d'),
+	" Alt=", $tel-&gt;alt, "\n";
+
+my $cSun = Astro::Coords-&gt;new(planet =&gt; 'sun');
+$cSun-&gt;telescope($tel);
+$cSun-&gt;datetime($obsDate);
+
+my $sRise = $cSun-&gt;rise_time();
+my $sSet  = $cSun-&gt;set_time();
+$sRise-&gt;set_time_zone('Pacific/Auckland');
+$sSet -&gt;set_time_zone('Pacific/Auckland');
+
+print "Rise: ",$sRise-&gt;strftime('%FT%T %Z'),
+      " Set: ",$sSet -&gt;strftime('%FT%T %Z'),"\n";
+
+my $sun = DateTime::Event::Sunrise-&gt;new( altitude=&gt;-0.833,
+    longitude =&gt; $tel-&gt;long('d'), latitude =&gt; $tel-&gt;lat('d') );
+$obsDate-&gt;add(days=&gt;1); # not sure yet why the two modules differ here
+my $rise2 = $sun-&gt;sunrise_datetime($obsDate);
+my $set2  = $sun-&gt; sunset_datetime($obsDate);
+$rise2-&gt;set_time_zone('Pacific/Auckland');
+$set2 -&gt;set_time_zone('Pacific/Auckland');
+
+print "Rise: ",$rise2-&gt;strftime('%FT%T %Z'),
+      " Set: ",$set2 -&gt;strftime('%FT%T %Z'),"\n";
+
+__END__
+
+Lat=-41.2842368910727 Lon=174.7654 Alt=144.005447541833
+Rise: 2022-04-01T07:35:56 NZDT Set: 2022-04-01T19:13:17 NZDT
+Rise: 2022-04-01T07:36:11 NZDT Set: 2022-04-01T19:13:42 NZDT
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; For Solstice/Equinox, see my script at [id://1172535].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11143067</root_node>
+<parent_node field_name="parent_node">11143067</parent_node>
+<thread id="11143067">
+<node id="11143068"><node id="11143069"><node id="11143070"><node id="11143074"><node id="11143106"/>
+<node id="11143172"><node id="11143173"><node id="11143192"><node id="11143206"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11143082"/>
+</node>
+</node>
+</node>
+<node id="11143073"><node id="11143092"/>
+<node id="11143105"><node id="11143222"/>
+</node>
+<node id="11143187"/>
+</node>
+<node id="11143175"><node id="11143186"/>
+</node>
+</thread></node>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1195131" title="Monkey patching all subs with a basic 'starting subname' message" created="2017-07-14 12:09:23" updated="2017-07-14 12:09:23" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;While working on an existing Perl package file, I would like to log the start/end of each method call (preferably without adding any new dependencies to the module).  I've already added a rudimentary &lt;code&gt;__dbg&lt;/code&gt; sub, which I'm fond of, like so...&lt;/p&gt;
+&lt;code&gt;
+our $DEBUG_LEVEL = 5;
+
+sub __dbg (&amp;;$) {
+    my ($code, $verbosity) = @_;
+    if ($DEBUG_LEVEL &gt;= ($verbosity // 1)) {
+        my $msg = join('', $code-&gt;());
+        print STDERR "DEBUG: ", $msg, "\n" if length($msg);
+    }
+}
+
+# ...the meat of the package is below...
+&lt;/code&gt;
+&lt;p&gt;I &lt;i&gt;think&lt;/i&gt; I have been able to monkey-patch all the methods in the package, by adding the following to the bottom of the package file:&lt;/p&gt;
+&lt;code&gt;
+# ...the meat of the package is above...
+
+__dbg {
+    no strict 'refs';
+    no warnings 'redefine';
+    my $package = __PACKAGE__;
+    my %patched = ('__dbg' =&gt; 1);
+    foreach (grep { defined &amp;{"${package}::$_"} } keys %{"${package}::"}) {
+        unless (exists $patched{$_}) {
+            $patched{$_} = 1;
+            __dbg { "Monkeypatching '${package}::$_' for tracing..." } 5;
+            my $fname = $_;
+            my $fn = \&amp;{"${package}::$_"};
+            *$_ = sub {
+                __dbg { "Starting ${package}::${fname}(", join(',', @_), ')' } 4;
+                my @ret = $fn-&gt;(@_);
+                __dbg { "Ending ${package}::${fname} with return values: ", join(',', @ret) } 4;
+                return unless defined(wantarray);
+                return @ret if wantarray;
+                return @ret[0] if scalar(@ret);
+            }
+        }
+    }    
+};
+1;
+&lt;/code&gt;
+&lt;p&gt;Now, whether this is a good thing to do or not (I promise to remove it at the end of the dev cycle), it seems to be working, but now I'm worried that my 'light-touch' profiling will actually have unintended side-effects on the subs it touches.  For example:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;It warns on subs that have prototypes (e.g. &lt;code&gt;Prototype mismatch: sub MyModule::method1 (&amp;;$) vs none at /MyModule.pm line Y.&lt;/code&gt;), where &lt;code&gt;Y&lt;/code&gt; is the closing brace to the &lt;code&gt;unless (exists...&lt;/code&gt; block.  I can suppress with &lt;code&gt;no warnings 'prototype'&lt;/code&gt; but does that mean that the interpreter may no longer apply the syntactic distinctions that prototypes intend to provide?&lt;/li&gt;
+&lt;li&gt;Even though I'm trying to reflect the requirements of the caller using &lt;code&gt;wantarray&lt;/code&gt;, am I altering the results of &lt;code&gt;wantarray&lt;/code&gt; in the actual wrapped call?  Better to check &lt;code&gt;wantarray&lt;/code&gt; first?&lt;/li&gt;
+&lt;li&gt;I &lt;i&gt;think&lt;/i&gt; it's also attaching to subs that are imported into the module (i.e. I don't think &lt;code&gt;try&lt;/code&gt;, &lt;code&gt;with&lt;/code&gt; or &lt;code&gt;time&lt;/code&gt; are actually part of the package), but I can't see the 'best' way to exclude them&lt;/li&gt;
+&lt;li&gt;(Also, it doesn't actually output the arguments, but I can't see the bug -- should I copy &lt;code&gt;@_&lt;/code&gt; to a local variable first (i.e. &lt;code&gt;my @args = @_&lt;/code&gt;)?)&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Any other wisdom to be shared here (bar the obvious "don't" and "use a cpan module")?&lt;/p&gt;</doctext>
+<reputation field_name="reputation">17</reputation>
+<thread id="1195131">
+<node id="1195132"><node id="1195136"><node id="1195141"><node id="1195278"/>
+</node>
+</node>
+</node>
+<node id="1195133"><node id="1195139"><node id="1195140"><node id="1195273"><node id="1195275"><node id="1195326"><node id="1195344"><node id="1195454"/>
+</node>
+<node id="1195977"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1195135"/>
+<node id="1195137"><node id="1195143"><node id="1195281"/>
+</node>
+</node>
+</thread></node>

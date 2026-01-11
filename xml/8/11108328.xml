@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108328" title="Re: Batch file renaming - on identical name, keep only most recent file, based on dates (updated)" created="2019-11-05 09:39:35" updated="2019-11-05 09:39:35" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Here's how I might have coded this. &lt;b&gt;Disclaimer:&lt;/b&gt; I've only done a small amount of testing on this, use at your own risk!&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Time::Piece;
+use File::Spec::Functions qw/ no_upwards catfile /;
+use Getopt::Long qw/ HelpMessage :config posix_default gnu_compat
+	bundling auto_help /;
+use Data::Dumper;
+$Data::Dumper::Quotekeys=0;
+$Data::Dumper::Useqq=$Data::Dumper::Sortkeys=1;
+
+=head1 SYNOPSIS
+
+ myrename.pl [OPTIONS] PATH
+ OPTIONS:
+   -r | --run        - Actually perform actions
+   -v | --verbose    - With --run, report actions
+   -q | --quiet      - Suppress warning messages
+   -d | --debug      - Enable debugging (overrides -v and -q)
+
+=cut
+
+GetOptions(
+	'r|run'      =&gt; \( my $RUN     ),
+	'v|verbose'  =&gt; \( my $VERBOSE ),
+	'q|quiet'    =&gt; \( my $QUIET   ),
+	'd|debug'    =&gt; \( my $DEBUG   ),
+	version    =&gt; sub { print q$myrename.pl v0.01$,"\n"; exit },
+	) or HelpMessage(-exitval=&gt;255);
+HelpMessage(-exitval=&gt;255) unless @ARGV==1;
+if ( $DEBUG ) { $VERBOSE=1; $QUIET=0; }
+my $PATH = $ARGV[0];
+print STDERR Data::Dumper-&gt;Dump([$PATH],['PATH']) if $DEBUG;
+
+opendir my $dh, $PATH or die "$PATH: $!";
+my @FILES = sort grep { -f catfile($PATH,$_) } no_upwards readdir $dh;
+closedir $dh;
+print STDERR Data::Dumper-&gt;Dump([\@FILES],['*FILES']) if $DEBUG;
+
+my %files;
+FILE: for my $origfile (@FILES) {
+	my ($uid,$time,$file) = $origfile =~ /\A(\d+_)((?:\d+_){6})(.+)\z/
+		or do { warn "No match, skipping $origfile\n"
+			unless $QUIET; next FILE };
+	print STDERR Data::Dumper-&gt;Dump([$uid,$time,$file],
+		[qw/uid time file/]) if $DEBUG;
+	$time = Time::Piece-&gt;strptime($time, '%Y_%m_%d_%H_%M_%S_')-&gt;epoch;
+	push @{ $files{$file} }, { origfile =&gt; $origfile, time=&gt;$time };
+}
+@$_ = sort { $b-&gt;{time} &lt;=&gt; $a-&gt;{time} } @$_ for values %files;
+print STDERR Data::Dumper-&gt;Dump([\%files],['*files']) if $DEBUG;
+
+for my $file (sort keys %files) {
+	my $keep = shift @{ $files{$file} };
+	my $srcfile = catfile($PATH,$keep-&gt;{origfile});
+	my $dstfile = catfile($PATH,$file);
+	print "Rename $srcfile to $dstfile\n" if !$RUN || $VERBOSE;
+	die "Destination file exists: $dstfile\n" if -e $dstfile;
+	# NOTE: There is a possible race condition between -e and rename
+	if ($RUN) {
+		rename($srcfile, $dstfile)
+			or die "rename($srcfile, $dstfile): $!";
+	}
+	for my $drop ( @{ $files{$file} } ) {
+		my $dropfile = catfile($PATH,$drop-&gt;{origfile});
+		print "Drop $dropfile\n" if !$RUN || $VERBOSE;
+		if ($RUN) {
+			unlink($dropfile) or die "unlink($dropfile): $!";
+		}
+	}
+}
+warn "This was a dry-run, no actions performed\n" unless $RUN;
+&lt;/c&gt;
+&lt;p&gt;For a set of files &lt;c&gt;( "2007_5_22_15_34_23_Table_-_2007522_XYZ_W3.pdf", "8_2007_5_22_15_34_23_Table_-_2007522_XYZ_W3.pdf", "8_2007_5_22_15_34_23_Table_-_2008522_XYZ_W3.pdf", "8_2007_5_22_22_34_12_Table_-_2007522_XYZ_W3.pdf" )&lt;/c&gt;, the output is:&lt;/p&gt;
+&lt;c&gt;
+No match, skipping 2007_5_22_15_34_23_Table_-_2007522_XYZ_W3.pdf
+Rename x/8_2007_5_22_22_34_12_Table_-_2007522_XYZ_W3.pdf to x/Table_-_2007522_XYZ_W3.pdf
+Drop x/8_2007_5_22_15_34_23_Table_-_2007522_XYZ_W3.pdf
+Rename x/8_2007_5_22_15_34_23_Table_-_2008522_XYZ_W3.pdf to x/Table_-_2008522_XYZ_W3.pdf
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; I guess a few words of explanation would be helpful. First off, note that this loads the entire list of files into memory, but with 5k files, I think that should be fine. Most of the first half of the script is just setting up and reading the list of files from the directory. The interesting stuff happens in the &lt;c&gt;%files&lt;/c&gt; hash: it's a hash where the keys are the target filenames, and each value is an array of the original filenames, along with their datetimes parsed into UNIX timestamps (use the &lt;c&gt;--debug&lt;/c&gt; switch to see the data structures). This allows me to simply sort each list of files (the &lt;c&gt;@$_ = sort ...&lt;/c&gt; step) so that the first element of each array is the latest filename. Then, I loop over all the files again, taking the first element of each array as the file to keep and rename to the target filename, and I delete all the other files. I hope this makes sense, and feel free to ask if anything is unclear. (Note I used core modules only.)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11108322</root_node>
+<parent_node field_name="parent_node">11108322</parent_node>
+<thread id="11108322">
+<node id="11108323"/>
+<node id="11108326"><node id="11108327"/>
+</node>
+<node id="11108328"/>
+<node id="11108332"/>
+<node id="11108345"/>
+<node id="11108347"><node id="11108357"><node id="11108382"><node id="11108383"><node id="11108385"><node id="11108392"><node id="11108395"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11108406"><node id="11108430"><node id="11108453"/>
+</node>
+</node>
+<node id="11110370"/>
+</thread></node>

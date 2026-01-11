@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201716" title="Re^5: Parsing HTML/XML with Regular Expressions (regex)" created="2017-10-19 19:50:04" updated="2017-10-19 19:50:04" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1080444">RonW</author>
+<doctext field_name="doctext">&lt;p&gt;I tried it and got no output. Did you fix something in my code?&lt;/p&gt;
+&lt;p&gt;I did add a statement to output the list of elements from the shallow parse regex. As far as I can tell, it split out the elements correctly, but it left the embedded newlines in the mark-up elements.&lt;/p&gt;
+&lt;p&gt;For example, the following:&lt;/p&gt;
+&lt;c&gt;
+&lt;/div
+&gt;
+&lt;/c&gt;
+&lt;p&gt;became &lt;c&gt;&lt;/div\n&gt;&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;In the case of the Sunday div:&lt;/p&gt;
+&lt;c&gt;
+&lt;div title=" class='data' id='Foo'&gt;Bar"
+id="Seven" class="data"&gt;&amp;#xA0;Sunda&amp;#121;&lt;/div&gt;
+&lt;/c&gt;
+&lt;p&gt;became:&lt;/p&gt;
+&lt;c&gt;
+&lt;div title=" class='data' id='Foo'&gt;Bar"\nid="Seven" class="data"&gt;
+&amp;#xA0;Sunda&amp;#121;
+&lt;/div&gt;
+&lt;/c&gt;
+&lt;p&gt;So, I added &lt;c&gt;tr/\n/ / for (@elements);&lt;/c&gt; to get rid of the embedded newlines. Still no output (other than the dump of the elements list).&lt;/p&gt;
+&lt;p&gt;I did encounter an unexpected error: &lt;c&gt;Variable "$XML_SPE" is not imported at extractor.pl line 46.&lt;/c&gt; So, I changed:&lt;/p&gt;
+&lt;c&gt;
+my @elements = $xml =~ /$XML_SPE/g;
+&lt;/c&gt;
+&lt;p&gt;to:&lt;/p&gt;
+&lt;c&gt;
+my @elements = $xml =~ /$::XML_SPE/g;
+&lt;/c&gt;
+&lt;p&gt;I don't have time to try to debug my code, now. Will try, later.&lt;/p&gt;
+&lt;p&gt;Current code:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+#!perl
+# use strict;
+use warnings;
+
+# regex from http://www.cs.sfu.ca/~cameron/REX.html#AppA
+# Robert D. Cameron "REX: XML Shallow Parsing with Regular Expressions",
+# Technical Report TR 1998-17, School of Computing Science, Simon Fraser 
+# University, November, 1998.
+# Copyright (c) 1998, Robert D. Cameron. 
+# The following code may be freely used and distributed provided that
+# this copyright and citation notice remains intact and that modifications
+# or additions are clearly identified.
+
+$TextSE = "[^&lt;]+";
+$UntilHyphen = "[^-]*-";
+$Until2Hyphens = "$UntilHyphen(?:[^-]$UntilHyphen)*-";
+$CommentCE = "$Until2Hyphens&gt;?";
+$UntilRSBs = "[^\\]]*](?:[^\\]]+])*]+";
+$CDATA_CE = "$UntilRSBs(?:[^\\]&gt;]$UntilRSBs)*&gt;";
+$S = "[ \\n\\t\\r]+";
+$NameStrt = "[A-Za-z_:]|[^\\x00-\\x7F]";
+$NameChar = "[A-Za-z0-9_:.-]|[^\\x00-\\x7F]";
+$Name = "(?:$NameStrt)(?:$NameChar)*";
+$QuoteSE = "\"[^\"]*\"|'[^']*'";
+$DT_IdentSE = "$S$Name(?:$S(?:$Name|$QuoteSE))*";
+$MarkupDeclCE = "(?:[^\\]\"'&gt;&lt;]+|$QuoteSE)*&gt;";
+$S1 = "[\\n\\r\\t ]";
+$UntilQMs = "[^?]*\\?+";
+$PI_Tail = "\\?&gt;|$S1$UntilQMs(?:[^&gt;?]$UntilQMs)*&gt;";
+$DT_ItemSE = "&lt;(?:!(?:--$Until2Hyphens&gt;|[^-]$MarkupDeclCE)|\\?$Name(?:$PI_Tail))|%$Name;|$S";
+$DocTypeCE = "$DT_IdentSE(?:$S)?(?:\\[(?:$DT_ItemSE)*](?:$S)?)?&gt;?";
+$DeclCE = "--(?:$CommentCE)?|\\[CDATA\\[(?:$CDATA_CE)?|DOCTYPE(?:$DocTypeCE)?";
+$PI_CE = "$Name(?:$PI_Tail)?";
+$EndTagCE = "$Name(?:$S)?&gt;?";
+$AttValSE = "\"[^&lt;\"]*\"|'[^&lt;']*'";
+$ElemTagCE = "$Name(?:$S$Name(?:$S)?=(?:$S)?(?:$AttValSE))*(?:$S)?/?&gt;?";
+$MarkupSPE = "&lt;(?:!(?:$DeclCE)?|\\?(?:$PI_CE)?|/(?:$EndTagCE)?|(?:$ElemTagCE)?)";
+$XML_SPE = "$TextSE|$MarkupSPE";
+
+use strict;
+
+my $xml = join '', &lt;DATA&gt;;
+
+my $nest = 0;
+my $out = '';
+my @elements = $xml =~ /$::XML_SPE/g; # see http://www.cs.sfu.ca­/~cameron/REX.html#A­ppA
+
+tr/\n/ / for (@elements);
+
+print "   $_\n" for (@elements);
+print "\n";
+
+for (@elements)
+{
+    if (/^&lt;div/)
+    {
+        $nest++ if ($nest &gt; 0); # only increment if inside an interesting &lt;div&gt;
+        next unless (/class\h*=\h*['"]da­ta['"]/); # \h is horizontal white space
+        next unless (/id\h*=\h*['"](\w+)­['"]/);
+        $out .= ", $1=";
+        $nest = 1 if ($nest == 0); # if this is the outer most interesting &lt;div&gt;
+        next;
+    }
+    $nest--, next if (/^&lt;\/div/);
+    next if (/^[&lt;]/); # skip other mark-up
+    $out .= $_ if ($nest &gt; 0);
+}
+$out =~ s/^, //;
+print "$out\n";
+
+__DATA__
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"[
+&lt;!ATTLIST html
+	xmlns:xsi CDATA #FIXED "http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation CDATA #IMPLIED  &gt; ]&gt;
+&lt;html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.w3.org/1999/xhtml
+	http://www.w3.org/2002/08/xhtml/xhtml1-strict.xsd"&gt;
+&lt;head&gt;
+	&lt;meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /&gt;
+	&lt;title&gt;Hello, World&lt;/title&gt;
+	&lt;script type="text/javascript"&gt;
+//&lt;![CDATA[
+console.log(' &lt;div class="data" id="Hello"&gt;World&lt;/div&gt; ');
+//]]&gt;
+	&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class="data" id="Zero" /&gt;
+&lt;div class="data" id="One"&gt;Monday&lt;/div&gt;&lt;div class="data" id="Two"&gt;Tuesday&lt;/div&gt;
+&lt;div id="Three" class='data'&gt;Wednes&lt;div id="day"&gt;day&lt;/div&gt;&lt;/div&gt;
+&lt;div class="data" id='Four'&gt;&lt;b&gt;Thursday&lt;/b&gt;&lt;/div&gt;
+&lt;div
+class="data" id="Five"&gt;
+Friday
+&lt;/div&gt;
+&lt;div
+class
+=
+"data"
+id
+=
+"Six"
+&gt;
+&lt;div
+&gt;
+Satur
+&lt;/div
+&gt;
+day
+&lt;/div
+&gt;
+&lt;div title=" class='data' id='Foo'&gt;Bar"
+id="Seven" class="data"&gt;&amp;#xA0;Sunda&amp;#121;&lt;/div&gt;
+&lt;div class="data otherclass" id="aaa"&gt;bbb&lt;/div&gt;
+&lt;div class="otherclass" id="ccc"&gt;ddd&lt;/div&gt;
+&lt;p class="data"&gt;eee&lt;/p&gt;
+&lt;p id="fff"&gt;ggg&lt;/p&gt;
+&lt;!--
+&lt;div class="data" id="Quz"&gt;Baz&lt;/div&gt;
+--&gt;
+&lt;p&gt;&lt;![CDATA[
+&lt;div class="data" id="Bye"&gt;Bye&lt;/div&gt;
+]]&gt;&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;And the output:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+   &lt;?xml version="1.0" encoding="UTF-8"?&gt;
+
+   &lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"     "http://www.w3.o
+rg/TR/xhtml1/DTD/xhtml1-strict.dtd"[&lt;!ATTLIST html      xmlns:xsi CDATA #FIXED "
+http://www.w3.org/2001/XMLSchema-instance"      xsi:schemaLocation CDATA #IMPLIE
+D  &gt; ]&gt;
+
+   &lt;html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"   xmlns:xs
+i="http://www.w3.org/2001/XMLSchema-instance"   xsi:schemaLocation="http://www.w
+3.org/1999/xhtml        http://www.w3.org/2002/08/xhtml/xhtml1-strict.xsd"&gt;
+
+   &lt;head&gt;
+
+   &lt;meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /&gt;
+
+   &lt;title&gt;
+   Hello, World
+   &lt;/title&gt;
+
+   &lt;script type="text/javascript"&gt;
+   //
+   &lt;![CDATA[console.log(' &lt;div class="data" id="Hello"&gt;World&lt;/div&gt; ');//]]&gt;
+
+   &lt;/script&gt;
+
+   &lt;/head&gt;
+
+   &lt;body&gt;
+
+   &lt;div class="data" id="Zero" /&gt;
+
+   &lt;div class="data" id="One"&gt;
+   Monday
+   &lt;/div&gt;
+   &lt;div class="data" id="Two"&gt;
+   Tuesday
+   &lt;/div&gt;
+
+   &lt;div id="Three" class='data'&gt;
+   Wednes
+   &lt;div id="day"&gt;
+   day
+   &lt;/div&gt;
+   &lt;/div&gt;
+
+   &lt;div class="data" id='Four'&gt;
+   &lt;b&gt;
+   Thursday
+   &lt;/b&gt;
+   &lt;/div&gt;
+
+   &lt;div class="data" id="Five"&gt;
+   Friday
+   &lt;/div&gt;
+
+   &lt;div class="data"id="Six"&gt;
+
+   &lt;div&gt;
+   Satur
+   &lt;/div&gt;
+   day
+   &lt;/div&gt;
+
+   &lt;div title=" class='data' id='Foo'&gt;Bar" id="Seven" class="data"&gt;
+   &amp;#xA0;Sunda&amp;#121;
+   &lt;/div&gt;
+
+   &lt;div class="data otherclass" id="aaa"&gt;
+   bbb
+   &lt;/div&gt;
+
+   &lt;div class="otherclass" id="ccc"&gt;
+   ddd
+   &lt;/div&gt;
+
+   &lt;p class="data"&gt;
+   eee
+   &lt;/p&gt;
+
+   &lt;p id="fff"&gt;
+   ggg
+   &lt;/p&gt;
+
+   &lt;!--&lt;div class="data" id="Quz"&gt;Baz&lt;/div&gt;--&gt;
+
+   &lt;p&gt;
+   &lt;![CDATA[&lt;div class="data" id="Bye"&gt;Bye&lt;/div&gt;]]&gt;
+   &lt;/p&gt;
+
+   &lt;/body&gt;
+
+   &lt;/html&gt;
+
+
+
+&lt;/c&gt;
+&lt;/readmore&gt;
+</doctext>
+<root_node field_name="root_node">1201438</root_node>
+<parent_node field_name="parent_node">1201689</parent_node>
+<thread id="1201438">
+<node id="1201443"><node id="1201454"><node id="1201483"><node id="1201489"/>
+</node>
+</node>
+</node>
+<node id="1201450"><node id="1201457"/>
+</node>
+<node id="1201473"><node id="1201488"><node id="1201493"><node id="1201521"><node id="1201551"/>
+</node>
+</node>
+<node id="1201633"><node id="1201689"><node id="1201709"/>
+<node id="1201716"><node id="1201740"><node id="1201776"/>
+<node id="1201933"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201490"><node id="1201529"><node id="1201612"/>
+</node>
+</node>
+</node>
+<node id="1201497"/>
+<node id="1201514"><node id="1201621"><node id="1201623"><node id="1201624"><node id="1201625"><node id="1201628"><node id="1201663"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201540"><node id="1201622"><node id="1201657"/>
+</node>
+</node>
+<node id="1201544"><node id="1201553"/>
+</node>
+<node id="1201545"><node id="1201554"/>
+</node>
+</thread></node>

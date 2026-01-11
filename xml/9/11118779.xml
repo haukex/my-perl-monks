@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118779" title="Re: Is there a problem with using barewords as filehandles ?" created="2020-07-01 23:49:09" updated="2020-07-01 23:49:09" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1149436">jcb</author>
+<doctext field_name="doctext">&lt;p&gt;Bareword filehandles have their places, particularly in simple scripts, where there really is almost no difference between them and lexical file handles &amp;mdash; declaring a lexical at file-scope has almost exactly the same effect, and exactly the same effect if the convention of maintaining a 1:1 mapping between files and packages is followed.&lt;/p&gt;
+
+&lt;p&gt;However, a &lt;c&gt;sub&lt;/c&gt; that opens a file and returns a handle should always return a lexical filehandle, unless its purpose is to return "THE" singleton filehandle for some resource, and in that case it should be using &lt;c&gt;our&lt;/c&gt; to store the filehandle in a global.  Generally, bareword filehandles should be limited to the mainline code in the top-level script.  Subroutines should use lexical filehandles and modules should only contain subroutines.&lt;/p&gt;
+
+&lt;p&gt;In Perl, all "globals" are actually package variables, although a few special names (including the "punctuation variables") are forced into package &lt;c&gt;main&lt;/c&gt;.  The distinction is that a "global" variable is stored in a symbol table slot in some package.  Package variables in Perl are globally-accessible, since the package namespace is itself global.  The &lt;c&gt;our&lt;/c&gt; keyword creates lexically-scoped aliases to package variables and is very convenient when needed.&lt;/p&gt;
+
+&lt;p&gt;A lexical declared at file scope is effectively a global variable and has all of the same problems in complex code, with the additional risk that file-scope lexicals can be &lt;i&gt;shared &lt;b&gt;across&lt;/b&gt; packages&lt;/i&gt; if multiple packages are defined in the same file.  Global variables are generally dangerous in programming and I strongly favor the use of bareword filehandles at top-level in preference to declaring lexicals at file-scope and thinking that you are safe.&lt;/p&gt;
+
+&lt;p&gt;Perhaps the best would be to default to &lt;c&gt;use bareword::filehandles&lt;/c&gt; in package &lt;c&gt;main&lt;/c&gt; and &lt;c&gt;no bareword::filehandles&lt;/c&gt; in other packages.  This keeps the feature where it is most useful, to avoid the "head in sand" problem of using file-scope lexicals in the main script, while still pushing modules to avoid the feature unless it really is appropriate.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11118753</root_node>
+<parent_node field_name="parent_node">11118753</parent_node>
+<thread id="11118753">
+<node id="11118754"><node id="11118757"><node id="11118759"/>
+<node id="11119517"><node id="11119519"><node id="11119529"/>
+</node>
+</node>
+</node>
+<node id="11118760"><node id="11118762"/>
+</node>
+<node id="11118804"/>
+</node>
+<node id="11118755"/>
+<node id="11118756"><node id="11118764"/>
+</node>
+<node id="11118758"><node id="11118785"/>
+</node>
+<node id="11118770"><node id="11118777"/>
+</node>
+<node id="11118779"><node id="11118942"><node id="11118947"><node id="11118956"><node id="11118987"><node id="11118995"><node id="11119016"><node id="11119017"><node id="11119018"><node id="11119029"><node id="11119030"><node id="11119033"><node id="11119072"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11119049"><node id="11119050"><node id="11119052"/>
+</node>
+</node>
+</node>
+<node id="11119019"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11118988"/>
+</node>
+</node>
+</node>
+<node id="11118801"/>
+<node id="11119477"><node id="11119480"><node id="11119506"><node id="11119513"/>
+</node>
+</node>
+<node id="11119507"/>
+</node>
+</thread></node>

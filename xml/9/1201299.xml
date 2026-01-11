@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201299" title="Re^3: modular file scoping" created="2017-10-13 04:17:10" updated="2017-10-13 04:17:10" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Now I am wondering if the key factor for Perl retaining the state of %webpaths is due specifically to the precedence of calls in testme.pl to subs defined in DataBank.pm, ...&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, that's it (I assume you meant &lt;c&gt;s/precedence/presence/&lt;/c&gt;). From [doc://perlsub#Persistent-variables-with-closures]:&lt;/p&gt;
+&lt;blockquote&gt;Unlike local variables in C or C++, Perl's lexical variables don't necessarily get recycled just because their scope has exited. If something more permanent is still aware of the lexical, it will stick around. So long as something else references a lexical, that lexical won't be freed--which is as it should be. You wouldn't want memory being free until you were done using it, or kept around once you were done. Automatic garbage collection takes care of this for you. ... If declared at the outermost scope (the file scope), then lexicals work somewhat like C's file statics. They are available to all functions in that same file declared below them, but are inaccessible from outside that file. This strategy is sometimes used in modules to create private variables that the whole module can see.&lt;/blockquote&gt;
+&lt;p&gt;That "something more permanent" are the &lt;c&gt;sub&lt;/c&gt;s, and I'll get more into &lt;i&gt;why&lt;/i&gt; those are "more permanent" below.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;... and will therefore persist while testme.pl stays alive, even though other modules which altered the state of %webpaths are themselves long dead?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, obviously it's a bit more complicated than "dead" and "alive" :-) Especially in dynamic languages like Perl, where the lines between the traditional "compile time" and "run time" can be blurred - you can run code at compile time with [doc://perlmod#BEGIN,-UNITCHECK,-CHECK,-INIT-and-END|BEGIN] and [doc://use], and compile code at runtime with [doc://eval], [doc://do], and [doc://require]. In this case, consider what is going on when you write &lt;c&gt;use DataBank;&lt;/c&gt; (or in your case &lt;c&gt;use Importer 'DataBank';&lt;/c&gt;, which as I understand it is equivalent): During the compliation of &lt;c&gt;testme.pl&lt;/c&gt;, when the compiler encounters the line &lt;c&gt;use DataBank;&lt;/c&gt;, basically it will immediately compile and execute all of the code in &lt;c&gt;DataBank.pm&lt;/c&gt; (plus the import/export code, the details of which I'll skip over for now), so when the line &lt;c&gt;use DataBank;&lt;/c&gt; finishes compiling, the code in &lt;c&gt;DataBank.pm&lt;/c&gt; will have finished executing (and all of its scopes have ended).&lt;/p&gt;
+&lt;p&gt;Now the code in &lt;c&gt;DataBank.pm&lt;/c&gt; includes statements like &lt;c&gt;sub set_webpath { ... }&lt;/c&gt;. The important thing to keep in mind is that this does not actually run the code inside the &lt;c&gt;sub&lt;/c&gt;, all it does is install that code into the symbol table under the names &lt;c&gt;&amp;DataBank::set_webpath&lt;/c&gt; and via the import/export mechanism also as &lt;c&gt;&amp;main::set_webpath&lt;/c&gt;, so that it can be run later, when other code says &lt;c&gt;set_webpath(...)&lt;/c&gt;. So I hope it's obvious that the &lt;c&gt;sub&lt;/c&gt;s from &lt;c&gt;DataBank.pm&lt;/c&gt; need to stick around until after it has finished compiling and executing, because otherwise &lt;c&gt;testme.pl&lt;/c&gt; couldn't call those functions, and the entire concept of modules exporting functions would break down. And since those functions need the &lt;c&gt;%webpaths&lt;/c&gt; variable, it makes sense to keep that around as well, as described above.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1201062</root_node>
+<parent_node field_name="parent_node">1201286</parent_node>
+<thread id="1201062">
+<node id="1201066"><node id="1201112"/>
+<node id="1201286"><node id="1201299"><node id="1201358"><node id="1201367"><node id="1201378"><node id="1201416"/>
+</node>
+<node id="1201415"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

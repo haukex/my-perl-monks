@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="651535" title="History now influences voting" created="2007-11-18 15:39:58" updated="2007-11-18 10:39:58" _doctext_mode="lenient"><type id="1036">monkdiscuss</type>
+<author id="22609">tye</author>
+<doctext field_name="doctext">&lt;p&gt;
+I've started making the following fairly minor changes to the Voting/XP system.
+These changes serve to mildly discourage some forms of "problematic" voting
+and, more importantly, to make such "problem voting" matter much less.
+
+&lt;ul&gt;&lt;li&gt;
+No XP loss if your node is only down-voted once.  Experience shows that a
+single down-vote being cast against a node usually has more to do with the
+person casting the vote than with the node.  Losing 1 XP because of a single
+down-vote on one of your nodes is just noise that should be avoided.
+&lt;/li&gt;&lt;li&gt;
+Less XP loss if an &lt;em&gt;old&lt;/em&gt; node of yours is down-voted (we forgive you
+for your old sins).  If a node is more than 4 weeks old, then you can no
+longer lose any XP for it.  The odds start dropping gradually after the node
+is 2 weeks old.  This makes it much less effective for somebody to "attack"
+someone by down-voting all of their nodes.
+&lt;/li&gt;&lt;li&gt;
+High-reputation nodes that are &lt;em&gt;old&lt;/em&gt; earn XP for up-votes more like
+regular-reputation nodes.  This reduces the pile-on effect of [Best Nodes]
+on XP.  Once a node is 4 weeks old, it having a high reputation no longer
+increases the likelihood of its author getting 1 XP for the up-vote.  The
+effect of reputation begins dropping after the node is 2 weeks old.
+&lt;/li&gt;&lt;li&gt;
+If you cast too many down-votes, then each down-vote poses a chance that
+you'll lose 1 XP.  If you only cast down-votes occasionally, then each will
+still give you a chance of gaining 1 XP.
+&lt;/li&gt;&lt;li&gt;
+I'm also considering a change such that casting most of your votes for/against
+a single author would cause you to not get most of your votes restored to you
+the next day.  So if you always spend all of your votes on just one author,
+then you'd only get votes every other day.  But I need to work on this idea
+more before I'll consider implementing it.
+&lt;/li&gt;&lt;/ul&gt;
+&lt;/p&gt;&lt;p&gt;
+The "problems" addressed here are several.
+&lt;/p&gt;&lt;readmore&gt;&lt;p&gt;
+Once in a while we get a monk in a fit of pique or dudgeon decide to punish
+another monk or just vent their feelings by systematically down-voting every
+node by that monk.  This is not something that we feel we can outright ban,
+for several reasons&lt;sup&gt;3&lt;/sup&gt;.  But it also is easy to characterize as an
+abuse of the PerlMonks voting system.  So I'd like to still allow the rare
+monk to occassionally anonymously "vent" (in hopes of helping them to "get
+over it"), while greatly reducing the potential impact on the "victim" and
+also encouraging the "attacker" to give up sooner rather than later (in the
+past, some of these "attacks" have gone on for many months -- go figure).
+&lt;/p&gt;&lt;blockquote&gt;
+&lt;sup&gt;3&lt;/sup&gt; We have a long-standing policy of "they are your votes, cast them
+how you see fit".  There have been rare cases where such actions could be seen
+by &lt;em&gt;some&lt;/em&gt; as a reasonable protest against systematic anti-social
+behavior.  Allowing people a fairly inoccuous way of venting their outrage
+can be a good idea.  There have been cases that have gone to extremes and
+resulted in administrative intervention.  But administrative intervention
+sucks so we'd rather just make it so the administrators and victims mostly
+just don't care much when this type of thing happens in the future.
+&lt;/blockquote&gt;&lt;p&gt;
+Although the vast majority of monks mostly only up-votes nodes (thankfully),
+we have a small but significant minority of monks who mostly only down-vote
+nodes.  These less-discriminate down-votes also seem to be among the most
+disruptive (most likely to lead to "dwelling" or worse).  I think if you feel
+justified in dishing it out, you ought to be required to "take it", so casting
+only down-votes is going to incur one an XP penalty roughly equal to the one
+being given.  I hope that these changes will encourage some monks to seek more
+balance with respect to voting.
+&lt;/p&gt;&lt;p&gt;
+We also occassionally (though more rarely than many predict, I think) get
+monks who miss the point and decide to cast as many votes as they can
+primarily for the XP gained rather than to aid in encouraging the creation
+of good quality nodes and to aid in the identification of which nodes are of
+the best quality.  It appears that the most common route taken is to pick an
+author and just systematically vote for (or against) every one of their nodes.
+So I think it appropriate and useful to reduce the number of votes one can
+cast if one is only casting them toward a single author.  The tough part for
+me is how to (mildly) discourage casting &lt;em&gt;most&lt;/em&gt; of your votes for a
+single author while not unduely causing frustration when one reasonably runs
+into several nodes by one author that all deserve an up-vote.
+&lt;/p&gt;&lt;p&gt;
+Below is part of the [Voting/Experience System] documentation updated with
+the changes being implemented.
+&lt;/p&gt;&lt;hr /&gt;&lt;p&gt;
+There are five ways to earn XP on PerlMonks:
+&lt;ol&gt;&lt;li&gt;
+        You have a 25% chance of gaining 2 XP once each day if you were
+        logged in when visiting the site in the past 24 hours from when
+        the vote fairy does the rounds.
+    &lt;/li&gt;&lt;li&gt;
+        You have a 25% chance of gaining 1 XP every time you up-vote somebody
+        else's node and a chance of gaining or losing 1 XP every time you
+        down-vote a node (more on that later).
+    &lt;/li&gt;&lt;li&gt;
+        If you cast all of your available votes, then you gain XP equal to
+        +1/6 the number of votes you get each day.  But this bonus only
+        applies until you reach level 6.
+    &lt;/li&gt;&lt;li&gt;
+        You gain 1 XP for each node you post that at least one person
+        up-votes.
+    &lt;/li&gt;&lt;li&gt;
+        You have a chance of gaining 1 XP each time somebody else up-votes
+        one of your nodes.  You have a chance of losing 1 XP each time
+        somebody else down-votes one of your nodes.  The exact odds are
+        rather complicated and are explained below.
+    &lt;/li&gt;
+&lt;/ol&gt;&lt;/p&gt;
+
+&lt;h3&gt;Exactly how do others' votes on my nodes affect my XP?&lt;/h3&gt;
+&lt;p&gt;
+How you gain or lose XP when others vote on your nodes is a bit complicated.
+First let us define a couple of variables as follows:
+&lt;/p&gt;
+&lt;dl&gt;&lt;dt&gt;
+        &lt;b&gt;&lt;code&gt;$NORM&lt;/code&gt;&lt;/b&gt;
+    &lt;/dt&gt;&lt;dd&gt;
+        This variable is calculated daily when votes are handed out.  It
+        is the average reputation of all of the nodes created within the past
+        week.  The current value of &lt;b&gt;&lt;code&gt;$NORM&lt;/code&gt; is ....&lt;/b&gt;
+    &lt;/dd&gt;&lt;dt&gt;
+        &lt;b&gt;&lt;code&gt;$REP&lt;/code&gt;&lt;/b&gt;
+    &lt;/dt&gt;&lt;dd&gt;
+        The current reputation of the node being voted on.
+&lt;/dd&gt;&lt;/dl&gt;
+&lt;p&gt;
+The chance that a vote on a node changes the author's XP is based on the
+&lt;code&gt;$REP&lt;/code&gt;'s relative value to the current &lt;code&gt;$NORM&lt;/code&gt; and on
+the node's age (how much time has passed since the node was created).  If
+the node's &lt;code&gt;$REP&lt;/code&gt; is higher than the &lt;code&gt;$NORM&lt;/code&gt;, then
+an up-vote is more likely to result in the author gaining 1 XP, and a
+down-vote is less likely to result in the author losing 1 XP.  If the
+&lt;code&gt;$REP&lt;/code&gt; is below &lt;code&gt;$NORM&lt;/code&gt; then any given vote will always
+have a fixed chance of altering the author's XP.  The exact odds are as
+follows, for nodes that are 2 weeks old or newer:
+&lt;/p&gt;
+&lt;center&gt;
+&lt;table border="1"&gt;
+&lt;caption&gt;
+Odds of author's XP change based on &lt;code&gt;$NORM&lt;/code&gt; and &lt;code&gt;$REP&lt;/code&gt;
+&lt;/caption&gt;
+&lt;colgroup align="left"&gt;&lt;/colgroup&gt;
+&lt;colgroup align="center"&gt;&lt;/colgroup&gt;
+&lt;colgroup align="center"&gt;&lt;/colgroup&gt;
+&lt;tr&gt;
+    &lt;th align="center"&gt;Range&lt;/th&gt;
+    &lt;th&gt;Odds of a Gain&lt;sup&gt;1&lt;/sup&gt;&lt;/th&gt;
+    &lt;th&gt;Odds of a Loss&lt;sup&gt;2&lt;/sup&gt;&lt;/th&gt;
+&lt;/tr&gt;&lt;tr&gt;
+    &lt;td&gt;&lt;b&gt;&lt;code&gt;            $REP &lt;   $NORM &lt;/code&gt;&lt;/b&gt;&lt;/td&gt;
+    &lt;td&gt;1/3&lt;/td&gt;
+    &lt;td&gt;1/3&lt;/td&gt;
+&lt;/tr&gt;&lt;tr&gt;
+    &lt;td&gt;&lt;b&gt;&lt;code&gt;   $NORM &lt;= $REP &lt; 2*$NORM &lt;/code&gt;&lt;/b&gt;&lt;/td&gt;
+    &lt;td&gt;1/2&lt;/td&gt;
+    &lt;td&gt;1/3&lt;/td&gt;
+&lt;/tr&gt;&lt;tr&gt;
+    &lt;td&gt;&lt;b&gt;&lt;code&gt; 2*$NORM &lt;= $REP &lt; 3*$NORM &lt;/code&gt;&lt;/b&gt;&lt;/td&gt;
+    &lt;td&gt;2/3&lt;/td&gt;
+    &lt;td&gt;1/3&lt;/td&gt;
+&lt;/tr&gt;&lt;tr&gt;
+    &lt;td&gt;&lt;b&gt;&lt;code&gt; 3*$NORM &lt;= $REP &lt; 4*$NORM &lt;/code&gt;&lt;/b&gt;&lt;/td&gt;
+    &lt;td&gt;3/4&lt;/td&gt;
+    &lt;td&gt;1/4&lt;/td&gt;
+&lt;/tr&gt;&lt;tr&gt;
+    &lt;td&gt;&lt;b&gt;&lt;code&gt; 4*$NORM &lt;= $REP &lt;/code&gt;&lt;/b&gt;&lt;/td&gt;
+    &lt;td&gt;1&lt;/td&gt;
+    &lt;td&gt;0&lt;/td&gt;
+&lt;/tr&gt;&lt;tr&gt;
+    &lt;td&gt;&lt;b&gt;&lt;code&gt; 4 weeks &lt;= Age &lt;/code&gt;&lt;/b&gt;&lt;/td&gt;
+    &lt;td&gt;1/3&lt;/td&gt;
+    &lt;td&gt;0&lt;/td&gt;
+&lt;/tr&gt;&lt;/table&gt;
+&lt;/center&gt;
+&lt;p&gt;
+&lt;sup&gt;1&lt;/sup&gt; If a node is more than 4 weeks old, then the odds of its author
+gaining 1 XP when it is up-voted are 1/3 no matter the reputation.  When a
+node turns 2 weeks old, the odds are based on the node's reputation as listed
+in the above table.  As the node's age goes from 2 weeks to 4 weeks, the odds
+are linearly slid from the odds shown above to the 1/3 odds.  For example,
+exactly 3 weeks after it is posted, if &lt;c&gt;4*$NORM &lt;= $REP&lt;/c&gt; then the odds are
+(1+1/3)/2 or a 2/3 chance of earning its author 1 XP each time it is up-voted.
+Also, as noted previously, the first up-vote on a node always earns its author
+1 XP (and has a 1/3 chance of earning its author a 2nd XP).
+&lt;/p&gt;&lt;p&gt;
+&lt;sup&gt;2&lt;/sup&gt; If a node is more than 4 weeks old, then the author of the node
+will no longer lose any XP when it is down-voted.  When a
+node turns 2 weeks old, the odds are based on the node's reputation as listed
+in the above table.  As the node's age goes from 2 weeks to 4 weeks, the odds
+are linearly slid from the odds shown above to 0.  For example, exactly 3
+weeks after it is posted, a node with &lt;c&gt;3*$NORM == $REP&lt;/c&gt; has (1/4+0)/2
+or 1/8 chance of losing its author 1 XP each time it is down-voted.  Also,
+the first down-vote cast on a node never costs its author any XP.
+&lt;/p&gt;
+
+&lt;h3&gt;Exactly how does down-voting another's node affect my XP?&lt;/h3&gt;
+&lt;p&gt;
+If you cast down-votes infrequently, then each down-vote that you cast has
+a 1/4 chance of earning you 1 XP, just like casting an up-vote does.  If all
+you ever do is down-vote, then each down-vote that you cast has a 1/3 chance
+of losing you 1 XP, just like the author you down-vote likely has 1/3 chance
+of losing 1 XP.
+&lt;/p&gt;&lt;p&gt;
+For each user, PerlMonks tracks a weighted average of the recent votes that
+they have cast.  Each time you cast an up-vote, your weighted average, $vtavg,
+is set to &lt;c&gt;0.1 + 0.9*$vtavg&lt;/c&gt;.  Each time you cast a down-vote, your
+weighted average is set to &lt;c&gt;-0.1 + 0.9*$vtavg&lt;/c&gt;.  So somebody who only
+ever up-votes will quickly have a $vtavg very close to +1 while somebody who
+only ever down-votes will quickly have a $vtavg very close to -1.
+&lt;/p&gt;&lt;p&gt;
+If your $vtavg is positive, then each down-vote has $vtavg/4 chance of gaining
+you 1 XP.  If your $vtavg is negative, then each down-vote has $vtavg/3 chance
+of losing you 1 XP.  No, you are not allowed to look up another monk's or
+even your own current $vtavg.
+&lt;/p&gt;&lt;hr /&gt;&lt;/readmore&gt;&lt;p&gt;
+For now, casting a down-vote will not earn nor cost you any XP.  About one
+week from now, I'll deploy the "chance to gain or lose 1 XP when casting a
+down-vote" feature.  But your $vtavg is already being updated based on your
+current voting.
+&lt;/p&gt;&lt;p&gt;
+The rest of the features are already in place, except, of course, for the
+"you don't get as many votes if you mostly just vote for/against one author"
+feature.
+&lt;/p&gt;&lt;p&gt;
+&lt;b&gt;Update:&lt;/b&gt; See also [id://656189].
+&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-22609"&gt;&lt;p align="right"&gt;
+- [tye]&lt;tt&gt; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;&lt;/tt&gt;
+&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="651535">
+<node id="651551"><node id="651560"><node id="651563"><node id="651564"><node id="651565"><node id="651567"/>
+</node>
+</node>
+<node id="651575"/>
+</node>
+<node id="651671"/>
+</node>
+</node>
+<node id="651605"><node id="651610"><node id="651993"/>
+<node id="677964"/>
+</node>
+</node>
+<node id="651608"><node id="651615"/>
+</node>
+<node id="651625"><node id="651742"/>
+</node>
+<node id="651709"><node id="651737"><node id="651759"/>
+</node>
+<node id="11124380"/>
+</node>
+<node id="651774"/>
+<node id="651776"/>
+<node id="651781"><node id="651804"><node id="651808"/>
+<node id="651860"><node id="651910"/>
+<node id="651933"><node id="652155"><node id="652395"><node id="652407"><node id="652512"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="651963"><node id="656354"/>
+</node>
+</node>
+<node id="651891"><node id="652218"><node id="652425"/>
+</node>
+</node>
+<node id="651969"><node id="651979"><node id="652019"><node id="652239"><node id="652267"><node id="652278"/>
+</node>
+<node id="652285"><node id="652320"><node id="652322"/>
+<node id="652446"/>
+</node>
+</node>
+</node>
+</node>
+<node id="652035"/>
+</node>
+<node id="652123"><node id="652183"/>
+<node id="652207"/>
+</node>
+</node>
+<node id="652427"><node id="652432"><node id="652443"/>
+</node>
+</node>
+<node id="652515"><node id="652529"><node id="652802"/>
+</node>
+</node>
+<node id="652691"/>
+<node id="654400"><node id="654401"/>
+<node id="654402"/>
+</node>
+<node id="658780"><node id="658782"/>
+</node>
+<node id="662047"/>
+<node id="670829"/>
+</thread></node>

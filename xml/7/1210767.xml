@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1210767" title="[SOLVED] Get element count of CONSTANT list (aref))" created="2018-03-12 17:29:20" updated="2018-03-12 17:29:20" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="789891">stevieb</author>
+<doctext field_name="doctext">&lt;p&gt;Hello friends and esteemed Monks,&lt;/p&gt;
+
+&lt;p&gt;This isn't a problem per-se, just something I've observed and am wondering if there's a way around it.&lt;/p&gt;
+
+&lt;p&gt;I am currently building several wildlife cameras that will be attached to my house and some of my cabins, each camera will be attached to a Raspberry Pi, and will stream back results to a central preview server that I will display on a television screen (up to eight inside of a single browser window).&lt;/p&gt;
+
+&lt;p&gt;To enhance what I've already got working, I decided that I want pan/tilt capabilities to my cameras, so for the tilt, I'm using a servo (with the &lt;c&gt;servo()&lt;/c&gt; capability of [metamod://RPi::WiringPi]), and for the pan, I'm going to use a stepper motor with a ULN2003 integrated circuit, for which I'm now writing a new distribution, &lt;c&gt;RPi::StepperMotor&lt;/c&gt; for. Everything is working great thus far, but I have a question specifically related to &lt;c&gt;constant&lt;/c&gt;.&lt;/p&gt;
+
+&lt;p&gt;Normally, with a list (ie. array in this case), we can get the count of elements and assign it elsewhere:&lt;/p&gt;
+
+&lt;c&gt;
+my $array = [qw(1 2 3)];
+my $array_len = @$array;
+
+# $array_len == 3
+&lt;/c&gt;
+
+&lt;p&gt;However, in the module I'm writing, I'd prefer to use a constant:&lt;/p&gt;
+
+&lt;c&gt;
+use constant STEPPER_SEQUENCE =&gt; [
+    [qw(1 0 0 1)],
+    [qw(1 0 0 0)],
+    [qw(1 1 0 0)],
+    [qw(0 1 0 0)],
+    [qw(0 1 1 0)],
+    [qw(0 0 1 0)],
+    [qw(0 0 1 1)],
+    [qw(0 0 0 1)],
+];
+&lt;/c&gt;
+
+&lt;p&gt;All is still well and great. However, what I can't seem to figure out, is how to extract the count of elements in the constant list. Here is an example. It prints only &lt;c&gt;aref ok&lt;/c&gt;. I've tried a few things I've found in the documentation and elsewhere, but I've either overlooked something, or it's not possible to extract the info I want here:&lt;/p&gt;
+
+&lt;c&gt;
+use warnings;
+use strict;
+use feature 'say';
+
+use constant STEPPER_SEQUENCE =&gt; [
+    [qw(1 0 0 1)],
+    [qw(1 0 0 0)],
+    [qw(1 1 0 0)],
+    [qw(0 1 0 0)],
+    [qw(0 1 1 0)],
+    [qw(0 0 1 0)],
+    [qw(0 0 1 1)],
+    [qw(0 0 0 1)],
+];
+
+# the below line houses the normal "ARRAY(0x...)"
+
+use constant STEP_COUNT =&gt; STEPPER_SEQUENCE;
+
+# ... and because STEPPER_SEQUENCE returns the "ARRAY(0x...)",
+# this fails:
+
+say "const ok" if STEPPER_SEQUENCE == 3;
+
+my $aref = [qw(1 2 3)];
+
+say "aref ok" if @$aref == 3;
+&lt;/c&gt;
+
+&lt;p&gt;I have tried:&lt;/p&gt;
+
+&lt;c&gt;
+@{ STEPPER_SEQUENCE }
+@( STEPPER_SEQUENCE )
+(STEPPER_SEQUENCE)
+@STEPPER_SEQUENCE
+etc, etc, etdc
+&lt;/c&gt;
+
+&lt;p&gt;Is it that I'm oblivious to something, or is what I'm attempting not possible?&lt;/p&gt;
+
+&lt;p&gt;Thanks!&lt;/p&gt;
+
+&lt;p&gt;-stevieb&lt;/p&gt;</doctext>
+<thread id="1210767">
+<node id="1210768"><node id="1210769"/>
+</node>
+<node id="1210770"/>
+<node id="1210773"><node id="1210774"><node id="1210811"/>
+</node>
+</node>
+<node id="1210851"/>
+</thread></node>

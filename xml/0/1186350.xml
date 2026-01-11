@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1186350" title="Re^3: How to take only maximum directory name by using its digits using perl?" created="2017-03-29 05:59:46" updated="2017-03-29 05:59:46" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Hence i am not getting the things.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;What does this mean? I already [id://1185450|explained] it to you: If you ask good questions, like you've done a few times so far, we can give good answers. If you ask questions that can't be answered because you haven't provided enough information, not only will you not get good answers, you will lose support from more and more monks as you go on. I [id://1185450|gave] you three links to read, please do so, and always follow that advice!&lt;/p&gt;
+&lt;p&gt;Your code looks ok to me (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; however, you should take [stevieb]'s [id://1186303|advice], as well as [hippo]'s [id://1186347|advice] to [id://111088]) and when I set &lt;c&gt;$output_dir&lt;/c&gt; to an input file name, it seems to work. However, &lt;i&gt;only you&lt;/i&gt; know what all of your specifications are, and what all of your input looks like, so &lt;i&gt;I&lt;/i&gt; can't tell you if your code will always work, at the moment &lt;i&gt;only you&lt;/i&gt; can confirm that your code fully works. Testing is an important skill, and what I &lt;i&gt;can&lt;/i&gt; do is show you how you might go about this. For example, you can test whether your code, properly modularized into a subroutine, works for various test inputs. Here, I'm using in-memory files ([doc://open]) and [mod://Test::More]. Note how I've left your logic entirely unchanged.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+sub scan_handle_for_rev {
+	my $filehandle = shift;
+	my $first_line = 1;
+	my $max_id;
+	while (&lt;$filehandle&gt;) {
+		if (/rev(\d+)/) {
+			if ($first_line) {
+				$first_line = 0;
+				$max_id = $1;
+			} else {
+				$max_id = $1 if ($1 &gt; $max_id);
+			}
+		}
+	}
+	return $max_id;
+}
+
+use Test::More;
+
+{
+	open my $fh, '&lt;', \&lt;&lt;'END_TEST_INPUT' or die $!;
+        |   |-- action.txt
+        |   `-- rev2
+        |       `-- rev1.html
+        `-- add.html
+END_TEST_INPUT
+	is scan_handle_for_rev($fh), 2;
+	close $fh;
+}
+
+{
+	open my $fh, '&lt;', \&lt;&lt;'END_TEST_INPUT' or die $!;
+        |--action
+        |   |-- action.txt
+        |   `-- rev1
+        |   |    `-- rev1.html
+        |   `-- rev2
+        |       `-- rev1.html
+        `-- add.html
+END_TEST_INPUT
+	is scan_handle_for_rev($fh), 2;
+	close $fh;
+}
+
+{
+	open my $fh, '&lt;', \&lt;&lt;'END_TEST_INPUT' or die $!;
+        |--action
+        |   |-- action.txt
+        |   `-- rev1
+        |   |    `-- rev1.html
+        |   `-- rev13
+        |   |    `-- rev1.html
+        |   `-- rev2
+        |       `-- rev1.html
+        `-- add.html
+END_TEST_INPUT
+	is scan_handle_for_rev($fh), 13;
+	close $fh;
+}
+
+done_testing;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1186302</root_node>
+<parent_node field_name="parent_node">1186341</parent_node>
+<thread id="1186302">
+<node id="1186303"><node id="1186304"/>
+</node>
+<node id="1186306"><node id="1186307"><node id="1186310"/>
+</node>
+</node>
+<node id="1186308"><node id="1186309"/>
+<node id="1186311"><node id="1186314"/>
+</node>
+<node id="1186313"/>
+</node>
+<node id="1186312"/>
+<node id="1186315"/>
+<node id="1186316"/>
+<node id="1186317"><node id="1186341"><node id="1186347"/>
+<node id="1186350"/>
+<node id="1186395"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11113688" title="Re: system() call mis-directs?" created="2020-03-03 02:42:16" updated="2020-03-03 02:42:16" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Then inside the script we fork off ... We then waitpid inside the forked process&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This sounds a lot like what [doc://system] already does. Why do this twice?&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;we have found that in some cases the upgrade.pl child process starts out writing to its parent process log (do-upgrades.log), and in other instances it writes to worklog correctly as directed&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Obviously, if you could narrow this down in which cases this happens (as others have pointed out, e.g. for what values of &lt;c&gt;$sensor&lt;/c&gt;) more and make it more reproducible, that would be the best thing.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;system("./upgrade.pl $sensor &gt;&gt; worklog 2&gt;&amp;1")&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This kind of thing may work when &lt;c&gt;$sensor&lt;/c&gt; is tightly controlled (see my node [id://1180578|here]!) and the system it is being run on never changes ([id://1205217]), but I would still strongly recommend against it. Also, what is the first line of &lt;c&gt;upgrade.pl&lt;/c&gt;? If it's &lt;c&gt;#!/usr/bin/env perl&lt;/c&gt;, its execution is dependent on &lt;c&gt;PATH&lt;/c&gt;. Anyway, if &lt;c&gt;upgrade.pl&lt;/c&gt; is a short-lived process, then I'd recommend [mod://IPC::Run3] instead; if it is a longer process that needs to run in the background while your script continues, then [mod://IPC::Run]. Both of these modules allow to avoid the shell and can still redirect &lt;c&gt;STDOUT&lt;/c&gt; and &lt;c&gt;STDERR&lt;/c&gt;.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11113664</root_node>
+<parent_node field_name="parent_node">11113664</parent_node>
+<thread id="11113664">
+<node id="11113673"/>
+<node id="11113678"><node id="11113681"><node id="11113683"><node id="11113690"/>
+</node>
+<node id="11113685"/>
+</node>
+<node id="11113689"><node id="11113741"/>
+<node id="11113745"/>
+</node>
+<node id="11113799"><node id="11113811"/>
+<node id="11113889"/>
+</node>
+</node>
+<node id="11113688"/>
+</thread></node>

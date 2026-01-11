@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1183355" title="Re: SQL like query over iterable in perl (updated x2)" created="2017-03-02 02:25:38" updated="2017-03-02 02:25:38" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sounds to me like [doc://perlsyn#Foreach-Loops|foreach] (and perhaps [doc://map]) and hashes will help you:&lt;/p&gt;
+&lt;c&gt;
+my @array_of_objects = (
+	{ sex=&gt;'Male', occupation=&gt;'foo' },
+	{ sex=&gt;'Female', occupation=&gt;'foo' },
+	{ sex=&gt;'Male', occupation=&gt;'bar' },
+	{ sex=&gt;'Female', occupation=&gt;'bar' },
+	{ sex=&gt;'Female', occupation=&gt;'foo' },
+);
+
+my %counts;
+$counts{ $_-&gt;{sex} }++ for @array_of_objects;
+
+my %grouped;
+$grouped{ $_-&gt;{sex} }{ $_-&gt;{occupation} }++ for @array_of_objects;
+
+use Data::Dumper;
+print Dumper( \%counts, \%grouped );
+
+__END__
+
+$VAR1 = { 'Female' =&gt; 3, 'Male' =&gt; 2 };
+$VAR2 = { 'Female' =&gt; { 'bar' =&gt; 1, 'foo' =&gt; 2 },
+          'Male' =&gt; { 'foo' =&gt; 1, 'bar' =&gt; 1 } };
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Personally, I'd prefer the above, but if you really want a generic function, here's one option. Probably not the most efficient solution because it's recursive, I don't think the morning caffeine has fully kicked in yet ;-) Input and output is the same as above. (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; [huck]'s [id://1183361|solution], posted before the below, is the non-recursive variation of this.)&lt;/p&gt;
+&lt;c&gt;
+sub count {
+	my ($data, $fields) = @_;
+	$fields = [$fields] unless ref $fields;
+	my $count = {};
+	_dive( $count, $_, @$fields ) for @$data;
+	return $count;
+}
+sub _dive {
+	my ($ref, $obj, @path) = @_;
+	my $targ = \$ref-&gt;{ $obj-&gt;{ shift @path } };
+	if (!@path) { $$targ++; return $ref }
+	$$targ = _dive( $$targ, $obj, @path );
+}
+
+print Dumper( count(\@array_of_objects, 'sex') );
+print Dumper( count(\@array_of_objects,
+	['sex','occupation']) );
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; In the above, I'm working with hash references instead of objects. If you want to use real objects and method calls, then in the first example, replace &lt;c&gt;{ $_-&gt;{sex} }{ $_-&gt;{occupation} }&lt;/c&gt; with &lt;c&gt;{ $_-&gt;sex }{ $_-&gt;occupation }&lt;/c&gt;, and in the second example, replace &lt;c&gt;$obj-&gt;{ shift @path }&lt;/c&gt; with &lt;c&gt;$obj-&gt;${\shift @path}&lt;/c&gt;.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1183352</root_node>
+<parent_node field_name="parent_node">1183352</parent_node>
+<thread id="1183352">
+<node id="1183355"/>
+<node id="1183357"/>
+<node id="1183361"><node id="1183370"><node id="1183375"><node id="1183408"/>
+<node id="1183624"/>
+</node>
+</node>
+</node>
+</thread></node>

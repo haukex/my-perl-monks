@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1159358" title="Re: Design pattern factory : use lib issue on lib directory" created="2016-04-02 04:49:00" updated="2016-04-02 04:49:00" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [CraigWalker],&lt;/p&gt;
+
+&lt;p&gt;I'm not sure I understand your intent in the second example. Are you trying to relocate the class &lt;c&gt;Greet::Repeat&lt;/c&gt; into the &lt;c&gt;lib/&lt;/c&gt; subdirectory, or do you actually want to rename the &lt;c&gt;Greet::Repeat&lt;/c&gt; class to &lt;c&gt;lib::Repeat&lt;/c&gt;, as [Eily] and [Corion] have pointed out?&lt;/p&gt;
+
+&lt;p&gt;If it's the former, and you want to follow the normal Perl convention of class and module naming, that means you'll have a file &lt;c&gt;lib/Greet/Repeat.pm&lt;/c&gt; that contains the &lt;c&gt;Greet::Repeat&lt;/c&gt; class. If so, then all you need to do to make your first piece of example code work is change the &lt;c&gt;use lib&lt;/c&gt; statement to &lt;c&gt;use lib './lib';&lt;/c&gt;. [doc://lib] will prepend that path to [doc://@INC|&lt;c&gt;@INC&lt;/c&gt;], so when you tell [doc://require] to load the file &lt;c&gt;Greet/Repeat.pm&lt;/c&gt;, it will look for &lt;c&gt;./lib/Greet/Repeat.pm&lt;/c&gt; first.&lt;/p&gt;
+
+&lt;p&gt;Also, the &lt;c&gt;use lib './Greet';&lt;/c&gt; you've got in the first code example actually doesn't help you if the file is named &lt;c&gt;Greet/Repeat.pm&lt;/c&gt; - [doc://require] will first look for &lt;c&gt;./Greet/Greet/Repeat.pm&lt;/c&gt;, which it doesn't find, then it looks through the rest of &lt;c&gt;@INC&lt;/c&gt;. The first piece of example code works because the current directory &lt;c&gt;.&lt;/c&gt; is in &lt;c&gt;@INC&lt;/c&gt; by default. I think this can vary, but in my case &lt;c&gt;.&lt;/c&gt; is last in &lt;c&gt;@INC&lt;/c&gt;, so that perl actually looks through all the other &lt;c&gt;@INC&lt;/c&gt; directories for a file named &lt;c&gt;Greet/Repeat.pm&lt;/c&gt; first, which might not be what you want either. And AFAIK there are cases where the current directory isn't even in &lt;c&gt;@INC&lt;/c&gt;, so that the script would fail there.&lt;/p&gt;
+
+&lt;p&gt;Similarly, if your intent really was to rename &lt;c&gt;Greet::Repeat&lt;/c&gt; to &lt;c&gt;lib::Repeat&lt;/c&gt;, then the &lt;c&gt;use lib './lib';&lt;/c&gt; in your second code example is also not necessary, since you've already added that path to the filename in &lt;c&gt;my $location = "lib/$requested_type.pm";&lt;/c&gt;.&lt;/p&gt;
+
+&lt;p&gt;In any case, I recommend that you don't rely on the current directory &lt;c&gt;.&lt;/c&gt; as much. It's acceptable for initial testing, but in production I'd strongly recommend you use absolute paths for [doc://lib], or you use a different way of setting up &lt;c&gt;@INC&lt;/c&gt; properly. Sometimes [doc://FindBin] can help you (but it's not perfect, so be careful and test it first). (For example, if I've got a script I call from the command line and it needs a module that I know will always be in the same directory as the script, I'll sometimes write &lt;c&gt;use FindBin; use lib $FindBin::Bin; use ModuleName;&lt;/c&gt;.)&lt;/p&gt;
+
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1159303</root_node>
+<parent_node field_name="parent_node">1159303</parent_node>
+<thread id="1159303">
+<node id="1159305"><node id="1159310"/>
+</node>
+<node id="1159306"/>
+<node id="1159358"/>
+</thread></node>

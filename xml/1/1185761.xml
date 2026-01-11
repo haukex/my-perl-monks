@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1185761" title="Re^5: Joining multiple lines together while parsing" created="2017-03-24 07:07:55" updated="2017-03-24 07:07:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Here's one possible regex approach using named captures ([doc://perlre]) and [doc://%+]. However, it's starting to get a little complex, so the line-based state machine type approach from [Corion]'s [id://1185750|post] is starting to look a little better in this case (I gave some more examples of the state machine approach in [id://1180671|this thread]).&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+local $/ = "\n\n\n";
+while (&lt;DATA&gt;) {
+	# clobber the header
+	s/ ^ \s* Dumpdata\s+example \s* \n \s* -+ \s* \n //msx
+		or next;
+	my %row;
+	$row{$+{key}} = $+{val}
+		while m{
+			(?: # the very first key doesn't need colon
+				  \A \s* (?&lt;key&gt; \w+   )
+				# but the other keys need colons
+				| ^  \s* (?&lt;key&gt; \w+ : )
+			) \s+
+			# values should end at the next key
+			(?&lt;val&gt; (?: (?!^\s*\w+:) . )+ )
+		}xmsg;
+	s/\s+/ /g for values %row;
+	dd \%row;
+}
+
+__DATA__
+
+Dumpdata example
+-----------------
+
+Warning bad news here 
+    Detail:              Some really nice infos these are 
+    Info:              This is a problem
+                       but there is a solution
+
+
+Dumpdata example
+-----------------
+Warning test
+    Detail: foo
+            bar
+    Info:   quz
+            baz
+    Spec:   blah
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+{
+  "Detail:" =&gt; "Some really nice infos these are ",
+  "Info:"   =&gt; "This is a problem but there is a solution ",
+  "Warning" =&gt; "bad news here ",
+}
+{
+  "Detail:" =&gt; "foo bar ",
+  "Info:"   =&gt; "quz baz ",
+  "Spec:"   =&gt; "blah ",
+  "Warning" =&gt; "test ",
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Using the "branch reset" pattern &lt;c&gt;(?|...)&lt;/c&gt; allows for a little bit of simplification:&lt;/p&gt;
+&lt;c&gt;
+	my %row = m{
+			(?| \A \s* ( \w+   )
+			  | ^  \s* ( \w+ : ) ) \s+
+			( (?: (?!^\s*\w+:) . )+ )
+		}xmsg;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1185742</root_node>
+<parent_node field_name="parent_node">1185757</parent_node>
+<thread id="1185742">
+<node id="1185745"><node id="1185747"/>
+</node>
+<node id="1185748"><node id="1185752"><node id="1185754"><node id="1185757"><node id="1185761"/>
+</node>
+<node id="1185763"><node id="1185764"/>
+<node id="1185765"/>
+</node>
+<node id="1185766"/>
+</node>
+</node>
+</node>
+<node id="1185750"/>
+<node id="1185807"/>
+<node id="1185843"/>
+</thread></node>

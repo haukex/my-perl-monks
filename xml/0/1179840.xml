@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1179840" title="Building Regex Alternations Dynamically" created="2017-01-18 07:57:13" updated="2017-01-18 07:57:13" _doctext_mode="strict"><type id="120">perlmeditation</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;small&gt;&lt;b&gt;TL;DR:&lt;/b&gt; The two code samples below are working pieces of code that can be copied into your Perl script and adapted for your purposes. A compact version is: &lt;c&gt;my ($regex) = map {qr/$_/} join '|', map {quotemeta} sort { length $b &lt;=&gt; length $a or $a cmp $b } keys %map;&lt;/c&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;I thought it might be useful to explain the technique of building regular expressions dynamically from a set of strings. Let's say you have a list of strings, like &lt;c&gt;('abc.', 'd$ef', 'gh|i')&lt;/c&gt; (that's a &lt;c&gt;$&lt;/c&gt; character, not a variable), and you want to build a regex that matches any of them, like &lt;c&gt;/(?:abc\.|d\$ef|gh\|i)/&lt;/c&gt; - note how the special characters are escaped with backslashes so they lose their special meanings and will be matched &lt;i&gt;literally&lt;/i&gt; (more on this below). This also works well with &lt;c&gt;s/search/replacement/&lt;/c&gt; if you have a hash where the keys are the search strings and the values are the replacements, as I'll show [href://#search_replace_with_hash|below]. If you're uncertain on some of the regex concepts used here, like [doc://perlretut#Matching-this-or-that|alternations] &lt;c&gt;a|b&lt;/c&gt; and [doc://perlretut#Non-capturing-groupings|non-capturing groups] &lt;c&gt;(?:...)&lt;/c&gt;, I recommend [doc://perlretut].&lt;/p&gt;
+&lt;p&gt;First, the basic code, which I explain below - note the numbering on the lines of code.&lt;/p&gt;
+&lt;c&gt;
+my @values = qw/ a ab. d ef def g|h /;
+my ($regex) = map { qr/$_/ }          # 5.
+    join '|',                         # 4.
+    map {quotemeta}                   # 3.
+    sort { length $b &lt;=&gt; length $a }  # 2.
+    @values;                          # 1.
+print "$regex\n";                     # 6.
+&lt;/c&gt;
+&lt;ol&gt;
+&lt;li&gt;We begin with the list of strings stored in the array &lt;c&gt;@values&lt;/c&gt;. This could be any list, such as a literal [doc://perlop#qw/_STRING_/|&lt;c&gt;qw/.../&lt;/c&gt;], or return values from functions, including [doc://keys] or [doc://values].&lt;/li&gt;
+&lt;li&gt;We [doc://sort] the list so that the longer strings appear first. This is necessary because if we didn't do this and our regular expression was &lt;c&gt;/foo|foobar/&lt;/c&gt;, then applied to the string &lt;c&gt;"foobarfoofoobar"&lt;/c&gt;, it would only match &lt;c&gt;"foo"&lt;/c&gt; three times, and &lt;i&gt;never&lt;/i&gt; &lt;c&gt;"foobar"&lt;/c&gt;. But if the regex is &lt;c&gt;/foobar|foo/&lt;/c&gt;, then it would correctly match &lt;c&gt;"foobar"&lt;/c&gt;, &lt;c&gt;"foo"&lt;/c&gt;, and again &lt;c&gt;"foobar"&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;Next, we apply the [doc://quotemeta] function to each string, which escapes any metacharacters that might have special meaning in a regex, such as &lt;c&gt;.&lt;/c&gt; (dot, matches anything), &lt;c&gt;|&lt;/c&gt; (alternation operator), or &lt;c&gt;$&lt;/c&gt; (anchor to end of line/string). In our example, we want the string &lt;c&gt;"g|h"&lt;/c&gt; to be matched &lt;i&gt;literally&lt;/i&gt;, and not to mean "match &lt;c&gt;g&lt;/c&gt; or &lt;c&gt;h&lt;/c&gt;". Unescaped metacharacters can also break the syntax of the regex, like stray opening parentheses or similar. Note that &lt;c&gt;quotemeta&lt;/c&gt; is the same as using &lt;c&gt;\Q...\E&lt;/c&gt; in a regex. As discussed [id://1156540|here], you should &lt;i&gt;only&lt;/i&gt; drop &lt;c&gt;\Q...\E&lt;/c&gt; or &lt;c&gt;quotemeta&lt;/c&gt; in the case that you explicitly want metacharacters in your input strings to be special, they come from a trusted source, and you are &lt;i&gt;certain&lt;/i&gt; that your strings don't contain any characters that would break your regular expression or expose security holes!&lt;/li&gt;
+&lt;li&gt;Then, we [doc://join] the strings into one long string with the regex alternation operator &lt;c&gt;|&lt;/c&gt; in between each string. The string returned by &lt;c&gt;join&lt;/c&gt; in the example looks like this: &lt;c&gt;ab\.|def|g\|h|ef|a|d&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;This step compiles the regular expression using [doc://perlretut#Compiling-and-saving-regular-expressions|&lt;c&gt;qr//&lt;/c&gt;]. If you want to add [doc://perlre#Modifiers|modifiers] such as &lt;c&gt;/i&lt;/c&gt; (case-insensitive matching), this would be the place to do it, as in &lt;c&gt;qr/$_/i&lt;/c&gt;. This line of code needs a bit of explanation: [doc://join] from the previous step will return a single string, and so the [doc://map] will evaluate its code block &lt;c&gt;{ qr/$_/ }&lt;/c&gt; once, with &lt;c&gt;$_&lt;/c&gt; being the string returned by &lt;c&gt;join&lt;/c&gt;. The parentheses in &lt;c&gt;my ($regex) =&lt;/c&gt; are required so that [doc://map] will return the value from its code block (&lt;c&gt;map&lt;/c&gt; in "list context"), instead of a count of the values (&lt;c&gt;map&lt;/c&gt; in "scalar context") &lt;small&gt;(for a trick on how to avoid the parentheses, see [id://11116849|here])&lt;/small&gt;. Context in Perl is a topic for [id://738558|another] tutorial. Please note that if you want to add extra things to match in this &lt;c&gt;qr//&lt;/c&gt;, then you most likely will want to write &lt;c&gt;(?:$_)&lt;/c&gt; - the reason for this will be explained below. For example, if you want to apply the "word boundary" &lt;c&gt;\b&lt;/c&gt;, you need to write &lt;c&gt;qr/\b(?:$_)\b/&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;When we print the regular expression, we see that it has become this:&lt;/p&gt;
+&lt;c&gt;
+(?^:ab\.|def|g\|h|ef|a|d)
+&lt;/c&gt;
+&lt;p&gt;You can now use this precompiled regular expression anywhere, as explained in [doc://perlretut#Compiling-and-saving-regular-expressions] and [doc://perlop#qr/_STRING_/msixpodualn|perlop], such as:
+&lt;c&gt;
+if ($input=~$regex) {
+    print "It matches!\n";
+}
+# or
+while ($input=~/($regex)/g) {
+    print "Found string: $1\n";
+}
+&lt;/c&gt;
+&lt;p&gt;Note that the &lt;c&gt;qr//&lt;/c&gt; operator has implicitly added a non-capturing group &lt;c&gt;(?:...)&lt;/c&gt; around the regular expression. This is important when you want to use the regular expression we've just built as part of a larger expression. For example, if your input strings are &lt;c&gt;qw/a b c/&lt;/c&gt; and you write &lt;c&gt;/^$regex$/&lt;/c&gt;, then what you probably meant is &lt;c&gt;/^(?:a|b|c)$/&lt;/c&gt;. If the non-capturing group wasn't there, then the regex would look like this: &lt;c&gt;/^a|b|c$/&lt;/c&gt;, which means "match &lt;c&gt;a&lt;/c&gt; only at the beginning of the string, or &lt;c&gt;b&lt;/c&gt; anywhere in the string, or &lt;c&gt;c&lt;/c&gt; only at the end of the string", which is probably not what you meant! (In the previous step, the same problem can happen, but you're responsible for adding the &lt;c&gt;(?:...)&lt;/c&gt; around the &lt;c&gt;$_&lt;/c&gt; yourself, because at that point, &lt;c&gt;$_&lt;/c&gt; is just a plain string, and not yet a precompiled regular expression.)&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3&gt;&lt;a name="search_replace_with_hash"&gt;&lt;/a&gt;Search and Replace Using a Hash&lt;/h3&gt;
+&lt;c&gt;
+my %map = ( a=&gt;1, ab=&gt;23, cd=&gt;45 );   # 1.
+my ($regex) = map { qr/$_/ }          # 2.
+    join '|', map {quotemeta}
+    sort { length $b &lt;=&gt; length $a
+           or $a cmp $b }             # 3.
+    keys %map;
+print "$regex\n";                     # 4.
+# Now, use the regex
+my @strings = qw/ abcd aacd abaab /;  # 5.
+for (@strings) {
+    my $before = $_;
+    s/($regex)/$map{$1}/g;            # 6.
+    print "$before -&gt; $_\n";          # 7.
+}
+&lt;/c&gt;
+&lt;ol&gt;
+&lt;li&gt;This is the hash in which the keys are the search strings, and the values are the replacements. As above, this can come from any source.&lt;/li&gt;
+&lt;li&gt;This code to build the regex is mostly the same as the above, with the following difference:&lt;/li&gt;
+&lt;li&gt;Instead of only sorting by length, this [doc://sort] first sorts by length, and sorts values with the same length with a stringwise sort. While not strictly necessary, I would recommend this because hashes are unordered by default, meaning that your regex would be in a different order across different runs of the program. Sorting the hash keys like this causes the regex to be in the same order in every run of the program.&lt;/li&gt;
+&lt;li&gt;We print the regex for debugging, and see that it looks like this: &lt;c&gt;(?^:ab|cd|a)&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;These &lt;c&gt;@strings&lt;/c&gt; are the test strings we will apply the regular expression against.&lt;/li&gt;
+&lt;li&gt;This is the search and replace operation that matches the keys of the hash, and as a replacement value gets the corresponding value from the hash. Note that the &lt;c&gt;/g&lt;/c&gt; modifier is not strictly required (&lt;c&gt;s///g&lt;/c&gt; will replace all matches in the string, not just the first), and you can adapt this regex any way you like. So for example, to only make one replacement anchored at the beginning of the string, you can say &lt;c&gt;s/^($regex)/$map{$1}/;&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;The output of the code is:
+&lt;c&gt;
+abcd -&gt; 2345
+aacd -&gt; 1145
+abaab -&gt; 23123
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;b&gt;Thank you&lt;/b&gt; to all those who replied to this post as well as [id://1179847|this one], in particular thanks to [kcott], [LanX], [AnomalousMonk], and [Haarg], whose suggestions ended up in the above!&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Updates:&lt;/i&gt; 2017-05-14: Merged in the draft text I previously had in [id://1179921|this] node, made several updates to the text, and removed the "RFC" tag from the title. 2019-05-01: Updated first section regarding &lt;c&gt;$_&lt;/c&gt; in &lt;c&gt;qr//&lt;/c&gt; (points 5 and 6), and updated TL;DR with a bit of code.&lt;/small&gt;&lt;/p&gt;</doctext>
+<thread id="1179840">
+<node id="1179850"><node id="1179851"><node id="1179853"/>
+</node>
+<node id="1180085"><node id="1180087"/>
+</node>
+</node>
+<node id="1179864"><node id="1179870"/>
+</node>
+<node id="1179898"/>
+<node id="1179901"><node id="1179921"><node id="1179940"/>
+</node>
+</node>
+<node id="1179929"><node id="1190259"><node id="1190349"/>
+</node>
+</node>
+<node id="11116849"><node id="11116850"/>
+</node>
+<node id="11118145"/>
+</thread></node>

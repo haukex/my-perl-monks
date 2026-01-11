@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200359" title="Re: execute shell script from perl" created="2017-09-29 02:44:49" updated="2017-09-29 02:44:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I wrote about the topic of running external commands at length [id://1180578|here]. In this case, since you seem to want to pass something to the script's STDIN and get something from its STDOUT, [mod://IPC::Run3] is a good choice IMO; it allows you to capture STDERR too if you need to. Note that running the script with a relative path ("./shellscript.sh") is another possible point of failure, as it relies on the current working directory.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use IPC::Run3 'run3';
+
+my $in = " string argument passed ";
+my @cmd = ('/path/to/shellscript.sh');
+
+run3 \@cmd, \$in, \my @out or die "run3 failed";
+$?==0 or die "command failed, \$?=$?";
+
+chomp(@out);
+print "&lt;&lt;$_&gt;&gt;\n" for @out;
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Changed output to array to be more in line with OP's code.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1200296</root_node>
+<parent_node field_name="parent_node">1200296</parent_node>
+<thread id="1200296">
+<node id="1200298"/>
+<node id="1200308"><node id="1200390"><node id="1200396"/>
+</node>
+</node>
+<node id="1200350"/>
+<node id="1200359"><node id="1200551"/>
+</node>
+</thread></node>

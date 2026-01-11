@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1222392" title="Re: choosing closest date to a given date" created="2018-09-14 15:09:24" updated="2018-09-14 15:09:24" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Personally, I like [mod://DateTime] (usually together with [mod://DateTime::Format::Strptime] for parsing).&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime;
+use DateTime::Format::Strptime;
+
+my @time_strs = qw/
+	2018-09-14T14:35:56Z  2018-09-13T09:32:12Z  2018-09-12T20:12:16Z
+	2018-08-07T07:12:45Z  2018-08-01T23:55:59Z  2018-07-24T15:39:01Z
+	2018-01-04T18:19:20Z  2017-11-03T10:26:49Z  2017-07-17T17:22:04Z/;
+
+my @target_strs = qw/
+	2018-09-13T23:55:00Z  2018-09-14T00:55:00Z
+	2018-04-14T09:33:12Z  2018-04-15T09:33:12Z/;
+
+for my $target_str (@target_strs) {
+	
+	my $strp = DateTime::Format::Strptime-&gt;new( on_error=&gt;'croak',
+		pattern =&gt; '%Y-%m-%dT%H:%M:%SZ', time_zone=&gt;'UTC' );
+	
+	my $target_dt = $strp-&gt;parse_datetime($target_str);
+	
+	my @dts;
+	for my $t (@time_strs) {
+		my $dt = $strp-&gt;parse_datetime($t);
+		my $diff_s = $dt-&gt;subtract_datetime_absolute($target_dt)
+			-&gt;in_units('seconds');
+		push @dts, { dt=&gt;$dt,
+			diff_s=&gt;$diff_s, absdiff_s=&gt;abs($diff_s) };
+	}
+	@dts = sort { $a-&gt;{absdiff_s} &lt;=&gt; $b-&gt;{absdiff_s} } @dts;
+	
+	my $closest = $dts[0];
+	print "Closest is ",
+		$closest-&gt;{dt}-&gt;strftime('%Y-%m-%dT%H:%M:%S %Z'),
+		", which is ", $closest-&gt;{diff_s}&gt;0 ? 'after  ' : 'before ',
+		$target_dt-&gt;strftime('%Y-%m-%dT%H:%M:%S %Z'), "\n";
+}
+
+__END__
+
+Closest is 2018-09-13T09:32:12 UTC, which is before 2018-09-13T23:55:00 UTC
+Closest is 2018-09-14T14:35:56 UTC, which is after  2018-09-14T00:55:00 UTC
+Closest is 2018-01-04T18:19:20 UTC, which is before 2018-04-14T09:33:12 UTC
+Closest is 2018-07-24T15:39:01 UTC, which is after  2018-04-15T09:33:12 UTC
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1222354</root_node>
+<parent_node field_name="parent_node">1222354</parent_node>
+<thread id="1222354">
+<node id="1222359"/>
+<node id="1222366"/>
+<node id="1222392"/>
+<node id="1222393"/>
+<node id="1222455"/>
+</thread></node>

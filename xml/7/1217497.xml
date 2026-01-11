@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217497" title="Re: Multiple Packages in a Module?" created="2018-06-27 06:50:25" updated="2018-06-27 06:50:25" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;If you want to play it safe and check that a package contained in &lt;c&gt;test_v1.pm&lt;/c&gt; isn't loaded by a &lt;tt&gt;[doc://use] &lt;i&gt;package&lt;/i&gt;;&lt;/tt&gt; statement somewhere else, insert the following code at the top of the &lt;c&gt;test_vN.pm&lt;/c&gt; files. This won't protect you against loading more than one &lt;c&gt;test_vN.pm&lt;/c&gt; file, but if that does happen, and you have [doc://warnings] enabled (which you always should, of course), you should see some "Subroutine redefined" warnings (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; I hope that &lt;c&gt;test_v1.pm&lt;/c&gt; and &lt;c&gt;test_v2.pm&lt;/c&gt; defining at least a few of the same &lt;c&gt;sub&lt;/c&gt;s is a safe assumption).&lt;/p&gt;
+&lt;c&gt;
+use Module::Runtime qw/module_notional_filename/;
+BEGIN {
+	for my $package (qw/ Foo Foo::Bar /) {
+		my $fn = module_notional_filename($package);
+		die "$package already loaded from $INC{$fn}"
+			if exists $INC{$fn};
+		$INC{$fn} = __FILE__;
+	}
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1217365</root_node>
+<parent_node field_name="parent_node">1217365</parent_node>
+<thread id="1217365">
+<node id="1217371"><node id="1217391"><node id="1217392"><node id="1217400"><node id="1217402"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1217373"><node id="1217374"/>
+<node id="1217387"><node id="1217390"/>
+</node>
+</node>
+<node id="1217378"><node id="1217395"/>
+<node id="1217401"/>
+</node>
+<node id="1217380"><node id="1217396"><node id="1217399"><node id="1217405"><node id="1217406"/>
+</node>
+<node id="1217409"/>
+</node>
+</node>
+<node id="1217404"/>
+</node>
+<node id="1217485"><node id="1217498"/>
+</node>
+<node id="1217497"/>
+</thread></node>

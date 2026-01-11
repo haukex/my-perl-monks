@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108057" title="Re: Problems learning WebDAV with dav_this and HTTP::DAV" created="2019-10-28 17:41:24" updated="2019-10-28 17:41:24" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The trace on this is:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The &lt;c&gt;400 Bad Request&lt;/c&gt; is generated at [https://metacpan.org/source/CPANEL/Net-DAV-Server-1.305/lib/Net/DAV/Server.pm#L84|Net::DAV::Server line 84],&lt;/li&gt;
+&lt;li&gt;caused by the call to the &lt;c&gt;propfind&lt;/c&gt; method, which fails at [https://metacpan.org/source/CPANEL/Net-DAV-Server-1.305/lib/Net/DAV/Server.pm#L821|Net::DAV::Server line 821],&lt;/li&gt;
+&lt;li&gt;which calls Net::DAV::LockManager's &lt;c&gt;list_all_locks&lt;/c&gt;,&lt;/li&gt;
+&lt;li&gt;which fails due to the "Not a valid user name" error at [https://metacpan.org/source/CPANEL/Net-DAV-Server-1.305/lib/Net/DAV/LockManager.pm#L221|Net::DAV::LockManager line 221].&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The difference between e.g. Nautilus and [mod://HTTP::DAV] is that the former sends a &lt;c&gt;&lt;D:propfind xmlns:D="DAV:"&gt;&lt;D:prop&gt;...&lt;/c&gt; request, while the latter sends a &lt;c&gt;&lt;D:propfind xmlns:D="DAV:"&gt;&lt;D:allprop/&gt;...&lt;/c&gt; request, which hits the above branch of code. There, the &lt;c&gt;propfind&lt;/c&gt; method attempts to [https://metacpan.org/source/CPANEL/Net-DAV-Server-1.305/lib/Net/DAV/Server.pm#L820|use] the HTTP Basic Auth user credentials, which it doesn't have because AFAICT it never requests them from the client (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; and at the moment I don't see a way to force the client to send the auth, although I may be missing something).&lt;/p&gt;
+&lt;p&gt;Unfortunately, that's where my analysis ends for now - I don't know much about WebDAV and I'm not sure which module is at fault here, although I suspect it's [mod://Net::DAV::Server] not handling this type of request, because the [mod://HTTP::DAV] client code seems to work fine for me on two different servers. So you might just want to use a different server for testing, and perhaps file a bug for [mod://Net::DAV::Server] (although that module hasn't been updated since 2013).&lt;/p&gt;
+&lt;p&gt;I like to sometimes use [https://www.lighttpd.net/|lighttpd] for quick &amp;amp; dirty test servers. On Ubuntu, &lt;c&gt;sudo apt-get install --no-install-recommends lighttpd lighttpd-mod-webdav&lt;/c&gt;, &lt;c&gt;sudo systemctl stop lighttpd&lt;/c&gt;, and &lt;c&gt;sudo systemctl disable lighttpd&lt;/c&gt; (assuming you don't want it running all the time), then create a file &lt;c&gt;/tmp/lhttpd.conf&lt;/c&gt; with the following contents ([https://redmine.lighttpd.net/projects/lighttpd/wiki/Docs_ModWebDAV|module docs]):&lt;/p&gt;
+&lt;c&gt;
+server.document-root = "/tmp/foo/"
+
+server.port = 4242
+server.bind = "127.0.0.1"
+
+server.modules += ( "mod_webdav" )
+
+$HTTP["url"] =~ "^/dav($|/)" {
+	webdav.activate = "enable" 
+	#webdav.is-readonly = "disable" # (default)
+	webdav.sqlite-db-name = "/tmp/foo_webdav.db" 
+}
+&lt;/c&gt;
+&lt;p&gt;Then run &lt;c&gt;mkdir -p /tmp/foo/dav&lt;/c&gt; and &lt;c&gt;lighttpd -Df /tmp/lhttpd.conf&lt;/c&gt;, and you can then access the server using [mod://HTTP::DAV] at &lt;c&gt;http://localhost:4242/dav/&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;There are lots of other modules available, see the files (including the &lt;c&gt;README&lt;/c&gt;) that get installed at &lt;c&gt;/etc/lighttpd/conf-available&lt;/c&gt;, it includes SSL, authentication, CGI, and FastCGI.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11108055</root_node>
+<parent_node field_name="parent_node">11108055</parent_node>
+<thread id="11108055">
+<node id="11108057"><node id="11108176"/>
+</node>
+</thread></node>

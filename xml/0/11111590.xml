@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111590" title="Re^5: Processing an encoded file backwards" created="2020-01-18 16:53:59" updated="2020-01-18 16:53:59" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;The Flag FB_QUIET seems to be the answer&lt;/i&gt;&lt;/blockquote&gt;
+&lt;blockquote&gt;&lt;i&gt;providing a call back helps identifying the malformed bytes&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Unfortunately, that doesn't always seem to be the case:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Encode qw/decode/;
+use Data::Dump;
+
+dd decode('UTF-16-BE', "\xD8\x3D\xDD\xFA", Encode::FB_QUIET|Encode::LEAVE_SRC);
+dd decode('UTF-16-BE', "\x3D\xDD\xFA", Encode::FB_QUIET|Encode::LEAVE_SRC);
+dd decode('UTF-16-BE', "\x3D\xDD\xFA", sub{ sprintf "&lt;U+%04X&gt;", shift });
+
+dd decode('UTF-16-LE', "\x3D\xD8\xFA\xDD", Encode::FB_QUIET|Encode::LEAVE_SRC);
+dd decode('UTF-16-LE', "\xD8\xFA\xDD", Encode::FB_QUIET|Encode::LEAVE_SRC);
+dd decode('UTF-16-LE', "\xD8\xFA\xDD", sub{ sprintf "&lt;U+%04X&gt;", shift });
+
+__END__
+
+"\x{1F5FA}"
+"\x{3DDD}"
+"\x{3DDD}"
+"\x{1F5FA}"
+"\x{FAD8}"
+"\x{FAD8}"
+&lt;/c&gt;
+&lt;p&gt;It could be argued that this is a bug / oversight in [mod://Encode], and of course if we know we're reading UTF-16 we should always read an even number of bytes. But still, because of this behavior, and because I don't yet know if there are encodings where chopped up byte sequences might end up in valid characters, I'm doubtful that a &lt;i&gt;generalized&lt;/i&gt; "read &lt;i&gt;any&lt;/i&gt; file backwards with [doc://Encode]" is reliable. Personally I'd just make a version for UTF-8 and UTF-16, and any others as needed, or other encodings can be converted to the supported ones.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11111579</root_node>
+<parent_node field_name="parent_node">11111589</parent_node>
+<thread id="11111579">
+<node id="11111582"><node id="11111585"><node id="11111588"><node id="11111589"><node id="11111590"><node id="11111592"><node id="11111593"><node id="11111594"><node id="11111596"><node id="11111598"><node id="11111602"/>
+</node>
+<node id="11111600"/>
+</node>
+<node id="11111604"><node id="11111605"><node id="11111607"/>
+</node>
+</node>
+</node>
+<node id="11111595"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11111584"/>
+</thread></node>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1187386" title="Re: Using Modules (updated)" created="2017-04-07 05:44:52" updated="2017-04-07 05:44:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;And for the sake of thoroughness there are a few cases inside My::Module::Another that do the following: &lt;c&gt;My::Module::asub1();&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;So in &lt;c&gt;package My::Module::Another&lt;/c&gt;, do you do &lt;c&gt;use My::Module&lt;/c&gt;? Because if not, that's not quite correct - you're relying on &lt;c&gt;My::Module&lt;/c&gt; being loaded by someone else, which might not always be true.&lt;/p&gt;
+&lt;p&gt;Also, it sounds to me like you might have a circular dependency brewing. Two relatively easy ways to solve that would be to either move the commonly used functions into a third module, or in your case (no OO, and interdependencies between the modules) consider maybe merging the two modules into a single one - unless of course this would cause you to end up with one giant messy file.&lt;/p&gt;
+&lt;p&gt;Another important question is whether you can guarantee that the names of the functions exported from the two modules will never collide? If you can, then one simple way to export everything at once would be to import the functions from  &lt;c&gt;My::Module::Another&lt;/c&gt; into &lt;c&gt;My::Module&lt;/c&gt;, and then re-export them from there:&lt;/p&gt;
+&lt;c&gt;
+package My::Module;
+use Exporter 'import';
+use My::Module::Another;
+our @EXPORT = ( qw/asub1 asub2 asub3/, @My::Module::Another::EXPORT );
+&lt;/c&gt;
+&lt;p&gt;There are other, trickier ways to accomplish the same thing without exporting everything from &lt;c&gt;My::Module::Another&lt;/c&gt; into &lt;c&gt;My::Module&lt;/c&gt; or vice versa, by writing your own &lt;c&gt;import&lt;/c&gt; function. However, this is certainly a more advanced technique, and I would strongly recommend thinking about the above solutions (including whether to merge your modules into one) before going this far. Also, note that I've had to remove support for explicit export lists in this example, since a "merged" list would cause one module to complain since it doesn't know about the other's functions, so this solution isn't without its disadvantages.&lt;/p&gt;
+&lt;c&gt;
+package My::Module::Another;
+use base 'Exporter';
+our @EXPORT = qw/bsub1 bsub2 bsub3/;
+&lt;/c&gt;
+&lt;c&gt;
+package My::Module;
+use base 'Exporter';
+our @EXPORT = qw/asub1 asub2 asub3/;
+use My::Module::Another;
+sub import {
+	warn "WARNING: Ignoring export list!" if @_&gt;1;
+	__PACKAGE__-&gt;export_to_level(1, $_[0]);
+	My::Module::Another-&gt;export_to_level(1, $_[0]);
+}
+&lt;/c&gt;
+&lt;p&gt;Lastly, it's also possible to write your own &lt;c&gt;import&lt;/c&gt; function and not use [doc://Exporter], although this is one of those cases of "do this only if you know what you are doing and why". Also, you lose the functionality of [doc://Exporter], such as tags etc. I'm just showing this as a proof-of-concept for completeness, &lt;strike&gt;which is why I haven't added support for export lists&lt;/strike&gt; (&lt;b&gt;Update:&lt;/b&gt; added that functionality, note that this assumes there are no duplicate &lt;c&gt;sub&lt;/c&gt; names in the modules). I re-use the &lt;c&gt;@EXPORT&lt;/c&gt; variable that [doc://Exporter] uses, but note there is no requirement for this as the variable isn't special - I could also just hard-code the list of functions or use a different variable if I like.&lt;/p&gt;
+&lt;c&gt;
+package My::Module;
+# no "use Exporter" or "use base 'Exporter'", we're on our own!
+# ...
+use Carp;
+our @EXPORT_FROM_PACKS = qw/ My::Module My::Module::Another /;
+sub import {
+	my ($class, @export) = @_;
+	my ($callerpack) = caller;
+	my %export = map {$_=&gt;1} @export;
+	for my $frompack (@EXPORT_FROM_PACKS) { # loop over packages
+		# attempt to load that module
+		eval "require $frompack; 1"
+			or croak "failed to load $frompack: $@";
+		# get their @EXPORT variable
+		my @exps = do { no strict 'refs'; @{"${frompack}::EXPORT"} };
+		for my $ex (@exps) { # loop over their exports
+			next if @export &amp;&amp; !$export{$ex};
+			no strict 'refs'; # limit scope of "no strict"
+			#      target function &lt;-- source function
+			*{"${callerpack}::$ex"} = \&amp;{"${frompack}::$ex"};
+		}
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;This is probably a case of "just enough rope to shoot yourself in the foot", but I think it's important to know that what [doc://use] and [doc://Exporter] are doing isn't magic, and it is possible to DIY.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update 2:&lt;/i&gt; Minor tweaks to wording.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1187338</root_node>
+<parent_node field_name="parent_node">1187338</parent_node>
+<thread id="1187338">
+<node id="1187341"/>
+<node id="1187386"/>
+</thread></node>

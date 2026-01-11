@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1199051" title="Re: Print summary of tests results when using Test::More ?" created="2017-09-10 17:25:54" updated="2017-09-10 17:25:54" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I'm not seeing anyway to do this within the module&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;[choroba] and [1nickt] already pointed you to [doc://prove], which I think is the best answer, but just to answer this part of the question, yes, there are ways to get at the test results from within the test script itself, although that isn't really how the test architecture works - test scripts generate [https://testanything.org/|TAP] output which is then consumed by harnesses to generate the statistics etc. across multiple test files.&lt;/p&gt;
+&lt;p&gt;If tests in an individual script fail, you already get an output like "&lt;c&gt;# Looks like you failed 5 tests of 30.&lt;/c&gt;" at the end of the test script. To get at this information yourself, &lt;c&gt;Test::More-&gt;builder-&gt;details&lt;/c&gt; returns a list of hashes that you can inspect yourself (see [doc://Test::Builder]):&lt;/p&gt;
+&lt;c&gt;
+my ($passed,$failed) = (0,0);
+my @tests = Test::More-&gt;builder-&gt;details;
+for my $test (@tests) {
+	if ($test-&gt;{ok}) {$passed++} else {$failed++};
+}
+diag "Of ".(0+@tests)." tests, $passed passed and $failed failed.";
+&lt;/c&gt;
+&lt;p&gt;Now AFAIK and as far as I can tell from looking at the source, what [doc://prove] does is use [doc://TAP::Harness], which in turn uses [doc://TAP::Parser] and [doc://TAP::Formatter::Base] to generate the summary output. But again, it's much easier to just use [doc://prove].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1199046</root_node>
+<parent_node field_name="parent_node">1199046</parent_node>
+<thread id="1199046">
+<node id="1199047"/>
+<node id="1199048"/>
+<node id="1199051"><node id="1199056"/>
+</node>
+</thread></node>

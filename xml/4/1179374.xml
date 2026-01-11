@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1179374" title="NFSLock - Continue in code if another server already has lock on file" created="2017-01-11 03:13:06" updated="2017-01-11 03:13:06" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1179371">mightyMrJawz</author>
+<doctext field_name="doctext">&lt;p&gt;     I'm having a difficult time getting NFSLock to work as I understand it through the documentation.  I was able to get the example "lock_test" provided with the CPAN module to correctly work simultaneously on 4 servers using NFS file system so &lt;/p&gt;
+&lt;p&gt;     However, what I need to do is determine if a server can get an NFSLock on a new file- and if so I need the server to create and lock it, and write to it.  If it is unable to get the lock, simply have the server move on.  I could have up to 50 servers trying to determine if the file exists, but only need one of them to create it.  The "README" file that comes with the module states "Blocking locks will wait until other locks are removed before the process continues.  Non blocking locks will return undef if another process currently has the lock."  It seemed to me that if I simply changed the code from "LOCK_EX" to "LOCK_NB" that this would do what I need but this isn't the case.  Instead, two things happen 1) NONE of the servers are able to ever get an NFSLock, and 2)hundreds if not thousands of "tmp" files are created (depending on the increment I choose) in the directory and not removed.&lt;/p&gt;
+&lt;p&gt;     Am I using this module incorrectly or missing something?  I also know through research that the NFS system can be troublesome, but it seemed that occurred for older versions of NFS, and finding this module gave me hope that I'd be able to do what I need.  For the code given, I just change the line comment for the "my $lock"&lt;/p&gt;
+&lt;p&gt; command line:  ./my_lock_test.pl nfs_lock_test.txt 1000 &gt; server_A.out &lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl5.10.1 -w
+use strict;
+use File::NFSLock ();
+use Fcntl qw( O_CREAT LOCK_EX LOCK_NB);
+use lib '../lib/perl/';
+ 
+my $datafile = shift;
+my $inc      = shift || do {
+  print "Usage: $0 &lt;filename&gt; &lt;increment&gt;\n";
+  exit;
+};
+ 
+while ( $inc -- &gt; 0 ) {
+  my $lock = new File::NFSLock ($datafile, LOCK_NB);
+  #my $lock = new File::NFSLock ($datafile, LOCK_EX);
+ 
+        if ($lock)
+        {
+                print "true\n";
+        }
+        else
+        {
+                print "false\n";
+        }
+}
+&lt;/code&gt;</doctext>
+<thread id="1179374">
+<node id="1179381"><node id="1179458"/>
+</node>
+</thread></node>

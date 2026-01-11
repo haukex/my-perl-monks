@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1164439" title="Re: 'g' flag w/'qr'" created="2016-05-29 07:12:25" updated="2016-05-29 07:12:25" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [perl-diddler],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;So why can't I add the global switch to the "qr" expression?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Here are some of my thoughts about the "why" part of the question: the way I like to think of this is that &lt;c&gt;/g&lt;/c&gt; doesn't modify the regular expression (the &lt;i&gt;inside&lt;/i&gt; of the /.../ construct), it modifies how &lt;c&gt;m//&lt;/c&gt; and &lt;c&gt;s///&lt;/c&gt; work. A thorough reading of [doc://perlop#Regexp-Quote-Like-Operators] shows that this behavior is pretty complex, and for example the return values of &lt;c&gt;m//&lt;/c&gt; depend on context, whether or not the regular expression contains capturing groups, and whether the &lt;c&gt;/g&lt;/c&gt; modifier is present. Consider that when you construct a regular expression with &lt;c&gt;qr//&lt;/c&gt;, it is not yet known what kind of regular expression operator it will be used in - it can be used in both an &lt;c&gt;m//&lt;/c&gt; and an &lt;c&gt;s///&lt;/c&gt;. Lastly, consider this hypothetical situation:&lt;/p&gt;
+&lt;c&gt;
+my $foo = qr/foo/g;     # hypothetical, won't work
+my $bar = qr/bar(\d+)/;
+while (&lt;&gt;) {
+    while (/$foo$bar/) {...} # endless loop or not?
+    my @x = /$foo$bar/;      # what's the return value?
+    s/$bar$foo/quz$1/;       # replaces first or all matches?
+    # ... etc. ...
+}
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1164425</root_node>
+<parent_node field_name="parent_node">1164425</parent_node>
+<thread id="1164425">
+<node id="1164426"><node id="1164431"><node id="1164433"/>
+<node id="1164434"><node id="1164444"/>
+</node>
+<node id="1164436"/>
+</node>
+</node>
+<node id="1164427"><node id="1164432"/>
+</node>
+<node id="1164437"><node id="1164476"><node id="1164479"/>
+</node>
+</node>
+<node id="1164439"/>
+<node id="1164441"/>
+<node id="1164443"><node id="1164477"><node id="1164480"/>
+<node id="1164490"/>
+</node>
+</node>
+<node id="1164469"><node id="1164478"/>
+</node>
+<node id="1164481"><node id="1164643"><node id="1164646"/>
+<node id="1164651"/>
+<node id="1164653"/>
+</node>
+</node>
+</thread></node>

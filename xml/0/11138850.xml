@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11138850" title="Re^6: Dealing with files with differing line endings" created="2021-11-15 15:33:08" updated="2021-11-15 15:33:08" _doctext_mode="lenient"><type id="11">note</type>
+<author id="732669">Marshall</author>
+<doctext field_name="doctext">I experimented more with this (code attached below).  Answering my own question - when reading a line using "&lt;:raw", Perl is looking for a &lt;LF&gt; to determine the "end of line".  This is the same thing that it does with the :CRLF layer.  The difference is that with :raw, the CR (if any) immediately before the LF is not removed.&lt;p&gt;
+
+The terminology does get confusing because "\n" as written in Perl on Windows sometimes means &lt;CR&gt;&lt;LF&gt; and sometimes it means only &lt;LF&gt;.&lt;p&gt;
+
+With the normal I/O layer, the &lt;CR&gt; in &lt;CR&gt;&lt;LF&gt; will be removed before your Perl code ever sees the line. chomp() only operates on &lt;LF&gt;, not &lt;CR&gt;&lt;LF&gt;.&lt;p&gt;
+
+Running two regexes as you suggest is not necessary, the standard I/O layer does this part: &lt;c&gt;$text=~s/\r\n/\n/g;&lt;/c&gt; (remove any &lt;CR&gt; that immediately precedes a &lt;LF&gt;).  Translating &lt;CR&gt; to &lt;LF&gt; would get the multiple lines contained within the input string into "normal line format".&lt;p&gt;
+
+So the rub here is that there is no easy way to say "give me a line" no matter old Mac,unix or windows. $/, the input record separator, is a string, not a regex. When you attempt to read a line from a file with &lt;CR&gt; terminated lines, you will get the entire file, not just one line because readline is looking for &lt;LF&gt;.  Now having in effect slurped the entire file into one string variable, you can indeed split it up into "real lines". However now we have altered the program flow from reading a line at a time to reading the whole file into a buffer, modifying that buffer (perhaps with tr instead of regex) and then reading that buffer a line at a time. &lt;p&gt;
+
+Anyway, I did not see the need to burden the 99.99999% code with special stuff for this ancient Mac. There are also some memory issues with reading entire files into memory to process them when line by line processing is desired. It would also be possible to read part of the file, determine that \r should be the input record separator, then back up and use that. But that is "complicated".&lt;p&gt;
+
+I'm not working with Unix at the moment.  But from memory, Perl code to read files line by line between Unix and Windows is the same. When reading a Windows file on Unix, the I/O layer zaps the &lt;CR&gt; and I never see it. When Windows reads a Unix file, it doesn't care that the &lt;CR&gt; isn't there. When writing a line on Unix, Perl writes a &lt;LF&gt; for "\n". When writing a line on Windows, Perl writes a &lt;CR&gt;&lt;LF&gt; for "\n". &lt;p&gt;
+
+Mixed line ending files can happen. When I was working on Unix, my environment allowed me to click on a remote Unix file and edit it with my local Windows editor. Only the lines that I modified wound up with &lt;CR&gt;&lt;LF&gt; endings. My editor preserved the exiting &lt;LF&gt; terminated lines. Perl and GNU C didn't have an issue with this and I didn't really worry about it. LPR was fussy. I had some simple Perl thing that read a line, chomped it, then printed line with "\n" (which on output is platform specific).  Now that I think about it, it could be that chomp() was unnecessary, the read of the &lt;CR&gt;&lt;LF&gt; line would have zapped the &lt;CR&gt; already. There would be no need to remove the &lt;LF&gt; only to add it back in.&lt;p&gt;
+
+Unix and Windows have &lt;LF&gt; in common and that works well. Ancient Mac with &lt;CR&gt; is a "weird duck". 
+ 
+&lt;c&gt;
+use strict;
+use warnings;
+
+### setup input file  &lt;CR&gt;=0d  &lt;LF&gt;=0a
+
+open (my $fh,'&gt;',"testfilein.txt") or die "$!";
+print $fh "bbb \naaa \r\n"; #62626220 0d0a 61616120 0d0d0a
+close $fh;                  #note spaces are for human reading
+
+open ($fh,'&gt;',"testfileout.txt") or die "$!";
+binmode $fh;                
+
+#read from input with std &lt;&gt;, write binary to output file
+
+open (my $fh2, '&lt;', "testfilein.txt") or die "$!";
+while (my $line = &lt;$fh2&gt;)
+{
+   print length($line),'_', $line, '|';
+   print $fh $line;       #62626220 0a 61616120 0d0a
+}
+close $fh2;
+close $fh;
+print "*** run two...\n";
+
+# use same read file
+# this time use :raw layer for reading
+# A line ends in &lt;LF&gt; like above, but the &lt;CR&gt; before it
+# (if any) is not removed.
+
+open ($fh,'&gt;',"testfileout2.txt") or die "$!";
+binmode $fh;                
+
+open ($fh2, '&lt;:raw', "testfilein.txt") or die "$!";
+while (my $line = &lt;$fh2&gt;)
+{
+   print length($line),'_', $line, '|';
+   print $fh $line;  #62626220 0d0a 61616120 0d0d0a
+}
+__END__
+
+5_bbb      "bbb "+LF     4+1=5
+|6_aaa     "aaa "+CRLF   4+2=6
+
+|*** run two...
+6_bbb      "bbb "+CRLF   4+2=6
+
+|7_aaa     "aaa "+CRCRLF 4+3=7
+&lt;/c&gt;
+
+
+
+
+
+
+</doctext>
+<root_node field_name="root_node">11138481</root_node>
+<parent_node field_name="parent_node">11138758</parent_node>
+<thread id="11138481">
+<node id="11138483"><node id="11138485"/>
+<node id="11138486"/>
+</node>
+<node id="11138484"><node id="11138488"><node id="11138490"/>
+</node>
+</node>
+<node id="11138487"><node id="11138489"/>
+</node>
+<node id="11138491"><node id="11138532"><node id="11138556"><node id="11138738"><node id="11138758"><node id="11138850"><node id="11138854"><node id="11138857"><node id="11138877"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11138503"/>
+</thread></node>

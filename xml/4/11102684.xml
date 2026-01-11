@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11102684" title="&quot;open&quot; Best Practices" created="2019-07-11 10:41:59" updated="2019-07-11 10:41:59" _doctext_mode="strict"><type id="120">perlmeditation</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;h1&gt;&lt;c&gt;open&lt;/c&gt; Best Practices&lt;/h1&gt;
+
+&lt;h2&gt;TL;DR: &lt;c&gt;open my $fh, '&lt;', $filename or die "$filename: $!";&lt;/c&gt;&lt;/h2&gt;
+
+&lt;p&gt;You will see styles of [doc://open] such as "&lt;c&gt;open FILE, $filename;&lt;/c&gt;"
+or "&lt;c&gt;open(LOG, "&gt;$filename") || die "Could not open $filename";&lt;/c&gt;" in many places.
+These mainly come from versions of Perl before 5.6.0 (released in 2000), because
+that version of Perl introduced lexical filehandles and the three-argument [doc://open].
+Since then, these new features have become a best practice, for the reasons below.&lt;/p&gt;
+
+&lt;h2&gt;1. Use Lexical Filehandles&lt;/h2&gt;
+
+&lt;p&gt;Instead of &lt;c&gt;open FILE, ...&lt;/c&gt;, &lt;b&gt;say: &lt;c&gt;open my $fh, ...&lt;/c&gt;&lt;/b&gt;.&lt;/p&gt;
+
+&lt;p&gt;Lexical filehandles have the advantage of not being global variables,
+and such filehandles will be automatically closed when the
+variable goes out of scope. You can use them just like any other filehandle,
+e.g. instead of &lt;c&gt;print FILE "Output"&lt;/c&gt;, you just say &lt;c&gt;print $fh "Output"&lt;/c&gt;.
+They're also more convenient to pass as parameters to &lt;c&gt;sub&lt;/c&gt;s.
+Also, "bareword" filehandles like &lt;c&gt;FILE&lt;/c&gt; have a potential for conflicts
+with package names &lt;small&gt;(see [choroba]'s [id://11102698|reply] for details)&lt;/small&gt;,
+and they don't protect against typos like lexical filehandles do!
+&lt;small&gt;(For two recent discussions on lexical vs. bareword filehandles,
+see [id://11115734|this] and [id://11117517|this] thread.)&lt;/small&gt;&lt;/p&gt;
+
+&lt;h2&gt;2. Use the Three-Argument Form&lt;/h2&gt;
+
+&lt;p&gt;Instead of &lt;c&gt;open my $fh, "&gt;$filename"&lt;/c&gt;, &lt;b&gt;say: &lt;c&gt;open my $fh, '&gt;', $filename&lt;/c&gt;&lt;/b&gt;.&lt;/p&gt;
+
+&lt;p&gt;In the two-argument form of [doc://open], the filename has to be parsed
+for the presence of mode characters such as &lt;c&gt;&gt;&lt;/c&gt;, &lt;c&gt;&lt;+&lt;/c&gt;, or &lt;c&gt;|&lt;/c&gt;.
+If you say &lt;c&gt;open my $fh, $filename&lt;/c&gt;, and &lt;c&gt;$filename&lt;/c&gt; contains
+such characters, the [doc://open] may not do what you want, or worse, if
+&lt;c&gt;$filename&lt;/c&gt; is user input, this may be a security risk! The two-argument
+form can still be useful in rare cases, but I strongly recommend to play it
+safe and use the three-argument form instead.&lt;/p&gt;
+
+&lt;p&gt;In the three-argument form, &lt;c&gt;$filename&lt;/c&gt; will always be taken as
+a filename. Plus, the mode can include "[doc://PerlIO|layers]", so instead
+of having to do a [doc://binmode] after the [doc://open], you can just
+say e.g. &lt;c&gt;open my $fh, "&lt;:raw", $filename&lt;/c&gt;, or you can specify an encoding
+such as &lt;c&gt;open my $fh, "&gt;:encoding(UTF-8)", $filename&lt;/c&gt;.
+&lt;b&gt;Note:&lt;/b&gt; As [doc://PerlIO|documented], &lt;c&gt;:encoding(UTF-8)&lt;/c&gt; should be preferred
+over &lt;c&gt;:utf8&lt;/c&gt;, and on Windows, to decode UTF-16 properly, you need to say
+&lt;c&gt;":raw:encoding(UTF-16):crlf"&lt;/c&gt;, because otherwise the default &lt;c&gt;:crlf&lt;/c&gt;
+layer will incorrectly mangle the Unicode characters &lt;c&gt;U+0D0A&lt;/c&gt; or &lt;c&gt;U+0A0D&lt;/c&gt;.
+Be aware that if you don't specify any layers, the layers in &lt;tt&gt;[doc://${^OPEN}]&lt;/tt&gt;
+are used (see that link for details).&lt;/p&gt;
+
+&lt;h2&gt;3. Check and Handle Errors&lt;/h2&gt;
+
+&lt;pre&gt;
+open my $fh, '&amp;lt;', $filename;                          # Bad: No error handling!
+open my $fh, '&amp;lt;', $filename  || die ...;              # &lt;b&gt;WRONG!&lt;/b&gt;&lt;sup&gt;1&lt;/sup&gt;
+open my $fh, '&amp;lt;', $filename  or die "open failed";    # error is missing info
+
+&lt;b&gt;open my $fh, '&amp;lt;', $filename  or die "$filename: $!";  # good
+open(my $fh, '&amp;lt;', $filename) or die "$filename: $!";  # good&lt;/b&gt;
+open(my $fh, '&amp;lt;', $filename) || die "$filename: $!";  # works, &lt;b&gt;but risky!&lt;/b&gt;&lt;sup&gt;1&lt;/sup&gt;
+
+use autodie qw/open/;  # at the top of your script / code block
+open my $fh, '&amp;lt;', $filename;                          # ok, but read [doc://autodie]!
+&lt;/pre&gt;
+
+&lt;p&gt;You should check the return value of the [doc://open] function,
+and if it returns a false value, report the error that is available
+in the [doc://$!] variable. It is best to also report the filename
+as well, and of course you're free to customize the message as needed (see the tips below for some suggestions).&lt;/p&gt;
+&lt;p&gt;&lt;sup&gt;1&lt;/sup&gt; It is a common mistake to use
+&lt;c&gt;open my $fh, '&lt;', $filename || die ...&lt;/c&gt; -
+because of the higher precedence of &lt;c&gt;||&lt;/c&gt;, it actually means
+&lt;c&gt;open( my $fh, '&lt;', ($filename || die ...) )&lt;/c&gt;. So to avoid mistakes,
+I would suggest just staying away from &lt;c&gt;||&lt;/c&gt; in this case &lt;small&gt;(as is
+also highlighted in [id://11102770|these] replies by AM and [eyepopslikeamosquito])&lt;/small&gt;.&lt;/p&gt;
+
+&lt;p&gt;Note that [doc://open] failing does not necessarily have to be
+a fatal error, see some examples of alternatives [id://11101709|here].
+Also, note that the effect of [doc://autodie] is limited to its lexical
+scope, so it's possible to turn it on for only smaller blocks of code
+&lt;small&gt;(as discussed in [kcott]'s [id://11102717|reply])&lt;/small&gt;.&lt;/p&gt;
+
+&lt;h2&gt;4. Additional Tips&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Make sure that the filename you're opening &lt;i&gt;always&lt;/i&gt; matches the filename in the error message. One easy way to accomplish this is to use a single variable to hold the filename, like &lt;c&gt;$filename&lt;/c&gt; in the above examples &lt;small&gt;(as described in [Eily]'s [id://11102693|reply])&lt;/small&gt;.&lt;/li&gt;
+&lt;li&gt;Consider putting the filename in the error message in quotes or similar, such as &lt;c&gt;"'$filename': $!"&lt;/c&gt;, so that it's easier to see issues arising from whitespace at the beginning or end of the filename &lt;small&gt;(as suggested in [Discipulus]'s [id://11102715|reply])&lt;/small&gt;.&lt;/li&gt;
+&lt;li&gt;In addition, consider adding even more useful details to your error message, such as whether you're trying to read or write from/to the file, and put quotes around &lt;c&gt;$!&lt;/c&gt; as well, so it's easier to tell everything apart &lt;small&gt;(as [id://11102747|suggested] by [haj])&lt;/small&gt;.&lt;/li&gt;
+&lt;li&gt;On Windows, consider also displaying [doc://$^E] as part of the error message for more information &lt;small&gt;(as suggested in [Discipulus]'s [id://11102715|reply])&lt;/small&gt;.&lt;/li&gt;
+&lt;li&gt;If you're setting global variables that will affect reading the file, like [doc://$/], it's best to use [doc://local] in a new block &lt;small&gt;(as mentioned in [stevieb]'s [id://11102687|reply])&lt;/small&gt;.&lt;/li&gt;
+&lt;li&gt;Remember that it's possible for multiple processes to access the same file at the same time, and you may need to consider a way to coordinate that, such as file locking &lt;small&gt;(as mentioned in [davido]'s [id://11102708|reply])&lt;/small&gt;.&lt;/li&gt;
+&lt;li&gt;For even more discussion, see Chapter 10, "I/O", in the book [https://www.oreilly.com/library/view/perl-best-practices/0596001738/|Perl Best Practices] by [TheDamian],
+also the book [http://modernperlbooks.com/books/modern_perl_2016/index.html|Modern Perl] by [chromatic] is a great book about more modern Perl.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr&gt;
+&lt;small&gt;
+&lt;p&gt;&lt;i&gt;Fellow Monks:&lt;/i&gt; I wrote this so I would have something to link
+to instead of repeating these points again and again. If there's something
+you think is worth adding, please feel free to suggest it!&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update 2019-07-12:&lt;/i&gt; Added section "Additional Tips",
+mentioned bareword filehandles, and added a bit more on &lt;c&gt;autodie&lt;/c&gt;.
+Thanks to everyone for your suggestions!
+&lt;i&gt;2019-07-13:&lt;/i&gt; Added more suggestions from replies, thanks!
+&lt;i&gt;2020-04-19:&lt;/i&gt; Added mention of typo prevention, as inspired by [id://11115734].
+&lt;i&gt;2020-06-07:&lt;/i&gt; Added links to threads about bareword vs. lexical handles and added note about &lt;c&gt;:crlf&lt;/c&gt; and UTF-16 interaction on Windows.
+&lt;i&gt;2022-02-08:&lt;/i&gt; Updated notes on layers.
+&lt;/p&gt;
+&lt;/small&gt;</doctext>
+<thread id="11102684">
+<node id="11102687"><node id="11102688"/>
+</node>
+<node id="11102693"/>
+<node id="11102695"/>
+<node id="11102698"/>
+<node id="11102708"><node id="11102718"/>
+<node id="11102730"><node id="11102835"/>
+</node>
+<node id="11102744"/>
+</node>
+<node id="11102715"/>
+<node id="11102717"/>
+<node id="11102747"/>
+<node id="11102770"><node id="11102772"><node id="11102778"><node id="11102785"><node id="11102786"/>
+<node id="11102809"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11102771"><node id="11102773"/>
+</node>
+</thread></node>

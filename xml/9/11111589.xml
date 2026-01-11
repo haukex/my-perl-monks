@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111589" title="Re^4: Processing an encoded file backwards (updated)" created="2020-01-18 16:16:37" updated="2020-01-18 16:16:37" _doctext_mode="lenient"><type id="11">note</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">&lt;I&gt;&amp;gt; So it doesn't allow you to differentiate between a character that was broken by the read, and an actually malformed input file.&lt;/I&gt;&lt;P&gt;
+
+providing a call back helps identifying the malformed bytes &lt;P&gt;
+
+&lt;c&gt;
+  DB&lt;131&gt; dd $rr
+"\x84\xC3\x96\xC3\x9C.\r\n\r\n"
+
+  DB&lt;132&gt; $start=0
+
+  DB&lt;133&gt; $rru = Encode::decode('utf8',$rr, sub{ my $broken = shift; $start++; "" });
+
+  DB&lt;134&gt; dd $rru
+"\xD6\xDC.\r\n\r\n"
+
+  DB&lt;135&gt; p $start
+1
+  DB&lt;136&gt;        
+&lt;/c&gt;&lt;P&gt;
+
+&lt;I&gt;&amp;gt; I don't use the debugger often, so reading its output doesn't come naturally to me ;-)&lt;/I&gt;&lt;P&gt;
+
+as commented
+&lt;UL&gt;
+&lt;LI&gt; pp/dd are from [METAMOD://Data::Dump]
+&lt;LI&gt; Dump from [METAMOD://Devel::Peek] 
+&lt;/UL&gt;&lt;P&gt;
+
+
+furthermore debugger commands
+&lt;UL&gt;
+&lt;LI&gt; p prints scalar
+&lt;LI&gt; x prints list
+&lt;/UL&gt;&lt;P&gt;
+
+&lt;c&gt; DB&lt;79&gt; h p
+p expr        Same as "print {DB::OUT} expr" in current package.
+
+  DB&lt;80&gt; h x
+x expr        Evals expression in list context, dumps the result.
+&lt;/c&gt;&lt;P&gt;
+
+&lt;H5&gt; update&lt;/H5&gt;&lt;P&gt;
+
+one way to identify how many malformed bytes are at the start and to be sure the rest is well.  &lt;P&gt;
+
+&lt;c&gt;
+  DB&lt;159&gt; $start=0
+
+  DB&lt;160&gt; $rru = Encode::decode('utf8',$rr,sub{ $start++; return "" });
+
+  DB&lt;161&gt; $sub= substr $rr,$start
+
+  DB&lt;162&gt; $rru2 = Encode::decode('utf8',$sub ,Encode::FB_CROAK);
+
+  DB&lt;163&gt; p $rru2 eq $rru
+1
+  DB&lt;164&gt;              
+&lt;/c&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;small&gt;&lt;strike&gt;Football&lt;/strike&gt;Perl is like chess, only without the dice&lt;/small&gt;
+&lt;/sub&gt; &lt;P&gt;
+
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.142} --&gt;</doctext>
+<root_node field_name="root_node">11111579</root_node>
+<parent_node field_name="parent_node">11111588</parent_node>
+<thread id="11111579">
+<node id="11111582"><node id="11111585"><node id="11111588"><node id="11111589"><node id="11111590"><node id="11111592"><node id="11111593"><node id="11111594"><node id="11111596"><node id="11111598"><node id="11111602"/>
+</node>
+<node id="11111600"/>
+</node>
+<node id="11111604"><node id="11111605"><node id="11111607"/>
+</node>
+</node>
+</node>
+<node id="11111595"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11111584"/>
+</thread></node>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11103322" title="Re^2: SQLPLUS connect database" created="2019-07-24 13:48:28" updated="2019-07-24 13:48:28" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Using a fixed filename can potentially cause problems if there are multiple processes, and a relative filename can cause problems if the user doesn't have write access in that directory. I'd recommend using [doc://File::Temp] (a core module):&lt;/p&gt;
+&lt;c&gt;
+use File::Temp qw/tempfile/;
+
+my ($tfh,$tfn) = tempfile(UNLINK=&gt;1);
+print $tfh &lt;&lt;'END_OF_SQL';
+SET HEADING OFF;
+SELECT systimestamp || ' IP=' || sys_context('USERENV','IP_ADDRESS') 
+FROM dual;
+EXIT
+END_OF_SQL
+close $tfh;
+
+# the filename is in $tfn
+
+# no "unlink" needed, that's automatic
+&lt;/c&gt;
+&lt;p&gt;I showed some more common [doc://File::Temp] patterns that I use, such as creating the files in a specific directory, in [id://11100039|this node]. And because the above requires putting a variable into the external command being run, I'd recommend using a module to do that, such as e.g. &lt;c&gt;capturex&lt;/c&gt; from [mod://IPC::System::Simple] (see my node [id://1180578|here]).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11103246</root_node>
+<parent_node field_name="parent_node">11103315</parent_node>
+<thread id="11103246">
+<node id="11103247"><node id="11103249"/>
+</node>
+<node id="11103254"><node id="11103304"><node id="11103312"><node id="11103319"><node id="11103320"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11103267"><node id="11103302"><node id="11103303"/>
+</node>
+</node>
+<node id="11103315"><node id="11103322"/>
+<node id="11103331"/>
+<node id="11103335"><node id="11103474"/>
+</node>
+</node>
+</thread></node>

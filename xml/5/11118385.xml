@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118385" title="Re: Could SHA encode faster than MD5?" created="2020-06-23 13:16:49" updated="2020-06-23 13:16:49" _doctext_mode="lenient"><type id="11">note</type>
+<author id="863021">$h4X4_&amp;#124;=73}{</author>
+<doctext field_name="doctext">[https://perldoc.perl.org/Memoize.html|Memoize] one of the most under utilized modules Perl has to offer for speeding things up.&lt;br&gt;
+Look for comment "# Uncomment the three lines below to speed things up" to test [https://perldoc.perl.org/Memoize.html|Memoize].&lt;br&gt;&lt;br&gt;
+&lt;c&gt;#!/usr/bin/perl
+use strict;
+use warnings;
+use Carp qw(carp croak);
+use Data::Dumper;
+use Benchmark;
+
+my %loaded;
+for (qw/ Digest::MD5 /) {
+    eval "use $_";
+    unless ($@) {
+        $loaded{$_} = $_-&gt;VERSION;
+    }
+}
+print "Benchmarking...\n";
+for my $key (sort keys %loaded) {
+    print "$key\t$loaded{$key}\n";
+}
+
+my $code = &lt;&lt;'EOM';
+[b]bold [i]italic[/i] test[/b]
+[code]some [perl] code[/code]
+[url=http://foo.example.org/]a link![/url]
+
+EOM
+
+sub Dmd5 {
+    my $pb = Digest::MD5-&gt;new;
+   # Uncomment the three lines below to speed things up
+   # use Memoize;
+   # memoize('Digest::MD5::add');
+   # memoize('Digest::MD5::hexdigest');
+    return $pb;
+}
+
+my ($pb);
+if ($loaded{'Digest::MD5'}) {
+    $pb = Dmd5();
+    my $rendered1 = $pb-&gt;add($code);
+}
+
+timethese($ARGV[0] || -1, {
+    $loaded{'Digest::MD5'} ?  (
+        'Digest::MD5::new'  =&gt; \&amp;Dmd5,
+        'Digest::MD5'  =&gt; sub { my $out = $pb-&gt;hexdigest },
+    ) : (),
+});
+
+#Benchmarking...
+#Digest::MD5	2.55
+#Benchmark: running Digest::MD5, Digest::MD5::new for at least 1 CPU seconds...
+#Digest::MD5: -1 wallclock secs ( 1.11 usr +  0.00 sys =  1.11 CPU) @ 138871.96/s (n=154009)
+#Digest::MD5::new:  1 wallclock secs ( 1.11 usr +  0.00 sys =  1.11 CPU) @ 69872.97/s (n=77559)
+#
+#Benchmarking with Memoize...
+#Digest::MD5	2.55
+#Benchmark: running Digest::MD5, Digest::MD5::new for at least 1 CPU seconds...
+#Digest::MD5:  1 wallclock secs ( 1.12 usr +  0.00 sys =  1.12 CPU) @ 61895.11/s (n=69632)
+#Digest::MD5::new:  1 wallclock secs ( 1.06 usr +  0.03 sys =  1.09 CPU) @ 5227.61/s (n=5719)
+&lt;/c&gt; </doctext>
+<root_node field_name="root_node">11118270</root_node>
+<parent_node field_name="parent_node">11118270</parent_node>
+<thread id="11118270">
+<node id="11118279"/>
+<node id="11118295"><node id="11118346"/>
+</node>
+<node id="11118385"><node id="11118391"/>
+</node>
+<node id="11118393"/>
+</thread></node>

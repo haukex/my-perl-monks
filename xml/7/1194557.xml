@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1194557" title="Re: Odd perl/ssh interaction" created="2017-07-08 06:49:56" updated="2017-07-08 06:49:56" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I think that the script could do with some improvements - [id://111088], three arg [doc://open] with proper error checking, error checking on the [doc://close] due to the piped open, and using &lt;c&gt;&lt;&gt;&lt;/c&gt; instead of &lt;c&gt;&lt;STDIN&gt;&lt;/c&gt; would be some best practices that would also make the script more robust and easily debuggable in case of errors.&lt;/p&gt;
+&lt;p&gt;Anyway, I think [huck] is [id://1194548|on to something]. I can reproduce the problem when I run the program as &lt;c&gt;./1194547.pl &lt;hosts.txt&lt;/c&gt;, but when I run the program as &lt;c&gt;cat hosts.txt | perl 1194547.pl&lt;/c&gt;, it works. Also, adding the &lt;c&gt;&lt;/dev/null&lt;/c&gt; to the command as [huck] suggested makes it work as well, as does using the &lt;c&gt;ssh -n&lt;/c&gt; switch, which has the same effect. So while I haven't dug into the details, changing the &lt;c&gt;uptime&lt;/c&gt; to &lt;c&gt;cat&lt;/c&gt; does seem to show that the problem is &lt;c&gt;ssh&lt;/c&gt; is reading &lt;c&gt;STDIN&lt;/c&gt; and sending it to the remote command.&lt;/p&gt;
+&lt;p&gt;However, as I wrote about at length [id://1180578|here], shelling out to an external process is not always a good idea, &lt;i&gt;especially&lt;/i&gt; when you can't trust the user input. The great [mod://Net::OpenSSH] module, while it does also use external &lt;c&gt;ssh&lt;/c&gt; processes, does this in a more robust fashion, plus it provides a whole lot more functionality ([mod://Net::OpenSSH::Parallel] might be of interest to you). I would strongly recommend using that module instead of shelling out to &lt;c&gt;ssh&lt;/c&gt; yourself.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1194547</root_node>
+<parent_node field_name="parent_node">1194547</parent_node>
+<thread id="1194547">
+<node id="1194548"><node id="1194560"/>
+</node>
+<node id="1194555"><node id="1194559"/>
+<node id="1194563"/>
+</node>
+<node id="1194557"><node id="1194558"><node id="1194561"/>
+</node>
+</node>
+</thread></node>

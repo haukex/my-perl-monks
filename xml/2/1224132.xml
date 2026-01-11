@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224132" title="Re^2: how to get Config values into a hash" created="2018-10-16 20:17:27" updated="2018-10-16 20:17:27" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;p&gt;Thx, [Haukex], you've been instrumental in helping me to disambiguate Config situations in such nodes as [id://1219777] and node [id://1219636]. I hope this isn't a three strikes, you're out scenario, as I fanned on this one pretty hard. I was unaware that this Config was stamped when the user's perl install was made. It's been revealing for me to poke around in this space as a guy who knows some C. I wanted to see if I could read Config.pm, so typed&lt;/p&gt;
+
+&lt;code&gt;locate Config.pm &gt;1.txt&lt;/code&gt;
+
+ &lt;p&gt;I might have had 20 candidates with many interesting features on their own right, but I think I narrowed it down to 3 that look like the Config.pm that gets used. &lt;/p&gt;
+&lt;code&gt;diff /usr/lib/x86_64-linux-gnu/perl/5.26.1/Config.pm /usr/lib/x86_64-linux-gnu/perl-base/Config.pm &gt;2.txt
+diff /usr/lib/x86_64-linux-gnu/perl/5.26.1/Config.pm /usr/lib/x86_64-linux-gnu/perl/cross-config-5.26.1/Config.pm  &gt;3.txt
+diff /usr/lib/x86_64-linux-gnu/perl-base/Config.pm /usr/lib/x86_64-linux-gnu/perl/cross-config-5.26.1/Config.pm  &gt;5.txt&lt;/code&gt;
+ &lt;p&gt;They weren't different from each other except for path. So I try to add functionality to a script to organize and probe these values. My next attempt fell apart when I tried to use Data::Dumper. What's more when I tried to work up the example from Data::Dumper, I couldn't get anywhere. I was able to cobble together a path for one of the Config.pm's using Path::Tiny and slurp it in. It's not horrendously long like some of this output, but to save the monastery's collective scrollfingers, I'll list the script and put abridged output between readmore tags:&lt;/p&gt;
+&lt;c&gt;$ cat 4.tk.pl
+#!/usr/bin/perl -w
+use 5.011;
+use utf8;
+use Config qw/%Config config_vars/;
+use lib "1.&amp;#1087;&amp;#1089;&amp;#1099;/template_stuff";
+use utils1 qw/print_hash/;
+
+my $archname = $Config{'archname'};
+print "&lt;$archname&gt;\n";
+say "---------------";
+config_vars( "archname", "version", "libpath", "perl", "scriptdir", "sitearchexp" );
+say "---------------";
+my $ref_Config = \%Config;
+print Dumper $ref_Config;  # print() on unopened filehandle Dumper 
+# print Dumper $Config;  # Variable "$Config" is not imported 
+print_hash($ref_Config);
+
+say "---------------";
+use Path::Tiny;
+
+my ($archlibexp, $version) = ($Config{archlibexp},$Config{version});
+my $arch_path = path($archlibexp)-&gt;parent;
+say "arch_path is $arch_path";
+my $path_to_Config = path($arch_path,$version, "Config.pm");
+my @lines = $path_to_Config-&gt;lines;
+say "lines are @lines";
+say "---------------";
+my $ref2_Config = \%Config::Config;
+print Dumper $ref2_Config;
+say "---------------";
+use ExtUtils::MakeMaker::Config;
+say $Config{installbin}; 
+say "---------------";   
+$Data::Dumper::Sortkeys = \&amp;my_filter;
+my $foo = { map { (ord, "$_$_$_") } 'I'..'Q' };
+say "foo is %$foo";
+# print Dumper $foo; # print() on unopened filehandle Dumper 
+print_hash($foo);
+my $bar = { %$foo };
+my $baz = { reverse %$foo };
+print Dumper [ $foo, $bar, $baz ];
+ 
+sub my_filter {
+    my ($hash) = @_;
+    # return an array ref containing the hash keys to dump
+    # in the order that you want them to be dumped
+    return [
+      # Sort the keys of %$foo in reverse numeric order
+        $hash eq $foo ? (sort {$b &lt;=&gt; $a} keys %$hash) :
+      # Only dump the odd number keys of %$bar
+        $hash eq $bar ? (grep {$_ % 2} keys %$hash) :
+      # Sort keys in default order for all other hashes
+        (sort keys %$hash)
+    ];
+}
+
+$ 
+&lt;/c&gt;
+&lt;readmore&gt;
+ &lt;c&gt;&lt;x86_64-linux-gnu-thread-multi&gt;
+---------------
+archname='x86_64-linux-gnu-thread-multi';
+version='5.26.1';
+libpath='UNKNOWN';
+perl='perl';
+scriptdir='/usr/bin';
+sitearchexp='/usr/local/lib/x86_64-linux-gnu/perl/5.26.1';
+---------------
+subroutine says this is your hash: 
+key: Author, value: 
+
+key: CONFIG, value: true
+...
+key: zcat, value: 
+
+key: zip, value: zip
+
+---------------
+arch_path is /usr/lib/x86_64-linux-gnu/perl
+lines are # This file was created by configpm when Perl was built. Any changes
+ # made to this file will be lost the next time perl is built.
+ 
+ # for a description of the variables, please have a look at the
+ # Glossary file, as written in the Porting folder, or use the url:
+ # http://perl5.git.perl.org/perl.git/blob/HEAD:/Porting/Glossary
+ 
+ package Config;
+ use strict;
+ use warnings;
+ use vars '%Config', '$VERSION';
+ 
+ $VERSION = "5.026001";
+ 
+ # Skip @Config::EXPORT because it only contains %Config, which we special
+ # case below as it's not a function. @Config::EXPORT won't change in the
+ # lifetime of Perl 5.
+ my %Export_Cache = (myconfig =&gt; 1, config_sh =&gt; 1, config_vars =&gt; 1,
+ 		    config_re =&gt; 1, compile_date =&gt; 1, local_patches =&gt; 1,
+ 		    bincompat_options =&gt; 1, non_bincompat_options =&gt; 1,
+ 		    header_files =&gt; 1);
+ 
+ @Config::EXPORT = qw(%Config);
+ @Config::EXPORT_OK = keys %Export_Cache;
+ 
+ # Need to stub all the functions to make code such as print Config::config_sh
+ # keep working
+ 
+ sub bincompat_options;
+ sub compile_date;
+ sub config_re;
+ sub config_sh;
+ sub config_vars;
+ sub header_files;
+ sub local_patches;
+ sub myconfig;
+ sub non_bincompat_options;
+ 
+ # Define our own import method to avoid pulling in the full Exporter:
+ sub import {
+     shift;
+     @_ = @Config::EXPORT unless @_;
+ 
+     my @funcs = grep $_ ne '%Config', @_;
+     my $export_Config = @funcs &lt; @_ ? 1 : 0;
+ 
+     no strict 'refs';
+     my $callpkg = caller(0);
+     foreach my $func (@funcs) {
+ 	die qq{"$func" is not exported by the Config module\n}
+ 	    unless $Export_Cache{$func};
+ 	*{$callpkg.'::'.$func} = \&amp;{$func};
+     }
+ 
+     *{"$callpkg\::Config"} = \%Config if $export_Config;
+     return;
+ }
+ 
+ die "$0: Perl lib version (5.26.1) doesn't match executable '$^X' version ($])"
+     unless $^V;
+ 
+ $^V eq 5.26.1
+     or die sprintf "%s: Perl lib version (5.26.1) doesn't match executable '$^X' version (%vd)", $0, $^V;
+ 
+ sub FETCH {
+     my($self, $key) = @_;
+ 
+     # check for cached value (which may be undef so we use exists not defined)
+     return exists $self-&gt;{$key} ? $self-&gt;{$key} : $self-&gt;fetch_string($key);
+ }
+ 
+ sub TIEHASH {
+     bless $_[1], $_[0];
+ }
+ 
+ sub DESTROY { }
+ 
+ sub AUTOLOAD {
+     require 'Config_heavy.pl';
+     goto \&amp;launcher unless $Config::AUTOLOAD =~ /launcher$/;
+     die "&amp;Config::AUTOLOAD failed on $Config::AUTOLOAD";
+ }
+ 
+ # tie returns the object, so the value returned to require will be true.
+ tie %Config, 'Config', {
+     archlibexp =&gt; '/usr/lib/x86_64-linux-gnu/perl/5.26',
+     archname =&gt; 'x86_64-linux-gnu-thread-multi',
+     cc =&gt; 'x86_64-linux-gnu-gcc',
+     d_readlink =&gt; 'define',
+     d_symlink =&gt; 'define',
+     dlext =&gt; 'so',
+     dlsrc =&gt; 'dl_dlopen.xs',
+     dont_use_nlink =&gt; undef,
+     exe_ext =&gt; '',
+     inc_version_list =&gt; '5.26.0 5.26.0/x86_64-linux-gnu-thread-multi',
+     intsize =&gt; '4',
+     ldlibpthname =&gt; 'LD_LIBRARY_PATH',
+     libpth =&gt; '/usr/local/lib /usr/lib/gcc/x86_64-linux-gnu/7/include-fixed /usr/include/x86_64-linux-gnu /usr/lib /lib/x86_64-linux-gnu /lib/../lib /usr/lib/x86_64-linux-gnu /usr/lib/../lib /lib',
+     osname =&gt; 'linux',
+     osvers =&gt; '4.9.0',
+     path_sep =&gt; ':',
+     privlibexp =&gt; '/usr/share/perl/5.26',
+     scriptdir =&gt; '/usr/bin',
+     sitearchexp =&gt; '/usr/local/lib/x86_64-linux-gnu/perl/5.26.1',
+     sitelibexp =&gt; '/usr/local/share/perl/5.26.1',
+     so =&gt; 'so',
+     useithreads =&gt; 'define',
+     usevendorprefix =&gt; 'define',
+     version =&gt; '5.26.1',
+ };
+
+---------------
+---------------
+/usr/bin
+---------------
+foo is %HASH(0x55f2c54cf370)
+subroutine says this is your hash: 
+key: 73, value: III
+
+key: 74, value: JJJ
+
+key: 75, value: KKK
+
+key: 76, value: LLL
+
+key: 77, value: MMM
+
+key: 78, value: NNN
+
+key: 79, value: OOO
+
+key: 80, value: PPP
+
+key: 81, value: QQQ&lt;/c&gt;&lt;/readmore&gt;
+ &lt;p&gt;How did I lose my grip on Data::Dumper so as not to be able to even work up the example code?&lt;/p&gt;
+&lt;p&gt;With 1000's of values in this hash, would I find a variable that contained the path that I think is probable for being the one actually used when during &lt;c&gt;use Config ();&lt;/c&gt;? Not really. Output then source:&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;readmore&gt;
+ &lt;c&gt;arch_path is /usr/lib/x86_64-linux-gnu/perl
+---------------
+archlib matched: /usr/lib/x86_64-linux-gnu/perl/5.26
+archlibexp matched: /usr/lib/x86_64-linux-gnu/perl/5.26
+config_arg13 matched: -Darchlib=/usr/lib/x86_64-linux-gnu/perl/5.26
+config_arg16 matched: -Dvendorarch=/usr/lib/x86_64-linux-gnu/perl5/5.26
+...
+installarchlib matched: /usr/lib/x86_64-linux-gnu/perl/5.26
+installvendorarch matched: /usr/lib/x86_64-linux-gnu/perl5/5.26
+vendorarch matched: /usr/lib/x86_64-linux-gnu/perl5/5.26
+vendorarchexp matched: /usr/lib/x86_64-linux-gnu/perl5/5.26&lt;/c&gt;&lt;/readmore&gt;
+ &lt;c&gt;#!/usr/bin/perl -w
+use 5.011;
+use utf8;
+use Config qw/%Config config_vars/;
+use lib "1.&amp;#1087;&amp;#1089;&amp;#1099;/template_stuff";
+use utils1 qw/print_hash/;
+use Path::Tiny;
+
+my ( $archlibexp, $version ) = ( $Config{archlibexp}, $Config{version} );
+my $arch_path = path($archlibexp)-&gt;parent;
+say "arch_path is $arch_path";
+my $path_to_Config = path( $arch_path, $version, "Config.pm" );
+my @lines = $path_to_Config-&gt;lines;
+
+# say "lines are @lines"; this works
+say "---------------";
+
+for ( keys %Config ) {
+  next if ($Config{$_} eq undef);
+  if ( $Config{$_} =~ m%/usr/lib/x86_64-linux-gnu/perl% ) {
+    say "$_ matched: $Config{$_}";
+  }
+}&lt;/c&gt;
+&lt;p&gt;My question here is how does perl decide which Config.pm it uses?&lt;/p&gt;
+
+ &lt;p&gt;Thank you for your comments, [haukex]; I've been following your webperl development and have gotten good initial results that I'm building on.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1224063</root_node>
+<parent_node field_name="parent_node">1224067</parent_node>
+<thread id="1224063">
+<node id="1224067"><node id="1224132"><node id="1224204"><node id="1224211"/>
+</node>
+<node id="1224332"><node id="1224644"/>
+</node>
+</node>
+</node>
+</thread></node>

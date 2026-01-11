@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1163430" title="Re: Scalar to @ARGV for Getopt::Std" created="2016-05-19 03:19:56" updated="2016-05-19 03:19:56" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [c64whiz],&lt;/p&gt;
+&lt;p&gt;Some shells have ludicrously complex quoting/interpolation rules, so personally I'd avoid trying to re-implement them. If you really wanted to implement a simple subset of them though, there's [doc://Text::ParseWords], this is what [doc://Getopt::Long]'s &lt;c&gt;GetOptionsFromString&lt;/c&gt; uses.&lt;/p&gt;
+&lt;p&gt;But I have the same question [afoken] already asked: why are you getting the command line on STDIN?&lt;/p&gt;
+&lt;p&gt;Here is a possible solution for applying &lt;c&gt;getopts&lt;/c&gt; to a string:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+=head2 getopts_from_str(string, argumentspec, hashref)
+
+This function uses L&lt;Text::ParseWords&gt;'s C&lt;shellwords&gt; to parse the
+given I&lt;string&gt;, and then applies C&lt;getopts&gt; from L&lt;Getopt::Std&gt; to
+the result, passing it the I&lt;argumentspec&gt; and I&lt;hashref&gt;.
+If C&lt;getopts&gt; returns a true value, this function returns an arrayref
+of the arguments remaining after applying C&lt;getopts&gt;,
+and if C&lt;getopts&gt; reports an error by returning false,
+this function also returns false.
+
+=cut
+
+use Text::ParseWords 'shellwords';
+use Getopt::Std 'getopts';
+
+sub getopts_from_str {
+	my ($str,$argspec,$hashref) = @_;
+	local @ARGV = shellwords($str);
+	return unless getopts($argspec, $hashref);
+	return [@ARGV];
+}
+
+# Example Code:
+my $optstr = q{ -a "hello world" -b "some \"text\"" -c 'abc def' };
+my $argv = getopts_from_str($optstr, 'a:b:c', \my %opts)
+	or die "bad options";
+
+use Data::Dumper;
+print Dumper(\%opts, $argv);
+
+__END__
+
+$VAR1 = {
+          'b' =&gt; 'some "text"',
+          'a' =&gt; 'hello world',
+          'c' =&gt; 1
+        };
+$VAR2 = [
+          'abc def'
+        ];
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update 2016-12-20:&lt;/b&gt; Since I've linked to this node a few times, I updated the above code so that it provides the function &lt;c&gt;getopts_from_str&lt;/c&gt;. The original code follows.&lt;/p&gt;
+&lt;readmore&gt;
+&lt;p&gt;Anyway, this seems to work:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use Data::Dump 'pp';
+use Text::ParseWords 'shellwords';
+use Getopt::Std 'getopts';
+
+my $stdin = q{ -a "hello world" -b "some \"text\"" -c 'abc def' };
+my %opts;
+{ # for local; avoid messing with global @ARGV
+	local @ARGV = shellwords($stdin);
+	pp \@ARGV;
+	getopts('a:b:c', \%opts) or die "bad options";
+	pp \%opts, \@ARGV;
+}
+
+__END__
+
+["-a", "hello world", "-b", "some \"text\"", "-c", "abc def"]
+(
+  { a =&gt; "hello world", b =&gt; "some \"text\"", c =&gt; 1 },
+  ["abc def"],
+)
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1163407</root_node>
+<parent_node field_name="parent_node">1163407</parent_node>
+<thread id="1163407">
+<node id="1163410"/>
+<node id="1163418"/>
+<node id="1163430"><node id="1163706"/>
+</node>
+</thread></node>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1194238" title="Re: Perl OOP" created="2017-07-05 08:48:25" updated="2017-07-05 08:48:25" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The other monks have already provided some good answers, I just wanted to add a few more thoughts:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;Quoting the [http://shop.oreilly.com/product/9780596004927.do|Camel] (&lt;i&gt;the&lt;/i&gt; Perl book, which I can highly recommend especially since you already have a coding background), Chapter 11:&lt;/p&gt;
+&lt;blockquote&gt;
+Perl does not automatically patrol private/public borders within its modules - unlike languages such as C++, Java, and Ada, Perl isn't obsessed with enforced privacy. A Perl module would prefer that you stay out of its living room because you weren't invited, not because it has a shotgun.
+&lt;/blockquote&gt;
+&lt;p&gt;I know this isn't exactly the topic you're asking about, but I think it expresses this part of the Perl philosophy quite well. In Perl, you can generally reach into any classes' internals if you wanted to, extend them with monkey patching, etc., and class authors usually won't try to stop you. But if you break something by doing something you shouldn't have, it's your fault :-) (&lt;i&gt;Update:&lt;/i&gt; I should make it more clear that although you &lt;i&gt;could&lt;/i&gt; do the aforementioned things, they are certainly not recommended for readable/maintainable code!)&lt;/p&gt;
+&lt;p&gt;This idea extends into other areas as well: sure, you could make all your constants [mod://Readonly], but OTOH, you could trust that others will see variable names in all caps and know that they shouldn't be modified; if they do then anything that breaks is their fault. Because I myself tend to code defensively, I can tell you that this idea can take some getting used to. (As an aside, it should be noted that even in Java, sometimes it's necessary to look into an Object's &lt;c&gt;private&lt;/c&gt; variables, and that is indeed possible with its Reflection API.)&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;AFAIK, the primary purpose of Java's &lt;c&gt;hashCode&lt;/c&gt; is to assist with storing objects in Java's hash tables. In Perl, hashes are indexed by strings, and any variable you try to use as a hash key will be forced into a string form. You also normally wouldn't use an object as a key for a hash - plain objects will stringify to something like &lt;c&gt;"Object=HASH(0xa81262)"&lt;/c&gt; - although theoretically unique because it's based on the memory address, it's not really useful for lookups etc. Normally one would choose a useful string as the hash key. (There are of course some objects that stringify to useful values and that can be then turned back into those objects from strings, for example [doc://Math::BigInt], or [mod://DateTime] via e.g. [mod://DateTime::Format::Strptime].)&lt;/p&gt;
+&lt;p&gt;As for &lt;c&gt;equals&lt;/c&gt;, note that even in Java there is often a problem with defining this method properly - e.g., are two ORM objects equal when they have the same primary key, or when all of their other fields match, or some combination of both? And then there are lots of cases where it doesn't even make sense to compare objects for "equality" other than comparing their memory addresses. So it has to be defined on a case-by-case basis, and if you want to compare Perl objects, it's the same, each class will have to define its own method to answer the question "am I equal to some other object?" - Perl does not place any requirement on this. (There is also the possibility to [doc://overload] objects so that they can be compared with operators like &lt;c&gt;eq&lt;/c&gt;, but this is an advanced topic, and many Perl classes don't use it.)&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;No, as others have said, this isn't usually necessary in Perl. Let's say you have an object that stores other objects, you can just say: &lt;c&gt;$collection-&gt;get($index)-&gt;some_method()&lt;/c&gt;, and the &lt;c&gt;-&gt;some_method()&lt;/c&gt; call will be looked up dynamically on the object that &lt;c&gt;-&gt;get()&lt;/c&gt; returns, regardless of what it is. (You can even do slightly wacky things like store the method name in a variable and say &lt;c&gt;$collection-&gt;get($index)-&gt;$some_method_name&lt;/c&gt;. &lt;i&gt;Update 2:&lt;/i&gt; Again, not recommended for normal practice, I'm just using this as an example as to just how dynamic method lookups are.)&lt;/p&gt;
+&lt;p&gt;If you wanted to make sure that your "collection" only contains objects of one class, then you'd have to add code to enforce this yourself (lots of different ways to do that, also depending on whether an OO framework is being used, so I won't get into that here). Perl's native types like &lt;c&gt;@arrays&lt;/c&gt; and &lt;c&gt;%hashes&lt;/c&gt; don't have any mechanism like generics, although if you wanted to get into advanced topics, then it's possible to use [doc://tie]d variables that could enforce this - but I haven't yet seen that level of defensive coding.&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;In general, for getting into Perl OO programming, I think [http://modernperlbooks.com/|Modern Perl] is a good choice. When you read it, you might notice that Perl's objects can actually be very simple: they start out as references to anonymous hashes (usually), that are then "[doc://bless]ed" into their class. There aren't many other requirements for objects, you can even freely choose the name of their constructor, it doesn't have to be &lt;c&gt;new&lt;/c&gt;. And you'll probably notice that unlike languages like Java, not every script/program needs to be OO, so my suggestion would be to first work on some Perl scripts without OO, then learn about blessed references (e.g. from the chapter "Blessed References" in Modern Perl), and then look at full-featured OO frameworks like [mod://Moose] or [mod://Moo].&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1194172</root_node>
+<parent_node field_name="parent_node">1194172</parent_node>
+<thread id="1194172">
+<node id="1194173"><node id="1194174"><node id="1194409"/>
+</node>
+</node>
+<node id="1194176"><node id="1194177"/>
+<node id="1194179"/>
+<node id="1194180"><node id="1194224"><node id="1194229"><node id="1194231"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1194181"><node id="1194182"><node id="1194191"><node id="1194213"><node id="1194223"/>
+</node>
+</node>
+<node id="1194212"/>
+</node>
+<node id="1194237"><node id="1194283"><node id="1194389"><node id="1194390"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1194230"/>
+<node id="1194238"/>
+<node id="1194260"><node id="1194510"/>
+</node>
+<node id="1194333"><node id="1194358"/>
+<node id="1194511"/>
+</node>
+<node id="1194499"><node id="1194516"/>
+</node>
+</thread></node>

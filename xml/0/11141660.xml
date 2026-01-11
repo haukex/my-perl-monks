@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11141660" title="Re^3: unexpected behavior on hash passed by reference" created="2022-02-26 13:56:18" updated="2022-02-26 13:56:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;What if I wanted to also remove the blessing?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sounds like an XY problem and/or that your example isn't really representative - why do you want to do this?&lt;/p&gt;
+&lt;p&gt;Anyway, TIMTOWTDI:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+sub one {
+	$_[0] = {abc=&gt;'one'};
+}
+my $r1 = bless {r=&gt;111}, 'One';
+dd $r1;   # bless({ r =&gt; 111 }, "One")
+one $r1;
+dd $r1;   # { abc =&gt; "one" }
+
+sub two {
+	my $ref = shift;
+	$$ref = {abc=&gt;'two'};
+}
+my $r2 = bless {r=&gt;222}, 'Two';
+dd $r2;    # bless({ r =&gt; 222 }, "Two")
+two \$r2;
+dd $r2;    # { abc =&gt; "two" }
+
+sub three {
+	my $ref = shift;
+	return {abc=&gt;'three'};
+}
+my $r3 = bless {r=&gt;333}, 'Three';
+dd $r3;   # bless({ r =&gt; 333 }, "Three")
+$r3 = three($r3);
+dd $r3;   # { abc =&gt; "three" }
+&lt;/c&gt;
+&lt;p&gt;And there's stuff like [mod://Acme::Damn], but I'm fairly certain that wouldn't be the right solution.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11141657</root_node>
+<parent_node field_name="parent_node">11141659</parent_node>
+<thread id="11141657">
+<node id="11141658"><node id="11141659"><node id="11141660"/>
+<node id="11141662"/>
+</node>
+</node>
+<node id="11141663"/>
+</thread></node>

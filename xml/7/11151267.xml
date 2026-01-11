@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11151267" title="Re: use Mojo::IOLoop::Subprocess - cannot pass argument to the subprocess" created="2023-03-27 13:50:32" updated="2023-03-27 13:50:32" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11151262">PerlDiver</author>
+<doctext field_name="doctext">I have done it with closure. Sure, I tried it at the first and it did not work, so I started searching for an alternative (this is how I came to the approach in the OP).
+&lt;br /&gt;&lt;br /&gt;
+The problem is with the for() loops. I cannot use in the subprocess any var, crated within the loop for() even $_).
+&lt;br /&gt;&lt;br /&gt;
+I am not sure I understand - why :)
+&lt;br /&gt;&lt;br /&gt;
+What was the remedy:
+&lt;br /&gt;&lt;br /&gt;
+&lt;code&gt;
+my @looper = (0..5);
+	
+foreach my $lp (@looper){
+	... subprocess preparation as in the OP ...
+	sub {
+		my $i = $lp || 5;
+		return $i;
+	}
+}
+&lt;/code&gt;
+&lt;br /&gt;&lt;br /&gt;
+Now it shows every number from the @looper.
+&lt;br /&gt;&lt;br /&gt;
+&lt;b&gt;The complete working example:&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;
+&lt;code&gt;
+use Mojo::Base -strict, -signatures, -async_await;
+use Mojo::IOLoop::Subprocess;
+use Mojo::Promise;
+
+async sub testMehod{
+
+    $c-&gt;render_later;
+    my $start_timer1 = Time::HiRes::gettimeofday();
+
+    show "BEFORE";
+
+    my @promises;
+    
+    my @looper = (0..5);
+    
+    foreach my $lp (@looper){
+
+        say "(START) This is $lp loop";
+        
+        my $subprocess = Mojo::IOLoop::Subprocess-&gt;new;
+            
+            push @promises, $subprocess-&gt;run_p(
+            
+                sub {
+                    my $i = $lp || 5;
+                    my $sp = shift; # $subprocess
+                    #my $i = shift || 3;
+                    #my $promise = Mojo::Promise-&gt;new;
+                    
+                    say "Hello, from $i and $$!";
+                    sleep 2;
+                    say "Good bye, from $i and $$!";
+                    
+                    #$promise-&gt;resolve("Done for $i");
+                    #return $promise;
+                    return "Done for $i";
+                #}-&gt;($_)
+                }
+            )-&gt;then(sub ($_result) {
+                show $_result;
+                return $_result;
+            })-&gt;catch(sub  {
+                my $err = shift;
+                say "Subprocess error: $err";
+            });
+        $subprocess-&gt;ioloop-&gt;start unless $subprocess-&gt;ioloop-&gt;is_running;
+        say "(END) This is $lp loop";
+    }
+
+
+    my @results = await Mojo::Promise-&gt;all_settled(@promises); 
+    show @results;
+
+    my $stop_timer1 = Time::HiRes::gettimeofday();
+    my $total1 = sprintf("%.5f\n", $stop_timer1 - $start_timer1);
+
+    return $c-&gt;render(text =&gt; "All done. Parallel: within $total1", status =&gt; 405);
+}
+&lt;/code&gt;
+&lt;br /&gt;&lt;br /&gt;
+If you know - why it did not work with for() loop - please, kindly, share this knowledge :)
+&lt;br /&gt;&lt;br /&gt;
+Thank you!
+</doctext>
+<root_node field_name="root_node">11151265</root_node>
+<parent_node field_name="parent_node">11151265</parent_node>
+<thread id="11151265">
+<node id="11151267"/>
+<node id="11151319"><node id="11151450"/>
+</node>
+</thread></node>

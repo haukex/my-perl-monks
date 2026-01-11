@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11102983" title="Re^3: Zip script not running on cron" created="2019-07-18 13:29:49" updated="2019-07-18 13:29:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Welcome to Perl and the Monastery, [PerlMonger79]!&lt;/p&gt;
+&lt;p&gt;My experience with [man://cron] has been that the safest thing to do is &lt;i&gt;always&lt;/i&gt; use absolute pathnames for &lt;i&gt;everything&lt;/i&gt; in the [man://crontab;5|crontab] and everything that is run from the &lt;c&gt;crontab&lt;/c&gt;, which is basically also what [Paladin] meant with the CWD issue. In this case, I think it's unlikely that anything is affected by [doc://%ENV] variables, but it's important to keep it in mind.&lt;/p&gt;
+&lt;p&gt;In this case, the first thing that jumps out at me is that you're not checking the [doc://chdir] for errors, as in e.g. &lt;c&gt;chdir "/path/to/directory" or die "chdir: $!";&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;Although not critical, there are several other suggestions I'd make:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;You don't need both &lt;c&gt;use warnings&lt;/c&gt; and &lt;c&gt;perl -w&lt;/c&gt; on the shebang, you can drop the latter - see also [doc://warnings#What's-wrong-with-*-w*-and-$^W|What's wrong with &lt;b&gt;-w&lt;/b&gt; and &lt;c&gt;$^W&lt;/c&gt;].&lt;/li&gt;
+&lt;li&gt;You don't need the &lt;c&gt;use Cwd qw(cwd);&lt;/c&gt; since you're not using that function, it would only become necessary if you wanted to change back to the previous directory (although I like [mod://File::pushd] for that).&lt;/li&gt;
+&lt;li&gt;Consider moving the two paths out of the body of the script and into variables/constants defined at the top of the script, so they're easier to change globally and could later be turned into subroutine arguments, command-line arguments, or configuration file options. This would become especially important if the script starts getting longer.&lt;/li&gt;
+&lt;li&gt;POSIX's &lt;c&gt;strftime&lt;/c&gt; is ok, but nowadays I'd recommend the core module [doc://Time::Piece], or for more complex tasks (e.g. anything involving time zones or complex math) [mod://DateTime].&lt;/li&gt;
+&lt;li&gt;Regarding [doc://glob], be aware of all of the caveats described in [id://1206848]. In this case, in a short script where you use it in list context, and the pattern is a known pattern without whitespace, it's probably ok. Two alternatives might be [mod://Path::Class], or the more low-level [doc://opendir]+[doc://readdir] (for the latter, [doc://File::Spec]'s &lt;c&gt;no_upwards&lt;/c&gt; is useful).&lt;/li&gt;
+&lt;li&gt;In any case, I'd store the list of filenames in an array instead of building the list twice.&lt;/li&gt;
+&lt;li&gt;If you're certain you'll always be running this script on a *NIX OS, it's ok, but personally I prefer to use [doc://File::Spec] for filename manipulation anyway (or [mod://Path::Class], with a nicer API).&lt;/li&gt;
+&lt;li&gt;You can also check [doc://unlink] for errors; you might not need to [doc://die], you could just [doc://warn] if there are problems, that's up to you.&lt;/li&gt;
+&lt;li&gt;A couple more diagnostics in unexpected cases are helpful.&lt;/li&gt;
+&lt;li&gt;As I mentioned above, consider providing the absolute path of the &lt;c&gt;perl&lt;/c&gt; binary in the &lt;c&gt;crontab&lt;/c&gt; entry as well as the absolute path of the script, i.e. &lt;c&gt;/usr/bin/perl /path/to/script.pl&lt;/c&gt;. (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; Doing this, i.e. calling the interpreter and telling it which script to run, also avoids the issue that may arise if you have multiple &lt;c&gt;perl&lt;/c&gt; binaries installed and your script uses the shebang &lt;c&gt;#!/usr/bin/env perl&lt;/c&gt; and [man://env] picks the wrong &lt;c&gt;perl&lt;/c&gt;.)&lt;/li&gt;
+&lt;li&gt;If you need more advanced ZIP file handling, consider [mod://Archive::Zip].&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Here's a script reworked with several of those suggestions:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+use Time::Piece;
+use File::Spec::Functions qw/catfile/;
+use IO::Compress::Zip qw/zip $ZipError/;
+
+# Timestamp
+my $now = localtime;
+$now -= 60*60;
+$now = $now-&gt;strftime("%d%b%Y_%H00");
+
+# Where zip file is to be stored
+my $arc = catfile("/path/to/archive","$now.zip");
+die "Error: $arc already exists, refusing to overwrite" if -e $arc;
+
+# Where csv files are found.
+chdir "/path/to/directory" or die "chdir: $!";
+
+# Zipping files found and storing into archive
+my @files = glob("*-$now.csv");
+warn "Warning: No files to ZIP found\n" unless @files;
+zip \@files =&gt; $arc or die "Cannot create zip file: $ZipError" ;
+
+# Deleting csv files 
+unlink(@files)==@files or warn "Failed to unlink some files: $!";
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; A few grammar improvements. Apparently I work for the Department of Redundancy Department, apparently.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11102978</root_node>
+<parent_node field_name="parent_node">11102982</parent_node>
+<thread id="11102978">
+<node id="11102979"><node id="11102980"/>
+<node id="11102982"><node id="11102983"><node id="11102990"/>
+</node>
+</node>
+</node>
+</thread></node>

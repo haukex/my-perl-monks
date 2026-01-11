@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11124864" title="match two files" created="2020-12-09 00:21:31" updated="2020-12-09 00:21:31" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1214210">yueli711</author>
+<doctext field_name="doctext">&lt;p&gt;Hello,
+
+I want to quickly match two files according to the first column.
+
+Thank you in advance for any help!
+
+Best,
+
+Yue
+
+&lt;/p&gt;
+
+&lt;code&gt;
+
+Input tmp01:
+
+PeptideID	ProteinID
+6	109521
+7	741
+11	681
+11	780
+20	2352
+27	1490
+27	1491
+27	1492
+28	51996
+29	1490
+29	1491
+29	1492
+30	1490
+30	1491
+30	1492
+
+
+
+Input tmp02:
+
+PeptideID	SpectrumID	Sequence
+6	53663	KMGEGR
+7	53663	KPPSGK
+11	144492	NNDALR
+20	15547	SPAKPK
+27	55547	LHKPPK
+28	55547	LFVGRK
+29	55504	LHKPPK
+30	55602	LHKPPK
+
+
+Output tmp11_quick:
+
+PeptideID	ProteinID	SpectrumID	Sequence
+6	109521	53663	KMGEGR
+7	741	53663	KPPSGK
+11	681	144492	NNDALR
+11	780	144492	NNDALR
+20	2352	15547	SPAKPK
+27	1490	55547	LHKPPK
+27	1491	55547	LHKPPK
+27	1492	55547	LHKPPK
+28	51996	55547	LFVGRK
+29	1490	55504	LHKPPK
+29	1491	55504	LHKPPK
+29	1492	55504	LHKPPK
+30	1490	55602	LHKPPK
+30	1491	55602	LHKPPK
+30	1492	55602	LHKPPK
+
+
+
+#!/usr/bin/perl
+use warnings;
+use strict;
+
+use Fcntl ':seek';
+
+
+open my $TAB01, '&lt;', 'tmp01' or die "Cannot open 'tmp01' because: $!";
+open my $TAB02, '&lt;', 'tmp02' or die "Cannot open 'tmp02' because: $!";
+open my $OUT, '&gt;', 'tmp11_QUICK' or die "Cannot open 'tmp12_01' because: $!";
+
+my $pos = tell $TAB01;
+my %tab01_data;
+while ( &lt;$TAB01&gt; ) {
+    my ( $first,$second) = split /\t+/;
+    print $OUT ",$_" unless length $first;
+    push @{ $tab01_data{ $first } }, $pos;
+    $pos = tell $TAB01;
+    }
+
+
+my %tab02_data;
+while ( &lt;$TAB02&gt; ) {
+    my ( $first,$second, $third ) = split /\t+/ ;
+    next unless exists $tab01_data{ $first };
+    for my $pos ( @{ $tab01_data{ $first } } ) {
+        seek $TAB01, $pos, SEEK_SET or die "Cannot seek on 'tmp01' because: $!";
+        print $OUT "$tab01_data","$tab02_data{$second}" ,scalar &lt;$TAB01&gt;;
+        }
+    }
+
+close $TAB01;
+close $TAB02;
+close $OUT;
+
+&lt;/code&gt;</doctext>
+<thread id="11124864">
+<node id="11124866"><node id="11124867"/>
+</node>
+<node id="11124868"><node id="11124869"/>
+</node>
+<node id="11124873"><node id="11124886"><node id="11124888"><node id="11124893"/>
+</node>
+</node>
+</node>
+<node id="11124874"><node id="11124887"><node id="11124891"><node id="11124898"><node id="11124903"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11124878"><node id="11124900"/>
+</node>
+<node id="11124928"/>
+<node id="11124971"><node id="11124974"><node id="11125037"/>
+</node>
+<node id="11125004"/>
+</node>
+</thread></node>

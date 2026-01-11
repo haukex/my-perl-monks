@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1196308" title="Re: Filtering certain multi-line patterns from a file" created="2017-07-30 10:59:35" updated="2017-07-30 10:59:35" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I wanted to check here and see if this seems like a good use-case for Perl&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Certainly, text processing is one of the things Perl is great at, and AFAIK it was heavily inspired by awk. If you want to get started with Perl, there are lots of good places, like [doc://perlintro], [id://954], [http://learn.perl.org], and [id://1174927|lots of books].&lt;/p&gt;
+&lt;p&gt;I'm not an [man://awk] expert, but I think this is a pretty direct translation of your program (the automated translator script that comes with Perl, [doc://a2p], is giving me strange results and I didn't look into that yet):&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+my $timestamp;
+my $entryline;
+my $timestamp_regex = qr/^#([[:digit:]]{10})$/;
+my $exclusion_regex = qr/^(?:ls?|man|cat)\b/;
+my $state = "begin";
+
+while (&lt;&gt;) {
+	if ($state eq "begin") {
+		if (/$timestamp_regex/) {
+			$timestamp = $_;
+			$state = "readtimestamp";
+		}
+		else {
+			print;
+			$state = "printedline";
+		}
+	}
+	elsif ($state eq "printedline") {
+		if (/$timestamp_regex/) {
+			$timestamp = $_;
+			$state = "readtimestamp";
+		}
+		else {
+			print;
+			$state = "printedline";
+		}
+	}
+	elsif ($state eq "readtimestamp") {
+		if (/$timestamp_regex/ &amp;&amp; $1 &gt;= $timestamp) {
+			$timestamp = $_;
+			$state = "readtimestamp";
+		}
+		elsif (/$exclusion_regex/) {
+			$entryline = $_;
+			$state = "readentryline";
+		}
+		else {
+			print $timestamp;
+			print;
+			$state = "printedline";
+		}
+	}
+	elsif ($state eq "readentryline") {
+		if (/$timestamp_regex/) {
+			$entryline = "";
+			$timestamp = $_;
+			$state = "readtimestamp";
+		}
+		else {
+			print $timestamp;
+			print $entryline;
+			print;
+			$state = "printedline";
+		}
+	}
+}
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Note I had to make a few tweaks to the regexes, and I'm not sure whether I translated the intent of "&lt;c&gt;if ($0 ~ timestamp_regex &amp;&amp; $0 &gt;= timestamp)&lt;/c&gt;" correctly (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; &lt;c&gt;$1&lt;/c&gt; is a special variable referring to the first set of capturing parentheses, see e.g. [doc://perlretut]). Also, your original code could be reduced a little, note how your states &lt;c&gt;begin&lt;/c&gt; and &lt;c&gt;printedline&lt;/c&gt; are identical (you could drop &lt;c&gt;begin&lt;/c&gt; and start in &lt;c&gt;printedline&lt;/c&gt;), and you don't need to assign to &lt;c&gt;state&lt;/c&gt; in every branch.&lt;/p&gt;
+&lt;p&gt;But anyway, when you switch to Perl, you get lots of powerful tools at your disposal, and thereby more ways to solve the same problem. While the above is certainly one way to write your code, one of Perl's mottos is There Is More Than One Way To Do It (TIMTOWTDI, "tim toady"), so here are two more ways to implement the code. The first one is how I might have written it. (The trick with [doc://eof] is just for a bit of code reduction, the alternative is to repeat the code that checks and prints &lt;c&gt;@buf&lt;/c&gt; after the loop ends.) &lt;i&gt;Disclaimer:&lt;/i&gt; I haven't run the following code through a whole lot of test cases, mostly just the samples you provided, so I may have missed some edge cases - my motivation for showing this code is not to say these are "better" but to demonstrate TIMTOWTDI and different ways of approaching the problem. (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; Note I assume the format of the input file never varies from the format you showed, i.e. each entry is &lt;c&gt;#timestamp\n&lt;/c&gt; followed by one or more lines.)&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $exclre = qr/^(?:ls?|man|cat)\b/;
+
+my @buf;
+while (&lt;&gt;) {
+	if (/^#\d+$/ || eof()) {
+		push @buf, $_ if eof();
+		if (@buf&gt;2 || @buf==2 &amp;&amp; $buf[1]!~$exclre) {
+			print @buf;
+		}
+		@buf=();
+	}
+	push @buf, $_;
+}
+&lt;/c&gt;
+&lt;p&gt;Here's a solution that gets clever with the input record separator [doc://$/] and regular expressions (perhaps too clever, since it assumes that &lt;c&gt;"\n#"&lt;/c&gt; won't occur in other places in the history file):&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $exclre = qr/(?:ls?|man|cat)\b/;
+
+$/ = "\n#";
+while (&lt;&gt;) {
+	s/\n#?\z//;
+	print /\A#/?():'#', $_, "\n"
+		unless /\A#?\d+\n$exclre(?!.*\n)/;
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1196306</root_node>
+<parent_node field_name="parent_node">1196306</parent_node>
+<thread id="1196306">
+<node id="1196308"><node id="1196317"/>
+</node>
+<node id="1196309"/>
+<node id="1196358"/>
+</thread></node>

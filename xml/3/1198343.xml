@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198343" title="Referencing localized variables, and typeglobs" created="2017-08-30 13:56:07" updated="2017-08-30 13:56:07" _doctext_mode="strict"><type id="115">perlquestion</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi all,&lt;/p&gt;
+&lt;p&gt;So there's this strange thing you can do:&lt;/p&gt;
+&lt;c&gt;
+our %h;
+my $x = do { local %h=(a=&gt;'3'); \%h };
+my $y = do { local %h=(b=&gt;'5'); \%h };
+dd \%h;  # {}
+dd $x;   # { a =&gt; 3 }
+dd $y;   # { b =&gt; 5 }
+&lt;/c&gt;
+&lt;p&gt;While I wouldn't actually do this, I couldn't seem to find any documentation of it, and I'm wondering if it's "safe" to do, or it is some kind of dark magic that should be avoided. (Also I've only tested it on 5.18 and 5.26 so far.)&lt;/p&gt;
+&lt;p&gt;The second part of my question is that the [doc://Symbol] module's &lt;c&gt;gensym&lt;/c&gt; claims to return a reference to an "anonymous" glob. But it turns out they're not actually anonymous:&lt;/p&gt;
+&lt;c&gt;
+use Symbol qw/gensym/;
+my $foo = gensym;
+*$foo-&gt;{bar} = 'quz';
+dd \%Symbol::GEN0;  # { bar =&gt; "quz" }
+&lt;/c&gt;
+&lt;p&gt;So I'm wondering why [doc://Symbol]::gensym isn't just implemented like this, which I got from [BrowserUk]'s post [id://646822|here]? It seems to me that, while the globrefs are still associated with a name, they really do seem to be more "anonymous".&lt;/p&gt;
+&lt;c&gt;
+sub gensym { \do{ local *ANONGLOB; *ANONGLOB } }
+&lt;/c&gt;
+&lt;p&gt;In the thread I linked to, [tye] mentions that unique names make debugging a bit easier, but I am wondering if there are any other technical downsides to the above?&lt;/p&gt;
+&lt;p&gt;Thanks,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2017-09-05:&lt;/b&gt; So [doc://Tie::StdHandle] has been doing something like this for about 18 years now: &lt;c&gt;my $fh = \do { local *HANDLE };&lt;/c&gt;&lt;/p&gt;
+</doctext>
+<thread id="1198343">
+<node id="1198351"><node id="1198356"><node id="1198360"/>
+</node>
+</node>
+<node id="1198352"><node id="1198357"/>
+</node>
+<node id="1198370"/>
+<node id="1198385"/>
+<node id="1198434"/>
+</thread></node>

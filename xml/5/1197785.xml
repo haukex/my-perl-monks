@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1197785" title="Re: incrementing mixed letters and numbers" created="2017-08-22 03:34:49" updated="2017-08-22 03:34:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;One way to do this is with an iterator, like the "odometer" example from Chapter 4 of [Dominus]'s [http://hop.perl.plover.com/|Higher-Order Perl], here's a version of that. The advantage is that it only generates each item of the sequence on demand. Note it doesn't necessarily need to be in a package, I just did that so I could overload the &lt;c&gt;&lt;&gt;&lt;/c&gt; operator, it's also possible to just call the code reference returned by &lt;c&gt;new&lt;/c&gt; as &lt;c&gt;$odo-&gt;()&lt;/c&gt;. This doesn't implement the &lt;i&gt;"starting from an arbitrary point"&lt;/i&gt; that you mention, because it depends a bit on how that starting point is provided to you - is it a number of iterations, or an existing string like &lt;c&gt;"abcd"&lt;/c&gt;?&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2019-10-05:&lt;/b&gt; I've now released [mod://Algorithm::Odometer::Tiny]!&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+{
+	package Odometer;
+	use overload '&lt;&gt;' =&gt; sub { shift-&gt;() };
+	sub new {
+		my $class = shift;
+		my @w = map { [ 1, ref eq 'ARRAY' ? @$_ : $_ ] } @_;
+		my $done;
+		return bless sub {
+			if ($done) { $done=0; return }
+			my @cur = map {$$_[$$_[0]]} @w;
+			for (my $i=$#w; $i&gt;=0; $i--) {
+				last if ++$w[$i][0]&lt;@{$w[$i]};
+				$w[$i][0]=1;
+				$done=1 unless $i;
+			}
+			return wantarray ? @cur : join '', @cur;
+		}, $class;
+	}
+}
+
+my $odo = Odometer-&gt;new( (['0'..'9','a'..'z']) x 4 );
+
+my $cnt=0;
+while (&lt;$odo&gt;) {
+	print $_;
+	last if ++$cnt&gt;=100;
+	print ', ';
+}
+print "\n";
+
+__END__
+0000, 0001, 0002, 0003, 0004, 0005, 0006, 0007, 0008, 0009, 000a, 000b, 000c, 000d, 000e, 000f, 000g, 000h, 000i, 000j, 000k, 000l, 000m, 000n, 000o, 000p, 000q, 000r, 000s, 000t, 000u, 000v, 000w, 000x, 000y, 000z, 0010, 0011, 0012, 0013, 0014, 0015, 0016, 0017, 0018, 0019, 001a, 001b, 001c, 001d, 001e, 001f, 001g, 001h, 001i, 001j, 001k, 001l, 001m, 001n, 001o, 001p, 001q, 001r, 001s, 001t, 001u, 001v, 001w, 001x, 001y, 001z, 0020, 0021, 0022, 0023, 0024, 0025, 0026, 0027, 0028, 0029, 002a, 002b, 002c, 002d, 002e, 002f, 002g, 002h, 002i, 002j, 002k, 002l, 002m, 002n, 002o, 002p, 002q, 002r
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1197777</root_node>
+<parent_node field_name="parent_node">1197777</parent_node>
+<thread id="1197777">
+<node id="1197781"><node id="1197801"/>
+</node>
+<node id="1197785"/>
+<node id="1197790"/>
+<node id="1197791"/>
+<node id="1197800"/>
+<node id="1197807"/>
+<node id="1197821"/>
+<node id="1200152"/>
+</thread></node>

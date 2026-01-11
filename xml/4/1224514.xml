@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224514" title="Re: Outputting JSON with function () {...} values" created="2018-10-22 15:05:26" updated="2018-10-22 15:05:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;As the others have said, that's not JSON, and it's unclear what Perl structure you would want to translate to a JS function. Could you show an example of such a Perl data structure, and the equivalent JavaScript that you expect to get?&lt;/p&gt;
+&lt;p&gt;Anyway, for WebPerl, I also looked into exactly this question and found that at least [mod://Cpanel::JSON::XS], and it seems the other JSON modules too, do not provide a good way to hook into the serialization to accomplish this. I ended up [https://github.com/haukex/emperl5/blob/e0b45cd50bf/ext/WebPerl/WebPerl.pm#L185|writing] my own simple serializer. Something like this:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Cpanel::JSON::XS;
+
+our $JSON = Cpanel::JSON::XS-&gt;new-&gt;allow_nonref;
+
+sub to_js {
+	my $what = shift;
+	if (my $r = ref $what) {
+		if ($r eq 'HASH') {
+			return '{' . join(',',
+				map { $JSON-&gt;encode("$_").':'.to_js($$what{$_}) }
+					sort keys %$what ) . '}';
+		}
+		elsif ($r eq 'ARRAY') {
+			return '[' . join(',', map { to_js($_) } @$what) . ']';
+		}
+		elsif ($r eq 'CODE') {
+			return 'function () { /* some JS here? */ }';
+		}
+		else { die "can't encode ref $r to JS" }
+	}
+	else { return $JSON-&gt;encode($what) }
+}
+
+print to_js( {
+		foo =&gt; [ "bar", "quz" ],
+		baz =&gt; sub {},
+	} ), "\n";
+
+__END__
+
+{"baz":function () { /* some JS here? */ },"foo":["bar","quz"]}
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1224498</root_node>
+<parent_node field_name="parent_node">1224498</parent_node>
+<thread id="1224498">
+<node id="1224502"/>
+<node id="1224504"/>
+<node id="1224510"><node id="1224511"/>
+</node>
+<node id="1224514"><node id="1224645"><node id="1224646"/>
+<node id="1224647"/>
+</node>
+</node>
+<node id="1224516"><node id="1224518"><node id="1224520"/>
+</node>
+</node>
+</thread></node>

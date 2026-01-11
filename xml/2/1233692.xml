@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1233692" title="Re: processing file content as string vs array" created="2019-05-13 08:52:51" updated="2019-05-13 08:52:51" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1039428">Eily</author>
+<doctext field_name="doctext">&lt;p&gt;You only have one @user_info in the whole file right? Otherwise your regex will give the wrong result: everything from the first @user_info_start to the &lt;i&gt;last&lt;/i&gt; @user_info_end. This is because of '.*' in your regex, because * is 'greedy' it will try to match as much as possible. This means that after @user_info_start has been found, the regex engine will basically jump to the end of the file, and move backward one character at a time (this is called backtracking) until it finds @user_info_end.&lt;/p&gt;
+&lt;p&gt;To have the reverse behaviour: go forward one character at a time right after finding @user_info_start you could use (.*?), where [doc://perlreref|.*?] will start by matching nothing, and only consume an extra character when necessary.&lt;/p&gt;
+&lt;p&gt;That being said, I really like the idiom presented by [haukex] [id://1233688|here], which is quite intuitive when you know that the [doc://perlop#Range-Operators|..] operator is read as "FROM .. TO" so in [haukex]'s code that would be FROM @user_info_start TO @user_info_end. One thing you can add to his code if you only have one occurence of @user_info in the whole file is an exit from the loop as soon as you have found your data:
+&lt;c&gt;use warnings;
+use strict;
+
+my @userinfo;
+LINE: while (&lt;DATA&gt;) {
+  chomp;
+  if ( /\@user_info_start/ ... /\@user_info_end/ ) {
+    push @userinfo, $_;
+  }
+  elsif (@userinfo) {
+    last LINE; # stop looking
+  }
+}
+
+use Data::Dumper;
+print Dumper(\@userinfo);
+
+__DATA__
+xxxxxxxxxxx
+xxxx*@user_info_start
+xxxx*@Title         : Mr
+xxxx*@Username   : xxxxx
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0001
+xxxx*@Create_Date       : 20190407
+xxxx*@Product       : xxxx
+xxxx*@user_info_end
+xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+&lt;/c&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1233681</root_node>
+<parent_node field_name="parent_node">1233681</parent_node>
+<thread id="1233681">
+<node id="1233684"><node id="1233687"><node id="1233688"/>
+<node id="1233689"/>
+<node id="1233732"/>
+</node>
+</node>
+<node id="1233692"><node id="1233694"><node id="1233695"><node id="1233698"/>
+</node>
+<node id="1233755"/>
+</node>
+</node>
+<node id="11100004"><node id="11100041"><node id="11100133"><node id="11100227"><node id="11100307"><node id="11100327"><node id="11100328"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

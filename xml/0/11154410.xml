@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11154410" title="Re: Why are these undefs different?" created="2023-09-13 02:15:41" updated="2023-09-13 02:15:41" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The answer is: Autovivification.&lt;/p&gt;
+&lt;p&gt;In the case of &lt;c&gt;[grep { $_-&gt;{"aaa"} &lt; 4 } @x]-&gt;[0]-&gt;{"aaa"}&lt;/c&gt;, the [doc://grep] returns an empty list, which means the expression is the equivalent of &lt;c&gt;[]-&gt;[0]-&gt;{"aaa"}&lt;/c&gt;. &lt;c&gt;[]&lt;/c&gt; creates a new anonymous array and returns a reference to it, and then the following dereference operations autovivify both the 0th element of the array, as well as the reference to the new anonymous hash in that element. And since the element &lt;c&gt;aaa&lt;/c&gt; doesn't exist in that hash, the whole expression returns &lt;c&gt;undef&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;In the second case, [doc://List::Util#first] is simply returning &lt;c&gt;undef&lt;/c&gt;, which can't be dereferenced with &lt;c&gt;-&gt;{"aaa"}&lt;/c&gt;, hence the error.&lt;/p&gt;
+&lt;p&gt;If the reason you're using [doc://List::Util#first] here is simply to stop the search on the first found element, then you could use the same "trick" as described above*. &lt;c&gt;[first { $_-&gt;{"aaa"} &lt; 4 } @x]-&gt;[0]-&gt;{"aaa"}&lt;/c&gt; will work, with a minor difference: the first arrayref in the chain will not be empty, but it will be &lt;c&gt;[undef]&lt;/c&gt;, that is, an array with one element, that element being &lt;c&gt;undef&lt;/c&gt;. Perl doesn't need to autovivify the 0th element, and still autovivifies the hash reference in place of the &lt;c&gt;undef&lt;/c&gt; in that case.&lt;/p&gt;
+&lt;c&gt;
+$ perl -MData::Dump -e 'my $x = []; dd !!$x-&gt;[0]-&gt;{"aaa"}; dd $x;'
+""
+[{}]
+$ perl -MList::Util=first -MData::Dump -e 'my @x; dd [first {$_} @x]'
+[undef]
+$ perl -le 'print( (undef)-&gt;{"aaa"} )'
+Can't use an undefined value as a HASH reference at -e line 1.
+$ perl -MList::Util=first -MData::Dump -e \
+  'my @x; my $y=[first {$_} @x]; dd $y; dd !!$y-&gt;[0]-&gt;{"aaa"}; dd $y'
+[undef]
+""
+[{}]
+&lt;/c&gt;
+&lt;p&gt;See also [doc://perlref#Arrow-Notation|perlref].&lt;/p&gt;
+&lt;p&gt;* &lt;i&gt;Update:&lt;/i&gt; Though personally, I would probably tend towards a two-step process: first using [doc://List::Util#first] to find the element, and then checking whether that result is &lt;c&gt;undef&lt;/c&gt; or not before attempting to access it. Of course this would require two statements instead of one, so it'd be a bit more verbose, but thereby also more clear. And at least &lt;i&gt;I think&lt;/i&gt; probably a tiny bit more efficient, since it wouldn't need to autovivify anything just for the test - but whether that would even make a difference depends on how often the code gets called. But TIMTOWTDI and I also understand the desire for more terse code.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11154409</root_node>
+<parent_node field_name="parent_node">11154409</parent_node>
+<thread id="11154409">
+<node id="11154428"/>
+<node id="11154410"/>
+<node id="11154417"/>
+<node id="11154432"><node id="11154442"/>
+</node>
+</thread></node>

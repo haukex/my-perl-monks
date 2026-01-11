@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11126607" title="looking for feedback on my first script" created="2021-01-08 10:48:06" updated="2021-01-08 10:48:06" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11126464">thirtySeven</author>
+<doctext field_name="doctext">&lt;p&gt;
+Hello, I just finished my first perl script. I am having a hard time understanding a lot of the code, but it works so that's great. I am making a btrfs snapshot manager, this script is going to be just one component of it. Anyways I just want to improve my skills and would like some feedback.
+&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use 5.010;
+
+=pod
+
+=head1 DESCRIPTION
+
+This script is used for taking and deleting a single snapshot.
+
+Snapshot names look something like this: 'day=01_07_2021,time=15:30'.
+
+Exactly six arguments must be given:
+1: subvolume to be snapshotted
+2: root snapshot directory (typically /.snapshots)
+3: the yabsm name of the subvolume being snapshotted (ex: 'root' for '/')
+4: the timeframe for the snapshot (hourly, daily, etc). 
+5: the desired date format. Either 'mm/dd/yyyy' or 'dd/mm/yyyy'
+6: the number of snapshots the user wants to keep for this subvolume/timeframe.
+
+This script should not be used by the end user.
+
+=cut
+
+               ####################################
+               #       GRAB INPUT PARAMETERS      #
+               ####################################
+
+my $subvol_to_snapshot_arg = $ARGV[0];
+my $snap_root_dir_arg      = $ARGV[1];
+my $yabsm_subvol_name_arg  = $ARGV[2];
+my $timeframe_arg          = $ARGV[3]; 
+my $date_format_arg        = $ARGV[4];
+my $snaps_to_keep_arg      = $ARGV[5];
+
+               ####################################
+               #               MAIN               #
+               ####################################
+
+delete_earliest_snapshot(); 
+take_new_snapshot();
+
+&lt;/code&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+
+               ####################################
+               #         SNAPSHOT CREATION        #
+               ####################################
+
+sub take_new_snapshot {
+
+  my $snap_name = create_snapshot_name();
+
+  system('btrfs subvolume snapshot '
+         . $subvol_to_snapshot_arg . ' '
+         . $snap_root_dir_arg . '/'
+         . $yabsm_subvol_name_arg . '/'
+         . $timeframe_arg . '/'
+         . $snap_name);
+}
+
+
+sub create_snapshot_name { 
+
+  my ($min, $hr, $day, $mon, $yr) = (localtime())[1..5];
+
+  $mon++;      # month count starts at zero. 
+  $yr += 1900; # year represents years since 1900. 
+
+  if ($date_format_arg eq 'mm/dd/yyyy')
+    { return
+      'day='.pad($mon).'_'.pad($day).'_'.$yr.',time='.pad($hr).':'.pad($min);
+    }
+  elsif ($date_format_arg eq 'dd/mm/yyyy')
+    { return
+      'day='.pad($day).'_'.pad($mon).'_'.$yr.',time='.pad($hr).':'.pad($min);
+    }
+  else {
+    die "$date_format_arg is not a valid date format";
+  }
+}
+
+sub pad { 
+  if ($_[0] &lt; 10) {
+    return '0' . $_[0];
+  } else {
+    return $_[0];
+  }
+}
+
+               ####################################
+               #        SNAPSHOT DELETION         #
+               ####################################
+
+sub delete_earliest_snapshot {
+
+  opendir(DIR,"${snap_root_dir_arg}/${yabsm_subvol_name_arg}/$timeframe_arg");
+
+  my @snaps = grep(/^[^\.]/, readdir DIR); # exclude dot files
+
+  closedir DIR;
+
+  return if scalar(@snaps) &lt; $snaps_to_keep_arg; 
+
+  my $earliest_snap = earliest_snapshot(\@snaps);
+
+  system('btrfs subvolume delete '
+         . $snap_root_dir_arg . '/'
+         . $yabsm_subvol_name_arg . '/'
+         . $timeframe_arg . '/'
+         . $earliest_snap);
+}
+
+sub earliest_snapshot {
+
+  my @snaps = @{$_[0]};
+
+  my $earliest_snap = $snaps[0];
+  foreach my $snap (@snaps) {
+    $earliest_snap = $snap if snapshot_lt($snap,$earliest_snap);
+  }
+    
+  return $earliest_snap;
+}
+
+sub snapshot_lt {
+  return lexically_lt(snap_name_to_lex_ord_nums($_[0]),
+                      snap_name_to_lex_ord_nums($_[1]));
+}
+
+sub lexically_lt {
+
+  my ($head1, @tail1) = @{$_[0]};
+  my ($head2, @tail2) = @{$_[1]};
+
+  if ($head1 &gt; $head2) {
+    return 0;
+  }
+  elsif ($head1 &lt; $head2) {
+    return 1;
+  }
+  elsif (@tail1 == 0) {
+    return 1;
+  }
+  elsif (@tail2 == 0) {
+    return 0;
+  }
+  else {
+    return lexically_lt(\@tail1,\@tail2);
+  }
+}
+
+sub snap_name_to_lex_ord_nums {
+
+  my ($yr, $mon, $day, $hr, $min);
+
+  if ($date_format_arg eq 'mm/dd/yyyy') {
+    ($mon,$day,$yr,$hr,$min) = snap_name_nums($_[0]);
+    return [$yr,$mon,$day,$hr,$min];
+  }
+  elsif ($date_format_arg eq 'dd/mm/yyyy') {
+    ($day,$mon,$yr,$hr,$min) = snap_name_nums($_[0]);
+    return [$yr,$mon,$day,$hr,$min];
+  }
+  else {
+    die "$date_format_arg is not a valid date format";
+  }
+}
+
+sub snap_name_nums { 
+  return $_[0] =~ m/([0-9]+)/g;
+}
+&lt;/code&gt;
+&lt;/readmore&gt;
+</doctext>
+<thread id="11126607">
+<node id="11126610"/>
+<node id="11126611"><node id="11126615"/>
+<node id="11126616"/>
+</node>
+<node id="11126614"><node id="11126617"/>
+<node id="11126659"><node id="11126661"><node id="11126665"><node id="11126666"/>
+<node id="11126673"><node id="11126678"><node id="11126683"/>
+<node id="11126688"><node id="11126880"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11126628"/>
+<node id="11126631"/>
+<node id="11126644"/>
+</thread></node>

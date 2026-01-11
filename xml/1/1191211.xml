@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1191211" title="Re^2: Use CGI to run a Perl script via web server" created="2017-05-25 09:50:57" updated="2017-05-25 09:50:57" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1191196">suvajit123</author>
+<doctext field_name="doctext">&lt;p&gt;Thanks everyone for all the comments. First of all, sorry to not mention "doesn't work". There is no security risk as this Link will only be used from within a different application. I am providing the script that needs to be executed over CGI via the webserver. It connects to LDAP and queries the username and some other details and with those creates a user account in another application (using system call). Reason is mentioned in the script comments.&lt;/p&gt;
+
+&lt;p&gt;This script works fine with shift flag on line 11, by running the script manually like 'perl myscript.pl 212453261'. &lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use CGI;
+use Net::LDAP;
+use IPC::System::Simple qw(system capture);
+
+#create CGI query object to get the SSO from URL
+#my $query = new CGI;
+#my $sso = $query-&gt;param( "sso" );
+
+my $sso = shift;
+
+if( $sso == "" )
+{
+	print "&lt;html&gt;";
+	print "&lt;body&gt;";
+	print "&lt;h1&gt;\n\n ERROR: Entered SSO is EMPTY! &lt;/h1&gt;\n\n";
+	die "Empty SSO";
+}
+else
+{
+print "&lt;p&gt;Processing: $sso&lt;/p&gt;\n\n";
+
+#LDAP server with port
+my $LDAP_SERVER = 'ldaps://ldap.hostname.com:636/ou=enterprise,dc=vds,dc=logon';
+my $LDAP_USER = 'bind_user';
+my $LDAP_PWD  = 'bindpwd';
+
+#base tree to start searching
+my $BASE  = "ou=users,ou=enterprise,dc=vds,dc=logon";
+#Just search for the SSO - no group search required.
+my $FILTER = "(cn=$sso)";
+#values to return - we need CN - SSO, First Name, Last Name, and Email
+my $ATRBS = ['cn', 'givenName', 'sn', 'mail'];
+
+#Start LDAP session and bind to LDAP
+my $ldap = Net::LDAP-&gt;new($LDAP_SERVER) or die "$@";
+my $mesg = $ldap-&gt;bind($LDAP_USER, password=&gt;$LDAP_PWD);
+my $result = $ldap-&gt;search(base =&gt; $BASE,
+                          filter =&gt; $FILTER,
+                          attrs =&gt; $ATRBS
+                          );
+my @entries = $result-&gt;entries;
+#only one result should be returned
+if(@entries == 1) {
+
+  print "\n\t&lt;p&gt;Found user $sso in LDAP&lt;/p&gt;\n";
+  my $usr 		= $entries[0];
+  my $firstName = $usr-&gt;get_value('givenName');
+  my $lastName  = $usr-&gt;get_value('sn');
+  my $email     = $usr-&gt;get_value('mail');
+
+ print "\t&lt;p&gt;Creating User account in Application with \n
+                        Login name:- $sso \n
+                        FullName:- $firstName $lastName \n
+                        Email ID:- $email \n
+                        &lt;/p&gt;\n\n";
+
+#*********SYSTEM CALL **********
+#script within a script both files in same path
+#This is required because the main script runs with ActiveState Extended Perl v5.24.1 
+#Whereas cqperl runs with v5.16.1 (limited features), cannot use ActiveState for this one.
+#*********SYSTEM CALL **********
+ system( "cqperl NewLdapUser.pl $sso $firstName $lastName $email" );
+
+ print "\n\t&lt;p&gt;Application account created for $sso - $firstName $lastName - $email&lt;/p&gt;\n\n";
+}
+else {
+  #error
+  print "\t&lt;h1&gt;ERROR: Wrong SSO or User doesn't exist in OneAD LDAP&lt;/h1&gt;\n\n";
+}
+
+$mesg = $ldap-&gt;unbind;
+}
+print "\t&lt;h3&gt;DONE!&lt;/h3&gt;\n";
+print "&lt;/body&gt;&lt;/html&gt;";
+&lt;/code&gt;
+
+&lt;p&gt;The output of the script is attached below. All I am looking for is to find out a way to parse the value from [$sso = shift] to just $sso using CGI. &lt;/p&gt;
+
+&lt;code&gt; 
+# perl myscript.pl 212453261
+&lt;p&gt;Processing: 212453261&lt;/p&gt;
+
+
+        &lt;p&gt;Found user 212453261 in LDAP&lt;/p&gt;
+        &lt;p&gt;Creating User account in Application with
+
+                        Login name:- 212453261
+
+                        FullName:- John Doe
+
+                        Email ID:- john.doe@mailhost.com
+
+                        &lt;/p&gt;
+
+
+        &lt;p&gt;Application account created for 212453261 - John Doe - john.doe@mailhost.com&lt;/p&gt;
+
+        &lt;h3&gt;DONE!&lt;/h3&gt;
+&lt;/code&gt;
+
+
+ 
+</doctext>
+<root_node field_name="root_node">1191201</root_node>
+<parent_node field_name="parent_node">1191203</parent_node>
+<thread id="1191201">
+<node id="1191202"/>
+<node id="1191203"><node id="1191211"><node id="1191212"/>
+<node id="1191214"/>
+<node id="1191217"><node id="1191247"><node id="1191248"/>
+<node id="1191253"><node id="1191270"><node id="1191271"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1191204"/>
+<node id="1191205"/>
+<node id="1191206"/>
+</thread></node>

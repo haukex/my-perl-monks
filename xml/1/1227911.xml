@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227911" title="Class::Struct accessor function after Perl V5.16" created="2019-01-02 05:44:54" updated="2019-01-02 05:44:54" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">Hello,&lt;br&gt;
+
+I have this snippet:&lt;br&gt;&lt;br&gt;
+
+&lt;code&gt;
+use strict;
+use lib ("./Lib");
+use Datum;
+my $datum = new Datum;
+&lt;/code&gt;
+and, in ./Lib/Datum.pm&lt;br&gt;
+&lt;code&gt;
+package Datum;
+
+use strict;
+use warnings;
+use Data::Dumper;
+use Class::Struct;
+
+struct Datum =&gt; {
+    heights_agl =&gt; '@',
+};
+
+sub heights_agl {
+    my $self = shift;
+    if (@_) {
+        $self-&gt;set_values(Variable=&gt;'heights_agl',@_);
+    }
+}
+
+sub set_values {
+    my $self = shift;
+    my %args = @_;
+    die Dumper \@_;
+}
+
+1;
+&lt;/code&gt;
+
+
+This gives me an error when run with Perl versions after 5.16.&lt;br&gt;
+It seems to me that after V 5.16 the override function is called when creating the Class, thus giving the error, while it is not before V5.16&lt;br&gt;&lt;br&gt;
+
+With Perl V5.16:&lt;br&gt;&lt;br&gt;
+&lt;code&gt;
+C:\Tmp\debug.4&gt;perl driver.pl
+function 'heights_agl' already defined, overrides struct accessor method at Lib/Datum.pm line 8.
+
+C:\Tmp\debug.4&gt;perl -v
+
+This is perl 5, version 16, subversion 3 (v5.16.3) built for MSWin32-x64-multi-thread
+&lt;/code&gt;
+
+And with Perl V5.26:&lt;br&gt;&lt;br&gt;
+&lt;code&gt;
+$ perl driver.pl
+function 'heights_agl' already defined, overrides struct accessor method at Lib/Datum.pm line 8.
+Odd number of elements in hash assignment at Lib/Datum.pm line 25.
+$VAR1 = [
+          'Variable',
+          'heights_agl',
+          []
+        ];
+$ perl -v
+
+This is perl 5, version 26, subversion 1 (v5.26.1) built for x86_64-linux-gnu-thread-multi
+(with 67 registered patches, see perl -V for more detail)
+&lt;/code&gt;
+
+Is this hypothesis correct and is there a way to have it working again?&lt;br&gt;
+Thank you
+</doctext>
+<reputation field_name="reputation">10</reputation>
+<thread id="1227911">
+<node id="1227912"/>
+<node id="1227913"/>
+<node id="1227914"><node id="1227930"><node id="1227953"/>
+</node>
+</node>
+</thread></node>

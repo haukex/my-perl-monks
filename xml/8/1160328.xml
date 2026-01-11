@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1160328" title="Extending a class" created="2016-04-13 11:20:38" updated="2016-04-13 11:20:38" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="497276">betacentauri</author>
+<doctext field_name="doctext">&lt;p&gt;Hi, Monks&lt;/p&gt;
+&lt;p&gt;How do I properly extend a class?&lt;/p&gt;
+&lt;p&gt;I was dreaming of creating my own SVG drawing class having SVG's inherited methods and then mine. As the wiser than me can foresee, the accompanying code spits out:&lt;/p&gt;
+&lt;code&gt;
+Can't locate object method "Foo" via package "SVG::Element" at ./test.pl line 17.
+&lt;/code&gt;
+&lt;p&gt;Of course, the message refers to the last line in Bar().&lt;/p&gt;
+&lt;p&gt;
+Does this mean I should mimic every SVG method I need into MyPackage (possibly by way of __SUPER__:: calls)? Or should I make $g behave as a MyPackage object by way of casting? Or?
+&lt;/p&gt;  
+&lt;code&gt;
+#!/usr/bin/perl
+
+use warnings;
+use strict;
+
+package MyPackage;
+use parent 'SVG';
+
+sub Foo {
+	my ($self, $fooArg) = @_;
+	return $self-&gt;rectangle(id =&gt; $fooArg, x =&gt; 10, y =&gt; 10);
+}
+
+sub Bar {
+	my ($self, $barArg) = @_;
+	my $g = $self-&gt;group(id =&gt; $barArg);
+	return $g-&gt;Foo("g$barArg");
+}
+
+package main;
+
+my $s = MyPackage-&gt;new(); 
+
+$s-&gt;Foo("someID");
+$s-&gt;Bar("someOtherID");
+print $s-&gt;xmlify(namespace =&gt; 'svg');
+&lt;/code&gt;</doctext>
+<thread id="1160328">
+<node id="1160329"><node id="1160330"><node id="1160333"><node id="1160347"><node id="1160348"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1160342"/>
+<node id="1160343"><node id="1160353"><node id="1160359"/>
+<node id="1160377"/>
+</node>
+</node>
+</thread></node>

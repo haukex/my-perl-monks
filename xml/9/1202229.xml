@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1202229" title="Re: Anagrams &amp; Letter Banks" created="2017-10-28 08:59:59" updated="2017-10-28 08:59:59" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+next if $seen{$key}++;
+push @{$words{$signature}}, $_;
+&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You've already received some excellent answers, I just wanted to touch on your questions about these two lines of code. Both of them involve the concept of autovivification, where elements of data structures are brought into existence simply by referring to them.&lt;/p&gt;
+&lt;p&gt;The postincrement operator &lt;c&gt;++&lt;/c&gt; first returns the old value of its argument and then increments it (the argument &lt;c&gt;$seen{$key}&lt;/c&gt;, not the returned value). This means that if the key does not yet exist in the hash, it will return the undefined value, which in the boolean (scalar) context of &lt;c&gt;if&lt;/c&gt; evaluates to false, then brings the hash entry into existence, with a value of 1 (&lt;small&gt;&lt;i&gt;Update 2:&lt;/i&gt;&lt;/small&gt; because &lt;c&gt;undef&lt;/c&gt; in numeric context is 0, so 0+1=1, and in this special case there is no warning about using &lt;c&gt;undef&lt;/c&gt; in a numeric operation). The next time this key is encountered, that means that the operator returns the previous value of 1, [id://11104607|which is true], so the &lt;c&gt;next&lt;/c&gt; is executed, thereby skipping duplicates. Since the increment is also executed, this also means that the values of the hash count how many times each key is seen.&lt;/p&gt;
+&lt;p&gt;In the second case, the array dereference operation &lt;c&gt;@{}&lt;/c&gt; tells Perl explicitly that you expect that hash element to contain an array reference, so if the hash element does not yet exist, it will be brought into existence as an empty anonymous array, so then it can be [doc://push]ed onto.&lt;/p&gt;
+&lt;p&gt;As for your questions about &lt;c&gt;for&lt;/c&gt; and &lt;c&gt;$_&lt;/c&gt;, I find that the first few paragraphs of [doc://perlsyn#Foreach-Loops] explains this fairly well.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; I strongly recommend you [id://111088], also have a look at the [id://745674].&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update 2019-08-17:&lt;/i&gt; Updated the link to "Truth and Falsehood".&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1202179</root_node>
+<parent_node field_name="parent_node">1202179</parent_node>
+<thread id="1202179">
+<node id="1202182"><node id="1202188"><node id="1202204"/>
+</node>
+</node>
+<node id="1202190"><node id="1202195"><node id="1202202"/>
+</node>
+</node>
+<node id="1202193"><node id="1202196"><node id="1202197"><node id="1202198"><node id="1202199"><node id="1202205"><node id="1202206"><node id="1202210"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1202211"><node id="1202224"/>
+</node>
+<node id="1202223"/>
+<node id="1202225"/>
+<node id="1202229"/>
+<node id="1202234"/>
+</thread></node>

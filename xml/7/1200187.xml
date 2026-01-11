@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200187" title="Re^3: When modules install in perl5" created="2017-09-27 08:30:23" updated="2017-09-27 08:30:23" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Since this is a different topic than the one in the root node, if you have more issues/questions, I recommend starting a new thread. There are a few issues with the code, and potential improvements:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;[id://111088]! For example it would have given you a hint that you have a typo in the line &lt;c&gt;print File "$files[$x] is incorrect&lt;br&gt;";&lt;/c&gt; - in fact this is probably one of the issues that is making you think the regex isn't working, when it actually is.&lt;/li&gt;
+&lt;li&gt;You need to check the return value of [doc://open] for errors, and I'd strongly recommend to use lexical filehandles and the 3-argument form, as in &lt;c&gt;open my $fh, '&lt;:raw', $files[$x] or die "$files[$x]: $!";&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;You should open your files with the &lt;c&gt;:raw&lt;/c&gt; layer as I showed above, or [doc://binmode] them after opening (as the AM post points out), because otherwise, under Windows, your files will be opened with the &lt;c&gt;:crlf&lt;/c&gt; layer by default (see [doc://PerlIO]), another reason your test code might not be working.&lt;/li&gt;
+&lt;li&gt;You've also got a typo in the two &lt;c&gt;open (FILE, "&lt;$files[$x]);&lt;/c&gt; lines (again, [id://111088]).&lt;/li&gt;
+&lt;li&gt;When reading the entire file into memory, you don't need to read it in a loop, there is a trick to slurp the entire file into memory at once: &lt;c&gt;my $tmp = do { local $/; &lt;$fh&gt; };&lt;/c&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Personally I find the regex &lt;c&gt;s/[\n\r][\n\r]/\n/g&lt;/c&gt; a little too flexible: If the file for some reason contains mixed CR/LF line endings, this regex might muck them up even more. Plus, if there are mixed endings, just checking the first line isn't enough. Here's how I might have written a script like this, even though there is no need to reinvent this wheel - for example, the &lt;c&gt;fromdos&lt;/c&gt; tool from the [http://www.thefreecountry.com/tofrodos/index.shtml|Tofrodos] package could already be installed on your system.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Getopt::Std 'getopts';
+
+our $VERSION = '0.01';
+$Getopt::Std::STANDARD_HELP_VERSION = 1;
+getopts('qi', \my %opts)
+	or die "Usage: $0 [-q] [-i] FILE(s)\n";
+if ( !@ARGV || (!$opts{i} &amp;&amp; $opts{q}) )
+	{ warn "No actions to perform\n"; exit 1 }
+
+for my $file (@ARGV) {
+	open my $ifh, '&lt;:raw', $file or die "$file: $!";
+	my $data = do { local $/; &lt;$ifh&gt; };
+	close $ifh;
+	if (not $opts{q}) {
+		my $cr   = () = $data=~/\x0D(?!\x0A)/g;
+		my $lf   = () = $data=~/(?&lt;!\x0D)\x0A/g;
+		my $crlf = () = $data=~/\x0D\x0A/g;
+		print "$file: ", ( join(', ', $cr?"$cr CR":(), $lf?"$lf LF":(),
+			$crlf?"$crlf CRLF":() ) || 'no CR or LF' ), "\n";
+	}
+	if ($opts{i}) {
+		$data =~ s/\x0D\x0A?|\x0A/\n/g;
+		open my $ofh, '&gt;:raw', $file or die "$file: $!";
+		print $ofh $data;
+		close $ofh;
+	}
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1200039</root_node>
+<parent_node field_name="parent_node">1200132</parent_node>
+<thread id="1200039">
+<node id="1200040"/>
+<node id="1200041"/>
+<node id="1200042"><node id="1200043"><node id="1200051"/>
+</node>
+<node id="1200132"><node id="1200142"/>
+<node id="1200187"/>
+</node>
+</node>
+<node id="1200044"><node id="1200055"><node id="1200128"/>
+</node>
+<node id="1200127"/>
+</node>
+<node id="1200045"><node id="1200129"/>
+</node>
+<node id="1200060"/>
+<node id="11109615"/>
+</thread></node>

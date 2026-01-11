@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1231759" title="&quot;deep&quot; unit testing" created="2019-03-27 16:23:58" updated="2019-03-27 16:23:58" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">Warning: lots of magic ahead!&lt;P&gt;
+
+My colleague came up with a question regarding a very special case of unit testing and I'm not sure how to answer it.
+&lt;UL&gt;
+&lt;LI&gt; there are loads of legacy routines which produce complicated data-structure and write them to file.
+&lt;LI&gt; he doesn't want to test the very complicated output but the intermediate datastructures without changing the code much
+&lt;/UL&gt;&lt;P&gt;
+
+My response was the clean approach is to  refactor the code into additional subs called from the "printers" returning the data structures and test those nested "units". &lt;P&gt;
+
+Obviously the code would be easier to maintain and reusable.
+&lt;UL&gt;
+&lt;LI&gt; He declined it, cause he is very critical about performance and doesn't want the overhead of extra sub calls.*
+&lt;/UL&gt;
+So I suggested a "dirtier" approach to use a constant TEST to flag that tests are running and to safe the 
+desired code into package variables named "$PKG::TEST_something" (or probably $PKG::TST::Something)&lt;P&gt;
+
+The advantage is that every code conditioned by &lt;C&gt;... if TEST&lt;/C&gt; won't show up in production code.&lt;P&gt;
+
+Here a condensed demo in a single file, the output of [DOC://B::Deparse] shows that the TEST code disappears.
+(In a real test.t file the "PKG::TEST" flag has to be set before requiring the module PKG to be effective) &lt;P&gt;
+
+&lt;B&gt;Question&lt;/B&gt; Is there a better way to do this?&lt;P&gt;
+
+&lt;c&gt;
+#  set TEST flag before compiling tested module
+use constant 'PKG::TEST' =&gt; 1; 
+
+# ###  here normally use PKG
+{
+    package PKG;
+
+    use strict;
+    use warnings;
+    use Data::Dump qw/pp dd/;
+    use v5.16;
+
+
+
+
+
+    sub create_output {
+        my $count =shift;
+    
+        my $string;
+        my $fh;
+
+        my %hash;
+
+        # create (mildly) complex demo HoA
+        $hash{$_} = [reverse 1.. $count--]
+            for "a".."f";
+
+        # memorize datastructure when testing
+        $PKG::TEST_result = \%hash if TEST;
+
+        my $target = "c:/tmp/output.txt";
+
+        #  redirect filehande to string when testing
+        $target = \$PKG::TEST_content if TEST;
+    
+        open $fh, '&gt;', $target;
+
+
+        #  Output to "file"
+        print $fh pp \%hash;
+    }
+}
+
+
+# ### my tests
+package main;
+
+use B::Deparse;
+use Data::Dump qw/pp dd/;
+
+
+# prove that TEST code disappears unless TEST is true 
+print B::Deparse-&gt;new-&gt;coderef2text(\&amp;PKG::create_output);
+
+PKG::create_output(5);
+
+if ( PKG::TEST ) {
+    use Test::More;
+
+    my $expected ={
+        a =&gt; [5, 4, 3, 2, 1],
+        b =&gt; [4, 3, 2, 1],
+        c =&gt; [3, 2, 1],
+        d =&gt; [2, 1],
+        e =&gt; [1],
+        f =&gt; [],
+    };
+    
+    is_deeply(
+        $PKG::TEST_result,
+        $expected,
+        "internal result"
+    );
+
+    my $expected_str = pp $expected;
+    
+    is(
+        $PKG::TEST_content,
+        $expected_str,
+        "file output"
+    );
+
+    done_testing();
+}
+&lt;/c&gt;&lt;P&gt;
+
+The problems I see:
+&lt;UL&gt;
+&lt;LI&gt; still litering production code with TEST statements
+&lt;LI&gt; when testing multiple subs which call each other they may confuse the results
+&lt;LI&gt; there doesn't seem to be a way to check the subs name at compiletime
+&lt;LI&gt; [DOC://__SUB__|&lt;tt&gt;__SUB__&lt;/tt&gt;] gives me only the subref which isn't known at test start.
+&lt;LI&gt; I can only use [DOC://__SUB__|&lt;tt&gt;__SUB__&lt;/tt&gt;] as a hash key to store different results...
+&lt;/UL&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;small&gt;&lt;strike&gt;Football&lt;/strike&gt;Perl is like chess, only without the dice&lt;/small&gt;
+&lt;/sub&gt; &lt;P&gt;
+
+&lt;/div&gt;&lt;/div&gt;&lt;P&gt;
+
+*) a case were inlining would be nice, more about that in a future post&lt;P&gt;
+
+&lt;H5&gt; update&lt;/H5&gt;&lt;P&gt;
+
+added comments to code&lt;!-- Wiki2Monks {"version":1.142} --&gt;</doctext>
+<thread id="1231759">
+<node id="1231760"><node id="1231761"><node id="1231762"><node id="1231763"><node id="1231769"><node id="1231771"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1231833"><node id="1231838"/>
+</node>
+</thread></node>

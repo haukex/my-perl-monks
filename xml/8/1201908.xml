@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201908" title="Re^2: porting C code to Perl -- solved" created="2017-10-23 12:12:15" updated="2017-10-23 12:12:15" _doctext_mode="lenient"><type id="11">note</type>
+<author id="174111">Discipulus</author>
+<doctext field_name="doctext">thanks a lot [haukex]!&lt;P&gt;
+
+your insights are exactly what I needed. I spotted the type casting of &lt;C&gt;int&lt;/C&gt; but I have not thought it constrained all the operations too.. what a complicated world they have with C..&lt;P&gt;
+
+Now I ported to a more perlish versions, but speaking frankly, I'm quite struggling with it's efficiency. Infact the inner &lt;C&gt;for&lt;/C&gt; loop for a precision of 1000 cause each of it's line to be called something like 3 million of times if I read correctly the [METAMOD://Devel::NYTProf] output.&lt;P&gt;
+
+&lt;B&gt;UPDATE&lt;/B&gt; some output from NYTProf Performance Profile 
+&lt;c&gt;
+Line	Statements	Time on line		Code
+
+ 9	1002               49.4ms		for $i(reverse 1..$l){
+10	3347682	        441ms			    $x=10*$a[$i-1]+$q*$i;
+11	3347682	        474ms			    $a[$i-1]=$x%(2*$i-1);
+12	3347682	        882ms			    $q=int($x/(2*$i-1))
+&lt;/c&gt;&lt;P&gt;
+
+This inner &lt;C&gt;for&lt;/C&gt; loop if I read correctly it's not influenced by the outer &lt;C&gt;$j&lt;/C&gt; and only set a final (?) &lt;C&gt;$q&lt;/C&gt; and the array element &lt;C&gt;$a[$i-1]&lt;/C&gt; so i'm trying to cut the loop from there and prebuild an array of &lt;C&gt;q&lt;/C&gt; linkable with &lt;C&gt;$j&lt;/C&gt; indexes and prefilling the &lt;C&gt;@a&lt;/C&gt; accordingly. No big luck until now.&lt;P&gt;
+
+In reality I'm working blindly not having well understood what the code do. I'll try a reverse eng. based on &lt;C&gt;print&lt;/C&gt; statements if i do not desist sooner. Another ugly think I've done is the last line where I merely susbtitute the leading 03 with 3, any attempt to do this within the loop failed.&lt;P&gt;
+
+Anyway thank you again!&lt;P&gt;
+
+&lt;c&gt;
+use strict;
+use warnings;
+
+my $n=1002;
+
+my $len = 1 + int (10 * $n / 3);
+
+my $pi;
+
+my @a= (2) x $len;
+
+my $nines = 0;
+
+my $predigit = 0;
+
+foreach my $j(1..$n){
+    my $q = 0;
+    foreach my $i( reverse 1..$len){
+        my $x = 10 * $a[$i-1] + $q * $i;
+        $a[$i-1] = $x % (2 * $i - 1);
+        $q = int($x / (2 * $i - 1));
+    }
+    $a[0]=$q%10;
+    $q=int($q/10);
+    if (9 == $q){ ++$nines;   }
+    elsif(10 == $q){
+          $pi.=$predigit + 1;
+          for (my $k = 0; $k &lt; $nines; $k++){$pi.=0}
+          $predigit = $nines = 0;
+    }
+    else{
+         $pi.= int $predigit;
+         $predigit = $q;
+         if(0 != $nines){
+              for (my $k = 0; $k &lt; $nines; $k++) {
+                  $pi.=9;
+              }
+              $nines = 0;
+        }
+    }
+}
+print $pi=~s/^03/3./r;
+&lt;/c&gt;&lt;P&gt;
+
+&lt;B&gt;PS&lt;/B&gt; and yes these are the Pi digits and the C source is what you spotted!&lt;P&gt;
+
+L*&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-174111"&gt;
+There are no rules, there are no thumbs..&lt;BR&gt;
+Reinvent the wheel, then learn The Wheel; may be one day you reinvent one of THE WHEELS.
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.1416} --&gt;</doctext>
+<root_node field_name="root_node">1201848</root_node>
+<parent_node field_name="parent_node">1201854</parent_node>
+<thread id="1201848">
+<node id="1201854"><node id="1201908"><node id="1201919"><node id="1201928"/>
+</node>
+<node id="1201925"><node id="1201948"><node id="1201979"/>
+</node>
+</node>
+<node id="1201942"/>
+<node id="1201952"/>
+</node>
+</node>
+<node id="1201876"><node id="1201906"><node id="1202311"><node id="1202793"/>
+<node id="1202895"><node id="1202913"/>
+</node>
+<node id="1207735"/>
+</node>
+</node>
+</node>
+<node id="1201909"><node id="1201939"><node id="1201960"><node id="1201963"><node id="1201964"><node id="1201965"/>
+<node id="1201977"/>
+<node id="1202036"/>
+</node>
+<node id="1202039"/>
+</node>
+<node id="1201978"><node id="1201999"><node id="1202004"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201910"><node id="1201927"><node id="1201929"/>
+<node id="1201931"/>
+</node>
+</node>
+<node id="1201987"><node id="1201998"><node id="1202008"/>
+</node>
+<node id="1202002"><node id="1202042"><node id="1202055"/>
+<node id="1202921"/>
+</node>
+<node id="1202295"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1210996" title="Re: map() and grep() suppress &quot;Can't use an undefined value as an ARRAY reference at ...&quot; errors" created="2018-03-15 16:47:23" updated="2018-03-15 16:47:23" _doctext_mode="lenient"><type id="11">note</type>
+<author id="789891">stevieb</author>
+<doctext field_name="doctext">&lt;p&gt;This is due to the way that [doc://map] does aliasing (it's essentially using a &lt;c&gt;for()&lt;/c&gt; loop). What's happening is that the aref is being used in l-value context, and therefore is being [https://www.effectiveperlprogramming.com/2011/04/understand-autovivification/|auto-vivified] into existence.&lt;/p&gt;
+
+&lt;p&gt;In your latter example, you're attempting to use the aref directly in r-value context, which is why it generates the error (because no auto-vivification happens).&lt;/p&gt;
+
+&lt;p&gt;You can simplify your test to use &lt;c&gt;for()&lt;/c&gt;, and you'll get the same result as with &lt;c&gt;map()&lt;/c&gt;:&lt;/p&gt;
+
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $x;
+
+for (@{ $x }){
+    print "$_\n";
+}
+&lt;/c&gt;
+
+&lt;p&gt;...no output.
+
+To visually see that &lt;c&gt;$x&lt;/c&gt; was auto-vivified as an array reference, you can use the &lt;c&gt;ref()&lt;/c&gt; function:&lt;/p&gt;
+
+&lt;c&gt;
+my $x;
+my @a = map $_, @{ $x };
+
+print ref $x;
+&lt;/c&gt;
+
+&lt;p&gt;Output:&lt;/p&gt;
+
+&lt;c&gt;
+ARRAY
+&lt;/c&gt;
+
+&lt;p&gt;Disclaimer: taken verbatim from one of my previous [https://stackoverflow.com/questions/40246957/why-does-map-mask-the-undefined-value-error/40247420#40247420|StackOverflow answers].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1210995</root_node>
+<parent_node field_name="parent_node">1210995</parent_node>
+<thread id="1210995">
+<node id="1210996"/>
+<node id="1210997"><node id="1211000"/>
+</node>
+<node id="1210999"/>
+<node id="1211001"/>
+</thread></node>

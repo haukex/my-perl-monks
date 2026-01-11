@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116349" title="Re: unable to eval dumped hash" created="2020-05-02 05:54:34" updated="2020-05-02 05:54:35" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Shameless plug: You might be interested in my module [mod://Data::Undump::PPI]. It uses a static parse so it's safer than [doc://eval].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I dumped a hash into a file and then copied into the __DATA__section of my script.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Although I wouldn't recommend this for real-world use (use a config file instead), see [id://1208917|my reply] in the thread [id://1208841] for a script that modifies its own &lt;c&gt;__DATA__&lt;/c&gt; section:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use File::Replace 'replace3';
+use Data::Undump::PPI qw/Dump Undump/;
+
+my $pos = tell DATA;
+my $data = Undump(fh =&gt; *DATA);
+
+$data-&gt;{counter}++;
+
+my (undef,$outfh,$repl) = replace3(__FILE__,':raw');
+$repl-&gt;copy($pos);
+Dump([$data], fh=&gt;$outfh);
+$repl-&gt;finish;
+
+__DATA__
+$VAR1 = {
+          counter =&gt; 0
+        };
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11116141</root_node>
+<parent_node field_name="parent_node">11116141</parent_node>
+<thread id="11116141">
+<node id="11116142"><node id="11116143"/>
+</node>
+<node id="11116144"/>
+<node id="11116151"><node id="11116162"/>
+</node>
+<node id="11116152"><node id="11116183"><node id="11116230"><node id="11116256"><node id="11116348"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11116163"/>
+<node id="11116349"/>
+</thread></node>

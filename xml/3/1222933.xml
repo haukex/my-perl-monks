@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1222933" title="Re: Prototypes required even after mocking a sub" created="2018-09-24 16:16:51" updated="2018-09-24 16:16:51" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;If you set the prototype of your mock sub before replacing the original one, that should get rid of the warning, try commenting out the &lt;c&gt;set_prototype&lt;/c&gt; call in the following and you should get the "Prototype mismatch" warning back:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Scalar::Util qw/set_prototype/;
+
+sub foo ($$$) { print "foo(@_)\n" }
+
+foo(1,2,3);  # prints "foo(1 2 3)"
+{
+        my $name = "foo";
+        my $sub = sub { print "bar(@_)\n" };
+        set_prototype(\&amp;$sub,prototype($name));
+        #use Devel::Peek; Dump($sub);
+        no strict 'refs';
+        no warnings 'redefine';
+        *$name = $sub;
+}
+foo(4,5,6);  # prints "bar(4 5 6)"
+&lt;/c&gt;
+&lt;p&gt;By the way, in the code you showed, you're disabling &lt;c&gt;strict 'refs'&lt;/c&gt; for a fairly large block of code.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1222807</root_node>
+<parent_node field_name="parent_node">1222807</parent_node>
+<thread id="1222807">
+<node id="1222810"><node id="1222812"><node id="1222814"/>
+<node id="1222816"/>
+</node>
+</node>
+<node id="1222811"><node id="1222813"><node id="1222815"><node id="1222818"><node id="1222819"><node id="1222820"><node id="1222821"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1222933"/>
+</thread></node>

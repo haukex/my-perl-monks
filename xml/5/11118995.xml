@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118995" title="Re^6: Is there a problem with using barewords as filehandles ?" created="2020-07-07 05:34:20" updated="2020-07-07 05:34:20" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;a typo ... will produce a warning&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I know, since I'm the one who [id://11117703|corrected] you about this. And since lexicals cause compile-time errors, this is an argument for lexicals instead of bareword filehandles.&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;"being careful" ... conventions ... in good practice&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;These three are the same thing, and we've been [id://11117547|over this] too.&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;Bareword filehandles do not clash with &lt;c&gt;sub&lt;/c&gt; names at all&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You're mistaken, see the [id://11117763|references I gave].&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;That was not specific to filehandles ... These scopes have the same extent.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Once again you're just explaining something to me that I already know, while missing the point I was making: you said lexicals have an additional risk, which I agreed with, while pointing out that the scope of the potential issue is both easily remedied and the issue arguably smaller than all the issues that bareword filehandles have.&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;A lexical declared at file-scope &lt;b&gt;is indistinguishable&lt;/b&gt; from a global variable in good practice.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;There's that insistence again. And just in case your point happens to be that code using bareword filehandles, when correctly written, &lt;i&gt;runs&lt;/i&gt; just like code using lexicals, then while true, I think this fails to recognize the action-at-a-distance issue I [id://11117547|named]. While the cost of this may not be immediately apparent and you may not have personally run into this so you may not know this feeling, ask anyone who's had to maintain code that uses globals how brittle that feels, or especially anyone who's had to debug an action-at-a-distance bug what that's like and what the cost was.&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;I find similar insistences that a lexical declared at file-scope is somehow not effectively a global variable merely because it is not in the symbol table similarly misleading.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Who's insisting this?? [id://11117637|Not me]...&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;Lexical variables declared at file scope have the same risks as global variables (use strict / use vars) and need to be recognized as such.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Once again I fail to see how this has anything to do with an argument for using bareword filehandles instead of lexicals.&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;At file-scope, lexicals have the same problem.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That lexicals and barewords share an issue or two may be true, but neither is this a counterargument to anything I said, nor is this what you [id://11118779|said] that I was responding to. Saying barewords have &lt;i&gt;"exactly the same effect"&lt;/i&gt; while not acknowledging that barewords have [id://11118770|more problems] than lexicals is misleading and potentially dangerous to people who aren't aware of the issues. Imagine someone writing a short, single-&lt;c&gt;package&lt;/c&gt; daemon:&lt;/p&gt;
+&lt;c&gt;
+print STATUSMAIL "Error report:\n";
+print STAIUSMAIL "IMPORTANT ERROR\n" if some_rare_error_condition();
+&lt;/c&gt;
+&lt;p&gt;Lexicals would have obviously prevented this. And yes, I'm aware of "but conventions" and "but warnings" and "but testing" - I find the analogy in the anonymous post fitting: my car may or may not have a cru&lt;ins&gt;mple&lt;/ins&gt;&lt;del&gt;nch&lt;/del&gt; zone, airbags, and autopilot, and yes, seatbelts may not be a silver bullet, can be used wrong, and can cause bruises, but guess what, I'm still going to argue that the habit of always putting on a seatbelt is a Good Thing for many good reasons (while educating people on how to do it right when necessary), and one major reason is that there are &lt;i&gt;other people&lt;/i&gt; on the road too. And I'm still going to take issue with people who say otherwise, and to me, &lt;i&gt;"I strongly favor the use of bareword filehandles at top-level in preference to declaring lexicals at file-scope and thinking that you are safe"&lt;/i&gt; reads as "I strongly favor not wearing a seatbelt in specific circumstances in preference to wearing a seatbelt and thinking that driving is perfectly safe." In response to my arguments, you just seem to keep repeating various permutations of "seatbelts and driving overall aren't perfectly safe", which may be true, but is &lt;b&gt;not&lt;/b&gt; an argument against seatbelts. And just to be clear, yes I'm equating lexicals to seatbelts because they protect against all of the [id://11118770|issues] of bareword filehandles, and I have yet to hear arguments against this.&lt;/p&gt;
+
+&lt;p&gt;Taking a step back, at this point I'm just seeing a lot of nitpicking, explaining things I know, and repetitions of things we've been over, and continuing the "discussion" in this manner is not helpful. So far, I've carefully read all of your posts in hopes that I'd find an actual, concrete argument for bareword filehandles (as I [id://11117547|asked]), and also arguments against the various [id://11118770|issues] that I named (that isn't nitpicking), because I was honestly curious if either exist. But at this point I'm more worried that I've insulted your personal coding style, which I [id://11117547|said] isn't why I'm arguing this, so I'm sorry if that's the case.&lt;/p&gt;
+
+&lt;p&gt;What I'm arguing for is what to recommend to others, in particular (but not limited to) newcomers - in that respect, my viewpoint remains unchanged from what I [id://11117763|said]: I don't really see what arguments &lt;i&gt;for&lt;/i&gt; bareword filehandles are left, other than making newcomers to the language aware of the fact that they exist but are &lt;i&gt;not&lt;/i&gt; a best practice.&lt;/p&gt;
+
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Edit:&lt;/i&gt; Clarified second paragraph.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11118753</root_node>
+<parent_node field_name="parent_node">11118987</parent_node>
+<thread id="11118753">
+<node id="11118754"><node id="11118757"><node id="11118759"/>
+<node id="11119517"><node id="11119519"><node id="11119529"/>
+</node>
+</node>
+</node>
+<node id="11118760"><node id="11118762"/>
+</node>
+<node id="11118804"/>
+</node>
+<node id="11118755"/>
+<node id="11118756"><node id="11118764"/>
+</node>
+<node id="11118758"><node id="11118785"/>
+</node>
+<node id="11118770"><node id="11118777"/>
+</node>
+<node id="11118779"><node id="11118942"><node id="11118947"><node id="11118956"><node id="11118987"><node id="11118995"><node id="11119016"><node id="11119017"><node id="11119018"><node id="11119029"><node id="11119030"><node id="11119033"><node id="11119072"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11119049"><node id="11119050"><node id="11119052"/>
+</node>
+</node>
+</node>
+<node id="11119019"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11118988"/>
+</node>
+</node>
+</node>
+<node id="11118801"/>
+<node id="11119477"><node id="11119480"><node id="11119506"><node id="11119513"/>
+</node>
+</node>
+<node id="11119507"/>
+</node>
+</thread></node>

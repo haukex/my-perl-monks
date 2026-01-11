@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1180116" title="Re: Readonly references, replicating data structures" created="2017-01-22 07:20:29" updated="2017-01-22 07:20:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [nikmit],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I expected the below code to create a fresh copy of &lt;c&gt;@arr&lt;/c&gt; every time &lt;c&gt;gimme()&lt;/c&gt; is executed.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In the code you showed, &lt;c&gt;@arr&lt;/c&gt; is only initialized once, so the anonymous hashes are only created &lt;i&gt;once&lt;/i&gt;. The first and only element of &lt;c&gt;@arr&lt;/c&gt; is a &lt;i&gt;reference to&lt;/i&gt; an anonymous hash. When you say &lt;c&gt;my @result = @arr;&lt;/c&gt;, the elements of &lt;c&gt;@arr&lt;/c&gt; are copied into &lt;c&gt;@result&lt;/c&gt;, so that reference is copied exactly, so it still points to the &lt;i&gt;same&lt;/i&gt; anonymous hash. This is known as a "shallow copy" and is how arrays and hashes are copied in Perl. (Note: Making &lt;c&gt;@arr&lt;/c&gt; [mod://Readonly] won't change that.)&lt;/p&gt;
+&lt;p&gt;To get a "deep copy" or "clone", [choroba] already pointed you to [doc://Storable] and [mod://Clone], but there's another solution:&lt;/p&gt;
+&lt;c&gt;
+sub gimme {
+	my @result = ( {
+		box =&gt; { attr =&gt; 'foo' },
+		} );
+	return \@result;
+}
+&lt;/c&gt;
+&lt;p&gt;This causes the array &lt;i&gt;and&lt;/i&gt; the anonymous hashes to be re-created on every call to &lt;c&gt;gimme&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update: Minor clarifications to wording.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1180111</root_node>
+<parent_node field_name="parent_node">1180111</parent_node>
+<thread id="1180111">
+<node id="1180115"/>
+<node id="1180116"/>
+<node id="1180132"/>
+</thread></node>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111450" title="Re: One to one file output idiom" created="2020-01-15 13:10:37" updated="2020-01-15 13:10:37" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I think your solution is fine. If you want to get fancy, you could use my [mod://Tie::Handle::Argv], which is the basis of my [mod://File::Replace::Inplace], an emulation of the &lt;c&gt;-i&lt;/c&gt; switch (note: Perl v5.16 strongly recommended):&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use 5.016;
+
+package Tie::Handle::FancyThingy {
+	use parent 'Tie::Handle::Argv';
+	use File::Basename qw/fileparse/;
+	sub OPEN {
+		my ($self, $origfn) = @_;
+		my ($fn, $dirs, $ext) = fileparse($origfn, qr/\.[^\.]+$/);
+		my $outfn = $dirs.$fn.'.out';
+		print STDERR "Debug: $origfn =&gt; $outfn\n";
+		open ARGVOUT, '&gt;', $outfn or die "$outfn: $!";
+		select ARGVOUT;
+		return $self-&gt;SUPER::OPEN($origfn);
+	}
+	sub inner_close {
+		my $self = shift;
+		select STDOUT;
+		return $self-&gt;SUPER::inner_close(@_);
+	}
+}
+
+tie *ARGV, 'Tie::Handle::FancyThingy';
+while (&lt;&gt;) {
+	chomp;
+	say translate($_);
+}
+
+sub translate { return "&lt;".shift."&gt;" }
+&lt;/c&gt;
+&lt;p&gt;A more simplistic approach might be to just use the &lt;c&gt;-i&lt;/c&gt; switch to write the "backup" (input) files to a different directory and then [mod://rename] the output afterwards.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor edit to code:&lt;/i&gt; Replaced &lt;c&gt;my $ofh&lt;/c&gt; (output filehandle) with the more appropriate [doc://perlvar#ARGVOUT].&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11111448</root_node>
+<parent_node field_name="parent_node">11111448</parent_node>
+<thread id="11111448">
+<node id="11111449"><node id="11111455"><node id="11111472"/>
+</node>
+</node>
+<node id="11111450"><node id="11111471"/>
+</node>
+<node id="11111451"><node id="11111453"><node id="11111454"><node id="11111474"><node id="11111497"><node id="11111515"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11111452"><node id="11111473"><node id="11111475"><node id="11111476"/>
+<node id="11111498"><node id="11111505"><node id="11111509"><node id="11111779"><node id="11111782"><node id="11111785"/>
+<node id="11111805"><node id="11111817"/>
+</node>
+</node>
+<node id="11111825"/>
+</node>
+</node>
+<node id="11111511"><node id="11111514"><node id="11111521"/>
+</node>
+</node>
+<node id="11111533"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11111458"/>
+<node id="11111461"/>
+<node id="11111463"/>
+<node id="11111496"/>
+</thread></node>

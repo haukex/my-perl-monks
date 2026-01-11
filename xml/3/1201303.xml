@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201303" title="Re^3: I want to know the current week number of the current month (updated!)" created="2017-10-13 05:22:28" updated="2017-10-13 05:22:28" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Later on if i encounter some "0's" stuff i think i'll just sort it out with some conditional statements&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm not sure what you mean by this. If you don't want to have a week numbered zero, you could just add one to the week number, but keep in mind that some months will end up having up to six weeks and the first and last "weeks" will almost always end up having less than seven days:&lt;/p&gt;
+&lt;c&gt;
+_________ Oct 2017 _________
+Week 1: 01
+Week 2: 02 03 04 05 06 07 08
+Week 3: 09 10 11 12 13 14 15
+Week 4: 16 17 18 19 20 21 22
+Week 5: 23 24 25 26 27 28 29
+Week 6: 30 31
+&lt;/c&gt;
+&lt;readmore title="Code to generate the above table"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime;
+
+my $year = 2017;
+for my $month (1..12) {
+	my $dt = DateTime-&gt;new(year=&gt;$year,month=&gt;$month);
+	print "_"x9,$dt-&gt;strftime(" %b %Y "),"_"x9,"\n";
+	my $prevweek=-1;
+	while ($dt-&gt;month==$month) {
+		my $week = $dt-&gt;week_of_month();
+		print $prevweek&lt;0?'':"\n", "Week ",$week+1,":"
+			if $week != $prevweek;
+		printf " %02d", $dt-&gt;day;
+		$prevweek=$week;
+		$dt-&gt;add(days=&gt;1);
+	}
+	print "\n";
+}
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;As others have said, talk to your client / boss about how &lt;i&gt;they&lt;/i&gt; define "week of month". A common system is the [wp://ISO week date|ISO 8601 week number], maybe your client / boss would be happier with that system, since every week will have seven days. Also note in the following table how some weeks have two &lt;c&gt;week_of_month&lt;/c&gt;-based "names" under the above system.&lt;/p&gt;
+&lt;c&gt;
+________________________ 2017 ________________________
+Week     Mon    Tue    Wed    Thu    Fri    Sat    Sun
+  52  Dec 26     27     28     29     30     31 Jan 01   (Dec Week 6, Jan Week 1)
+   1      02     03     04     05     06     07     08   (Jan Week 2)
+   2      09     10     11     12     13     14     15   (Jan Week 3)
+   3      16     17     18     19     20     21     22   (Jan Week 4)
+   4      23     24     25     26     27     28     29   (Jan Week 5)
+   5      30     31 Feb 01     02     03     04     05   (Feb Week 2, Jan Week 6)
+...
+  39      25     26     27     28     29     30 Oct 01   (Oct Week 1, Sep Week 5)
+  40      02     03     04     05     06     07     08   (Oct Week 2)
+  41      09     10     11     12     13     14     15   (Oct Week 3)
+  42      16     17     18     19     20     21     22   (Oct Week 4)
+  43      23     24     25     26     27     28     29   (Oct Week 5)
+  44      30     31 Nov 01     02     03     04     05   (Nov Week 2, Oct Week 6)
+...
+&lt;/c&gt;
+&lt;readmore title="Code to generate the above table"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime;
+
+my $year = 2017;
+my $dt = DateTime-&gt;new(year=&gt;$year)-&gt;truncate(to=&gt;'week');
+print "_"x24," $year ","_"x24,"\n";
+my $dt1 = $dt-&gt;clone;
+print "Week ";
+for (1..7) {
+	print "    ",$dt1-&gt;day_abbr;
+	$dt1-&gt;add(days=&gt;1);
+}
+print "\n";
+my $prevmonth=0;
+for (1..54) { # weeks
+	my $weekno = $dt-&gt;week_number;
+	printf "%4d ", $weekno;
+	my %names;
+	for (1..7) { # days in the week
+		die unless $dt-&gt;week_number==$weekno;
+		printf " %3s %02d",
+			$prevmonth==$dt-&gt;month?'':$dt-&gt;month_abbr,
+			$dt-&gt;day;
+		$names{$dt-&gt;month_abbr." Week ".($dt-&gt;week_of_month+1)}++;
+		$prevmonth=$dt-&gt;month;
+		$dt-&gt;add(days=&gt;1);
+	}
+	print "   (".join(', ',sort keys %names),")\n";
+}
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Fixed bug that weekdays weren't properly aligned. Also added the &lt;c&gt;week_of_month&lt;/c&gt;-based "names".&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1201207</root_node>
+<parent_node field_name="parent_node">1201214</parent_node>
+<thread id="1201207">
+<node id="1201208"><node id="1201210"><node id="1201211"><node id="1201215"><node id="1201217"><node id="1201310"><node id="1201313"><node id="1201314"/>
+</node>
+<node id="1201315"/>
+</node>
+</node>
+</node>
+<node id="1201224"><node id="1201225"/>
+<node id="1201228"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1201209"><node id="1201214"><node id="1201240"/>
+<node id="1201303"/>
+</node>
+</node>
+<node id="1201227"/>
+<node id="1201244"/>
+<node id="1201291"><node id="1201301"/>
+<node id="1201309"/>
+</node>
+</thread></node>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201659" title="Re: Integer regex, different results in windows and mac - I just need regex help" created="2017-10-19 04:16:01" updated="2017-10-19 04:16:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Just to confirm what the others have said, if you save your file with CRLF line endings on a system that uses LF line endings (*NIX, including Mac OS X) and run it, it gives the wrong results. If you then put &lt;c&gt;binmode DATA, ':crlf';&lt;/c&gt; just before the loop, it works again. &lt;c&gt;:crlf&lt;/c&gt; is the default on Windows, see [doc://open] and [doc://binmode], and it causes the CRLF line endings to be converted to LF, so that [doc://chomp] works properly. Without &lt;c&gt;:crlf&lt;/c&gt;, what is happening is that &lt;c&gt;$num&lt;/c&gt; contains a trailing CRLF, but [doc://chomp] only removes the LF, leaving the strings looking like &lt;c&gt;"19\r"&lt;/c&gt;, which you can see yourself if you use [mod://Data::Dump] or [doc://Data::Dumper] with &lt;c&gt;$Data::Dumper::Useqq=1;&lt;/c&gt; - see also the [id://745674]. The best solution IMO is to convert the file to LF line endings, for example using &lt;c&gt;fromdos&lt;/c&gt; from the [http://www.thefreecountry.com/tofrodos/index.shtml|Tofrodos] package, and also many text editors support selecting the line endings in the "Save As" dialog.&lt;/p&gt;
+&lt;p&gt;Also, regarding your regexes, I just wanted to point out [mod://Regexp::Common::number], which you might find useful, and also that the regex &lt;c&gt;/^[0].{0}/&lt;/c&gt; looks a little suspicious: &lt;c&gt;.{0}&lt;/c&gt; doesn't really do anything, and rewriting the regex as &lt;c&gt;/^0/&lt;/c&gt; shows that it will accept any string beginning with a &lt;c&gt;0&lt;/c&gt;, including stuff like &lt;c&gt;"0 but true"&lt;/c&gt;, is that really what you want?&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1201647</root_node>
+<parent_node field_name="parent_node">1201647</parent_node>
+<thread id="1201647">
+<node id="1201648"/>
+<node id="1201654"/>
+<node id="1201655"/>
+<node id="1201659"/>
+<node id="1201676"/>
+<node id="1201704"/>
+</thread></node>

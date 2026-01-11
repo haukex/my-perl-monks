@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11107929" title="The missing link between &quot;you may need to install the module&quot; and &quot;distribution installed&quot; application is running!" created="2019-10-24 07:57:01" updated="2019-10-24 07:57:01" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">You may try a perl app and see 
+&lt;tt&gt;Can't locate Foo/Bar.pm in @INC (you may need to install the 
+Foo::Bar module) (@INC contains: ...&lt;/tt&gt;
+&lt;p&gt;
+So you install the Foo::Bar module and try again and see 
+&lt;tt&gt;Can't locate Bar/Baz.pm in @INC (you may need to install the 
+Bar::Baz module) (@INC contains: ...&lt;/tt&gt;
+&lt;p&gt;
+So you install the Bar::Baz module and the application runs.
+&lt;p&gt;
+Module::Load::Conditional (core) can reduce the pain to:
+&lt;pre&gt;
+Install required modules Foo::Bar Bar::Baz from CPAN? (y)/n y
+Use 1. cpan or 2. cpanm 1/(2) 2
+Successfully installed Foo::Bar
+Successfully installed Bar::Baz
+&lt;/pre&gt;
+Or select 'n' for something more than @INC:
+&lt;pre&gt;
+Install required perl modules:
+cpan Foo::Bar Bar::Baz 
+cpanm -v Foo::Bar Bar::Baz 
+
+Can't locate Foo::Bar Bar::Baz in @INC (@INC contains: ...
+&lt;/pre&gt;
+Should perl be doing something like this on the core level?
+&lt;p&gt;
+Should monks adopt this mess or fold it into a module so 
+it becomes a best practice?
+&lt;p&gt;
+How could this idea be improved?
+&lt;p&gt;
+Thank you!
+&lt;code&gt;
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+#use Foo::Bar;
+#use Bar::Baz;
+
+use Module::Load::Conditional 'can_load';
+BEGIN { my $modules = [ map {$_} qw[
+IPC::Cmd
+Foo::Bar
+Bar::Baz
+]];
+
+my @install = do { local @_;
+  for my $m (@$modules) { push @_, $m
+  unless can_load(modules =&gt; {$m,undef},
+  autoload =&gt; 1)} @_
+};
+
+@install and do {
+  print 'Install required modules ',
+  join(' ', @install), ' from CPAN? (y)/n ';
+  
+  my $in = &lt;STDIN&gt;; chomp $in; $in ||= 'y';
+  my $cpanm = IPC::Cmd::can_run('cpanm');
+
+  if (lc $in eq 'y') {
+    if ($cpanm) {
+
+      print 'Use 1. cpan or 2. cpanm 1/(2) ';
+
+      my $cpan = do { local $_ = &lt;STDIN&gt;; chomp $_; $_ ||= 2;
+      $_ = 2 unless /^1|2$/; $_ };
+
+      if ($cpan == 2) {
+        unless (system $cpanm, '-v', @install) {
+          system 'perl', $0, @ARGV;
+          exit
+        }
+      }
+    }
+    unless (system 'cpan', @install) {
+      system 'perl', $0, @ARGV;
+      exit
+    }
+  }
+  else{
+    die "Install required perl modules:\n".
+    join ' ', 'cpan',  @install, "\n".
+    ($cpanm ? join(' ', 'cpanm', @install) : '')."\n\n".
+    "Can't locate ".join(' ',@install).' in @INC '.
+    '(@INC contains: '.join(' ', @INC).") \n"
+  }
+};
+
+Bar::Baz-&gt;import('Something')}
+&lt;/code&gt;</doctext>
+<reputation field_name="reputation">12</reputation>
+<thread id="11107929">
+<node id="11107930"/>
+<node id="11107931"/>
+<node id="11107956"/>
+<node id="11109481"><node id="11160811"/>
+</node>
+</thread></node>

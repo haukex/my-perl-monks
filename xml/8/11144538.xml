@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11144538" title="Re: How to Use Pack to Convert UTF-16 Surrogate Pairs to UTF-8?" created="2022-06-08 23:30:33" updated="2022-06-08 23:30:33" _doctext_mode="lenient"><type id="11">note</type>
+<author id="44715">graff</author>
+<doctext field_name="doctext">&lt;P&gt;I'm just coming back from having been away from Perl for awhile, and this was a very challenging problem that allowed me to learn some useful stuff -- so thank you very much for posting the question.
+&lt;/p&gt;&lt;p&gt;
+It's helpful/important to point out that the wide-character escape form that you have there is based on UTF-16BE ("big-endian", aka high-byte-first) -- this is also known (as mentioned in the manual for the &lt;c&gt;pack&lt;/c&gt; function) as "network" order.
+&lt;/p&gt;&lt;p&gt;
+I found that the following approach seems to work; note that I'm looping over the surrogate pairs first, then looping over the "normal" characters (the ones with code points less than 0x10000) -- and I print out the results at each iteration to see what's going on.
+&lt;c&gt;
+#!/usr/bin/perl -CS
+
+use strict;
+use warnings;
+use Encode qw(decode);
+
+$_ = &lt;DATA&gt;;
+print;
+
+while (/(\\u(d8[0-9a-f]{2})\\u(d[c-f][0-9a-f]{2}))/ ) {  ## NB: Match only surrogate pairs
+    my $rplc = $1;
+    my $sp = pack( "nn", hex($2), hex($3) );
+    s/\Q$rplc/decode( "UTF-16BE", $sp )/e;
+    print;
+}
+while (/(\\u([0-9a-f]{4}))/ ) {
+    my $rplc = $1;
+    my $cp = pack( "n", hex($2) );
+    s/\Q$rplc/decode( "UTF-16BE", $cp )/e;
+    print;
+}
+__DATA__
+Ren\u00e9 \ud83d\ude06 Fran\u00e7oise
+&lt;/c&gt;
+Output:
+&lt;pre&gt;
+Ren\u00e9 \ud83d\ude06 Fran\u00e7oise
+Ren\u00e9 &amp;#128518; Fran\u00e7oise
+René &amp;#128518; Fran\u00e7oise
+René &amp;#128518; Françoise
+&lt;/pre&gt;
+&lt;p&gt;
+IMPORTANT UPDATE:  I altered the initial regex above -- the one for matching surrogate-pair escape sequences -- to ensure that the two escapes &lt;strike&gt;both start with the hex-digit "d"&lt;/strike&gt; &lt;i&gt;start with "d8" (for the first surrogate) and &lt;c&gt;"d[c-f]"&lt;/c&gt; (for the second surrogate)&lt;/i&gt;; this avoids misfiring on cases where two non-surrogate characters happen to appear next to each other in the data.</doctext>
+<root_node field_name="root_node">11144531</root_node>
+<parent_node field_name="parent_node">11144531</parent_node>
+<thread id="11144531">
+<node id="11144533"/>
+<node id="11144538"><node id="11144552"/>
+<node id="11144639"/>
+<node id="11144721"/>
+</node>
+<node id="11144542"/>
+</thread></node>

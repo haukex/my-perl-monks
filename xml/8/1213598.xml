@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1213598" title="Re: Modifying pos() from within (?{...})" created="2018-04-26 07:56:56" updated="2018-04-26 07:56:56" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I am also attempting to move the position with the regex by assigning to &lt;c&gt;pos()&lt;/c&gt;. While the assignment seems to work, as in there are no errors, it seems to have no affect.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, this is documented in [doc://pos]:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;c&gt;pos&lt;/c&gt; directly accesses the location used by the regexp engine to store the offset, so assigning to &lt;c&gt;pos&lt;/c&gt; will change that offset, and so will also influence the &lt;c&gt;\G&lt;/c&gt; zero-width assertion in regular expressions. Both of these effects take place for the next match, so you can't affect the position with &lt;c&gt;pos&lt;/c&gt; during the current match, such as in &lt;c&gt;(?{pos() = 5})&lt;/c&gt; or &lt;c&gt;s//pos() = 5/e&lt;/c&gt;.
+&lt;/blockquote&gt;
+&lt;p&gt;As for the general approach, I think you should probably anchor the match to the end of the previous one with &lt;c&gt;\G&lt;/c&gt;, use the &lt;c&gt;/gc&lt;/c&gt; modifiers, and check for whether the end of string was reached:&lt;/p&gt;
+&lt;c&gt;
+my $string = " foo bar quz ";
+pos($string)=undef;  # just to play it safe
+while ( $string =~ / \G \s* (foo|bar|quz) \s* /xgc) {
+    print "&lt;$1&gt;\n";
+}
+die "match failed at pos ".pos($string)
+    unless pos($string)==length($string);
+&lt;/c&gt;
+&lt;p&gt;Although of course a regex is probably not the right tool here, [doc://unpack] is probably better.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1213595</root_node>
+<parent_node field_name="parent_node">1213595</parent_node>
+<thread id="1213595">
+<node id="1213598"><node id="1213604"><node id="1213606"/>
+</node>
+</node>
+<node id="1213599"><node id="1213602"/>
+</node>
+<node id="1213605"><node id="1213607"/>
+<node id="1213611"><node id="1213685"><node id="1213692"/>
+</node>
+</node>
+</node>
+</thread></node>

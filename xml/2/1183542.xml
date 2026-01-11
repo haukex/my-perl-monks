@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1183542" title="Re: Platform Dependence observed in Perl - Hash keys have different format" created="2017-03-03 05:00:23" updated="2017-03-03 05:00:23" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1039428">Eily</author>
+<doctext field_name="doctext">&lt;blockquote&gt;The hash keys (when printed using Data::Dumper) were displayed within double quotes when the code was ran on different machine. On my machine, the hash keys appear without double quotes.&lt;/blockquote&gt;
+&lt;p&gt;There are two package variables in [mod://Data::Dumper] that can modify this behaviour:
+&lt;blockquote&gt;$Data::Dumper::Quotekeys or $OBJ-&gt;Quotekeys(&amp;#91;NEWVAL])
+
+Can be set to a boolean value to control whether hash keys are quoted. A defined false value will avoid quoting hash keys when it looks like a simple string. Default is 1, which will always enclose hash keys in quotes.&lt;/blockquote&gt;
+&lt;blockquote&gt;$Data::Dumper::Useqq or $OBJ-&gt;Useqq(&amp;#91;NEWVAL])
+
+When set, enables the use of double quotes for representing string values. Whitespace other than space will be represented as &amp;#91;\n\t\r], "unsafe" characters will be backslashed, and unprintable characters will be output as quoted octal integers. The default is 0.&lt;/blockquote&gt;&lt;/p&gt;
+&lt;p&gt;You should check the other modules you use, maybe one of them changes those package variables without resetting them, propagating the changed behaviour everywhere. BTW, to limit the effect of those variables you can use [doc://local].
+&lt;c&gt;
+{
+  local $Data::Dumper::Quotekeys = 0;
+  print Data::Dumper \%hash; # No quote keys
+  sub_from_other_module(); # No quote keys in the calls to Data::Dumper from the other module
+}
+print Data::Dumper \%hash; # Quote keys
+sub_from_other_module(); # Quote keys as well&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;The default behaviour is neither of the cases you have observed though (it's single quotes, not doubles, not none) so that's still surprising. &lt;/p&gt;</doctext>
+<root_node field_name="root_node">1183529</root_node>
+<parent_node field_name="parent_node">1183529</parent_node>
+<thread id="1183529">
+<node id="1183530"><node id="1183535"><node id="1183536"><node id="1184157"><node id="1184168"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1183542"/>
+<node id="1183606"/>
+<node id="1183636"><node id="1183651"><node id="1183656"/>
+</node>
+</node>
+</thread></node>

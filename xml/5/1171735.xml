@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1171735" title="Receive certificate ASN1 structure" created="2016-09-14 08:03:44" updated="2016-09-14 08:03:44" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1051414">LoraIlieva</author>
+<doctext field_name="doctext">&lt;p&gt;I am trying to receive the ASN1 structure of a certificate with Convert::ASN1. I have my certificate in PEM format in a file.&lt;/p&gt;
+&lt;p&gt;This is what I did:&lt;/p&gt;
+&lt;p&gt;1. Read the PEM certificate&lt;/p&gt;
+&lt;code&gt;my $s_filename = 'path/to/file';
+my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size, $atime, $mtime, $ctime, $blksize, $blocks) = stat $s_filename;
+open FILE, "&lt;$s_filename" or die "no such file";
+binmode FILE;
+my $pem_cert;
+read FILE, $pem_cert, $size;
+close FILE;&lt;/code&gt;
+&lt;p&gt;2. Remove 'BEGIN' and 'END'-CERTIFICATE&lt;/p&gt;
+&lt;code&gt;$pem_cert =~ /-----BEGIN CERTIFICATE-----(?:\r\n?|\n)(.+)(?:\r\n?|\n)-----END CERTIFICATE-----/s;
+my $s_pem = $1;&lt;/code&gt;
+&lt;p&gt;3. Receive the DER format, because Convert::ASN1 works with DER or BER format&lt;/p&gt;
+&lt;code&gt;my $der   = MIME::Base64::decode($s_pem);&lt;/code&gt;
+&lt;p&gt;3. Create Convert::ASN1 object&lt;/p&gt;
+&lt;code&gt;my $asn = Convert::ASN1-&gt;new;&lt;/code&gt;
+&lt;p&gt;4. Configure the encoding of the object – to be DER, because by default Convert::ASN1 works with BER format&lt;/p&gt;
+&lt;code&gt;$asn-&gt;configure(encoding =&gt; 'DER');&lt;/code&gt;
+&lt;p&gt;5. Decode the DER format, which causes the problem&lt;/p&gt;
+&lt;code&gt;my $out = $asn-&gt;decode($der);
+if(!defined $out)
+{
+	die $asn-&gt;error();
+}
+print Dumper($out);&lt;/code&gt;
+&lt;p&gt;
+This is the output:&lt;/p&gt;
+&lt;code&gt;decode error 0 1918 at /.../Convert/ASN1/_decode.pm line 260.&lt;/code&gt;
+&lt;p&gt;
+When I tried to follow the execution using step-by-step debugger, I saw that there is nothing in ASN1's $self-&gt;{script}, but I can't understand what that variable stands for.&lt;/p&gt;
+&lt;p&gt;Can somebody help me?&lt;/p&gt;</doctext>
+<thread id="1171735">
+<node id="1171737"/>
+<node id="1171744"/>
+</thread></node>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1233274" title="Re^3: remove element from 2D array after comparing it with other 2D array" created="2019-05-02 07:12:22" updated="2019-05-02 07:12:22" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Ok, I think I understand your algorithm, it seems very similar to the LCSS idea I mentioned and showed, except you want to split words on underscores, and I think you want to compare each word exactly? (In that case, when comparing &lt;c&gt;sbr_ux_side_clkack&lt;/c&gt; with &lt;c&gt;ux_side_clk&lt;/c&gt;, the match would only be &lt;c&gt;ux_side&lt;/c&gt;.)&lt;/p&gt;
+&lt;p&gt;I could implement your algorithm more or less literally, although in the following I haven't implemented the 50% rule you mentioned - it just picks the &lt;c&gt;@array1&lt;/c&gt; element with the best match, and also there is currently no protection against picking the same &lt;c&gt;@array1&lt;/c&gt; element twice. Instead of [doc://splice]ing the &lt;c&gt;@array2&lt;/c&gt; elements, which is a destructive operation, I use different offsets. However, as you can tell, the whole thing gets kind of complex, plus, because of the four (!) nested loops, if the strings and/or arrays get longer, it will be less and less performant! But maybe this is a good starting point anyway.&lt;/p&gt;
+&lt;p&gt;By the way, &lt;c&gt;@array1&lt;/c&gt; and &lt;c&gt;@array2&lt;/c&gt; aren't very descriptive names, I recommend you choose some better (more descriptive) variable names.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump qw/dd pp/;
+
+my @array1 = ('ux_prim_clk', 'ux_side_clk', 'ux_xtal_frm_refclk');
+my @array2 = ('ccu_ux_xtal_frm_refclk_ack', 'ibbs_ux_prim_clkack',
+	'sbr_ux_side_clkack'); 
+
+my @aoa1 = map { [ split /_/, $_ ] } @array1;
+my @output;
+# Using @array2 for the basis of ordering, so loop over that first
+for my $a2 ( map { [ split /_/, $_ ] } @array2 ) {
+	#print "##### "; dd $a2; # debug
+	# Now look through @array1 for the best match
+	my ($highest_match, $highest_match_at_a1idx) = (-1);
+	for my $i ( 0 .. $#aoa1 ) { # in this loop, keep track of index
+		my $a1 = $aoa1[$i];
+		# The following code relies on @$a1 &gt;= @$a2, so check that
+		if ( @$a2 &lt; @$a1 ) { warn "Skipping ".pp($a2, $a1); next }
+		# Try matching $a1 against $a2 at different offsets
+		for my $offset ( 0 .. @$a2 - @$a1 ) {
+			my $match = 0;
+			# Count the number of matching elements at each offset
+			for my $j ( 0 .. $#$a1 ) {
+				if ( $a2-&gt;[$offset+$j] eq $a1-&gt;[$j] ) { $match++ }
+				else { last } # failed to match, stop looking
+			}
+			# If this index and offset matches better, record that
+			if ( $match &amp;&amp; $match &gt; $highest_match ) {
+				#dd $a2, $offset, $a1, $match; # debug
+				$highest_match = $match;
+				$highest_match_at_a1idx = $i;
+			}
+		}
+	}
+	if ( defined $highest_match_at_a1idx )
+		{ push @output, $array1[$highest_match_at_a1idx] }
+	else { warn "Failed to find match for ".pp($a2) }
+}
+
+dd @array1; dd @array2; dd @output;
+
+__END__
+
+("ux_prim_clk", "ux_side_clk", "ux_xtal_frm_refclk")
+(
+  "ccu_ux_xtal_frm_refclk_ack",
+  "ibbs_ux_prim_clkack",
+  "sbr_ux_side_clkack",
+)
+("ux_xtal_frm_refclk", "ux_prim_clk", "ux_side_clk")
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1233063</root_node>
+<parent_node field_name="parent_node">1233259</parent_node>
+<thread id="1233063">
+<node id="1233064"><node id="1233072"/>
+</node>
+<node id="1233070"><node id="1233073"/>
+<node id="1233259"><node id="1233274"><node id="1233309"><node id="1233310"><node id="1233312"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1233095"/>
+</thread></node>

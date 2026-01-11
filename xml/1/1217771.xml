@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217771" title="Re: Perl and Shell (text conversion) (updated)" created="2018-07-02 12:54:12" updated="2018-07-02 12:54:12" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Personally, I'd do it the other way around, that is, just write the whole thing in Perl... but ok, embedding Perl into a longer shell script is ok too, I guess... &lt;c&gt;;-)&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;I'm assuming you're using [man://bash], and you don't seem to need &lt;c&gt;STDIN&lt;/c&gt; in your Perl script, so I'd probably use a [https://www.gnu.org/software/bash/manual/bash.html#Here-Documents|here doc], like in the following. I've also made some tweaks, plus you didn't seem to be passing the Perl script any filenames. &lt;strike&gt;(Note: I tested without &lt;c&gt;RTF::TEXT::Converter&lt;/c&gt;.)&lt;/strike&gt;&lt;/p&gt;
+&lt;c&gt;
+function fConvert {
+	perl -wMstrict -- - $@ &lt;&lt;'ENDPERL'
+	use RTF::TEXT::Converter;
+	my $result = '';
+	my $object = RTF::TEXT::Converter-&gt;new( output =&gt; \$result );
+	foreach my $filename (@ARGV) {
+		$object-&gt;parse_stream($filename);
+		print $result;
+		$result = '';
+	}
+ENDPERL
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Or, just make it a oneliner &lt;c&gt;;-)&lt;/c&gt; (the module just [doc://print]s its output by default)&lt;/p&gt;
+&lt;c&gt;
+perl -wMstrict -MRTF::TEXT::Converter -00ne
+	'RTF::TEXT::Converter-&gt;new-&gt;parse_string($_)'
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update 2:&lt;/i&gt; I guess I should mention &lt;i&gt;why&lt;/i&gt; I'd suggest a heredoc: when the delimiter is quoted (as in &lt;c&gt;'ENDPERL'&lt;/c&gt;), you don't have to worry about special characters within the heredoc.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1217745</root_node>
+<parent_node field_name="parent_node">1217745</parent_node>
+<thread id="1217745">
+<node id="1217746"/>
+<node id="1217752"/>
+<node id="1217771"/>
+<node id="1217772"><node id="1217774"><node id="1217781"/>
+</node>
+</node>
+<node id="1217794"/>
+</thread></node>

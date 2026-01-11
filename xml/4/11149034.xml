@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11149034" title="Re^3: Encoding problem with function in C library" created="2022-12-22 08:20:37" updated="2022-12-22 08:20:37" _doctext_mode="lenient"><type id="11">note</type>
+<author id="5348">Corion</author>
+<doctext field_name="doctext">&lt;p&gt;[mod://Win32::Console] gives you the interface to &lt;c&gt;-&gt;OutputCP&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+#!perl
+use strict;
+use warnings;
+use charnames ':full';
+use Win32::Console;
+
+my $c = Win32::Console-&gt;new(STD_OUTPUT_HANDLE);
+$c-&gt;OutputCP(65001); # we write UTF-8
+binmode STDOUT, ':encoding(UTF-8)';
+
+print "\N{INFINITY}\n";
+&lt;/c&gt;
+&lt;p&gt;In my tests, the output code page persisted after the program run, so you might (or might not) want to save/restore the codepage:&lt;/p&gt;
+&lt;c&gt;
+my $oldCP = $c-&gt;OutputCP();
+$c-&gt;OutputCP(65001); # we write UTF-8
+END{
+    if( $c ) {
+        $c-&gt;OutputCP($oldCP); # we write UTF-8
+    }
+}
+...
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11149013</root_node>
+<parent_node field_name="parent_node">11149032</parent_node>
+<thread id="11149013">
+<node id="11149017"><node id="11149018"/>
+</node>
+<node id="11149019"/>
+<node id="11149023"><node id="11149032"><node id="11149033"/>
+<node id="11149034"><node id="11149036"><node id="11149037"><node id="11149038"/>
+</node>
+</node>
+</node>
+<node id="11149035"><node id="11149039"><node id="11149043"><node id="11149047"/>
+</node>
+<node id="11149045"><node id="11149046"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11149031"/>
+</thread></node>

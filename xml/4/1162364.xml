@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1162364" title="Re: Config::Tiny croaks at runtime, not in debugger" created="2016-05-06 11:12:20" updated="2016-05-06 11:12:20" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [xavier8854],&lt;/p&gt;
+&lt;p&gt;Welcome!&lt;/p&gt;
+&lt;p&gt;What is the exact error message, including the contents of &lt;c&gt;$Config::Tiny::errstr&lt;/c&gt;?&lt;/p&gt;
+&lt;p&gt;Also, I don't think &lt;c&gt;chdir dirname($0);&lt;/c&gt; will be reliable in all environments, have a look at [doc://FindBin] instead of trying to [doc://chdir] (which may fail due to security/permission restrictions) or use [doc://$0] (which isn't always the name of the script file!). Even [doc://FindBin] isn't always perfect but it tries fairly hard and has almost always worked for me.&lt;/p&gt;
+&lt;c&gt;
+use CGI::Carp qw/fatalsToBrowser/;
+use FindBin;
+use File::Spec::Functions qw/catfile/;
+use Config::Tiny;
+my $config = Config::Tiny-&gt;read(catfile($FindBin::Bin,'Config.ini'));
+croak "Failed to read Config.ini: $Config::Tiny::errstr" unless $config;
+&lt;/c&gt;
+&lt;p&gt;Although you may want to consider the security implications of saving the config file alongside the script, and reporting the exact location of that file via the error message in case opening the file fails.&lt;/p&gt;
+&lt;p&gt;Regards,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1162363</root_node>
+<parent_node field_name="parent_node">1162363</parent_node>
+<thread id="1162363">
+<node id="1162364"/>
+<node id="1163242"><node id="1163246"/>
+</node>
+</thread></node>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1216059" title="Re^2: eval failure does not set $@" created="2018-06-06 16:51:41" updated="2018-06-06 16:51:41" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Only if the code you are executing "dies" or throws a warning, in the perl sense, would eval return something in $@.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;But [id://1216036|as I wrote], there are cases where the code in the [doc://eval] can [doc://die], and [doc://$@] &lt;i&gt;doesn't&lt;/i&gt; get set (&lt;i&gt;Update:&lt;/i&gt; or to be more specific, gets clobbered so that it's no longer available after the &lt;c&gt;eval&lt;/c&gt;). A simple demo of [https://rt.perl.org/Public/Bug/Display.html?id=123738|this bug]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+sub Foo::DESTROY { eval {} }
+
+eval {
+	for (bless {}, "Foo") {
+		print "Hello";
+		die "KABOOM";
+	}
+};
+print "&lt;$@&gt;\n";  # Where's the kaboom? There was supposed
+                 # to be an earth-shattering kaboom!
+&lt;/c&gt;
+&lt;p&gt;Even on Perl 5.26, this only prints "&lt;c&gt;Hello&lt;&gt;&lt;/c&gt;". That's why the &lt;c&gt;eval { ...; 1 } or do { ... };&lt;/c&gt; pattern is better - [choroba] showed how that pattern still works even in the presence of a similar bug on Perls &amp;lt;5.14 [id://1153468|here].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;If the routines you are running return a status, then you want to catch that status coming back from eval&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I would suggest writing it this way, where of course &lt;c&gt;3+4&lt;/c&gt; is a stand-in for something more complex (and it may also be a false value):&lt;/p&gt;
+&lt;c&gt;
+my $status;
+eval '$status = 3+4; 1' or warn $@||"unknown error";
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1216032</root_node>
+<parent_node field_name="parent_node">1216055</parent_node>
+<thread id="1216032">
+<node id="1216035"/>
+<node id="1216036"/>
+<node id="1216055"><node id="1216059"/>
+</node>
+</thread></node>

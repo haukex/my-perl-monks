@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110887" title="Re^4: Mixing asynchronous data feed with synchronous program flow control" created="2020-01-02 20:02:02" updated="2020-01-02 20:02:02" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1149436">jcb</author>
+<doctext field_name="doctext">&lt;p&gt;I admit my precondition was incomplete as well.  The actual requirement is that, upon entering or returning to the event loop, all resources must be in some usable idle state.  I still maintain that race conditions cannot occur in a program with a single event loop because the program is implicitly serialized on the event loop itself.  The error that you cite is "use of uninitialized value" and the bug is obscured by an asynchronous environment, but it is not a result of undefined timing.  It is very well defined:  an attempt is made to use &lt;c&gt;$TX&lt;/c&gt; some time later, even if the I/O required to initialize &lt;c&gt;$TX&lt;/c&gt; is still pending.&lt;/p&gt;
+
+&lt;p&gt;I am most familiar with writing &lt;c&gt;Tk&lt;/c&gt; callbacks where getting back to the event loop quickly is very important, but &lt;c&gt;Tk&lt;/c&gt; ensures that all initialization is complete before the first user callback runs.  The error you have found occurs when the event loop is started but some resource used in a callback has not yet been fully initialized.  If initializing a connection requires the event loop to run, things get more interesting and you must track the "initialization pending" state somewhere and either drop or requeue timer events until the connection is ready.  So the "idle state" for the connection includes a "connected" flag that must remain clear until the connection is actually established.&lt;/p&gt;
+
+&lt;p&gt;&lt;small&gt;... and so the pristine model starts to get hairy when put into practice ...&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11110853</root_node>
+<parent_node field_name="parent_node">11110886</parent_node>
+<thread id="11110853">
+<node id="11110859"><node id="11110867"/>
+</node>
+<node id="11110864"><node id="11110885"><node id="11110886"><node id="11110887"><node id="11110895"><node id="11110919"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11110871"/>
+<node id="11110913"><node id="11110915"><node id="11110920"><node id="11110924"/>
+</node>
+</node>
+</node>
+</thread></node>

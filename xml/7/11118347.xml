@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118347" title="Re: Efficient way to verify scalar contents (updated x3)" created="2020-06-22 03:05:36" updated="2020-06-22 03:05:36" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;See also [id://1154672]. You can do it all in a single regex, see [doc://perlretut] (and [doc://perlre]) in regards to alternations, character classes, and lookaheads. &lt;i&gt;However&lt;/i&gt;, perhaps my test cases below will give a hint that these password rules aren't necessarily good indicators of password quality; perhaps use one of the other established methods like [mod://Data::Password::zxcvbn] instead. If this happens to be for a website, note there's also a JavaScript version of the "zxcvbn" algorithm that allows you to give live feedback to the user when and why a password isn't good, so they can know while choosing one; of course it should still be verified on the server in case they have JS disabled.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Note that &lt;c&gt;given&lt;/c&gt;/&lt;c&gt;when&lt;/c&gt; are unforunately still experimental, in this case I'd suggest normal &lt;c&gt;if&lt;/c&gt;s instead.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; The talk on the library is great: [https://youtu.be/vf37jh3dV2I] (even just the first five minutes on the issues)&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 3:&lt;/b&gt; A slightly optimized version of the regex below, that [id://11118365|turns out to be pretty fast]:&lt;/p&gt;
+&lt;c&gt;
+my $pw_re = qr{ \A (?: .{20,} | (?=.*[a-z]) (?=.*[A-Z])
+		(?: .{16,19} | (?=.*[0-9]) (?: .{12,15}
+			| (?=.*[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]) .{8,11}
+	) ) ) \z }msx;
+&lt;/c&gt;
+&lt;p&gt;Original code:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $pw_re =
+	qr{ \A (?:
+		  .{20,}
+		| (?=.*[a-z]) (?=.*[A-Z])
+		  .{16,19}
+		| (?=.*[a-z]) (?=.*[A-Z]) (?=.*[0-9])
+		  .{12,15}
+		| (?=.*[a-z]) (?=.*[A-Z]) (?=.*[0-9])
+		  (?=.*[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E])
+		  .{8,11}
+	) \z }msx;
+
+use Test::More;
+unlike '', $pw_re;
+unlike 'aA0-', $pw_re;
+unlike 'aA0-aA0', $pw_re;
+  like 'aA0-aA0-', $pw_re;
+  like 'aaaaaA0-', $pw_re;
+  like 'aaaaaaaaA0-', $pw_re;
+unlike 'aaaaaaaaa0-', $pw_re;
+unlike 'aaaaaaaaAA-', $pw_re;
+unlike 'AAAAAAAAA0-', $pw_re;
+unlike 'aaaaaaaaA00', $pw_re;
+  like 'aaaaaaaaaaA0', $pw_re;
+  like 'aaaaaaaaa-A0', $pw_re;
+  like 'aaaaaaaaaaaaaA0', $pw_re;
+unlike 'aaaaaaaaaaaaaaA', $pw_re;
+unlike 'aaaaaaaaaaaaaa0', $pw_re;
+unlike 'AAAAAAAAAAAAAA0', $pw_re;
+unlike 'aaaaaaaaaaaaa-A', $pw_re;
+unlike 'aaaaaaaaaaaaa-0', $pw_re;
+  like 'aaaaaaaaaaaaaaaA', $pw_re;
+  like 'aaaaaaaaaaaaaa0A', $pw_re;
+  like 'aaaaaaaaaaaaa-0A', $pw_re;
+  like 'aaaaaaaaaaaaaaaaaaA', $pw_re;
+unlike 'aaaaaaaaaaaaaaaaaaa', $pw_re;
+unlike 'AAAAAAAAAAAAAAAAAAA', $pw_re;
+unlike 'aaaaaaaaaaaaaaaaaa0', $pw_re;
+unlike 'aaaaaaaaaaaaaaaaaa-', $pw_re;
+  like 'aaaaaaaaaaaaaaaaaaaa', $pw_re;
+  like 'aaaaaaaaaaaaaaaaaA0-', $pw_re;
+  like 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', $pw_re;
+done_testing;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11118334</root_node>
+<parent_node field_name="parent_node">11118334</parent_node>
+<thread id="11118334">
+<node id="11118336"><node id="11118337"><node id="11118341"/>
+<node id="11118358"><node id="11118360"><node id="11118363"><node id="11118364"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11118340"/>
+<node id="11118347"><node id="11118386"><node id="11118387"><node id="11118389"/>
+</node>
+</node>
+</node>
+<node id="11118354"><node id="11118361"><node id="11118362"/>
+</node>
+</node>
+<node id="11118365"><node id="11118366"><node id="11118367"/>
+</node>
+</node>
+<node id="11118369"/>
+<node id="11118395"><node id="11118408"><node id="11118433"><node id="11118485"/>
+</node>
+</node>
+</node>
+</thread></node>

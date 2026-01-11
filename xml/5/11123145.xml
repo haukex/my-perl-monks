@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11123145" title="Re: Applying regex to each line in a record." created="2020-10-25 06:45:34" updated="2020-10-25 06:45:34" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;To comment on your code specifically:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+local $/ = "";
+while (my @records = &lt;$fh&gt;) {
+    foreach my $line (@records) {
+&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You're activating paragraph mode with &lt;c&gt;$/ = ""&lt;/c&gt;, meaning that for your sample data, each call to &lt;c&gt;&lt;$fh&gt;&lt;/c&gt; in scalar context (e.g. &lt;c&gt;my $para = &lt;$fh&gt;&lt;/c&gt;) will return one paragraph (e.g. &lt;c&gt;"first:\nthis:that\nhere:there..."&lt;/c&gt;). However, in your &lt;c&gt;while&lt;/c&gt;, you're calling &lt;c&gt;&lt;$fh&gt;&lt;/c&gt; in list context (because you're assigning to an array), which will cause it to return &lt;i&gt;all&lt;/i&gt; records, i.e. all paragraphs. This means that the second time the &lt;c&gt;while&lt;/c&gt; tries to execute, it won't get anything from &lt;c&gt;$fh&lt;/c&gt;, so the while loop will only execute once, and that makes the &lt;c&gt;while&lt;/c&gt; loop kind of useless in this code. You can see this yourself by adding a &lt;c&gt;print Dumper(\@records);&lt;/c&gt; at the top of the &lt;c&gt;while&lt;/c&gt; (I'd also strongly recommend setting &lt;c&gt;$Data::Dumper::Useqq=1;&lt;/c&gt;).&lt;/p&gt;
+&lt;p&gt;Next, based on your variable naming and code, I guess that what you are expecting is that &lt;c&gt;foreach my $line (@records)&lt;/c&gt; will loop over the lines in each paragraph. However, Perl doesn't do this automatically - with this code, you'd have to [doc://split] each element of &lt;c&gt;@records&lt;/c&gt; manually. What you're doing instead is looping over the paragraphs. Here is the code I think you were trying to write:&lt;/p&gt;
+&lt;c&gt;
+local $/ = "";
+while (my $paragraph = &lt;$fh&gt;) {
+	print Dumper($paragraph);
+	foreach my $line (split /\n+/, $paragraph) {
+		print Dumper($line);
+		next if $line =~ /^[a-z]+:$/m;
+		print "&lt;$line&gt;\n";
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;As you can see, the problem actually occurrs before your code even gets to the regex.&lt;/p&gt;
+&lt;p&gt;The above approach is ok, as long as the paragraphs don't get too large to fit comfortably into RAM. Otherwise, you'd have to choose a more efficient approach like reading the file line-by-line and recognizing paragraphs with a [id://11103827|state machine type approach]. The other monks have shown you several examples of different approaches.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11123126</root_node>
+<parent_node field_name="parent_node">11123126</parent_node>
+<thread id="11123126">
+<node id="11123129"/>
+<node id="11123130"/>
+<node id="11123133"><node id="11123136"/>
+</node>
+<node id="11123134"/>
+<node id="11123135"><node id="11123138"><node id="11123150"/>
+</node>
+</node>
+<node id="11123137"/>
+<node id="11123139"><node id="11123154"/>
+</node>
+<node id="11123145"><node id="11123153"/>
+</node>
+<node id="11123165"/>
+</thread></node>

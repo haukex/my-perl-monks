@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110459" title="Re^3: unexpected modify hash in a distance with grep { $_ } (inconsistent behaviour of aliasing)" created="2019-12-20 17:38:58" updated="2019-12-20 17:38:58" _doctext_mode="lenient"><type id="11">note</type>
+<author id="341121">dave_the_m</author>
+<doctext field_name="doctext">grep (and for) provide lvalue context for their args, since the expectation is that when aliased to $_, the $_ variable (and thus the arg) could be modified by the code in the code block. This lvalue context is what causes the autovivification action to be compiled in. The 'x' element of %$h is created at run-time when the arg list for grep is being assembled, but before grep itself is invoked (i.e. before the code block is called for the first time).
+&lt;p&gt;
+However, function call arguments which are hash subscripts are special-cased. Although function args are technically always in lvalue context (e.g. the sub about to be called might do &lt;c&gt;sub f { $_[0]++ }&lt;/c&gt;, who knows!), perl tries to avoid auto-vivification by deferring hash lookup. Instead, if you do &lt;c&gt;foo($h{$k})&lt;/c&gt; then rather than looking up the hash value and passing it as an arg, perl creates a special proxy object (PVLV) which holds pointers to $h and the key and passes that instead. For example:
+&lt;code&gt;
+$ perl -MDevel::Peek -e'sub f { Dump $_[0] } f($h{akey})'
+SV = PVLV(0xd28a78) at 0xcb2658
+  REFCNT = 1
+  FLAGS = (GMG,SMG)
+  IV = 0
+  NV = 0
+  PV = 0
+  MAGIC = 0xce9828
+    MG_VIRTUAL = &amp;PL_vtbl_defelem
+    MG_TYPE = PERL_MAGIC_defelem(y)
+    MG_FLAGS = 0x02
+      REFCOUNTED
+    MG_OBJ = 0xcb2820
+    SV = PV(0xcb2ed8) at 0xcb2820
+      REFCNT = 1
+      FLAGS = (POK,pPOK)
+      PV = 0xce97f8 "akey"\0
+      CUR = 4
+      LEN = 10
+  TYPE = y
+  TARGOFF = 0
+  TARGLEN = 1
+  TARG = 0xce1a80
+  FLAGS = 0
+  SV = PVHV(0xcb8218) at 0xce1a80
+    REFCNT = 2
+    FLAGS = (SHAREKEYS)
+    ARRAY = 0x0
+    KEYS = 0
+    FILL = 0
+    MAX = 7
+&lt;/code&gt;
+If this PVLV values is assigned to then it autovivifies the hash. If it is just read, it doesn't. It behaves kinda like a tied variable.
+Personally I don't like like this behaviour much, but it was added in 5.004, before my time as a p5 porter.
+&lt;p&gt;
+Dave.</doctext>
+<root_node field_name="root_node">11110437</root_node>
+<parent_node field_name="parent_node">11110447</parent_node>
+<thread id="11110437">
+<node id="11110438"><node id="11110442"><node id="11110455"><node id="11110456"><node id="11110457"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11110443"><node id="11110446"><node id="11110448"/>
+<node id="11110460"/>
+</node>
+<node id="11110447"><node id="11110459"><node id="11110461"><node id="11110462"><node id="11110480"/>
+</node>
+</node>
+<node id="11110475"><node id="11110482"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

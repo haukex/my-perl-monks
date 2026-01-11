@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11131385" title="Re: (Windows) verbatim command line arguments inside Perl script (updated)" created="2021-04-16 11:13:18" updated="2021-04-16 11:13:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Is there any way to access the "raw" command-line in order to catch quoting and escaping?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The first google result for "windows api get command line" is [https://docs.microsoft.com/en-us/windows/win32/api/processenv/nf-processenv-getcommandlinea|GetCommandLineA]. So I hunted on CPAN and thanks to [mod://Win32::API]'s [https://metacpan.org/release/Win32-API/source/samples/Win32/kernel32.pm|samples] I got:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use feature 'state';
+use Win32::API;
+sub GetCommandLine {
+	state $GetCommandLine = Win32::API-&gt;new("kernel32", "GetCommandLine", [], 'P');
+	( my $c = pack("a1024", $GetCommandLine-&gt;Call()) ) =~ s/\0*$//;
+	return $c;
+}
+
+use Data::Dumper;
+$Data::Dumper::Useqq=1;
+
+my $cmdline = GetCommandLine();
+print Dumper($cmdline);
+
+$cmdline =~ s/^(?:\Q$^X\E|perl(?:\.exe|\.bat|\.cmd)?)\s+(?:\Q$0\E\s+)?//; # hack!!
+print "some_cmd ", $cmdline, "\n";
+
+__END__
+
+X:\Perl&gt;perl cmdline.pl "1 2" "3" 4
+
+$VAR1 = "perl  cmdline.pl \"1 2\" \"3\" 4";
+some_cmd "1 2" "3" 4
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;PS: I don't think this question is overly Win specific, when creating a bash script on Linux I'd face the same problem.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;On Linux, your Perl script could theoretically have been invoked by [man://execvp;3|execvp], meaning there actually is &lt;i&gt;no&lt;/i&gt; command line in the first place. I think you'd have to settle with using [mod://String::ShellQuote] on [doc://@ARGV] (note that it only supports bash style quoting).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11131372</root_node>
+<parent_node field_name="parent_node">11131372</parent_node>
+<thread id="11131372">
+<node id="11131381"><node id="11131383"><node id="11131387"/>
+</node>
+<node id="11131384"><node id="11131388"/>
+<node id="11131395"><node id="11131405"><node id="11131418"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11131482"/>
+<node id="11131385"><node id="11131391"/>
+<node id="11131483"/>
+</node>
+<node id="11131379"><node id="11131382"/>
+</node>
+<node id="11131386"><node id="11131389"/>
+</node>
+</thread></node>

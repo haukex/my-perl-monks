@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="954718" title="On creating hash whose keys aren't case-sensitive" created="2012-02-18 02:43:55" updated="2012-02-18 02:43:55" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="954280">anazawa</author>
+<doctext field_name="doctext">Hi Monks,
+
+I'm working on the following situation:
+
+&lt;code&gt;
+package main;
+use CGI qw(header);
+our $header_ref = { -type =&gt; 'text/html' };
+
+# loads plugins
+
+print header( $header_ref );
+&lt;/code&gt;
+
+Above script passes a hash reference [mod://CGI]::header to generate HTTP headers.
+CGI::header doesn't care whether keys are lowercased or camelized, nor whether to put a dash before a key.
+And also underscores are translated into dashes.
+And so the following parameters are semantically equivalent:
+
+&lt;code&gt;
+$header_ref = {
+    'content-length'  =&gt; 1234,
+    'content_length'  =&gt; 1234,
+    '-content-length' =&gt; 1234,
+    '-content_length' =&gt; 1234,
+    'Content-Length'  =&gt; 1234,
+    'Content_Length'  =&gt; 1234,
+    '-Content-Length' =&gt; 1234,
+    '-Content_Length' =&gt; 1234,
+};
+&lt;/code&gt;
+
+Plugin developers can modify $main::header_ref.
+When they modify HTTP headers, they must write as follows:
+
+&lt;code&gt;
+# plugins/foo
+package foo;
+$main::header_ref-&gt;{'-status'} = '304 Not Modified';
+&lt;/code&gt;
+
+Another plugin may be as follows:
+
+&lt;code&gt;
+# plugins/bar
+package bar;
+$main::header_ref-&gt;{'Status'} = '404 Not Found';
+&lt;/code&gt;
+
+To solve above problem, I wrote the following module;
+
+&lt;code&gt;
+# plugins/foo
+package foo;
+use Header qw(set_header);
+set_header( $main::header, 'Status' =&gt; '304 Not Modified');
+
+# Header.pm
+package Header;
+use Exporter 'import';
+use List::Util qw(first);
+
+our @EXPORT_OK = qw(get_header set_header exists_header delete_header);
+
+sub get_header {
+    my $header_ref = shift;
+    my $key        = _lc( shift );
+
+    if ( wantarray ) {
+        my @keys = grep { _lc( $_ ) eq $key } keys %{ $header_ref };
+        return @{ $header_ref }{ @keys };
+    }
+    else {
+        my $first_key = first { _lc( $_ ) eq $key } keys %{ $header_ref };
+        return $header_ref-&gt;{ $first_key };
+    }
+}
+
+sub set_header {
+    my $header_ref = shift;
+    my $key        = shift;
+    my $value      = shift;
+    my @keys       = grep { _lc( $_ ) eq _lc( $key ) } keys %{ $header_ref };
+
+    if ( @keys ) {
+        $key = shift @keys;
+        delete @{ $header_ref }{ @keys };
+    }
+
+    $header_ref-&gt;{ $key } = $value;
+
+    return;
+}
+
+sub exists_header {
+    my $header_ref = shift;
+    my $key        = _lc( shift );
+    my @keys       = grep { _lc( $_ ) eq $key } keys %{ $header_ref };
+
+    return scalar @keys;
+}
+
+sub delete_header {
+    my $header_ref = shift;
+    my $key        = _lc( shift );
+
+    # deletes elements whose key matches $key
+    my @keys = grep { _lc( $_ ) eq $key } keys %{ $header_ref };
+    delete @{ $header_ref }{ @keys };
+
+    return;
+}
+
+# returns a lowercased version of a given string
+sub _lc {
+    my $key = lc shift;
+
+    # get rid of an initial dash if exists
+    $key =~ s{^\-}{};
+
+    # use dashes instead of underscores
+    $key =~ tr{_}{-};
+
+    return $key;
+}
+&lt;/code&gt;
+
+I don't think that the above way is the best to solve the problem.
+Although I intended to use [mod://Tie::Hash] to implement above features, I don't understand how to use this module.
+I'm waiting for your suggestions or comments.
+
+&lt;p&gt;&lt;strong&gt;Update:&lt;/strong&gt; NOTE: I assumed that I might not modify the main script. (Thanks to tobyinc)&lt;/p&gt;</doctext>
+<thread id="954718">
+<node id="954730"><node id="954765"/>
+</node>
+<node id="954736"><node id="954759"/>
+<node id="994054"/>
+</node>
+<node id="954748"><node id="954750"><node id="954815"/>
+</node>
+<node id="954758"/>
+</node>
+</thread></node>

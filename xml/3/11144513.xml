@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11144513" title="'background' CPU process when Idle in AnyEvent" created="2022-06-08 06:17:12" updated="2022-06-08 06:17:12" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1145534">sectokia</author>
+<doctext field_name="doctext">&lt;p&gt;Consider the code below, where CPU crunching is done when Event loop is idle, but only for 0.1s to allow HTTP requests about the processed data to not be delayed more than ~100mS.&lt;/p&gt;
+
+&lt;p&gt;Is there any better way to do this that would eliminate the (up-to) 100mS wait time for a request to actioned? Basically... is there any way idle could run continously and be interuptted by the events? What is generally used in this situation. A second thread?&lt;/p&gt;
+
+&lt;p&gt;Thanks!&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+use AnyEvent;
+use AnyEvent::HTTPD;
+use Time::HiRes qw(gettimeofday);
+use Digest::MD5 qw(md5);
+
+my $httpd = AnyEvent::HTTPD-&gt;new(port=&gt;9090);
+my $count = 0;
+my $foo = 'bar';
+
+# Handle other events
+$httpd-&gt;reg_cb(
+	'/count' =&gt; sub {
+		my ($h,$r)= @_;
+		$r-&gt;respond({content=&gt;['text/plain',"$count: ".(unpack 'q',$foo)]});
+		$h-&gt;stop_request;		
+	});
+
+# CPU crunching for 100mS when idle...
+my $idle = AnyEvent-&gt;idle(cb =&gt; sub {
+	
+	my $now = gettimeofday;
+	while(gettimeofday &lt; ($now + 0.1)) { $foo = md5($foo); }
+	$count+=1;
+});
+
+my $cv = AnyEvent-&gt;condvar;
+$cv-&gt;recv;
+&lt;/code&gt;
+</doctext>
+<thread id="11144513">
+<node id="11144514"/>
+<node id="11144532"/>
+</thread></node>

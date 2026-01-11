@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1194782" title="Re^11: Compare 2 XML files" created="2017-07-11 03:20:56" updated="2017-07-11 03:20:56" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1193343">snehit.ar</author>
+<doctext field_name="doctext">You are really a monk saver for me ...!!!
+Please do help me with 1more small query ... as per the code u shared yesterday i am getting eventid and name in diff arrays..
+But Now i want out put as :
+
+&lt;p&gt;required output&lt;/p&gt;
+&lt;code&gt;
+$VAR1 = [
+          {
+            'eventid' =&gt; '957',
+            'name' =&gt; 'aaaa'  
+          },
+          {
+            'eventid' =&gt; '2667',
+            'name' =&gt; 'bbbb'
+          },
+          {
+            'eventid' =&gt; '2667'
+            'name' =&gt; 'bbbb'
+          },
+          {
+            'eventid' =&gt; '1503'
+            'name' =&gt; 'cccc'
+          },
+          {
+            'eventid' =&gt; '1103'
+            'name' =&gt; 'dddd'
+          },
+          {
+            'eventid' =&gt; '1503'
+            'name' =&gt; 'cccc'
+          }
+        ];
+&lt;/code&gt;
+
+How can i do with multiple loop :
+
+&lt;code&gt;
+#!/usr/bin/env perl       
+use strict;
+use warnings;
+use XML::XPath;
+use Data::Dumper;
+
+my $xml = 'ApplicationList.xml';
+my $xp = XML::XPath-&gt;new(filename =&gt; $xml);
+my $appxpath =  $xp-&gt;findnodes("//application_list/application/");
+
+my %appid = ();
+foreach my $appnodeset ($appxpath-&gt;get_nodelist) {
+  my $id   = $xp-&gt;find('./@id',$appnodeset)-&gt;string_value;
+  my $name = $xp-&gt;find('./@name',$appnodeset)-&gt;string_value;
+  s/^\s+|\s+$//g for $id,$name;
+  $appid{$id} = $name;
+}
+print Dumper \%appid;
+
+my $eventxml = 'events.xml';
+my $evenxp = XML::XPath-&gt;new(filename =&gt; $eventxml);
+my $xpath = "//event/custom_attribute_list/custom_attribute[normalize-space(name)='SLB_SSRID']/value";
+
+my @eventrecords = ();
+foreach my $node ($evenxp-&gt;findnodes($xpath)) { 
+  my $ssrid = $node-&gt;string_value;
+  $ssrid =~ s/^\s+|\s+$//g ;
+  if ( exists $appid{$ssrid} ){
+    push @eventrecords, 
+      { eventid =&gt; $ssrid };
+  } 
+}
+print Dumper \@eventrecords;
+
+&lt;/code&gt;
+
+Thanks for helping .
+</doctext>
+<root_node field_name="root_node">1194656</root_node>
+<parent_node field_name="parent_node">1194781</parent_node>
+<thread id="1194656">
+<node id="1194665"><node id="1194671"/>
+<node id="1194672"><node id="1194675"><node id="1194677"><node id="1194679"><node id="1194698"><node id="1194701"/>
+<node id="1194716"><node id="1194771"><node id="1194775"><node id="1194776"><node id="1194780"><node id="1194789"/>
+</node>
+</node>
+<node id="1194781"><node id="1194782"><node id="1194785"><node id="1194793"/>
+</node>
+<node id="1194919"><node id="1194925"><node id="1194926"/>
+</node>
+<node id="1194977"><node id="1194992"><node id="1195062"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1194666"/>
+<node id="1194678"/>
+</thread></node>

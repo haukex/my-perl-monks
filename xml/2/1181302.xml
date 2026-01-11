@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1181302" title="Tyring to grep array of hashes" created="2017-02-07 10:45:09" updated="2017-02-07 10:45:09" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="843269">dirtdog</author>
+<doctext field_name="doctext">&lt;p&gt; Hi Monks, &lt;/p&gt;
+
+&lt;p&gt; I have an array of hashes with sports teams and I define what should be part of the list of teams as TEAMS, and then I use __DATA__  to input the list of ACTUAL_TEAMS.  My goal is to then check to see what team(s) provided as ACTUAL_TEAMS are missing from TEAMS.  In my example it should be only the GIANTS that are missing, but for some reason it's not working. &lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/env perl
+use strict;
+
+my %ACTUAL_TEAMS;
+
+
+my %TEAMS = (
+    "NFL" =&gt; [ 'JETS', 'PATRIOTS', 'GIANTS', ],
+    "MLB" =&gt; [ 'YANKEES', 'METS', 'CARDINALS', ],
+    "NBA" =&gt; [ 'SIXERS', 'CELTICS','LAKERS', ],
+);
+
+while (&lt;DATA&gt;) {
+        chomp;
+        next if /^\s*$/ || /^\#/;
+        my $aref = [split /,/, $_];
+        push( @{$ACTUAL_TEAMS{$aref-&gt;[0]}}, $aref-&gt;[1]);
+}
+
+
+foreach my $group (keys %TEAMS) {
+    #print "The members of $group are\n";
+    foreach (@{$TEAMS{$group}}) {
+    #    print "\t$_\n";
+print "MISSING:\tSPORT:$group\tTEAM:$_\n" unless (my @type = grep /\b$_\b/, @{$ACTUAL_TEAMS{$group}});
+    }
+}
+
+
+
+__DATA__
+NFL,JETS
+NFL,PATRIOTS
+MLB,YANKEES
+MLB,CARDINALS
+MLB,METS
+NBA,SIXERS
+NBA,CELTICS
+NBA,LAKERS
+&lt;/code&gt;
+
+&lt;p&gt;  Any help would be greatly appreciated. Thanks &lt;/p&gt;</doctext>
+<thread id="1181302">
+<node id="1181303"/>
+<node id="1181306"><node id="1181311"><node id="1181312"/>
+<node id="1181343"/>
+</node>
+</node>
+<node id="1181308"><node id="1181313"><node id="1181319"/>
+<node id="1181320"/>
+<node id="1181321"/>
+</node>
+</node>
+</thread></node>

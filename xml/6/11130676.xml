@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11130676" title="help declaring variables within perl one-liner" created="2021-04-01 12:34:16" updated="2021-04-01 12:34:16" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1022667">Special_K</author>
+<doctext field_name="doctext">&lt;p&gt;
+I have a file one_liner_wrapper.pl that contains the following:
+&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl -w
+use strict;
+
+my $num_subs = `perl -w -0777 -pi -e 'my $c=s/foo/bar/g;print STDOUT "$c\n"' ./foo_test`;
+
+printf("num_subs = $num_subs\n");
+
+&lt;/code&gt;
+
+&lt;p&gt;
+The file foo_test contains the following:
+&lt;/p&gt;
+
+&lt;code&gt;
+foo
+food
+fool
+foot
+&lt;/code&gt;
+
+&lt;p&gt;
+When I try to execute one_line_wrapper.pl, I receive the following error:
+&lt;/p&gt;
+
+&lt;code&gt;
+&gt; ./one_liner_wrapper.pl
+Global symbol "$c" requires explicit package name (did you forget to declare "my $c"?) at ./one_liner_wrapper.pl line 4.
+Global symbol "$c" requires explicit package name (did you forget to declare "my $c"?) at ./one_liner_wrapper.pl line 4.
+Execution of ./one_liner_wrapper.pl aborted due to compilation errors.
+&lt;/code&gt;
+
+&lt;p&gt;
+This error also occurs if I omit the "my " in the above code.
+&lt;br&gt;
+&lt;br&gt;
+Why I am I receiving this error despite the "my $c" that is included at the start of the statement?  If I instead change one_liner_wrapper.pl to the following:
+&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl -w
+use strict;
+
+my $c;
+my $num_subs = `perl -w -0777 -pi -e '$c=s/foo/bar/g;print STDOUT "$c\n"' ./foo_test`;
+
+printf("num_subs = $num_subs\n");
+&lt;/code&gt;
+
+&lt;p&gt;
+The output is:
+&lt;/p&gt;
+
+&lt;code&gt;
+&gt; ./one_liner_wrapper.pl
+Use of uninitialized value $c in concatenation (.) or string at ./one_liner_wrapper.pl line 5.
+Use of uninitialized value $c in concatenation (.) or string at ./one_liner_wrapper.pl line 5.
+num_subs = 
+&lt;/code&gt;
+
+&lt;p&gt;
+What is the proper way to declare variables that will be used only within perl one-liners called from another perl script when "use strict" is in effect?
+&lt;/p&gt;
+
+</doctext>
+<thread id="11130676">
+<node id="11130677"/>
+<node id="11130688"><node id="11130689"><node id="11130690"/>
+</node>
+</node>
+<node id="11130691"><node id="11130701"><node id="11130716"/>
+</node>
+</node>
+</thread></node>

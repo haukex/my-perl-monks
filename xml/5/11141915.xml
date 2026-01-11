@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11141915" title="Re^2: How to redefine a modules private function?" created="2022-03-08 07:02:14" updated="2022-03-08 07:02:14" _doctext_mode="lenient"><type id="11">note</type>
+<author id="446266">salva</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+There may be some Devel::* modules or some other trickery that could prevent inlining from the outside, but I'm currently unaware of any such modules, though I would be interested to learn about such things.
+&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;A relatively simple solution would be to tie &lt;c&gt;AnyEvent::DNS&lt;/c&gt; stash, so that the definition of &lt;c&gt;DOMAIN_PORT&lt;/c&gt; could be replaced by a custom one:
+
+&lt;c&gt;
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use feature 'say';
+use Data::Dumper;
+use Tie::Hash;
+
+package Tie::Hash::Mine {
+    BEGIN { our @ISA = qw(Tie::StdHash) };
+    sub STORE {
+        warn "Setting AnyEvent::DNS::$_[1]";
+        $_[0]-&gt;SUPER::STORE($_[1],
+                            ($_[1] eq 'DOMAIN_PORT') ? sub () { 1053 } : $_[2])
+    }
+};
+
+BEGIN {
+    tie %AnyEvent::DNS::, 'Tie::Hash::Mine';
+}
+
+#use AnyEvent::DNS; &lt;-- uncommenting this results in a segmentation fault!
+BEGIN {
+    package AnyEvent::DNS {
+        sub ONE () { 1 }
+        sub DOMAIN_PORT () { 53 }
+    }
+}
+
+say Dumper \%AnyEvent::DNS::;
+say Dumper tied(%AnyEvent::DNS::);
+&lt;/c&gt;
+
+&lt;p&gt;... unfortunately, it seems that tieing a stash doesn't work at all :-(
+</doctext>
+<root_node field_name="root_node">11141900</root_node>
+<parent_node field_name="parent_node">11141907</parent_node>
+<thread id="11141900">
+<node id="11141905"><node id="11141908"><node id="11141911"/>
+<node id="11141938"><node id="11141940"><node id="11141954"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11141907"><node id="11141910"><node id="11141912"/>
+</node>
+<node id="11141915"><node id="11141921"/>
+</node>
+<node id="11141916"><node id="11141919"><node id="11141944"/>
+</node>
+</node>
+<node id="11141917"><node id="11141920"/>
+<node id="11141923"/>
+</node>
+<node id="11141934"><node id="11141935"><node id="11141939"><node id="11141942"/>
+<node id="11141950"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11141924"><node id="11141925"><node id="11141927"><node id="11141941"><node id="11141943"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11141951"><node id="11141952"><node id="11141953"/>
+</node>
+<node id="11141969"/>
+<node id="11141970"><node id="11141971"/>
+</node>
+</node>
+<node id="11141968"/>
+<node id="11141972"><node id="11141976"><node id="11142913"/>
+</node>
+</node>
+</thread></node>

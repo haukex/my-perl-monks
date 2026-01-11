@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1175311" title="System calls from CGI script" created="2016-11-04 13:21:18" updated="2016-11-04 13:21:18" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1175307">whitdan</author>
+<doctext field_name="doctext">&lt;p&gt;Hello monks,&lt;br&gt;&lt;br&gt;I need some advice with system calls. I have been researching for the past few days and have not been able to find what I'm looking for. I'm running a Perl CGI script from a webpage that needs to make some system calls. I'm running into a problem where no system calls will work at all. Not even a simple one such as "ls". Here's the important part of the code:&lt;/p&gt;&lt;code&gt;#! /usr/bin/perl -T
+use strict;
+use warnings;
+
+$ENV{"PATH"} = "";
+chdir "/home/user/";
+chomp($update_location); # $update_location is:
+                         # /home/user/test/update_test.pl
+                         # it's retrieved from the database
+
+my $cmd = sprintf("perl %s", $update_location);
+system($cmd);
+if ($? == -1) 
+{
+    logger("failed to execute: $!\n");
+    # logger is a simple sub that appends whatever is passed
+    # to an error.txt file
+}
+elsif ($? &amp; 127) 
+{
+    logger("child died with signal coredump\n");
+}
+else
+{
+    my $sys_code = $? &gt;&gt; 8;
+    logger("child exited with value $sys_code\n");
+}
+&lt;/code&gt;
+&lt;p&gt;When I run the code above, my error.txt file says "failed to execute: Permission denied". When I comment out the chdir line, error.txt says "failed to execute: No such file or directory".&lt;br&gt;Whether or not I comment out the chdir line, if I try a simple system call such as:&lt;/p&gt;
+&lt;code&gt;system("ls");&lt;/code&gt;&lt;p&gt;it responds with "failed to execute: No such file or directory".&lt;br&gt;Permissions are &lt;br&gt;/home/ drwxr-xr-x&lt;br&gt;/home/user/ drwxr-xr-x&lt;br&gt;/home/user/test/ drwxr-xr-x&lt;br&gt; /home/user/test/update_test.pl -rwxr-xr-x&lt;br&gt;
+I already ran chmod +x on update_test.pl and am able to run it from a terminal.&lt;br&gt;&lt;br&gt;Any ideas as to why the system calls won't work? Thank you for any advice you can give me!&lt;/p&gt;</doctext>
+<thread id="1175311">
+<node id="1175312"><node id="1175328"/>
+</node>
+<node id="1175313"><node id="1175329"/>
+</node>
+<node id="1175339"/>
+</thread></node>

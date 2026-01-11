@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1186674" title="When does IPC::Open\d work on Windows, and when doesn't?" created="2017-04-01 07:01:34" updated="2017-04-01 07:01:34" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1020196">vr</author>
+<doctext field_name="doctext">&lt;p&gt;It's &lt;a href ="http://perldoc.perl.org/perlipc.html#Bidirectional-Communication-with-Another-Process"&gt;said&lt;/a&gt;, that&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;
+The open2() and open3() functions are unlikely to work anywhere except on a Unix system, or at least one purporting POSIX compliance.
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;There are, however, &lt;a href ="http://www.perlmonks.org/?node_id=628192"&gt;examples&lt;/a&gt; of the opposite, i.e. &lt;c&gt;open2&lt;/c&gt; can work on Windows.&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;p&gt;I want my Perl script to dynamically create Postscript code, invoke the Ghostscript, feed it, collect the output for further tasks. Without any IPC:&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+
+my $in_fn  = 'in.ps';
+my $out_fn = 'out.pdf';
+open my $fh, '&gt;', $in_fn;
+print $fh &lt;&lt;'END';
+%!PS
+%
+% skipped
+%
+showpage
+END
+close $fh;
+
+system 'gswin32c', '-q', '-sDEVICE=pdfwrite', '-o', $out_fn, $in_fn;
+
+# now do something useful with out.pdf
+&lt;/c&gt;
+&lt;p&gt;Ghostscript &lt;a href="https://ghostscript.com/doc/current/Use.htm#Pipes"&gt;can use pipes&lt;/a&gt;, therefore I thought about more efficient implementation. Below, for simplicity, GS doesn't produce any output except error messages. E.g., using &lt;c&gt;IPC::Run3:&lt;/c&gt;&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+use IPC::Run3;
+
+run3 [
+    'gswin32c',
+    '-q',
+    '-sDEVICE=nullpage',
+    '-'
+    ],
+    \ 'syntax error!',
+    \ my $out,
+    \ my $err,
+    {
+        binmode_stdin  =&gt; 1,
+        binmode_stdout =&gt; 1,
+    };
+print "*** STDOUT ***\n$out\n";
+print "*** STDERR ***\n$err\n";
+&lt;/c&gt;
+&lt;p&gt;It works, but module's documentation says about nearly always creating temporary files. Therefore it's all nothing but syntactic sugar compared to no-IPC solution above.&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;p&gt;The &lt;c&gt;IPC::Open2&lt;/c&gt;, however, won't work, it just hangs indefinitely (and so does GS process):&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+use IPC::Open2;
+
+my ( $in, $out, );
+my $pid = open2 $out, $in, 'gswin32c -q -sDEVICE=nullpage -';
+$in-&gt; autoflush( 1 );
+print $in "syntax error!\n\cZ\n";
+close $in;
+print do { local $/; &lt;$out&gt; };
+close $out;
+waitpid( $pid, 0 );
+&lt;/c&gt;
+&lt;p&gt;Autoflushing, and ctrl-Z were my futile attempts to make it work.&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;p&gt;I understand, efficiency gain of in-memory buffers vs disk-IO can be negligible. But, if not for this case, but for the future -- are there clear advice about when &lt;c&gt;IPC::Open\d&lt;/c&gt; will work on Windows, and when not to waste time trying?&lt;/p&gt;
+</doctext>
+<thread id="1186674">
+<node id="1186677"><node id="1186684"/>
+</node>
+<node id="1186685"/>
+</thread></node>

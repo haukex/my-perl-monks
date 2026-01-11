@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1205842" title="Re: How to grep matching IP address from a log file?" created="2017-12-19 02:46:52" updated="2017-12-19 02:46:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You could use [mod://Regexp::Common::net] - this will extract any IP's from the line:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Regexp::Common qw/net/;
+
+my $regex = qr{ (?&lt;ip&gt; \b $RE{net}{IPv4} \b ) }msx;
+my $filename = 'mylogFile.log';
+
+open my $fh, '&lt;:encoding(UTF-8)', $filename or die "$filename: $!";
+while (my $line = &lt;$fh&gt;) {
+	while ($line=~/$regex/g) {
+		print "&lt;", $+{ip}, "&gt;\n";
+	}
+}
+close $fh;
+&lt;/c&gt;
+&lt;p&gt;However, in your sample input you wrote &lt;c&gt;&lt;my source IP&gt;&lt;/c&gt;. If this is an actual IP address, then that will be matched too. If you don't want that, you need to extend the regex to match the surrounding parts of the line. Also, if that's the case, you haven't shown what the actual lines look like, i.e. your input isn't representative, so we can't really help there. All I can say is that if you only want to match one IP per line, you can replace the inner &lt;c&gt;while&lt;/c&gt; loop with a single &lt;c&gt;if&lt;/c&gt;. Have a look at [id://1201201|this] for some advice on designing regexes.&lt;/p&gt;
+&lt;p&gt;In the code you posted, you are reading the entire file into an array, which is a bit wasteful, and it'd probably be better if you used a regular &lt;c&gt;while (&lt;$fh&gt;)&lt;/c&gt; loop instead, like what I showed above and as is explained in e.g. [doc://perlintro#Files-and-I/O] and [doc://perlop#I/O-Operators]. Also, note that with your current regex, you're just matching the first digits of an IP address, and you may get false positives.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1205840</root_node>
+<parent_node field_name="parent_node">1205840</parent_node>
+<thread id="1205840">
+<node id="1205841"/>
+<node id="1205842"><node id="1205844"><node id="1205845"/>
+<node id="1205854"/>
+</node>
+</node>
+<node id="1205846"><node id="1205847"/>
+</node>
+<node id="1205876"/>
+</thread></node>

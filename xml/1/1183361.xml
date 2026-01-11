@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1183361" title="Re: SQL like query over iterable in perl" created="2017-03-02 02:45:00" updated="2017-03-02 02:45:00" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1175204">huck</author>
+<doctext field_name="doctext">&lt;p&gt;More generic than haukex's, more pure-perl than Athanasius's, more functional than OO 
+&lt;code&gt;#!/usr/bin/perl -w
+
+use strict; use warnings; 
+
+my $ar=[
+       {sex=&gt;'m',occupation=&gt;'programmer',state=&gt;'CA'},
+       {sex=&gt;'m',occupation=&gt;'blah1',state=&gt;'CA'},
+       {sex=&gt;'m',occupation=&gt;'blah1',state=&gt;'NY'},
+       {sex=&gt;'m',occupation=&gt;'blah2',state=&gt;'NY'},
+       {sex=&gt;'f',occupation=&gt;'blah1',state=&gt;'NY'},
+       {sex=&gt;'f',occupation=&gt;'blah2',state=&gt;'NJ'},
+       ];
+
+printer(counter($ar,['sex'])); 
+printer(counter($ar,['sex','state'])); 
+printer(counter($ar,['sex','occupation'])); 
+printer(counter($ar,[])); 
+exit; 
+
+sub printer{ 
+  use Data::Dumper;
+  my $ref=shift; 
+
+  local $Data::Dumper::Deepcopy=1;
+  local $Data::Dumper::Purity=1;
+  local $Data::Dumper::Sortkeys=1;
+  local $Data::Dumper::Indent=2; 
+
+  print Dumper($ref)."\n";
+} # printer 
+
+sub counter { 
+  my $arin=shift; 
+  my $arparts=shift; 
+  my $res={}; 
+  my $size1=scalar(@$arparts)-1; 
+  return  $res unless ($size1 &gt;=0); 
+  my $size2=$size1-1; 
+
+  for my $hash (@$arin){ 
+  my @parts=(); 
+  for my $key (@$arparts){ 
+    my $val=$hash-&gt;{$key};
+    if (!defined ($val)) {$val='.'}
+    push @parts,$val;
+    } 
+
+  my $reshead=$res; 
+  for my $n (0..$size2) { 
+    my $val=$parts[$n]; 
+    unless ($reshead-&gt;{$val}) {$reshead-&gt;{$val}={};} 
+    $reshead=$reshead-&gt;{$val};
+    } 
+  $reshead-&gt;{$parts[$size1]}++;
+  } # hash 
+
+return $res; 
+}  # counter 
+&lt;/code&gt;
+Result
+&lt;code&gt;
+$VAR1 = {
+          'f' =&gt; 2,
+          'm' =&gt; 4
+        };
+
+$VAR1 = {
+          'f' =&gt; {
+                   'NJ' =&gt; 1,
+                   'NY' =&gt; 1
+                 },
+          'm' =&gt; {
+                   'CA' =&gt; 2,
+                   'NY' =&gt; 2
+                 }
+        };
+
+$VAR1 = {
+          'f' =&gt; {
+                   'blah1' =&gt; 1,
+                   'blah2' =&gt; 1
+                 },
+          'm' =&gt; {
+                   'blah1' =&gt; 2,
+                   'blah2' =&gt; 1,
+                   'programmer' =&gt; 1
+                 }
+        };
+
+$VAR1 = {};
+&lt;/code&gt;
+&lt;/p&gt;
+
+&lt;p&gt; Added:
+&lt;code&gt;
+printer(counter($ar,['state','sex','occupation'])); 
+&lt;/code&gt;
+Result
+&lt;code&gt;
+$VAR1 = {
+          'CA' =&gt; {
+                    'm' =&gt; {
+                             'blah1' =&gt; 1,
+                             'programmer' =&gt; 1
+                           }
+                  },
+          'NJ' =&gt; {
+                    'f' =&gt; {
+                             'blah2' =&gt; 1
+                           }
+                  },
+          'NY' =&gt; {
+                    'f' =&gt; {
+                             'blah1' =&gt; 1
+                           },
+                    'm' =&gt; {
+                             'blah1' =&gt; 1,
+                             'blah2' =&gt; 1
+                           }
+                  }
+        };
+&lt;/code&gt;
+&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1183352</root_node>
+<parent_node field_name="parent_node">1183352</parent_node>
+<thread id="1183352">
+<node id="1183355"/>
+<node id="1183357"/>
+<node id="1183361"><node id="1183370"><node id="1183375"><node id="1183408"/>
+<node id="1183624"/>
+</node>
+</node>
+</node>
+</thread></node>

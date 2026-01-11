@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1214158" title="Re: Trying to understand method calling in OOP" created="2018-05-07 11:53:05" updated="2018-05-07 11:53:05" _doctext_mode="lenient"><type id="11">note</type>
+<author id="789891">stevieb</author>
+<doctext field_name="doctext">&lt;p&gt;Ok, in your case, because the &lt;c&gt;Cow&lt;/c&gt; class has its own &lt;c&gt;speak()&lt;/c&gt; method, this line:&lt;/p&gt;
+
+&lt;c&gt;
+Animal::speak('Cow'); 
+&lt;/c&gt;
+
+&lt;p&gt;...is actually not being called, the one in &lt;c&gt;Cow&lt;/c&gt; is instead.&lt;/p&gt;
+
+&lt;p&gt;Now, if you comment out or otherwise remove the &lt;c&gt;Cow-&gt;speak()&lt;/c&gt; method from the &lt;c&gt;Cow&lt;/c&gt; class, what will happen is, when you call &lt;c&gt;Cow-&gt;speak()&lt;/c&gt;, that method will not be found, and since you are inheriting from &lt;c&gt;Animal&lt;/c&gt;, &lt;c&gt;Animal-&gt;speak()&lt;/c&gt; will be looked up instead, and if found, it'll call it, sending in the &lt;c&gt;Cow&lt;/c&gt; class as the parameter to the inherited &lt;c&gt;Animal-&gt;speak()&lt;/c&gt;. Observe:&lt;/p&gt;
+
+&lt;c&gt;
+use warnings;
+use strict;
+
+package Animal; {
+    sub speak {
+        my ($class) = @_;
+        if ($class eq 'Cow'){
+            print "$class says moooo!\n";
+        }
+    }
+    sub run {
+        my ($class) = @_;
+        print "$class is running away!\n";
+    }
+}
+
+package Cow; {
+    our @ISA = qw(Animal);
+}
+
+package Rooster; {
+    our @ISA = qw(Animal);
+}
+
+package main;
+
+Cow-&gt;speak;
+Rooster-&gt;run;
+&lt;/c&gt;
+
+&lt;p&gt;Output:&lt;/p&gt;
+
+&lt;c&gt;
+Cow says moooo!
+Rooster is running away!
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1214157</root_node>
+<parent_node field_name="parent_node">1214157</parent_node>
+<thread id="1214157">
+<node id="1214158"><node id="1214270"><node id="1214296"/>
+</node>
+</node>
+<node id="1214159"><node id="1214170"><node id="1214171"><node id="1214172"/>
+</node>
+<node id="1214192"><node id="1214436"/>
+</node>
+</node>
+</node>
+<node id="1214166"/>
+<node id="1214207"><node id="1214229"><node id="1214432"><node id="1214433"><node id="1214438"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1192786" title="Re: Hashes and values (updated)" created="2017-06-14 06:18:08" updated="2017-06-14 06:18:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I think you're asking about a [doc://perldsc#HASHES-OF-HASHES|hash of hashes]? In that case, here's one way:&lt;/p&gt;
+&lt;c&gt;
+my %hash1 = ( foo =&gt; 'bar' );
+my %hash2 = ( quz =&gt; 'baz' );
+$hash1{somekey} = \%hash2;
+
+use Data::Dumper;
+print Dumper(\%hash1);
+print Dumper( $hash1{somekey}{quz} );
+__END__
+$VAR1 = {
+          'foo' =&gt; 'bar',
+          'somekey' =&gt; {
+                         'quz' =&gt; 'baz'
+                       }
+        };
+$VAR1 = 'baz';
+&lt;/c&gt;
+&lt;p&gt;See also [doc://perlreftut] and [doc://perlref].&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; On re-reading your question, are you just asking for how to copy &lt;c&gt;%hash2&lt;/c&gt; into &lt;c&gt;%hash1&lt;/c&gt;? Below, in "Case 1", the contents of &lt;c&gt;%hash1&lt;/c&gt; are preserved, but if there are duplicate keys in &lt;c&gt;%hash1&lt;/c&gt; and &lt;c&gt;%hash2&lt;/c&gt; then the values from &lt;c&gt;%hash2&lt;/c&gt; will replace those from &lt;c&gt;%hash1&lt;/c&gt;. In "Case 2", the contents of &lt;c&gt;%hash1&lt;/c&gt; are simply replaced by &lt;c&gt;%hash2&lt;/c&gt;. There are other ways to do this depending on what your needs are.&lt;/p&gt;
+&lt;c&gt;
+use Data::Dump;
+
+my %hash1 = ( foo =&gt; 'bar' );
+my %hash2 = ( quz =&gt; 'baz' );
+
+# Case 1
+%hash1 = (%hash1, %hash2);
+# OR
+$hash1{$_} = $hash2{$_} for keys %hash2;
+dd \%hash1;  # { foo =&gt; "bar", quz =&gt; "baz" }
+
+# Case 2
+%hash1 = %hash2;
+dd \%hash1;  # { quz =&gt; "baz" }
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1192784</root_node>
+<parent_node field_name="parent_node">1192784</parent_node>
+<thread id="1192784">
+<node id="1192786"/>
+<node id="1192787"/>
+<node id="1192797"/>
+<node id="1192799"/>
+<node id="1192801"/>
+</thread></node>

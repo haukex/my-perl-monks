@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11139691" title="Re: Is A Number" created="2021-12-17 15:02:00" updated="2021-12-17 15:02:00" _doctext_mode="lenient"><type id="11">note</type>
+<author id="861371">kcott</author>
+<doctext field_name="doctext">&lt;p&gt;
+The suggested [https://perldoc.perl.org/Scalar::Util#looks_like_number|Scalar::Util::looks_like_number()]
+is often a good choice; however, be aware of some gotchas:
+&lt;/p&gt;
+
+&lt;p&gt;
+Infinity (see "[https://perldoc.perl.org/perldata#Special-floating-point:-infinity-(Inf)-and-not-a-number-(NaN)|perldata: Special floating point: infinity (Inf) and not-a-number (NaN)]"):
+&lt;/p&gt;
+
+&lt;code&gt;
+perl -E '
+    use Scalar::Util "looks_like_number";
+
+    for (qw{Inf -Inf Infinity -Infinity}) {
+        say "$_: ", looks_like_number($_) ? 1 : 0;
+    }
+'
+Inf: 1
+-Inf: 1
+Infinity: 1
+-Infinity: 1
+&lt;/code&gt;
+
+&lt;p&gt;
+Non-decimal numbers:
+&lt;/p&gt;
+
+&lt;code&gt;
+perl -E '
+    use Scalar::Util "looks_like_number";
+
+    for (qw{1 0b10 0o10 0x10}) {
+        say "$_: ", looks_like_number($_) ? 1 : 0
+    }
+'
+1: 1
+0b10: 0
+0o10: 0
+0x10: 0
+&lt;/code&gt;
+
+&lt;code&gt;
+perl -E '
+    use Scalar::Util "looks_like_number";
+
+    for (1, 0b10, 0o10, 0x10) {
+        say "$_: ", looks_like_number($_) ? 1 : 0
+    }
+'
+1: 1
+2: 1
+8: 1
+16: 1
+&lt;/code&gt;
+
+&lt;blockquote&gt;
+&lt;em&gt;"I would like to combine the string comparisons into as few as possible but seem to break the code every time I try."&lt;/em&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;
+If &lt;c&gt;looks_like_number()&lt;/c&gt; is causing you problems, perhaps due to "gotchas" indicated above,
+or as a purely academic exercise, here's some hints for a hand-crafted solution.
+&lt;/p&gt;
+
+&lt;p&gt;
+Get rid of the &lt;em&gt;blacklist&lt;/em&gt;: this will take ages to get right and, even then, 
+there's a high chance that you'll miss an edge-case or two (or more).
+Just use a &lt;em&gt;whitelist&lt;/em&gt; which represents valid numbers for your application.
+&lt;/p&gt;
+
+&lt;p&gt;
+Use a single regex with alternations, and only define it once (not in every iteration).
+With Perl v5.10 or higher, you can use this format:
+&lt;/p&gt;
+
+&lt;code&gt;
+sub IsNumber {
+    state $re = qr{...};
+    return $_[0] =~ $re;
+}
+&lt;/code&gt;
+
+&lt;p&gt;
+For Perls of an older vintage:
+&lt;/p&gt;
+
+&lt;code&gt;
+{
+    my $re; BEGIN { $re = qr{...} }
+
+    sub IsNumber {
+        return $_[0] =~ $re;
+    }
+}
+&lt;/code&gt;
+
+&lt;p&gt;
+Don't try to write your regex in the smallest possible space.
+This isn't a golfing exercise.
+Readability and maintainability will very quickly deteriorate.
+Use the &lt;c&gt;/x&lt;/c&gt; modifier &amp;mdash; or &lt;c&gt;/xx&lt;/c&gt; if available; requires Perl v5.26 or later &amp;mdash;
+as explained in "[https://perldoc.perl.org/perlre#/x-and-/xx|perlre: /x and /xx]".
+&lt;/p&gt;
+
+&lt;p&gt;
+Consider whether you're allowing exponents:
+&lt;/p&gt;
+
+&lt;code&gt;
+$ perl -E 'say 1e6'
+1000000
+&lt;/code&gt;
+
+&lt;p&gt;
+What about when underscores have been used to improve the readability of large numbers:
+&lt;/p&gt;
+
+&lt;code&gt;
+$ perl -E 'say 1_000_000/1_000'
+1000
+&lt;/code&gt;
+
+&lt;p&gt;
+Are you only dealing with 7-bit ASCII digits (&lt;c&gt;/[0-9]/&lt;/c&gt;)
+or allowing the handling of all (i.e. Unicode&amp;reg;) digits (&lt;c&gt;/\p{Digit}/&lt;/c&gt;)?
+&lt;/p&gt;
+
+&lt;p&gt;
+Note that &lt;c&gt;/\d/&lt;/c&gt; and &lt;c&gt;/[[:digit:]]/&lt;/c&gt; are not necessarily the same as &lt;c&gt;/[0-9]/&lt;/c&gt;.
+See "[https://perldoc.perl.org/perlre#/a-(and-/aa)|perlre: /a (and /aa)]".
+&lt;/p&gt;
+
+&lt;p&gt;
+More general sources of reference are: [https://perldoc.perl.org/perlre|perlre];
+[https://perldoc.perl.org/perlrebackslash|perlrebackslash]; 
+and, [https://perldoc.perl.org/perlrecharclass|perlrecharclass].
+&lt;/p&gt;
+
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-861371"&gt;
+&lt;p&gt;&amp;mdash; Ken&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11139686</root_node>
+<parent_node field_name="parent_node">11139686</parent_node>
+<thread id="11139686">
+<node id="11139687"><node id="11139688"/>
+</node>
+<node id="11139691"/>
+<node id="11139692"/>
+<node id="11139696"/>
+<node id="11139711"/>
+<node id="11139716"/>
+</thread></node>

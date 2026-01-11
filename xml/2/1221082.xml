@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1221082" title="Populating scalar using more than 2 while loops." created="2018-08-25 05:37:30" updated="2018-08-25 05:37:30" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1201390">Maire</author>
+<doctext field_name="doctext">&lt;p&gt; Hi Monks, &lt;/p&gt;
+
+&lt;p&gt; I've been using the following script to count the number of times per day words appear in two separate sections of text within my corpus (which has been stored in a hash). &lt;/p&gt;
+
+ &lt;code&gt;
+sub getCorpus {				
+my %corpus;					
+my $text;					
+ opendir (DR, "$_[0]") || die ("Cannot open directory");  
+my @files = readdir(DR);
+ for my $i (0 .. $#files) {			
+ if ($files[$i] =~ /\.txt/ &amp;&amp; $files[$i] !~ /\._/) {	
+ {
+local $/ = undef ;							
+ open(FILE, "$_[0]/$files[$i]") or die ("file not found");
+ $text = &lt;FILE&gt; ;	
+}
+ $files[$i] =~ s{\.txt}{};
+ $corpus{$files[$i]} = $text; 
+}
+}
+return %corpus;					#Returns a hash called corpus
+}
+
+my %mycorpus = (
+    a =&gt; "date:#20180101# title:#cat dog# text:#sheep sheep sheep sheep#" ,
+
+    b =&gt; "date:#20180101# title:#cow puppy# text:#pig pig pig#",
+);
+
+my %counts;
+foreach my $filename (sort keys %mycorpus) {
+        my $date;
+        my $dataset = '';
+
+				#get date
+        while ($mycorpus{$filename} =~ /date:#(\d{8})#/g){ 
+            $date = $1; 
+        }
+		
+				#get part 1 of dataset
+         while ($mycorpus{$filename} =~ /title:#(.*?)#/g){
+            $dataset = $1;
+					#Actions usually performed here which clean the titles
+												}	
+				#get part 2 of dataset																
+		  while ($mycorpus{$filename} =~ /text:#(.*?)#/g){
+            $dataset = $1;
+			#Actions usually performed here which clean the text
+												}
+			my @words = split /\W+/, $dataset;
+			
+			foreach my $word (@words){
+				
+				if ($word =~ /(\w+)/gi){
+					$word =~ tr/A-Z/a-z/;
+					$counts{$date}{$word}++;
+					$word_types{$word}++;
+					$overallcounts{$date}++;
+				}
+			}   
+		}
+
+ use Data::Dumper;
+ print Dumper \%counts;
+&lt;/code&gt;
+&lt;p&gt; This script has largely worked without issue and produces the desired output. However, I have recently been trying to modify the script so that I am using three while loops (instead of two, as above) to populate the scalar $dataset, but in these instances, the first while loop appears to be ignored and only the 2nd and 3rd populate $dataset. In other words, in the example below, I am only seeing data for the "text" and "comments" but not the titles. &lt;/p&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+sub getCorpus {				
+my %corpus;					
+my $text;					
+ opendir (DR, "$_[0]") || die ("Cannot open directory");  
+my @files = readdir(DR);
+ for my $i (0 .. $#files) {			
+ if ($files[$i] =~ /\.txt/ &amp;&amp; $files[$i] !~ /\._/) {	
+ {
+local $/ = undef ;							
+ open(FILE, "$_[0]/$files[$i]") or die ("file not found");
+ $text = &lt;FILE&gt; ;	
+}
+ $files[$i] =~ s{\.txt}{};
+ $corpus{$files[$i]} = $text; 
+}
+}
+return %corpus;					#Returns a hash called corpus
+}
+
+my %mycorpus = (
+    a =&gt; "date:#20180101# title:#cat dog# text:#sheep sheep sheep sheep#" ,
+
+    b =&gt; "date:#20180101# comment:#woof woof#",
+
+    c =&gt; "date:#20180101# title:#cow puppy# text:#pig pig pig#",
+);
+
+
+
+my %counts;
+foreach my $filename (sort keys %mycorpus) {
+        my $date;
+        my $dataset = '';
+
+				
+        while ($mycorpus{$filename} =~ /date:#(\d{8})#/g){ 
+            $date = $1; 
+        }
+            
+         while ($mycorpus{$filename} =~ /title:#(.*?)#/g){
+            $dataset = $1;
+					#Actions usually performed here which clean the titles (i.e. substituting certain characters)
+												}	
+												
+		 while ($mycorpus{$filename} =~ /text:#(.*?)#/g){
+            $dataset = $1;
+			#Actions usually performed here which clean the text
+					
+												}
+																				
+		  while ($mycorpus{$filename} =~ /comment:#(.*?)#/g){
+				$dataset = $1;
+					#Actions usually performed here which clean the comments	
+												 }	
+			
+			my @words = split /\W+/, $dataset;
+			
+			foreach my $word (@words){
+				
+				if ($word =~ /(\w+)/gi){
+					$word =~ tr/A-Z/a-z/;
+					$counts{$date}{$word}++;
+					$word_types{$word}++;
+					$overallcounts{$date}++;
+				}
+			}   
+		}
+
+ use Data::Dumper;
+ print Dumper \%counts;
+ &lt;/code&gt;
+
+&lt;p&gt; The output I was expecting was: &lt;/p&gt;
+
+ &lt;code&gt;
+$VAR1 = {
+          '20180101' =&gt; {
+                          'puppy' =&gt; 1
+                          'dog' =&gt; 1
+                          'cat' =&gt; 1
+                          'cow' =&gt; 1
+                          'sheep' =&gt; 4,
+                          'woof' =&gt; 2,
+                          'pig' =&gt; 3
+                        }
+        };
+&lt;/code&gt;
+
+&lt;p&gt; But in reality I got: &lt;/p&gt;
+&lt;code&gt;
+$VAR1 = {
+          '20180101' =&gt; {
+                          'sheep' =&gt; 4,
+                          'woof' =&gt; 2,
+                          'pig' =&gt; 3
+                        }
+        };
+&lt;/code&gt;
+ &lt;p&gt; Does it seem like I am doing something wrong here, or is this a recognised way that while loops work? In the instance of the latter, is there any way to work around this? Thanks! &lt;/p&gt;
+&lt;/readmore&gt;</doctext>
+<thread id="1221082">
+<node id="1221083"><node id="1221114"/>
+</node>
+<node id="1221084"><node id="1221116"/>
+</node>
+<node id="1221100"><node id="1221115"/>
+</node>
+</thread></node>

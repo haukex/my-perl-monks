@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1168553" title="Re: Get excel column letter from number" created="2016-07-26 07:10:18" updated="2016-07-26 07:10:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [bulrush],&lt;/p&gt;
+&lt;p&gt;Here are a couple of tests, and just for fun my own (horribly inefficient, benchmark included) implementation using Perl's [doc://perlop#Auto-increment-and-Auto-decrement|magic string increment]:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+sub excelpos2ltr { # by bulrush, https://perlmonks.pair.com/?node_id=1168549
+	my($oldcol)=@_; # Col starts at 0='A'
+	my($procname,$numeric,$ltr,$num2,$outs);
+	$procname="excelpos2ltr";
+	# Alt method 4.
+	$numeric = $oldcol % 26;
+	$ltr = chr(65 + $numeric);
+	#$num2 = intval($oldcol / 26); # old line
+	$num2 = int($oldcol / 26);
+	if ($num2 &gt; 0) {
+		$outs=excelpos2ltr($num2 - 1) . $ltr;
+	}
+	else {
+		$outs=$ltr;
+	}
+	return $outs;
+}
+
+sub colname {
+	my $n = "A";
+	$n++ for 1..shift;
+	return $n;
+}
+
+my %tests = (
+	  0=&gt;"A",    1=&gt;"B",
+	 25=&gt;"Z",   26=&gt;"AA",
+	 27=&gt;"AB",  99=&gt;"CV",
+	420=&gt;"PE", 479=&gt;"RL",
+	 14557=&gt;"UMX",
+	285075=&gt;"PERL",
+);
+
+use Test::More;
+plan tests =&gt; 2 * scalar keys %tests;
+is excelpos2ltr($_), $tests{$_}, "excelpos2ltr $_ =&gt; $tests{$_}"
+	for sort {$a&lt;=&gt;$b} keys %tests;
+is colname($_), $tests{$_}, "colname $_ =&gt; $tests{$_}"
+	for sort {$a&lt;=&gt;$b} keys %tests;
+done_testing;
+
+use Benchmark 'cmpthese';
+cmpthese(-5, {
+	# not neccesarily a fair benchmark due to random test data
+	excelpos2ltr =&gt; sub { excelpos2ltr(rand(10000)) },
+	colname =&gt; sub { colname(rand(10000)) },
+});
+&lt;/c&gt;
+&lt;p&gt;Regards,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1168549</root_node>
+<parent_node field_name="parent_node">1168549</parent_node>
+<thread id="1168549">
+<node id="1168552"/>
+<node id="1168553"/>
+<node id="1168554"><node id="1168562"/>
+<node id="1168564"/>
+</node>
+<node id="1168581"/>
+<node id="1168587"/>
+</thread></node>

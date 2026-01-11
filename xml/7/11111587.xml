@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111587" title="Re^3: @INC error" created="2020-01-18 15:54:18" updated="2020-01-18 15:54:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;My question now is how can I remove all versions of Perl and start with a completely new version including the necessary additions to @INC?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, you don't necessarily need to remove the old versions to build a fresh, self-contained Perl. In any case, you first need to hunt down and eliminate all environment variables related to Perl. In particular, look in your &lt;c&gt;~/.profile&lt;/c&gt; and &lt;c&gt;~/.bashrc&lt;/c&gt;, but environment variables could also be set elsewhere (like some files under &lt;c&gt;/etc&lt;/c&gt;, depending on the system). Look for anything Perl-related, including for example &lt;c&gt;source ~/perl5/perlbrew/etc/bashrc&lt;/c&gt;. Those would be in particular &lt;c&gt;PERL5LIB&lt;/c&gt;, any &lt;c&gt;PATH&lt;/c&gt; entries pointing to any specific Perl builds, &lt;c&gt;PERL_MB_OPT&lt;/c&gt;, &lt;c&gt;PERL_MM_OPT&lt;/c&gt;, &lt;c&gt;PERL5OPT&lt;/c&gt;, and really any other environment variables with &lt;c&gt;PERL&lt;/c&gt; in the name (see [doc://perlrun#ENVIRONMENT|perlrun]). If you're unsure about any of these, feel free to ask here.&lt;/p&gt;
+&lt;p&gt;Then, it depends on whether it's enough to install Perl in your home directory, or whether you want to install it in some system-wide location. For the former, I'd suggest [https://perlbrew.pl/|perlbrew]. You can clobber &lt;c&gt;~/perl5/perlbrew/&lt;/c&gt; first if you want to make sure you're getting a fresh start. Of course, if the file permissions on &lt;c&gt;~/perl5/perlbrew/&lt;/c&gt; allow it, then you can use this Perl on the entire system.&lt;/p&gt;
+&lt;p&gt;If you wanted to build Perl from source into some global location, like say &lt;c&gt;/opt&lt;/c&gt;, then have a look at the [https://github.com/Perl/perl5/blob/blead/INSTALL|INSTALL] file. In short, it can be as simple as doing the following in the Perl source directory: &lt;c&gt;sh Configure -de -Dprefix='/opt/perl5.30' &amp;&amp; make &amp;&amp; make test &amp;&amp; sudo make install&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Both of the methods above will set up self-contained Perl builds, that is, their &lt;c&gt;@INC&lt;/c&gt; directories will only be located below &lt;c&gt;~/perl5/perlbrew/perls/perl-*/&lt;/c&gt; or &lt;c&gt;/opt/perl5.30&lt;/c&gt;, respectively, instead of being spread out all over the system. You can freely install modules there, and you no longer need to worry about [doc://@INC], &lt;c&gt;PERL5LIB&lt;/c&gt;, [doc://local::lib], and so on. You only need to worry about your &lt;c&gt;PATH&lt;/c&gt; pointing to the installation of Perl you want to use, or pointing your shebang line at the correct Perl.&lt;/p&gt;
+&lt;p&gt;For installing modules, I strongly recommend [mod://cpanm], which you can install via &lt;c&gt;curl -L https://cpanmin.us | perl - App::cpanminus&lt;/c&gt; (see [mod://App::cpanminus]). When you're installing modules, you can check &lt;c&gt;which perl&lt;/c&gt; and &lt;c&gt;which cpanm&lt;/c&gt; to make sure they are from the same installation, otherwise you've got something strange going on with your &lt;c&gt;PATH&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;If the installation gets mucked up somehow, you can simply &lt;c&gt;perlbrew uninstall&lt;/c&gt; or &lt;c&gt;rm -rf /opt/perl5.30&lt;/c&gt; to clobber them. Keeping a [mod://cpanfile] with your dependencies is an advantage, since it allows easy re-installation of your modules with "&lt;c&gt;cpanm --installdeps .&lt;/c&gt;".&lt;/p&gt;
+&lt;p&gt;Then, in your [man://crontab;5|crontab] file, make sure to call the correct Perl, I recommend doing this with the absolute pathname. So for example, &lt;c&gt;0 0 * * *  /opt/perl5.30/bin/perl /home/user/script.pl arg1 arg2 ...&lt;/c&gt;.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11111445</root_node>
+<parent_node field_name="parent_node">11111580</parent_node>
+<thread id="11111445">
+<node id="11111446"/>
+<node id="11111447"/>
+<node id="11111501"><node id="11111542"><node id="11111561"/>
+<node id="11111570"/>
+<node id="11111571"/>
+<node id="11111634"/>
+</node>
+</node>
+<node id="11111547"><node id="11111580"><node id="11111587"><node id="11111597"><node id="11111603"><node id="11111617"><node id="11111646"/>
+</node>
+</node>
+</node>
+<node id="11111644"/>
+<node id="11111648"><node id="11111649"><node id="11111707"><node id="11111709"><node id="11111711"><node id="11111720"><node id="11111854"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117703" title="Re^11: Summing numbers in a file" created="2020-06-04 15:59:28" updated="2020-06-04 15:59:28" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;given a CODE ref in a structure somewhere, how do you get the closed over values out of it?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Ok, I see what you're asking now. Whenever you want to inspect lexical variables for debugging, think [mod://PadWalker] (that's also what the Perl debugger uses, as per [doc://perldebug|its docs]). If you wanted to get fancy, combine it with [mod://Data::Dump::Filtered] and [doc://B::Deparse]:&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use B::Deparse;
+use Data::Dump qw/dd pp/;
+use Data::Dump::Filtered qw/add_dump_filter/;
+use Sub::Util qw/subname/;
+use PadWalker qw/closed_over/;
+
+my $deparse = B::Deparse-&gt;new();
+$deparse-&gt;ambient_pragmas(strict=&gt;'all', warnings=&gt;'all');
+add_dump_filter(sub {
+	my ($ctx, $obj) = @_;
+	if ( $ctx-&gt;is_code &amp;&amp; subname($obj)=~/\b__ANON__\z/ ) {
+		my $vars = closed_over($obj);
+		return {
+			dump =&gt; 'sub '.$deparse-&gt;coderef2text($obj),
+			comment =&gt; join("\n",
+				map { my $v = $vars-&gt;{$_}; "my $_ = ".(
+					ref $v eq 'ARRAY' ? pp(@$v) : ref $v eq 'HASH'
+					? "(".join(", ", map { pp($_).' =&gt; '
+						.pp($v-&gt;{$_}) } sort keys %$v ).')'
+					: pp($$v) ).';' }
+				sort keys %$vars ),
+		}
+	}
+	return undef;
+});
+
+sub x {
+	my $i = shift;
+	my $y = { val=&gt;123 };
+	return sub {
+		$y-&gt;{val} += $i;
+		my $z = 2;
+		$i *= $z;
+		return $y;
+	}
+}
+my $foo = {
+	bar =&gt; x(111),
+};
+
+dd $foo;
+dd $foo-&gt;{bar}-&gt;();
+dd $foo;
+
+__END__
+
+{
+  bar =&gt; # my $i = 111;
+         # my $y = { val =&gt; 123 };
+         sub {
+             $y-&gt;{'val'} += $i;
+             my $z = 2;
+             $i *= $z;
+             return $y;
+         },
+}
+{ val =&gt; 234 }
+{
+  bar =&gt; # my $i = 222;
+         # my $y = { val =&gt; 234 };
+         sub {
+             $y-&gt;{'val'} += $i;
+             my $z = 2;
+             $i *= $z;
+             return $y;
+         },
+}
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;blockquote&gt;&lt;i&gt;Is this the origin of the convention in Perl of writing file handle names in ALL UPPERCASE?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I don't know, but that sounds plausible. All I've found in the Camel 2nd Ed. so far is:&lt;/p&gt;
+&lt;blockquote&gt;Since reserved words are always entirely lowercase, we recommend that you pick label and filehandle names that do not appear all in lowercase. ... Using uppercase filehandles also improves readability and protects you from conflict with future reserved words. ... if you have a package called &lt;c&gt;m&lt;/c&gt;, &lt;c&gt;s&lt;/c&gt;, &lt;c&gt;y&lt;/c&gt;, or &lt;c&gt;tr&lt;/c&gt;, then you can't use the qualified form of an identifier as a filehandle because it will be interpreted instead as a pattern match, a substitution, or a translation. Using uppercase package names avoids this problem.&lt;/blockquote&gt;
+&lt;blockquote&gt;&lt;i&gt;This can be a legitimate concern in that you will get only a run-time error instead of a compiler error&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, you don't even get a run-time error, just a warning, which can easily be swallowed or go unnoticed if running the script from a web server, a daemon, a &lt;c&gt;cron&lt;/c&gt; that can't send mails, a script that generates a lot of other output, and so on.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I have yet to write code that had enough bareword file handles for this to be a problem for me. ... This is probably why I have not had typo problems with them, now that I notice it.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Once again, this may apply to &lt;i&gt;you&lt;/i&gt;, but I still don't see any good reason to suggest them to newcomers. Lexical filehandles have become the new best practice for lots of good reasons, and I think I've named pretty much all of them by now. One more might be that lexical filehandles are closed automatically when they go out of scope, but bareword filehandles are not (only when the script ends, which may be a lot later, depending on the code).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;bareword file handles remain a useful tool in producing concise I/O code in a main script ...&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;But is that really the case? You [id://11117543|mentioned] using a filehandle named &lt;c&gt;MANIFEST&lt;/c&gt;, and you said &lt;i&gt;"Global file handles should have meaningful names."&lt;/i&gt; That makes sense since they're package-global, but for lexical filehandles that have limited scope, using a name like &lt;c&gt;$fh&lt;/c&gt; is perfectly fine IMHO. &lt;c&gt;open my $fh, '&lt;', 'Manifest' or die $!; my $data = do { local $/; &lt;$fh&gt; }; close $fh;&lt;/c&gt; is 12 characters &lt;i&gt;shorter&lt;/i&gt; than &lt;c&gt;open MANIFEST, '&lt;', 'Manifest' or die $!; my $data = do { local $/; &lt;MAINFEST&gt; }; close MANIFEST;&lt;/c&gt;, and the latter suffers from all the issues I've already named.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;... while also being visually distinctive in their own way, with both ALLCAPS and different syntax highlighting from variables.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If that's really the only remaining advantage, which is strongly dependent on the editor and highlighting scheme, then I don't really see how that stacks up against all the disadvantages I named (and that you haven't responded to).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;but I am suspicious of "always" and "never" in general&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I know what you mean, and I feel the same way, but I don't think I said "never" anywhere in this thread. I'm a big fan of TIMTOWTDI, but also [wp://There's more than one way to do it|Tim Toady Bicarbonate]. Don't confuse strict coding policies with best practices - the name of the latter already implies that there are other ways to accomplish the same thing, but best practices exist usually because they have advantages over the other practices, it solves issues that other methods have, and so on.&lt;/p&gt;
+&lt;p&gt;In this case, bareword filehandles are no longer the generally recommended practice in part because of the horrible debugging messes that people have had to deal with over the years of people using globals. Lexicals are &lt;i&gt;simply better&lt;/i&gt;, which is far from saying "never use globals". But design desicions made to limit globals can also have positive effects on application architecture.&lt;/p&gt;
+&lt;p&gt;Although traditionally, Perl has often been used for &lt;i&gt;scripts&lt;/i&gt; (I've [https://bitbucket.org/haukex/htools|written] [https://bitbucket.org/haukex/hgpstools|plenty] [id://11108328|myself], and yes, I've used "globals" in a lot of them), something that really opened my eyes is when I spent a few years coding more Java than Perl. In large applications, and especially multi-threaded ones, you just &lt;i&gt;can't&lt;/i&gt; use globals, and for example, [https://stackoverflow.com/a/16161219|context objects] (when properly implemented) make a ton more sense - they're thread-safe, serializable, etc. and replace the functionality that people often use globals for.&lt;/p&gt;
+&lt;p&gt;Just for example, someone coding in [mod://Mojolicious], where the production-mode server is multiprocess, may try to use globals to share information, only to find that it simply doesn't work, but someone already used to limiting the scope of their variables as much as possible will likely find it much easier to deal with - at least that's been my experience.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;The concern I have is the possibility of advice that works well for a beginner, but could unintentionally limit their future growth. I am unsure exactly how "always use lexical file handles" would do that&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That might be an important thing to think about, then. Given than they have so many disadvantages, other than making people aware that bareword filehandles exist, what else is there?  I think it'd be enough to say something like "by the way, bareword filehandles exist and you may see them in legacy code, but nowadays the best practice is to use lexical filehandles because they have many advantages".&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11117483</root_node>
+<parent_node field_name="parent_node">11117678</parent_node>
+<thread id="11117483">
+<node id="11117489"><node id="11117517"><node id="11117523"><node id="11117541"><node id="11117548"><node id="11117638"/>
+</node>
+</node>
+</node>
+<node id="11117525"><node id="11117543"><node id="11117547"><node id="11117580"><node id="11117586"><node id="11117616"/>
+</node>
+<node id="11117617"><node id="11117621"><node id="11117637"><node id="11117678"><node id="11117703"><node id="11117709"><node id="11117763"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11117496"/>
+<node id="11117497"/>
+<node id="11117498"/>
+<node id="11117522"><node id="11117640"><node id="11117649"/>
+</node>
+</node>
+<node id="11117639"/>
+<node id="11117641"/>
+</thread></node>

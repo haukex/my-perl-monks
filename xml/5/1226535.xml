@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1226535" title="Re: curious behavior: why does it do this? (updated!)" created="2018-11-30 09:20:54" updated="2018-11-30 09:20:54" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Based on the discussion [id://1226438], I reported [https://rt.perl.org/Ticket/Display.html?id=133695|bug #133695], where I just [https://rt.perl.org/Ticket/Display.html?id=133695#txn-1597421|posted] some patches. One of them explains the &lt;b&gt;behavior in Perls up to v5.30&lt;/b&gt; of the range operator when its operands are strings:&lt;/p&gt;
+&lt;blockquote&gt;
+
+&lt;p&gt;The range operator in list context can make use of the magical auto-increment algorithm if both operands are strings, subject to the following rules:&lt;/p&gt;
+
+&lt;ul&gt;
+
+&lt;li&gt;&lt;p&gt;With one exception (below), if both strings look like numbers to Perl, the magic increment will not be applied, and the strings will be treated as numbers (more specifically, integers) instead.&lt;/p&gt;
+
+&lt;p&gt;For example, &lt;tt&gt;&amp;quot;-2&amp;quot;..&amp;quot;2&amp;quot;&lt;/tt&gt; is the same as &lt;tt&gt;-2..2&lt;/tt&gt;, &lt;tt&gt;&amp;quot;1&amp;quot;..&amp;quot;-1&amp;quot;&lt;/tt&gt; is the same as &lt;tt&gt;1..-1&lt;/tt&gt; (producing the empty list), and &lt;tt&gt;&amp;quot;2.18&amp;quot;..&amp;quot;3.14&amp;quot;&lt;/tt&gt; produces &lt;tt&gt;2, 3&lt;/tt&gt;.&lt;/p&gt;
+
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;The exception to the above rule is when the left-hand string begins with &lt;tt&gt;0&lt;/tt&gt;, &lt;u&gt;including the string &lt;tt&gt;&amp;quot;0&amp;quot;&lt;/tt&gt; itself&lt;/u&gt;. In this case, the magic increment &lt;i&gt;will&lt;/i&gt; be applied, even though strings like &lt;tt&gt;&amp;quot;01&amp;quot;&lt;/tt&gt; would normally look like a number to Perl.&lt;/p&gt;
+
+&lt;p&gt;For example, &lt;tt&gt;&amp;quot;01&amp;quot;..&amp;quot;04&amp;quot;&lt;/tt&gt; produces &lt;tt&gt;&amp;quot;01&amp;quot;, &amp;quot;02&amp;quot;, &amp;quot;03&amp;quot;, &amp;quot;04&amp;quot;&lt;/tt&gt;, and &lt;u&gt;&lt;tt&gt;&amp;quot;0&amp;quot;..&amp;quot;-1&amp;quot;&lt;/tt&gt; produces &lt;tt&gt;&amp;quot;0&amp;quot;&lt;/tt&gt; through &lt;tt&gt;&amp;quot;99&amp;quot;&lt;/tt&gt;&lt;/u&gt; - this may seem surprising, but see the following rules for why it works this way. To get dates with leading zeros, you can say:&lt;/p&gt;
+
+&lt;pre&gt;    @z2 = (&amp;quot;01&amp;quot; .. &amp;quot;31&amp;quot;);
+    print $z2&amp;#91;$mday&amp;#93;;&lt;/pre&gt;
+
+&lt;p&gt;If you want to force strings to be interpreted as numbers, you could say&lt;/p&gt;
+
+&lt;pre&gt;    @numbers = ( 0+$first .. 0+$last );&lt;/pre&gt;
+
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;If the initial value specified isn&amp;#39;t part of a magical increment sequence (that is, a non-empty string matching &lt;tt&gt;/^&amp;#91;a-zA-Z&amp;#93;*&amp;#91;0-9&amp;#93;*\z/&lt;/tt&gt;), only the initial value will be returned.&lt;/p&gt;
+
+&lt;p&gt;For example, &lt;tt&gt;&amp;quot;ax&amp;quot;..&amp;quot;az&amp;quot;&lt;/tt&gt; produces &lt;tt&gt;&amp;quot;ax&amp;quot;, &amp;quot;ay&amp;quot;, &amp;quot;az&amp;quot;&lt;/tt&gt;, but &lt;tt&gt;&amp;quot;*x&amp;quot;..&amp;quot;az&amp;quot;&lt;/tt&gt; produces only &lt;tt&gt;&amp;quot;*x&amp;quot;&lt;/tt&gt;.&lt;/p&gt;
+
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;For other initial values that are strings that do follow the rules of the magical increment, the corresponding sequence will be returned.&lt;/p&gt;
+
+&lt;p&gt;For example, you can say&lt;/p&gt;
+
+&lt;pre&gt;    @alphabet = (&amp;quot;A&amp;quot; .. &amp;quot;Z&amp;quot;);&lt;/pre&gt;
+
+&lt;p&gt;to get all normal letters of the English alphabet, or&lt;/p&gt;
+
+&lt;pre&gt;    $hexdigit = (0 .. 9, &amp;quot;a&amp;quot; .. &amp;quot;f&amp;quot;)&amp;#91;$num &amp;amp; 15&amp;#93;;&lt;/pre&gt;
+
+&lt;p&gt;to get a hexadecimal digit.&lt;/p&gt;
+
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;If the final value specified is not in the sequence that the magical increment would produce, the sequence goes until the next value would be longer than the final value specified. If the length of the final string is shorter than the first, the empty list is returned.&lt;/p&gt;
+
+&lt;p&gt;For example, &lt;tt&gt;&amp;quot;a&amp;quot;..&amp;quot;--&amp;quot;&lt;/tt&gt; is the same as &lt;tt&gt;&amp;quot;a&amp;quot;..&amp;quot;zz&amp;quot;&lt;/tt&gt;, &lt;tt&gt;&amp;quot;0&amp;quot;..&amp;quot;xx&amp;quot;&lt;/tt&gt; produces &lt;tt&gt;&amp;quot;0&amp;quot;&lt;/tt&gt; through &lt;tt&gt;&amp;quot;99&amp;quot;&lt;/tt&gt;, and &lt;tt&gt;&amp;quot;aaa&amp;quot;..&amp;quot;--&amp;quot;&lt;/tt&gt; returns the empty list.&lt;/p&gt;
+
+&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;strike&gt;&lt;i&gt;However&lt;/i&gt;, in case one of my patches gets accepted, it would change &lt;c&gt;"0".."-1"&lt;/c&gt; from returning &lt;c&gt;"0".."99"&lt;/c&gt; to returning the empty list, which would be consistent with &lt;c&gt;0..-1&lt;/c&gt;. In any case, the patches include the corresponding documentation, so hopefully [doc://perlop] will get an update.&lt;/strike&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;Update 2019-08-27:&lt;/b&gt; &lt;b&gt;As of Perl 5.32, the behavior has changed&lt;/b&gt; to the following (changes underlined):&lt;/p&gt;
+&lt;blockquote&gt;
+
+&lt;p&gt;The range operator in list context can make use of the magical
+auto-increment algorithm if both operands are strings, subject to the
+following rules:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;With one exception (below), if both strings look like numbers to Perl,
+the magic increment will not be applied, and the strings will be treated
+as numbers (more specifically, integers) instead.&lt;/p&gt;
+&lt;p&gt;For example, &lt;c&gt;"-2".."2"&lt;/c&gt; is the same as &lt;c&gt;-2..2&lt;/c&gt;, and
+&lt;c&gt;"2.18".."3.14"&lt;/c&gt; produces &lt;c&gt;2, 3&lt;/c&gt;.&lt;/p&gt;
+&lt;/li&gt;&lt;li&gt;
+&lt;p&gt;The exception to the above rule is when the left-hand string begins with
+&lt;c&gt;0&lt;/c&gt; &lt;u&gt;and is longer than one character&lt;/u&gt;, in this case the magic increment
+&lt;i&gt;will&lt;/i&gt; be applied, even though strings like &lt;c&gt;"01"&lt;/c&gt; would normally look
+like a number to Perl.&lt;/p&gt;
+&lt;p&gt;For example, &lt;c&gt;"01".."04"&lt;/c&gt; produces &lt;c&gt;"01", "02", "03", "04"&lt;/c&gt;, and
+&lt;u&gt;&lt;c&gt;"00".."-1"&lt;/c&gt; produces &lt;c&gt;"00"&lt;/c&gt; through &lt;c&gt;"99"&lt;/c&gt;&lt;/u&gt; - this may seem
+surprising, but see the following rules for why it works this way.
+To get dates with leading zeros, you can say:&lt;/p&gt;
+&lt;c&gt;
+@z2 = ("01" .. "31");
+print $z2[$mday];
+&lt;/c&gt;
+&lt;p&gt;If you want to force strings to be interpreted as numbers, you could say&lt;/p&gt;
+&lt;c&gt;
+@numbers = ( 0+$first .. 0+$last );
+&lt;/c&gt;
+&lt;/li&gt;&lt;li&gt;
+&lt;p&gt;If the initial value specified isn't part of a magical increment
+sequence (that is, a non-empty string matching &lt;c&gt;/^[a-zA-Z]*[0-9]*\z/&lt;/c&gt;),
+only the initial value will be returned.&lt;/p&gt;
+&lt;p&gt;For example, &lt;c&gt;"ax".."az"&lt;/c&gt; produces &lt;c&gt;"ax", "ay", "az"&lt;/c&gt;, but
+&lt;c&gt;"*x".."az"&lt;/c&gt; produces only &lt;c&gt;"*x"&lt;/c&gt;.&lt;/p&gt;
+&lt;/li&gt;&lt;li&gt;
+&lt;p&gt;For other initial values that are strings that do follow the rules of the
+magical increment, the corresponding sequence will be returned.&lt;/p&gt;
+&lt;p&gt;For example, you can say&lt;/p&gt;
+&lt;c&gt;
+@alphabet = ("A" .. "Z");
+&lt;/c&gt;
+&lt;p&gt;to get all normal letters of the English alphabet, or&lt;/p&gt;
+&lt;c&gt;
+$hexdigit = (0 .. 9, "a" .. "f")[$num &amp; 15];
+&lt;/c&gt;
+&lt;p&gt;to get a hexadecimal digit.&lt;/p&gt;
+&lt;/li&gt;&lt;li&gt;
+&lt;p&gt;If the final value specified is not in the sequence that the magical
+increment would produce, the sequence goes until the next value would
+be longer than the final value specified. If the length of the final
+string is shorter than the first, the empty list is returned.&lt;/p&gt;
+&lt;p&gt;For example, &lt;c&gt;"a".."--"&lt;/c&gt; is the same as &lt;c&gt;"a".."zz"&lt;/c&gt;, &lt;c&gt;"0".."xx"&lt;/c&gt;
+produces &lt;c&gt;"0"&lt;/c&gt; through &lt;c&gt;"99"&lt;/c&gt;, and &lt;c&gt;"aaa".."--"&lt;/c&gt; returns the empty
+list.&lt;/p&gt;
+
+&lt;/blockquote&gt;</doctext>
+<root_node field_name="root_node">1226434</root_node>
+<parent_node field_name="parent_node">1226434</parent_node>
+<thread id="1226434">
+<node id="1226435"><node id="1226440"/>
+</node>
+<node id="1226437"><node id="1226438"><node id="1226439"/>
+<node id="1226443"/>
+<node id="1226451"><node id="1226464"><node id="1226478"><node id="1226532"/>
+</node>
+</node>
+<node id="1226474"/>
+</node>
+</node>
+<node id="1226446"/>
+</node>
+<node id="1226535"/>
+<node id="11109891"><node id="11109898"/>
+</node>
+</thread></node>

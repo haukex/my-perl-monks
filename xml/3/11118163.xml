@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118163" title="Re^2: Calculated position incorrect when using regex in text file that also contains binary info (updated)" created="2020-06-17 00:36:43" updated="2020-06-17 00:36:43" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11117262">geertvc</author>
+<doctext field_name="doctext">Hello [haukex|haukex],
+&lt;p&gt;
+Sorry for the late reply, but I was for a few days not able to work on that one.
+&lt;br&gt;&lt;br&gt;
+I've followed your advice, opened the file in &lt;c&gt;raw&lt;/c&gt; mode.  Before, I was using the module &lt;c&gt;use Path::Tiny;&lt;/c&gt; and then &lt;c&gt;path('&lt;file.pdf&gt;')-&gt;slurp_raw;&lt;/c&gt; to open the file in raw mode.  I guess that's the same behaviour?
+&lt;/p&gt;
+&lt;p&gt;
+Anyway, I followed your advice and came up with the following test program:
+&lt;c&gt;
+use v5.010;
+use strict;
+use warnings;
+
+# Reading in file in raw format.
+local $/;
+open F, "&lt;:raw", "input.pdf" or die $!;
+my $raw_content = &lt;F&gt;;
+
+my $nr_of_cos_objects = 10;
+my @counter = (1..$nr_of_cos_objects);
+my $position = 0;
+
+for my $number (@counter) {
+    my $result = $raw_content=~qr/^${number} 0 obj/aa;
+    if ($result) {
+        say "Object item [$number] ('${number} 0 obj') starts at position  [$-[0]]";
+    } else {
+        say "Object item [$number] ('${number} 0 obj') start position not found";
+    }
+
+    if ($result) {
+        say "Object item [$number] ('${number} 0 obj') ends   at position  [$+[0]]\n";
+    } else {
+        say "Object item [$number] ('${number} 0 obj') end   position not found\n";
+    }
+}
+
+say "End test program.  Bye...";
+&lt;/c&gt;
+Result: nothing is found at all when using &lt;c&gt;/aa&lt;/c&gt; (or &lt;c&gt;/a&lt;/c&gt;).  This is the output:
+&lt;c&gt;
+Object item [1] ('1 0 obj') start position not found
+Object item [1] ('1 0 obj') end   position not found
+
+Object item [2] ('2 0 obj') start position not found
+Object item [2] ('2 0 obj') end   position not found
+
+Object item [3] ('3 0 obj') start position not found
+Object item [3] ('3 0 obj') end   position not found
+
+Object item [4] ('4 0 obj') start position not found
+Object item [4] ('4 0 obj') end   position not found
+
+Object item [5] ('5 0 obj') start position not found
+Object item [5] ('5 0 obj') end   position not found
+
+Object item [6] ('6 0 obj') start position not found
+Object item [6] ('6 0 obj') end   position not found
+
+Object item [7] ('7 0 obj') start position not found
+Object item [7] ('7 0 obj') end   position not found
+
+Object item [8] ('8 0 obj') start position not found
+Object item [8] ('8 0 obj') end   position not found
+
+Object item [9] ('9 0 obj') start position not found
+Object item [9] ('9 0 obj') end   position not found
+
+Object item [10] ('10 0 obj') start position not found
+Object item [10] ('10 0 obj') end   position not found
+&lt;/c&gt;
+&lt;/p&gt;
+&lt;p&gt;
+The &lt;c&gt;/m&lt;/c&gt; is apparently indispensable in this regex setup, so I also tried &lt;c&gt;/ma&lt;/c&gt; and &lt;c&gt;/maa&lt;/c&gt; combinations.  When doing this, I get the results back, but incorrect (same results as my very initial attempts...).
+&lt;c&gt;
+Object item [1] ('1 0 obj') starts at position  [19]
+Object item [1] ('1 0 obj') ends   at position  [26]
+
+Object item [2] ('2 0 obj') starts at position  [235]
+Object item [2] ('2 0 obj') ends   at position  [242]
+
+Object item [3] ('3 0 obj') starts at position  [344]
+Object item [3] ('3 0 obj') ends   at position  [351]
+
+Object item [4] ('4 0 obj') starts at position  [667]
+Object item [4] ('4 0 obj') ends   at position  [674]
+
+Object item [5] ('5 0 obj') starts at position  [2663]
+Object item [5] ('5 0 obj') ends   at position  [2670]
+
+Object item [6] ('6 0 obj') starts at position  [3139]
+Object item [6] ('6 0 obj') ends   at position  [3146]
+
+Object item [7] ('7 0 obj') starts at position  [3514]
+Object item [7] ('7 0 obj') ends   at position  [3521]
+
+Object item [8] ('8 0 obj') starts at position  [3839]
+Object item [8] ('8 0 obj') ends   at position  [3846]
+
+Object item [9] ('9 0 obj') starts at position  [5063]
+Object item [9] ('9 0 obj') ends   at position  [5070]
+
+Object item [10] ('10 0 obj') starts at position  [5501]
+Object item [10] ('10 0 obj') ends   at position  [5509]
+&lt;/c&gt;
+&lt;/p&gt;
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-11117262"&gt;
+Best rgds,&lt;br/&gt;
+Geert
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11118037</root_node>
+<parent_node field_name="parent_node">11118039</parent_node>
+<thread id="11118037">
+<node id="11118039"><node id="11118163"><node id="11118174"><node id="11118213"/>
+</node>
+<node id="11118308"><node id="11118318"><node id="11118319"/>
+<node id="11118322"><node id="11118325"/>
+<node id="11118593"><node id="11118656"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11118042"><node id="11118166"><node id="11118181"/>
+<node id="11118249"/>
+</node>
+</node>
+<node id="11118048"><node id="11118165"/>
+</node>
+<node id="11118070"><node id="11118164"><node id="11118218"/>
+</node>
+</node>
+</thread></node>

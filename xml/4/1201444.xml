@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201444" title="&quot;no warnings 'uninitialized'&quot; failing" created="2017-10-16 10:05:36" updated="2017-10-16 10:05:36" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="274058">jest</author>
+<doctext field_name="doctext">&lt;p&gt;An older part of our codebase has a function for converting a data structure to XML, using XML::Simple (for some legacy reason), and saving it to a directory.&lt;/p&gt;
+
+&lt;p&gt;At some point, we upgraded XML::Simple to 2.24, and it started throwing "Use of uninitialized value" errors. Whatever caused this was irrelevant to our purposes, so I put this in a block with "no warnings 'uninitialized';", and all was good.&lt;/p&gt;
+
+&lt;p&gt;For no reason that I can tell--I didn't upgrade any package, or my Perl version (5.16.3 for this)--our test suite is now throwing the error again, though the "no warnings" is right there:&lt;/p&gt;
+
+&lt;code&gt;
+    use XML::Simple;
+
+    my $xml; 
+    {
+	# Suppress warnings from XML::Simple 2.24
+	no warnings 'uninitialized';
+	my $xmlout = XMLout($data, NoAttr =&gt; 1, RootName =&gt; undef, SuppressEmpty =&gt; 0);
+	$xml = '&lt;xml version="1.0" encoding="UTF-8"&gt;' . "\n$xmlout&lt;/xml&gt;";
+    }
+&lt;/code&gt;
+
+Result from test suite:
+
+&lt;code&gt;
+Use of uninitialized value at /[path/to]/Data.pm line 205.
+Use of uninitialized value at /[path/to]/Data.pm line 205.
+Use of uninitialized value at /[path/to]/Data.pm line 205.
+[...]
+&lt;/code&gt;
+
+Where line 205 is the "my $xmlout..." from above.
+
+&lt;p&gt;
+Can someone explain why I am getting a warning that I explicitly shut off on the immediately preceding line? And how I stop this? The tests pass, but it's distracting as hell to get 50 lines of this error every time we run it.
+&lt;/p&gt;</doctext>
+<thread id="1201444">
+<node id="1201445"/>
+<node id="1201446"/>
+<node id="1201468"/>
+<node id="1201471"><node id="1201472"/>
+</node>
+<node id="1201476"/>
+</thread></node>

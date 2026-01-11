@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11114782" title="i2c bus contention" created="2020-03-29 19:04:48" updated="2020-03-29 19:04:48" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1064720">anita2R</author>
+<doctext field_name="doctext">&lt;p&gt;Hello,&lt;/p&gt;
+
+&lt;p&gt;I am looking for advice on an approach that I can use to solve this problem:&lt;/p&gt;
+
+&lt;p&gt;I have a Perl script that runs an lcd display over i2c. This runs continuously, reading and displaying new data from a text file. This runs fine and is stable over many months.&lt;/p&gt;
+
+&lt;p&gt;I have a second perl script that reads volts &amp; amps from a device (INA219) that is also connected over i2c. This runs fine when run on a different machine (both Raspberry Pi's).&lt;/p&gt;
+
+&lt;p&gt;But ... when both scripts are run on the same machine, the lcd screen gets garbled and some of the amps/volts data is wrong. It seems that the underlying i2c driver does not handle contention. Both scripts use HiPi::Device::I2C.&lt;/p&gt;
+
+&lt;p&gt;I have overcome the problem by using time slots.&lt;/p&gt;
+&lt;p&gt;The amps/volts device can read/write at 0, 5, 10, 15 seconds etc. after each minute and the lcd script can write at (1,2,3) (6,7,8) (11,12,13) seconds etc. after each minute. The data from the amps/volts device is fine and the lcd display is stable using this scheme.&lt;/p&gt;
+
+&lt;p&gt;But this is an ugly fix, so I am looking for alternatives.&lt;/p&gt;
+&lt;p&gt;I looked at using a common module with the aim of passing read/write requests from each script to the module, which would then handle them sequentially, so no contention.&lt;/p&gt; 
+&lt;p&gt;Using two small test scripts and a module I wrote (i2cAccess.pm) I found, perhaps not unexpectedly, that each script loads or uses a separate copy of the module. so there is no common access to the i2c bus. I can post the two scripts and the module if it would be of any use.&lt;/p&gt;
+
+&lt;p&gt;I considered having a lock file that each script accesses, to control access to the i2c bus, but that seems like a lot of overhead, probably worse that my time slot solution.&lt;/p&gt;
+
+&lt;p&gt;I also setup a test using IPC::Shareable&lt;/p&gt;
+&lt;p&gt;The aim being to pass the i2c objects, register information etc. to the 'server' program. This failed because, as far as I can tell, Shareable does not support objects. I found a reference to this  at https://www.nntp.perl.org/group/perl.poe/2009/12/msg4706.html which says 'Storable can't serialize filehandles'. When adding an i2c object to a shared hash I get 'Can't store GLOB items at ... /IPC/Shareable.pm. Again I can post the test scripts I used if that would be helpful.&lt;/p&gt;
+
+&lt;p&gt;Can the monks suggest an approach to handling this issue. &lt;/p&gt;
+
+&lt;p&gt;Thank you for your consideration.&lt;/p&gt;</doctext>
+<thread id="11114782">
+<node id="11114783"><node id="11114784"/>
+<node id="11114804"/>
+</node>
+<node id="11114786"><node id="11114790"><node id="11114791"><node id="11114823"/>
+</node>
+<node id="11114797"/>
+</node>
+<node id="11114796"/>
+<node id="11114799"><node id="11114805"/>
+</node>
+</node>
+<node id="11114794"><node id="11114798"/>
+<node id="11114956"/>
+</node>
+</thread></node>

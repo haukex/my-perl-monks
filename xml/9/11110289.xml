@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110289" title="Re^4: printing unitialized value of the 'do BLOCK'" created="2019-12-17 10:48:59" updated="2019-12-17 10:48:59" _doctext_mode="lenient"><type id="11">note</type>
+<author id="381608">ikegami</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;p&gt;&lt;i&gt;I remember this particular factiod because it has bothered me in the past that the return value of if isn't more clearly documented&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;Because it's not an expression. Expressions evaluate to a value, not statements. Nothing ever wants the value of an if statement.
+
+&lt;p&gt;Quote [doc://perlsub] (for subs, but the same applies to &lt;c&gt;do BLOCK&lt;/c&gt;):
+
+&lt;blockquote&gt;&lt;p&gt;If no return is found and if the last statement is an expression, its value is returned. If the last statement is a loop control structure like a foreach or a while, the returned value is unspecified. The empty sub returns the empty list. &lt;/p&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;An if statement isn't a "loop control structure", but more importantly, it's not an expression either. One shouldn't place an if statement as the last statement of a block from which we expect a value.
+
+&lt;p&gt;That said, people do use if statements that way, and the result has been quite predictable. (&lt;b&gt;Update&lt;/b&gt;: Mostly predictable. [id://11110359|Exception]) The last expression evaluated during the course of the processing of the if statement is the resulting value.
+
+&lt;c&gt;
+my $x = 1;
+if ($x) {
+   f();      # f() is the last expression evaluated.
+} else {
+   g();
+}
+&lt;/c&gt;
+
+&lt;c&gt;
+my $x = 0;
+if ($x) {
+   f();
+} else {
+   g();      # g() is the last expression evaluated.
+}
+&lt;/c&gt;
+
+
+&lt;c&gt;
+my $x = 0;
+if ($x) {    # $x is the last expression evaluated.
+   f();
+}
+&lt;/c&gt;
+
+&lt;c&gt;
+my $x = 0;
+if ($x == 1) {
+   f();
+} elsif ($x == 2) (    # $x==2 is the last expression evaluated.
+   g();
+}
+&lt;/c&gt;
+
+&lt;p&gt;The same goes for while statements, until statements, and bare loops (&lt;c&gt;{ }&lt;/c&gt;). Foreach loops are obviously different (since the iterator is hidden from us).
+
+&lt;p&gt;&lt;b&gt;Updated&lt;/b&gt;
+</doctext>
+<root_node field_name="root_node">11110281</root_node>
+<parent_node field_name="parent_node">11110285</parent_node>
+<thread id="11110281">
+<node id="11110282"><node id="11110284"><node id="11110285"><node id="11110289"><node id="11110293"><node id="11110295"/>
+</node>
+<node id="11110296"><node id="11110320"><node id="11110539"/>
+</node>
+<node id="11110342"><node id="11110359"><node id="11110362"><node id="11110364"><node id="11110366"><node id="11110525"><node id="11110592"/>
+</node>
+<node id="11110536"><node id="11110615"><node id="11110629"><node id="11110631"><node id="11110632"><node id="11110651"><node id="11110661"><node id="11110696"><node id="11110702"><node id="11110703"><node id="11110705"><node id="11110715"><node id="11110876"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11110650"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11110394"><node id="11110399"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11110297"><node id="11110303"/>
+<node id="11110343"/>
+</node>
+</node>
+</node>
+<node id="11110286"><node id="11110294"/>
+<node id="11110299"/>
+<node id="11110538"><node id="11110548"><node id="11110561"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11110283"/>
+</thread></node>

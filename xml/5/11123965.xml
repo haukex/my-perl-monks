@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11123965" title="Re^2: Fastest way to &quot;pick without replacement&quot;" created="2020-11-21 07:11:27" updated="2020-11-21 07:11:27" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I was curious if storing the values in a hash in the first place might be better. Turns out, no, even if the output is a hash as well.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Benchmark qw/cmpthese/;
+
+my @array = ( 'a'..'t' );
+my %hash = map { $_ =&gt; $array[$_] } 0..$#array;
+my $index = 3;
+my $expect = 'abcefghijklmnopqrst';
+use constant TEST =&gt; 0;
+
+cmpthese(-2, {
+	splice =&gt; sub {
+		my @output = @array;
+		splice @output, $index, 1;
+		join("", @output) eq $expect or die if TEST;
+	},
+	hash_slice =&gt; sub {
+		my %ha; @ha{0..$#array} = @array;
+		delete $ha{$index};
+		my @output = @ha{ sort {$a &lt;=&gt; $b} keys %ha };
+		join("", @output) eq $expect or die if TEST;
+	},
+	swap =&gt; sub {
+		my @output = @array;
+		$output[$index] = pop @output;
+		join("", sort @output) eq $expect or die if TEST;
+	},
+	prehash_del =&gt; sub {
+		my %ha = %hash;
+		delete $ha{$index};
+		my @output = @ha{ sort {$a &lt;=&gt; $b} keys %ha };
+		join("", @output) eq $expect or die if TEST;
+	},
+	prehash_local =&gt; sub {
+		delete local $hash{$index};
+		my @output = @hash{ sort {$a &lt;=&gt; $b} keys %hash };
+		join("", @output) eq $expect or die if TEST;
+	},
+	prehash_grep =&gt; sub {
+		my @output = @hash{ sort {$a &lt;=&gt; $b}
+			grep { $_ != $index } keys %hash };
+		join("", @output) eq $expect or die if TEST;
+	},
+	outhash =&gt; sub {
+		my %output = %hash;
+		delete $output{$index};
+		join("", @output{ sort {$a &lt;=&gt; $b} keys %output }) eq $expect
+			or die if TEST;
+	},
+});
+
+__END__
+
+                  Rate hash_slice prehash_del prehash_local prehash_grep outhash swap splice
+hash_slice    127891/s         --        -10%          -40%         -50%    -68% -85%   -85%
+prehash_del   142822/s        12%          --          -33%         -45%    -64% -83%   -84%
+prehash_local 214633/s        68%         50%            --         -17%    -46% -75%   -75%
+prehash_grep  258191/s       102%         81%           20%           --    -36% -70%   -70%
+outhash       400518/s       213%        180%           87%          55%      -- -53%   -54%
+swap          847448/s       563%        493%          295%         228%    112%   --    -2%
+splice        868423/s       579%        508%          305%         236%    117%   2%     --
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11123879</root_node>
+<parent_node field_name="parent_node">11123963</parent_node>
+<thread id="11123879">
+<node id="11123881"/>
+<node id="11123884"><node id="11123941"><node id="11123949"/>
+<node id="11123958"/>
+</node>
+<node id="11123952"/>
+</node>
+<node id="11123885"><node id="11123927"><node id="11123986"/>
+</node>
+</node>
+<node id="11123905"/>
+<node id="11123963"><node id="11123965"><node id="11123973"><node id="11124019"><node id="11124034"/>
+</node>
+</node>
+<node id="11124041"/>
+</node>
+</node>
+</thread></node>

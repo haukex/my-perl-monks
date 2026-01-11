@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1214701" title="Safely read/write a file simultaneously" created="2018-05-16 20:40:53" updated="2018-05-16 20:40:53" _doctext_mode="lenient"><type id="1042">CUFP</type>
+<author id="941867">golux</author>
+<doctext field_name="doctext">I'm working on a Client/Server project where a "progress file" gets updated (potentially quite often) and read from a separate (CGI) process.
+I was pretty sure having the writer reopening the progress file could cause the reader to have occasional problems, and also fairly sure that 
+writing to a tempfile instead (and then moving the tempfile over the progress file) would be much safer (ie. atomic).
+&lt;p&gt;But why Google it when you can write code to test it instead?  ;-)
+&lt;/p&gt;&lt;p&gt;Here's the result, which indicates I was correct on both counts, and happily the latter seems to be atomic enough that an error never occurs.
+Set or clear the value of &lt;c&gt;$unsafe&lt;/c&gt; to try the different algorithms.
+&lt;c&gt;
+#!/usr/bin/perl
+
+###############
+## Libraries ##
+###############
+use strict;
+use warnings;
+use File::Copy;
+use Function::Parameters;
+use IO::File;
+
+
+##################
+## User-defined ##
+##################
+my $file   = 'file.txt';
+my $rdelay = 0.03;      # Read delay:  3/100th of a second
+my $wdelay = 0.01;      # Write delay: 1/100th of a second
+my $unsafe = 1;         # Set to zero to call the "safe" write algorithm
+
+
+##################
+## Main Program ##
+##################
+$| = 1;
+
+if (fork) {
+    writer($unsafe);
+} else {
+    reader();
+}
+
+
+#################
+## Subroutines ##
+#################
+
+#
+# Writes to a file many times per second.
+#
+fun writer($unsafe) {
+    my $count = 0;
+    while (1) {
+        if ($unsafe) {
+            writefile1($file, $count++);
+        } else {
+            writefile2($file, $count++);
+        }
+
+        # Sleep for 1/100th of a second
+        select(undef, undef, undef, $wdelay);
+    }
+}
+
+
+#
+# Reads from the file, displaying number of total errors
+# (each time the $count was undefined).
+#
+fun reader() {
+    sleep 1;        # Give the writer time to create the file initially
+    my $nerrs = 0;  # How many total errors did we get?
+
+    while (1) {
+        my $count = readfile($file);
+        if ($count) {
+            printf "%8d, ", $count;
+        } else {
+            printf "\nTotal errors = %d\n", ++$nerrs;
+            sleep 1;
+        }
+    }
+
+    select(undef, undef, undef, $rdelay);
+}
+
+
+#
+# Algorithm 1
+#
+# Writes the $value directly to the file
+# This turns out to be quite prone to error when the file is read.
+#
+fun writefile1($file, $value) {
+    my $fh = IO::File-&gt;new;
+    open($fh, '&gt;', $file) or die "Can't write '$file' ($!)\n";
+    print $fh "$value\n";
+    close($fh);
+}
+
+
+#
+# Algorithm 2
+#
+# Writes the $value to a temp file, then moves the tempfile over the
+# actual destination.  This turns out to be quite safe for reading.
+#
+fun writefile2($file, $value) {
+    my $fh = IO::File-&gt;new;
+    my $tmp = 'tmp.txt';
+    open($fh, '&gt;', $tmp) or die "Can't write '$file' ($!)\n";
+    print $fh "$value\n";
+    close($fh);
+    move($tmp, $file);
+}
+
+
+#
+# Reads the $value from the $file
+#
+fun readfile($file) {
+    my $fh = IO::File-&gt;new;
+    open($fh, '&lt;', $file) or die "Can't read '$file' ($!)\n";
+    my $value = &lt;$fh&gt;;
+    defined($value) or return 0;
+    chomp($value);
+    close($fh);
+    return $value;
+}
+&lt;/c&gt;
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-941867"&gt;
+&lt;center&gt;&lt;font size="-1"&gt;
+&lt;font color="#ff0000"&gt;say&amp;nbsp;&lt;/font&gt;
+&lt;font color="#ffbf3f"&gt;substr&lt;/font&gt;&lt;font color="#c8871a"&gt;+&lt;/font&gt;&lt;font color="#9f4f06"&gt;lc&amp;nbsp;&lt;/font&gt;&lt;font color="#711f79"&gt;crypt&lt;/font&gt;&lt;font color="black"&gt;(&lt;font color="#a9df2d"&gt;qw&amp;nbsp;&lt;/font&gt;&lt;font color="#4df9ff"&gt;$i3&amp;nbsp;&lt;/font&gt;&lt;font color="#4db2ff"&gt;SI$&lt;/font&gt;),4,5&lt;/font&gt;&lt;/font&gt;&lt;/center&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1214701">
+<node id="1214716"/>
+</thread></node>

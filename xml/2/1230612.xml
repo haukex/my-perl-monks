@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230612" title="Re: Logic for importing and strict vars?" created="2019-02-27 07:08:14" updated="2019-02-27 07:08:14" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1020196">vr</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+why the fourth of these examples is an error
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'd say it's in accordance with [doc://strict] (emphasis mine):&lt;/p&gt;
+&lt;blockquote&gt;
+strict vars&lt;br/&gt;
+&lt;br/&gt;
+This generates a compile-time error if you access a variable that was &lt;b&gt;neither explicitly declared&lt;/b&gt; (using any of my, our, state, or use vars ) &lt;b&gt;nor fully qualified&lt;/b&gt;.&lt;br/&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;p&gt;(&lt;b&gt;Edit:&lt;/b&gt; to re-phrase, maybe it's more clear -- &lt;i&gt;was&lt;/i&gt; neither explicitly declared nor &lt;i&gt;is&lt;/i&gt; fully qualified.)&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;p&gt;Thus, no surprise that next 2 lines fail:&lt;/p&gt;
+&lt;c&gt;
+perl -wMstrict -e "$::x=0; $x++"                        # not OK
+perl -wMstrict -e "package foo; $foo::x=0; $x++"        # not OK
+&lt;/c&gt;
+&lt;p&gt;Next 2 lines are your examples -- it's strange 2nd (your third) doesn't fail:&lt;/p&gt;
+&lt;c&gt;
+perl -wMstrict -e "BEGIN{*::x=\$a} $x++"                # not OK (1)
+perl -wMstrict -e "BEGIN{package foo; *::x=\$a} $x++"   # OK     (2)
+&lt;/c&gt;
+&lt;p&gt;It has something to do with BEGIN:&lt;/p&gt;
+&lt;c&gt;
+perl -wMstrict -e "{package foo; *::x=\$a} $x++"        # not OK
+&lt;/c&gt;
+&lt;p&gt;the deparsed output is an insult:&lt;/p&gt;
+&lt;c&gt;
+C:\&gt;perl -MO=Deparse -wMstrict -e "{package foo; *::x=\$a} $x++"
+Variable "$x" is not imported at -e line 1.
+Global symbol "$x" requires explicit package name (did you forget to declare "my
+ $x"?) at -e line 1.
+-e had compilation errors.
+BEGIN { $^W = 1; }
+use strict;
+{
+    package foo;
+    *main::x = \$a;
+}
+$main::x++;
+&lt;/c&gt;
+&lt;p&gt;&lt;strike&gt;But also with "main" package.&lt;/strike&gt; Next 2 are symmetrical with examples (1) and (2), just with "bar" instead of "main", &lt;strike&gt;but both OK now:&lt;/strike&gt;&lt;/p&gt;
+&lt;c&gt;
+perl -wMstrict -e "BEGIN{package bar; *bar::x=\$a} package bar; $x++"   # not OK
+perl -wMstrict -e "BEGIN{package foo; *bar::x=\$a} package bar; $x++"   # OK
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Edit 2:&lt;/b&gt; Actually, replacing "main" with "bar" doesn't change anything (fixed one of the lines above).&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1230603</root_node>
+<parent_node field_name="parent_node">1230603</parent_node>
+<thread id="1230603">
+<node id="1230604"><node id="1230609"><node id="1230616"/>
+</node>
+<node id="1230652"/>
+</node>
+<node id="1230608"><node id="1230653"><node id="1230661"/>
+</node>
+</node>
+<node id="1230612"><node id="1230613"><node id="1230655"/>
+</node>
+<node id="1230654"/>
+</node>
+<node id="1230614"><node id="1230656"/>
+</node>
+<node id="1230615"><node id="1230617"><node id="1230618"><node id="1230619"><node id="1230620"/>
+</node>
+</node>
+</node>
+<node id="1230657"><node id="1230662"><node id="1230698"/>
+</node>
+</node>
+</node>
+<node id="1230622"><node id="1230658"/>
+</node>
+</thread></node>

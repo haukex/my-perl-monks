@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1159412" title="LWP not POSTING (400 Bad Request)" created="2016-04-03 05:45:03" updated="2016-04-03 05:45:03" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1159409">HollyWould</author>
+<doctext field_name="doctext">Hi all,
+
+I have a simple script to POST data, but for some reason it is not posting the data:
+
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use LWP::UserAgent;
+use MIME::Base64;
+use JSON;
+
+my $ua = LWP::UserAgent-&gt;new;
+push @{ $ua-&gt;requests_redirectable }, 'POST';
+
+my $server_endpoint = "http://photos.mysite.com/api/1/upload/";
+my $server_api_key = "xxxx";
+my $encoded = "http://photos.mysite.com/128.jpg";
+
+my $req = HTTP::Request-&gt;new(POST =&gt; $server_endpoint);
+#$req-&gt;header('content-type' =&gt; 'multipart/form-data');
+$req-&gt;header('content-type' =&gt; 'application/json');
+
+my $post_json = {
+    key    =&gt; $server_api_key,
+    source =&gt; $encoded,
+    format =&gt; "json",
+};
+
+my $post_data = encode_json($post_json);
+$req-&gt;content($post_data);
+printf "\n\n$post_data\n";
+
+my $resp = $ua-&gt;request($req);
+print $resp-&gt;as_string;
+
+if ($resp-&gt;is_success) {
+    my $message = $resp-&gt;decoded_content;
+    print "Received reply: $message\n";
+}
+else {
+    print "HTTP POST error code: ", $resp-&gt;code, "\n";
+    print "HTTP POST error message: ", $resp-&gt;message, "\n";
+}
+&lt;/code&gt;
+
+Response in web server logs:
+&lt;code&gt;
+192.168.1.108 - - [03/Apr/2016:19:22:43 +1000] "POST /api/1/upload/ HTTP/1.1" 301 424 "-" "libwww-perl/6.08"
+&lt;/code&gt;
+You can see that the data is not being posted?
+
+I would expect to see something like: (which works when I use the Paw Client to do the POST)
+&lt;code&gt;
+192.168.1.54 - - [03/Apr/2016:19:32:44 +1000] "POST /api/1/upload/?key=xxxx&amp;format=json&amp;source=http%3A%2F%2Fphotos.mysite.com%2F128.jpg HTTP/1.1" 200 2570 "-" "Paw/2.3.3  GCDHTTPRequest"
+&lt;/code&gt;
+
+Any ideas would be greatly appreciated.
+
+Thanks, HW
+
+</doctext>
+<thread id="1159412">
+<node id="1159416"><node id="1159420"/>
+</node>
+<node id="1159419"><node id="1159421"/>
+</node>
+</thread></node>

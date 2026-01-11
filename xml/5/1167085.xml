@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1167085" title="Undumping Perl" created="2016-07-03 14:27:10" updated="2016-07-03 14:27:10" _doctext_mode="strict"><type id="1042">CUFP</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Respected Monks,&lt;/p&gt;
+&lt;p&gt;I'd like to present to you today, in hopes you might find it interesting
+or even useful, the result of scratching an itch I had for quite some time:
+parsing Perl data structures &lt;b&gt;without [doc://eval]&lt;/b&gt;; instead I do it
+with the great module [mod://PPI]. The result is &lt;b&gt;[mod://Config::Perl]&lt;/b&gt;.
+A nice additional benefit is that the module can round-trip much of the
+output of [doc://Data::Dumper], for which I provide the helper module
+&lt;b&gt;[mod://Data::Undump::PPI]&lt;/b&gt;.&lt;/p&gt;
+&lt;p&gt;Let me demonstrate with code:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+# --&gt; This is an example configuration file, foo.conf
+$default_profile = 'alpha';
+%profiles = (
+	'alpha' =&gt; { path =&gt; '/etc/alpha', recurse =&gt; 1 },
+	'beta' =&gt; { path =&gt; '/var/beta', recurse =&gt; 0 },
+);
+@resources = qw/ xyz abc def /;
+&lt;/c&gt;
+&lt;p&gt;Here's what it looks like when you read that file and display the
+resulting data structure:&lt;/p&gt;
+&lt;c&gt;
+use Config::Perl;
+
+my $parser = Config::Perl-&gt;new;
+my $conf = $parser-&gt;parse_or_die('foo.conf');
+
+use Data::Dumper;
+print Dumper($conf);
+&lt;/c&gt;
+&lt;p&gt;Which outputs (whitespace edited for brevity):&lt;/p&gt;
+&lt;c&gt;
+$VAR1 = {
+  '$default_profile' =&gt; 'alpha',
+  '%profiles' =&gt; {
+    'alpha' =&gt; { 'path' =&gt; '/etc/alpha', 'recurse' =&gt; 1 },
+    'beta' =&gt; { 'path' =&gt; '/var/beta', 'recurse' =&gt; 0 }
+  },
+  '@resources' =&gt; [ 'xyz', 'abc', 'def' ]
+};
+&lt;/c&gt;
+&lt;p&gt;As you can see, [mod://Config::Perl] returns a kind of "symbol table"
+for the parsed data structure.&lt;/p&gt;
+&lt;/readmore&gt;
+&lt;p&gt;[mod://Data::Undump::PPI] makes round-tripping Perl data structures
+to and from strings (and files, see below) easier:&lt;/p&gt;
+&lt;c&gt;
+use Data::Dumper;
+$Data::Dumper::Purity=1;     # setting these two options like this
+$Data::Dumper::Terse=0;      # is important (see also "Dump" below)
+
+use Data::Undump::PPI;
+
+my @input = ( {foo=&gt;"bar"}, ["Hello","World"], "undumping!" );
+my $str = Dumper(@input);
+my @parsed = Undump($str);
+&lt;/c&gt;
+&lt;p&gt;In the above example, &lt;c&gt;@parsed&lt;/c&gt; now looks identical to &lt;c&gt;@input&lt;/c&gt;,
+and is essentially a deep copy. Another example:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;p&gt;Let's say you want to save some application state and restore it later -
+yesterday I released v0.06 which adds some helpful features, such as a
+helper for [mod://Data::Dumper] called &lt;c&gt;Dump&lt;/c&gt; (which sets up several
+[mod://Data::Dumper] options) and the ability to read / write files
+directly:&lt;/p&gt;
+&lt;c&gt;
+use Data::Undump::PPI qw/Dump Undump/;
+
+Dump(\@state_out, file=&gt;'state.pl');
+
+my @state_in = Undump(file=&gt;'state.pl');
+&lt;/c&gt;
+&lt;p&gt;Having said all that, the modules are definitely not perfect (yet &lt;c&gt;;-)&lt;/c&gt;).
+There are of course many features of Perl that aren't supported (I'd end up
+re-implementing Perl otherwise), there's a list at the end of the
+[mod://Config::Perl] documentation. As a result I currently often can't
+parse the output of, for example, [mod://Data::Dump], since that uses things
+like lexical variables or the range operator. Maybe I'll add support for
+those later.&lt;/p&gt;
+&lt;p&gt;[mod://Data::Undump::PPI] seems to work fairly well as far as I can tell
+at the moment; the two notable things that aren't supported are deserializing
+objects (because [mod://Config::Perl] doesn't support [doc://bless],
+although that might be possible in the future), and code references (for
+hopefully obvious reasons: without [doc://eval] I'd have to re-implement
+Perl...).&lt;/p&gt;
+&lt;/readmore&gt;
+&lt;p&gt;So if you get a chance to play around with the modules, I'd be happy to
+hear your (constructive) feedback, bug reports, and so on &lt;c&gt;:-)&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;Regards,&lt;br&gt;-- Hauke D&lt;/p&gt;
+</doctext>
+<thread id="1167085">
+</thread></node>

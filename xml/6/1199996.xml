@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1199996" title="PPI replacing/updating a stub" created="2017-09-24 11:41:11" updated="2017-09-24 11:41:11" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="607703">clueless newbie</author>
+<doctext field_name="doctext">&lt;p&gt;
+How to replace a (sub's) stub using PPI? 
+&lt;/p&gt;
+&lt;p&gt;
+I'm playing with PPI and the problem of fleshing out a stub has me baffled. The following snippet illustrates my problem.
+&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/env perl
+
+use if (-d 'C:/Users/clueless_newbie'),lib=&gt;'C:/Users/clueless_newbie/GOOGLE~1/code/lib';
+use if (-d 'C:/Users/clueless_newbie'),lib=&gt;'C:/Users/clueless_newbie/code/Perl-5/devlib';
+
+# $ENV{DBG} -&gt; compile time; $ENV{DEBUG} -&gt; run time.
+use if ($ENV{DBG} || $ENV{DEBUG}),"Devel::UnComment","#[=]#","Keep";
+
+use Data::Dumper;
+use PPI;
+use PPI::Dumper;
+use strict;
+use warnings;
+use 5.10.0;
+
+{ # INTERNALS
+
+    }; # INTERNALS
+
+my $raw=&lt;&lt;'__RAW__';
+   package FeeFi;
+   sub Fee {
+       print "Fee\n";
+       }
+   sub Fi {
+       print "Fi\n";
+       }
+   -1;
+__RAW__
+
+my %sub_h;
+{ # Save the subs; replacing them with placeholders
+    # Create the PPI document
+    my $document=PPI::Document-&gt;new(\$raw)
+        or die "oops!";
+    $document-&gt;save('before');
+
+    for my $sub (@{$document-&gt;find('PPI::Statement::Sub') || []}) {
+        unless ($sub-&gt;forward) {
+            #say $sub-&gt;name;
+            # save the sub and its content
+            $sub_h{$sub-&gt;name}{content}=$sub-&gt;content;
+            # Replace the sub's block as a stub by removing its children
+            my @elements=$sub-&gt;block-&gt;children;
+            for (my $i=0; $i &lt; @elements; $i++) {
+                $elements[$i]-&gt;remove;
+                };
+            };
+        };
+    # Save the stubbed out "main/package" under the key '';
+    $sub_h{''}{content}=$document-&gt;content;
+    };
+#=# DEBUG [ sub_h=&gt;\%sub_h ];
+
+# Completing the round trip
+{
+    # Create the stubbed out main
+    my $document=PPI::Document-&gt;new(\$sub_h{''}{content})
+        or die "oops creating ''!";
+    #=# DEBUG '',PPI::Dumper-&gt;new($document,whitespace=&gt;0)-&gt;string;
+
+    # Find and flesh out the stubs
+    for my $stub (@{$document-&gt;find('PPI::Statement::Sub') || []}) {
+    	  unless ($stub-&gt;forward) {
+            my $name=$stub-&gt;name;
+            #=# TRACE $name;
+            # Flesh out this stub
+            my $sub=PPI::Document-&gt;new(\$sub_h{$name}{content})-&gt;find_first('PPI::Statement::Sub');
+            #=# TRACE '',PPI::Dumper-&gt;new($sub,whitespace=&gt;0)-&gt;string;
+
+            # So ow do I flesh out the stub from $sub????
+            $stub-&gt;insert_after($sub)    # &lt;=== Doesn't do it!
+                or warn "Can't insert_after!";
+            #=# DEBUG '',PPI::Dumper-&gt;new($document,whitespace=&gt;0)-&gt;string;
+
+
+    	      };
+        };
+    #=# DEBUG '',PPI::Dumper-&gt;new($document,whitespace=&gt;0)-&gt;string;
+    $document-&gt;save('after');            # &lt;=== "after" should be programmatically equal to "before"
+    };
+
+exit;
+&lt;/code&gt;
+</doctext>
+<thread id="1199996">
+<node id="1199999"><node id="1200002"/>
+</node>
+<node id="1200006"><node id="1200007"/>
+</node>
+<node id="1200010"/>
+</thread></node>

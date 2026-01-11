@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1231861" title="Re^2: Perl Regex \A or ^ Not Working" created="2019-03-29 08:25:32" updated="2019-03-29 08:25:32" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1231824">thundercat</author>
+<doctext field_name="doctext">No I did not have warnings on.
+&lt;code&gt;
+my $pattern  = '\\Aaudit';
+my $no_file_error      ="TRUE";
+my @dir_files =  $ftp-&gt;dir($ftp_directory);
+$Data::Dumper::Useqq=1;
+print Dumper($pattern);
+my $netrc = Net::Netrc-&gt;lookup($ftp_server) or die ("Could not find login info in .netrc for $ftp_server");
+
+     my $ftp = Net::FTP-&gt;new($ftp_server, Port =&gt; $ftp_server_port, Debug =&gt; 1) or die ('Could not create ftp object');
+
+     $ftp-&gt;login($netrc-&gt;login, $netrc-&gt;password) or die ('Could not log in'), $ftp-&gt;message;
+
+     $ftp-&gt;binary();
+
+    #print directory of files before command
+     print "--------------------First List all files------------------\n";
+     my @dir_files =  $ftp-&gt;dir($ftp_directory);
+     foreach my $list(@dir_files){
+       print "$list\n";
+     }
+
+    @dir_files = grep { $_ =~ /$pattern/ } @dir_files;
+     if (@dir_files == 0) {
+      if ($no_file_error eq "TRUE") {
+        print "No files exist with that $pattern\n";
+      } else {
+        print "Send Email: Cannot find files to GET for parameter $pattern";
+      }} else {
+
+     for my $list(@dir_files){
+       print "$ftp_command $list\n";
+     }
+     }
+&lt;/code&gt;
+
+I added data::dumper and warnings
+Output with audit
+&lt;code&gt;
+$VAR1 = "audit";
+Net::FTP&gt;&gt;&gt; Net::FTP(2.77)
+Net::FTP&gt;&gt;&gt;   Exporter(5.63)
+Net::FTP&gt;&gt;&gt;   Net::Cmd(2.29)
+Net::FTP&gt;&gt;&gt;   IO::Socket::INET(1.31)
+Net::FTP&gt;&gt;&gt;     IO::Socket(1.31)
+Net::FTP&gt;&gt;&gt;       IO::Handle(1.28)
+Net::FTP=GLOB(0xaec9e8)&lt;&lt;&lt; 220 Titan FTP Server 11.20.2264 Ready.
+Net::FTP=GLOB(0xaec9e8)&gt;&gt;&gt; USER xupromgr
+Net::FTP=GLOB(0xaec9e8)&lt;&lt;&lt; 331 User name okay, need password.
+Net::FTP=GLOB(0xaec9e8)&gt;&gt;&gt; PASS ....
+Net::FTP=GLOB(0xaec9e8)&lt;&lt;&lt; 230-Welcome xupromgr from 10.253.2.119. You are now logged in to the server.
+Net::FTP=GLOB(0xaec9e8)&lt;&lt;&lt; 230 User logged in, proceed.
+Net::FTP=GLOB(0xaec9e8)&gt;&gt;&gt; TYPE I
+Net::FTP=GLOB(0xaec9e8)&lt;&lt;&lt; 200 Type set to I.
+--------------------First List all files------------------
+Net::FTP=GLOB(0xaec9e8)&gt;&gt;&gt; PASV
+Net::FTP=GLOB(0xaec9e8)&lt;&lt;&lt; 227 Entering Passive Mode (10,253,1,56,236,13).
+Net::FTP=GLOB(0xaec9e8)&gt;&gt;&gt; LIST /AS/testftp
+Net::FTP=GLOB(0xaec9e8)&lt;&lt;&lt; 150 File status okay; about to open data connection.
+Net::FTP=GLOB(0xaec9e8)&lt;&lt;&lt; 226 Closing data connection. Transferred 415 bytes.
+drw-rw---- 1 xupromgr xupromgr          512 Mar 29 08:04 .
+drw-rw---- 1 xupromgr xupromgr          512 Mar 28 13:54 ..
+-rw-rw---- 1 xupromgr xupromgr           18 Feb 27 14:21 no_audit.txt
+-rw-rw---- 1 xupromgr xupromgr           18 Feb 27 14:21 no_audit_date.txt
+-rw-rw---- 1 xupromgr xupromgr           10 Feb 27 14:08 auditsample.txt
+-rw-rw---- 1 xupromgr xupromgr           11 Feb 27 14:21 audit_date.txt
+get -rw-rw---- 1 xupromgr xupromgr           18 Feb 27 14:21 no_audit.txt
+get -rw-rw---- 1 xupromgr xupromgr           18 Feb 27 14:21 no_audit_date.txt
+get -rw-rw---- 1 xupromgr xupromgr           10 Feb 27 14:08 auditsample.txt
+get -rw-rw---- 1 xupromgr xupromgr           11 Feb 27 14:21 audit_date.txt
+&lt;/code&gt;
+
+This list is what is outputted with ^audit
+&lt;code&gt;
+$VAR1 = "^audit";
+Net::FTP&gt;&gt;&gt; Net::FTP(2.77)
+Net::FTP&gt;&gt;&gt;   Exporter(5.63)
+Net::FTP&gt;&gt;&gt;   Net::Cmd(2.29)
+Net::FTP&gt;&gt;&gt;   IO::Socket::INET(1.31)
+Net::FTP&gt;&gt;&gt;     IO::Socket(1.31)
+Net::FTP&gt;&gt;&gt;       IO::Handle(1.28)
+Net::FTP=GLOB(0x1cdf9e8)&lt;&lt;&lt; 220 Titan FTP Server 11.20.2264 Ready.
+Net::FTP=GLOB(0x1cdf9e8)&gt;&gt;&gt; USER xupromgr
+Net::FTP=GLOB(0x1cdf9e8)&lt;&lt;&lt; 331 User name okay, need password.
+Net::FTP=GLOB(0x1cdf9e8)&gt;&gt;&gt; PASS ....
+Net::FTP=GLOB(0x1cdf9e8)&lt;&lt;&lt; 230-Welcome xupromgr from 10.253.2.119. You are now logged in to the server.
+Net::FTP=GLOB(0x1cdf9e8)&lt;&lt;&lt; 230 User logged in, proceed.
+Net::FTP=GLOB(0x1cdf9e8)&gt;&gt;&gt; TYPE I
+Net::FTP=GLOB(0x1cdf9e8)&lt;&lt;&lt; 200 Type set to I.
+--------------------First List all files------------------
+Net::FTP=GLOB(0x1cdf9e8)&gt;&gt;&gt; PASV
+Net::FTP=GLOB(0x1cdf9e8)&lt;&lt;&lt; 227 Entering Passive Mode (10,253,1,56,235,244).
+Net::FTP=GLOB(0x1cdf9e8)&gt;&gt;&gt; LIST /AS/testftp
+Net::FTP=GLOB(0x1cdf9e8)&lt;&lt;&lt; 150 File status okay; about to open data connection.
+Net::FTP=GLOB(0x1cdf9e8)&lt;&lt;&lt; 226 Closing data connection. Transferred 415 bytes.
+drw-rw---- 1 xupromgr xupromgr          512 Mar 29 08:04 .
+drw-rw---- 1 xupromgr xupromgr          512 Mar 28 13:54 ..
+-rw-rw---- 1 xupromgr xupromgr           18 Feb 27 14:21 no_audit.txt
+-rw-rw---- 1 xupromgr xupromgr           18 Feb 27 14:21 no_audit_date.txt
+-rw-rw---- 1 xupromgr xupromgr           10 Feb 27 14:08 auditsample.txt
+-rw-rw---- 1 xupromgr xupromgr           11 Feb 27 14:21 audit_date.txt
+No files exist with that ^audit
+&lt;/code&gt;
+
+This is with the variable set to \\Aaudit
+&lt;code&gt;
+
+$VAR1 = "\\Aaudit";
+Net::FTP&gt;&gt;&gt; Net::FTP(2.77)
+Net::FTP&gt;&gt;&gt;   Exporter(5.63)
+Net::FTP&gt;&gt;&gt;   Net::Cmd(2.29)
+Net::FTP&gt;&gt;&gt;   IO::Socket::INET(1.31)
+Net::FTP&gt;&gt;&gt;     IO::Socket(1.31)
+Net::FTP&gt;&gt;&gt;       IO::Handle(1.28)
+Net::FTP=GLOB(0x18539e8)&lt;&lt;&lt; 220 Titan FTP Server 11.20.2264 Ready.
+Net::FTP=GLOB(0x18539e8)&gt;&gt;&gt; USER xupromgr
+Net::FTP=GLOB(0x18539e8)&lt;&lt;&lt; 331 User name okay, need password.
+Net::FTP=GLOB(0x18539e8)&gt;&gt;&gt; PASS ....
+Net::FTP=GLOB(0x18539e8)&lt;&lt;&lt; 230-Welcome xupromgr from 10.253.2.119. You are now logged in to the server.
+Net::FTP=GLOB(0x18539e8)&lt;&lt;&lt; 230 User logged in, proceed.
+Net::FTP=GLOB(0x18539e8)&gt;&gt;&gt; TYPE I
+Net::FTP=GLOB(0x18539e8)&lt;&lt;&lt; 200 Type set to I.
+--------------------First List all files------------------
+Net::FTP=GLOB(0x18539e8)&gt;&gt;&gt; PASV
+Net::FTP=GLOB(0x18539e8)&lt;&lt;&lt; 227 Entering Passive Mode (10,253,1,56,236,32).
+Net::FTP=GLOB(0x18539e8)&gt;&gt;&gt; LIST /AS/testftp
+Net::FTP=GLOB(0x18539e8)&lt;&lt;&lt; 150 File status okay; about to open data connection.
+Net::FTP=GLOB(0x18539e8)&lt;&lt;&lt; 226 Closing data connection. Transferred 415 bytes.
+drw-rw---- 1 xupromgr xupromgr          512 Mar 29 08:04 .
+drw-rw---- 1 xupromgr xupromgr          512 Mar 28 13:54 ..
+-rw-rw---- 1 xupromgr xupromgr           18 Feb 27 14:21 no_audit.txt
+-rw-rw---- 1 xupromgr xupromgr           18 Feb 27 14:21 no_audit_date.txt
+-rw-rw---- 1 xupromgr xupromgr           10 Feb 27 14:08 auditsample.txt
+-rw-rw---- 1 xupromgr xupromgr           11 Feb 27 14:21 audit_date.txt
+No files exist with that \Aaudit
+&lt;/code&gt;
+</doctext>
+<root_node field_name="root_node">1231826</root_node>
+<parent_node field_name="parent_node">1231828</parent_node>
+<thread id="1231826">
+<node id="1231827"/>
+<node id="1231828"><node id="1231861"><node id="1231863"><node id="1231868"/>
+<node id="1231879"/>
+</node>
+</node>
+</node>
+</thread></node>

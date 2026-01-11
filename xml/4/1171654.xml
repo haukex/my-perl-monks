@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1171654" title="Re: Help to monitor a PID" created="2016-09-13 06:14:49" updated="2016-09-13 06:14:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [lsvolo],&lt;/p&gt;
+&lt;p&gt;As [Cuhulain] has already pointed out, the string &lt;c&gt;$pid&lt;/c&gt; will have a newline at the end, which you can remove with [doc://chomp], e.g. &lt;c&gt;chomp($pid);&lt;/c&gt; This won't help if [man://pgrep] happens to return multiple PIDs - in this case I would recommend assigning the return value of the backticks to an array - see the description of backticks in list context in [doc://perlop#qx/_STRING_/|Quote-Like Operators in perlop]. I've given an example using [doc://join] below.&lt;/p&gt;
+&lt;p&gt;As for your second question, look at the order in which your loop is doing things: print the message, then get the status of the process, then sleep for 10 seconds, then repeat (print the message, etc.). That's why you're getting the old status. If you move the [man://pgrep] call to just before the [doc://print], then you'll get the most recent status.&lt;/p&gt;
+&lt;p&gt;As a general suggestion, I'd strongly recommend you use [doc://strict], see for example [id://111088]. Although your code looks ok for now, [doc://strict] will help avoid programming mistakes.&lt;/p&gt;
+&lt;p&gt;Here's how I might write the same script; have a look and if you have any questions about understanding then feel free to ask. I'm using [mod://IPC::System::Simple]'s &lt;c&gt;capturex&lt;/c&gt; function to replace the backticks (&lt;c&gt;`...`&lt;/c&gt;).&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use IPC::System::Simple 'capturex';
+
+my @cmd = ('pgrep','-f','bash');
+my $msg = "Alive";
+my $outfile = 'file.txt';
+my $count = 5;
+my $sleeptime = 1;
+
+open my $fh, '&gt;&gt;', $outfile
+	or die "Could not open $outfile! $!";
+
+for (1..$count) {
+	my $timestamp = localtime(time);
+	my @pids = capturex(@cmd);
+	chomp(@pids);
+	if (@pids) {
+		print $fh join(',',@pids)
+			. " , $timestamp , $msg\n";
+	}
+	else {
+		print $fh "No pid , $timestamp\n"; 
+	}
+	sleep $sleeptime;
+}
+
+print $fh "Time over , ".localtime(time)."\n";
+
+close $fh;
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1171643</root_node>
+<parent_node field_name="parent_node">1171643</parent_node>
+<thread id="1171643">
+<node id="1171647"><node id="1171652"/>
+<node id="1173554"/>
+</node>
+<node id="1171653"><node id="1171657"/>
+</node>
+<node id="1171654"/>
+</thread></node>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1199720" title="[RFC] File::Replace" created="2017-09-20 05:50:42" updated="2017-09-20 05:50:42" _doctext_mode="strict"><type id="120">perlmeditation</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Many of you are probably aware of the pattern of opening a temporary file, reading from the original file and writing the modified contents to the temporary file, and then [doc://rename]ing the temporary file over the original file, which is often an atomic operation (depending on OS &amp;amp; FS). I recently wrote a module to encapsulate this behavior, and here is one of three interfaces that are available in [mod://File::Replace]. There are several options to configure the behavior, including the ability to specify PerlIO layers, what happens if the file doesn't exist yet, etc.&lt;/p&gt;
+&lt;c&gt;
+use File::Replace 'replace2';
+ 
+my ($infh,$outfh) = replace2($filename);
+while (&lt;$infh&gt;) {
+    # write whatever you like to $outfh here
+    print $outfh "X: $_";
+}
+close $infh;   # closing both handles will
+close $outfh;  # trigger the replace
+&lt;/c&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;p&gt;Since I hope this is something that you might find useful, I would be happy about any feedback you might have!&lt;/p&gt;
+&lt;p&gt;To give a practical example, here is an update of my code from [id://1180937|this node]. As you can see I was able to get rid of eight lines of fairly complicated code, while keeping the main loop entirely unchanged. The module also adds some more robustness, as it incorporates a few more checks on whether operations were successful or not.&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use File::Replace 'replace2';
+
+my $filename = "/tmp/test.html";
+my @to_insert = ( '&lt;p&gt;Hello,',
+	'World! It is '.gmtime(time).' UTC&lt;/p&gt;' );
+
+my ($ifh,$tfh) = replace2($filename);
+my $found;
+while (&lt;$ifh&gt;) {
+	print $tfh $_;
+	if (/&lt;!--\s*INSERT\s+HERE\s*--&gt;/i) {
+		$found=1;
+		print $tfh "$_\n" for @to_insert;
+	}
+}
+close $ifh;
+close $tfh;
+die "Marker not found" unless $found;
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<thread id="1199720">
+<node id="1199785"><node id="1199803"><node id="1200162"/>
+</node>
+</node>
+<node id="1199790"><node id="1199805"/>
+</node>
+<node id="1227995"/>
+</thread></node>

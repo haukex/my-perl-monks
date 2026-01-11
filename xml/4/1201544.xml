@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201544" title="Re: Parsing HTML/XML with Regular Expressions (HTML::Parser)" created="2017-10-17 22:18:39" updated="2017-10-17 22:18:39" _doctext_mode="lenient"><type id="11">note</type>
+<author id="905403">tangent</author>
+<doctext field_name="doctext">My favourite module for parsing HTML is HTML::TreeBuilder::XPath, but it misses out on the first div (id=Zero). It uses HTML::Parser internally but I could not find a way to pass the necessary attribute &lt;c&gt;empty_element_tags=&gt;1&lt;/c&gt; from HTML::TreeBuilder to HTML::Parser. 
+&lt;p&gt;So here is a fairly verbose version using just HTML::Parser:&lt;/p&gt;
+&lt;code&gt;
+use HTML::Parser;
+
+my $file = 'example.html';
+my ($in_div,$in_wanted_div) = (0,0);
+my @result;
+
+my $parser = HTML::Parser-&gt;new(
+	api_version =&gt; 3,
+	start_h =&gt; [\&amp;start, "tagname, attr"],
+	text_h =&gt; [\&amp;text, "dtext"],
+	end_h =&gt; [\&amp;end, "tagname"],
+	empty_element_tags =&gt; 1,
+);
+$parser-&gt;parse_file($file);
+
+print join(', ',@result);
+
+sub start {
+	my ($tag, $attr) = @_;
+	return unless ($tag eq 'div');
+	if (exists $attr-&gt;{'class'} and $attr-&gt;{'class'} eq 'data') {
+		$in_div = 1;
+		$in_wanted_div = 1;
+		push(@result, "$attr-&gt;{'id'}=");
+	}
+	else {
+		$in_div++;
+	}
+}
+
+sub text {
+	my ($text) = @_;
+	return unless $in_wanted_div;
+	$text =~ s/\W//g;
+	$result[-1] .= $text;
+}
+
+sub end {
+	my ($tag) = @_;
+	return unless ($tag eq 'div');
+	$in_div--;
+	$in_wanted_div = 0 if not $in_div;
+}
+
+&lt;/code&gt;
+
+Output:
+
+&lt;code&gt;
+Zero=, One=Monday, Two=Tuesday, Three=Wednesday, Four=Thursday, Five=Friday, Six=Saturday, Seven=Sunday
+&lt;/code&gt;
+</doctext>
+<root_node field_name="root_node">1201438</root_node>
+<parent_node field_name="parent_node">1201438</parent_node>
+<thread id="1201438">
+<node id="1201443"><node id="1201454"><node id="1201483"><node id="1201489"/>
+</node>
+</node>
+</node>
+<node id="1201450"><node id="1201457"/>
+</node>
+<node id="1201473"><node id="1201488"><node id="1201493"><node id="1201521"><node id="1201551"/>
+</node>
+</node>
+<node id="1201633"><node id="1201689"><node id="1201709"/>
+<node id="1201716"><node id="1201740"><node id="1201776"/>
+<node id="1201933"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201490"><node id="1201529"><node id="1201612"/>
+</node>
+</node>
+</node>
+<node id="1201497"/>
+<node id="1201514"><node id="1201621"><node id="1201623"><node id="1201624"><node id="1201625"><node id="1201628"><node id="1201663"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201540"><node id="1201622"><node id="1201657"/>
+</node>
+</node>
+<node id="1201544"><node id="1201553"/>
+</node>
+<node id="1201545"><node id="1201554"/>
+</node>
+</thread></node>

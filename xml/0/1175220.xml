@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1175220" title="Re: splitting csv file and saving data" created="2016-11-03 06:48:44" updated="2016-11-03 06:48:44" _doctext_mode="lenient"><type id="11">note</type>
+<author id="171588">BrowserUk</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You'll get lots of "Use XYZ::CSV module" replies despite that they don't help with your main problems, and add unnecessary complexity. 
+
+&lt;p&gt;This is how I would tackle the problem described:&lt;code&gt;
+#! perl -sl
+use strict;
+
+while( &lt;DATA&gt; ) {
+    my( $name, $number, $type, $text ) = m[^([^,]+),(\d+),(\d+|"[^"]+"),(\d+)?$]; #"
+
+    $type =~ s["([^"]+)"][$1]; #"
+
+    printf "%s layernumber %d datatype %s%s%s\n",
+        $name, $number,
+        ( $type =~ m[,] ? join( ' datatype ', split ',', $type ) : $type ),
+        ( defined( $text ) ? ' text ' . $text : '' ),
+        ( $name eq 'NWER' ? ';' : ',' )
+    ;
+}
+
+__DATA__
+NPLUS,32,0,
+NW,41,0,1
+NWER,51,"0,1,2",12
+&lt;/code&gt;
+
+&lt;p&gt;Produces:&lt;code&gt;
+C:\test&gt;junk44
+NPLUS layernumber 32 datatype 0,
+NW layernumber 41 datatype 0 text 1,
+NWER layernumber 51 datatype 0 datatype 1 datatype 2 text 12;
+&lt;/code&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-171588"&gt;
+&lt;hr /&gt;
+&lt;font size=1 &gt;
+ &lt;div&gt;With the rise and rise of 'Social' network sites: 'Computers are making people easier to use everyday'&lt;/div&gt;
+ &lt;div&gt;Examine what is said, not who speaks -- Silence betokens consent -- Love the truth but pardon error.&lt;/div&gt;
+ &lt;div&gt;"Science is about questioning the status quo. Questioning authority". [http://www.bbc.co.uk/news/business-33609566|I knew I was on the right track :)]&lt;/div&gt;
+&lt;div&gt;In the absence of evidence, opinion is indistinguishable from prejudice. &lt;/div&gt;
+&lt;/font&gt;
+
+&lt;/div&gt;&lt;/div&gt;
+ </doctext>
+<root_node field_name="root_node">1175217</root_node>
+<parent_node field_name="parent_node">1175217</parent_node>
+<thread id="1175217">
+<node id="1175218"><node id="1175221"><node id="1175222"><node id="1175224"><node id="1175225"/>
+</node>
+</node>
+<node id="1175223"/>
+<node id="1175262"><node id="1175265"/>
+</node>
+</node>
+</node>
+<node id="1175220"/>
+<node id="1175267"/>
+</thread></node>

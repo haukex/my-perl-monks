@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11105817" title="Any way to simulate a Windows path handling for File::Spec without Windows?" created="2019-09-08 00:56:27" updated="2019-09-08 00:56:27" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="66801">nysus</author>
+<doctext field_name="doctext">&lt;p&gt;Got the following sub for creating what I call "short paths," which are relative file paths that are relative to a common directory shared by a group of arbitrary files. It's broken in Windows. I'd rather avoid having to use Windows to test it. Is there a way I can tell File::Spec to behave as if it's on a Windows machine? 
+
+&lt;c&gt;
+
+use strict;
+use warnings;
+use File::Spec;
+
+my @files = qw (
+ C:\STRAWB~1\cpan\build\File-Collector-0.024-0\t\test_data\many_files\dir1\file4
+ C:\STRAWB~1\cpan\build\File-Collector-0.024-0\t\test_data\many_files\dir1\file5
+ C:\STRAWB~1\cpan\build\File-Collector-0.024-0\t\test_data\many_files\dir1\file6
+ C:\STRAWB~1\cpan\build\File-Collector-0.024-0\t\test_data\many_files\dir2\file7
+ C:\STRAWB~1\cpan\build\File-Collector-0.024-0\t\test_data\many_files\dir2\file8
+ C:\STRAWB~1\cpan\build\File-Collector-0.024-0\t\test_data\many_files\dir2\file9
+ C:\STRAWB~1\cpan\build\File-Collector-0.024-0\t\test_data\many_files\file1
+ C:\STRAWB~1\cpan\build\File-Collector-0.024-0\t\test_data\many_files\file2
+ C:\STRAWB~1\cpan\build\File-Collector-0.024-0\t\test_data\many_files\file3
+);
+
+&amp;do(@files);
+
+sub do {
+  my @files = @_;
+
+  my $os = $^O;
+
+  my $file                          = pop @files;
+  my ($vol, $dirs)                  = File::Spec-&gt;splitpath( $file );
+  my @comps                         = File::Spec-&gt;splitdir( $dirs );
+  my ($new_string, $longest_string) = '';
+  foreach my $cfile (@files) {
+    my ($cvol, $cdirs)           = File::Spec-&gt;splitpath( $cfile );
+    my @ccomps                   = File::Spec-&gt;splitdir($cfile);
+    my $lc     = 0;
+
+    foreach my $comp (@ccomps) {
+      if (defined $comps[$lc] &amp;&amp; $ccomps[$lc] eq $comps[$lc]) {
+        $new_string   .= File::Spec-&gt;catfile($ccomps[$lc++], '');
+        next;
+      }
+      $longest_string = $new_string;
+      ($cvol, $cdirs) = File::Spec-&gt;splitpath( $new_string );
+      @comps          = File::Spec-&gt;splitdir($cdirs);
+      $new_string     = '';
+      last;
+    }
+  }
+
+  #  $s-&gt;{_common_dir} = $longest_string || (fileparse($file))[1];
+
+  if (@files) {
+    foreach my $file ( @files, $file ) {
+      my $tfile = $file;
+      $tfile =~ s/$longest_string//;
+      #    $s-&gt;{_files}{all}{$file}{short_path} = $tfile;
+    }
+  } else {
+#    $s-&gt;{_files}{all}{$file}{short_path} = $file;
+  }
+}
+&lt;/c&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-66801"&gt;
+&lt;font size=2&gt;&lt;p&gt;
+$PM = "Perl Monk's";&lt;br&gt;
+$MCF = "Most Clueless &lt;strike&gt;Friar&lt;/strike&gt; &lt;strike&gt;Abbot&lt;/strike&gt; &lt;strike&gt;Bishop&lt;/strike&gt; &lt;strike&gt;Pontiff&lt;/strike&gt; &lt;strike&gt;Deacon&lt;/strike&gt; &lt;strike&gt;Curate&lt;/strike&gt; &lt;strike&gt;Priest&lt;/strike&gt; Vicar";&lt;br&gt;
+$nysus = $PM . ' ' . $MCF;&lt;br&gt;
+&lt;a href="http://perlmonks.org/index.pl?node=Offering%20Plate"&gt;Click here if you love Perl Monks&lt;/a&gt;&lt;br&gt;&lt;/font&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="11105817">
+<node id="11105818"/>
+<node id="11105821"><node id="11105824"><node id="11105825"><node id="11105826"><node id="11105827"><node id="11105828"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11105843"><node id="11105847"/>
+</node>
+</thread></node>

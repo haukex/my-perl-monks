@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224232" title="Loop through all directory and files and lines" created="2018-10-18 09:25:56" updated="2018-10-18 09:25:56" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1191317">MissPerl</author>
+<doctext field_name="doctext">Hi fellow monks! 
+
+&lt;b&gt;CODE EDITED&lt;/b&gt;
+
+&lt;p&gt;I want to go into first directory/i/j/*, then read all the files and all the lines inside every file. Eg, /somewhere/1/2/*&lt;/p&gt;
+Currently the script gave me no error, but the output was surprisingly all from the (else condition).
+
+&lt;p&gt;I couldnt make sure, since there are a lot of files inside it, but there should at least have some cases match the (if ) condition.&lt;/p&gt;
+
+Can anyone have a look at the script i wrote and tell me if anything i have overlooked ?
+
+&lt;p&gt;Each file, I want to find if any three of the strings exists, if it does, I'll store its filepath in store_location.&lt;/p&gt;
+
+Also the (i, j), was from an array with even number contents, odd number will be i; while even is j.
+
+&lt;code&gt;
+# !/usr/bin/perl
+use strict; use warnings;
+use File::Glob 'bsd_glob';
+
+my $store_location = '/path/to/file';
+
+my $Dir1 = "/somewhere";
+my $Dir2 = "/somewhereelse";
+my @first_directory = ( bsd_glob("$Dir1/"), bsd_glob("$Dir2/") );
+
+my @store_array = qw (1 2 3 4 5 6);
+
+foreach my $first (@first_directory){
+    while(my ($i,$j) = splice(@store_array,0,2)){
+
+        my $second_directory = "$first/$i/$j";
+        if (-e $second_directory and -d $second_directory){
+        
+            my @third_directory = bsd_glob("$first/$i/$j/*");    
+            foreach my $file (@third_directory){
+                open(FILE, "&lt;" , $file) or die "Can't open file '$file': $!";    
+                while (&lt;FILE&gt;){
+                    if (($_ =~ /TbhODK/) or ($_ =~ /octuov/) or ($_ =~ /qas_uop/))
+                    {
+                        
+                        open(my $filehand, '&gt;&gt;', $store_location) or die "Fail to open file '$store_location' $!";
+                        print $filehand "$first/$i/$j/$file \n";
+                        close $filehand;
+                    }            
+                }
+                
+            }
+            close FILE;    
+        
+        }
+        
+        else{                
+            open(my $filehand, '&gt;&gt;', $store_location) or die "Fail to open file '$store_location' $!";
+            print $filehand "$first/$i/$j (fail to exist)\n";
+            close $filehand;
+        }
+    
+    }
+    
+}#first_directory
+&lt;/code&gt;
+
+Kindly let me know if it's unclear,I will improve the sentence.thank you perlmonks !
+&lt;/p&gt;
+
+&lt;/p&gt;</doctext>
+<thread id="1224232">
+<node id="1224233"><node id="1224239"/>
+</node>
+<node id="1224235"><node id="1224241"><node id="1224245"/>
+<node id="1224288"/>
+</node>
+</node>
+<node id="1224301"/>
+<node id="1224331"/>
+</thread></node>

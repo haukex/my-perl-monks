@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101760" title="Re: Timeouts in IO::Socket (updated)" created="2019-06-23 09:14:32" updated="2019-06-23 09:14:32" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;When you launch &lt;c&gt;client.pl&lt;/c&gt; on its own, it tries to connect to TCP port 8000, but there is nothing listening, so the server OS immediately responds with a TCP packet with the RST flag set (at least on my Linux system), which results in the TCP connection attempt to abort with the error "Connection refused" - the timeout doesn't apply because there &lt;i&gt;is&lt;/i&gt; a response coming from the server, albeit a negative one. On Windows, the error code 10061 is &lt;c&gt;WSAECONNREFUSED&lt;/c&gt; - from [https://docs.microsoft.com/en-us/windows/desktop/winsock/windows-sockets-error-codes-2|here]: "No connection could be made because the target computer actively refused it. This usually results from trying to connect to a service that is inactive on the foreign host—that is, one with no server application running."&lt;/p&gt;
+&lt;p&gt;You could implement the retry yourself, the following works for me, you could adapt this as you like:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use IO::Socket;
+
+my $socket;
+for (1..10) {
+	$socket = IO::Socket::INET-&gt;new(Proto =&gt; 'tcp',
+		PeerAddr =&gt; 'localhost', PeerPort =&gt; 8000, Timeout  =&gt; 10);
+	last if defined $socket;
+	print "Not connected, retrying...\n";
+	sleep 1;
+}
+die "Connection failed" unless defined $socket;
+print "Client connected\n";
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Updated:&lt;/i&gt; Minor tweaks to text and code.&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; Actually, the above code can wait for up to 100 seconds total (10 times the &lt;c&gt;Timeout&lt;/c&gt; value). You might want to use a time-based loop instead, in the following I've also made the logic and messages a little bit nicer:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use IO::Socket;
+
+my $CONN_TIMEOUT_SEC = 10;
+
+my $socket;
+my $startt = time;
+my $attempt = 1;
+while ( time - $startt &lt; $CONN_TIMEOUT_SEC ) {
+	sleep 1 if $attempt &gt; 1;
+	print "Connection attempt ", $attempt++, "...\n";
+	$socket = IO::Socket::INET-&gt;new( Proto =&gt; 'tcp',
+		PeerAddr =&gt; 'localhost', PeerPort =&gt; 8000,
+		Timeout  =&gt; $CONN_TIMEOUT_SEC);
+	last if defined $socket;
+}
+die "Connection failed" unless defined $socket;
+print "Client connected\n";
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11101757</root_node>
+<parent_node field_name="parent_node">11101757</parent_node>
+<thread id="11101757">
+<node id="11101760"><node id="11101765"/>
+</node>
+</thread></node>

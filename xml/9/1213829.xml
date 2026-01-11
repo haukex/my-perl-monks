@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1213829" title="Re: Why does this string comparison compares &quot;numerically&quot; and can I rely on this in general?" created="2018-04-30 07:51:28" updated="2018-04-30 07:51:28" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;$a = 1e-3; $b = 0.001; if ( $a eq $b ) { ...&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note that this doesn't really have anything to do with &lt;c&gt;eq&lt;/c&gt; or &lt;c&gt;==&lt;/c&gt;, but with how Perl handles numeric literals in its source code - they are converted to Perl's internal representation first.&lt;/p&gt;
+&lt;c&gt;
+# force numbers to strings before printing:
+$ perl -wMstrict -le 'print "".1e-3; print "".0.001;
+    print "".0.0_0_1; print "".0x1.0624dd2f1a9fcp-10'
+0.001
+0.001
+0.001
+0.001
+# edited for brevity:
+$ perl -wMstrict -MDevel::Peek -le 'Dump( 1e-3 )'
+  NV = 0.001
+$ perl -wMstrict -MDevel::Peek -le 'Dump( 0.001 )'
+  NV = 0.001
+$ perl -wMstrict -MDevel::Peek -le 'Dump( 0.0_0_1 )'
+  NV = 0.001
+$ perl -wMstrict -MDevel::Peek -le 'Dump( 0x1.0624dd2f1a9fcp-10 )'
+  NV = 0.001
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;would two numbers always numerically oompared by "eq"&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If I take the question to mean "does &lt;c&gt;eq&lt;/c&gt; do numeric comparisons automatically when presented with numbers", the answer is &lt;b&gt;no&lt;/b&gt;, it always converts its operands to strings first (I'm ignoring [doc://overload]ing here).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;can I rely on this in general&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;But my question would be: Why would you want to rely on this? If you want to do a numeric comparison, you should use the numeric &lt;c&gt;==&lt;/c&gt; (always keeping in mind the [http://floating-point-gui.de/|limitations of floating-point numbers]!*), and if you want to know if two values converted to strings are equal, use &lt;c&gt;eq&lt;/c&gt; - and looking at the above, &lt;c&gt;eq&lt;/c&gt;'s behavior makes sense here.&lt;/p&gt;
+&lt;p&gt;At the moment, I can't think of a case where one would want to do such an "automatic numeric comparison". Could this be an XY problem - are you perhaps trying to do something with user input? (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; If you want a number to retain its formatting, you need to store it as a string instead of a number.)&lt;/p&gt;
+&lt;p&gt;* &lt;i&gt;Update:&lt;/i&gt; And if you want to know whether two numbers are &lt;i&gt;approximately&lt;/i&gt; equal:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -le '
+    if ( sprintf("%.3f",0.001) eq sprintf("%.3f",0.001001) )
+      { print "yes" } else { print "no" }'
+yes
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1213794</root_node>
+<parent_node field_name="parent_node">1213794</parent_node>
+<thread id="1213794">
+<node id="1213798"><node id="1213809"/>
+</node>
+<node id="1213824"/>
+<node id="1213829"/>
+</thread></node>

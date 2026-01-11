@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1145594" title="BUG in warnings uninitialized for derefed hashes?" created="2015-10-21 17:30:05" updated="2015-10-21 17:30:05" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">Today I head to localize an "uninitialized value" warning in a fairly big here doc with many interpolated variables. &lt;P&gt;
+
+Surprisingly Perl didn't tell me which variable was causing the trouble.&lt;P&gt;
+
+A closer investigation revealed that accessing hash entries via a dereference omitted the details.&lt;P&gt;
+
+Here a test in 5.22
+&lt;c&gt; 
+$ perl -wE 'my $x={};my %h; say "plain $h{new} deref $x-&gt;{new}"'
+Use of uninitialized value $h{"new"} in concatenation (.) or string at -e line 1.
+Use of uninitialized value in concatenation (.) or string at -e line 1.
+plain  deref 
+&lt;/c&gt;&lt;P&gt;
+
+is it a bug or is there a reason why Perl can't localize $x?&lt;P&gt;
+
+FWIW I tested 5.8.9 and back then no hints at all where given:&lt;P&gt;
+
+&lt;c&gt;
+$ perlbrew use perl-5.8.9
+$ perl -we 'my $x={};my %h; print "plain $h{new} deref $x-&gt;{new}"'
+Use of uninitialized value in concatenation (.) or string at -e line 1.
+Use of uninitialized value in concatenation (.) or string at -e line 1.
+&lt;/c&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language and [http://i.dailymail.co.uk/i/pix/2014/07/14/article-2690897-1F9F6C0E00000578-463_964x629.jpg|&amp;#9734;&amp;#9734;&amp;#9734;&amp;#9734;] :)
+&lt;br&gt; &lt;i&gt;[http://s3.freebeacon.com/up/2015/01/charliehebdo-540x342.png|Je suis Charlie]!&lt;/i&gt;
+&lt;/sub&gt; &lt;P&gt;
+
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1145594">
+<node id="1145596"><node id="1145598"/>
+</node>
+</thread></node>

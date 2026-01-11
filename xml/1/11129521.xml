@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129521" title="Re: Unable to write the .sv file" created="2021-03-12 13:42:46" updated="2021-03-12 13:42:46" _doctext_mode="lenient"><type id="11">note</type>
+<author id="281137">davido</author>
+<doctext field_name="doctext">&lt;p&gt;Your error handling is not revealing the actual error message. Consider this code:&lt;/p&gt;
+&lt;c&gt;
+|| die "File not found";
+&lt;/c&gt;
+&lt;p&gt;Are you sure that's why open failed? There are reasons other than the file not being found, and you aren't actually displaying the message that the system call produces. Your "[doc://die]" statements should also output the contents of &lt;c&gt;$!&lt;/c&gt;, which is described in [doc://perlvar].&lt;/p&gt;
+&lt;c&gt;
+|| die "Unable to open input file: $!";
+# ... and ...
+|| die "Unable to open output file: $!";
+&lt;/c&gt;
+&lt;p&gt;By displaying the actual error message instead of the one you assume happened, you learn a lot more about why something failed.&lt;/p&gt;
+&lt;p&gt;If I were writing it, the code would look more like this:&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+use File::Temp;
+use File::Copy qw(move);
+use Fcntl qw(:flock);
+
+my $target_file = 'generic_bist_ctrl_defines.sv';
+
+{
+    open my $in_fh, '&lt;', $target_file or die "Cannot open input file: $!\n";
+    flock $in_fh, LOCK_EX | LOCK_NB or die "Cannot obtain a lock on $target_file: $!\n";
+
+    my $temp_out = File::Temp-&gt;new(TEMPLATE =&gt; "$0-$$-XXXXX");
+
+    while (my $line = &lt;$in_fh&gt;) {
+        $line =~ s/=131/= $a/g; # Did you actually mean $line =~ s/=(131)/= $1/g; ???
+        print $temp_out $line;
+    }
+    close $in_fh or die "Failed to close $target_file. Aborting. $!\n";
+
+    $temp_out-&gt;flush;
+    eval {
+        move($temp_out-&gt;filename, $target_file);
+    } or do {
+        warn "Failed to swap $temp_out into $target_file: $!\n";
+        # There may need to be more cleanup here, or possibly a die is more appropriate.
+    };
+}   # $temp_out falls out of scope; temp file should be removed even if the move call failed.
+    # flock falls out of scope; lock is released on $target_file.
+&lt;/c&gt;
+&lt;p&gt;And I'd want to test it to make sure I hadn't missed something, since [mod://File::Temp] can be tempermental if used incorrectly, and because I would want to verify I'm using [mod://File::Copy]'s &lt;c&gt;move&lt;/c&gt; correctly.  But the pattern is approximately correct.&lt;/p&gt;
+&lt;p&gt;The pattern here is:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Open an input file and verify it opened correctly.&lt;/li&gt;
+&lt;li&gt;Lock the input file with an exclusive lock, and hope that other processes that access the file also use locking appropriately.&lt;/li&gt;
+&lt;li&gt;Open a tempfile.&lt;/li&gt;
+&lt;li&gt;Read the input file line by line (avoids slurping into memory)&lt;/li&gt;
+&lt;li&gt;Alter each line as needed.&lt;/li&gt;
+&lt;li&gt;Write each line to the tempfile.&lt;/li&gt;
+&lt;li&gt;When the input file is done being read, close it. Verify the close because we would not want to proceed to clobber the input file if the close failed (we may not have gotten all the contents).&lt;/li&gt;
+&lt;li&gt;Move the tempfile over the original target file. If the move fails, warn or throw with a descriptive error message.&lt;/li&gt;
+&lt;li&gt;Close the scope on the input and tempfile filehandles so that the lock expires on the input file, and the tempfile is cleaned up. Scope would also close in a 'die', so whether a move failure warns or dies, the tempfile should get cleaned up either way.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The reason for writing to a tempfile and moving is to reduce the potential for corruption of the input file, by making its replacement an atomic event.&lt;/p&gt;
+&lt;p&gt;Alternatively, you could use a module such as [mod://Tie::File], which is a fairly safe way to work line-by-line through files, modifying as you go. But it's less efficient. For small files or infrequent writes, it probably doesn't matter. For large files or frequent rewrites, it's probably not optimal. Here's an example:&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+use Fcntl qw(:flock);
+use Tie::File;
+
+my $target_file = '.....';
+
+{
+    my ($tied, @file_content)
+
+    $tied = tie @file_content, 'Tie::File', filename or die "Unable to tie $target_file: $!\n";
+    $tied-&gt;flock(LOCK_EX|LOCK_NB) or die "Cannot lock $target_file. Aborting. $!\n";
+    
+    foreach my $line (@file_content) {
+        $line =~ s/foo/bar/;
+    }
+}   # $tied falls out of scope. File is closed, lock expires.
+&lt;/c&gt;
+&lt;p&gt;It's simpler code, just less efficient. And it does allow you to avoid meddling with tempfiles yourself. However, [mod://File::Temp] doesn't create a single atomic write; it writes changes as you make them line by line. So you could become
+exposed to corruption if someone else is messing with the file (ignoring advisory locks). If that's a possibility, you're
+much better off going with some version of the first solution.&lt;/p&gt;
+    
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-281137"&gt;
+&lt;br /&gt;&lt;p&gt;Dave&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11129506</root_node>
+<parent_node field_name="parent_node">11129506</parent_node>
+<thread id="11129506">
+<node id="11129507"/>
+<node id="11129513"><node id="11129514"/>
+</node>
+<node id="11129515"><node id="11129516"/>
+</node>
+<node id="11129521"><node id="11129537"/>
+</node>
+</thread></node>

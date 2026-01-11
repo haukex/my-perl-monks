@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11145972" title="Re: Immediately writing the results of search-and-replace" created="2022-08-05 14:29:26" updated="2022-08-05 14:29:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I was under the impression that autoflushing on the currently open filehandle can be set using the $| variable, but if that's the case, why doesn't this have any affect?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, not quite. The documentation of [doc://$OUTPUT_AUTOFLUSH|$|] says: "If set to nonzero, forces a flush right away and after every write or print on the currently selected output channel. ... See [doc://select] on how to select the output channel." So in your code, it's likely just changing the autoflush of the default output channel,  &lt;c&gt;STDOUT&lt;/c&gt;. Unless you're on an ancient Perl, the easiest way to turn on autoflushing for a handle is &lt;c&gt;$filehandle-&gt;autoflush(1);&lt;/c&gt; &lt;small&gt;(for the nitpickers out there: the "1" isn't strictly necessary but it makes the statement look more like the other [doc://IO::Handle] methods)&lt;/small&gt;.&lt;/p&gt;
+&lt;p&gt;However, from your problem description, I doubt your issue has to do with autoflushing at all!&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;For example, if my script finds that a file contains the search string 'IP whitelist' on a given line, even if I confirm that I want to replace this with 'IP access list', it will then prompt me to replace just 'whitelist' with one of its various candidates. What I would expect to happen in that case is that the replacement of 'IP whitelist' with 'IP access list' happens before the search for the 'whitelist' key is initiated, preventing it from finding a match there. ... Is refactoring this subroutine so that it loops over the rows of the tables first, and then over each file in the inner loop a better solution? It seems like a lot more IO to be opening and closing every file over and over for each term, but I'm not a real programmer by any stretch, so I could be way off the mark here.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Unfortunately, you haven't shown us a full example, so for example we can't see how &lt;c&gt;@table&lt;/c&gt; is built or what its contents are - see [id://1177642].&lt;/p&gt;
+&lt;p&gt;Since you're prompting the user for input, my tutorial [id://1179840] isn't 100% applicable to your situation. However, I still suggest you read that node as it contains important advice applicable to this situation, for example regarding word boundaries (&lt;c&gt;\b&lt;/c&gt;) or sorting your matches to match longer strings before shorter ones, which &lt;i&gt;could&lt;/i&gt; be the cause of the issue you describe above. You might consider building a regex from all the potential search strings, and then building a hash where the search strings are the keys and the values are the possible replacements.&lt;/p&gt;
+&lt;p&gt;Another thing your code doesn't show is what &lt;c&gt;edit_file&lt;/c&gt; is (again, [id://1177642|SSCCE]), but if it's opening the files and rewriting the files on every call, then yes, that's not particularly efficient. If the files you are editing will always be small enough to fit comfortably in memory, you may want to consider simply loading them as strings into memory and then editing them in memory, writing them back out when done.&lt;/p&gt;
+&lt;p&gt;If you were to show your efforts as a complete, runnable example with representative sample input and expected output for that input, I'm sure we could help more.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11145971</root_node>
+<parent_node field_name="parent_node">11145971</parent_node>
+<thread id="11145971">
+<node id="11145972"><node id="11145975"><node id="11145976"/>
+<node id="11145977"><node id="11145978"><node id="11146003"><node id="11146017"/>
+</node>
+<node id="11149762"><node id="11149767"/>
+</node>
+</node>
+<node id="11146065"/>
+</node>
+<node id="11145979"><node id="11146066"/>
+</node>
+<node id="11146022"><node id="11146026"><node id="11146027"><node id="11146030"><node id="11146032"><node id="11146037"><node id="11146040"><node id="11146041"><node id="11146064"/>
+<node id="11146110"><node id="11146114"/>
+<node id="11146115"><node id="11146117"><node id="11146118"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11145980"><node id="11146067"/>
+</node>
+</thread></node>

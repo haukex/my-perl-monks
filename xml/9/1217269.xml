@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217269" title="Overloading Weirdness" created="2018-06-23 01:40:01" updated="2018-06-23 01:40:01" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="3383">pudge</author>
+<doctext field_name="doctext">Long story short: we want to mark strings so that later we can do something with them, even if they get embedded in other strings.
+
+So we figured, hey, let's try overloading.  It is pretty neat.  I can do something like:
+
+&lt;code&gt;
+my $str = str::new('&lt;encode this later&gt;');
+my $html = "&lt;html&gt;$str&lt;/html&gt;";
+print $html; # &lt;html&gt;&lt;encode this later&gt;&lt;/html&gt;
+print $html-&gt;encode; # &lt;html&gt;&amp;lt;encode this later&amp;gt;&lt;/html&gt;
+&lt;/code&gt;
+
+It does this by overloading the concatenation operator to make a new object array with the plain string "&amp;lt;html&gt;", the object wrapping "&amp;lt;encode this later&gt;", and the plain string "&amp;lt;/html&gt;".  It can nest these arbitrarily.  On encode, it will leave the plain strings, but encode the object strings.  But if you stringify the object, it just spits it all out as plain strings.
+
+This works well, except that in some cases, it stringifies for no apparent reason.  The script below shows the behavior, which I've duplicated in 5.10 through 5.22.
+
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use 5.010;
+use Data::Dumper; $Data::Dumper::Sortkeys=1;
+
+my $str1 = str::new('foo');
+my $str2 = str::new('bar');
+
+my $good1 = "$str1 $str2";
+my $good2;
+$good2 = $good1;
+my($good3, $good4);
+$good3 = "$str1 a";
+$good4 = "a $str1";
+
+my($bad1, $bad2, $bad3);
+$bad1 = "a $str1 a";
+$bad2 = "$str1 $str2";
+$bad3 = "a $str1 a $str2 a";
+
+say Dumper { GOOD =&gt; [$good1, $good2, $good3], BAD =&gt; [$bad1, $bad2, $bad3] };
+
+$bad1 = ''."a $str1 a";
+$bad2 = ''."$str1 $str2";
+$bad3 = ''."a $str1 a $str2 a";
+say Dumper { BAD_GOOD =&gt; [$bad1, $bad2, $bad3] };
+
+
+package str;
+use Data::Dumper; $Data::Dumper::Sortkeys=1;
+
+use strict;
+use warnings;
+use 5.010;
+
+use Scalar::Util 'reftype';
+
+use overload (
+    '""'        =&gt; \&amp;stringify,
+    '.'         =&gt; \&amp;concat,
+);
+
+sub new {
+    my($value) = @_;
+    bless((ref $value ? $value : \$value), __PACKAGE__);
+} 
+
+sub stringify {
+    my($str) = @_;
+#say Dumper { stringify =&gt; \@_ };
+    if (reftype($str) eq 'ARRAY') {
+        return join '', @$str;
+    }
+    else {
+        $$str;
+    }
+}
+
+sub concat {
+    my($s1, $s2, $inverted) = @_;
+#say Dumper { concat =&gt; \@_ };
+    return new( $inverted ? [$s2, $s1] : [$s1, $s2] );
+}
+
+1;
+&lt;/code&gt;
+
+I want all of these to be dumped as objects, not strings.  But the "BAD" examples are all stringified.  All of the "BAD" examples are when I'm assigning a string object I am concatenating at the moment to a variable previously declared.  If I declare at the same time, or concatenate the strings previously, or add in an extra concatenation (beyond the interpolated string concat), then it works fine.
+
+This is nuts.
+
+The result of the script:
+&lt;code&gt;
+$VAR1 = {
+          'BAD' =&gt; [
+                     'a foo a',
+                     'foo bar',
+                     'a foo a bar a'
+                   ],
+          'GOOD' =&gt; [
+                      bless( [
+                               bless( [
+                                        bless( do{\(my $o = 'foo')}, 'str' ),
+                                        ' '
+                                      ], 'str' ),
+                               bless( do{\(my $o = 'bar')}, 'str' )
+                             ], 'str' ),
+                      $VAR1-&gt;{'GOOD'}[0],
+                      bless( [
+                               $VAR1-&gt;{'GOOD'}[0][0][0],
+                               ' a'
+                             ], 'str' )
+                    ]
+        };
+
+$VAR1 = {
+          'BAD_GOOD' =&gt; [
+                          bless( [
+                                   '',
+                                   bless( [
+                                            bless( [
+                                                     'a ',
+                                                     bless( do{\(my $o = 'foo')}, 'str' )
+                                                   ], 'str' ),
+                                            ' a'
+                                          ], 'str' )
+                                 ], 'str' ),
+                          bless( [
+                                   '',
+                                   bless( [
+                                            bless( [
+                                                     $VAR1-&gt;{'BAD_GOOD'}[0][1][0][1],
+                                                     ' '
+                                                   ], 'str' ),
+                                            bless( do{\(my $o = 'bar')}, 'str' )
+                                          ], 'str' )
+                                 ], 'str' ),
+                          bless( [
+                                   '',
+                                   bless( [
+                                            bless( [
+                                                     bless( [
+                                                              bless( [
+                                                                       'a ',
+                                                                       $VAR1-&gt;{'BAD_GOOD'}[0][1][0][1]
+                                                                     ], 'str' ),
+                                                              ' a '
+                                                            ], 'str' ),
+                                                     $VAR1-&gt;{'BAD_GOOD'}[1][1][1]
+                                                   ], 'str' ),
+                                            ' a'
+                                          ], 'str' )
+                                 ], 'str' )
+                        ]
+        };
+&lt;/code&gt;
+
+The behavior makes no sense to me.  I'd like to understand why it works this way, and I'd like to find a workaround.
+</doctext>
+<thread id="1217269">
+<node id="1217270"><node id="1217280"><node id="1217310"><node id="1217313"/>
+</node>
+</node>
+<node id="1217284"><node id="1217304"/>
+<node id="1217312"><node id="1217336"/>
+</node>
+</node>
+</node>
+<node id="1217271"><node id="1217279"><node id="1217290"><node id="1217301"><node id="1217662"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1217306"/>
+</thread></node>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11114414" title="Re^2: Mojolicious refresh" created="2020-03-18 03:44:13" updated="2020-03-18 03:44:13" _doctext_mode="lenient"><type id="11">note</type>
+<author id="248054">Your Mother</author>
+<doctext field_name="doctext">&lt;p&gt;You’re killing me, Smalls.&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Mojolicious::Lite;
+
+get "/" =&gt; sub {
+    my $c = shift;
+    $c-&gt;clock;
+    $c-&gt;render("index");
+};
+
+helper clock =&gt; sub {
+    my $clock = { clock =&gt; time };
+    +shift-&gt;stash( $clock );
+    $clock;
+};
+
+get "/clock" =&gt; sub {
+    my $c = shift;
+    $c-&gt;render(json =&gt; $c-&gt;clock);
+};
+
+app-&gt;start;
+
+__DATA__
+@@ index.html.ep
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;title&gt;MojoClock&lt;/title&gt;
+  &lt;script src="https://code.jquery.com/jquery-3.4.1.min.js"
+          integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+          crossorigin="anonymous"&gt;&lt;/script&gt;
+  &lt;style&gt;* { font-family:"helvetica neue", helvetica }&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1 class="clock"&gt;
+     &lt;%= $clock %&gt;
+  &lt;/h1&gt;
+  &lt;script type="text/javascript"&gt;
+    function clockMe() {
+      $clock = $(".clock");
+      $.ajax({ type: "GET"
+              ,url: "clock"
+              ,success: function(json){
+                  $clock.fadeOut(10,function(){ $clock.text(json.clock).fadeIn() });
+               }
+              ,error: function(req,msg){
+                   alert("Oh, noes! Errerz!!!");
+               } });
+    };
+    setInterval(clockMe, 1000)
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/code&gt;
+
+&lt;p&gt;I consider meta refresh an unambiguously worst UX practice except in the rare case of needing to do it *once* in a situation you want to present a message to the user before a real redirect or ensure a session timeout or something where JS is disabled… or pump up your page view stats for advertisers like certain broadsheet hacks who shall remain unnamed. :P&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11114408</root_node>
+<parent_node field_name="parent_node">11114413</parent_node>
+<thread id="11114408">
+<node id="11114409"><node id="11114445"><node id="11114447"><node id="11114452"><node id="11114454"><node id="11114457"><node id="11114524"/>
+</node>
+</node>
+<node id="11114458"><node id="11114459"><node id="11114464"><node id="11114468"><node id="11114469"><node id="11114470"><node id="11114471"><node id="11114472"/>
+<node id="11114478"><node id="11114479"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11114411"/>
+<node id="11114413"><node id="11114414"/>
+</node>
+<node id="11114415"><node id="11114416"/>
+</node>
+</thread></node>

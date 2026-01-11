@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203780" title="Re: Overriding Global Variables" created="2017-11-19 08:55:53" updated="2017-11-19 08:55:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;There are several ways to do this, and which ones are best depends a bit on what you're trying to do - normally, a "debug" flag is a global thing, enabled only once by a command line option or environment variable. I'm not sure why you need multiple packages to access it - will the flag be switched on and off during the run of your program? If so, a different design is probably better, because otherwise you may run into issues with the dynamic scope of the setting. To implement only what you've asked so far, I'd suggest to just have a single variable and access it in the &lt;c&gt;Debug&lt;/c&gt; package via &lt;c&gt;$Debug::&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+{
+	package Debug;
+	use Exporter 'import';
+	our @EXPORT = qw/debug/;
+	our $FLAG = 0;     # package variable
+	sub debug {
+		if ($FLAG) {
+			print @_;
+		}
+	}
+}
+{
+	package Foo;
+	Debug-&gt;import;     # normally "use Debug;"
+	$Debug::FLAG = 1;  # global enable
+	debug("Hello\n");  # prints "Hello"
+}
+{
+	package Bar;
+	Debug-&gt;import;      # normally "use Debug;"
+	$Debug::FLAG = 0;   # global disable
+	debug("World!\n");  # doesn't print
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1203778</root_node>
+<parent_node field_name="parent_node">1203778</parent_node>
+<thread id="1203778">
+<node id="1203779"><node id="1203786"><node id="1203787"/>
+</node>
+</node>
+<node id="1203780"><node id="1203782"><node id="1203793"/>
+<node id="1203813"/>
+</node>
+</node>
+<node id="1203781"><node id="1203784"/>
+</node>
+<node id="1203783"><node id="1203785"><node id="1203825"/>
+</node>
+</node>
+<node id="1203827"/>
+</thread></node>

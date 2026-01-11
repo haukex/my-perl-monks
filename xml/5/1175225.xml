@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1175225" title="Re^5: splitting csv file and saving data" created="2016-11-03 08:52:04" updated="2016-11-03 08:52:04" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [BrowserUk],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Please note: I didn't say it could not be solved with a cvs module, only that the don't really help.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I was disagreeing mostly with what appeared to be your main point, &lt;i&gt;"his data isn't CSV!"&lt;/i&gt; I also disagree that a CSV module doesn't help, since [mod://Text::CSV] gives you the handling of quoted strings. I'm sure you know all the other usual arguments as to why using a module is often better than rolling your own, but just to highlight one: it does give more flexibility if the input happens to vary (e.g. if one of the fields is empty or another field happens to be a quoted string).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;For example, you've resorted to split for the embedded field. Why it it accesptable to do so there, but not for the rest?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'd say a simple [doc://split] isn't really appropriate for the rest of the line because it doesn't have all the power of the module. However, you've still got a good point, using a simple [doc://split] for the third column does make assumptions about the input format (I've updated my node accordingly). If I wanted total consistency I could use another instance of [mod://Text::CSV], but the line between what's overkill and what isn't has to be drawn somewhere ;-)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;But, your code also only solves half the problem&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, I admittedly did skip that part of the question; I felt that the OP's problems with parsing CSV were more important. But then again, [id://1175220|your code] doesn't solve that part very generically ;-P&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;... the use of a csv module does nothing to assist in that. In fact it effectively denies access to some information that could be used to assist in the production of the output.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;True, one does lose some info on the input (IIRC the physical line number in the input file in the case of newlines embedded in fields; maybe there's more I'm forgetting at the moment). But I also think the solution for the problem of adding either a comma or a semicolon at the end of the line is the same whether I manually parse the rows or whether I use a module to help. Just a quick, inelegant idea:&lt;/p&gt;
+&lt;c&gt;
+my $rownum = 1;
+while ( my $data = somehow_parse_input_line() ) {
+	print ",\n" unless $rownum==1;
+	print $data;
+}
+continue { $rownum++ }
+print ";\n";
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;You unconditionally attempt to split the 3rd field regardless of whether it requires it.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Unless we're talking about performance, I don't think unconditionally splitting the third field hurts; although as I said above it could certainly be solved differently, and that'd certainly be necessary if the input varies.&lt;/p&gt;
+&lt;p&gt;Regards,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1175217</root_node>
+<parent_node field_name="parent_node">1175224</parent_node>
+<thread id="1175217">
+<node id="1175218"><node id="1175221"><node id="1175222"><node id="1175224"><node id="1175225"/>
+</node>
+</node>
+<node id="1175223"/>
+<node id="1175262"><node id="1175265"/>
+</node>
+</node>
+</node>
+<node id="1175220"/>
+<node id="1175267"/>
+</thread></node>

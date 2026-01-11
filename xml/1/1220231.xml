@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1220231" title="Re: More accurate way to calculate Date difference" created="2018-08-11 04:05:17" updated="2018-08-11 04:05:17" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;It's important to be clear on definitions and provide meaningful examples. For example, sometimes a "month" is defined as exactly 30 days, but since you're asking this question, I'm guessing that's not what you want. For example, using [mod://DateTime] math:&lt;/p&gt;
+&lt;pre&gt;
+2016-01-29 + 30 days = 2016-02-28    2017-01-29 + 30 days = 2017-02-28
+2016-01-30 + 30 days = 2016-02-29    2017-01-30 + 30 days = 2017-03-01
+vs.
+2016-01-29 + 1 month = 2016-02-29    2017-01-29 + 1 month = 2017-03-01
+2016-01-30 + 1 month = 2016-03-01    2017-01-30 + 1 month = 2017-03-02
+&lt;/pre&gt;
+&lt;p&gt;I would recommend this: First, calculate the "deadline" date by adding your "6 months" to the &lt;c&gt;$date_birth&lt;/c&gt;. Then, use the methods provided by the library to see if the &lt;c&gt;$diab_confirm&lt;/c&gt; is past that date or not. For example, in [mod://Date::Calc] that would probably be &lt;c&gt;Add_Delta_YM&lt;/c&gt; for the first part, and &lt;c&gt;Date_to_Days&lt;/c&gt; or &lt;c&gt;Delta_Days&lt;/c&gt; for the second.&lt;/p&gt;
+&lt;p&gt;Personally, I like [mod://DateTime], and its objects overload the comparison operators:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime;
+use DateTime::Format::Strptime;
+
+my $date_birth = '21/02/2013';
+my $diab_confirm = '29/08/2013';
+
+my $strp = DateTime::Format::Strptime-&gt;new(on_error=&gt;'croak',
+	pattern =&gt; '%d/%m/%Y');
+
+my $dt_birth = $strp-&gt;parse_datetime($date_birth);
+my $dt_confirm = $strp-&gt;parse_datetime($diab_confirm);
+print "   birth: ", $dt_birth-&gt;ymd, "\n";
+print " confirm: ", $dt_confirm-&gt;ymd, "\n";
+
+my $dt_deadline  = $dt_birth-&gt;clone-&gt;add(months=&gt;6);
+print "deadline: ", $dt_deadline-&gt;ymd, "\n";
+
+if ($dt_confirm &gt; $dt_deadline) {
+	print $dt_confirm-&gt;ymd, " &gt; ", $dt_deadline-&gt;ymd, "\n";
+}
+else {
+	print $dt_confirm-&gt;ymd, " &lt;= ", $dt_deadline-&gt;ymd, "\n";
+}
+
+__END__
+
+   birth: 2013-02-21
+ confirm: 2013-08-29
+deadline: 2013-08-21
+2013-08-29 &gt; 2013-08-21
+&lt;/c&gt;
+&lt;p&gt;As always, the more test cases the better!&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1220223</root_node>
+<parent_node field_name="parent_node">1220223</parent_node>
+<thread id="1220223">
+<node id="1220228"><node id="1220229"/>
+<node id="1220233"/>
+</node>
+<node id="1220230"/>
+<node id="1220231"/>
+<node id="1220235"/>
+</thread></node>

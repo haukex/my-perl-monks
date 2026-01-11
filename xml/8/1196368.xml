@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1196368" title="Re: &quot;Useless use of a constant&quot; in grep block?" created="2017-07-31 11:28:50" updated="2017-07-31 11:28:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;From my casual lurking on P5P, I think getting a warning like that added to the core might not be easy, or it'll take a while, and then only be available in the newer versions of Perl. But what you can do instead is use this [mod://Perl::Critic] policy that I whipped up:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+package Perl::Critic::Policy::BuiltinFunctions::GrepWithSimpleValue;
+use warnings;
+use strict;
+use base 'Perl::Critic::Policy';
+use Perl::Critic::Utils qw/:severities is_function_call/;
+use Perl::Critic::Utils::PPI qw/is_ppi_constant_element/;
+
+our $VERSION = '0.001';
+sub supported_parameters { return }
+sub default_severity { return $SEVERITY_MEDIUM }
+sub default_themes { return qw/core bugs/ }
+sub applies_to { return 'PPI::Token::Word' }
+
+=head1 DESCRIPTION
+
+A C&lt;grep&gt; with a constant value as the last thing in its block will
+either return all or none of the items in the list (depending on
+whether the value is true or false).
+You may have accidentally said C&lt;grep {123}&gt; when you meant
+C&lt;grep {$_==123}&gt;, or C&lt;grep {"foo"}&gt; when you meant
+C&lt;grep {$_ eq "foo"}&gt; or C&lt;grep {/foo/}&gt;.
+
+=cut
+
+my $DESC = q{"grep" with constant value};
+my $EXPL = q{Will return all or none of the values};
+
+# based partially on
+# Perl::Critic::Policy::BuiltinFunctions::ProhibitComplexMappings
+
+sub violates {
+	my ($self, $elem) = @_;
+	return if $elem-&gt;content() ne 'grep';
+	return if !is_function_call($elem);
+	my $sib = $elem-&gt;snext_sibling();
+	return $self-&gt;violation('Nothing following "grep"?',
+		'It seems there is a lone "grep" in your code?',
+		$elem) if !$sib;
+	my $arg = $sib;
+	if ( $arg-&gt;isa('PPI::Structure::List') ) {
+		$arg = $arg-&gt;schild(0);
+		$arg &amp;&amp; $arg-&gt;isa('PPI::Statement::Expression')
+			and $arg = $arg-&gt;schild(0);
+	}
+	if ($arg &amp;&amp; $arg-&gt;isa('PPI::Structure::Block')) {
+		my $stmt = $arg-&gt;schild(-1);
+		return $self-&gt;violation($DESC,$EXPL,$sib)
+			if !$stmt
+			|| $stmt-&gt;isa('PPI::Statement')
+			&amp;&amp; (   $stmt-&gt;schildren()==1
+				|| $stmt-&gt;schildren()==2
+					&amp;&amp; $stmt-&gt;schild(1)-&gt;isa('PPI::Token::Structure')
+					&amp;&amp; $stmt-&gt;schild(1)-&gt;content eq ';' )
+			&amp;&amp; is_ppi_constant_element($stmt-&gt;schild(0));
+	}
+	elsif ($arg &amp;&amp; is_ppi_constant_element($arg))
+		{ return $self-&gt;violation($DESC,$EXPL,$sib) }
+	return;
+}
+
+1;
+&lt;/c&gt;
+&lt;p&gt;Tests:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+# tests for Perl::Critic::Policy::BuiltinFunctions::GrepWithSimpleValue
+# run me with e.g.: perl -c greptest.pl &amp;&amp; perlcritic -3 greptest.pl
+
+my @array = qw/a b c 1 2 3/;
+my (@out,$foo);
+## no critic (RequireBlockGrep)
+
+@out = grep "foo", @array;          # bad
+@out = grep /foo/, @array;          # good
+@out = grep $_ eq "foo", @array;    # good
+
+@out = grep {;} @array;             # bad
+@out = grep {"foo"} @array;         # bad
+@out = grep {/foo/} @array;         # good
+@out = grep {123} @array;           # bad
+@out = grep {0x123} @array;         # bad
+@out = grep {$_ eq "foo"} @array;   # good
+@out = grep {'$foo1'} @array;       # bad
+@out = grep {'$foo2';} @array;      # bad
+@out = grep {"$foo"} @array;        # good
+@out = grep {'$foo3';;} @array;     # bad
+@out = grep {'$foo4';'bar'} @array; # bad
+
+my @ary;
+push @ary, "foo" unless grep { "foo" } @ary;       # bad
+push @ary, "foo" unless grep { $_ eq "foo" } @ary; # good
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;When run against your code with &lt;c&gt;perlcritic -3 code.pl&lt;/c&gt;, it'll say something like "&lt;c&gt;"grep" with constant value at line X, column Y.  Will return all or none of the values.&lt;/c&gt;"&lt;/p&gt;
+&lt;p&gt;You can monkey-patch this into your installation by running &lt;c&gt;perldoc -l Perl::Critic::Policy::BuiltinFunctions::ProhibitComplexMappings&lt;/c&gt;, taking that pathname, and placing the above code into that path as the file &lt;c&gt;GrepWithSimpleValue.pm&lt;/c&gt;. (Maybe someday I'll get around to making a distro, along with my [id://1180082|other] policy &lt;c&gt;:-) &lt;/c&gt;)&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1196283</root_node>
+<parent_node field_name="parent_node">1196283</parent_node>
+<thread id="1196283">
+<node id="1196284"><node id="1196338"><node id="1196619"><node id="1196627"><node id="1196630"/>
+<node id="1196713"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1196286"><node id="1196294"><node id="1196495"/>
+</node>
+</node>
+<node id="1196288"><node id="1196337"/>
+</node>
+<node id="1196295"/>
+<node id="1196296"/>
+<node id="1196312"/>
+<node id="1196368"><node id="1196390"/>
+<node id="1196391"/>
+</node>
+<node id="1196378"/>
+</thread></node>

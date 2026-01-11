@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203294" title="Re: Auto-Expansion of Grep Function" created="2017-11-13 15:25:20" updated="2017-11-13 15:25:20" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Optimization is of course a science and it should be done by locating hotspots with a profiler ([mod://Devel::NYTProf]), and attacking the places where the code is spending the most time &lt;small&gt;&lt;c&gt;&lt;update2&gt;&lt;/c&gt;&lt;/small&gt; and using a module like [doc://Benchmark] to test and compare alternatives &lt;small&gt;&lt;c&gt;&lt;/update2&gt;&lt;/c&gt;&lt;/small&gt;. But here are some rough rules of thumb / unverified gut feelings based on experience (every mention of "slow" below is therefore subjective):&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;[doc://grep] will loop over the entire array, so running it multiple times will loop over the list multiple times, and will therefore be slow&lt;/li&gt;
+&lt;li&gt;you are right that [doc://eval] on a string is relatively slow&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;(any_list_context) = &lt;$FILE&gt;&lt;/c&gt;, as [doc://grep] and &lt;c&gt;foreach&lt;/c&gt; require, will load the &lt;i&gt;entire&lt;/i&gt; file into memory (slow and memory-hungry)&lt;/li&gt;
+&lt;li&gt;therefore, &lt;c&gt;foreach (@lines)&lt;/c&gt; will be slower than a &lt;c&gt;while (&lt;&gt;)&lt;/c&gt; loop, which reads and processes only one line at a time&lt;/li&gt;
+&lt;li&gt;instead of your &lt;c&gt;while (&lt;&gt;) { foreach my $pattern (@patterns) { ... } }&lt;/c&gt; (nested loops always slow things down), I would suggest a single regex, or regexen combined with logic (&lt;c&gt;if (/regex1/ &amp;&amp; /regex2/)&lt;/c&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;So personally my starting point would be something like this, based on [id://1179840]:&lt;/p&gt;
+&lt;c&gt;
+my @strings_to_match = ('192.168.200.', '10.10.200');
+my ($regex) = map { qr/$_/ }
+    join '|', map {quotemeta}
+    sort { length $b &lt;=&gt; length $a }
+    @strings_to_match;
+
+my @filtered_result;
+while (&lt;&gt;) {
+    push @filtered_result, $_
+        if m{ ,SEVERE, .* $regex }x;
+}
+&lt;/c&gt;
+&lt;p&gt;Note that I am only recommending this solution because you said &lt;i&gt;"it didn't really matter to me where the IP address I was filtering was located, (just that it was there)"&lt;/i&gt;. Otherwise, I would recommend [mod://Text::CSV_XS] for loading CSV files.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I was hoping to find a solution, however, where the grep function could be expanded (nested?) an arbitrary number of times based on the different match strings that we get.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, sorry, it doesn't work that way*, &lt;i&gt;however&lt;/i&gt;, you &lt;i&gt;can&lt;/i&gt; make the matching logic for a single loop (&lt;c&gt;while&lt;/c&gt;/&lt;c&gt;foreach&lt;/c&gt;/&lt;c&gt;grep&lt;/c&gt;) as complex as you need, as I showed above. I would not recommend building a string of Perl code and [doc://eval]ing it either, because it's much too easy to get burned (and in some cases expose security holes).&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor edits for clarity.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;* &lt;i&gt;Update:&lt;/i&gt; The solution would be "lazy lists", which is something that can be implemented by iterators - although this is probably much too advanced for now (and probably wouldn't give you a performance gain either), [Dominus]'s book [https://hop.perl.plover.com/book/|Higher-Order Perl] is a wonderful read on that topic.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203290</root_node>
+<parent_node field_name="parent_node">1203290</parent_node>
+<thread id="1203290">
+<node id="1203291"/>
+<node id="1203294"/>
+<node id="1203311"/>
+</thread></node>

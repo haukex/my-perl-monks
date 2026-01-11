@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11145971" title="Immediately writing the results of search-and-replace" created="2022-08-05 13:56:22" updated="2022-08-05 13:56:22" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">Most gracious monks:
+
+I am a Perl novice working on a script that takes a CSV file as input, uses the first element of each row as a string to search on, and the second element of each row as the replacement string. In the event that one search term appears in multiple rows, these are merged together so that the second element becomes an array of replacement candidates, reduced down to unique items. In either case, the user is prompted to adjudicate the replacement (either yes/no for a single replacement candidate, or a numeric input for multiple). I have the core functionality working, but some problems crop up when doing replacements on search strings for which other search strings are substrings.&lt;br/&gt;&lt;br/&gt;
+
+For example, if my script finds that a file contains the search string 'IP whitelist' on a given line, even if I confirm that I want to replace this with 'IP access list', it will then prompt me to replace just 'whitelist' with one of its various candidates. What I would expect to happen in that case is that the replacement of 'IP whitelist' with 'IP access list' happens &lt;em&gt;before&lt;/em&gt; the search for the 'whitelist' key is initiated, preventing it from finding a match there. Doing some digging, it seemed that setting up autoflushing would solve my problem, but either I've misunderstood and that is not a solution to the situation, or I have implemented it incorrectly. Here is the subroutine that performs the actual search-and-replace:&lt;br/&gt;
+
+&lt;code&gt;
+sub search_and_replace {
+      open my $target_file, "&lt;", $_;
+      $| = 1;
+      my $filename = $_;
+      while (my $target_string = &lt;$target_file&gt;) {
+        for my $row (@table) {
+          my $search = $row-&gt;[0];
+          my $replacement = $row-&gt;[1];
+               
+          if ((lc $target_string) =~ (lc $search)) {
+            print "Found $search in $filename in the following context:\n";
+            print "$target_string\n";
+            if (ref($replacement) eq 'ARRAY' &amp;&amp; length $replacement &gt; 1) {
+              print "Choose a replacement candidate by typing the appropriate number, or else type '0' to skip.\n";
+              my $count = 1;
+              for my $value (@$replacement) {
+                print "$count\) $value\n";
+                  $count++;
+              }
+              my $choice = &lt;STDIN&gt;;
+              if ($choice &gt;= 1 &amp;&amp; $choice &lt;= (length $replacement)) {
+                my $replace_choice = $replacement-&gt;[$choice];
+                edit_file { s/$search/$replace_choice/gi} $filename;
+              }
+              else {
+                print "Skipping this occurrence without replacing.\n";
+              }
+            }
+            else {
+              print "Confirm replacement with $replacement by typing y, or skip by typing any other key.\n";
+              my $choice = &lt;STDIN&gt;;
+              if ($choice eq 'y' || 'Y') {
+                edit_file { s/$search/$replacement/gi } $filename;
+              }
+              else {
+                print "Skipping this occurrence without replacing.\n";
+              }
+            }
+          }
+        }
+      }
+      close $target_file;
+}&lt;/code&gt;
+
+1) I was under the impression that autoflushing on the currently open filehandle can be set using the $| variable, but if that's the case, why doesn't this have any affect?&lt;br/&gt;
+
+2) Is refactoring this subroutine so that it loops over the rows of the tables first, and then over each file in the inner loop a better solution? It seems like a lot more IO to be opening and closing every file over and over for each term, but I'm not a real programmer by any stretch, so I could be way off the mark here.&lt;br/&gt;
+
+3) I also tried putting the line &lt;code&gt;$target_file-&gt;flush;&lt;/code&gt; as the last line of each of the replacement 'if' statements, and that did nothing either.&lt;br/&gt;&lt;br/&gt;
+
+Please let me know if there is any additional info I can provide that would help. Thank you very much.</doctext>
+<reputation field_name="reputation">19</reputation>
+<thread id="11145971">
+<node id="11145972"><node id="11145975"><node id="11145976"/>
+<node id="11145977"><node id="11145978"><node id="11146003"><node id="11146017"/>
+</node>
+<node id="11149762"><node id="11149767"/>
+</node>
+</node>
+<node id="11146065"/>
+</node>
+<node id="11145979"><node id="11146066"/>
+</node>
+<node id="11146022"><node id="11146026"><node id="11146027"><node id="11146030"><node id="11146032"><node id="11146037"><node id="11146040"><node id="11146041"><node id="11146064"/>
+<node id="11146110"><node id="11146114"/>
+<node id="11146115"><node id="11146117"><node id="11146118"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11145980"><node id="11146067"/>
+</node>
+</thread></node>

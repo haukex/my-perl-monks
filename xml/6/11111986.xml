@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111986" title="Re: Get total number of characters in a hash (not memory usage)" created="2020-01-28 15:54:57" updated="2020-01-28 15:54:57" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;{ 'key' =&gt; 'value' } # should be 7&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Should be 8, shouldn't it? Anyway, you can take advantage of the fact that a hash in list context evaluates to the key/value pairs.&lt;/p&gt;
+&lt;c&gt;
+my $hashref = { 'key' =&gt; 'value' };
+
+my $sum1 = 0;
+$sum1 += length for %$hashref;
+# - or -
+my $sum2 = length join '', %$hashref;
+# - or -
+use List::Util qw/sum/;
+my $sum3 = sum map {length} %$hashref;
+&lt;/c&gt;
+&lt;p&gt;I suspect the first of these will be most efficient since it doesn't build an intermediate string or list - &lt;i&gt;Update:&lt;/i&gt; at least, I think it doesn't; I hope &lt;c&gt;for %hash&lt;/c&gt; is optimized to use an iterator, but I'm not certain at the moment. If you wanted to play it super safe:&lt;/p&gt;
+&lt;c&gt;
+my $sum4 = 0;
+while ( my ($k, $v) = each %$hashref )
+	{ $sum4 += length($k) + length($v) }
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11111985</root_node>
+<parent_node field_name="parent_node">11111985</parent_node>
+<thread id="11111985">
+<node id="11111986"/>
+<node id="11111990"/>
+<node id="11111993"/>
+<node id="11112006"/>
+<node id="11112022"><node id="11112035"/>
+</node>
+</thread></node>

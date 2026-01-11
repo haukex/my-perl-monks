@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1205703" title="Re: hexadecimal division" created="2017-12-16 14:42:08" updated="2017-12-16 14:42:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I think it's best to clarify a few things - you may already know some or all of this, but since this kind of question comes up once in a while, I'll take this opportunity to write a little more on it.&lt;/p&gt;
+&lt;p&gt;First, hexadecimal is just another representation format for the more abstract concept of an &lt;del&gt;integer&lt;/del&gt; &lt;ins&gt;number&lt;/ins&gt; - although Perl handles all kinds of numbers pretty transparently, I'll just talk about integers for now. The idea of different representations of the same thing occurs in a lot of places:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;0b00101010&lt;/c&gt;, &lt;c&gt;0x2a&lt;/c&gt;, &lt;c&gt;052&lt;/c&gt;, and &lt;i&gt;XLII&lt;/i&gt; represent the same integer commonly known as 42 in decimal; note that in C (not Perl!) one can even write that integer as &lt;c&gt;'*'&lt;/c&gt;,&lt;/li&gt;
+&lt;li&gt;the byte sequences &lt;c&gt;EF BB BF&lt;/c&gt;, &lt;c&gt;FE FF&lt;/c&gt;, and &lt;c&gt;2B 2F 76 38&lt;/c&gt; represent the same Unicode character (the [wp://Byte_order_mark#Byte_order_marks_by_encoding|BOM]),&lt;/li&gt;
+&lt;li&gt;42°C, 315.15°K, and 107.6°F represent the same temperature, and&lt;/li&gt;
+&lt;li&gt;"2009-02-13 13:31:30 HST" and "2009-02-14 10:31:30 AEDT" represent the same second in time.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In any of these examples, if one is getting inputs in different formats, it's usually easiest to first convert them to a single internal representation, do the work, and then re-convert them to the desired format on output, instead of trying to mix different formats in one program.&lt;/p&gt;
+&lt;p&gt;Second, I've noticed that sometimes the term "hexadecimal" is used in place of "binary", probably because binary files are viewed with "hex editors", and also that there is sometimes confusion between a string containing a hexadecimal representation of some bytes and the bytes themselves.&lt;/p&gt;
+&lt;p&gt;Let's say a file contains four bytes whose numeric values in decimal are 80, 101, 114, and 108. This sequence of bytes interpreted as ASCII characters is the string &lt;c&gt;"Perl"&lt;/c&gt;. If I run a tool to get a hex dump of that file, I will see something like "&lt;c&gt;5065726c&lt;/c&gt;", that is, each byte is being represented as a two-digit hexadecimal number. However, if in my code I have a string that looks like &lt;c&gt;"5065726c"&lt;/c&gt;, this is a sequence of eight characters and, ignoring Unicode for now, also a sequence of &lt;i&gt;eight&lt;/i&gt; bytes (decimal values 53, 48, 54, 53, etc.). If in my program I instead want to work with the four bytes (8-bit integers) which the string &lt;c&gt;"5065726c"&lt;/c&gt; represents, I need to convert it first. In Perl, the usual tools for all these kinds of conversions are [doc://pack], [doc://unpack], [doc://ord], [doc://chr], [doc://hex], [doc://oct], and [doc://sprintf].&lt;/p&gt;
+&lt;p&gt;In Perl, the string &lt;c&gt;"Perl"&lt;/c&gt; can also be written as &lt;c&gt;"\x50\x65\x72\x6C"&lt;/c&gt;, but regarding your code note that &lt;c&gt;"\x10"&lt;/c&gt; is not the same as &lt;c&gt;0x10&lt;/c&gt; - the latter is simply another way of writing the number 16, while the former is a string with one character, that character having a decimal value of 16 (the ASCII control character &lt;c&gt;DLE&lt;/c&gt; / "data link escape"). If one has had exposure to a language like C or C++, one might be used to the equivalence (again ignoring Unicode) of strings and &lt;c&gt;char&lt;/c&gt; arrays, and therefore being able to initialize a "string" with code like &lt;c&gt;{0x50,0x65,0x72,0x6C,0}&lt;/c&gt;. But in Perl, strings can't directly be treated as arrays of integers - although this being Perl, of course there's [mod://Tie::StringArray|a module] for that ;-) (but please don't use it in real code). Another point: although Perl converts between the two transparently in most cases, &lt;c&gt;16&lt;/c&gt; and &lt;c&gt;"16"&lt;/c&gt; are still two different things, the first an integer and the second a two-character string.&lt;/p&gt;
+&lt;p&gt;When it comes to the operations &lt;c&gt;~ | &amp; ^&lt;/c&gt;, in Perl one has to be aware of how the [doc://perlop#Bitwise-String-Operators] work, so it is important to be aware of whether one is working with strings or integers. &lt;c&gt;0x2A ^ 0x7A&lt;/c&gt; and &lt;c&gt;"\x2A" ^ "\x7A"&lt;/c&gt; are essentially the same operation (00101010 xor 01111010 = 01010000), but in the first, the inputs &lt;i&gt;and&lt;/i&gt; output are integers, while in the latter they are strings. &lt;/p&gt;
+&lt;p&gt;While it's possible to implement division in other domains, it's of course easiest with numbers, and we don't even really have to care what internal format the computer is using to store those numbers. So at the very latest, the division is when you'll need to convert. But in this case, I'd personally probably work with integers all the way through. (By the way, dividing an integer by a power of two is the same as a [wp://Bitwise_operation#Bit_shifts|bit shift], that is, &lt;c&gt;int($x/16)&lt;/c&gt; is the same as &lt;c&gt;$x&gt;&gt;4&lt;/c&gt;.)&lt;/p&gt;
+&lt;p&gt;Lastly, [doc://Data::Dumper] with &lt;c&gt;Useqq&lt;/c&gt; turned on (or [mod://Data::Dump]) will help you inspect the variables at each step. However, note that both of these modules will sometimes display a string like &lt;c&gt;"16"&lt;/c&gt; as the number &lt;c&gt;16&lt;/c&gt; - if you want to know exactly how Perl is storing your value internally, use [doc://Devel::Peek].&lt;/p&gt;
+&lt;p&gt;It is still a bit unclear to me if you need the output as an integer or string. In your example, the output as an integer would be &lt;c&gt;0&lt;/c&gt; (aka &lt;c&gt;0x00&lt;/c&gt;), which Perl will transparently convert to the string &lt;c&gt;"0"&lt;/c&gt;, which is a one-character string, that character being the ASCII character &lt;c&gt;0x30&lt;/c&gt; - which would probably explain the result you are currently getting. If instead you need the output as a binary value stored in a string, you'll have to convert the integer &lt;c&gt;0&lt;/c&gt; to the string &lt;c&gt;"\0"&lt;/c&gt; (aka &lt;c&gt;"\x00"&lt;/c&gt;) using e.g. [doc://pack], or, since it's a single character, [doc://chr].&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use List::Util qw/reduce/;
+use Data::Dumper;
+$Data::Dumper::Useqq=1;
+$Data::Dumper::Indent=0; $Data::Dumper::Terse=1;
+
+my $string = "a202005";
+print Dumper($string),"\n";              # "a202005"
+my @chars = map ord, split //, $string;  # or: unpack 'C*', $string
+print Dumper(\@chars),"\n";              # [97,50,48,50,48,48,53]
+my $xor = reduce { $a ^ $b } @chars;
+print Dumper($xor),"\n";                 # 100
+my $chr = chr $xor;                      # or: pack 'C', $xor
+print Dumper($chr),"\n";                 # "d"
+my $out = $xor&gt;&gt;4;
+print Dumper($out),"\n";                 # 6
+print Dumper(chr $out),"\n";             # "\6"
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Updated&lt;/i&gt; as per replies. Also very minor edits for clarity.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1205629</root_node>
+<parent_node field_name="parent_node">1205629</parent_node>
+<thread id="1205629">
+<node id="1205630"/>
+<node id="1205631"><node id="1205667"/>
+<node id="1205670"><node id="1205691"/>
+</node>
+</node>
+<node id="1205634"><node id="1205636"/>
+<node id="1205671"><node id="1205679"/>
+</node>
+</node>
+<node id="1205635"><node id="1205639"><node id="1205645"><node id="1205650"><node id="1205652"/>
+</node>
+</node>
+</node>
+<node id="1205644"><node id="1205646"><node id="1205647"/>
+<node id="1205648"><node id="1205649"><node id="1205654"><node id="1205656"><node id="1205682"/>
+</node>
+<node id="1205681"><node id="1205812"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1205653"/>
+<node id="1205689"><node id="1205690"><node id="1205695"><node id="1205699"/>
+</node>
+<node id="1205698"/>
+</node>
+</node>
+<node id="1205703"><node id="1205706"><node id="1205707"/>
+<node id="1205709"><node id="1205710"/>
+</node>
+</node>
+</node>
+<node id="1205713"><node id="1205714"><node id="1205715"><node id="1205718"/>
+</node>
+</node>
+</node>
+<node id="1205717"/>
+<node id="1205741"/>
+<node id="1205802"/>
+</thread></node>

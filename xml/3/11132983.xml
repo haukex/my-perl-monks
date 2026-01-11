@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11132983" title="Re: executing perl command from a perl file" created="2021-05-24 14:12:49" updated="2021-05-24 14:12:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;How to execute &lt;c&gt;perl -F, -lanE 'm/module/?say:say qq|.$F[0]($F[0])$F[1]|' &lt; trial1.txt&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In your thread [id://11132903], where you were given this code, [kcott] and [AnomalousMonk] both gave you some example code that included &lt;c&gt;while&lt;/c&gt; loops. The code &lt;c&gt;'m/module/?say:say qq|.$F[0]($F[0])$F[1]|'&lt;/c&gt; is what would go in the body of the loop, plus the code provided by the &lt;c&gt;-F, -lan&lt;/c&gt; switches, which you can see by adding &lt;c&gt;-MO=Deparse&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+$ perl -MO=Deparse -F, -lanE 'm/module/?say:say qq|.$F[0]($F[0])$F[1]|'
+BEGIN { $/ = "\n"; $\ = "\n"; }
+use feature 'current_sub', 'bitwise', 'evalbytes', 'fc', 'postderef_qq', 'say', 'state', 'switch', 'unicode_strings', 'unicode_eval';
+LINE: while (defined($_ = readline ARGV)) {
+    chomp $_;
+    our @F = split(/,/u, $_, 0);
+    /module/u ? say($_) : say(".$F[0]($F[0])$F[1]");
+}
+&lt;/c&gt;
+&lt;p&gt;This can be cleaned up to:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use feature 'say';
+
+while ( my $line = &lt;&gt; ) {
+    chomp $line;
+    my @F = split /,/, $line;
+	if ( $line =~ /module/ ) {
+		say $line;
+	}
+	else {
+		say ".$F[0]($F[0])$F[1]";
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;Though you probably want to replace the &lt;c&gt;&lt;&gt;&lt;/c&gt; with a filehandle from an [doc://open]ed file, as has been shown to you.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11132976</root_node>
+<parent_node field_name="parent_node">11132976</parent_node>
+<thread id="11132976">
+<node id="11132993"/>
+<node id="11132978"><node id="11132981"><node id="11132982"><node id="11132989"><node id="11132992"/>
+</node>
+<node id="11132984"/>
+</node>
+</node>
+</node>
+<node id="11132983"/>
+</thread></node>

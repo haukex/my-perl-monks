@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1178946" title="relink: Rewriting Symlinks with Perl" created="2017-01-04 13:01:13" updated="2017-01-04 13:01:13" _doctext_mode="strict"><type id="1042">CUFP</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Fellow Monks,&lt;/p&gt;
+
+&lt;p&gt;I've just made the first public
+[https://bitbucket.org/haukex/htools/src|release] of a tool I've been working
+on called &lt;b&gt;&lt;c&gt;relink&lt;/c&gt;&lt;/b&gt; &lt;small&gt;&lt;i&gt;(Update: it's GPLv3)&lt;/i&gt;&lt;/small&gt;, and I wanted to tell you about it in
+the form of a short narrative, below. But first, just to whet your appetite:&lt;/p&gt;
+
+&lt;c&gt;
+  # Rewrite the targets of symlinks with Perl
+$ relink rewrite 's/foo/bar/' PATH(s)
+  # Convert between absolute and relative targets
+$ relink abs2rel PATH(s)
+$ relink rel2abs PATH(s)
+  # List links  [only certain symlinks]
+$ relink list [-t '/foo/'] PATH(s)
+&lt;/c&gt;
+
+&lt;readmore&gt;
+&lt;p&gt;In this fictional scenario, let's say I've been keeping activity reports.
+I decided to keep weekly logs, but since I was supposed to file them monthly,
+and I wasn't very careful about which weeks I began and ended the reports on,
+I've ended up with this mishmash of files and symlinks:&lt;/p&gt;
+
+&lt;c&gt;
+~/Documents$ find . ! -type d -printf '%y %p\t%l\n'
+f ./Reports Oct 2016/Report Weeks 40-42.xls	
+f ./Reports Oct 2016/Report Weeks 43-46.xls	
+l ./Reports Nov 2016/Report Weeks 43-46.xls	/home/foobar/Documents/Reports Oct 2016/Report Weeks 43-46.xls
+f ./Reports Nov 2016/Report Weeks 47-51.xls	
+l ./Reports Dec 2016/Report Weeks 47-51.xls	/home/foobar/Documents/Reports Nov 2016/Report Weeks 47-51.xls
+&lt;/c&gt;
+
+&lt;p&gt;Later, I realize that a different directory structure would make much more
+sense. No problem, I'll just do that by hand:&lt;/p&gt;
+
+&lt;c&gt;
+~/Documents$ mkdir 'Reports 2016'
+~/Documents$ for M in Oct Nov Dec; do \
+  mv -v "Reports $M 2016" "Reports 2016/$M"; done
+‘Reports Oct 2016’ -&gt; ‘Reports 2016/Oct’
+‘Reports Nov 2016’ -&gt; ‘Reports 2016/Nov’
+‘Reports Dec 2016’ -&gt; ‘Reports 2016/Dec’
+~/Documents$ find . ! -type d -printf '%y %p\t%l\n'
+f ./Reports 2016/Oct/Report Weeks 40-42.xls	
+f ./Reports 2016/Oct/Report Weeks 43-46.xls	
+l ./Reports 2016/Nov/Report Weeks 43-46.xls	/home/foobar/Documents/Reports Oct 2016/Report Weeks 43-46.xls
+f ./Reports 2016/Nov/Report Weeks 47-51.xls	
+l ./Reports 2016/Dec/Report Weeks 47-51.xls	/home/foobar/Documents/Reports Nov 2016/Report Weeks 47-51.xls
+&lt;/c&gt;
+
+&lt;p&gt;D'oh! Forgot about those symlinks, now they're broken!
+But no problem,
+[https://bitbucket.org/haukex/htools/raw/HEAD/relink|&lt;c&gt;relink&lt;/c&gt;]
+to the rescue!&lt;/p&gt;
+
+&lt;c&gt;
+~/Documents$ relink rewrite 's{/Reports (\w+) 2016/}{/Reports 2016/$1/}'
+~/Documents$ find . ! -type d -printf '%y %p\t%l\n'
+f ./Reports 2016/Oct/Report Weeks 40-42.xls	
+f ./Reports 2016/Oct/Report Weeks 43-46.xls	
+l ./Reports 2016/Nov/Report Weeks 43-46.xls	/home/foobar/Documents/Reports 2016/Oct/Report Weeks 43-46.xls
+f ./Reports 2016/Nov/Report Weeks 47-51.xls	
+l ./Reports 2016/Dec/Report Weeks 47-51.xls	/home/foobar/Documents/Reports 2016/Nov/Report Weeks 47-51.xls
+&lt;/c&gt;
+
+&lt;p&gt;Fixed! But it'd be much nicer if those were just relative symlinks...
+no problem!&lt;/p&gt;
+
+&lt;c&gt;
+~/Documents$ relink abs2rel
+~/Documents$ find . ! -type d -printf '%y %p\t%l\n'
+f ./Reports 2016/Oct/Report Weeks 40-42.xls	
+f ./Reports 2016/Oct/Report Weeks 43-46.xls	
+l ./Reports 2016/Nov/Report Weeks 43-46.xls	../Oct/Report Weeks 43-46.xls
+f ./Reports 2016/Nov/Report Weeks 47-51.xls	
+l ./Reports 2016/Dec/Report Weeks 47-51.xls	../Nov/Report Weeks 47-51.xls
+&lt;/c&gt;
+
+&lt;p&gt;But wait! There's more!&lt;/p&gt;
+
+&lt;spoiler&gt;
+&lt;p&gt;&lt;c&gt;relink&lt;/c&gt; can also:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Convert relative to absolute symlinks with the &lt;c&gt;rel2abs&lt;/c&gt; command&lt;/li&gt;
+&lt;li&gt;Show you what it's doing (in color!) with the &lt;c&gt;-v&lt;/c&gt; (verbose) option&lt;/li&gt;
+&lt;li&gt;Show you what it &lt;i&gt;would&lt;/i&gt; do, without actually performing the
+operations, with the &lt;c&gt;-n&lt;/c&gt; (dry-run) option&lt;/li&gt;
+&lt;li&gt;Resolve chains of symlinks to a certain depth, with the &lt;c&gt;-d&lt;/c&gt; option&lt;/li&gt;
+&lt;li&gt;Limit its operations to broken symlinks or non-broken symlinks, with the
+options &lt;c&gt;-b&lt;/c&gt; or &lt;c&gt;-B&lt;/c&gt; respectively&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Limit its operations on links for which a Perl expression returns true,
+with the &lt;c&gt;-t CODE&lt;/c&gt; option, e.g. &lt;c&gt;-t '/regex/'&lt;/c&gt; where &lt;c&gt;$_&lt;/c&gt;
+is the result of [doc://readlink] on the link.
+For example, the following will list only those symlinks which are in
+&lt;c&gt;~/Documents&lt;/c&gt; and whose targets, when fully resolved, point to files
+also in the &lt;c&gt;~/Documents&lt;/c&gt; directory (the special variables &lt;c&gt;$FULL&lt;/c&gt;
+and &lt;c&gt;$PATHS&lt;/c&gt; are documented in the POD).&lt;/p&gt;
+&lt;c&gt;
+~$ relink list -t '$FULL=~/^$PATHS/' -- ~/Documents
+/home/foobar/Documents/Reports 2016/Nov/Report Weeks 43-46.xls -&gt; ../Oct/Report Weeks 43-46.xls
+/home/foobar/Documents/Reports 2016/Dec/Report Weeks 47-51.xls -&gt; ../Nov/Report Weeks 47-51.xls
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Simply show you a (colorized) list of symlinks:&lt;/p&gt;
+&lt;c&gt;
+~/Documents$ relink list
+./Reports 2016/Nov/Report Weeks 43-46.xls -&gt; ../Oct/Report Weeks 43-46.xls
+./Reports 2016/Dec/Report Weeks 47-51.xls -&gt; ../Nov/Report Weeks 47-51.xls
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;And last but not least, it can walk chains of symlinks:&lt;/p&gt;
+&lt;c&gt;
+~$ relink list -l `which x-www-browser`
+/usr/bin/x-www-browser -&gt; /etc/alternatives/x-www-browser -&gt; /usr/bin/firefox -&gt; /usr/lib/firefox/firefox.sh
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/spoiler&gt;
+
+&lt;p&gt;You can learn about all of the above features (and a few more!) from the POD, with &lt;c&gt;perldoc relink&lt;/c&gt;.&lt;/p&gt;
+&lt;/readmore&gt;
+
+&lt;p&gt;Regards,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<thread id="1178946">
+</thread></node>

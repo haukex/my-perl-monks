@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11144520" title="Simple web server to ingest POST" created="2022-06-08 10:28:07" updated="2022-06-08 10:28:07" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="29228">23skiddoo</author>
+<doctext field_name="doctext">&lt;p&gt;Hi! It's been a while! So I have a project where I need to have a server running just to ingest XML files POSTed from a vendor's server. I have something basic working but my responses after ingesting the XML are throwing errors on the vendor's side. Here's what I have:&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+{
+    package Four51Listener;
+    use HTTP::Server::Simple::CGI;
+    use base qw( HTTP::Server::Simple::CGI );
+    use EGA::Utils qw( TimeStamp ); # a set of custom functions
+
+    my %dispatch = (
+	'/toMFF'    =&gt; \&amp;toMFF,
+    );
+
+    sub handle_request {
+	my ( $self, $cgi )  = @_;
+	my $path    = $cgi-&gt;path_info();
+	my $handler = $dispatch{ $path };
+
+	if ( ref( $handler ) eq 'CODE' ) {
+	    $handler-&gt;( $cgi );
+	    print $cgi-&gt;header( -type =&gt; 'text/xml', -charset =&gt; 'ascii' ), response_ok();
+	}
+    }
+
+    sub toMFF {
+	my $cgi	= shift;
+	my $xml = $cgi-&gt;param( 'POSTDATA' );
+    }
+
+    sub response_ok {
+	my $timestamp   = TimeStamp();
+	$timestamp	=~ s/\s/T/;
+	my $response    = &lt;&lt;EOF;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE cXML SYSTEM "http://xml.cXML.org/schemas/cXML/1.1.009/cXML.dtd"&gt;
+&lt;cXML payloadID="foo&amp;commat;ceprinter.com" xml:lang="en-US" timestamp="$timestamp"&gt;
+    &lt;Response&gt;
+	&lt;Status code="200" text="OK" /&gt;
+    &lt;/Response&gt;
+&lt;/cXML&gt;
+EOF
+	return $response;
+    }
+}
+
+my $pid	= Four51Listener-&gt;new(8888)-&gt;background();
+print "Kill $pid to stop server.\n";
+&lt;/code&gt;
+
+&lt;p&gt;The server doing the POST expects XML back but I keep getting errors about "protocol violation". I'm not opposed to using a framework like Dancer2 or Mojolicious, but I'm not quite sure how to do so for something like this.&lt;/p&gt;
+Any ideas?
+
+</doctext>
+<thread id="11144520">
+<node id="11144522"><node id="11144525"><node id="11144526"><node id="11144527"/>
+</node>
+<node id="11144528"/>
+</node>
+</node>
+</thread></node>

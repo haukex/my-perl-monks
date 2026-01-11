@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1161756" title="Restrict file search within current filessystem using wanted subroutine" created="2016-04-28 07:41:33" updated="2016-04-28 07:41:33" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1161753">madparu</author>
+<doctext field_name="doctext">Hello, 
+&lt;p&gt;
+I found the following code in Perl Monks to search for top 10 largest files in a filesystem. But it searches in all sub directories of different filesystem. Example., I have /var and /var/log filesystems, my requirement is to search top 10 files under /var but the code searches through /var/log too. is there a way to restrict the search with teh current filesystem alone with this script using File:find and warning subroutine?
+&lt;/p&gt;
+
+
+&lt;code&gt;
+use File::Find;
+
+File::Find::find(
+  {
+    wanted =&gt; sub {
+      return unless -f;
+      my $s = -s _;
+      return if $min &lt; $s &amp;&amp; @z &gt; 10;
+      push @z, [ $File::Find::name, $s ];
+      @z = sort { $b-&gt;[1] &lt;=&gt; $a-&gt;[1] } @z;
+      pop @z if @z &gt; 10;
+      $min = $z[-1]-&gt;[1];
+      }
+  },
+  shift || '.'
+);
+
+for (@z) {
+  print $_-&gt;[0], " ", $_-&gt;[1], "\n";
+}
+&lt;/code&gt;</doctext>
+<thread id="1161756">
+<node id="1161758"/>
+<node id="1161759"><node id="1161763"><node id="1161766"><node id="1161774"/>
+<node id="1162846"><node id="1162848"><node id="1162851"><node id="1162852"><node id="1162855"/>
+<node id="1163226"><node id="1163262"><node id="1163364"><node id="1163369"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1162893"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

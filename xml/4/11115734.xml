@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11115734" title="lexical vs. local file handles" created="2020-04-18 14:26:12" updated="2020-04-18 14:26:12" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="1226468">jo37</author>
+<doctext field_name="doctext">&lt;p&gt;
+&lt;b&gt;EDIT:&lt;/b&gt;
+&lt;br/&gt;
+I &lt;strike&gt;use&lt;/strike&gt; &lt;i&gt;used&lt;/i&gt; bareword filehandles.
+&lt;i&gt;In the course of this discussion I was convinced not to do so.&lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;
+I've seen many Perl programmers advocating the usage of lexical scalars instead.
+Though there are good reasons for this, it has a drawback.
+Filehandles in Perl are special on a syntactical level.
+The compiler is capable of catching errors like this:
+&lt;/p&gt;
+&lt;c&gt;
+open FH, '&lt;', 'myfile';
+print FH, "something\n";
+&lt;/c&gt;
+&lt;p&gt;
+by emitting an error:
+&lt;/p&gt;
+&lt;c&gt;
+No comma allowed after filehandle at ...
+&lt;/c&gt;
+&lt;p&gt;
+Whereas strange things happen at runtime if you use:
+&lt;/p&gt;
+&lt;c&gt;
+open my $fh, '&lt;', 'myfile';
+print $fh, "something\n";
+&lt;/c&gt;
+&lt;small&gt;
+NB: Someone else pointed to this subtle difference but sadly I don't remember who and where it was.
+She/he should be credited here.
+&lt;/small&gt;
+&lt;p&gt;
+So I stay with barewords and try to avoid the problems caused by the usage of global variables using this idiom:
+&lt;/p&gt;
+&lt;c&gt;
+open local *FH, '&lt;', 'myfile';
+while (&lt;FH&gt;) {
+    # do something
+}
+close FH;
+&lt;/c&gt;
+&lt;p&gt;
+Some features:
+&lt;ul&gt;
+  &lt;li&gt;usages of equally named file handles do not affect each other in different scopes&lt;/li&gt;
+  &lt;li&gt;the usage in a sub does no harm if the sub is in the same package and it uses the same idiom&lt;/li&gt;
+  &lt;li&gt;the usage in a sub of a different package does not harm.&lt;/li&gt;
+&lt;/ul&gt;
+So, as long as I follow this pattern im my own package, I feel kind of safe.
+Side effects of localizing a glob are easily circumvented.
+&lt;/p&gt;
+&lt;p&gt;
+The question remains: Do I miss something here?
+Do you see any pitfalls using this approach?
+&lt;/p&gt;
+&lt;p&gt;
+Here is an example demonstrating the issues I'm aware of.
+&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+
+use Test2::V0;
+
+package Foobar;
+
+our $foobar = "foobar\n";
+our @foobar;
+sub use_fh {
+	# unlocalized use of FH in separate package
+	open FH, '&lt;', \$foobar;
+	@foobar = &lt;FH&gt;;
+	close FH;
+}
+
+package main;
+
+my $foo = "foo\n";
+my $bar = "bar\n";
+my $baz = "baz\n";
+
+my @baz;
+sub use_localized_fh {
+	# protect caller's FH
+	open local *FH, '&lt;', \$baz;
+	@baz = &lt;FH&gt;;
+	close FH;
+}
+
+sub close_fh {
+	# unlocalized use of FH
+	close FH;
+}
+
+# open now, use later
+open FH, '&lt;', \$bar;
+
+my @foo;
+
+# create new scope
+{
+	# use localized FH, protecting handle opened on \$bar
+	open local *FH, '&lt;', \$foo;
+	
+	# call sub that uses localized FH
+	use_localized_fh;
+
+	# call sub in other package that uses FH
+	Foobar::use_fh;
+
+	# FH still intact
+	@foo = &lt;FH&gt;;
+
+	close FH;
+}
+
+is \@baz, [$baz], 'got $baz in sub';
+is \@Foobar::foobar, [$Foobar::foobar], 'got $Foobar::foobar in foreign sub';
+is \@foo, [$foo], 'good: got $foo';
+
+{
+	open local *FH, '&lt;', \$foo;
+	# call sub that closes FH
+	close_fh;
+	@foo = &lt;FH&gt;;
+	close FH;
+}
+
+is \@foo, [], 'bad: FH was closed in sub';
+
+# FH at this scope is still untouched
+my @bar = &lt;FH&gt;;
+close FH;
+is \@bar, [$bar], 'good: got $bar';
+
+done_testing;
+&lt;/c&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1226468"&gt;
+&lt;p&gt;Greetings,&lt;br/&gt;-jo&lt;/p&gt;
+&lt;tt&gt;$gryYup$d0ylprbpriprrYpkJl2xyl~rzg??P~5lp2hyl0p$&lt;/tt&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="11115734">
+<node id="11115735"><node id="11115736"><node id="11115737"><node id="11115738"><node id="11115739"><node id="11115741"><node id="11115742"/>
+</node>
+</node>
+<node id="11115746"/>
+</node>
+</node>
+<node id="11115750"><node id="11115784"><node id="11115786"><node id="11115787"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11115748"/>
+<node id="11115756"><node id="11115785"/>
+</node>
+</thread></node>

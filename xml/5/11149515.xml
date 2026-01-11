@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11149515" title="Re^5: How to know that a regexp matched, and get its capture groups?" created="2023-01-11 01:22:32" updated="2023-01-11 01:22:32" _doctext_mode="lenient"><type id="11">note</type>
+<author id="634253">AnomalousMonk</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+if ( my (@caps) = ($line =~ $re) ) {
+    @caps = () if $caps[0] ne $1;           # reset pseudo captures
+    $cb-&gt;(@caps);
+    last;
+}
+&lt;/C&gt;
+&lt;/I&gt;&lt;/BLOCKQUOTE&gt;
+
+&lt;p&gt;
+In &lt;br&gt;
+&lt;c&gt;    @caps = () if $caps[0] ne $1;&lt;/C&gt; &lt;br&gt;
+&lt;c&gt;$1&lt;/C&gt; will be undefined if there is no capture group 1 or it is something like &lt;c&gt;(...)?&lt;/C&gt; that fails to match
+(but an overall match can still occur). Warnings will be generated.
+&lt;/P&gt;
+
+&lt;p&gt;
+Although it's only compatible back to version 5.6, an alternative would be
+&lt;c&gt;
+c:\@Work\Perl\monks&gt;perl
+
+use strict;
+use warnings;
+
+use Data::Dump qw(pp);
+
+my $cb = sub { print "matched,  captured ", pp @_; };
+
+for my $str ("AB","") {
+
+    for my $re (qr/../, qr/(.)(.)/, qr/(X)?(.)/, qr/XY/, qr/(X)Y/, qr//) {
+
+        print "str &lt;$str&gt;  re $re  ";
+
+        if ( my (@caps) = ($str =~ $re) ) {
+          # @caps = () if $caps[0] ne $1;  # reset pseudo capture
+            $#caps = $#- - 1;  # reset pseudo capture
+            $cb-&gt;(@caps);
+            }
+        else {
+            print 'NO match';
+            }
+
+        print "\n";
+
+        }
+
+    }
+
+^Z
+str &lt;AB&gt;  re (?-xism:..)  matched,  captured ()
+str &lt;AB&gt;  re (?-xism:(.)(.))  matched,  captured ("A", "B")
+str &lt;AB&gt;  re (?-xism:(X)?(.))  matched,  captured (undef, "A")
+str &lt;AB&gt;  re (?-xism:XY)  NO match
+str &lt;AB&gt;  re (?-xism:(X)Y)  NO match
+str &lt;AB&gt;  re (?-xism:)  matched,  captured ()
+str &lt;&gt;  re (?-xism:..)  NO match
+str &lt;&gt;  re (?-xism:(.)(.))  NO match
+str &lt;&gt;  re (?-xism:(X)?(.))  NO match
+str &lt;&gt;  re (?-xism:XY)  NO match
+str &lt;&gt;  re (?-xism:(X)Y)  NO match
+str &lt;&gt;  re (?-xism:)  matched,  captured ()
+&lt;/C&gt;
+&lt;/P&gt;
+
+&lt;p&gt;
+&lt;b&gt;Update:&lt;/B&gt; But see [haukex]'s [id://11149516|reply] about the preference for &lt;c&gt;$#+&lt;/C&gt; versus &lt;c&gt;$#-&lt;/C&gt; (&lt;c&gt;@+&lt;/C&gt; versus &lt;c&gt;@-&lt;/C&gt;) regex special variables.
+&lt;/P&gt;
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-634253"&gt;
+&lt;hr&gt;&lt;p&gt;Give a man a fish&lt;b&gt;:&lt;/B&gt; &lt;c&gt; &lt;%-{-{-{-&lt;&lt;/C&gt;&lt;/P&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11149467</root_node>
+<parent_node field_name="parent_node">11149491</parent_node>
+<thread id="11149467">
+<node id="11149468"/>
+<node id="11149469"><node id="11149480"><node id="11149481"><node id="11149483"><node id="11149484"><node id="11149485"/>
+</node>
+</node>
+<node id="11149491"><node id="11149515"><node id="11149516"/>
+<node id="11149522"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11149472"><node id="11149496"><node id="11149499"><node id="11149506"/>
+</node>
+</node>
+</node>
+<node id="11149473"/>
+<node id="11149474"/>
+<node id="11149478"/>
+<node id="11149487"/>
+</thread></node>

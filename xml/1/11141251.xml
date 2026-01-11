@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11141251" title="Re: Getting an SSL Certificate Expiration Date" created="2022-02-08 17:41:40" updated="2022-02-08 17:41:40" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I'm not enough of an expert with [mod://LWP] to know if this is the "right" way, but it's based on what worked for me over in [id://1216823]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use LWP::UserAgent;
+use Net::SSLeay;
+use LWP::Protocol::https (); # just to make sure this is installed
+use Class::Method::Modifiers qw/around/;
+
+# wrap this method to fetch additional info from the cert
+around 'LWP::Protocol::https::_get_sock_info' =&gt; sub {
+	my $orig = shift;
+	my ($self, $res, $sock) = @_;
+	my $cert = $sock-&gt;peer_certificate;
+	$res-&gt;push_header("Client-SSL-Cert-NotAfter"
+		=&gt; Net::SSLeay::P_ASN1_TIME_get_isotime(
+			Net::SSLeay::X509_get_notAfter($cert) ) );
+	$orig-&gt;(@_);
+};
+
+my $ua = LWP::UserAgent-&gt;new;
+my $res = $ua-&gt;get("https://www.perlmonks.org/");
+die $res-&gt;status_line unless $res-&gt;is_success;
+my @issuer   = $res-&gt;header("client-ssl-cert-issuer");
+my @subject  = $res-&gt;header("client-ssl-cert-subject");
+my @notAfter = $res-&gt;header("client-ssl-cert-notafter");
+print "  Issuer: @issuer\n Subject: @subject\nnotAfter: @notAfter\n";
+
+__END__
+
+  Issuer: /C=US/ST=New Jersey/L=Jersey City/O=The USERTRUST Network/CN=USERTrust RSA Domain Validation Secure Server CA
+ Subject: /CN=perlmonks.org
+notAfter: 2022-09-02T23:59:59Z
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; See also [id://11141252|my other post].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11141247</root_node>
+<parent_node field_name="parent_node">11141247</parent_node>
+<thread id="11141247">
+<node id="11141250"><node id="11141252"/>
+</node>
+<node id="11141251"><node id="11141267"/>
+</node>
+<node id="11141289"/>
+</thread></node>

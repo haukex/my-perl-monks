@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1169516" title="get same return that system gives and get pid" created="2016-08-10 14:49:20" updated="2016-08-10 14:49:20" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1169514">Raiden690</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Perl Monks, i would like to get the exact same behaviour that i get with $ret = system( "some command"); but in addition i want to get the pid of that command, i been reading about the differences between exec,system and backticks, as i understand none of these is usefull for what i want to do. what worked for me was this:&lt;/p&gt;
+&lt;code&gt;
+&gt;...my $ret = undef;
+&gt;...my $pid = undef;
+&gt;...if( $pid = fork()){
+&gt;...&gt;...#here i store the pid in some array for other process
+&gt;...}
+&gt;...elsif( defined $pid){
+&gt;...&gt;...$ret = system($cmd);
+&gt;...&gt;...open(my $f,"&gt;","/tmp/$$") or die "couldn't write file";
+&gt;...&gt;...print $f $ret;
+&gt;...&gt;...close($f);
+&gt;...&gt;...die;#not sure if this is the proper way to kill the child, not my main worry in this question
+&gt;...}
+&gt;...else{
+&gt;...&gt;...print "\n couldn´t fork\n";
+&gt;...}
+
+&gt;...waitpid($pid,0);
+&gt;...if( open(my $F, "/tmp/$pid")){
+&gt;...&gt;...while( my $line = &lt;$F&gt;){
+&gt;...&gt;...&gt;...$ret .= $line;
+&gt;...&gt;...}
+&gt;...&gt;...close($F);
+&gt;...&gt;...system("rm /tmp/$pid");
+&gt;...}
+&gt;...else{
+&gt;...&gt;...$ret = -1;
+&gt;...}
+&lt;/code&gt;
+
+&lt;p&gt; i know this is suuper awfull, so mi question is: how i do this properly? p.s: sorry my english, and be good, this is my first question here.&lt;/p&gt;
+&lt;p&gt;p.s 2: i think the get_pidof function wont do because there will be several identical commands running at the same time.&lt;/p&gt;</doctext>
+<thread id="1169516">
+<node id="1169517"/>
+<node id="1169583"><node id="1169584"/>
+</node>
+</thread></node>

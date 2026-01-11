@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1225106" title="Merge 2 or more logs, sort by date &amp; time" created="2018-11-02 10:53:07" updated="2018-11-02 10:53:07" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="999189">ImJustAFriend</author>
+<doctext field_name="doctext">Hello again Monks.  I have a task that on the surface seems reasonable (I've done it before with different data).  I need to merge 2 or more logfiles into one cohesive log and sort by date/time.  The issue I am running into is the formatting of the date in the log files is weird.  They look like:
+
+&lt;code&gt;
+Tue Oct 16 17:48:03 2018
+&lt;/code&gt;
+
+I am using the sort cmp method of sorting, but it fails in that the 2 files don't come together.  In my logs (simplified, only showing date/time), I see:
+
+&lt;code&gt;
+[file1] TIMESTAMP=Wed Oct  5 04:08:28 2018...
+...
+[file1] TIMESTAMP=Fri Nov  2 14:11:28 2018...
+[file2] TIMESTAMP=Tue Oct 16 17:10:00 2018...
+...
+[file2] TIMESTAMP=Fri Nov  2 14:11:03 2018...
+&lt;/code&gt;
+
+EDIT EDIT EDIT EDIT EDIT &lt;br /&gt;
+I left the formatting of the log files out, in case it helps:
+
+&lt;code&gt;
+&lt;13&gt;{Mangled Date/Time} &lt;source&gt;[pid]:
+TIMESTAMP={I'm using this timestamp}
+MSGCLS=
+Title=
+Severity=
+message =
+&lt;message part a&gt;
+&lt;message part b&gt;
+...
+Message Id=
+END OF REPORT
+&lt;/code&gt;
+The server/script sees each line as individual lines with newline between them...&lt;br /&gt;
+EDIT EDIT EDIT EDIT EDIT
+
+My script looks like this:
+
+&lt;code&gt;
+foreach my $log (@CommonLogFiles) {
+    print "Now Processing $log....\n";
+    open LOG, "$datadir/$log" or die "LOG $log: $!\n";
+    print "Just opened $datadir/$log...\n";
+
+    $linecnt = 0;
+    while (&lt;LOG&gt;) {
+        chomp $_;
+        $linecnt++;
+        if ( $linecnt == "1" ) {
+            $line .= "[$log] ";
+        }
+
+        $line .= $_;
+        push @lines, "$line\n";
+        #print "Just added " . $line . " to the lines array...\n";
+        $line = "";
+        $linecnt = 0;
+    }
+    close LOG;
+}
+
+print APPLOG "Files parsed and data inserted into array for further processing...\n";
+
+@sortedlines = sort { ($a =~ /^\&lt;\d+\&gt;\w+\s+\d+:\d+:\d+\s+\w+:TIMESTAMP\=(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+\s+\d+).*MSGCLS.*$/m)[0] cmp ($b =~ /^\&lt;\d+\&gt;\w+\s+\d+:\d+:\d+\s+\w+:TIMESTAMP\=(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+\s+\d+).*MSGCLS.*$/m)[0] } @lines;
+
+print SORTED "@sortedlines\n";
+print APPLOG "Log files merged together with events in time order...\n";
+close SORTED;
+&lt;/code&gt;
+
+Anyone have any ideas?  I would appreciate the help!!</doctext>
+<thread id="1225106">
+<node id="1225110"><node id="1225111"/>
+<node id="1225117"><node id="1225120"><node id="1225123"><node id="1225126"><node id="1225130"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1225115"/>
+<node id="1225121"/>
+<node id="1225127"/>
+<node id="1225131"/>
+<node id="1225141"/>
+</thread></node>

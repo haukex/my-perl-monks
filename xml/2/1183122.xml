@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1183122" title="Re: Converting Uniprot File to a Fasta File in Perl" created="2017-02-28 05:43:01" updated="2017-02-28 05:43:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I was considering posting another example of a parser, but having researched the question a bit more, I can only second what [erix] [id://1183023|wrote]!&lt;/p&gt;
+&lt;p&gt;Also, my understanding is that there are already existing modules to handle these things, such as [mod://BioPerl], which appears to have multiple existing parsers for this format, such as [mod://Bio::SeqIO::swiss]. This is my first time trying out [mod://BioPerl] so probably there's an even better way, but this seems to work:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use HTTP::Tiny;
+use Bio::SeqIO;
+
+my $filename = '/tmp/Q94650.txt';
+HTTP::Tiny-&gt;new-&gt;mirror(
+	'http://www.uniprot.org/uniprot/Q94650.txt',
+	$filename)-&gt;{success} or die "Failed to fetch";
+
+my $stream = Bio::SeqIO-&gt;new(
+	-file =&gt; $filename, -format =&gt; 'swiss');
+while ( my $seq = $stream-&gt;next_seq() ) {
+	# just some examples...
+	print $seq-&gt;accession_number, "\n";
+	print $seq-&gt;species-&gt;species, "\n";
+	my ($gene) = $seq-&gt;annotation-&gt;get_Annotations('gene_name');
+	print $gene-&gt;findval('Name'), "\n";
+}
+&lt;/c&gt;
+&lt;p&gt;Or using the included [mod://bp_seqconvert] utility:&lt;/p&gt;
+&lt;c&gt;
+$ wget -q http://www.uniprot.org/uniprot/Q94650.txt
+$ bp_seqconvert.pl --from swiss --to fasta &lt;Q94650.txt
+&gt;ARF1_PLAFA RecName: Full=ADP-ribosylation factor 1; Short=plARF;
+MGLYVSRLFNRLFQKKDVRILMVGLDAAGKTTILYKVKLGEVVTTIPTIGFNVETVEFRN
+ISFTVWDVGGQDKIRPLWRHYYSNTDGLIFVVDSNDRERIDDAREELHRMINEEELKDAI
+ILVFANKQDLPNAMSAAEVTEKLHLNTIRERNWFIQSTCATRGDGLYEGFDWLTTHLNNA
+K
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1182973</root_node>
+<parent_node field_name="parent_node">1182973</parent_node>
+<thread id="1182973">
+<node id="1182975"/>
+<node id="1182976"><node id="1183000"><node id="1183001"><node id="1183038"/>
+<node id="1183040"><node id="1183048"/>
+<node id="1183067"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1183023"/>
+<node id="1183122"/>
+<node id="1183150"/>
+</thread></node>

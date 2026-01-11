@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11121148" title="Re: net::ldap -&gt;singel valued attributes and multivalued attributes" created="2020-08-28 10:01:29" updated="2020-08-28 10:01:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Within this hash, attribute values are always an array, i.e. single valued attributes are returned in an array containing a single value. ... this would require to know, which attribute is single valued and which is multivalued. Is there a way to figure this out?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm not an LDAP expert, but are you referring to attributes like &lt;c&gt;objectclass&lt;/c&gt; in the following example? Going with that assumption, in this example, the way to check is to de-reference the array reference with &lt;c&gt;@{...}&lt;/c&gt; ([doc://perlreftut] and [doc://perlref]), and use the array in scalar context to get the number of elements it contains, e.g. &lt;c&gt;if ( @array &gt; 1 ) { print "More than one element in the array.\n" }&lt;/c&gt;. You can walk the data structure as returned by &lt;c&gt;as_struct&lt;/c&gt;, or, probably better, you can walk the [mod://Net::LDAP::Entry] objects returned by [mod://Net::LDAP::Search]. I've shown examples of both in the following.&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+use Net::LDAP;
+
+my $ldap = Net::LDAP-&gt;new('ldap.forumsys.com') or die "$@";
+my $mesg = $ldap-&gt;bind( 'cn=read-only-admin,dc=example,dc=com',
+	password =&gt; 'password' );
+$mesg-&gt;code and die $mesg-&gt;error;
+
+my $srch = $ldap-&gt;search( base =&gt; "dc=example,dc=com",
+	filter =&gt; "(uid=test)" );
+$srch-&gt;code and die $srch-&gt;error;
+
+# walk with perl
+my $struct = $srch-&gt;as_struct;
+dd $struct;
+for my $entryname (sort keys %$struct) {
+	my $entry = $struct-&gt;{$entryname};
+	for my $attr (sort keys %$entry) {
+		print "$attr is ", @{$entry-&gt;{$attr}}&gt;1 ? "multi" : "single",
+			"-valued\n";
+	}
+}
+print "---\n";
+# walk with Net::LDAP
+for my $entry ($srch-&gt;entries) {
+	for my $attr ( $entry-&gt;attributes ) {
+		my @values = $entry-&gt;get_value($attr);
+		print "$attr is ", @values&gt;1 ?"multi" : "single","-valued\n";
+	}
+}
+
+$mesg = $ldap-&gt;unbind;
+$mesg-&gt;code and die $mesg-&gt;error;
+
+__END__
+
+{
+  "uid=test,dc=example,dc=com" =&gt; {
+    cn =&gt; ["Test"],
+    displayname =&gt; ["Test"],
+    gidnumber =&gt; [0],
+    givenname =&gt; ["Test"],
+    homedirectory =&gt; ["home"],
+    initials =&gt; ["TS"],
+    o =&gt; ["Company"],
+    objectclass =&gt; ["posixAccount", "top", "inetOrgPerson"],
+    sn =&gt; ["Test"],
+    uid =&gt; ["test"],
+    uidnumber =&gt; [24601],
+  },
+}
+cn is single-valued
+displayname is single-valued
+gidnumber is single-valued
+givenname is single-valued
+homedirectory is single-valued
+initials is single-valued
+o is single-valued
+objectclass is multi-valued
+sn is single-valued
+uid is single-valued
+uidnumber is single-valued
+---
+objectClass is multi-valued
+gidNumber is single-valued
+givenName is single-valued
+sn is single-valued
+displayName is single-valued
+uid is single-valued
+initials is single-valued
+homeDirectory is single-valued
+cn is single-valued
+uidNumber is single-valued
+o is single-valued
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">11121099</root_node>
+<parent_node field_name="parent_node">11121099</parent_node>
+<thread id="11121099">
+<node id="11121131"/>
+<node id="11121137"/>
+<node id="11121139"/>
+<node id="11121148"/>
+</thread></node>

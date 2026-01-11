@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11165928" title="Re^2: passing newline in string argument" created="2025-08-02 04:40:18" updated="2025-08-02 04:40:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;But what if someone actually wants to provide the two characters &lt;c&gt;\n&lt;/c&gt;?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;[Special_K], just for completeness, here's one common way - &lt;b&gt;however,&lt;/b&gt; as we both [id://11165917|said], this is only a workaround with its own caveats, and the problem should be fixed in the shell instead!&lt;/p&gt;
+&lt;spoiler&gt;
+&lt;c&gt;
+sub interpolate_nl {
+	my $str = shift;
+	$str =~ s/(?&lt;!\\)(?:\\\\)*\K\\n/\n/g;
+	$str =~ s/\\\\/\\/g;
+	return $str;
+	# on 5.14 and above, the above can be compacted to:
+	#shift =~ s/(?&lt;!\\)(?:\\\\)*\K\\n/\n/gr =~ s/\\\\/\\/gr
+}
+
+use Test::More tests=&gt;9;
+is interpolate_nl("a\\b"),          "a\\b";    # *
+is interpolate_nl("a\\nb"),         "a\nb";
+is interpolate_nl("a\\\\b"),        "a\\b";
+is interpolate_nl("a\\\\nb"),       "a\\nb";
+is interpolate_nl("a\\\\\\b"),      "a\\\\b";  # *
+is interpolate_nl("a\\\\\\nb"),     "a\\\nb";
+is interpolate_nl("a\\\\\\\\b"),    "a\\\\b";
+is interpolate_nl("a\\\\\\\\nb"),   "a\\\\nb";
+is interpolate_nl("a\\\\\\\\\\nb"), "a\\\\\nb";
+# * \b and all other escapes are unhandled and ignored!
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;(Bonus: even more rope to shoot yourself in the foot: [mod://String::Unescape])&lt;/small&gt;&lt;/p&gt;
+&lt;/spoiler&gt;</doctext>
+<root_node field_name="root_node">11165916</root_node>
+<parent_node field_name="parent_node">11165922</parent_node>
+<thread id="11165916">
+<node id="11165917"><node id="11165920"><node id="11165921"><node id="11165923"><node id="11165927"><node id="11165934"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11165922"><node id="11165928"/>
+</node>
+<node id="11165926"><node id="11165929"><node id="11165930"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11103321" title="Re: Using SIG{ALRM} within while loop." created="2019-07-24 13:38:39" updated="2019-07-24 13:38:39" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I would like to achieve the following: Run a command and capture its output. While waiting for output, run a subroutine every 10 seconds.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sounds like exactly the kind of job [mod://IPC::Run] can do:&lt;/p&gt;
+&lt;c&gt;use warnings;
+use strict;
+use IPC::Run qw/ harness timer /;
+
+my @cmd = ( 'perl','-le','sleep 60; print "Done!"' );
+my $h = harness \@cmd, \undef, \my $out, \my $err,
+	( my $t = timer 10 );
+
+my $startt = time;
+$h-&gt;start;
+printf "%2d started\n", time-$startt;
+while ( $h-&gt;pumpable ) {
+	$t-&gt;start;
+	$h-&gt;pump;
+	printf "%2d pumped\n", time-$startt;
+}
+$h-&gt;finish;
+printf "%2d finished\n", time-$startt;
+
+print "stdout: &lt;&lt;$out&gt;&gt;\nstderr: &lt;&lt;$err&gt;&gt;\n";
+&lt;/c&gt;
+&lt;p&gt;You can also capture the "live" output of the command, The &lt;c&gt;$out&lt;/c&gt; and &lt;c&gt;$err&lt;/c&gt; variables should be updated as data from the external program comes in.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; See [mod://IPC::Run::Timer] for details on the timings (on my system the delay in the above ends up being about 11 seconds).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11103281</root_node>
+<parent_node field_name="parent_node">11103281</parent_node>
+<thread id="11103281">
+<node id="11103283"><node id="11103290"/>
+</node>
+<node id="11103288"><node id="11103289"><node id="11103293"/>
+</node>
+</node>
+<node id="11103294"><node id="11103295"/>
+<node id="11103299"><node id="11103301"/>
+</node>
+</node>
+<node id="11103298"/>
+<node id="11103300"/>
+<node id="11103321"/>
+</thread></node>

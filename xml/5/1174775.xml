@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1174775" title="Re^3: If line matches, print column, else print file name" created="2016-10-26 08:53:35" updated="2016-10-26 08:53:35" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [Yakup],&lt;/p&gt;
+&lt;p&gt;Glad to hear your code is doing what you want. I do have to admit I found the logic a bit hard to follow, but that isn't necessarily a problem. I would however recommend you run the code through enough test cases, just to make sure.&lt;/p&gt;
+&lt;p&gt;I just wanted to point out a few potential improvements:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Using [doc://FindBin] to locate the directory that the Perl script is located in is much more reliable than &lt;c&gt;dirname $0&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;Using [doc://glob] is easier than [doc://opendir]+[doc://readdir] (with the caveat that [doc://glob] does things a little bit differently, for example it ignores files whose name begin with a dot by default; see [doc://File::Glob] for all the details); alternatively there are modules like [mod://Path::Class] or [mod://Path::Tiny] to help.&lt;/li&gt;
+&lt;li&gt;This is just a stylistic thing, but personally I wouldn't make the regex as complex. I might write something like &lt;c&gt;next if /^\s*#/; if (/--hostname=/) ...&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;Smart match (&lt;c&gt;~~&lt;/c&gt;) has been placed into experimental status and its implementation might change in the future, so in this case something like [doc://List::Util]'s &lt;c&gt;any&lt;/c&gt; is better for now. Or, if all you're using &lt;c&gt;@predefined&lt;/c&gt; for is to check whether certain strings have been seen before, a hash would be much better.&lt;/li&gt;
+&lt;li&gt;The code &lt;c&gt;(split /\./, $kickstart)[0]&lt;/c&gt; will only return the first part of &lt;c&gt;$kickstart&lt;/c&gt; up to the &lt;i&gt;first&lt;/i&gt; dot &lt;i&gt;anywhere&lt;/i&gt; in the string, so it will not do what you want (strip the .ks suffix) for strings like &lt;c&gt;"some.file.name.ks"&lt;/c&gt; or &lt;c&gt;"/some.path/some.file.ks"&lt;/c&gt;. I would recommend a regex, or the all-out solution is [doc://File::Basename]'s &lt;c&gt;fileparse&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;Also, I'd recommend the three-argument form of [doc://open], and to limit the scope of your variable declarations to where they are needed.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;If I implement those suggestions, I get:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use FindBin;
+use File::Basename qw/fileparse/;
+use List::Util qw/any/;
+
+my $lab_root = $FindBin::Bin;
+my @kickstarts = glob "$lab_root/*.ks";
+
+my @bsname;
+my @predefined;
+for my $kickstart (@kickstarts) {
+    open my $fh, '&lt;', $kickstart or die "Cannot open $kickstart: $!";
+    while (&lt;$fh&gt;) {
+        chomp;
+        next if /^\s*#/;
+        if (/--hostname=/) {
+            my @fields = split /[=\s]/;
+            push @bsname, $fields[1];
+            push @predefined, $kickstart;
+        }
+    }
+    close $fh;
+    next if any {$kickstart eq $_} @predefined;
+    my $hostname = fileparse($kickstart, qr/\.ks$/i);
+    push @bsname, $hostname;
+}
+&lt;/c&gt;
+&lt;p&gt;Note that in this code compared to yours, the filenames now all have their pathnames prefixed. Since I don't know what the rest of your code does, this may or may not be a problem for you. If it is, you could for example use the same &lt;c&gt;fileparse&lt;/c&gt; function to get only the filename.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1174719</root_node>
+<parent_node field_name="parent_node">1174768</parent_node>
+<thread id="1174719">
+<node id="1174720"/>
+<node id="1174723"><node id="1174768"><node id="1174775"><node id="1174786"/>
+</node>
+</node>
+</node>
+</thread></node>

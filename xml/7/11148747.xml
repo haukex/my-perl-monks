@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11148747" title="Re^6: use of Backticks to catch console output" created="2022-12-11 14:33:18" updated="2022-12-11 14:33:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I did a quick search and apparently I've written about calling external commands more safely over a hundred times. Perhaps I'm getting a bit tired of it, which caused me to use inaccurate language - in other words, I wasn't nitpicky enough with myself, sorry about that. Specifically, I think I've gotten used to using the phrase "avoiding the shell" as a blanket term. So here's the full story:&lt;/p&gt;
+&lt;p&gt;Calling external commands is something I try to do as little as possible and definitely wouldn't do in a tight loop, which is why I don't care all too much about the overhead of calling an external command, including whether a possible shell in between my script and the external command is having a performance impact. What I &lt;i&gt;do&lt;/i&gt; care about a lot is being exact in what ends up in the external command's &lt;c&gt;@ARGV&lt;/c&gt;. Aside from the major security implications of shell injections, I also care that if I distribute my script to other machines that may have different environments and different shells, I wouldn't want some strange quoting and interpolation issues to trip up potential users. Or, for example, if I put my script onto a server and the admin decides to change what &lt;c&gt;/bin/sh&lt;/c&gt; is, my script may mysteriously stop working, or even worse, appear to keep working while actually producing inaccurate results (see also [afoken]'s [id://1205217]). It's admittedly a little bit paranoid, but OTOH, avoiding such issues doesn't take a lot of work, so why not. And wisdom seekers regularly come here with things like in the root node, a variable interpolated into backticks with no indication whether that variable is user input or not, so I prefer to err on the side of caution and assume that it is, which is why I think you provided the only "correct" answer in this thread by suggesting &lt;c&gt;capturex&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;On *NIX, several Perl functions like [doc://system] and [doc://exec], when called correctly, allow one to use [man://execvp], which allows one to know exactly what the external command will get in its &lt;c&gt;@ARGV&lt;/c&gt;. As I learned from [id://1199200|the node I linked to] (among other places), in Windows, command arguments are passed to commands as one big string, and then it's up to the command to parse that string ([id://11131385|see also]). Though there exist standardized libraries and functions to do so, there are probably a lot of commands out there that reinvented that wheel and have their own quoting, escaping, etc. schemes. What this means is that on Windows, there appears to be no single, correct way to pass arguments to external commands, regardless of whether a shell is present or not - though AFAICT the shell does introduce additional complications. So really, the issue is not "avoiding the shell", which I incorrectly said, but more like "avoiding quoting and escaping issues". (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; And on *NIX, the two are eqivalent, another reason why I got lazy with the phrase.)&lt;/p&gt;
+&lt;p&gt;I pointed to the use of [mod://Win32::ShellQuote] to indicate that [mod://IPC::System::Simple] was using what I still consider a "workaround" to the "single command string" problem. Even if there's no shell in between the script and the external command, with the combination of [mod://Win32::ShellQuote] having to quote the strings in the first place, and the external command having to parse that, there is still a potential for a mismatch between the two. Even though [mod://Win32::ShellQuote] may work just fine in almost all cases, I personally still think the 1% (or even 0.1%) of cases where there may be mysterious failures when attempting to call external commands on Windows made it worth it to pick that nit. To [id://11113741|quote] [afoken]: "On Windows, you simply can not win the quoting game."&lt;/p&gt;
+&lt;p&gt;I should add that, at the moment, I am not aware of any security issues when using [mod://Win32::ShellQuote] to escape arguments passed to external commands, though of course there may be hidden issues or ones that show up in the future. I do recall seeing some issues where the quoting provided by the module didn't work, though I'm having trouble finding examples at the moment. But in any case, [mod://IPC::System::Simple] (which is nice because its &lt;c&gt;systemx&lt;/c&gt; is a drop-in replacement for [doc://system] and its &lt;c&gt;capturex&lt;/c&gt; is a drop-in replacement for backticks, and both provide nice error handling) and [mod://IPC::Run3] (which I like because it has a few more features than the former), both use [mod://Win32::ShellQuote] on Windows, which is still &lt;i&gt;much&lt;/i&gt; better than not using it.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;If a *nix system, open(my $pipe, '-|') would be used, which also creates (forks) a process.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Just a note here: As I explain in [id://1180578|my node on the topic], similar to [doc://system], piped [doc://open]s can also invoke the shell or not, depending on the arguments.&lt;/p&gt;
+&lt;p&gt;And just for completeness, here's an example showing that "single command string" on Windows:&lt;/p&gt;
+&lt;p&gt;&lt;c&gt;showcmdline.pl&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Win32::API;
+use Data::Dump;
+
+my $GetCommandLine = Win32::API-&gt;new("kernel32", "GetCommandLine", [], 'P');
+( my $c = pack("a1024", $GetCommandLine-&gt;Call()) ) =~ s/\0*$//;
+print $c, "\n";
+dd $0, @ARGV;
+&lt;/c&gt;
+&lt;p&gt;Which I can call like so:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use IPC::System::Simple qw/capturex/;
+
+print capturex( $^X, 'showcmdline.pl', 'foo\\" bar\\\\', 'open(my $x,"&gt;&amp;STDOUT");' );
+
+__END__
+
+"C:\Strawberry\perl\bin\perl.exe" "showcmdline.pl" "foo\\\" bar\\\\" "open(my $x,\"&gt;&amp;STDOUT\");"
+(
+  "showcmdline.pl",
+  "foo\\\" bar\\\\",
+  "open(my \$x,\"&gt;&amp;STDOUT\");",
+)
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11148715</root_node>
+<parent_node field_name="parent_node">11148741</parent_node>
+<thread id="11148715">
+<node id="11148716"><node id="11148718"/>
+</node>
+<node id="11148717"/>
+<node id="11148722"><node id="11148734"><node id="11148738"><node id="11148739"><node id="11148741"><node id="11148747"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

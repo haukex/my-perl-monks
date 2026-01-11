@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1225684" title="Unable to make shallow copy of Moo hash ref attribute" created="2018-11-13 00:45:07" updated="2018-11-13 00:45:07" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="66801">nysus</author>
+<doctext field_name="doctext">&lt;p&gt;This is driving me nuts:
+
+&lt;c&gt;
+
+has 'tree'       =&gt; ( is =&gt; 'ro',
+                      isa =&gt; sub { {} },
+                      default =&gt; sub { { '/' =&gt; { children =&gt; {} } } } );
+
+has 'clean_tree' =&gt; ( is =&gt; 'rw',
+                      lazy =&gt; 1,
+                      predicate =&gt; 1,
+                    );
+
+sub BUILD {
+  my $s = shift;
+
+  $s-&gt;app-&gt;add_hook (Dancer2::Core::Hook-&gt;new (
+    name =&gt; 'before_template',
+    code =&gt; sub {
+      ...
+      if (!$s-&gt;has_clean_tree) {
+        my %tree = %{$s-&gt;tree};   # Attempting to make shallow copy here.
+        $s-&gt;clean_tree(\%tree);
+      }
+
+      # set active
+      my $tree = $s-&gt;clean_tree-&gt;{'/'};
+      foreach my $segment (@segments) {
+        $tree-&gt;{children}{$segment}{active} = 1;
+        $tree = $tree-&gt;{children}{$segment};
+      }
+
+      ...
+    }
+  ));
+}
+&lt;/c&gt;
+
+&lt;p&gt;&lt;c&gt;$s-&gt;clean_tree&lt;/c&gt; is reflecting &lt;c&gt;$s-&gt;tree&lt;/c&gt; despite trying to make a shallow copy of $s-&gt;tree first.. 
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-66801"&gt;
+&lt;font size=2&gt;&lt;p&gt;
+$PM = "Perl Monk's";&lt;br&gt;
+$MCF = "Most Clueless &lt;strike&gt;Friar&lt;/strike&gt; &lt;strike&gt;Abbot&lt;/strike&gt; &lt;strike&gt;Bishop&lt;/strike&gt; &lt;strike&gt;Pontiff&lt;/strike&gt; &lt;strike&gt;Deacon&lt;/strike&gt; &lt;strike&gt;Curate&lt;/strike&gt; &lt;strike&gt;Priest&lt;/strike&gt; Vicar";&lt;br&gt;
+$nysus = $PM . ' ' . $MCF;&lt;br&gt;
+&lt;a href="http://perlmonks.org/index.pl?node=Offering%20Plate"&gt;Click here if you love Perl Monks&lt;/a&gt;&lt;br&gt;&lt;/font&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1225684">
+<node id="1225687"/>
+<node id="1225690"><node id="1225724"><node id="1225727"><node id="1225804"><node id="1225942"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

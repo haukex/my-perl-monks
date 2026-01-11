@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109264" title="The most precise second (timer)" created="2019-11-26 09:53:07" updated="2019-11-26 09:53:07" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11103499">tukusejssirs</author>
+<doctext field_name="doctext">&lt;p&gt;We have monitoring scripts that need to be run every second. The scripts execution takes longer than a second, but that is not a problem.&lt;/p&gt;
+
+&lt;p&gt;So we have need a function that would run the script every second. The interval must be as precise as possible. I know that the preciseness depends on CPU, RAM, CMOS etc. I don’t care about these.&lt;/p&gt;
+
+&lt;p&gt;Currently, we use a script, let’s call it &lt;code&gt;negative_timer&lt;/code&gt;. It works quite precisely, but the &lt;code&gt;Time::HiRes::sleep&lt;/code&gt; from time to time complains that &lt;code&gt;negative time not invented yet&lt;/code&gt;. A second using this script is in average about &lt;code&gt;0.000000676723442&lt;/code&gt; less than a real second.&lt;/p&gt;
+
+&lt;p&gt;The problem is that the &lt;code&gt;negative_timer&lt;/code&gt; substracts a second from a &lt;code&gt;$max&lt;/code&gt; value. Sometimes the NTP kicks in and it makes the trouble. We don’t case if a second would be longer/shorter when the NTP updates the time.&lt;/p&gt;
+
+&lt;p&gt;Actually, we don’t need any &lt;code&gt;$max&lt;/code&gt; value, as we run the monitoring script indefinitely (i.e. until seldom reboot or maintaince).&lt;/p&gt;
+
+&lt;p&gt;Could anyone help me out in this?&lt;/p&gt;
+
+&lt;p&gt;Thank you in advance.&lt;/p&gt;
+
+&lt;p&gt;The &lt;code&gt;negative_timer&lt;/code&gt; script:&lt;/p&gt;
+
+&lt;code&gt;use strict;
+use warnings;
+use Time::HiRes qw/time sleep/;
+
+sub negative_timer {
+	my $max = $_[0];
+	my @time_test;
+	my $start = time();
+	for (my $i = 0; $i &lt; $max; $i++) {
+		$start += 1;
+		sleep $start - time();
+		$time_test[$i] = time();
+	}
+	return @time_test;
+}&lt;/code&gt;</doctext>
+<thread id="11109264">
+<node id="11109266"><node id="11109268"/>
+</node>
+<node id="11109272"><node id="11109275"><node id="11109301"><node id="11109305"><node id="11109374"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11109278"><node id="11109279"><node id="11109287"><node id="11109291"><node id="11109299"/>
+<node id="11109304"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11109280"/>
+<node id="11109293"><node id="11109313"/>
+</node>
+<node id="11109295"><node id="11109300"/>
+</node>
+<node id="11109306"><node id="11109310"><node id="11109314"><node id="11109331"><node id="11109343"><node id="11109358"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11109341"/>
+<node id="11109487"><node id="11109489"><node id="11109554"><node id="11109574"><node id="11109655"><node id="11109673"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11109577"/>
+<node id="11109665"/>
+</thread></node>

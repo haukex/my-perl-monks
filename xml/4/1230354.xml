@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230354" title="Re^2: Entire Results from R" created="2019-02-22 01:36:56" updated="2019-02-22 01:36:56" _doctext_mode="lenient"><type id="11">note</type>
+<author id="588751">kevbot</author>
+<doctext field_name="doctext">++[haukex]
+
+I put together a short script to confirm that your solution works (I was curious about [metamod://Statistics::R] since I had not used it before).
+
+This code, 
+&lt;c&gt;
+#!/usr/bin/env perl
+
+use Statistics::R;
+use Data::Dumper;
+
+# Create a communication bridge with R and start R
+my $R = Statistics::R-&gt;new();
+
+$R-&gt;set(
+    'data',
+    [
+        "2016-03-15 13",
+        "2016-03-16 23",
+        "2016-03-17 06",
+        "2016-03-18 15",
+        "2016-03-19 08",
+        "2016-03-20 21"
+    ]
+);
+
+$R-&gt;run( q`datevec &lt;- strptime(data,"%Y-%m-%d %H")` );
+$R-&gt;run( q`xx &lt;- difftime(datevec[-length(datevec)],datevec[-1],units="hours")` );
+@Rres = $R-&gt;get('xx');
+
+print Dumper(\@Rres);
+
+exit;
+&lt;/c&gt;
+
+Gives this output,
+&lt;c&gt;
+$VAR1 = [
+          [
+            '[1]',
+            '-34',
+            '-7',
+            '-33',
+            '-17',
+            '-37'
+          ]
+        ];
+
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1230256</root_node>
+<parent_node field_name="parent_node">1230285</parent_node>
+<thread id="1230256">
+<node id="1230264"><node id="1230270"><node id="1230273"/>
+</node>
+</node>
+<node id="1230285"><node id="1230354"><node id="1230404"/>
+</node>
+</node>
+</thread></node>

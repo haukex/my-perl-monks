@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100505" title="Re: how to avoid full scan in file." created="2019-05-25 05:08:08" updated="2019-05-25 05:08:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Thank you for providing sample input, but unfortunately, when I run the code on this sample input, the output is empty. Could you provide sample input that produces some output, and to play it safe also provide that output, each inside &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags? See also [id://1177642].&lt;/p&gt;
+&lt;p&gt;In general, as has already been suggested, a hash table provides for much faster lookups than a linear scan with nested loops.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use List::Util qw/ shuffle /;
+use Time::HiRes qw/ gettimeofday tv_interval /;
+use Test::More tests=&gt;2;
+
+my @looking_for = qw/ foo bar quz baz /;
+my @looking_in = shuffle qw/ foo bar quz baz / x 100_000,
+	qw/ some other stuff we're not looking for / x 2_000_000;
+
+{
+	my $t0 = [gettimeofday];
+	my $found_count;
+	for my $haystack (@looking_in) {
+		for my $needle (@looking_for) {
+			if ( $needle eq $haystack ) {
+				$found_count++;
+			}
+		}
+	}
+	is $found_count, 400_000, 'linear scan';
+	diag sprintf "that took %.3fs", tv_interval($t0);
+}
+
+{
+	my $t0 = [gettimeofday];
+	my $found_count;
+	my %needles_hash = map { ($_=&gt;1) } @looking_for;
+	diag 'needles_hash: ', explain \%needles_hash;
+	for my $haystack (@looking_in) {
+		if ( $needles_hash{$haystack} ) {
+			$found_count++;
+		}
+	}
+	is $found_count, 400_000, 'hash lookup';
+	diag sprintf "that took %.3fs", tv_interval($t0);
+}
+
+__END__
+
+1..2
+ok 1 - linear scan
+# that took 2.274s
+# needles_hash: {
+#   'bar' =&gt; 1,
+#   'baz' =&gt; 1,
+#   'foo' =&gt; 1,
+#   'quz' =&gt; 1
+# }
+ok 2 - hash lookup
+# that took 0.599s
+&lt;/c&gt;
+&lt;p&gt;When you're asking the question "do the strings in the haystack &lt;i&gt;contain&lt;/i&gt; any of the needles", or in general when what you're looking for is not a fixed string but can be expressed as a regex, an alternative is to [id://1179840|build a regex].&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use List::Util qw/ shuffle /;
+use Time::HiRes qw/ gettimeofday tv_interval /;
+use Test::More tests=&gt;2;
+
+my @looking_for = qw/ foo bar quz baz /;
+my @looking_in = shuffle qw/ xyfooz abcbarx 123quzy abazz / x 10_000,
+	qw/ some other stuff we're not looking for / x 100_000;
+
+{
+	my $t0 = [gettimeofday];
+	my $found_count;
+	for my $haystack (@looking_in) {
+		for my $needle (@looking_for) {
+			if ( $haystack =~ /\Q$needle\E/ ) {
+				$found_count++;
+			}
+		}
+	}
+	is $found_count, 40_000, 'linear scan';
+	diag sprintf "that took %.3fs", tv_interval($t0);
+}
+
+{
+	my $t0 = [gettimeofday];
+	my $found_count;
+	my ($needles_regex) = map {qr/$_/} join '|', map {quotemeta}
+		sort { length $b &lt;=&gt; length $a or $a cmp $b } @looking_for;
+	diag "needles_regex: ", explain $needles_regex;
+	for my $haystack (@looking_in) {
+		if ( $haystack =~ $needles_regex ) {
+			$found_count++;
+		}
+	}
+	is $found_count, 40_000, 'regex';
+	diag sprintf "that took %.3fs", tv_interval($t0);
+}
+
+__END__
+
+1..2
+ok 1 - linear scan
+# that took 2.716s
+# needles_regex: qr/bar|baz|foo|quz/
+ok 2 - regex
+# that took 0.212s
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11100496</root_node>
+<parent_node field_name="parent_node">11100496</parent_node>
+<thread id="11100496">
+<node id="11100497"><node id="11100502"/>
+</node>
+<node id="11100503"><node id="11100504"><node id="11100514"><node id="11100521"><node id="11100522"><node id="11100524"><node id="11100526"><node id="11100539"><node id="11100549"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11100523"/>
+</node>
+</node>
+</node>
+<node id="11100505"/>
+</thread></node>

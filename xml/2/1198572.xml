@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198572" title="Re^7: Which &quot;use&quot; statements in a module do &quot;bubble up&quot; to the callers? (updated)" created="2017-09-02 06:56:12" updated="2017-09-02 06:56:12" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I would not have come to the idea that a pragma's subpragma might be scoped in another way than the pragma itself or its other subpragmas.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I agree the documentation could be clarified. A bit of historical perspective helps a little: In Perl things generally default(ed) to being global. For example, just like [http://perldoc.perl.org/open.html|the &lt;c&gt;open&lt;/c&gt; pragma], lexically-scoped [doc://warnings] were [doc://perl56delta#Lexically-scoped-warning-categories|introduced in 5.6.0] (before that it was just [doc://warnings#What's-wrong-with-*-w*-and-$^W|&lt;c&gt;-w&lt;/c&gt; and &lt;c&gt;$^W&lt;/c&gt;]) - that may be 17 years ago now, but consider that was six years after the release of Perl 5 and nine years after Perl 4. And a lot of the wordings in the documentation haven't really changed over time (including &lt;c&gt;open&lt;/c&gt;: [https://perl5.git.perl.org/perl.git/blob/16fe6d590:/lib/open.pm#l34|this] is from the first implementation in March 2000). So keeping in mind the default is "global", when you look at the documentation, it's fairly explicit about which part of &lt;c&gt;use open&lt;/c&gt; is lexically scoped.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;If I have a lexically scoped pragma at the top my main script, and if I then use another module, the pragma will not be in effect during initialization (i.e. loading and compiling at compile time) of that other module.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, that's a good point! &lt;b&gt;Update:&lt;/b&gt; Thinking about this a bit more, some more can be said about the particular current case. Your statement is correct for pragmas like [doc://warnings] and the lexically-scoped &lt;i&gt;part&lt;/i&gt; of the &lt;c&gt;open&lt;/c&gt; pragma. But we're talking about &lt;c&gt;STD(IN|OUT|ERR)&lt;/c&gt; here, these handles are global and normally stay opened during the entire run of the program, unless they are explicitly changed. That means you'd have to execute code every time the lexical scope changes, but the only mechanism built in to Perl to support lexical scoping of pragmas, [doc://$^H] and [doc://%^H] ([doc://perlpragma]), doesn't really support that directly (although it can be hacked in). So if you wanted to affect those filehandles with an effect in the lexical scope, I think you'd have to get pretty creative with modules like [mod://B::Hooks::EndOfScope]. So it's not really too surprising that the &lt;c&gt;open&lt;/c&gt; pragma isn't that advanced (although doing it for the current dynamic scope would probably be easier). Plus, what would be the use case of switching the handles's encodings mid-run? The terminal isn't going to change encodings all of a sudden, and most likely neither will files piped to and from Perl via the shell. So taking all that into account, it's not really surprising that the &lt;c&gt;:std&lt;/c&gt; option is implemented to just globally change the handles.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1198411</root_node>
+<parent_node field_name="parent_node">1198571</parent_node>
+<thread id="1198411">
+<node id="1198416"><node id="1198417"><node id="1198420"><node id="1198426"><node id="1198430"><node id="1198530"><node id="1198533"/>
+<node id="1198537"><node id="1198543"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1198419"/>
+<node id="1198421"><node id="1198433"><node id="1198441"><node id="1198499"><node id="1198503"/>
+<node id="1198508"><node id="1198571"><node id="1198572"><node id="1198582"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1198424"/>
+<node id="1198435"/>
+<node id="1198516"/>
+<node id="1198517"><node id="1198519"><node id="1198522"><node id="1198525"/>
+</node>
+</node>
+</node>
+</thread></node>

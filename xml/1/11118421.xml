@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118421" title="Re^3: substr on UTF-8 strings" created="2020-06-24 08:46:27" updated="2020-06-24 08:46:27" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;But then a Unicode character comes up, and suddenly writing text to stdout produces garbage characters and Perl issues a warning about it.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Add &lt;c&gt;use open qw/:std :utf8/;&lt;/c&gt; at the top of your code to open &lt;c&gt;STDIN/OUT/ERR&lt;/c&gt; as UTF-8 (assuming your console is UTF-8).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I verify that strings are flagged as native or as UTF-8 at the places where they should be.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You should only be checking the UTF8 flag for debugging purposes when you find problems with your code, and not assuming what its state should be - it's an internal flag that can (and will) change across Perl versions.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Perl will then have a mixture of 'native' and 'UTF-8' strings to concatenate. How does that work? Even if there are no characters above 127, Perl will have to scan all 'native' strings, if only to issue a warning for high characters. Is that right? If all strings were flagged as UTF8, concatenation should be faster, shouldn't it?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I think you're worrying too much about the internals here. Perl generally does the right thing; you should only worry about it if you actually have problems with your code (write tests to check the input and output of your code), and you should only worry about speed if it becomes an issue for you.&lt;/p&gt;
+&lt;p&gt;In general, for the best Unicode support, use the latest version of Perl (5.26 is pretty good, but think about upgrading using e.g. [https://perlbrew.pl|perlbrew]), encode your source files as UTF-8, and start them off like this:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use 5.026; # or higher, enables "unicode_strings" features etc.
+use utf8; # source code is encoded with UTF-8
+use open qw/:std :utf8/; # make UTF-8 default encoding, incl STDIN+OUT
+use warnings FATAL =&gt; 'utf8'; # optional
+&lt;/c&gt;
+&lt;p&gt;And make sure to always specify the correct encoding when [doc://open]ing files ([id://11102684]). If you have problems, feel free to post them here, see also my advice on that [id://1233709|here].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I think I will code the removal of trailing slashes with a regular expression, as that should respect the flag.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;See the core module [doc://File::Spec] for how to do operations on filenames in a portable way.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Added "&lt;c&gt;use warnings FATAL =&gt; 'utf8';&lt;/c&gt;"&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11118415</root_node>
+<parent_node field_name="parent_node">11118419</parent_node>
+<thread id="11118415">
+<node id="11118417"/>
+<node id="11118418"><node id="11118419"><node id="11118421"><node id="11118427"><node id="11118428"/>
+<node id="11118585"/>
+</node>
+<node id="11118581"/>
+</node>
+<node id="11118580"/>
+<node id="11118584"/>
+</node>
+</node>
+<node id="11118432"/>
+<node id="11118578"><node id="11118583"/>
+</node>
+</thread></node>

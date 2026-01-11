@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193699" title="Re^2: Escaping double quotes in complete document" created="2017-06-27 10:44:54" updated="2017-06-27 10:44:54" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;This protects you from Cross-Site-Scripting attacks and handles the double quote issue.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Not quite, you're missing the &lt;c&gt;html&lt;/c&gt; [mod://Template::Manual::Filters|filter], e.g.:&lt;/p&gt;
+&lt;c&gt;
+use Template;
+my $tt = Template-&gt;new();
+my $soap = ' "foo" &lt;bar&gt; &amp;amp; ';
+$tt-&gt;process(\&lt;&lt;END, {soap=&gt;$soap}) || die $tt-&gt;error();
+&lt;html&gt;
+  &lt;input type="text" name="mytext" value="[% soap %]"/&gt;
+&lt;/html&gt;
+END
+$tt-&gt;process(\&lt;&lt;END, {soap=&gt;$soap}) || die $tt-&gt;error();
+&lt;html&gt;
+  &lt;input type="text" name="mytext" value="[% soap | html %]"/&gt;
+&lt;/html&gt;
+END
+
+__END__
+
+&lt;html&gt;
+  &lt;input type="text" name="mytext" value=" "foo" &lt;bar&gt; &amp;amp; "/&gt;
+&lt;/html&gt;
+&lt;html&gt;
+  &lt;input type="text" name="mytext" value=" &amp;quot;foo&amp;quot; &amp;lt;bar&amp;gt; &amp;amp;amp; "/&gt;
+&lt;/html&gt;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1193555</root_node>
+<parent_node field_name="parent_node">1193698</parent_node>
+<thread id="1193555">
+<node id="1193559"><node id="1193562"><node id="1193565"><node id="1193658"/>
+</node>
+</node>
+</node>
+<node id="1193609"><node id="1193659"/>
+</node>
+<node id="1193612"><node id="1193657"><node id="1193662"/>
+<node id="1193663"/>
+<node id="1193676"><node id="1193694"/>
+</node>
+</node>
+</node>
+<node id="1193698"><node id="1193699"><node id="1193702"/>
+</node>
+</node>
+<node id="1193806"><node id="1193808"/>
+</node>
+</thread></node>

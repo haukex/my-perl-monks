@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200658" title="Re^5: Killing a child process" created="2017-10-04 11:25:37" updated="2017-10-04 11:25:37" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Your suggestions have provided the right answer!&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm glad to help, but unfortunately I'm also confused by your post. Maybe it's because I haven't fully understood all of your requirements. So far, I get that you want to play a sound to the user, but also want to be able to stop the playback at any time, is that right? In that case, I'm not sure how the "Option 1" script helps, and how it's different from the code [id://1200649|I showed]? As for the "Option 2" script, I understand you want to monitor the state of the subprocess - that's an understandable requirement, although there are often better solutions than polling, but that depends on other things like if this is a GUI app or something else, and how playing a sound fits into the "bigger picture" of your application's purpose and design? If I've missed something, please explain. &lt;small&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/small&gt;&amp;nbsp;In my previous node, I admit I did not consider that you may want to poll the state instead of just block until the subprocess is done, but again, that's just another good reason to explain all of the requirements and the context :-)&amp;nbsp;&lt;small&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;I'm sorry but I have to say I don't agree with the way you're going about using the module. First, you're reaching into the [mod://IPC::Run] object's undocumented internals. They may change without notice across different versions of the module, breaking your code. Also, your assumptions, like that the "&lt;c&gt;KIDS&lt;/c&gt;" array only has one element, might not always be true. Second, I don't see how the &lt;c&gt;sleep 5;&lt;/c&gt; helps in the first script. Third, I said that &lt;c&gt;-&gt;finish&lt;/c&gt; calls [doc://waitpid] under the hood, but now you're using both. The same goes for &lt;c&gt;$h-&gt;signal('INT')&lt;/c&gt; - you're signaling a process that at that point should already be gone. Both are unnecessary, and the reason I mention this is because it makes me suspect you may have misunderstood something in their use, or even the control of subprocesses in general (perhaps a close read of [doc://perlipc] is a good idea).&lt;/p&gt;
+&lt;p&gt;Modules like [mod://IPC::Run] wrap the underlying system calls (like [doc://waitpid]) in a "nicer" interface so that you don't have to use the lower-level calls. Sure, sometimes (rarely!) the modules don't support everything you need, and hacking their internals becomes necessary. But I strongly recommend looking at the API the module provides &lt;i&gt;before&lt;/i&gt; looking into its internals!&lt;/p&gt;
+&lt;p&gt;For your "Option 1" (block until the subprocess is done), the "right" way to use the module is [id://1200649|the code I showed] (just remove the &lt;c&gt;Time::HiRes&lt;/c&gt; stuff). For your "Option 2" (poll the subprocess state), study the [mod://IPC::Run] documentation and you will find the &lt;c&gt;pumpable&lt;/c&gt; method:&lt;/p&gt;
+&lt;c&gt;
+use IPC::Run qw/start/;
+my $h = start ['play','-q','/tmp/sound.wav'];
+while ($h-&gt;pumpable) {
+	print "waiting...\n";
+	sleep 1;
+}
+$h-&gt;finish;
+print "finished!\n";
+&lt;/c&gt;
+&lt;p&gt;See how much nicer that is, without having to muck about in the object's internals? Here, I've put that together with a signal handler that will catch &lt;c&gt;SIGINT&lt;/c&gt; (usually Ctrl-C) and cleanly signal and terminate the subprocess:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+use IPC::Run qw/start/;
+my $h = start ['play','-q','/tmp/sound.wav'];
+{ # block for local $SIG{INT}
+	my $run=1;
+	local $SIG{INT} = sub {
+		print "caught SIGINT, stopping...\n";
+		$run=0;
+		$h-&gt;signal('INT');
+	};
+	while ($run &amp;&amp; $h-&gt;pumpable) {
+		print "waiting...\n";
+		sleep 1;
+	}
+}
+$h-&gt;finish;
+print "finished!\n";
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1200577</root_node>
+<parent_node field_name="parent_node">1200655</parent_node>
+<thread id="1200577">
+<node id="1200579"><node id="1200581"><node id="1200582"><node id="1200588"><node id="1200592"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1200587"><node id="1200590"><node id="1200593"><node id="1200647"><node id="1200649"/>
+</node>
+<node id="1200655"><node id="1200658"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1200594"><node id="1200617"/>
+</node>
+</thread></node>

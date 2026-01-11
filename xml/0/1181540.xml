@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1181540" title="Re: How to split a non even number of string elements into a hash [RESOLVED]" created="2017-02-09 11:06:39" updated="2017-02-09 11:06:39" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [thanos1983],&lt;/p&gt;
+&lt;p&gt;In the spirit of TIMTOWTDI: just yesterday I [https://bitbucket.org/haukex/hgpstools/src/3cb43e3a98/serloggers/ngserlog_hmt310.pl#ngserlog_hmt310.pl-125|published] some code that uses [doc://perlop#\G-_assertion_|&lt;c&gt;m/\G.../gc&lt;/c&gt;] to incrementally parse a string into a hash. The goal of that code is to parse a string like &lt;c&gt;"RH= 23.8 %RH T= 20.4 'C Td= -1.0 'C Tdf=-0.9 'C a=  4.2 g/m3   x=   3.5 g/kg  Tw= 10.2 'C ppm=  5635 pw=   5.68 hPa pws=  23.90 hPa h=  29.5 kJ/kg"&lt;/c&gt; (a line of data from a [http://www.vaisala.com/en/products/humidity/Pages/HMT310.aspx|sensor] I have to parse) into a data structure like &lt;c&gt;{ RH =&gt; { val=&gt;23.8, unit=&gt;"%RH" }, ... }&lt;/c&gt;. Although this is probably overkill for your case, note how it does allow for more powerful parsing of the input - in the aforementioned example, note how &lt;c&gt;"ppm=  5635"&lt;/c&gt; doesn't have units, and how a simple split on whitespace won't work for &lt;c&gt;"Tdf=-0.9"&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;If I apply the same principle to your code (slightly simplified):&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $input = "one 1 two 2 three 3 odd_element";
+
+my $REGEX = qr{ \s* \b (\w+) \s+ (\w+) \b \s* }msx;
+my %output;
+pos($input)=undef;
+while ($input=~/\G$REGEX/gc) {
+	$output{$1} = $2;
+}
+my $rest = substr $input, pos $input;
+if (length $rest) { # leftovers
+	$output{$rest} = 'turkeysandwich';
+}
+
+use Data::Dumper;
+print Dumper(\%output);
+__END__
+$VAR1 = {
+          'one' =&gt; '1',
+          'two' =&gt; '2',
+          'three' =&gt; '3',
+          'odd_element' =&gt; 'turkeysandwich'
+        };
+&lt;/c&gt;
+&lt;p&gt;(Note: Assigning to [doc://pos] is not needed in the example above, but it may become necessary if the code is embedded into a larger script that performs other regexes on the input that may modify [doc://pos].)&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1181516</root_node>
+<parent_node field_name="parent_node">1181516</parent_node>
+<thread id="1181516">
+<node id="1181517"><node id="1181526"/>
+</node>
+<node id="1181518"><node id="1181527"/>
+<node id="1181531"/>
+</node>
+<node id="1181519"><node id="1181528"><node id="1181552"/>
+</node>
+</node>
+<node id="1181520"><node id="1181530"><node id="1181556"><node id="1181563"/>
+</node>
+<node id="1181571"><node id="1181649"/>
+</node>
+</node>
+<node id="1181559"/>
+</node>
+<node id="1181540"/>
+<node id="1181570"><node id="1181648"/>
+</node>
+<node id="1181634"><node id="1181650"/>
+</node>
+</thread></node>

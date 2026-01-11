@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="549703" title="Re: memory leak with Thread::Queue ?" created="2006-05-16 06:04:16" updated="2006-05-16 02:04:16" _doctext_mode="lenient"><type id="11">note</type>
+<author id="171588">BrowserUk</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Your code (slightly modified for win32), doesn't appear to leak under AS811/5.8.6 or AS817/5.8.8.
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use threads;
+use Thread::Queue;
+my $queue = Thread::Queue -&gt; new;
+
+threads -&gt; create ("popper", $queue) -&gt; detach for (1..10);
+
+my $message="this is a line of test around the right size";
+
+while (1) {
+    $queue -&gt; enqueue ($message) for (1..100);
+    sleep 1 while $queue -&gt; pending;
+    system qq[tasklist /nh /fi "PID eq $$"];
+}
+
+sub popper {
+    print "started a popper\n";
+    my $queue = shift;
+    while ($queue -&gt; dequeue) {
+        print ".";
+    }
+}
+__END__
+C:\test&gt;junk5
+started a popper
+started a popper
+started a popper
+started a popper
+started a popper
+started a popper
+started a popper
+started a popper
+started a popper
+started a popper
+perl.exe                    3128                         0      6,936 K
+perl.exe                    3128                         0      6,944 K
+perl.exe                    3128                         0      6,948 K
+perl.exe                    3128                         0      6,948 K
+perl.exe                    3128                         0      6,948 K
+perl.exe                    3128                         0      6,948 K
+perl.exe                    3128                         0      6,948 K
+perl.exe                    3128                         0      6,948 K
+perl.exe                    3128                         0      6,948 K
+perl.exe                    3128                         0      6,948 K
+perl.exe                    3128                         0      6,948 K
+perl.exe                    3128                         0      6,948 K
+perl.exe                    3128                         0      6,948 K
+perl.exe                    3128                         0      6,948 K
+&lt;/code&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-171588"&gt;
+&lt;hr /&gt;
+&lt;font size=1 &gt;
+&lt;div&gt;Examine what is said, not who speaks -- Silence betokens consent -- Love the truth but pardon error.&lt;/div&gt;
+&lt;div&gt;Lingua non convalesco, consenesco et abolesco. -- Rule 1 has a caveat! -- Who broke the cabal?&lt;/div&gt;
+&lt;div&gt;"Science is about questioning the status quo. Questioning authority". &lt;/div&gt;
+&lt;div&gt;In the absence of evidence, opinion is indistinguishable from prejudice.&lt;/div&gt;
+&lt;/font&gt;
+
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">549677</root_node>
+<parent_node field_name="parent_node">549677</parent_node>
+<thread id="549677">
+<node id="549695"><node id="549740"/>
+</node>
+<node id="549703"><node id="796212"><node id="796215"/>
+</node>
+</node>
+</thread></node>

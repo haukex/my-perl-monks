@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1222322" title="Re: Rounding off ? (updated)" created="2018-09-13 18:38:08" updated="2018-09-13 18:38:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I can't reproduce that here, I'm getting the output:&lt;/p&gt;
+&lt;c&gt;
+3243BCFE21EF4468
+EF453276BDBDE566
+2342ED65876AB55F
+&lt;/c&gt;
+&lt;p&gt;Maybe you're on a 32-bit build of Perl?* Also, what version of Perl are you on? Maybe you could post the output of &lt;c&gt;perl -V&lt;/c&gt; here.&lt;/p&gt;
+&lt;p&gt;Anyway, yes, it's possible you're seeing some rounding effects, although I'm not sure exactly what since I can't see it here. [doc://printf] is probably numifying the object into a regular Perl number, which may not be large enough to hold the value*. However, [doc://Math::BigInt] provides the &lt;c&gt;as_hex&lt;/c&gt; method:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Math::BigInt;
+
+my @CRCTable = (
+	Math::BigInt-&gt;new("0x3243bcfe21ef4468"),
+	Math::BigInt-&gt;new("0xef453276bdbde566"),
+	Math::BigInt-&gt;new("0x2342ed65876ab55f"),
+);
+
+for my $crc (@CRCTable) {
+	print $crc-&gt;as_hex, "\n";
+}
+
+__END__
+
+0x3243bcfe21ef4468
+0xef453276bdbde566
+0x2342ed65876ab55f
+&lt;/c&gt;
+&lt;p&gt;* &lt;b&gt;Update:&lt;/b&gt; Based on the replies I have to revise my guess: maybe you are doing some operations on the BitInts that you haven't shown here? Are you certain that the output you've posted here is exactly what you get when you run the exact code you've posted here? If yes, maybe there's something different about your build of Perl. In addition to the output of &lt;c&gt;perl -V&lt;/c&gt;, please show the output of &lt;c&gt;perl -MMath::BigInt -le 'print $Math::BigInt::VERSION'&lt;/c&gt;.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1222321</root_node>
+<parent_node field_name="parent_node">1222321</parent_node>
+<thread id="1222321">
+<node id="1222322"><node id="1222324"/>
+<node id="1222329"><node id="1222342"/>
+</node>
+<node id="1222341"/>
+<node id="1222361"/>
+<node id="1222379"/>
+</node>
+<node id="1222382"><node id="1222416"><node id="1222449"/>
+</node>
+</node>
+</thread></node>

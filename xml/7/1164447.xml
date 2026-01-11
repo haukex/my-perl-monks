@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1164447" title="Behavior of Flip-Flop Operators" created="2016-05-29 11:09:15" updated="2016-05-29 11:09:15" _doctext_mode="strict"><type id="120">perlmeditation</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hello everyone,&lt;/p&gt;
+&lt;p&gt;A recent thread reminded me of a script I wrote years ago while learning about the [doc://perlop#Range-Operators|flip-flop operator] (aka the range operator in scalar context), and I thought I'd share it in case it helps someone else.&lt;/p&gt;
+&lt;p&gt;The script, which I've included below the output, runs through a sequence of true/false values, tests whether the right-hand-side and/or left-hand-side of the operator is evaluated (marked by an asterisk in the table), gets the return value of the operator, and outputs all that in the following handy table. I hope it illustrates the difference between the &lt;c&gt;..&lt;/c&gt; (two-dot) and &lt;c&gt;...&lt;/c&gt; (three-dot) versions of the operator: two dots will immediately evaluate the RHS if the LHS is true, three dots will wait until the next evaluation.&lt;/p&gt;
+&lt;c&gt;
+*** Demonstration of the Flip-Flop Operators ***
+
+__A______B____X___   __A______B____X___
+  0* ..  0  =          0* ... 0  =     
+  0* ..  1  =          0* ... 1  =     
+  0* ..  0  =          0* ... 0  =     
+  1* ..  0* = 1        1* ... 0  = 1   
+  0  ..  0* = 2        0  ... 0* = 2   
+  0  ..  0* = 3        0  ... 0* = 3   
+  0  ..  1* = 4E0      0  ... 1* = 4E0 
+  0* ..  0  =          0* ... 0  =     
+  0* ..  0  =          0* ... 0  =     
+  1* ..  1* = 1E0      1* ... 1  = 1   
+  0* ..  0  =          0  ... 0* = 2   
+  0* ..  0  =          0  ... 0* = 3   
+  1* ..  0* = 1        1  ... 0* = 4   
+  0  ..  0* = 2        0  ... 0* = 5   
+  0  ..  1* = 3E0      0  ... 1* = 6E0 
+  0* ..  1  =          0* ... 1  =     
+  1* ..  1* = 1E0      1* ... 1  = 1   
+  1* ..  0* = 1        1  ... 0* = 2   
+  0  ..  0* = 2        0  ... 0* = 3   
+  0  ..  1* = 3E0      0  ... 1* = 4E0 
+  0* ..  0  =          0* ... 0  =     
+  1* ..  1* = 1E0      1* ... 1  = 1   
+  1* ..  1* = 1E0      1  ... 1* = 2E0 
+  1* ..  1* = 1E0      1* ... 1  = 1   
+  0* ..  0  =          0  ... 0* = 2   
+  0* ..  1  =          0  ... 1* = 3E0 
+  0* ..  0  =          0* ... 0  =     
+
+(* = Evaluated)
+&lt;/c&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+print "*** Demonstration of the Flip-Flop Operators ***\n\n";
+
+my @tests = qw/
+	0:0 0:1 0:0 1:0 0:0 0:0 0:1 0:0 0:0
+	1:1 0:0 0:0 1:0 0:0 0:1 0:1 1:1 1:0
+	0:0 0:1 0:0 1:1 1:1 1:1 0:0 0:1 0:0 /;
+
+print join('   ', ("__A______B____X___") x 2), "\n";
+sub fmt {
+	my ($lv,$le,$op,$rv,$re,$v) = @_;
+	return sprintf '  %s%s %-3s %s%s = %-3s ',
+		$lv, $le?'*':' ', $op,
+		$rv, $re?'*':' ', $v;
+}
+
+for (@tests) {
+	my ($lv, $rv) = split /:/;
+	
+	my ($le, $re);
+	my $lf = sub { $le=1; $lv };
+	my $rf = sub { $re=1; $rv };
+	
+	($le, $re) = (0,0);
+	my $v1 = &amp;$lf ..  &amp;$rf;
+	print fmt($lv,$le,'..' ,$rv,$re,$v1);
+	
+	print '   ';
+	
+	($le, $re) = (0,0);
+	my $v2 = &amp;$lf ... &amp;$rf;
+	print fmt($lv,$le,'...',$rv,$re,$v2);
+	
+	print "\n";
+}
+
+print "\n(* = Evaluated)\n";
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Regards,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<thread id="1164447">
+<node id="1164465"/>
+</thread></node>

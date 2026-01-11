@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1172425" title="Can't get a server response from LWP Request" created="2016-09-23 03:45:05" updated="2016-09-23 03:45:05" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1172416">ddominnik</author>
+<doctext field_name="doctext">&lt;p&gt; First off, regarding Perl and coding in general I have just started to learn so it would be great if you could give me easy to understand/execute answers. Now onto the real problem:&lt;br&gt;&lt;br&gt;
+
+I'm trying to create a tool for a JIRA server at my workplace. But I can't seem to get a response from the server. I already struggle with the login, which takes a JSON string as a POST request and sends back a JSON string with cookie information. I've tried through the browser and with JavaScript, that somehow works, but Perl gives me a 500 status code response. I've already tried JIRA::REST 
+&lt;/p&gt;
+
+&lt;br&gt;
+
+&lt;code&gt;
+use JIRA::REST;
+use JSON;
+my $jira = JIRA::REST-&gt;new('https://jira.hostname:PORT/jira', 'myuser', 'mypass');
+
+my $request = $jira-&gt;POST("/issue/search", undef, {
+	jql=&gt; 'project ~ MYPROJECT and status = closed',
+	starAt=&gt; 0,
+	maxResults=&gt;1,
+	fields=&gt;[asignee],
+	});
+
+print(parse_json ($request));
+&lt;/code&gt;
+&lt;p&gt;
+Then I tried REST::Client
+&lt;/p&gt;
+&lt;code&gt;
+use REST::Client;
+my $client = REST::Client-&gt;new();
+$client-&gt;setHost('https://jira.hostname:PORT/jira/rest');
+	$client-&gt;request('post', '/auth/1/session', ['{ "username" : "myuser", "password" : "mypass" }', undef]);
+	print ($client-&gt;responseContent());
+&lt;/code&gt;
+&lt;p&gt;
+And now I'm trying a custom request with LWP
+&lt;/p&gt;
+&lt;code&gt;
+use LWP;
+use LWP::UserAgent;
+use HTTP::Request;
+use JSON;
+
+my $host 		= 	'https://jira.hostname:PORT/jira/rest';
+my $loginurl 	        = 	'/auth/1/session';
+my %credentials         = 	("username"=&gt;"myuser", "password"=&gt;"mypass");
+my $json 		= 	encode_json \%credentials;
+my $request 		= 	HTTP::Request-&gt;new('POST', $host.=$loginurl);
+$request		-&gt;	header('Content-Type'=&gt;'application/json');
+$request		-&gt;	content($json);
+
+my $browser 	        =	LWP::UserAgent-&gt;new;
+$browser  		-&gt;	agent('Mozilla/5.0');
+$browser		-&gt;	protocols_allowed(['https']);
+my $response 	        = 	$browser-&gt;request($request);
+     
+if($response-&gt;is_success){
+print $response-&gt;decoded_content; 
+}
+else {
+    die $response-&gt;status_line;
+};
+&lt;/code&gt;
+&lt;p&gt;
+All of them are giving me the same or a similar response:
+&lt;/p&gt;
+&lt;code&gt;
+500 Can't connect to jira.hostname:PORT
+
+Bad file descriptor at C:/myperl/perl/vendor/lib/LWP/Protocol/http.pm line 47.
+ at jiratest.pl line 28.
+&lt;/code&gt;
+&lt;p&gt;
+I think that the LWP lib might be broken somehow, but I already tried upgrading and reinstalling via CPAN and still got no response.
+The code from the LWP/Protocol/http.pm file is:
+&lt;/p&gt;
+&lt;code&gt;
+sub _new_socket
+{
+    my($self, $host, $port, $timeout) = @_;
+
+    # IPv6 literal IP address should be [bracketed] to remove
+    # ambiguity between ip address and port number.
+    if ( ($host =~ /:/) &amp;&amp; ($host !~ /^\[/) ) {
+      $host = "[$host]";
+    }
+
+    local($^W) = 0;  # IO::Socket::INET can be noisy
+    my $sock = $self-&gt;socket_class-&gt;new(PeerAddr =&gt; $host,
+					PeerPort =&gt; $port,
+					LocalAddr =&gt; $self-&gt;{ua}{local_address},
+					Proto    =&gt; 'tcp',
+					Timeout  =&gt; $timeout,
+					KeepAlive =&gt; !!$self-&gt;{ua}{conn_cache},
+					SendTE    =&gt; 1,
+					$self-&gt;_extra_sock_opts($host, $port),
+				       );
+
+    unless ($sock) {
+	# IO::Socket::INET leaves additional error messages in $@
+	my $status = "Can't connect to $host:$port";
+	if ($@ =~ /\bconnect: (.*)/ ||
+	    $@ =~ /\b(Bad hostname)\b/ ||
+	    $@ =~ /\b(certificate verify failed)\b/ ||
+	    $@ =~ /\b(Crypt-SSLeay can't verify hostnames)\b/
+	) {
+	    $status .= " ($1)";
+	}
+	die "$status\n\n$@"; # this is the mentioned "line 47"
+    }
+
+    # perl 5.005's IO::Socket does not have the blocking method.
+    eval { $sock-&gt;blocking(0); };
+
+    $sock;
+}
+&lt;/code&gt;
+&lt;p&gt;
+I really hoped I could fix this myself as generally solving issues yourself is a great way to learn about the language, but I really don't know what to do anymore.
+It has to be a problem on the client side, because the server is responding as regular when I'm using JavaScript. 
+Any help would be greatly appreciated!
+&lt;br&gt;
+P.S: I've always used &lt;code&gt; use strict; use warnings; &lt;/code&gt; as well, so I don't think it has something to do with that&lt;br&gt;&lt;br&gt;&lt;br&gt;
+EDIT: &lt;a href="http://www.perlmonks.org/?node_id=1172426"&gt;Corion's comment&lt;/a&gt; was right, it was a proxy issue as well as a SSL-Certificate issue.&lt;br&gt;&lt;br&gt;
+Thank you for your help Perl Monks!&lt;/p&gt;</doctext>
+<thread id="1172425">
+<node id="1172426"><node id="1172430"><node id="1172432"/>
+<node id="1172433"><node id="1172444"/>
+</node>
+</node>
+</node>
+<node id="1172427"><node id="1172428"/>
+</node>
+</thread></node>

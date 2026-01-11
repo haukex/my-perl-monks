@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1179336" title="Re^3: Begginer's question: If loops one after the other. Is that code correct?" created="2017-01-10 11:30:14" updated="2017-01-10 11:30:14" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [predrag],&lt;/p&gt;
+&lt;p&gt;It sounds like the trickiest part of your current solution is probably figuring out whether you're in some part of the HTML code or whether you're in the text, since obviously tags shouldn't be converted to Cyrillic. Unfortunately, parsing HTML is a pretty difficult task ([http://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags/1732454#1732454|a humorous post] about the topic). So I'd like to encourage you to look at one of the parser modules again.&lt;/p&gt;
+&lt;p&gt;Two classic modules are [mod://HTML::Parser] and [mod://HTML::TreeBuilder], but there are several others, such as [mod://Mojo::DOM]. If the input is always XHTML, there's [mod://XML::Twig] and many more XML-based modules. These modules generally break down the HTML into their structure, including elements (&lt;c&gt;&lt;tags&gt;&lt;/c&gt;) with their attributes, comments, or text. Some of the modules then represent the HTML as a [wp://Document Object Model] (DOM), which is also worth reading a little about. It sounds like you only want to operate on text, and maybe on some elements' attributes (such as &lt;c&gt;title="..."&lt;/c&gt; attributes).&lt;/p&gt;
+&lt;p&gt;Operating only on text is relatively easy: for example, in a [mod://HTML::Parser] solution, you could register a handler on the &lt;c&gt;text&lt;/c&gt; event, which does the appropriate conversions, and register a &lt;c&gt;default&lt;/c&gt; handler which just outputs everything else unchanged:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use HTML::Parser;
+
+my $p = HTML::Parser-&gt;new(
+	api_version =&gt; 3,
+	unbroken_text =&gt; 1 );
+$p-&gt;handler(text =&gt; sub {
+	my ($text) = @_;
+	# ### Your filter here ###
+	$text=~s/foo/bar/g;
+	print $text;
+}, 'text');
+$p-&gt;handler(default =&gt; sub {
+	print shift;
+}, 'text');
+
+my $infile = '/tmp/in.html';
+my $outfile = '/tmp/out.html';
+
+open my $out, '&gt;', $outfile
+	or die "open $outfile: $!";
+# "select" redirects the "print"s
+my $previous = select $out;
+$p-&gt;parse_file($infile);
+close $out;
+select $previous;
+print "$infile -&gt; $outfile\n";
+&lt;/c&gt;
+&lt;p&gt;Operating on attributes will require you to handle opening elements (tags) as well. Note also that the same basic principle I described above applies to the other modules: they all break the HTML down into its components, so that you can operate on only the textual parts, leaving the others unchanged.&lt;/p&gt;
+&lt;p&gt;BTW, have you seen [mod://Lingua::Translit]?&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1179302</root_node>
+<parent_node field_name="parent_node">1179321</parent_node>
+<thread id="1179302">
+<node id="1179304"><node id="1179390"/>
+</node>
+<node id="1179308"/>
+<node id="1179309"><node id="1179321"><node id="1179326"><node id="1179341"/>
+</node>
+<node id="1179336"><node id="1179342"><node id="1179361"><node id="1179363"><node id="1179418"><node id="1179419"><node id="1179452"><node id="1179455"><node id="1179456"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1179541"><node id="1179553"><node id="1179565"><node id="1179571"><node id="1179573"><node id="1179575"/>
+</node>
+<node id="1179736"><node id="1179858"><node id="1179865"><node id="1179867"><node id="1179868"/>
+</node>
+</node>
+<node id="1179915"><node id="1179931"/>
+<node id="1179981"><node id="1180109"><node id="1180164"><node id="1180166"><node id="1180181"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1179391"/>
+</node>
+</node>
+</node>
+</thread></node>

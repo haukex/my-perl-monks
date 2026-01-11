@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11128664" title="Surprising result when using undef" created="2021-02-22 15:39:47" updated="2021-02-22 15:39:47" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="200239">davebaker</author>
+<doctext field_name="doctext">&lt;p&gt;I was surprised at this result when I tried to write a couple of lines of code that would prevent an email from going out to an active mailing list, unless I (as the developer) had expressly set "is_dev_mode" to be 0 or 1 in an anonymous hash supplied as the parameter. Without expressly telling the subroutine whether or not we're in development mode, I figured, the subroutine needed to assume that we are, so as not to actually send an email to all of my important customers. So:&lt;/p&gt;
+
+&lt;code&gt;
+send_email (  {
+       subject =&gt; "Test subject",
+       body    =&gt; "Test body",
+  } );
+
+sub send_email {
+
+   my $param = shift;
+
+   my $subject     = $param-&gt;{subject};
+   my $body        = $param-&gt;{body};
+   my $is_dev_mode = exists $param-&gt;{is_dev_mode}
+     ? $param-&gt;{is_dev_mode}
+     : undef;
+
+   $is_dev_mode = 1
+       unless ( $is_dev_mode == 0 || $is_dev_mode == 1 )
+       ; # In case the CGI param is ''; default is to be "safe" (is_dev_mode == 1)
+
+   _blast_email_to_all_my_important_customers( $subject, $body ) unless ( $is_dev_mode );
+}
+&lt;/code&gt;
+&lt;p&gt;So I run the code, and... did all my important customers just get an embarrassing test email?&lt;/p&gt;
+&lt;p&gt;They sure did. Now, let's add "use strict;" and "use warnings;" and try it again, and throw in a warn statement to try to figure out what's happened.&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+
+send_email (  {
+       subject =&gt; "Test subject",
+       body    =&gt; "Test body",
+  } );
+
+sub send_email {
+
+   my $param = shift;
+
+   my $subject     = $param-&gt;{subject};
+   my $body        = $param-&gt;{body};
+   my $is_dev_mode = exists $param-&gt;{is_dev_mode}
+     ? $param-&gt;{is_dev_mode}
+     : undef;
+
+   $is_dev_mode = 1
+       unless ( $is_dev_mode == 0 || $is_dev_mode == 1 )
+       ; # In case the CGI param is ''; default is to be "safe" (is_dev_mode == 1)
+
+   warn "is_dev_mode is '", $is_dev_mode, "'\n";
+
+   _blast_email_to_all_my_important_customers( $subject, $body ) unless ( $is_dev_mode );
+}&lt;/code&gt;
+&lt;p&gt;Result:&lt;/p&gt;
+&lt;code&gt;
+Use of uninitialized value $is_dev_mode in numeric eq (==) at C:\Users\davel\Desktop\test-of-dev-mode-flag-revised.pl line 19.
+Use of uninitialized value $is_dev_mode in warn at C:\Users\davel\Desktop\test-of-dev-mode-flag-revised.pl line 23.
+is_dev_mode is ''
+&lt;/code&gt;
+&lt;p&gt;Thanks for the warning, but the customers just got ANOTHER email blast.&lt;/p&gt;
+&lt;p&gt;OK, I see how $is_dev_mode was undef, and hence the warning. But if $is_dev_mode is undef, then $is_dev_mode is not equal to zero, right? And if $is_dev_mode is undef, then $is_dev_mode is not equal to 1, right? And if neither is true, then the "unless it's true" clause means $is_dev_mode gets 1 as its value (so as to avoid the embarrassing blast to all my important customers), right? Nope! is_dev_mode is still undefined.&lt;/p&gt;
+
+&lt;p&gt;An interesting and surprising result to me. I don't think I'll be setting variables to undef and using them in this kind of boolean test again.&lt;/p&gt;
+
+&lt;p&gt;I would not have thought that "( $an_undefined_variable == 0 )" would evaluate to true because, golly, undef isn't a number and so the "==" operator is testing whether one number is the same as another number. Now, in hindsight of course, it's apparent that the "==" operator is going to convert both sides to a number in order to chug along and do the best it can, and 0 seems to be the closest thing to a number for undef. I think.&lt;/p&gt;</doctext>
+<thread id="11128664">
+<node id="11128666"/>
+<node id="11128667"/>
+<node id="11128671"/>
+<node id="11128678"/>
+<node id="11128699"/>
+<node id="11128707"><node id="11128794"/>
+</node>
+</thread></node>

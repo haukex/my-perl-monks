@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227519" title="Re: Uncompress streaming gzip on the fly in LWP::UserAgent/WWW::Mechanize" created="2018-12-20 07:36:29" updated="2018-12-20 07:36:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Since I don't have access to that site, I couldn't test at first, but I whipped up the following test server which I hope emulates the server you're accessing, and it seems that the solution provided by [pmqs] [id://1227475|here] works. The only issue I'm still having is that the last line is cut off, probably some interaction with [mod://WWW::Mechanize], I haven't checked it out yet. First the server (run e.g. via [mod://plackup]):&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use IO::Compress::Gzip qw/$GzipError Z_PARTIAL_FLUSH/;
+
+my $app = sub {
+	my $env = shift;
+	die "This app needs a server that supports psgi.streaming"
+		unless $env-&gt;{'psgi.streaming'};
+	die "The client did not send the 'Accept-Encoding: gzip' header"
+		unless defined $env-&gt;{HTTP_ACCEPT_ENCODING}
+			&amp;&amp; $env-&gt;{HTTP_ACCEPT_ENCODING} =~ /\bgzip\b/;
+	# Note some browsers don't correctly support gzip correctly,
+	# see e.g. https://metacpan.org/pod/Plack::Middleware::Deflater
+	# but we're not checking that here (and we don't set the Vary header)
+	return sub {
+		my $respond = shift;
+		my $zipped;
+		my $z = IO::Compress::Gzip-&gt;new(\$zipped)
+			or die "IO::Compress::Gzip: $GzipError";
+		my $w = $respond-&gt;([ 200, [
+				'Content-Type' =&gt; 'text/plain; charset=ascii',
+				'Content-Encoding' =&gt; 'gzip',
+			] ]);
+		for (1..10) {
+			$z-&gt;print("Hello, it is ".gmtime." GMT\n");
+			$z-&gt;flush(Z_PARTIAL_FLUSH);
+			$w-&gt;write($zipped) if defined $zipped;
+			$zipped = undef;
+			sleep 1;
+		}
+		$z-&gt;print("Goodbye!\n");
+		$z-&gt;close;
+		$w-&gt;write($zipped) if defined $zipped;
+		$w-&gt;close;
+	};
+};
+&lt;/c&gt;
+&lt;p&gt;And the client:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+use WWW::Mechanize;
+use Compress::Zlib;
+
+my $gunzip = inflateInit(WindowBits =&gt; 16 + MAX_WBITS)
+	or die "Cannot create a inflation stream\n";
+
+my $mech = WWW::Mechanize-&gt;new();
+$mech-&gt;add_handler( response_data =&gt; sub {
+	my ( $response, $ua, $h, $data ) = @_;
+	my ($buffer, $status) = $gunzip-&gt;inflate($data);
+	die "zlib error: $status" if length $status;
+	dd $buffer;
+	1;
+});
+$mech-&gt;get('http://localhost:5000');
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1227435</root_node>
+<parent_node field_name="parent_node">1227435</parent_node>
+<thread id="1227435">
+<node id="1227437"><node id="1227463"><node id="1227466"><node id="1227471"><node id="1227475"/>
+<node id="1227483"><node id="1227488"><node id="1227493"><node id="1227525"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1227490"><node id="1227496"><node id="1227531"/>
+</node>
+</node>
+</node>
+<node id="1227519"/>
+</thread></node>

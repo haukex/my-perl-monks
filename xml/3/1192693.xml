@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1192693" title="Re: Please help me understand string eval better" created="2017-06-13 10:26:47" updated="2017-06-13 10:26:47" _doctext_mode="lenient"><type id="11">note</type>
+<author id="957973">BillKSmith</author>
+<doctext field_name="doctext">Your main problem is that perl does not consider '09' to be a number.  The function 'eval' will fail no matter what you do.  Why not explicitly remove the leading zero?
+&lt;c&gt;
+use strict;
+use warnings;
+use Scalar::Util qw(looks_like_number isdual);
+my $transf = '/3+6';
+my $constant = '09';
+my $var = \$constant;
+#if (looks_like_number($$var)) {
+if (!looks_like_number($$var)) {         #correction per [haukex]
+    print "$$var is not a number\n";
+}
+else {
+    print "$$var looks like a number\n";
+}
+
+if (!isdual($$var)) {
+    print "$$var does not have a hidden numeric value\n";
+} 
+
+
+$$var =~ s/^0*//;   # make it into a valid number
+
+my$expr = "$$var$transf";
+my $ans = eval "$$var$transf";
+print "$expr yields: ";
+if (!$@) { 
+    print $ans, "\n";
+}
+else {
+    print $@, "\n";
+}
+&lt;/c&gt;
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-957973"&gt;
+Bill
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1192639</root_node>
+<parent_node field_name="parent_node">1192639</parent_node>
+<thread id="1192639">
+<node id="1192645"><node id="1192646"><node id="1192647"/>
+<node id="1192651"><node id="1192653"><node id="1192657"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1192664"><node id="1192858"/>
+</node>
+<node id="1192675"/>
+<node id="1192682"><node id="1192684"/>
+<node id="1192688"/>
+<node id="1192734"/>
+</node>
+<node id="1192693"><node id="1192698"/>
+</node>
+</thread></node>

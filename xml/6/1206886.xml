@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1206886" title="Process multiple directories" created="2018-01-08 03:43:06" updated="2018-01-08 03:43:06" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">Hi guys, this is a follow up question from previous thread: [id://1206593] . As thanos have provided me a very useful basic script which I am very thankful for, I still have some doubts. This is the code currently (which I have modified) from thanos's script:
+
+&lt;code&gt;
+ use strict;
+use warnings;
+use Date::Manip;
+use Data::Dumper;
+use File::Find::Rule;
+use IO::Uncompress::Bunzip2 ();
+use Net::Subnet;
+my @LogDir = &lt;/cygdrive/c/Users/anon/Documents/logs/png1/&gt;;
+my @LogDir2 = &lt;/cygdrive/c/Users/anon/Documents/logs/png2/*/&gt;;
+#Find relevant files
+sub get_files {
+    my (@dirs) = @_;
+	@ARGV = (@LogDir, @LogDir2);
+	my @dirss = join "", map {@ARGV . $_} @dirs;
+    my $level = shift // 3; # level to dig into
+    my @files = File::Find::Rule-&gt;file()
+    -&gt;name( '*.bz2','*.log' ) #can insert regex too
+    -&gt;maxdepth($level)
+    -&gt;in(@dirss);
+	#print @files;
+    return @files;
+}
+
+#Matches IP address only
+sub searchForIP {
+	my ($files, $ip) = @_;
+	my @files = @$files;
+	
+for my $file (@files){
+	my $filename = $file;
+	my $fh = IO::Uncompress::Bunzip2-&gt;new($filename)
+    or die "bunzip2 $filename: $IO::Uncompress::Bunzip2::Bunzip2Error";
+
+	while (&lt;$fh&gt;){
+		print "$filename:$.:$_" if /$ip/;
+    } 
+   
+  }
+}
+#This portion contains some code for user input, I will leave this out cause its not related to my problem
+my $numberOfDays = $numdays .' days';
+my $dateStart = ParseDate("$sdate");
+my $dateEnd = DateCalc($dateStart, $numberOfDays);
+
+# To find the every day date1 to date2
+my @dates =ParseRecur("0:0:0:1:0:0:0","",$dateStart, $dateEnd);
+
+my @datesFormatted = map { UnixDate($_, '%Y-%m-%d') } @dates;
+
+my @filess = get_files(@datesFormatted);
+searchForIP(\@filess, $ip);
+
+&lt;/code&gt;
+
+As you can see, I have multiple directories that contains many log files. As I am running the script from another directory, I would have to join the @LogDir with the @dirs in order to get the full path. An example of @dirs is 2017-12-01/access.log.bz2 so when joined, they become /cygdrive/c/Users/anon/Documents/logs/png1/2017-12-01/access.log.bz2 . I have tried using only 1 directory containing the logfiles and it worked for me, however,it doesn't work when I try putting in more than 1 directory. I am unsure how I can make it work with more than 1 directories. Below is the code when I tried it with only 1 directory (which worked for me):
+
+&lt;code&gt;
+
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Date::Manip;
+use Data::Dumper;
+use File::Find::Rule;
+use IO::Uncompress::Bunzip2 ();
+use Net::Subnet;
+my $LogDir = "/opt/splunk/httpd/png1/";
+
+#Find relevant files
+sub get_files {
+    my (@dirs) = @_;
+        my @dirss = join "", map {$LogDir . $_} @dirs;
+    my $level = shift // 3; # level to dig into
+    my @files = File::Find::Rule-&gt;file()
+    -&gt;name( '*.bz2' ) #can insert regex too
+    -&gt;maxdepth($level)
+    -&gt;in(@dirss);
+        #print @files;
+    return @files;
+}
+&lt;/code&gt;
+
+Any response will be greatly appreciated as I have already tried many ways to insert multiple directories but it still doesn't work... I am not sure why. Thank you again
+</doctext>
+<reputation field_name="reputation">11</reputation>
+<thread id="1206886">
+<node id="1206888"/>
+<node id="1206891"><node id="1206893"/>
+<node id="1206906"/>
+</node>
+<node id="1206894"><node id="1206941"><node id="1206957"/>
+</node>
+<node id="1206944"><node id="1206956"/>
+</node>
+<node id="1206946"><node id="1207037"/>
+</node>
+</node>
+</thread></node>

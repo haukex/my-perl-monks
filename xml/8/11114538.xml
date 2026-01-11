@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11114538" title="Looking for a function that returns status of a scalar's numeric flags" created="2020-03-22 02:06:06" updated="2020-03-22 02:06:06" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="524150">syphilis</author>
+<doctext field_name="doctext">Hi,&lt;br&gt;
+&lt;br&gt; By "numeric flags", I'm referring to the "IOK", "pIOK", "NOK", "pNOK" and the "IsUV" flags (as presented by Devel::Peek::Dump).
+&lt;br&gt; But rather than have this information displayed, I'm looking for a sub that returns the status of these specific flags. That is, something like:
+&lt;c&gt;
+sub flag_status {
+  my $v = $_[0];
+  return is_IOK($v) | is_pIOK($v) | is_IsUV($v)
+       | is_NOK($v) | is_pNOK($v);
+}
+sub is_IOK {
+ # return 1 if argument's IOK flag is set
+ # else return 0
+}
+
+sub is_pIOK {
+ # return 2 if argument's pIOK flag is set
+ # else return 0
+}
+
+sub is_NOK {
+ # return 4 if argument's NOK flag is set
+ # else return 0
+}
+
+sub is_pNOK {
+ # return 8 if argument's pNOK flag is set
+ # else return 0
+}
+
+sub is_IsUV {
+ # return 16 if argument's IsUV flag is set
+ # else return 0
+}
+&lt;/c&gt;
+The aim is to be able to determine whether a subroutine call changes the status of any of those flags on the subroutine's argument. That is:
+&lt;c&gt;
+my $d = 2.7;
+my $flags_prior = flag_status($d);
+
+foo($d);
+
+my $flags_after = flag_status($d);
+die "foo() altered its argument's numeric flags"
+  if($flags_prior != $flags_after);
+&lt;/c&gt;
+Is there already a perl module that ships with the core that will return the status of those 5 flags ?
+&lt;br&gt; Is there already a module on CPAN that will return the status of those 5 flags ?
+&lt;br&gt;&lt;br&gt; I know how to find the status of "IOK", "NOK" and "IsUV" in XS.
+&lt;br&gt;One can merely test the truth of SvIOK(sv), SvNOK(sv) and SvUOK(sv) respectively.
+&lt;br&gt;But how does one establish, in XS, whether the "pIOK" and "pNOK" flags are set ?
+&lt;br&gt;&lt;br&gt;Maybe there's another way to approach this.
+&lt;br&gt;The key thing is that I want to be able to &lt;b&gt;programmatically&lt;/b&gt; catch the occurrence of foo() altering its argument's "numeric flags".
+&lt;br&gt;&lt;br&gt;Cheers,&lt;br&gt;Rob
+</doctext>
+<thread id="11114538">
+<node id="11114539"><node id="11114558"/>
+</node>
+<node id="11114540"><node id="11114559"/>
+</node>
+<node id="11114541"><node id="11114560"/>
+</node>
+<node id="11114548"><node id="11114561"/>
+</node>
+</thread></node>

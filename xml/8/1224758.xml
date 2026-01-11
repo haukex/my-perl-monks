@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224758" title="Re^2: Selecting Ranges of 2-Dimensional Data" created="2018-10-26 18:30:40" updated="2018-10-26 18:30:40" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;p&gt;I think that part of testing code is trying to understand it and then giving it more cases. In order for me to see what is happening here, I had to add a routine to print the array as we are accustomed to seeing 2d arrays. I had to add a bunch of say statements to suss out the internals. I got my first look at is_deeply, where the 3rd argument $test_name must be optional:&lt;/p&gt;
+&lt;code&gt;
+is_deeply
+
+    is_deeply( $got, $expected, $test_name );
+&lt;/code&gt;
+&lt;p&gt;I'm also new with the syntax involving alias, so I printed out values to form a question there. I added a test to substitute in an 'M', intentionally causing the ultimate test to fail, to see if it would. I'll list output and then source between readmore tags:&lt;/p&gt;
+&lt;readmore&gt;&lt;code&gt;$ ./1.da.pl 
+1..25
+default is R1
+ok 1
+default is C1
+ok 2
+default is Rn
+ok 3
+default is Cn
+ok 4
+default is R4C5
+ok 5
+default is RnCn
+ok 6
+default is R2:R3
+ok 7
+default is C2:C3
+ok 8
+default is R4:Rn
+ok 9
+default is C5:Cn
+ok 10
+default is R2C3:R4C5
+ok 11
+default is R4C3:R4C3
+ok 12
+default is R5C1:R5C9
+ok 13
+default is R2C6:R11C6
+ok 14
+default is R3C1:RnC2
+ok 15
+default is R5C4:R5Cn
+ok 16
+default is RnC2:RnC5
+ok 17
+default is R3C2:RnCn
+ok 18
+inside first anonymous block
+default is R3
+value is ARRAY
+r is 3
+r is 1
+r is 3
+r is 10
+cis is 0 1 2 3 4 5 6 7 8 9
+11  12  13  14  15  16  17  18  19  20
+ok 19
+11  12  13  14  15  16  17  18  19  20
+11  12  13  14  15  66  17  18  19  20
+exiting first anonymous block
+----------
+1  2  3  4  5  6  7  8  9  10
+a  b  c  d  e  f  g  h  i  j
+11  12  13  14  15  66  17  18  19  20
+51  52  53  54  55  56  57  58  59  60
+----------
+default is C2
+value is ARRAY
+r is 1
+r is 2
+r is 4
+r is 2
+cis is 1
+2
+b
+12
+52
+ok 20
+2
+b
+21
+52
+exit 2nd
+----------
+1  2  3  4  5  6  7  8  9  10
+a  b  c  d  e  f  g  h  i  j
+11  21  13  14  15  66  17  18  19  20
+51  52  53  54  55  56  57  58  59  60
+----------
+default is R4C2
+value is ARRAY
+r is 4
+r is 2
+r is 4
+r is 2
+cis is 1
+52
+ok 21
+end 3rd
+----------
+1  2  3  4  5  6  7  8  9  10
+a  b  c  d  e  f  g  h  i  j
+11  21  13  14  15  66  17  18  19  20
+51  42  53  54  55  56  57  58  59  60
+----------
+default is R2C5:R4C8
+value is ARRAY
+r is 2
+r is 5
+r is 4
+r is 8
+cis is 4 5 6 7
+e  f  g  h
+15  66  17  18
+55  56  57  58
+ok 22
+added 5 to a value
+----------
+1  2  3  4  5  6  7  8  9  10
+a  b  c  d  e  f  g  h  i  j
+11  21  13  14  15  66  22  18  19  20
+51  42  53  54  55  56  57  58  59  60
+----------
+default is C8:Cn
+value is ARRAY
+r is 1
+r is 8
+r is 4
+r is 10
+cis is 7 8 9
+8  9  10
+h  i  j
+18  19  20
+58  59  60
+ok 23
+substitutes X
+----------
+1  2  3  4  5  6  7  8  9  10
+a  b  c  d  e  f  g  h  i  X
+11  21  13  14  15  66  22  18  19  20
+51  42  53  54  55  56  57  58  59  60
+----------
+default is R4
+value is ARRAY
+r is 4
+r is 1
+r is 4
+r is 10
+cis is 0 1 2 3 4 5 6 7 8 9
+51  42  53  54  55  56  57  58  59  60
+ok 24
+substitutes M
+----------
+1  2  3  4  5  6  7  8  9  10
+a  b  c  d  e  f  g  h  i  X
+11  21  13  14  15  66  22  18  19  20
+M  42  53  54  55  56  57  58  59  60
+----------
+not ok 25
+#   Failed test at ./1.da.pl line 156.
+#     Structures begin differing at:
+#          $got-&gt;[3][0] = 'M'
+#     $expected-&gt;[3][0] = '51'
+# Looks like you failed 1 test of 25.
+$ cat 1.da.pl
+#!/usr/bin/perl -w
+use 5.011;
+use Carp;
+use Data::Alias 'alias';
+use Data::Dumper;
+
+sub print_aoa {
+  use warnings;
+  use 5.011;
+
+  my $a     = shift;
+  my @array = @$a;
+  for my $row (@array) {
+    print join( "  ", @{$row} ), "\n";
+  }
+  return $a;
+}
+
+sub rangeparse {
+  local $_ = shift;
+  say "default is $_";
+  my @o;    # [ row1,col1, row2,col2 ] (-1 = last row/col)
+  if ( @o = /\AR([0-9]+|n)C([0-9]+|n):R([0-9]+|n)C([0-9]+|n)\z/ ) { }
+  elsif (/\AR([0-9]+|n):R([0-9]+|n)\z/) { @o = ( $1, 1, $2, -1 ) }
+  elsif (/\AC([0-9]+|n):C([0-9]+|n)\z/) { @o = ( 1, $1, -1, $2 ) }
+  elsif (/\AR([0-9]+|n)C([0-9]+|n)\z/) { @o = ( $1, $2, $1, $2 ) }
+  elsif (/\AR([0-9]+|n)\z/) { @o = ( $1, 1, $1, -1 ) }
+  elsif (/\AC([0-9]+|n)\z/) { @o = ( 1, $1, -1, $1 ) }
+  else                      { croak "failed to parse '$_'" }
+  $_ eq 'n' and $_ = -1 for @o;
+  return \@o;
+}
+
+sub getsubset {
+  my ( $data, $range ) = @_;
+  my $cols = @{ $$data[0] };
+
+  # say "cols is $cols"; cols is 10
+  @$_ == $cols or croak "data not rectangular" for @$data;
+  $range = rangeparse($range) unless ref $range eq 'ARRAY';
+  say "value is ", ref $range;
+  @$range == 4 or croak "bad size of range";
+  my @max = ( 0 + @$data, $cols ) x 2;
+
+  # say "max is @max"; max is 4 10 4 10
+  for my $i ( 0 .. 3 ) {
+    alias my $r = $$range[$i];
+    $r = $max[$i] if $r &lt; 0;
+    say "r is $r";
+    croak "index $i out of range" if $r &lt; 1 || $r &gt; $max[$i];
+  }
+
+  # say "r is $r"; requires explicit package name
+  croak "bad rows $$range[0]-$$range[2]" if $$range[0] &gt; $$range[2];
+  croak "bad cols $$range[1]-$$range[3]" if $$range[1] &gt; $$range[3];
+  my @cis = $$range[1] - 1 .. $$range[3] - 1;
+  say "cis is @cis";
+  my $ref_cis = \@cis;
+
+#print_aoa($ref_cis);  # Can't use string ("0") as an ARRAY ref while "strict refs" test exited with 255
+
+  return [ map { alias my @row = @{ $$data[$_] }[@cis]; \@row }
+      $$range[0] - 1 .. $$range[2] - 1 ];
+}
+
+use Test::More tests =&gt; 25;
+
+is_deeply rangeparse("R1"),         [ 1,  1,  1,  -1 ];
+is_deeply rangeparse("C1"),         [ 1,  1,  -1, 1 ];
+is_deeply rangeparse("Rn"),         [ -1, 1,  -1, -1 ];
+is_deeply rangeparse("Cn"),         [ 1,  -1, -1, -1 ];
+is_deeply rangeparse("R4C5"),       [ 4,  5,  4,  5 ];
+is_deeply rangeparse("RnCn"),       [ -1, -1, -1, -1 ];
+is_deeply rangeparse("R2:R3"),      [ 2,  1,  3,  -1 ];
+is_deeply rangeparse("C2:C3"),      [ 1,  2,  -1, 3 ];
+is_deeply rangeparse("R4:Rn"),      [ 4,  1,  -1, -1 ];
+is_deeply rangeparse("C5:Cn"),      [ 1,  5,  -1, -1 ];
+is_deeply rangeparse("R2C3:R4C5"),  [ 2,  3,  4,  5 ];
+is_deeply rangeparse("R4C3:R4C3"),  [ 4,  3,  4,  3 ];
+is_deeply rangeparse("R5C1:R5C9"),  [ 5,  1,  5,  9 ];
+is_deeply rangeparse("R2C6:R11C6"), [ 2,  6,  11, 6 ];
+is_deeply rangeparse("R3C1:RnC2"),  [ 3,  1,  -1, 2 ];
+is_deeply rangeparse("R5C4:R5Cn"),  [ 5,  4,  5,  -1 ];
+is_deeply rangeparse("RnC2:RnC5"),  [ -1, 2,  -1, 5 ];
+is_deeply rangeparse("R3C2:RnCn"),  [ 3,  2,  -1, -1 ];
+
+my $data = [ [ 1 .. 10 ], [ 'a' .. 'j' ], [ 11 .. 20 ], [ 51 .. 60 ] ];
+{
+  say "inside first anonymous block";
+  my $subset = getsubset( $data, "R3" );
+  print_aoa $subset;
+  is_deeply $subset, [ [ 11 .. 20 ] ];
+  print_aoa $subset;
+
+  $subset-&gt;[0][5] = 66;
+  print_aoa $subset;
+  say "exiting first anonymous block";
+}
+
+say "----------";
+print_aoa $data;
+say "----------";
+{
+  my $subset = getsubset( $data, "C2" );
+  print_aoa $subset;
+  is_deeply $subset, [ [2], ['b'], [12], [52] ];
+  $subset-&gt;[2][0] = 21;
+  print_aoa $subset;
+  say "exit 2nd";
+}
+say "----------";
+print_aoa $data;
+say "----------";
+{
+  my $subset = getsubset( $data, "R4C2" );
+  print_aoa $subset;
+  is_deeply $subset, [ [52] ];
+  $subset-&gt;[0][0] = 42;
+  say "end 3rd";
+}
+say "----------";
+print_aoa $data;
+say "----------";
+{
+  my $subset = getsubset( $data, "R2C5:R4C8" );
+  print_aoa $subset;
+  is_deeply $subset, [ [ 'e' .. 'h' ], [ 15, 66, 17, 18 ], [ 55, 56, 57, 58 ] ];
+  $subset-&gt;[1][2] += 5;
+  say "added 5 to a value";
+}
+say "----------";
+print_aoa $data;
+say "----------";
+{
+  my $subset = getsubset( $data, "C8:Cn" );
+  print_aoa $subset;
+  is_deeply $subset,
+    [ [ 8 .. 10 ], [ 'h' .. 'j' ], [ 18 .. 20 ], [ 58 .. 60 ] ];
+  $subset-&gt;[1][2] = 'X';
+  say "substitutes X";
+}
+say "----------";
+print_aoa $data;
+say "----------";
+{
+  my $subset = getsubset( $data, "R4" );
+  print_aoa $subset;
+  is_deeply $subset, [ [ 51, 42, 53, 54, 55, 56, 57, 58, 59, 60 ] ];
+  $subset-&gt;[0][0] = 'M';
+  say "substitutes M";
+}
+say "----------";
+print_aoa $data;
+say "----------";
+
+is_deeply $data,
+  [
+  [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ],
+  [qw/a b c  d  e  f  g  h  i  X/],
+  [ 11, 21, 13, 14, 15, 66, 22, 18, 19, 20 ],
+  [ 51, 42, 53, 54, 55, 56, 57, 58, 59, 60 ]
+  ];
+
+$ 
+&lt;/code&gt;&lt;/readmore&gt;
+&lt;p&gt;Q1) What is the purpose of using alias in this line&lt;/p&gt;
+&lt;code&gt;alias my $r = $$range[$i];&lt;/code&gt;
+&lt;p&gt;when it goes out of scope at the end of the loop?&lt;/p&gt;
+
+&lt;p&gt;I always enjoy reading your posts, [haukex], finding them challenging in the right way. I hope you don't resent me "embellishing" on your script.&lt;/p&gt;
+
+</doctext>
+<root_node field_name="root_node">1224734</root_node>
+<parent_node field_name="parent_node">1224746</parent_node>
+<thread id="1224734">
+<node id="1224735"><node id="1224737"/>
+</node>
+<node id="1224738"><node id="1224740"><node id="1224741"><node id="1224809"><node id="1224815"/>
+</node>
+</node>
+</node>
+<node id="1224808"/>
+</node>
+<node id="1224744"/>
+<node id="1224746"><node id="1224758"><node id="1224760"/>
+</node>
+</node>
+<node id="1224755"><node id="1224759"><node id="1224765"><node id="1224787"><node id="1224789"><node id="1224790"><node id="1224792"><node id="1224800"/>
+<node id="1224807"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1224943"><node id="1224959"><node id="1225075"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

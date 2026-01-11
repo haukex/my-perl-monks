@@ -1,0 +1,352 @@
+<html lang="en" style="color-scheme: light dark;">
+  <head>
+    <base href="https://perlmonks.org/"/>
+    <title>
+      What XML generators are currently available on PerlMonks?
+    </title>
+  </head>
+  <body>
+    <div id="header">
+      <div class="title">
+        What XML generators are currently available on PerlMonks?
+      </div>
+      <div class="subtitle">
+        by <span id="author">PublicAccess</span> on <span id="created">Apr 13, 2001 at 03:40&nbsp;UTC</span> (<a href="?replies=1;displaytype=print;node_id=72241">replies</a>)
+      </div>
+    </div>
+    <div id="url">
+        http://perlmonks.org?node_id=72241
+    </div>
+
+    <div id="content">
+      <!-- 
+2003-03-31 [pfaut]
+    1) timezone for sinceunixtime is GMT as pointed out by merlyn
+    2) node query xml generator seems to return information for any node type
+       so i removed 'improper node types are ignored'.
+    3) changed 'Site Documentation Clan' to 'SiteDocClan' in messaging
+       instructions at end.
+    4) changed 'back to' link to point to new PerlMonks FAQ.
+2003-09-20 [Louis_Wu] Added RDF feed to ticker list per theorbtwo's /msg request.
+2003-12-15 [Mr. Muskrat] Added basic info on ticker=yes
+2004-01-09 [BigLug] updated 'private message xml ticker': doesn't get archived msgs
+2004-01-21 [jdporter] added [New Chatterbox XML Ticker] entry.
+2004-02-11 [theorbtwo] removed brokenness from the RDF feed, noted update schedule
+2004-06-26 [demerphq] Added documentation for the XML view mode.
+    Updated 'private message xml ticker' to point to the announcement.
+    Info in that node should be directly inserted here.
+2004-08-09 [jdporter] Added new text for 'XP xml ticker' based on pmdev wiki message from demerphq.
+    Other format updates, including using <tt> for parameter strings.
+2004-08-10 [demerphq] Added pmdev:// viewcode links.
+2004-11-28 [jdporter] Added note about privmessages using EST
+2004-12-19 [demerphq] Added default parameter info, also mentioned the rss style of NN
+2005-02-09 [jdporter] Added entry for 'send chatter', at behest of theorbtwo
+2005-05-26 [demerphq] Updated 'send chatter' as it now supports XML
+2005-06-07 [demerphq] Updated 'XML node view' to reflect new nosend and nofields params,
+    and details about passthrough nodes.
+2005-06-09 [demerphq] Converted to sitedoclet.
+2005-08-02 [jdporter] Added ref to off-site RSS Feeds
+2005-11-10 [demerphq] Added NRXT. Im wondering if we need this changelog anymore? 
+-->
+
+<h1>What XML generators are currently available on PerlMonks?</h1>
+
+<p>
+There are several XML generators (called "tickers") on PerlMonks to help
+people who write scripts accessing information on PerlMonks.
+Here is a list of them, with some of the parameters documented.
+</p>
+
+<p>
+For tickers that require a login, either provide a login cookie or perform a
+login as part of the URL.   You may also add <tt>ticker=yes</tt> to the URL
+if you wish to stay out of the list of <a href="/index.pl?node_id=239623#users">Other Users</a>.
+(<tt>op=login;user=<i>username</i>;passwd=<i>password</i>;ticker=yes</tt>)
+</p>
+
+<p>
+As with all PerlMonks request URLs, parameters are semicolon separated. 
+</p>
+<p><b>Default Parameters:</b> Almost all nodes can be viewied directly in
+XML by using <i><tt class='inlinecode'>node_id=XXXX;displaytype=xml</tt></i>.
+Almost all XML feeds can have their XML modified by the 'xmlstyle' parameter.
+This parameter may be present multiple times and will respect 'flat' and
+'clean' as default types, some feeds may also provide additional types.
+</p>
+
+<dl>
+<dt><h3>Messaging Tickers</h3></dt>
+<dd>
+<ul>
+<a name="cb"></a>
+<!-- New Chatterbox XML Ticker -->
+<li> <a href="?node_id=207304">New Chatterbox XML Ticker</a> <!-- gNBI 207304 --><blockquote>
+Returns current chatterbox content. Defaults to presenting the 'new' 
+xml format, but you can use <tt><a href="?node_id=207304;xmlstyle=old">xmlstyle=old</a></tt> or <tt><a href="?node_id=207304;xmlstyle=modern">xmlstyle=modern</a></tt>
+to access the other styles. Other options are the <tt>limit=N</tt> and the
+<tt>timeout=S</tt> parameters, which can be used to control the number of
+records returned and the timeframe the records cover. S is a count of seconds
+where 0 &lt; S &lt;= 600. The <tt>fromid=ID</tt> parameter can be used to
+fetch all new records since a particular message (so long as they were posted
+within timeout seconds). IOW, the fromid automatically disables the limit
+parameter. It is recommended that new clients use the 'fromid' parameter
+(use the last message id from the previous fetch) and the <b>modern</b>
+style as this combination is the easiest work with and the lowest load
+on our servers. (With the modern style all timestamps are in GMT and the
+feed includes both parsed and unparsed data.) <b>Note:</b> if the user is
+logged in when doing a fetch the users /ignore settings are respected. 
+</blockquote></li>
+
+<a name="old_cb"></a>
+<!-- Chatterbox XML Ticker -->
+<li> <a href="?node_id=15834">chatterbox xml ticker</a> <!-- gNBI 15834 --><blockquote>
+This ticker is identical to <a href="?node_id=207304">New Chatterbox XML Ticker</a>, above, except that the default
+<tt>xmlstyle</tt> is 'old'.  As such, it is deprecated for new
+clients.
+</blockquote></li>
+
+<a name="private_msg"></a>
+<!-- Private Message XML Ticker -->
+<li> <a href="?node_id=15848">private message xml ticker</a> <!-- gNBI 15848 --><blockquote>
+Returns private and archived messages. 
+Supports <tt>since_id</tt>, <tt>prior_to</tt>, <tt>xmlstyle</tt>,
+<tt>archived</tt>, and <tt>max_recs</tt> parameters.
+Please see <a href="?node_id=379320">the change announcement</a> for details. 
+Requires a login and does not generate XML for <a href="?node=Anonymous%20Monk">Anonymous Monk</a>.
+Note that this ticker deals in EST, not GMT. (EST = GMT - 5.)
+</blockquote></li>
+
+<a name="sendchatter"></a>
+<!-- sendchatter -->
+<li> <a href="?node_id=227820">send chatter</a> <!-- gNBI 227820 --><blockquote>
+Call it with <tt>;op=message;message=<i>text of message</i></tt>.<br />
+It will return a plain text response: <tt>Chatter accepted.</tt><br />
+(If the request was malformed in some way, the response will be 
+<tt>No chatter to send.</tt>)<br />
+<a href="?node_id=227820">send chatter</a> can be asked to return XML using the normal displaytype=xml
+parameter, and respects the normal xmlstyle settings.  Of interest in the 
+response will be the <tt class='inlinecode'>send_chatter_result</tt> element which may contain 
+any one of <tt class='inlinecode'>error</tt>, <tt class='inlinecode'>response</tt> or <tt class='inlinecode'>accepted</tt> 
+elements which in turn should contain further HTML information about what has occurred. 
+Experimentation is recommended as this is a new feature that is subject to 
+possible change and improvement. (Until this notice is changed.)
+</blockquote></li>
+
+
+</ul>
+</dd>
+
+<dt><h3>User Nodes</h3></dt>
+<dd>
+<ul>
+
+<a name="user_nodes_info"></a>
+<!-- user nodes info xml generator  -->
+<li> <a href="?node_id=32704">user nodes info xml generator</a> <!-- gNBI 32704 --><blockquote>
+Returns title, date, reputation, etc. of a user's nodes.
+If the "reputation" field is not required,
+<tt>foruser=<i>userNameOrID</i></tt> can be used,
+which avoids requiring a login.
+Otherwise returns information about nodes by the logged-in user
+(or by <a href="?node=Anonymous%20Monk">Anonymous Monk</a> if no login). By default returns the oldest 500
+nodes written by the author in order of node_id. Possible options are <tt>offset=N</tt>,
+<tt>limit=N</tt> and <tt>order=(asc|desc)</tt>, where 0 &lt; N &lt;= 500.
+Also accepts the "fromid" parameter, which allows you to fetch new stuff 
+since an intitial pass. The idea being to build a local DB of this information
+to avoid refetching the full list every time.
+</blockquote></li> 
+
+<a name="noderep"></a>
+<!-- Noderep XML Ticker -->
+<li> <a href="?node_id=507310">noderep xml ticker</a> <!-- gNBI 507310 --><blockquote>
+Returns reputation information about recently voted on nodes owned by the logged in user. Returns those nodes voted on since the last fetch or the past 24 hours whichever is shorter. Will return an error code if called sooner than 10 minutes after the last fetch.  In order to make client development a little less frustrating for the first 50 fetches this restriction is overlooked, and during this time you may also use the parameter 'clear' to reset the last fetch time to 24 hours before.  After the 50th fetch the clear option is ineffective, and the minimum time between polls will be strictly enforced. Clients should use the data in the 'info' tag to control their fetch time as the minimum may change without warning. Read the <a href="?node_id=507312">announcement</a> for more detail.
+</blockquote></li>
+
+</ul>
+</dd>
+
+<dt><h3>Generic Tickers</h3></dt>
+<dd>
+<ul>
+
+<!-- xp xml ticker -->
+<a name="xp"></a>
+<li> User <a href="?node_id=16046">XP xml ticker</a> <!-- gNBI 16046 --><blockquote>
+Returns XP and other basic information for a requested user.
+If the "votesleft" field is not required, <tt>for_user=username</tt> or
+<tt>for_userid=<i>homenodeID</i></tt> can be used, which avoids requiring a
+login. Otherwise returns information for the logged-in user (or for
+Anonymous Monk if no login). If <tt>showlevels=1</tt> is given then the
+response set will include additional elements describing the levels in the
+<a href="?node_id=5938">Voting/Experience System</a> and if <tt>shownorm=1</tt> is given then the response will
+include the current "norm", <tt>showall=1</tt> includes both sets of
+additional info. Also accepts the <tt>xmlstyle=clean</tt> attribute.
+</blockquote></li>
+
+<a name="other_users"></a>
+<!-- other users xml ticker -->
+<li> <a href="?node_id=15851">other users xml ticker</a> <!-- gNBI 15851 --><blockquote>
+Returns list of users appearing in the 
+<a href="/index.pl?node_id=239623#users">Other Users</a> nodelet.
+No parameters. Does not require a login.
+</blockquote></li>
+
+<!-- newest nodes xml ticker -->
+<a name="nn"></a>
+<li> <a href="?node_id=30175">newest nodes xml generator</a> <!-- gNBI 30175 --><blockquote>
+Returns basic information about the most recent nodes and users.
+An optional parameter of <tt>sinceunixtime=<i>epochseconds</i></tt> or
+<tt>days=<i>decimal</i></tt> returns all nodes created since that date, up to
+a maximum of 3.0 days ago. (Default is <tt>days=0.25</tt> (i.e. 6 hours)).
+Does not require a login. Respects the xmlstyle parameter, with the additional 
+style of 'rss' which means the return is a valid RSS format and not the usual PM style list.
+Optional parameter of <tt>types=<i>typename,typename,...</i></tt>
+controls what types of nodes are returned. Default types are:
+<pre>
+	CUFP	note	poem	user	quest	snippet
+	perlnews		perlcraft
+	bookreview		obfuscated
+	sourcecode		monkdiscuss
+	modulereview		perlquestion
+	perltutorial		perlmeditation
+	categorized answer	categorized question
+</pre>
+See <a href="?node_id=472141">Perlmonks TagCloud</a> for an interesting application.<br />
+Users of this feed should be aware of <a href="?node_id=455143">rss feed corrupted by certain nodes</a>.
+</blockquote>
+</li>
+
+<!-- <li> [other users xml2 ticker]</li> -->
+
+<a name="node_query"></a>
+<!-- Node Query XML Generator -->
+<li> <a href="?node_id=37150">node query xml generator</a> <!-- gNBI 37150 --><blockquote>
+Returns information about specific node(s).  Required parameter is
+<tt>nodes=<i>nodeID&#091;,nodeID,nodeID,...&#093;</i></tt>,
+where each <tt><i>nodeID</i></tt> is a numeric node ID value.
+<!-- Improper node types are ignored (i.e., home node IDs). -->
+Does not require a login.
+<a href="?node_id=88228">request for another attribute of nodes in XML (node query, newest nodes, etc)</a> provides additional documentation.
+</blockquote></li>
+
+<a name="node_thread"></a>
+<!-- XML Node Thread -->
+<li> <a href="?node_id=180684">xml node thread</a> <!-- gNBI 180684 --><blockquote>
+Returns the node IDs of a thread, properly nested.
+Required parameter <tt>id=<i>nodeID</i></tt> specifies the node ID of the root
+of the tree of replies to be returned.
+</blockquote></li>
+
+<a name="scratchpad"></a>
+<!-- Scratchpad Viewer -->
+<li> <a href="?node_id=108949">scratch pad viewer</a> <!-- gNBI 108949 --><blockquote>
+<a href="?node_id=108949">scratch pad viewer</a> now acts as a proxy for displaying users' scratchpads
+(by name) in XML.  Please see <a href="?node_id=366368">Scratchpads Revisited and some XML Node View Changes</a> for details.
+</blockquote></li>
+
+<a name="xml_node_view"></a>
+<li> XML node view <!-- gNW handle_xml_view -->
+<blockquote>
+You may view nodes in XML by putting <tt>displaytype=xml</tt> in the request.
+The default XML is older and has various properties that make it easier to
+parse with a regex, but conversly harder to handle with normal XML manipulation
+tools.  This has been resolved by adding the <tt>xmlstlye=clean</tt> and
+<tt>xmlstyle=flat</tt> settings.  The former is cleaner (i.e. no added newlines
+inside content bearing XML tages) and the latter uses elements named after the
+actual DB columns used by PM instead of the 'data' elements the old style
+provides.  New clients and software should almost definitely use the
+<tt>xmlstyle=flat</tt> mode.<br /> 
+You may filter fields out with the 'nosend' parameter which may be present 
+multiple times and or contain a comma seperated list of field names to ignore.
+In addition the 'nofields' parameter may be provided to ignore most 'common' 
+fields (excluding id and type, but including things like 'doctext' etc.) This
+can be useful when accessing the XML of certain nodes which have "passthrough"
+behaviour so you don't have to download the non passthrough dataset. An example
+is node id 109, <a href="?node=login">login</a>, which has special behaviour included to help you tell 
+if you have logged in correctly.  All of the following nodes have special 
+xml behaviour over that of the normal XML view: <a href="?node_id=109">Login</a>, <a href="?node_id=9066">Best Nodes</a>, <a href="?node_id=9488">Worst Nodes</a>, <a href="?node_id=108949">scratch pad viewer</a>, <a href="?node_id=157620">Search internal code</a>, <a href="?node_id=328478">Selected Best Nodes</a>.
+</blockquote></li>
+
+<a name="navigator"></a>
+<li> <a href="?node_id=693598">node navigator ticker</a> <!-- gNBI 693598 --><blockquote>
+PerlMonks automation clients can use this to <a href="http://en.wikipedia.org/wiki/Special:Search?search=Web%20crawler">spider</a> the
+site in various ways.  Its concept of operation is just like that of the
+<a href="?node_id=590097">Node Navigator nodelet</a>: given a node (by ID), it reports the
+previous and next node, the previous and next of the same node type (e.g.
+Meditation), and the previous and next by the same author.  Optionally,
+it lets you request the previous/next node, relative to the given node,
+<i>of a different type or by a different author</i>.
+<br />
+The arguments are:
+<ul>
+<li> <tt class='inlinecode'>id</tt>= node id of the reference node </li>
+<li> <tt class='inlinecode'>nodetype</tt>= id of the desired node type (optional) </li>
+<li> <tt class='inlinecode'>author</tt>= id of the desired author (that is, their homenode id) (optional) </li>
+</ul>
+Information on the search, including the search parameters and any error conditions,
+is reported in the <tt class='inlinecode'>&lt;info&gt;</tt> "header" element of the result.
+</blockquote></li>
+
+<a name="headlines"></a>
+<li> <a href="/headlines.rdf">RDF feed</a><blockquote>
+An RDF feed for the Monastery.
+Please note that it's only updated once daily, at 11:57 GMT ( = UTC = unixtime).
+</blockquote></li>
+
+</ul>
+</dd>
+
+<dt><h3>Database Queries</h3></dt>
+<dd>
+<ul>
+
+<a name="now"></a>
+<li> <a href="?node_id=821113;displaytype=xml">now()</a> <!-- gNBI 821113 --><blockquote>
+Returns the current time of the database server; useful for comparing to various timestamps in other data.
+</blockquote></li>
+
+</ul>
+</dd>
+</dl>
+
+<a name="rss"></a>
+<h3>RSS Feeds</h3>
+
+<p>
+There are currently only a few RSS feeds generated on-site:
+<ul>
+<li> <a href="?node_id=30175;xmlstyle=rss">Newest Nodes RSS Generator</a> </li>
+<li> <a href="headlines.rdf">Headlines, updated daily</a> (RDF) </li>
+</ul>
+</p>
+
+<!-- These are all defunct: 
+<a name="offsite"></a>
+<p> 
+See also:
+<ul>
+<li> [id://561141] by [zigdon] </li>
+<li> [id://523903] by [jcwren] </li>
+<li> [id://434810] </li>
+</ul>
+-->
+
+<hr />
+<p>
+Please <tt><a href="?node=%2Fmsg%20SiteDocClan">/msg SiteDocClan</a></tt> with any corrections.
+</p>
+
+<hr /><i>Back to the <a href="?node=PerlMonks%20FAQ">PerlMonks FAQ</a></i>
+
+<!--
+args=(What XML generators are currently available on PerlMonks? sitedoclet -Passthrough <a href="?node_id=109">Login</a>, <a href="?node_id=9066">Best Nodes</a>, <a href="?node_id=9488">Worst Nodes</a>, <a href="?node_id=108949">scratch pad viewer</a>, <a href="?node_id=157620">Search internal code</a>, <a href="?node_id=328478">Selected Best Nodes</a>)
+NODE.title = What XML generators are currently available on PerlMonks?
+NODE.owner = 485628
+N.title = What XML generators are currently available on PerlMonks? sitedoclet
+N.owner = 17342
+-->
+
+
+    </div>
+  </body>
+</html>

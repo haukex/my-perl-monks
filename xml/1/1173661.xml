@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1173661" title="Getting the Behavior of the &quot;file open or die&quot; Pragma but with a Program Pause" created="2016-10-10 11:31:56" updated="2016-10-10 11:31:56" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1150057">perldigious</author>
+<doctext field_name="doctext">&lt;p&gt;Hello fellow Monasterians,&lt;/p&gt;
+
+&lt;p&gt;I'm asking for opinions on possibly better ways to do the following.&lt;/p&gt;
+
+&lt;p&gt;&lt;c&gt;
+open(my $Raw_fh, "&gt;", "Output_Raw.txt") or file_open_error_abort("Output_Raw.txt");
+
+# This subroutine will print a file open error message, including the filename passed to it, and terminate the program after an acknowledgement from the user.
+sub file_open_error_abort
+{
+    my $filename = $_[0];
+    say "Cannot open \"$filename\": $!.";
+    print "---Press Enter to quit---";
+    my $pause = &lt;STDIN&gt;;
+    exit;
+}
+&lt;/c&gt;&lt;/p&gt;
+
+&lt;p&gt;I'm really just forcing the script to pause so that the user can see the error message.  When I just used the standard file &lt;c&gt;open() or die&lt;/c&gt; pragma I would get frequent calls from people attempting to manually run scripts I'd written saying they weren't working (because the window would just close immediately), and the vast majority of the time it would simply be because they had an output file open in another program therefore denying permission for the script to write to it.  The &lt;c&gt;my $pause = &lt;STDIN&gt;;&lt;/c&gt; pause so they can read the message largely fixed this annoyance for me, but every time I use it I cringe a little and wonder if there isn't a better, perhaps more perlish way of doing this.&lt;/p&gt;
+
+&lt;p&gt;UPDATE BELOW:&lt;/p&gt;
+
+&lt;p&gt;Thanks [davido] and [tye], I'm going to take parts of both of your suggestions and go with the following.&lt;/p&gt;
+
+&lt;p&gt;&lt;c&gt;
+use utf8; use 5.022; use strict;
+
+say "BEGIN";
+
+open(my $out_fh, "&gt;", "permission_denied_output_file.txt") or die "Cannot open \"permission_denied_output_file.txt\": $!.";
+open(my $in_fh, "&lt;", "no_such_input_file.txt") or die "Cannot open \"no_such_input_file.txt\": $!.";
+
+say "END";
+
+END
+{
+    use ExtUtils::MakeMaker qw(prompt); # placing this use statement here for convenient copy-paste of this END block code to other scripts.
+    prompt('Please hit enter to exit.') if ($?); # stop and prompt for acknowledgement if program exits with a non-zero value.
+}
+&lt;/c&gt;&lt;/p&gt;
+
+&lt;p&gt;This code doesn't give me the same cringe as my kludge function did.  I tested it with an .exe generated via [http://search.cpan.org/~rschupp/PAR-Packer-1.035/lib/pp.pm|PAR::PACKER] and it works as expected for the two cases above (on my machine anyway) and doesn't cause any pause if there are no file open &lt;c&gt;die&lt;/c&gt;s.&lt;/p&gt;
+
+&lt;p&gt;Much appreciated, as always.&lt;/p&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1150057"&gt;
+I love it when things get difficult; after all, difficult pays the mortgage.  - Dr. Keith Whites&lt;br&gt;
+I hate it when things get difficult, so I'll just sell my house and rent cheap instead.  - perldigious
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1173661">
+<node id="1173663"><node id="1173668"/>
+</node>
+<node id="1173666"><node id="1173672"/>
+</node>
+<node id="1173680"><node id="1173682"><node id="1173685"/>
+</node>
+</node>
+</thread></node>

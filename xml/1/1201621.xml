@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201621" title="Re^2: Parsing HTML/XML with Regular Expressions" created="2017-10-18 17:11:26" updated="2017-10-18 17:11:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Impressive, thank you! As previously [id://1201490|threatened], and as per your comments, some notes on trying to break the regex solution ;-)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;using names that can be confused with the interesting ones: &lt;c&gt;&lt;divx&lt;/c&gt;, &lt;c&gt;aclass="data"&lt;/c&gt;, ...&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Good point, but without some trickery those would no longer validate properly as XHTML either.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;using XML namespaces liberally&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Indeed, I tested this and it does cause trouble: Unsurprisingly the regex and HTML parsers can't handle it, but a little more surprising is that [mod://Mojo::DOM] ignores namespaces and therefore fails with the following, and that also [mod://XML::Twig] has trouble with namespaces, or at least I haven't found the right options yet. Only the [mod://XML::LibXML] and [mod://XML::XSH2] solutions handle this correctly:&lt;/p&gt;
+&lt;c&gt;
+&lt;html xmlns:foo="http://www.w3.org/1999/xhtml"
+      xmlns:bar="http://www.perlmonks.com"
+...
+&lt;foo:div class="data" id="Zero" /&gt;
+&lt;bar:div class="data" id="Hi"&gt;there&lt;/bar:div&gt;
+&lt;/c&gt;
+&lt;p&gt;(&lt;i&gt;Update&lt;/i&gt;: Hmm, even the W3C Validator is having trouble with the namespaces...)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;using external entities&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;As noted [id://1201489|here], even some XML parsers seem to have trouble loading all the external entities. But even entities declared within the document should make life difficult for regexes:&lt;/p&gt;
+&lt;c&gt;
+&lt;!ENTITY atad "data"&gt;
+...
+&lt;div class="&amp;atad;" id="Zero" /&gt;
+&lt;/c&gt;
+&lt;p&gt;Only the [mod://XML::LibXML] and [mod://XML::Twig] solutions handle that correctly, everything else &lt;strike&gt;(including [mod://XML::XSH2])&lt;/strike&gt; fails.&lt;/p&gt;
+&lt;p&gt;Looks like [mod://XML::LibXML] &lt;small&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/small&gt; and [mod://XML::XSH2] &lt;small&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/small&gt; are the only ones left standing in this torture test so far! :-)&lt;/p&gt;
+&lt;p&gt;And one more thing: currently entities with hex values like &lt;c&gt;&amp;#xA0;&lt;/c&gt; aren't supported by the regex (although that's not too difficult to fix).&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Updated&lt;/i&gt; since the issue with [mod://XML::XSH2] was worked out further down in this thread.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1201438</root_node>
+<parent_node field_name="parent_node">1201514</parent_node>
+<thread id="1201438">
+<node id="1201443"><node id="1201454"><node id="1201483"><node id="1201489"/>
+</node>
+</node>
+</node>
+<node id="1201450"><node id="1201457"/>
+</node>
+<node id="1201473"><node id="1201488"><node id="1201493"><node id="1201521"><node id="1201551"/>
+</node>
+</node>
+<node id="1201633"><node id="1201689"><node id="1201709"/>
+<node id="1201716"><node id="1201740"><node id="1201776"/>
+<node id="1201933"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201490"><node id="1201529"><node id="1201612"/>
+</node>
+</node>
+</node>
+<node id="1201497"/>
+<node id="1201514"><node id="1201621"><node id="1201623"><node id="1201624"><node id="1201625"><node id="1201628"><node id="1201663"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201540"><node id="1201622"><node id="1201657"/>
+</node>
+</node>
+<node id="1201544"><node id="1201553"/>
+</node>
+<node id="1201545"><node id="1201554"/>
+</node>
+</thread></node>

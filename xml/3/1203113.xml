@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203113" title="Re: &quot;uninitialized value in subroutine exit&quot; warning from CGI.pm" created="2017-11-10 05:30:12" updated="2017-11-10 05:30:12" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Interesting, the only Google result for "uninitialized value in subroutine exit" (with quotes) is currently this thread. Here's an [id://1177642|SSCCE] to reproduce:&lt;/p&gt;
+&lt;c&gt;
+#!perl -w
+use warnings;
+use strict;
+use CGI;
+print "$] $CGI::VERSION\n";
+
+sub Foo::get_end_date { return undef }
+my $pa = bless {}, 'Foo';
+
+print CGI-&gt;new-&gt;textfield(-name=&gt;"end_date",
+	-default=&gt;substr($pa-&gt;get_end_date(),0,10)), "\n";
+
+__END__
+
+5.026000 4.36
+Use of uninitialized value in subroutine exit at .../CGI.pm line 472.
+&lt;input type="text" name="end_date"  /&gt;
+&lt;/c&gt;
+&lt;p&gt;And a minimal test case is&lt;/p&gt;
+&lt;c&gt;
+$ perl -wle 'sub x{@_} print x(substr undef,0)'
+&lt;/c&gt;
+&lt;p&gt;On Perl 5.6 thru 5.14, this dies with "&lt;c&gt;Use of uninitialized value in substr at -e line 1. Modification of a read-only value attempted at -e line 1.&lt;/c&gt;" (which also doesn't seem quite right to me), whereas on Perls 5.16 thru 5.26 it gives the warning "&lt;c&gt;Use of uninitialized value in subroutine exit at -e line 1.&lt;/c&gt;". A bisect shows the behavior changed with commit [https://perl5.git.perl.org/perl.git/commit/a74fb2cdc8f2121774cc6d2b5e9ddd01a96db467|a74fb2cdc8f2]. &lt;small&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/small&gt; I'm not an expert on the internals so I don't know if that commit is &lt;del&gt;a red herring, or if the change was an unintended side effect of that commit, there is another commit that explains the change better,&lt;/del&gt; or something else. &lt;ins&gt;See [id://1203124|replies].&lt;/ins&gt; &lt;small&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/small&gt; Perl v5.16 was also the release of the "[doc://perl5160delta#substr-lvalue-revamp|&lt;c&gt;substr&lt;/c&gt; lvalue revamp]", so I suspect a lot of code related to [doc://substr] was modified. The release notes also [doc://perl5160delta#The-substr-operator|say]:&lt;/p&gt;
+&lt;blockquote&gt;
+Passing a substring of a read-only value or a typeglob to a function (potential lvalue context) no longer causes an immediate "Can't coerce" or "Modification of a read-only value" error. That error occurs only if the passed value is assigned to.
+&lt;/blockquote&gt;
+&lt;p&gt;Like [LanX] I suspect the whole thing has to do with the fact that [doc://substr] is magical and returns a special lvalue that can modify the original string, in combination with the elements of [doc://@_] being aliases to the original parameters (&lt;small&gt;&lt;i&gt;Update before posting:&lt;/i&gt;&lt;/small&gt; as also said [id://1203106|here] by [dave_the_m], who has deep knowledge of the internals). &lt;small&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/small&gt; &lt;del&gt;I don't know what's going on at subroutine exit that would trigger the warning, but this issue may even be worth mentioning on [https://lists.perl.org/list/perl5-porters.html|P5P].&lt;/del&gt; &lt;ins&gt;See [id://1203124|replies].&lt;/ins&gt; &lt;small&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/small&gt; A few more comments on your code:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;You've already said that you changed your code to avoid this in the first place; my suggestion would be to add a method to your API next to &lt;c&gt;get_end_date&lt;/c&gt; (or a parameter to that method) that returns the 10-character string you want to display (I assume &lt;c&gt;YYYY-MM-DD&lt;/c&gt; or something similar), perhaps even using "proper" methods for date/time handling like the core [doc://Time::Piece], the powerful [mod://DateTime], or functions provided by the database.&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Perhaps you want to consider avoiding calling functions in the arguments to [mod://CGI] methods in general, there have even been some [http://blog.gerv.net/2014/10/new-class-of-vulnerability-in-perl-web-applications/|vulnerabilities] related to that, although I don't want to spread any FUD here - [doc://substr] will probably never return anything other than a single value, and your code may very well not use the affected pattern anywhere, I'm just pointing this out as something to keep in mind.&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Personally, I like to code defensively and sometimes will intentionally write &lt;c&gt;''.substr(...)&lt;/c&gt; to force the return value to be turned into a regular string if I suspect a risk of strange things happening with the lvalue.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;
+&lt;p&gt;I suspect you have &lt;c&gt;-w&lt;/c&gt; on your shebang line. Note that the Perl documentation includes a section "[doc://warnings#What's-wrong-with-*-w*-and-$^W]" (emphasis mine):&lt;/p&gt;
+&lt;blockquote&gt;
+Although very useful, the big problem with using -w on the command line to enable warnings is that it is all or nothing. Take the typical scenario when you are writing a Perl program. Parts of the code you will write yourself, but it's very likely that you will make use of pre-written Perl modules. &lt;u&gt;If you use the -w flag in this case, you end up enabling warnings in pieces of code that you haven't written.&lt;/u&gt; ...
+&lt;/blockquote&gt;
+&lt;p&gt;I recommend you just &lt;c&gt;use warnings;&lt;/c&gt; in your code and remove the &lt;c&gt;-w&lt;/c&gt; from the shebang line, there may be other places where using &lt;c&gt;-w&lt;/c&gt; (or [doc://$^W]) may trigger warnings in code you don't have control over.&lt;/p&gt;
+&lt;/li&gt;
+
+&lt;/ul&gt;</doctext>
+<root_node field_name="root_node">1203097</root_node>
+<parent_node field_name="parent_node">1203097</parent_node>
+<thread id="1203097">
+<node id="1203098"><node id="1203106"/>
+</node>
+<node id="1203099"/>
+<node id="1203113"><node id="1203123"/>
+<node id="1203124"><node id="1203125"/>
+</node>
+</node>
+</thread></node>

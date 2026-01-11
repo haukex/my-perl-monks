@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11131499" title="Re: Mojolicious url rewriting" created="2021-04-20 00:09:19" updated="2021-04-20 00:09:19" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;the URL '/user/1' should dynamically point and rewrite to '/user/John-H' in the browser address bar&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;By this I'm assuming you mean redirect?&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;and in link mouseover on the page&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This is a little bit unclear: if you're generating the pages yourself, then it would be easiest to just insert the correct link in the first place, like I did in the code below. Otherwise, if your HTML really contains a link like &lt;c&gt;&lt;a href="/user/1"&gt;&lt;/c&gt; and you want it to appear differently on mouseover, you'll have to solve that with JavaScript.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I have mapped id to value in the 'users' cache.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This seems a bit strange: a [mod://Mojo::Cache], being a cache, is transient, so I assume you're not actually using that as your data store in your actual application (and if you are, you shouldn't). You may have oversimplified your question a bit, since it's unclear what data source you're getting user IDs and names from, like a database? Anyway, I've just used a dummy.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;restrict the value of id to be an even number and less than 10.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That's done simply enough with a regex of &lt;c&gt;[02468]&lt;/c&gt;, but since I suspect in your actual application you probably don't want to limit it to numbers below 10, in the following code I just limited it to any even integer.&lt;/p&gt;
+&lt;p&gt;Also note that your description is not self-consistent. You want &lt;c&gt;/user/1&lt;/c&gt; to rewrite to &lt;c&gt;/user/John-H&lt;/c&gt;, but you also want to restrict IDs to even numbers. It's also unclear if/how you want to map &lt;c&gt;'John H'&lt;/c&gt; to &lt;c&gt;'John-H'&lt;/c&gt; and back, and how you want to handle &lt;c&gt;'/user/NonexistentUser'&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Anyway, here's my best guess:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+use Mojolicious::Lite -signatures;
+
+helper users =&gt; sub ($c) { # probably a database in reality?
+	state $users =&gt; { 
+		2 =&gt; 'John H',
+		4 =&gt; 'Sam A',
+	} };
+
+get '/' =&gt; sub ($c) { $c-&gt;render(template =&gt; 'index') } =&gt; 'index';
+
+get '/user/:id' =&gt; [id =&gt; qr/\d*[02468]/] =&gt; sub ($c) {
+	my $id = $c-&gt;param('id');
+	if ( exists app-&gt;users-&gt;{$id} )
+		{ $c-&gt;redirect_to('user_by_name', name=&gt;app-&gt;users-&gt;{$id} ) }
+	else { $c-&gt;reply-&gt;not_found }
+} =&gt; 'user_by_id';
+
+get '/user/:name' =&gt; sub ($c) {
+	# a very inefficient grep here, don't use this in production!!
+	if ( grep { $_ eq $c-&gt;param('name') } values app-&gt;users-&gt;%* )
+		{ $c-&gt;render( template=&gt;'user' ) }
+	else { $c-&gt;reply-&gt;not_found }
+} =&gt; 'user_by_name';
+
+app-&gt;start;
+
+__DATA__
+
+@@ layouts/main.html.ep
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+%= content
+&lt;/body&gt;
+&lt;/html&gt;
+
+@@ index.html.ep
+% layout 'main', title =&gt; 'Hello, World!';
+&lt;p&gt;User List&lt;/p&gt;
+&lt;ul&gt;
+% for my $id (sort {$a&lt;=&gt;$b} keys users-&gt;%*) {
+	&lt;li&gt;
+		%= link_to "User ID $id" =&gt; user_by_id =&gt; { id =&gt; $id }
+		%= link_to users-&gt;{$id} =&gt; user_by_name=&gt;{name=&gt;users-&gt;{$id}}
+	&lt;/li&gt;
+% }
+&lt;/ul&gt;
+
+@@ user.html.ep
+% layout 'main', title =&gt; 'User page';
+&lt;p&gt;This is &lt;%= $name %&gt;'s Page&lt;/p&gt;
+%= link_to Home =&gt; 'index';
+&lt;/c&gt;
+&lt;p&gt;Tests:&lt;/p&gt;
+&lt;c&gt;
+use Mojo::Base -strict, -signatures;
+use Test::Mojo;
+use Test::More;
+use Mojo::File;
+use Mojo::Util qw/url_escape/;
+
+my $t = Test::Mojo-&gt;new( Mojo::File-&gt;new('/path/to/app.pl') );
+
+$t-&gt;get_ok('/')-&gt;status_is(200)-&gt;content_like(qr/\bUser List\b/);
+
+$t-&gt;get_ok('/user/1')-&gt;status_is(404);
+$t-&gt;get_ok('/user/2')
+	-&gt;header_is(location =&gt; '/user/' . url_escape 'John H');
+$t-&gt;get_ok('/user/3')-&gt;status_is(404);
+$t-&gt;get_ok('/user/4')
+	-&gt;header_is(location =&gt; '/user/' . url_escape 'Sam A');
+$t-&gt;get_ok('/user/5')-&gt;status_is(404);
+$t-&gt;get_ok('/user/6')-&gt;status_is(404);
+
+$t-&gt;get_ok('/user/2/') # trailing slash
+	-&gt;header_is(location =&gt; '/user/' . url_escape 'John H');
+
+$t-&gt;get_ok('/user/John H')-&gt;status_is(200)
+	-&gt;content_like(qr/\bThis is John H's Page\b/);
+$t-&gt;get_ok('/user/Sam A')-&gt;status_is(200)
+	-&gt;content_like(qr/\bThis is Sam A's Page\b/);
+$t-&gt;get_ok('/user/John Doe')-&gt;status_is(404);
+
+done_testing;
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor typo fixes in text.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11131488</root_node>
+<parent_node field_name="parent_node">11131488</parent_node>
+<thread id="11131488">
+<node id="11131524"/>
+<node id="11131499"/>
+<node id="11131494"/>
+<node id="11131526"/>
+</thread></node>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227704" title="Re: Perl program to search files" created="2018-12-26 05:07:53" updated="2018-12-26 05:07:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;if you see some obvious bugs in my program, would you please tell me?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Unfortunately your algorithm suffers from an issue: when the text to be found happens to be split across two buffers, the match is not found. To demonstrate, try setting &lt;c&gt;$BUFF_SIZE = 4096&lt;/c&gt;, and then generating a test file with e.g. &lt;c&gt;perl -e 'print "x"x4095, ".\nThis is", "x"x5000' &gt;test.txt&lt;/c&gt; - the match won't be found, but if you either set &lt;c&gt;$BUFF_SIZE = 4095&lt;/c&gt;, or change the &lt;c&gt;"x"x4095&lt;/c&gt; to &lt;c&gt;"x"x4096&lt;/c&gt;, the match is found. A typical solution to this kind of problem would be to implement a sliding window (&lt;small&gt;&lt;i&gt;Update 2:&lt;/i&gt;&lt;/small&gt; see reply by [vr] below), making sure that the buffers are large enough so that the search string can be contained in them. Alternatively, if the files are always large enough to fit into memory, of course it's possible to just load the entire file into memory at once. You might want to have a look at these nodes, for example: [id://128925] and [id://1115829].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Can you make suggestions on how I could improve this program or what I could have done to make this better?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;As [Athanasius] already [id://1227700|mentioned], there are some things you're re-implementing. This is fine as a learning exercise, but I think it also helps to be aware of these kinds of things. It also gives you something to test your own implementations against (which I would recommend doing).&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;sub CountChars&lt;/c&gt;: [doc://perlfaq4#How-can-I-count-the-number-of-occurrences-of-a-substring-within-a-string?]&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;sub RSPACE&lt;/c&gt; and &lt;c&gt;sub PRINT&lt;/c&gt;: [doc://sprintf]/[doc://printf] (as mentioned by [Athanasius])&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;sub AddSeparator&lt;/c&gt; and &lt;c&gt;sub FormatPath&lt;/c&gt;: the core module [doc://File::Spec], in this case especially &lt;c&gt;catdir&lt;/c&gt; and &lt;c&gt;catfile&lt;/c&gt; (I prefer [doc://File::Spec::Functions]; there's also the CPAN module [mod://Path::Class])&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;sub isMatch&lt;/c&gt;: maybe [mod://Text::Glob] (there are a few others on CPAN)&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;sub CheckDIR&lt;/c&gt;: the core module [doc://File::Find] (or maybe [mod://File::Find::Rule] from CPAN)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In addition, I agree that variable names in all uppercase should be reserved for constants, IMO including variables that get set once at the top of the program and aren't supposed to be changed, so e.g. IMO &lt;c&gt;$LINUX&lt;/c&gt; is fine, but e.g. &lt;c&gt;$START&lt;/c&gt; is IMO not a good choice. Also I agree that magic numbers aren't good, although I would take it a step further, e.g. &lt;c&gt;my $ASTERISK = ord("*");&lt;/c&gt;, &lt;c&gt;my $DOT = ord(".");&lt;/c&gt;, etc. Some more descriptive variable names would be helpful in understanding the code as well, e.g. &lt;c&gt;sub CountChars&lt;/c&gt; is all one-letter variables.&lt;/p&gt;
+&lt;p&gt;A couple of other thoughts/issues:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;my $LINUX = (index(uc($^O), 'WIN') &lt; 0) ? 1 : 0;&lt;/c&gt; - this will misdetect &lt;c&gt;darwin&lt;/c&gt; as Windows (or rather, "not Linux", despite it being a *NIX OS), and there are lots of [doc://perlport#PLATFORMS|other OSes] that are neither Linux nor Windows. You might just want to stick to checking against &lt;c&gt;"MSWin32"&lt;/c&gt; - but as I said above really the best solution here IMO is to leave the handling of filenames to a module.&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;opendir(my $DIR, $PATH) or return;&lt;/c&gt; and &lt;c&gt;open $F, "&lt;$FULLNAME" or return;&lt;/c&gt; - you might want to consider reporting this to the user instead of silently skipping files/dirs.&lt;/li&gt;
+&lt;li&gt;You might want to have a look at [mod://Getopt::Long] to be able to handle command-line arguments instead of editing the variables in the source.&lt;/li&gt;
+&lt;li&gt;&lt;i&gt;Update:&lt;/i&gt; Instead of a long list of globs in &lt;c&gt;@INCLUDE&lt;/c&gt;, you could build a single regex to match against the filenames. See e.g. [id://1179840].&lt;/li&gt;
+&lt;/ul&gt;</doctext>
+<root_node field_name="root_node">1227699</root_node>
+<parent_node field_name="parent_node">1227699</parent_node>
+<thread id="1227699">
+<node id="1227700"><node id="1227783"/>
+<node id="1227784"><node id="1227798"/>
+</node>
+</node>
+<node id="1227704"><node id="1227708"><node id="1227709"/>
+</node>
+</node>
+<node id="1227788"/>
+</thread></node>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11127782" title="Re^7: Comparing a value to a list of numbers (updated)" created="2021-02-01 20:38:59" updated="2021-02-01 20:38:59" _doctext_mode="lenient"><type id="11">note</type>
+<author id="524150">syphilis</author>
+<doctext field_name="doctext">&lt;I&gt;Does the lower range end at 0.9, 0.99, 0.999, 0.9999, ...?&lt;/I&gt;&lt;br&gt;&lt;br&gt;
+Sounds like you would perhaps be looking for a "nextbelow" implementation (and "nextabove" at the other end of the range).
+&lt;br&gt;It's not implemented in core perl, and I'm unaware of any such implementations in any of the core modules, too.
+&lt;br&gt;My own Math::MPFR provides them, and I can also see them in Zefram's pure perl Data::Float module as (nextup/nextdown/nextafter).
+&lt;c&gt;
+use strict;
+use warnings;
+use Config;
+use Data::Float;
+
+# Set $prec to the required value
+# for "%.*e" formatting for the
+# nvtype that we have.
+
+my $prec = 35;  # __float128
+
+# Amend $prec's value as needed
+if( $Config{nvsize} == 8 ) { $prec = 16 }
+elsif( $Config{nvtype} eq 'long double' ) {
+  $prec = 20
+     unless( $Config{longdblkind} == 1 ||
+             $Config{longdblkind} == 2 );
+}
+
+my $val  = 1.0;
+my $down = Data::Float::nextdown( $val );
+my $up   = Data::Float::nextup  ( $val );
+
+printf "%.${prec}e %a\n", $down, $down;
+printf "%.${prec}e %a\n", $val,  $val;
+printf "%.${prec}e %a\n", $up,   $up;
+&lt;/c&gt;
+If nvtype is double, it outputs:
+&lt;c&gt;
+9.9999999999999989e-01 0x1.fffffffffffffp-1
+1.0000000000000000e+00 0x1p+0
+1.0000000000000002e+00 0x1.0000000000001p+0
+&lt;/c&gt;
+Cheers,&lt;br&gt;Rob
+
+
+</doctext>
+<root_node field_name="root_node">11127640</root_node>
+<parent_node field_name="parent_node">11127757</parent_node>
+<thread id="11127640">
+<node id="11127643"/>
+<node id="11127644"/>
+<node id="11127646"><node id="11127673"><node id="11127675"/>
+</node>
+</node>
+<node id="11127647"/>
+<node id="11127648"><node id="11127650"><node id="11127663"/>
+</node>
+</node>
+<node id="11127649"/>
+<node id="11127651"><node id="11127652"/>
+<node id="11127674"/>
+</node>
+<node id="11127656"><node id="11127666"/>
+</node>
+<node id="11127657"><node id="11127659"><node id="11127668"><node id="11127696"><node id="11127729"><node id="11127732"/>
+</node>
+</node>
+<node id="11127724"/>
+</node>
+</node>
+</node>
+<node id="11127703"><node id="11127707"><node id="11127720"><node id="11127743"><node id="11127744"><node id="11127757"><node id="11127758"/>
+<node id="11127782"><node id="11127849"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11127719"><node id="11127726"><node id="11127735"/>
+</node>
+</node>
+</node>
+<node id="11127725"/>
+<node id="11127789"/>
+</thread></node>

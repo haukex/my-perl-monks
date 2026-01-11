@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11115461" title="Re: Do I need/want to close __DATA__?" created="2020-04-13 10:57:14" updated="2020-04-13 10:57:14" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;As per [doc://perldata#Special-Literals]:&lt;/p&gt;
+&lt;blockquote&gt;The program should close DATA when it is done reading from it. (Leaving it open leaks filehandles if the module is reloaded for any reason, so it's a safer practice to close it.)&lt;/blockquote&gt;
+&lt;p&gt;So yes, any module reading from its &lt;c&gt;DATA&lt;/c&gt; should close it. BTW, it's not [mod://Geography::Countries::LatLong] at fault here, it doesn't have any &lt;c&gt;__DATA__&lt;/c&gt; sections, it's its parent, [mod://Geography::Countries]. A bug/patch could be filed with that module, although it appears unmaintained.&lt;/p&gt;
+&lt;p&gt;As for the general feature of appending the information to the error/warning messages, personally, I think it's a useful feature. I believe what it's using is the internal "last filehandle read", the same that [doc://eof] and [doc://tell] use when called without arguments, and that [doc://$.] uses; see e.g. [doc://perl5160delta#Filehandle%2c-last-accessed]. Although not extra pretty, and maybe I'm missing an easier way to do this, this works:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+sub resetfh { eof do { local *HANDLE; *HANDLE } }
+
+my @x = &lt;DATA&gt;;
+resetfh;
+warn "test";
+
+__DATA__
+1
+2
+3
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11115445</root_node>
+<parent_node field_name="parent_node">11115445</parent_node>
+<thread id="11115445">
+<node id="11115447"><node id="11115448"/>
+<node id="11115449"><node id="11115488"/>
+<node id="11115489"/>
+</node>
+</node>
+<node id="11115452"><node id="11115458"/>
+</node>
+<node id="11115455"><node id="11115496"/>
+</node>
+<node id="11115461"><node id="11115462"><node id="11115475"><node id="11115482"><node id="11115485"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11115480"/>
+<node id="11115503"><node id="11115508"><node id="11115550"/>
+</node>
+<node id="11115517"/>
+</node>
+</thread></node>

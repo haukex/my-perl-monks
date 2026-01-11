@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11114673" title="Re: Get Excel column name for given decimal number" created="2020-03-26 09:04:24" updated="2020-03-26 09:04:24" _doctext_mode="lenient"><type id="11">note</type>
+<author id="200365">Tux</author>
+<doctext field_name="doctext">&lt;p&gt;Hmm, that is a bit over-complicated.&lt;/p&gt;
+&lt;p&gt;See [https://github.com/Tux/Spreadsheet-Read/blob/master/Read.pm#L238|Spreadsheet::Read::&lt;c&gt;cell2cr&lt;/c&gt;]:&lt;/p&gt;
+&lt;code&gt;
+# cell2cr ("D18") =&gt; (4, 18)
+sub cell2cr {
+    ref $_[0] eq __PACKAGE__ and shift;
+    my ($cc, $r) = (uc ($_[0]||"") =~ m/^([A-Z]+)([0-9]+)$/) or return (0, 0);
+    my $c = 0;
+    while ($cc =~ s/^([A-Z])//) {
+        $c = 26 * $c + 1 + ord ($1) - ord ("A");
+        }
+    ($c, $r);
+    } # cell2cr
+&lt;/code&gt;
+&lt;p&gt;&lt;b&gt;update&lt;/b&gt;:&lt;/p&gt;
+&lt;p&gt;[haukex] is correct, as always. Sorry for not reading more closely.&lt;/p&gt;
+&lt;p&gt;Look at [https://github.com/Tux/Spreadsheet-Read/blob/master/Read.pm#L213|&lt;c&gt;col2label&lt;/c&gt;] instead:&lt;/p&gt;
+&lt;code&gt;
+# col2label (4) =&gt; "D"
+sub col2label {
+    ref $_[0] eq __PACKAGE__ and shift;
+    my $c = shift;
+    defined $c &amp;&amp; $c &gt; 0 or return "";
+    my $cell = "";
+    while ($c) {
+        use integer;
+
+        substr $cell, 0, 0, chr (--$c % 26 + ord "A");
+        $c /= 26;
+        }
+    $cell;
+    } # col2label
+&lt;/code&gt;
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-200365"&gt;
+&lt;br /&gt;
+Enjoy, Have FUN! H.Merijn
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11114672</root_node>
+<parent_node field_name="parent_node">11114672</parent_node>
+<thread id="11114672">
+<node id="11114673"><node id="11114674"/>
+<node id="11114676"/>
+</node>
+<node id="11114689"/>
+<node id="11114715"><node id="11114752"><node id="11114759"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198003" title="deconstructing tinydns(djbdns) SRV records" created="2017-08-25 05:43:02" updated="2017-08-25 05:43:02" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1197998">0xdeadbad</author>
+<doctext field_name="doctext">&lt;p&gt;
+I need to deconstruct tinydns/djbdns SRV records to build zone files for Bind.&lt;br&gt;
+The records are created by our inhouse management system and stored in LDAP. &lt;br&gt;
+&lt;/p&gt;
+&lt;br&gt;
+From LDAP I get:&lt;br&gt;
+&lt;code&gt;\000\012\000\144\023\304\003pbx\007example\003com\000:3600 &lt;/code&gt;&lt;br&gt;
+which is a mixture of octal and ascii and decimal. It is not a real string so split() et al will not be of use. (I think)
+&lt;br&gt;
+&lt;p&gt;
+It breaks down as&lt;br&gt;
+&lt;code&gt;\000\012&lt;/code&gt;=SRV priority where the first number is a multiple of 256 and the second is the remainder so \000\012 = (0*256) + 10 = &lt;b&gt;10&lt;/b&gt;&lt;br&gt;
+&lt;code&gt;\000\144&lt;/code&gt;=SRV weight, as before \000\144 = (0*256) + 100 = &lt;b&gt;100&lt;/b&gt; &lt;br&gt;
+&lt;code&gt;\023\304&lt;/code&gt;=SRV port,  \023\304 = (19*256) + 196 = &lt;b&gt;5060&lt;/b&gt; &lt;br&gt;
+&lt;code&gt;\003pbx\007example\003com\000&lt;/code&gt; = SRV target,  split on dots with the octal denoting how many chars in each part: &lt;b&gt;pbx.example.com.&lt;/b&gt; &lt;br&gt; 
+The final part after ":" is the TTL in decimal.  &lt;b&gt;3600&lt;/b&gt;&lt;bR&gt;
+&lt;/p&gt;
+
+Any advice on extracting the various fields from the LDAP reply would be greatly appreciated. Just converting the reply to ascii string would be a start. &lt;br&gt;
+I'm not a real coder as you can probably guess, so please bear that in mind.. 
+
+many thanks.
+
+</doctext>
+<thread id="1198003">
+<node id="1198005"><node id="1198008"><node id="1198009"/>
+</node>
+<node id="1198010"/>
+</node>
+<node id="1198007"><node id="1198011"/>
+</node>
+<node id="1198012"/>
+</thread></node>

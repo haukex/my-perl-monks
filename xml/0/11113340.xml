@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11113340" title="Re^3: Mojo database routing" created="2020-02-23 04:10:56" updated="2020-02-23 04:10:56" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Seems Mojo is pretty different from CGI in passing form parameters with GET.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Not really, [mod://CGI].pm also has an OO interface with a &lt;c&gt;-&gt;param&lt;/c&gt; method. Everything else is different, though &lt;c&gt;:-)&lt;/c&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;How to make make it do partial matching (and possibly case insensitive)&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That's more of an SQL question; it will depend on the database you're using. The most important thing is that if you build SQL queries yourself, you need to be &lt;i&gt;very&lt;/i&gt; careful to quote everything correctly, usually using either placeholders or [mod://DBI]'s &lt;c&gt;-&gt;quote&lt;/c&gt; method, which in my code above you can access via &lt;c&gt;$c-&gt;sqlite-&gt;db-&gt;dbh-&gt;quote(...)&lt;/c&gt; (or &lt;c&gt;app-&gt;sqlite-&gt;...&lt;/c&gt;).&lt;/p&gt;
+&lt;p&gt;SQLite and [mod://DBD::SQLite] supports an extension called [https://www.sqlite.org/fts5.html|FTS5] that might be helpful to you. For example, if in my code you replace the &lt;c&gt;CREATE TABLE&lt;/c&gt; with this:&lt;/p&gt;
+&lt;c&gt;
+CREATE VIRTUAL TABLE contacts USING fts5(name, department);
+INSERT INTO contacts (name,department) VALUES ('John Doe','Perl');
+INSERT INTO contacts (name,department) VALUES ('Larry Wall','Perl');
+INSERT INTO contacts (name,department) VALUES ('Gloria Wall','Perl');
+&lt;/c&gt;
+&lt;p&gt;And the &lt;c&gt;$c-&gt;stash( rows =&gt; ...&lt;/c&gt; value with this:&lt;/p&gt;
+&lt;c&gt;
+$c-&gt;sqlite-&gt;db-&gt;query(
+  q{ SELECT rowid,name,department FROM contacts WHERE name MATCH ? },
+  $c-&gt;stash('query') )-&gt;arrays );
+&lt;/c&gt;
+&lt;p&gt;Then you get the full power of the [https://www.sqlite.org/fts5.html|FTS5] extension, e.g. your query can be &lt;c&gt;john OR larry&lt;/c&gt;, &lt;c&gt;g*&lt;/c&gt;, etc. and it'll just work.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Edit:&lt;/i&gt; Typo fix.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11112802</root_node>
+<parent_node field_name="parent_node">11113325</parent_node>
+<thread id="11112802">
+<node id="11112820"><node id="11113325"><node id="11113340"/>
+</node>
+</node>
+</thread></node>

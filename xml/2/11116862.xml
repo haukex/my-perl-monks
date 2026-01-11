@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116862" title="Re: Regex with Backslashes" created="2020-05-17 11:35:02" updated="2020-05-17 11:35:02" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I'm having trouble understanding your inputs because I'm not sure how many backslashes the strings actually contain, for example in &lt;c&gt;'1,This is a problem-&gt;\\,B,2'&lt;/c&gt; this string actually contains only one backslash, where you probably meant two. And in &lt;c&gt;my $regex = '(?&lt;!\\\),';&lt;/c&gt;, the string actually only contains two backslashes because &lt;c&gt;'\\'&lt;/c&gt; becomes &lt;c&gt;\&lt;/c&gt; but &lt;c&gt;'\)'&lt;/c&gt; remains as &lt;c&gt;\)&lt;/c&gt; (see [doc://perlop#Quote-Like-Operators]).&lt;/p&gt;
+&lt;p&gt;My suggestion is to use double quotes for strings, since those will &lt;i&gt;force&lt;/i&gt; you to escape all backslashes that you want to appear in the string, and so it'll be less confusing. For regexes, definitely use &lt;c&gt;qr//&lt;/c&gt; instead of quotes (that's the reason for your &lt;i&gt;"Unrecognized escape \Q passed through in regex"&lt;/i&gt; problem). For looking at the strings you've got and showing them to us, use either [doc://Data::Dumper] with &lt;c&gt;$Data::Dumper::Useqq=1;&lt;/c&gt;, or [mod://Data::Dump].&lt;/p&gt;
+&lt;p&gt;Your question is also inconsistent in that you say &lt;i&gt;"2 character hex codes '\x2B'"&lt;/i&gt; but then show &lt;c&gt;'\0x2B'&lt;/c&gt; in the string.&lt;/p&gt;
+&lt;p&gt;Anyway, one approach to this task is [mod://Text::CSV], like what [jo37] [id://11116859|showed]. However, if I understand your requirement &lt;i&gt;"2 character hex codes"&lt;/i&gt; correctly, does this mean that your input string could be &lt;c&gt;"1,Something\\,\\\\text\\\\text\\x2B\\\\,X,99"&lt;/c&gt; and you want the output to be &lt;c&gt;("1","Something,\\text\\text+\\","X","99")&lt;/c&gt;? (Next time please show your expected output as well!)&lt;/p&gt;
+&lt;p&gt;Although if we're lucky, [Tux] might enlighten us to the correct options for [mod://Text::CSV_XS] to handle this case, in the meantime one possible solution is to write a somewhat-decent parser to your specification.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+sub parse {
+	local $_ = shift;
+	my @out = ('');
+	pos=undef;
+	while (1) {
+		   if ( m{\G , }xgc ) { push @out, '' }
+		elsif ( m{\G \\x([0-9a-fA-F]{2}) }xgc )
+			{ $out[-1] .= chr hex $1 }
+		elsif ( m{\G (?| \\([,\\]) | ([^,\\]+) ) }xgc )
+			{ $out[-1] .= $1 }
+		else { last }
+	}
+	pos==length or die "parse of '$_' failed at pos ".pos;
+	return @out;
+}
+
+use Test::More tests=&gt;1;
+my @o = parse "1,Something\\,\\\\text\\\\text\\x2B\\\\,X,99";
+is_deeply \@o, ["1","Something,\\text\\text+\\","X","99"];
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11116857</root_node>
+<parent_node field_name="parent_node">11116857</parent_node>
+<thread id="11116857">
+<node id="11116859"><node id="11116860"><node id="11116861"/>
+</node>
+</node>
+<node id="11116862"><node id="11116867"><node id="11116874"/>
+</node>
+</node>
+<node id="11116865"><node id="11116868"><node id="11116869"><node id="11116873"><node id="11116876"><node id="11116878"><node id="11116880"><node id="11116900"/>
+</node>
+</node>
+</node>
+<node id="11116882"><node id="11116912"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11116877"><node id="11116910"><node id="11116911"><node id="11116913"/>
+</node>
+<node id="11116914"><node id="11116916"><node id="11116917"><node id="11116918"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

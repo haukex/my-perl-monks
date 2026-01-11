@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1196431" title="Re: constant vector (updated x2)" created="2017-08-01 07:07:55" updated="2017-08-01 07:07:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Either replace&lt;/p&gt;
+&lt;c&gt;
+use constant D50 =&gt; [96.42, 100, 82.49];
+&lt;/c&gt;
+&lt;p&gt;with&lt;/p&gt;
+&lt;c&gt;
+sub D50 () { [96.42, 100, 82.49] }
+&lt;/c&gt;
+&lt;p&gt;because this will &lt;strike&gt;do the same thing as [doc://constant] (it creates an [doc://perlsub#Constant-Functions|inlineable sub]), but the sub will&lt;/strike&gt; return a &lt;i&gt;new&lt;/i&gt; arrayref every time, or do this:&lt;/p&gt;
+&lt;c&gt;
+use Readonly;
+Readonly::Array my @D50 =&gt; (96.42, 100, 82.49);
+print $D50[0], "\n";
+$D50[0]++;
+__END__
+96.42
+Modification of a read-only value attempted at ...
+&lt;/c&gt;
+&lt;p&gt;But I've also had some strange problems with [mod://Readonly] (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; [https://rt.cpan.org/Public/Bug/Display.html?id=64814|link]&lt;/small&gt;), so my approach nowadays to constants is simpler: make their names uppercase and assume people know this convention. (But I did need some time to get used to this idea, since I do tend to code defensively.)&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Sorry, [doc://B::Deparse] seems to say that I was incorrect and the &lt;c&gt;sub&lt;/c&gt; I showed does not seem to get inlined. &lt;strike&gt;Will update when I know more.&lt;/strike&gt; &lt;b&gt;Update 2:&lt;/b&gt; So testing seems to show the equivalent code to what [doc://constant] is doing (with the same problem that the array may be modified!) is this:&lt;/p&gt;
+&lt;c&gt;
+BEGIN {
+	my $x = [96.42, 100, 82.49];
+	*D50 = sub () { $x };
+}
+&lt;/c&gt;
+&lt;p&gt;While other forms, such as simply &lt;c&gt;my $x = [96.42, 100, 82.49]; sub D50 () { $x }&lt;/c&gt;, don't get inlined. And I believe the reason &lt;c&gt;sub D50 () { [96.42, 100, 82.49] }&lt;/c&gt; doesn't get inlined is exactly what I said above: it constructs a new arrayref on each call, thereby it is not constant. I made this mistake because of the equivalence of &lt;c&gt;use constant FOO =&gt; "bar";&lt;/c&gt; and &lt;c&gt;sub FOO () { "bar" }&lt;/c&gt;. As [LanX] points out in the reply, my first suggestion will still work, but just not be as fast as an inlined sub. As another possible alternative, note that [doc://constant] also allows list constants:&lt;/p&gt;
+&lt;c&gt;
+use constant D50 =&gt; (96.42, 100, 82.49);
+&lt;/c&gt;
+&lt;p&gt;Which you then have to access like so: &lt;c&gt;(D50)[0]&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update 3:&lt;/i&gt; While it's fairly well known that the output of [doc://B::Deparse] can be inaccurate, I think it's still noteworthy that it is misleading in this case in particular.&lt;/p&gt;
+&lt;c&gt;
+$ perl -MO=Deparse -e 'use constant X=&gt;[1]; print X-&gt;[0]++; print X-&gt;[0]++'
+use constant ('X', [1]);
+print [1]-&gt;[0]++;
+print [1]-&gt;[0]++;
+$ perl -le 'use constant X=&gt;[1]; print X-&gt;[0]++; print X-&gt;[0]++'
+1
+2
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1196430</root_node>
+<parent_node field_name="parent_node">1196430</parent_node>
+<thread id="1196430">
+<node id="1196431"><node id="1196435"/>
+</node>
+<node id="1196433"><node id="1196438"><node id="1196439"/>
+<node id="1196442"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1111054" title="Print lines based on matching words" created="2014-12-22 12:41:40" updated="2014-12-22 12:41:40" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1098998">ArifS</author>
+<doctext field_name="doctext">Print lines based on matching words. 
+
+This is what I have so far.
+
+&lt;code&gt;
+while (&lt;DATA&gt;) {
+/object-group\s/;
+# print the next word followed by object-group
+my @after=split(/\s/,$');
+my @array = $after[0];
+
+# unique array NOT working......
+my @unique = do { my %seen; grep { !$seen{$_}++ } @array };
+
+    foreach my $var ( @unique ) {
+         # remove word - network
+         if ($var !~ m/network/) {
+         # remove word - service
+         next if ($var =~ m/service/);
+              print $var, "\n";
+         }
+    }
+}
+
+__DATA__
+access-list INSIDE_IN remark Web Users To Web Server
+access-list INSIDE_IN extended permit tcp object-group WEB-CLIENT object-group WEB-SERVER object-group WEB_TCP
+access-list INSIDE_IN remark EMAIL To EMAIL Server
+access-list INSIDE_IN extended permit tcp object-group EMAIL-CLIENT object-group EMAIL-SERVER object-group SMTP_TCP
+object-group network PC1_1st
+ network-object host 10.1.1.11
+object-group network PC2_1st
+ network-object host 10.1.1.12
+object-group network WEB-CLIENT
+ group-object PC1_1st
+ group-object PC2_1st
+object-group network WEB-SERVER
+ network-object host 10.1.1.5
+object-group service WEB_TCP tcp
+ port-object eq www
+ port-object eq https
+object-group network EMAIL-CLIENT
+ group-object PC1_1st
+ group-object PC2_1st
+object-group network EMAIL-SERVER
+ network-object host 10.1.1.6
+object-group service SMTP_TCP tcp
+ port-object eq SMTP
+&lt;/code&gt;
+
+I am trying to print the lines that matches with given strings.&lt;br&gt;
+For example:
+&lt;code&gt;
+access-list INSIDE_IN extended permit tcp object-group WEB-CLIENT object-group WEB-SERVER object-group WEB_TCP&lt;br&gt;
+&lt;/code&gt;
+-will take WEB-CLIENT, WEB-SERVER, WEB_TCP, etc. and under those PC1_1st &amp; PC2_1st etc., to match and then print as following-&lt;br&gt;&lt;br&gt;
+
+Ignore the Line with word - remark.&lt;br&gt;&lt;br&gt;
+
+&lt;code&gt;
+access-list INSIDE_IN extended permit tcp object-group WEB-CLIENT object-group WEB-SERVER object-group WEB_TCP
+object-group network WEB-CLIENT
+ group-object PC1_1st
+ group-object PC2_1st
+object-group network PC1_1st
+ network-object host 10.1.1.11
+object-group network PC2_1st
+ network-object host 10.1.1.12
+object-group network WEB-SERVER
+ network-object host 10.1.1.5
+object-group service WEB_TCP tcp
+ port-object eq www
+ port-object eq https
+&lt;/code&gt;
+For the 2nd matching---
+&lt;code&gt;
+access-list INSIDE_IN extended permit tcp object-group EMAIL-CLIENT object-group EMAIL-SERVER object-group SMTP_TCP
+object-group network EMAIL-CLIENT
+ group-object PC1_1st
+ group-object PC2_1st
+object-group network PC1_1st
+ network-object host 10.1.1.11
+object-group network PC2_1st
+ network-object host 10.1.1.12
+object-group network EMAIL-SERVER
+ network-object host 10.1.1.6
+object-group service SMTP_TCP tcp
+ port-object eq SMTP
+&lt;/code&gt;
+
+Please let me know.</doctext>
+<thread id="1111054">
+<node id="1111093"/>
+<node id="1111096"><node id="1111172"/>
+<node id="1111174"/>
+<node id="1111210"/>
+<node id="1111310"><node id="1111385"><node id="1111410"/>
+</node>
+</node>
+<node id="1167369"/>
+<node id="1167555"><node id="1167580"/>
+</node>
+</node>
+</thread></node>

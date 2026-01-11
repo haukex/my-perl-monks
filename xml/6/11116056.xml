@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116056" title="iterator w/ wantarray()" created="2020-04-25 14:00:17" updated="2020-04-25 14:00:17" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="448195">cmic</author>
+<doctext field_name="doctext">&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+
+&lt;p&gt; 
+I was using a code from "Perl Hacks", hack-27, but it doesn't works as &lt;br&gt;
+expected, and I don't know why. &lt;br&gt;&lt;/p&gt;
+&lt;p&gt;Any one can explain what it should yield ?&lt;br&gt;
+Or am I missing something?&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/local/bin/perl
+
+use strict;
+use warnings;
+
+use Want 'howmany';
+
+sub multi_iterator {
+    my ($iterator)=@_;
+
+    return sub{
+        my $context=wantarray();
+
+        return unless defined $context;
+        return $iterator-&gt;() unless $context;
+        return map { $iterator-&gt;() } 1 .. howmany();
+    };
+}
+
+sub counter {
+    my ($from, $to, $step)= @_;
+    $step ||= 1;
+
+    return sub {
+        return if $from &gt; $to;
+        my $value=$from;
+        $value +=$step;
+        return $value;
+    };
+}
+
+#main
+my $counter=counter(1, 10, 3);
+my $iterator= multi_iterator($counter);
+
+my ($un, $deux)=$iterator-&gt;();
+my $trois=$iterator-&gt;();
+
+#should print 1, 4, 7
+print "Hack-27 ",  $un, ",", $deux, ",", $trois, "\n";
+
+&lt;/code&gt;
+
+
+--
+cmic. retired sysadmin and Perl user..
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-448195"&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="11116056">
+<node id="11116057"><node id="11116060"><node id="11116067"><node id="11116073"><node id="11116089"><node id="11116090"><node id="11116091"><node id="11116093"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11116059"><node id="11116066"><node id="11116108"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1216036" title="Re: eval failure does not set $@" created="2018-06-06 11:04:52" updated="2018-06-06 11:04:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Following the eval we are check $@ to verify the eval was successful.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;There was/is a [id://1153468|bug in eval] that means the &lt;c&gt;eval { ... }; if ($@) { ... }&lt;/c&gt; pattern is not reliable (even though it still appears in examples all over the web). It's much better to do &lt;c&gt;eval { ...; 1 } or do { ... };&lt;/c&gt;, or use a module like [mod://Try::Tiny].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;We are building the put command on the fly and then executing 'eval $PutCMD'.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I don't quite understand why you're doing it this way - you might get bitten by quoting/escaping issues. Note that you can always just pass an array of arguments to a method, and build that array dynamically. This example should do the same as the command you showed:&lt;/p&gt;
+&lt;c&gt;
+my @args = ("$opt_local_dir/$do_file");
+push @args, $remote_file, copy_perms =&gt; 0;
+push @args, copy_time =&gt; 0;
+eval { $ftp-&gt;put(@args); 1 }
+    or warn "put failed: ".($@//"unknown error");
+&lt;/c&gt;
+&lt;p&gt;Note that's &lt;c&gt;eval BLOCK&lt;/c&gt;, not &lt;c&gt;eval STRING&lt;/c&gt;, which means the code contained in the &lt;c&gt;BLOCK&lt;/c&gt; is compiled and checked for syntax errors along with the surrounding code, and at runtime just functions as an error catching mechanism.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1216032</root_node>
+<parent_node field_name="parent_node">1216032</parent_node>
+<thread id="1216032">
+<node id="1216035"/>
+<node id="1216036"/>
+<node id="1216055"><node id="1216059"/>
+</node>
+</thread></node>

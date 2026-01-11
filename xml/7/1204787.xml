@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1204787" title="Re: Simplify HoH code" created="2017-12-03 06:04:16" updated="2017-12-03 06:04:16" _doctext_mode="lenient"><type id="11">note</type>
+<author id="104470">pme</author>
+<doctext field_name="doctext">Hi [greetsathya],
+&lt;p&gt;
+I reworked your snippet code. It is probably not exactly what you need but I hope you can find useful details in it.
+&lt;p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+
+my @month = qw/JAN FEB MAR APR MAY JUN JUL AUG SEP OCT NOV DEC/;
+
+my $hash = {
+  2 =&gt; { W1 =&gt; 10.14,
+         W2 =&gt; 11.22,
+  },
+  3 =&gt; { W1 =&gt; 33.17,
+         W2 =&gt; 44.44,
+  },
+  4 =&gt; { W1 =&gt; 55.00,
+         W2 =&gt; 66.66,
+  },
+};
+
+my $lim = {
+  2 =&gt; { W1 =&gt; { L =&gt; 11,    U =&gt; 14 },
+         W2 =&gt; { L =&gt; 13,            },
+  },
+  4 =&gt; { W2 =&gt; { L =&gt; 13.02, U =&gt; 15 },
+  },
+};
+
+
+for my $month ( sort keys %$hash ) {
+  print "$month[$month-1]:\n";
+  for my $week ( sort keys %{$hash-&gt;{$month}} ) {
+
+    my $lower = defined $lim-&gt;{$month}-&gt;{$week}-&gt;{L} ? $lim-&gt;{$month}-&gt;{$week}-&gt;{L} : 0;   # min value
+    my $upper = defined $lim-&gt;{$month}-&gt;{$week}-&gt;{U} ? $lim-&gt;{$month}-&gt;{$week}-&gt;{U} : 999; # max value
+    my $value = $hash-&gt;{$month}-&gt;{$week};
+
+    my $below = ($value &lt; $lower) ?  sprintf('%6.2f', $value) : '';
+    my $above = ($value &gt; $upper) ?  sprintf('%6.2f', $value) : '';
+    my $in    = ($value &gt;= $lower and
+                 $value &lt;= $upper) ? sprintf('%6.2f', $value) : '';
+
+    printf "    %s %6.6s &lt;%6.2f&gt; %6.6s &lt;%6.2f&gt; %6.6s\n",
+        $week, $below, $lower, $in, $upper, $above;
+  }
+}
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">1204780</root_node>
+<parent_node field_name="parent_node">1204780</parent_node>
+<thread id="1204780">
+<node id="1204782"><node id="1204789"><node id="1204794"><node id="1204796"/>
+</node>
+</node>
+</node>
+<node id="1204787"><node id="1204795"/>
+</node>
+<node id="1204808"><node id="1204810"><node id="1204874"><node id="1204881"/>
+</node>
+</node>
+</node>
+</thread></node>

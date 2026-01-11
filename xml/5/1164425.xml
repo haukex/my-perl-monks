@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1164425" title="'g' flag w/'qr'" created="2016-05-28 22:25:25" updated="2016-05-28 22:25:25" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="438862">perl-diddler</author>
+<doctext field_name="doctext">I was trying a few examples from the "Mastering Perl" (brian d foy) book relating to RE's.  I noted w/interest, the 3 ways he used to match a "qr" expression on page 3.&lt;p&gt;
+&lt;code&gt;
+sub iregex { qr/ ... /ix }
+
+1)  my $regex = iregex()
+    if ($isbn =~ m/$regex/ ) { print "Matched!\n }
+
+2)  my $regex = iregex()
+    if ($isbn =~ $regex ) { print "Matched!\n }
+
+3)  if ($isbn =~ iregex() ) { print "Matched!\n }
+&lt;/code&gt;
+I especially liked methods 2 &amp; 3 as they didn't need
+interpolation, with 3 being better as it didn't require
+an intermediate variable.
+&lt;p&gt;
+Seeing that I wanted to try out capturing all matching
+sub expressions using 'g' added to my 'qr' expression,
+but I'm getting a deprecation error:
+&lt;code&gt;
+&gt; perl -we'use strict;use P;      
+my $re = qr{ (\w+) }gx;
+my $dat = "Just another cats meow";
+my @matches = $dat =~ $re;
+P "#matches=%s, matches=%s", scalar(@matches), \@matches;
+exit scalar(@matches);'
+  output:
+Having no space between pattern and following word is deprecated at -e line 2.
+Bareword found where operator expected at -e line 2, near "qr/ (\w+) /gx"
+syntax error at -e line 2, near "qr{ (\w+) }gx"
+Execution of -e aborted due to compilation errors.
+&lt;/code&gt;
+&lt;p&gt;If I move the 'g' option down to where the RE is used
+and use a *second* "RE" operator (i.e.: /.../g) and interpolate 
+my expression into another RE (the slowest of the above
+3 options), I get:
+&lt;code&gt;
+&gt; perl -we'use strict;use P;      
+my $re = qr{ (\w+) }x; 
+my $dat = "Just another cats meow";
+my @matches = $dat =~ /$re/g;
+P "#matches=%s, matches=%s", scalar(@matches), \@matches;
+exit scalar(@matches);'
+  output:
+#matches=4, matches=["Just", "another", "cats", "meow"]
+&lt;/code&gt;
+&lt;p&gt;So why can't I add the global switch to the "qr" expression?  FWIW,
+I also tried qr{ (?xg) }.  Perl strips out the 'g' and tells me to add
+it to the end of the RE -- where it is deprecated:
+&lt;code&gt;
+perl -we'use strict;use P;      
+my $re = qr{ (?xg) (\w+) };
+my $dat = "Just another cats meow";
+my @matches = $dat =~ $re;   
+P "#matches=%s, matches=%s", scalar(@matches), \@matches;
+exit scalar(@matches);'
+  output:
+Useless (?g) - use /g modifier in regex; marked by &lt;-- HERE in m/ (?xg &lt;-- HERE ) (\w+) / at -e line 2.
+#matches=1, matches=["another"]
+&lt;/code&gt;
+&lt;p&gt;  So how can I attach the "/g" modifier to my 
+"qr" regex so I can use the direct match as in #2 or #3
+above?
+&lt;/p&gt;
+Thanks...
+&lt;p&gt;P.S. - I also just noticed that in addition to stripping out the 'g' option, the 'x' option doesn't seem to work in the regex's parens, i.e. - (?x).
+
+
+
+
+ </doctext>
+<thread id="1164425">
+<node id="1164426"><node id="1164431"><node id="1164433"/>
+<node id="1164434"><node id="1164444"/>
+</node>
+<node id="1164436"/>
+</node>
+</node>
+<node id="1164427"><node id="1164432"/>
+</node>
+<node id="1164437"><node id="1164476"><node id="1164479"/>
+</node>
+</node>
+<node id="1164439"/>
+<node id="1164441"/>
+<node id="1164443"><node id="1164477"><node id="1164480"/>
+<node id="1164490"/>
+</node>
+</node>
+<node id="1164469"><node id="1164478"/>
+</node>
+<node id="1164481"><node id="1164643"><node id="1164646"/>
+<node id="1164651"/>
+<node id="1164653"/>
+</node>
+</node>
+</thread></node>

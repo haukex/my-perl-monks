@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108347" title="Re: Batch file renaming - on identical name, keep only most recent file, based on dates" created="2019-11-05 23:55:41" updated="2019-11-05 23:55:41" _doctext_mode="lenient"><type id="11">note</type>
+<author id="922586">Lotus1</author>
+<doctext field_name="doctext">&lt;p&gt;[jcb] beat me to the point about collisions from different users. &lt;b&gt;(Edit: it's late here and I got things reversed in my head. No need for the reverse for the sort.)&lt;/b&gt; Here is a simple solution that works except it will clobber any collisions between users with the user with the &lt;strike&gt;lowest&lt;/strike&gt; highest number. This solution takes a &lt;strike&gt;reverse&lt;/strike&gt; sort of the filenames and then uses File::Copy::move to rename them so that the newest collision file is the last one to be renamed. If you specify what to do by user collisions this could be modified to watch for the user number.&lt;/p&gt;
+&lt;p&gt;Perl has a built in rename function but the documentation suggests using File::Copy::move since it is more portable across operating systems.&lt;/p&gt;
+
+&lt;c&gt;
+use warnings;
+use strict;
+use File::Copy;
+use File::Glob ':glob';
+
+mkdir 'test' unless -d 'test';
+
+#foreach( reverse sort glob( "*_Table_*.pdf" ) ){
+foreach( sort glob( "*_Table_*.pdf" ) ){
+    print "$_\n";
+    my $newname = $_;
+    $newname =~ s/^[0-9_]+//;
+    print "--$newname\n";
+    ## using copy for testing.
+    copy $_, "./test/$newname" or print "Error copying &lt;$_&gt; $!\n";
+    #move $_, "$newname" or print "Error renaming &lt;$_&gt; $!\n";
+}
+
+__DATA__
+test files:
+8_2007_5_22_15_34_23_Table_-_2007522_XYZ_W3.pdf
+8_2007_5_22_22_34_12_Table_-_2007522_XYZ_W3.pdf
+7_2007_5_22_16_35_23_Table_-_2007522_XYZ_W3.pdf
+7_2007_5_22_23_36_12_Table_-_2007522_XYZ_W3.pdf
+
+output file:
+Table_-_2007522_XYZ_W3.pdf
+&lt;/c&gt;  
+
+&lt;p&gt;&lt;b&gt;Edit:&lt;/b&gt; I forgot to add the program output. Also, I had an extra file in my test files.&lt;/p&gt;
+&lt;strike&gt;&lt;c&gt;
+8_2007_5_22_22_34_12_Table_-_2007522_XYZ_W3.pdf
+--Table_-_2007522_XYZ_W3.pdf
+8_2007_5_22_15_34_23_Table_-_2007522_XYZ_W3.pdf
+--Table_-_2007522_XYZ_W3.pdf
+7_2007_5_22_22_34_12_Table_-_2007522_XYZ_W3.pdf
+--Table_-_2007522_XYZ_W3.pdf
+7_2007_5_22_15_34_23_Table_-_2007522_XYZ_W3.pdf
+--Table_-_2007522_XYZ_W3.pdf
+7_2007_12_22_15_34_23_Table_-_20071222_XYZ_W3.pdf
+--Table_-_20071222_XYZ_W3.pdf
+
+&lt;/c&gt;&lt;/strike&gt;
+&lt;p&gt;Edit: updated output without reverse sort.&lt;/p&gt;
+&lt;c&gt;
+7_2007_12_22_15_34_23_Table_-_20071222_XYZ_W3.pdf
+--Table_-_20071222_XYZ_W3.pdf
+7_2007_5_22_15_34_23_Table_-_2007522_XYZ_W3.pdf
+--Table_-_2007522_XYZ_W3.pdf
+7_2007_5_22_22_34_12_Table_-_2007522_XYZ_W3.pdf
+--Table_-_2007522_XYZ_W3.pdf
+8_2007_5_22_15_34_23_Table_-_2007522_XYZ_W3.pdf
+--Table_-_2007522_XYZ_W3.pdf
+8_2007_5_22_22_34_12_Table_-_2007522_XYZ_W3.pdf
+--Table_-_2007522_XYZ_W3.pdf
+
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11108322</root_node>
+<parent_node field_name="parent_node">11108322</parent_node>
+<thread id="11108322">
+<node id="11108323"/>
+<node id="11108326"><node id="11108327"/>
+</node>
+<node id="11108328"/>
+<node id="11108332"/>
+<node id="11108345"/>
+<node id="11108347"><node id="11108357"><node id="11108382"><node id="11108383"><node id="11108385"><node id="11108392"><node id="11108395"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11108406"><node id="11108430"><node id="11108453"/>
+</node>
+</node>
+<node id="11110370"/>
+</thread></node>

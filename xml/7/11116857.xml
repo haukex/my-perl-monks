@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116857" title="Regex with Backslashes" created="2020-05-17 10:39:05" updated="2020-05-17 10:39:05" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1064720">anita2R</author>
+<doctext field_name="doctext">Greetings Monks,
+&lt;p&gt;I am trying to construct a regex to use in a split command.&lt;/p&gt;&lt;p&gt;The string to be split consists of from one to four comma separated fields. The second field can contain text which may use backslashes to escape non-separating commas '\,', the backslash itself '\\', and    &lt;strike&gt;2 character hex codes '\x2B'&lt;/strike&gt;  hex codes '\0x2B'. Here is an example:&lt;/p&gt;&lt;code&gt;$text = '1,Something\,\\text\\text\0x2B,X,99';&lt;/code&gt;&lt;p&gt;I can split this with a regex using a negative lookbehind:&lt;/p&gt;
+&lt;code&gt;my $regex = '(?&lt;!\\\),';
+split( /$regex/, "$text" );&lt;/code&gt;&lt;p&gt;so it splits on a comma unless it is preceded by a backslash.&lt;/p&gt;&lt;p&gt;Actual outcome:&lt;/p&gt;&lt;code&gt;
+1
+Something\,\text\text\0x2B
+X
+99&lt;/code&gt;&lt;p&gt;(In a terminal the double backslash appears as a single \, but this is not an issue as the split data is processed further in the perl script).&lt;/p&gt;&lt;p&gt;Now my problem:&lt;/p&gt;&lt;p&gt;If an escaped backslash comes before the next separating comma the regex 'sees' a backslash before the separating comma and does not split.&lt;/p&gt;
+&lt;code&gt;$text = '1,This is a problem-&gt;\\,B,2';&lt;/code&gt;&lt;p&gt;Actual output:&lt;/p&gt;
+&lt;code&gt;1
+This is a problem-&gt;\,B
+2&lt;/code&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;I have tried several regexe's based on the concept that there needs to be a match on a comma except when preceded by a backslash, using negative lookbehind
+OR there is a match on a comma when preceded by two backslashes using positive lookbehind. Here are two that I have tried&lt;/p&gt;&lt;code&gt;$regex = '(?&lt;!\\\),|(?&lt;=\\\\),';&lt;/code&gt;&lt;p&gt;&lt;/p&gt;&lt;code&gt;$regex = '(?&lt;!\\\),|(?&lt;=[\\\]{2}),';&lt;/code&gt;&lt;p&gt;Neither gives the required output - so maybe I am lost in ever more escaped escaped escaped backslashes! I have tried variations with more backslashes in the positive lookbehind section of the regex. I also tried \Q...\E to avoid escaping the backslashes but this results in an error:'Unrecognized escape \Q passed through in regex'. I tried building the regex with qr like this&lt;/p&gt;&lt;code&gt;my $regex = qr /(?&lt;!\\),|(?&lt;=\\\\),/;&lt;/code&gt;&lt;p&gt;but it still didn't split on '\\,'.&lt;/p&gt;&lt;p&gt;As a test of my concept I replaced all backslashes with colons&lt;/p&gt;&lt;code&gt;my $regex = '(?&lt;!:),|(?&lt;=[:]{2}),';
+my $text = '1,This:, is not a problem-&gt;::,B,2';
+my @test = split( /$regex/, "$text" );
+
+foreach( @test ) {
+    print "$_\n";
+}&lt;/code&gt;&lt;p&gt;The output was 'correct'&lt;/p&gt;&lt;code&gt;1
+This:, is not a problem-&gt;::
+B
+2&lt;/code&gt;&lt;p&gt;In summary: I need to split a string at each comma or comma preceded by two backslashes but don't split at a comma preceded by only one backslash.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;Any suggested approaches to this problem would be appreciated.&lt;/p&gt;
+
+
+</doctext>
+<thread id="11116857">
+<node id="11116859"><node id="11116860"><node id="11116861"/>
+</node>
+</node>
+<node id="11116862"><node id="11116867"><node id="11116874"/>
+</node>
+</node>
+<node id="11116865"><node id="11116868"><node id="11116869"><node id="11116873"><node id="11116876"><node id="11116878"><node id="11116880"><node id="11116900"/>
+</node>
+</node>
+</node>
+<node id="11116882"><node id="11116912"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11116877"><node id="11116910"><node id="11116911"><node id="11116913"/>
+</node>
+<node id="11116914"><node id="11116916"><node id="11116917"><node id="11116918"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

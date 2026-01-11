@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1177153" title="portability / system / elegance" created="2016-12-04 08:19:07" updated="2016-12-04 08:19:07" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1160879">skendric</author>
+<doctext field_name="doctext">&lt;p&gt;I'm writing semi-portable code (Linux / Windows).&lt;/p&gt;
+
+&lt;p&gt;I use 'system' to execute an external binary ('tshark', part of the Wireshark collection).&lt;/p&gt;
+
+&lt;p&gt;I handle slashes like this:&lt;/p&gt;
+&lt;code&gt;
+use File::Which qw(which);
+$tshark_binary = which('tshark');
+$tshark_binary =~ s/\\/\\\\/g if $tshark_binary =~ /\\/;
+&lt;/code&gt;
+&lt;p&gt;The last line functions essentially as a "If this is Windows, escape the slashes in the path name", such that 'C:/Program Files/Wireshark/tshark.EXE' turns into 'C://Program Files//Wireshark//tshark.EXE'.&lt;/p&gt;
+
+&lt;p&gt;And then, when I actually execute tshark, I use the following:&lt;/p&gt;
+&lt;code&gt;
+system("\"$tshark_binary\" -r $pcap -e frame.number -e  frame.time_epoch -e ip.src -e ip.id -T text -T fields -E separator=, &gt; $temp_file");
+&lt;/code&gt;
+&lt;p&gt;The key 'portability' change being the escaped quotes around $tshark_binary, which aren't necessary in Linux but are needed under Windows, to dodge the:
+&lt;code&gt;"C:\Program" is not an executable&lt;/code&gt;
+errors.&lt;/p&gt;
+
+&lt;p&gt;This is fine, and it works.  But is there a more elegant / common way to accomplish these two tasks?&lt;/p&gt;
+
+--sk</doctext>
+<thread id="1177153">
+<node id="1177159"><node id="1177162"/>
+</node>
+<node id="1177161"><node id="1177181"/>
+</node>
+<node id="1177186"/>
+</thread></node>

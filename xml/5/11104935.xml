@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11104935" title="Re: change \n to \t" created="2019-08-24 05:12:56" updated="2019-08-24 05:12:56" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Note that none of the solutions so far take into account what your original code seems to want to do, which is to only replace newlines before &lt;c&gt;[ATCGN]&lt;/c&gt;; OTOH your solution doesn't take into account whether the lines start with &lt;c&gt;&gt;&lt;/c&gt; or not. Here is one way that does both, while processing the file line-by-line, thereby saving memory.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $prevline;
+while ( my $curline = &lt;DATA&gt; ) {
+	next unless defined $prevline;
+	if ( $prevline=~/^&gt;/ &amp;&amp; $curline=~/^[ATCGN]/ ) {
+		$prevline =~ s/\n\z/\t/;
+	}
+	print $prevline;
+} continue { $prevline = $curline }
+print $prevline if defined $prevline;
+
+__DATA__
+&gt;1
+AGTCGTAGCAT
+foo
+bar
+&gt;2
+TGAGCTACG
+&gt;3
+GGCATAGN
+quz
+&gt;4
+CGCACNCAGCTACACC
+&gt;5
+NGATAGCTACA
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+&gt;1	AGTCGTAGCAT
+foo
+bar
+&gt;2	TGAGCTACG
+&gt;3	GGCATAGN
+quz
+&gt;4	CGCACNCAGCTACACC
+&gt;5	NGATAGCTACA
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11104900</root_node>
+<parent_node field_name="parent_node">11104900</parent_node>
+<thread id="11104900">
+<node id="11104901"><node id="11104906"><node id="11104908"/>
+</node>
+</node>
+<node id="11104909"/>
+<node id="11104913"/>
+<node id="11104935"/>
+<node id="11104964"/>
+</thread></node>

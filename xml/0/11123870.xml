@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11123870" title="Find combination of numbers whose sum equals X" created="2020-11-20 02:15:27" updated="2020-11-20 02:15:27" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1166559">harangzsolt33</author>
+<doctext field_name="doctext">Dear Monks,
+
+&lt;P&gt;This question is about an algorithm, which I am writing in Perl.
+
+&lt;P&gt;Recently I tried to write a simple script for an accountant friend of mine as a hobby, and when I sat down to put this thing together, then I realized that it's not as simple as I thought!
+
+&lt;P&gt;The problem is we have a long list of numbers. The accountant types in one big number which we call TARGET NUMBER. And my program immediately lists all possible combination of numbers from the list whose sum equals the TARGET NUMBER. So, if that number is 100 and our list is made up of the following numbers: 1 99 2 40 50 60 90 3 5 95 100, then the result should look like this:
+&lt;BR&gt;100
+&lt;BR&gt;1+99
+&lt;BR&gt;2+3+95
+&lt;BR&gt;5+95
+&lt;BR&gt;2+3+5+90
+&lt;BR&gt;2+3+5+40+50
+&lt;BR&gt;40+60
+
+&lt;P&gt;Unfortunately, I don't know how to write the algorithm that finds all possible combinations. My program sorts the list of numbers first. Then it picks the smallest number from the list and adds it to the largest to see if it equals the TARGET NUMBER. If it's bigger, then it tries to add the smallest number to the second from the last and so forth until it finds a combination of two numbers that is equal or smaller than the TARGET NUMBER.
+
+&lt;P&gt;If the sum of two numbers is LESS than the TARGET NUMBER, then we try to add a third number to see if it equals and so forth... The problem is that this requires the numbers to occur in a certain order. If they occur in the wrong order, then we will miss some combinations! For example, we're looking to find combinations that equal 100. This is our list: 5 5 5 5 10 15 80 99
+
+&lt;P&gt;As you can see, in this scenario, we will find 5+15+80, because they occur in a specific order. But we will completely miss 5+5+5+5+80, because the algorithm has a bug. I don't know how to make this work. Can anyone suggest a fix or a different algorithm?
+
+&lt;P&gt;&lt;CODE&gt;
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+
+my @RESULT;
+my $TARGET = 100;
+my @LIST = qw(0 5 10 5 5 5 15 80 99);
+
+#34 111.38 55 3.93 100 100 100 100 88 6.3 99 400 1020 -2.43
+#73 39 3 12 -0.999 228 104 12377.31 390 399 212 315 5.8 405 4402 16252
+#10 3600 18209 288.62 3384 12 450 902 151 396.07 44 88 52 107 244 1 520);
+
+print "\n   This program finds a combination of numbers from a long list";
+print "\n   whose sum equals the \"TARGET\" total number. Ideally, we want";
+print "\n   to find ALL possible combinations! For example:";
+print "\n   When Target = 5 and our list is 1, 3, 6, 3.38, -9.8, 4, 72, 2";
+print "\n   then the solution would be : 5 = 1 + 4 and 5 = 2 + 3.";
+print "\n   1 + 2 + 2 will not appear in the list, because we only have one number 2.";
+print "\n\n\n";
+
+FindCombinations();
+exit;
+
+##################################################
+#
+# This is the main algorithm. First of all, it sorts
+# all the numbers in ascending order. Then we get rid
+# of all the numbers that are larger than the TARGET
+# or if they're zero or smaller. Then it looks at
+# the first number in the list and tries to add another
+# number to it until it equals the TARGET. Then it takes
+# the second number, and so forth, looking for pairs.
+#
+sub FindCombinations
+{
+  # First, we get rid of all the numbers that are larger
+  # than the TARGET or ZERO or less than 0. We also remove
+  # numbers if number == TARGET record a number if it equals the target.
+
+  print "\nSTAGE 1\n&gt;&gt;&gt;LIST=", join(' ', @LIST), "&lt;&lt;&lt;\nRESULTS=|", join(' ', @RESULT), "|\n";
+
+  my $NUMBER;
+  for (my $i = 0; $i &lt; @LIST; $i++)
+  {
+    $NUMBER = $LIST[$i];
+
+    if ($NUMBER &lt;= 0 || $NUMBER &gt;= $TARGET)
+    {
+      if ($NUMBER == $TARGET) { $RESULT[0] = ($TARGET); }
+      $LIST[$i] = '';
+    }
+  }
+
+  print "\nSTAGE 2\n&gt;&gt;&gt;LIST=", join(' ', @LIST), "&lt;&lt;&lt;\nRESULTS=|", join(' ', @RESULT), "|\n";
+  @LIST = RemoveBlankLines(@LIST);
+  @LIST = SortNumbers(@LIST);
+  print "\nSTAGE 3\n&gt;&gt;&gt;LIST=", join(' ', @LIST), "&lt;&lt;&lt;\nRESULTS=|", join(' ', @RESULT), "|\n";
+
+  ############# SEARCH ALGORITHM BEGINS HERE #############
+
+  my @ADD_LIST;
+  my @SKIP_LIST;
+
+  for (my $j = 0; $j &lt; @LIST; $j++)
+  {
+    my $Total = 0;
+    $Total =  $LIST[$j] * 1;
+    @ADD_LIST = ($LIST[$j]);   # Start here. Try adding numbers to this number.
+
+    for (my $i = @LIST - 1; $i &gt;= 0; $i--)
+    {
+      if ($i == $j) { next; }  # Skip this number, because it's already in ADD_LIST.
+
+      ### Try to add numbers and see if the sum is exactly what we are looking for.
+      $Total += $LIST[$i];
+      if ($Total &gt; $TARGET)
+      {
+        $Total = $LIST[$j];
+        $i += @ADD_LIST - 1;
+        @ADD_LIST = ($LIST[$j]);
+        next;
+      }
+      push(@ADD_LIST, $LIST[$i]);
+      if ($Total == $TARGET)
+      {
+        @ADD_LIST = sort(@ADD_LIST);
+        push(@RESULT, join('+', @ADD_LIST));
+        last;
+      }
+    }
+  }
+  @RESULT = ExtractDuplicates(@RESULT);
+  print "\nSTAGE 4\n&gt;&gt;&gt;LIST=", join(' ', @LIST), "&lt;&lt;&lt;\nRESULTS=|", join(' ', @RESULT), "|\n";
+}
+
+##################################################
+#                                      v2020.11.19
+# This function removes duplicate lines from an array
+# by sorting it and comparing each line with case-sensitive
+# comparison. Returns a new array.
+#
+# Usage: NEW_ARRAY = ExtractDuplicates(ARRAY)
+#
+sub ExtractDuplicates
+{
+  my @A = @_;
+  @A &gt; 1 or return @A;
+  @A = sort(@A);
+  my $i = 0;
+  my $j = 1;
+  while ($j &lt; @A)
+  {
+    if ($A[$i] eq $A[$j])
+    {
+      splice(@A, $j, 1);
+    }
+    else
+    {
+      $i++; $j++;
+    }
+  }
+  return @A;
+}
+##################################################
+#                                      v2020.11.19
+# This function trims each element of the input array
+# and removes empty strings elements. This function
+# shortens the original array.
+#
+# Usage: RemoveBlankLines(ARRAY)
+#
+sub RemoveBlankLines
+{
+  @_ or return;
+  my @A = @_;
+  my ($j, $i, $LINE) = 0;
+  for ($i = 0; $i &lt; @A; $i++)
+  {
+    $LINE = Trim($A[$i]);
+    if (length($LINE))
+    {
+      if ($j &lt; $i) { $A[$j] = $LINE; }
+      $j++;
+    }
+  }
+  $#A = $j - 1;
+  return @A;
+}  
+##################################################
+#                                       v2019.8.25
+# Removes whitespace from before and after STRING.
+# Whitespace is here defined as any byte whose
+# ASCII value is less than 33. That includes
+# tabs, esc, null, vertical tab, new lines, etc.
+# Usage: STRING = Trim(STRING)
+#
+sub Trim
+{
+  defined $_[0] or return '';
+  (my $L = length($_[0])) or return '';
+  my $P = 0;
+  while ($P &lt;= $L &amp;&amp; vec($_[0], $P++, 8) &lt; 33) {}
+  for ($P--; $P &lt;= $L &amp;&amp; vec($_[0], $L--, 8) &lt; 33;) {}
+  substr($_[0], $P, $L - $P + 2)
+}
+##################################################
+sub SortNumbers { return sort {$a &lt;=&gt; $b} @_; }
+##################################################
+&lt;/CODE&gt;</doctext>
+<thread id="11123870">
+<node id="11123877"><node id="11123904"/>
+</node>
+<node id="11123880"><node id="11123994"/>
+</node>
+<node id="11123894"/>
+<node id="11123915"/>
+<node id="11123998"/>
+<node id="11124072"/>
+</thread></node>

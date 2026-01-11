@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100402" title="Why do I need a local variable in map function" created="2019-05-23 03:31:33" updated="2019-05-23 03:31:33" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Monks,&lt;/p&gt;&lt;p&gt;
+I have a function with should select files by a given list of extension. I wrote a program, which did not work. After playing a little around I found a working solution (using a local variable: my $x). But I do not understand, why my first version is not working.&lt;/p&gt;&lt;p&gt;
+Can you help me explaining the difference between this two versions:  &lt;/p&gt;&lt;p&gt;
+In the first version the expression(@ext) is replaces by '1';&lt;/p&gt;&lt;p&gt;
+In the second version the expression(@ext) is correct. ('f.*\\.txt$', 'f.*\\.txt.*$')&lt;/p&gt;&lt;p&gt;
+
+
+Thanks for your help !!!&lt;/p&gt;
+&lt;code&gt;
+
+use strict;
+use warnings;
+use Data::Dumper qw(Dumper);
+$\="\n"; 
+
+my @ext;
+my @list=('f1.txt','f2.txtx','f3.xtxt','x1.txt');
+my  $ex="f*.txt,f*.txt*";
+
+print " Version 1: Not working--------------------------------";
+@ext=map { $_=quotemeta($_).'$'; s/\\\*/.*/;} split(/,/,$ex);           # &lt;&lt;&lt;&lt;&lt;&lt; compare this line
+print "qr=".Dumper(\@ext);
+foreach my $e(@ext)
+{ foreach my $f(@list) {print "Match: ($e) =&gt; $f" if ($f=~m/$e/); }}
+
+print " Version 2: working--------------------------------";
+@ext=map { my $x=quotemeta($_).'$'; $x=~s/\\\*/.*/g; $_=$x;} split(/,/,$ex);  # &lt;&lt;&lt;&lt;&lt;&lt; compare this line
+print "qr=".Dumper(\@ext);
+foreach my $e(@ext)
+{ foreach my $f(@list) {print "Match: ($e) =&gt; $f" if ($f=~m/$e/); }}
+
+&lt;/code&gt;</doctext>
+<reputation field_name="reputation">12</reputation>
+<thread id="11100402">
+<node id="11100403"><node id="11100408"/>
+</node>
+</thread></node>

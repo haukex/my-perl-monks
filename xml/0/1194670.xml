@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1194670" title="not fetching correct records in xml output" created="2017-07-10 05:58:00" updated="2017-07-10 05:58:00" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1193343">snehit.ar</author>
+<doctext field_name="doctext">Even i have multiple records in  xml file ,but below code only retrieve top record and  not the other records ....
+
+&lt;code&gt;
+use strict;
+use warnings;
+use XML::XPath;
+use Data::Dumper;
+my @records;
+
+my $xml = 'ApplicationList.xml';
+my $xp = XML::XPath-&gt;new(filename =&gt; $xml);
+my $nodeset = $xp-&gt;findnodes('/application_list');
+
+foreach my $node ($nodeset-&gt;get_nodelist) { 
+		my $appid = $xp-&gt;find('./application/@id', $node);
+		s/^\s+|\s+$//g for $appid;
+		
+			 push @records, {
+				 appid =&gt; $appid-&gt;string_value,
+				 }
+	}
+	
+print Dumper @records;
+&lt;/code&gt;
+&lt;p&gt;---Output&lt;/p&gt;
+&lt;code&gt;
+C:\SLB\Dashboard\Perl&gt;perl testperl.pl
+$VAR1 = {
+          'appid' =&gt; '212'
+        };
+&lt;/code&gt;
+
+&lt;p&gt;xml file
+&lt;code&gt;
+&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;
+&lt;application_list&gt;
+&lt;application id="212" &gt;&lt;/application&gt;
+&lt;application id="565" &gt;&lt;/application&gt;
+&lt;application id="654" &gt;&lt;/application&gt;
+&lt;application id="975" &gt;&lt;/application&gt;
+&lt;/application_list&gt;
+
+&lt;/code&gt;&lt;/p&gt;</doctext>
+<thread id="1194670">
+<node id="1194673"/>
+<node id="1194674"><node id="1194676"/>
+</node>
+</thread></node>

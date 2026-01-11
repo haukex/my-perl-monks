@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1204716" title="Re: Is there an advantage to storing references to objects in an attribute instead of the object itself?" created="2017-12-02 06:02:49" updated="2017-12-02 06:02:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Is there an advantage to storing the large object as a reference to the large object instead of the object itself?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;An object in Perl is just an anonymous data structure (it just happens to be [doc://bless]ed) that is referred to by one or more references, so in code that uses the object you'd never really store "the object itself" in a variable, but only a reference. You are free to take as many references to the same object as you like*, but in regards to "storing the object itself", I don't understand the question, and I think a [id://1177642] would help.&lt;/p&gt;
+&lt;p&gt;* &lt;b&gt;However,&lt;/b&gt; if you have your "one big object" storing references to your "smaller objects", and your smaller objects referring back to the big one, you've created circular references that will prevent the objects from being garbage-collected, in other words, your program has a memory leak. One way to deal with this is to weaken one of the references on one end with &lt;c&gt;weaken&lt;/c&gt; from [doc://Scalar::Util]. Note that even code like you showed in the reply [id://1204701|here] will still mean there are circular references.&lt;/p&gt;
+&lt;p&gt;In the following code, try commenting out the line &lt;c&gt;weaken($self-&gt;{big_obj});&lt;/c&gt; and see how the output changes to show the memory leak.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+{
+	package Big;
+	sub new { my $class = shift; bless {@_}, $class }
+	sub new_little {
+		my ($self,$id) = @_;
+		push @{$self-&gt;{little_objs}},
+			Little-&gt;new(id=&gt;$id, big_obj=&gt;$self);
+		return $self;
+	}
+	sub DESTROY
+		{ print "DESTROY ",__PACKAGE__," id=",shift-&gt;{id},"\n" }
+}
+{
+	package Little;
+	use Scalar::Util qw/weaken/;
+	sub new {
+		my $class = shift;
+		my $self = {@_};
+		weaken($self-&gt;{big_obj});
+		return bless $self, $class;
+	}
+	sub DESTROY
+		{ print "DESTROY ",__PACKAGE__," id=",shift-&gt;{id},"\n" }
+}
+
+my $big1 = Big-&gt;new(id=&gt;"One")-&gt;new_little("Hello");
+print "Clearing \$big1...\n";
+$big1 = undef; # no more references to object should cause GC
+
+my $big2 = Big-&gt;new(id=&gt;"Two")-&gt;new_little("World");
+print "Clearing \$big2...\n";
+$big2 = undef;
+
+END { print "END\n" }
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor edits for clarity.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1204699</root_node>
+<parent_node field_name="parent_node">1204699</parent_node>
+<thread id="1204699">
+<node id="1204701"/>
+<node id="1204702"/>
+<node id="1204705"/>
+<node id="1204716"><node id="1204757"><node id="1204758"/>
+<node id="1204771"/>
+<node id="1204791"/>
+<node id="1204821"/>
+</node>
+</node>
+<node id="1204744"/>
+</thread></node>

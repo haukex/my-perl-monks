@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1232500" title="Re^3: some efficiency, please (updated)" created="2019-04-12 12:19:24" updated="2019-04-12 12:19:24" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;So I do (think I) need to pass through the file twice - once to find the references I want to remove, and once to actually remove them.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I took that as a challenge &lt;c&gt;;-)&lt;/c&gt; This only needs a single pass by reversing both the input and output by piping it through [man://tac], and produces your desired output:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+die "Usage: $0 INFILE\n" unless @ARGV==1;
+my $INFILE = shift @ARGV;
+
+open my $ofh, '|-', 'tac' or die "tac (out): $!";
+open my $ifh, '-|', 'tac', $INFILE or die "tac $INFILE: $!";
+my ($aminblock,$prevnum,$foundstr);
+my %found;
+while (&lt;$ifh&gt;) {
+	chomp;
+	my $out=1;
+	if (!$aminblock) {
+		if (/^end$/) { undef $foundstr; $aminblock=1 }
+		elsif (/^\s*(?:foo\s+)?ref\s+(\d+)\s*$/) {
+			die "ref $1 without block?" unless exists $found{$1};
+			$out = !$found{$1};
+		}
+		else { die "unexpected outside of a block: $_" }
+	}
+	else {
+		if (/^\s*(\d+)\s*$/) { $prevnum=$1 }
+		elsif (/^begin$/) {
+			die "block ended without number?" unless defined $prevnum;
+			$found{$prevnum} = $foundstr;
+			undef $prevnum;
+			$aminblock=0;
+		}
+		else {
+			undef $prevnum;
+			if (/bar/) { $foundstr=1 }
+		}
+	}
+	print {$ofh} $_, "\n" if $out;
+}
+close $ifh or die "tac $INFILE: ".($!||"\$?=$?");
+close $ofh or die "tac (out): ".($!||"\$?=$?");
+&lt;/c&gt;
+&lt;p&gt;Although the two passes through [man://tac] might actually make that less efficient for large files. Here's a two-pass version:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+die "Usage: $0 INFILE\n" unless @ARGV==1;
+my $INFILE = shift @ARGV;
+
+use constant { STATE_IDLE=&gt;0, STATE_BEGIN=&gt;1, STATE_INBLOCK=&gt;2 };
+
+open my $fh, '&lt;', $INFILE or die "$INFILE: $!";
+my %found;
+my $state = STATE_IDLE;
+my $curnum;
+for my $pass (1..2) {
+	while (&lt;$fh&gt;) {
+		chomp;
+		my $out = 1;
+		if ($state==STATE_IDLE) {
+			if (/^\s*(?:foo\s+)?ref\s+(\d+)\s*$/) { $out=!$found{$1} }
+			elsif (/^begin$/) { $state=STATE_BEGIN }
+			else { die "unexpected in state $state: $_" }
+		}
+		elsif ($state==STATE_BEGIN) {
+			if (/^\s*(\d+)\s*$/) { $curnum=$1; $state=STATE_INBLOCK }
+			else { die "unexpected in state $state: $_" }
+		}
+		elsif ($state==STATE_INBLOCK) {
+			if (/^end$/) { $state=STATE_IDLE }
+			elsif (/bar/) { $found{$curnum}=1 }
+		}
+		else { die "bad state $state" }
+		print $_, "\n" if $pass==2 &amp;&amp; $out;
+	}
+	die "unexpected state at eof: $state" unless $state==STATE_IDLE;
+	seek $fh, 0, 0 or die "seek $INFILE: $!";
+}
+close $fh;
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Note that these solutions don't remove &lt;c&gt;ref N&lt;/c&gt; lines if they appear inside &lt;c&gt;begin...end&lt;/c&gt; blocks; this was an assumption I made, but it's actually unclear what the desired behavior is in that case?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1232492</root_node>
+<parent_node field_name="parent_node">1232496</parent_node>
+<thread id="1232492">
+<node id="1232494"><node id="1232496"><node id="1232498"><node id="1232502"/>
+</node>
+<node id="1232500"/>
+</node>
+<node id="1232497"><node id="1232501"/>
+</node>
+</node>
+<node id="1232503"><node id="1232527"><node id="1232547"/>
+</node>
+<node id="1232531"><node id="1232532"/>
+</node>
+</node>
+<node id="1232523"/>
+</thread></node>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111180" title="date and time difference" created="2020-01-08 08:50:04" updated="2020-01-08 08:50:04" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11110829">invisiblehand</author>
+<doctext field_name="doctext">&lt;p&gt;(perl version 5.8.7)&lt;/p&gt;
+
+&lt;p&gt;I have two date strings and and try to calculate date and time difference between two dates and times.&lt;/p&gt;
+&lt;p&gt;But the difference looks incorrect, could you help me to get the correct value?&lt;/p&gt;
+
+&lt;p&gt;notBefore=Nov 23 22:31:12 2019 GMT&lt;/p&gt;
+&lt;p&gt;notAfter=Mar 19 06:52:23 2020 GMT&lt;/p&gt;
+
+
+
+
+&lt;code&gt;
+#!/usr/bin/perl
+use Time::Local;
+
+# FILE READ IN
+$log_file = './raw.txt';
+open(FH, '&lt;',  $log_file) or die $!;
+
+while (&lt;FH&gt;) {
+ if(m/START/) {chomp; $sdname = $_;}
+ if(m/notBefore/) {
+   chomp; ($notB1, $notB2) = split('=', $_);
+   $notB2 =~ tr/:/ /;
+   my($mon,$mday,$hour,$minute,$sec,$year)=split(/ /,$notB2);
+   #print $mon, $mday, $hour, $minute, $sec, $year;
+   $time_1 = timelocal($sec,$minute,$hour,$mday,$mon,$year);
+ }
+ if(m/notAfter/) {
+   chomp; ($notA1, $notA2) = split('=', $_);
+   $notA2 =~ tr/:/ /;
+   my($mon,$mday,$hour,$minute,$sec,$year)=split(/ /,$notA2);
+   $time_2 = timelocal($sec,$minute,$hour,$mday,$mon,$year);
+ }
+ if(m/END/) {printf("%s %s %s\n", $sdname, $notB2, $notA2);
+   print $time_2,"\n",$time_1, "\n";
+   $diff_time = $time_2 - $time_1;
+   $diff_time1 = ($diff_time/86400);
+   print "diff_time :$diff_time:$diff_time1:\n";
+ }
+}
+&lt;/code&gt;
+
+
+
+&lt;p&gt;===output=====&lt;/p&gt;
+&lt;p&gt;SD0101START Nov 23 22 31 12 2019 GMT Mar 19 06 52 23 2020 GMT&lt;/p&gt;
+&lt;p&gt;1579384343&lt;/p&gt;
+&lt;p&gt;1548250272&lt;/p&gt;
+&lt;p&gt;diff_time :31134071:360.348043981481:&lt;/p&gt;
+
+
+
+
+
+&lt;p&gt;========rax.txt===========&lt;/p&gt;
+&lt;p&gt;SD0101START&lt;/p&gt;
+&lt;p&gt;notBefore=Nov 23 22:31:12 2019 GMT&lt;/p&gt;
+&lt;p&gt;notAfter=Mar 19 06:52:23 2020 GMT&lt;/p&gt;
+&lt;p&gt;SD0101END&lt;/p&gt;
+&lt;p&gt;SD0201START&lt;/p&gt;
+&lt;p&gt;notBefore=Nov 24 11:11:11 2019 GMT&lt;/p&gt;
+&lt;p&gt;notAfter=Mar 19 06:52:23 2020 GMT&lt;/p&gt;
+&lt;p&gt;SD0201END&lt;/p&gt;
+</doctext>
+<thread id="11111180">
+<node id="11111181"><node id="11111186"><node id="11111187"><node id="11111195"><node id="11111199"><node id="11111210"><node id="11111232"/>
+<node id="11111266"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11111192"/>
+</node>
+</node>
+<node id="11111185"/>
+<node id="11111219"><node id="11111368"/>
+</node>
+</thread></node>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229703" title="Re^3: Help encode_entities doesn't seem to work" created="2019-02-10 05:55:51" updated="2019-02-10 05:55:51" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Normally, PerlMonks is not a coding service, but this one happened to be interesting to me. It appears that the Excel file is encoded in one of the Mac formats, I'm guessing [wp://MacRoman]. I think this does what you want:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Spreadsheet::ParseExcel ();
+use Spreadsheet::Read 'ReadData';
+use Encode 'decode';
+use XML::LibXML;
+
+my $INFILE = 'TestPGR.xls';
+my $ENCODING = 'MacRoman';
+my $OUTFILE = 'TestPGR.xml';
+my %FIELDS = ( 1=&gt;'docid', 2=&gt;'title', 3=&gt;'version', 4=&gt;'revision',
+	5=&gt;'node_order', 6=&gt;'description', 7=&gt;'status', 8=&gt;'type',
+	9=&gt;'expected_coverage', );
+
+my $book = ReadData($INFILE, rc=&gt;1, cells=&gt;0);
+my $sheet = $book-&gt;[1] or die "Book doesn't have a sheet 1";
+
+my $doc = XML::LibXML::Document-&gt;createDocument('1.0', 'UTF-8');
+my $reqs = $doc-&gt;createElement('requirements');
+$doc-&gt;setDocumentElement($reqs);
+
+for my $r ( $sheet-&gt;{minrow}+1 .. $sheet-&gt;{maxrow} ) {
+	my $req = $doc-&gt;createElement('requirement');
+	for my $c ( $sheet-&gt;{mincol} .. $sheet-&gt;{maxcol} ) {
+		next unless exists $FIELDS{$c};
+		my $val = decode($ENCODING, $sheet-&gt;{cell}[$c][$r],
+			Encode::FB_CROAK);
+		my $node = $doc-&gt;createElement($FIELDS{$c});
+		$node-&gt;appendText($val);
+		$req-&gt;appendChild($node);
+	}
+	$reqs-&gt;appendChild($req);
+}
+
+$doc-&gt;toFile($OUTFILE,1);
+&lt;/c&gt;
+&lt;p&gt;Output (a UTF-8 encoded file):&lt;/p&gt;
+&lt;pre&gt;
+&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+&amp;lt;requirements&amp;gt;
+  &amp;lt;requirement&amp;gt;
+    &amp;lt;docid&amp;gt;PP10-RG-010&amp;lt;/docid&amp;gt;
+    &amp;lt;title&amp;gt;MASTER DATA&amp;lt;/title&amp;gt;
+    &amp;lt;version&amp;gt;1&amp;lt;/version&amp;gt;
+    &amp;lt;revision&amp;gt;1&amp;lt;/revision&amp;gt;
+    &amp;lt;node_order&amp;gt;1&amp;lt;/node_order&amp;gt;
+    &amp;lt;description&amp;gt;Le format et le contenu des 2 documents sont d&amp;eacute;crits dans la SFD XXX (JIRA 624).&amp;lt;/description&amp;gt;
+    &amp;lt;status&amp;gt;V&amp;lt;/status&amp;gt;
+    &amp;lt;type&amp;gt;3&amp;lt;/type&amp;gt;
+    &amp;lt;expected_coverage&amp;gt;1&amp;lt;/expected_coverage&amp;gt;
+  &amp;lt;/requirement&amp;gt;
+  &amp;lt;requirement&amp;gt;
+    &amp;lt;docid&amp;gt;PP10-RG-020&amp;lt;/docid&amp;gt;
+    &amp;lt;title&amp;gt;MASTER DATA&amp;lt;/title&amp;gt;
+    &amp;lt;version&amp;gt;1&amp;lt;/version&amp;gt;
+    &amp;lt;revision&amp;gt;1&amp;lt;/revision&amp;gt;
+    &amp;lt;node_order&amp;gt;2&amp;lt;/node_order&amp;gt;
+    &amp;lt;description&amp;gt;&amp;eacute;i&amp;ugrave;&amp;ucirc;&amp;ocirc;&amp;ecirc;&amp;ccedil;&amp;agrave;&amp;lt;/description&amp;gt;
+    &amp;lt;status&amp;gt;V&amp;lt;/status&amp;gt;
+    &amp;lt;type&amp;gt;3&amp;lt;/type&amp;gt;
+    &amp;lt;expected_coverage&amp;gt;1&amp;lt;/expected_coverage&amp;gt;
+  &amp;lt;/requirement&amp;gt;
+  &amp;lt;requirement&amp;gt;
+    &amp;lt;docid&amp;gt;PP10-RG-030&amp;lt;/docid&amp;gt;
+    &amp;lt;title&amp;gt;MASTER DATA&amp;lt;/title&amp;gt;
+    &amp;lt;version&amp;gt;1&amp;lt;/version&amp;gt;
+    &amp;lt;revision&amp;gt;1&amp;lt;/revision&amp;gt;
+    &amp;lt;node_order&amp;gt;2&amp;lt;/node_order&amp;gt;
+    &amp;lt;description&amp;gt;&amp;eacute;i&amp;ugrave;&amp;ucirc;&amp;ocirc;&amp;ecirc;&amp;ccedil;&amp;agrave;&amp;amp;lt;&amp;amp;gt;
+aqwzsx&amp;lt;/description&amp;gt;
+    &amp;lt;status&amp;gt;V&amp;lt;/status&amp;gt;
+    &amp;lt;type&amp;gt;3&amp;lt;/type&amp;gt;
+    &amp;lt;expected_coverage&amp;gt;1&amp;lt;/expected_coverage&amp;gt;
+  &amp;lt;/requirement&amp;gt;
+&amp;lt;/requirements&amp;gt;
+&lt;/pre&gt;</doctext>
+<root_node field_name="root_node">1229686</root_node>
+<parent_node field_name="parent_node">1229699</parent_node>
+<thread id="1229686">
+<node id="1229688"><node id="1229699"><node id="1229703"><node id="1229730"/>
+<node id="1229738"><node id="1229747"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1229690"><node id="1229700"><node id="1229706"><node id="1229725"><node id="1229734"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1229702"><node id="1229712"/>
+</node>
+</thread></node>

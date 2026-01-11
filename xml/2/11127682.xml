@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11127682" title="Re: UTF encoded subroutine names" created="2021-01-30 05:48:14" updated="2021-01-30 05:48:14" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The difference between the two symbols you've posted here is that &amp;#931; is U+03A3 GREEK CAPITAL LETTER SIGMA, while &amp;#8747; is U+222B INTEGRAL. If you use &amp;#8721; instead, that's U+2211 N-ARY SUMMATION, the same error happens, and if you use &amp;#643;, U+0283 LATIN SMALL LETTER ESH, the error doesn't happen. As per [doc://perldata#Identifier-parsing], identifiers under [doc://utf8|&lt;c&gt;use utf8;&lt;/c&gt;] must start with a character matching &lt;c&gt;(?[ ( \p{Word} &amp; \p{XID_Start} ) + [_] ])&lt;/c&gt;, and as per [doc://perluniprops], items from the [wp://Mathematical Operators (Unicode block)|Unicode block "Mathematical Operators"] don't match that rule. Unfortunately, these symbols aren't quite equivalent of course, but if you want to use them as names for Perl subroutines, you'll probably have to stick with the lookalikes. &lt;i&gt;Update:&lt;/i&gt; I also find this very useful: [https://util.unicode.org/UnicodeJsps/character.jsp|Unicode Utilities: Character Properties].&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use 5.028;
+use experimental 'regex_sets';
+use open qw/:std :utf8/;
+use charnames ':full';
+
+my $PERL_IDENT_RE =
+	qr/ (?[ ( \p{Word} &amp; \p{XID_Start} ) + [_] ])
+	    (?[ ( \p{Word} &amp; \p{XID_Continue} ) ]) *    /x;
+
+for my $c ( 0x2211, 0x03A3, 0x222B, 0x0283 ) {
+	printf "%s U+%04X %s %s\n", chr($c), $c, charnames::viacode($c),
+		chr($c) =~ /\A$PERL_IDENT_RE\z/ ? "matches" : "doesn't match";
+}
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;pre&gt;
+&amp;#8721; U+2211 N-ARY SUMMATION doesn't match
+&amp;#931; U+03A3 GREEK CAPITAL LETTER SIGMA matches
+&amp;#8747; U+222B INTEGRAL doesn't match
+&amp;#643; U+0283 LATIN SMALL LETTER ESH matches
+&lt;/pre&gt;
+&lt;p&gt;&lt;i&gt;Update 2:&lt;/i&gt; BTW, also: &lt;tt&gt;&amp;#425; U+01A9 LATIN CAPITAL LETTER ESH matches&lt;/tt&gt;.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11127679</root_node>
+<parent_node field_name="parent_node">11127679</parent_node>
+<thread id="11127679">
+<node id="11127682"><node id="11127683"><node id="11127684"><node id="11127709"><node id="11127714"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

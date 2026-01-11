@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227979" title="Re^3: Contextual find and replace large config file" created="2019-01-03 07:40:29" updated="2019-01-03 07:40:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Why &lt;c&gt;(?:\z|\n)&lt;/c&gt; and not just &lt;c&gt;\z&lt;/c&gt; when &lt;c&gt;\z&lt;/c&gt; is 'up to and including &lt;c&gt;\n&lt;/c&gt;'&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Not quite, &lt;c&gt;\z&lt;/c&gt; only ever matches at the very end of the string, whereas &lt;c&gt;\Z&lt;/c&gt; also matches before the newline at the end of the string, and the meaning of &lt;c&gt;$&lt;/c&gt; is changed by the &lt;c&gt;/m&lt;/c&gt; modifier to match &lt;i&gt;before&lt;/i&gt; every newline or at the end of the string. When I want to express "match up to the end of this line", I sometimes prefer &lt;c&gt;(?:\z|\n)&lt;/c&gt; over &lt;c&gt;$&lt;/c&gt;+&lt;c&gt;/m&lt;/c&gt; because the former explicitly consumes the &lt;c&gt;\n&lt;/c&gt;.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Why &lt;c&gt;\h*\n*&lt;/c&gt; and not &lt;c&gt;\s*&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Because &lt;c&gt;/\s*/&lt;/c&gt; would also match e.g. &lt;c&gt;\t\n\t&lt;/c&gt;, which causes a following &lt;c&gt;/^.../&lt;/c&gt; to no longer match, since &lt;c&gt;/\s*/&lt;/c&gt; consumed the &lt;c&gt;\t&lt;/c&gt; at the beginning of the line.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Regarding the first point:&lt;/p&gt;
+&lt;c&gt;
+$ perl -MData::Dump -e 'dd split /($)/m, "x\ny\nz"'
+("x", "", "\ny", "", "\nz")
+$ perl -MData::Dump -e 'dd split /(\z|\n)/m, "x\ny\nz"'
+("x", "\n", "y", "\n", "z")
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1227916</root_node>
+<parent_node field_name="parent_node">1227960</parent_node>
+<thread id="1227916">
+<node id="1227935"><node id="1227960"><node id="1227979"/>
+</node>
+</node>
+<node id="1227939"><node id="1227990"><node id="1227992"><node id="1228031"/>
+</node>
+</node>
+<node id="1228002"/>
+</node>
+<node id="1227941"/>
+<node id="1227942"><node id="1227963"><node id="1227986"/>
+</node>
+</node>
+<node id="1227987"/>
+<node id="1228072"/>
+<node id="1228229"/>
+</thread></node>

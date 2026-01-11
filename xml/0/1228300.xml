@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228300" title="Re: load a module or another: Dumper or dd" created="2019-01-10 04:46:47" updated="2019-01-10 04:46:47" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;As an alternative, here's something I regularly use some variation of (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; examples: [https://bitbucket.org/haukex/htools/src/5a8a44b48c75/enctool#enctool-388|1], [https://github.com/haukex/webperl/blob/fe8e030cdc361/web/regex_tester.html#L114|2], [https://github.com/haukex/IPC-Run3-Shell/blob/75bd608dab/lib/IPC/Run3/Shell.pm#L37|3]) to output strings or other small data structures as part of my debug output:&lt;/p&gt;
+&lt;c&gt;
+sub pp {
+    die "bad number of args to pp" unless @_==1;
+    return Data::Dumper-&gt;new([shift])-&gt;Terse(1)-&gt;Purity(1)-&gt;Useqq(1)
+        -&gt;Quotekeys(0)-&gt;Sortkeys(1)-&gt;Indent(0)-&gt;Pair('=&gt;')-&gt;Dump;
+}
+&lt;/c&gt;
+&lt;p&gt;As for your question of wanting to load either one or the other module, here's an example of how I would have done it - with this, you can always use &lt;c&gt;dd&lt;/c&gt;, no matter which module is available, although of course the output will look different:&lt;/p&gt;
+&lt;c&gt;
+BEGIN {
+	if ( eval { require Data::Dump; 1 } )
+		{ Data::Dump-&gt;import('dd'); }
+	else {
+		require Data::Dumper;
+		*dd = sub { print Data::Dumper-&gt;new(\@_)-&gt;Purity(1)
+			-&gt;Useqq(1)-&gt;Quotekeys(0)-&gt;Sortkeys(1)-&gt;Dump };
+	}
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1228281</root_node>
+<parent_node field_name="parent_node">1228281</parent_node>
+<thread id="1228281">
+<node id="1228282"><node id="1228286"><node id="1228292"/>
+</node>
+<node id="1228297"/>
+</node>
+<node id="1228283"><node id="1228284"><node id="1228288"/>
+</node>
+</node>
+<node id="1228285"><node id="1228301"/>
+</node>
+<node id="1228293"><node id="1228296"><node id="1228298"/>
+</node>
+</node>
+<node id="1228300"/>
+</thread></node>

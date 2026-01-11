@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203354" title="Re: regex negativ lookahead" created="2017-11-14 05:57:14" updated="2017-11-14 05:57:14" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;what did i not understand correctly?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You've already gotten some good answers, let me address this part: [doc://perlre#Lookaround-Assertions] are &lt;i&gt;zero-width&lt;/i&gt;. So for example, &lt;c&gt;/foo(?!bar)/&lt;/c&gt; matches the same thing as &lt;c&gt;/foo/&lt;/c&gt;, except that the next thing after the &lt;c&gt;foo&lt;/c&gt; may not be &lt;c&gt;bar&lt;/c&gt;, but it &lt;i&gt;can&lt;/i&gt; be &lt;i&gt;anything&lt;/i&gt; else, including the end of the string. So &lt;c&gt;/(?!start|sidebar)/&lt;/c&gt;, because it matches &lt;i&gt;zero&lt;/i&gt; characters, will match anywhere in the string where the next thing is not &lt;c&gt;(start|sidebar)&lt;/c&gt;, which is always true at the end of the string!*&lt;/p&gt;
+&lt;p&gt;[tybalt89]'s [id://1203334|solution] addresses this by anchoring the match at the beginning of the string. You haven't explained the bigger picture of what you're trying to do, so currently I don't understand why you want to use negative lookahead instead of &lt;c&gt;!~ /(start|sidebar)/&lt;/c&gt; - it sounds to me like you want to use this regex as part of a bigger regex, in which case additional considerations might need to be taken if you want to use lookaround assertions. If you could explain the context, perhaps we could suggest additional solutions.&lt;/p&gt;
+&lt;p&gt;BTW, I like to test my regexes the way I showed in [id://1201201].&lt;/p&gt;
+&lt;p&gt;* &lt;i&gt;Update:&lt;/i&gt; And in fact it's true in most places in the string.&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -MData::Dump
+"a"=~/(?!a)/p;
+dd ${^PREMATCH}, ${^MATCH}, ${^POSTMATCH};
+"start"=~/(?!start)/p;
+dd ${^PREMATCH}, ${^MATCH}, ${^POSTMATCH};
+__END__
+("a", "", "")
+("s", "", "tart")
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1203332</root_node>
+<parent_node field_name="parent_node">1203332</parent_node>
+<thread id="1203332">
+<node id="1203334"/>
+<node id="1203346"/>
+<node id="1203354"><node id="1203383"><node id="1203390"/>
+</node>
+</node>
+</thread></node>

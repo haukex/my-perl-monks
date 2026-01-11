@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101086" title="What is the logical error here (Fixed, but I want to understand)" created="2019-06-07 09:33:07" updated="2019-06-07 09:33:07" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11100471">hghosh</author>
+<doctext field_name="doctext">&lt;p&gt; Hello, Perl Monks! 
+
+I've fixed the code I'm about to show you, but I cannot understand why the original code was not working. For background, this script used to run just fine, but now, without explicitly defining the variables, it returns an undefined %chrsize hash.  I've inherited this script and I've been tasked with fixing it. It was written without "use warning" and "use strict". 
+
+here is the original code:&lt;/p&gt;
+
+&lt;code&gt;
+use File::Basename;
+my $filename=fileparse($ARGV[0]);
+
+$win=1000; # window size 1kb
+$L=`/scratch/xli91_lab/bin/rpyc/sumcol $ARGV[2] 2`; # total nt of genome excluding chrUext and chrM
+$N=$L/$win;
+$ratio=$ARGV[1]*0.01;
+
+open IN,$ARGV[2]; 
+while(&lt;IN&gt;) #there was no $_[1]; it was undef/blank. After explicitly declaring/storing in @array, it worked
+{
+    chomp;
+    split(/\t/);
+    $chrsize{$_[0]}=int($_[1]/$win);
+}  
+&lt;/code&gt;
+
+&lt;p&gt; Here is how I fixed it: &lt;/p&gt;
+
+&lt;code&gt;
+use File::Basename;
+my $filename=fileparse($ARGV[0]);
+
+$win=1000; # window size 1kb
+$L=`/scratch/xli91_lab/bin/rpyc/sumcol $ARGV[2] 2`; # total nt of genome excluding chrUext and chrM
+$N=$L/$win;
+$ratio=$ARGV[1]*0.01;
+
+open IN,$ARGV[2]; 
+while(&lt;IN&gt;)
+{
+    chomp(my $line= $_);
+    my @array = split(/\t/, $line);
+    print"$array[0]\n";
+    #array[1] are numbers
+    #array[2] are chr names
+    $chrsize{$array[0]}=int($array[1]/$win);
+}  
+&lt;/code&gt;
+
+
+
+&lt;p&gt;
+On an unrelated note: This is part of a perl script that USED to work without throwing errors until a system security update on our university's linux cluster. on an unrelated note, do you believe that the larger script may be throwing errors now due to permissions issues? Why else would a working script suddenly stop working after tightening security?&lt;/p&gt;</doctext>
+<thread id="11101086">
+<node id="11101088"><node id="11101093"><node id="11101094"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11145032" title="Re^5: Perlsecret - plus no-ops" created="2022-06-25 03:53:54" updated="2022-06-25 03:53:54" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I think that I'm missing something fundamental here... isn't for the third element of @array &lt;c&gt;grep {@$_} @arrays&lt;/c&gt; yielding &lt;c&gt;grep { 1,2 } @arrays&lt;/c&gt; when dereferenced?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I think perhaps the fundamental thing is that in Perl, arrays are different from lists. Lists and the comma operator are one way of several to initialize an array, as in &lt;c&gt;my @array = ("a","b","c");&lt;/c&gt;, but once those items are stored in the array, the comma operator is no longer relevant; &lt;c&gt;@array&lt;/c&gt; is &lt;b&gt;not&lt;/b&gt; the same as the literal expression &lt;c&gt;("a","b","c")&lt;/c&gt; any more, including for dereferenced array references. An array in scalar context returns the number of elements it contains, and [doc://grep] provides scalar context to its expression, so &lt;c&gt;grep {@$_} @arrays&lt;/c&gt; is equivalent to &lt;c&gt;grep {scalar(@$_)} @arrays&lt;/c&gt;, and &lt;c&gt;scalar(@$_)&lt;/c&gt; yields &lt;c&gt;2&lt;/c&gt; for the element &lt;c&gt;[1, 2]&lt;/c&gt;. That's &lt;i&gt;not&lt;/i&gt; because &lt;c&gt;2&lt;/c&gt; is the last item in the list, but because there are 2 items in the &lt;del&gt;list&lt;/del&gt;&lt;ins&gt;array&lt;/ins&gt;.&lt;/p&gt;
+&lt;p&gt;In the example code, try replacing &lt;c&gt;@arrays = ( [], [1], [ 1, 2 ], [], [ 5 .. 9 ] );&lt;/c&gt; with &lt;c&gt;@arrays = ( [], ["a"], ["b", "c"], [], ["d".."h"] );&lt;/c&gt;, and the functionality will be the same. Then, try replacing it with &lt;c&gt;@arrays = ( [], [0], [0, 0], [], [0,0,0,0,0] );&lt;/c&gt; (a bunch of [id://11104607|false] values) and it will still work the same. &lt;c&gt;scalar(0,0,0)&lt;/c&gt; is false, because it returns the last value of the &lt;i&gt;list&lt;/i&gt;, &lt;c&gt;0&lt;/c&gt;, which is false, but &lt;c&gt;my @x=(0,0,0); scalar(@x)&lt;/c&gt; is true, because the &lt;i&gt;array&lt;/i&gt; &lt;c&gt;@x&lt;/c&gt; evaluates to &lt;c&gt;3&lt;/c&gt;. That's how the [doc://grep] works here.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11144986</root_node>
+<parent_node field_name="parent_node">11145031</parent_node>
+<thread id="11144986">
+<node id="11144989"><node id="11144999"/>
+<node id="11145017"><node id="11145018"><node id="11145031"><node id="11145032"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

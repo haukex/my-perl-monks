@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1222257" title="Re: Unusual sorting requirement" created="2018-09-12 17:25:55" updated="2018-09-12 17:25:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;There is another field that identifies which array is currently being looked at, and hence can indicate the position of the date column.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Which column is that? I'm going to take a guess it's &lt;c&gt;src1&lt;/c&gt;/&lt;c&gt;src2&lt;/c&gt;. Also, I'm assuming string comparisons for the dates are ok, which should hold true if all the dates are formatted as you showed. I hope this is what you're looking for?&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/small&gt; I should have mentioned right off the bat that this is not the most efficient solution, and a Schwartzian transform, like [LanX] [id://1222259|said] and [tybalt89] [id://1222265|showed], helps in that regard. &lt;small&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+my $ary1 = [
+	[ 1,1,1,1,1,'2018-03-01', 'src1', 1,1,1,1 ],
+	[ 1,1,1,1,1,'2018-02-15', 'src1', 1,1,1,1 ],
+	[ 1,1,1,1,1,'2018-04-11', 'src1', 1,1,1,1 ],
+	[ 1,1,1,1,1,'2018-03-11', 'src1', 1,1,1,1 ],
+];
+
+my $ary2 = [
+	[ 2,2,2,2,'2018-03-02', 2, 'src2', 2,2,2,2 ],
+	[ 2,2,2,2,'2018-01-25', 2, 'src2', 2,2,2,2 ],
+	[ 2,2,2,2,'2018-04-22', 2, 'src2', 2,2,2,2 ],
+	[ 2,2,2,2,'2018-03-22', 2, 'src2', 2,2,2,2 ],
+];
+
+my @sorted = sort
+	{ $$a[$$a[6] eq 'src1' ?5:4] cmp $$b[$$b[6] eq 'src1' ?5:4] }
+	(@$ary1, @$ary2);
+
+dd @sorted;
+
+__END__
+
+(
+  [2, 2, 2, 2, "2018-01-25", 2, "src2", 2, 2, 2, 2],
+  [1, 1, 1, 1, 1, "2018-02-15", "src1", 1, 1, 1, 1],
+  [1, 1, 1, 1, 1, "2018-03-01", "src1", 1, 1, 1, 1],
+  [2, 2, 2, 2, "2018-03-02", 2, "src2", 2, 2, 2, 2],
+  [1, 1, 1, 1, 1, "2018-03-11", "src1", 1, 1, 1, 1],
+  [2, 2, 2, 2, "2018-03-22", 2, "src2", 2, 2, 2, 2],
+  [1, 1, 1, 1, 1, "2018-04-11", "src1", 1, 1, 1, 1],
+  [2, 2, 2, 2, "2018-04-22", 2, "src2", 2, 2, 2, 2],
+)
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1222256</root_node>
+<parent_node field_name="parent_node">1222256</parent_node>
+<thread id="1222256">
+<node id="1222257"><node id="1222258"/>
+</node>
+<node id="1222259"/>
+<node id="1222262"/>
+<node id="1222265"><node id="1222278"/>
+<node id="1222298"/>
+</node>
+</thread></node>

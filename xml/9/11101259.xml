@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101259" title="Re: %{^CAPTURE}, %{^CAPTURE_ALL} and %- don't produce expected output (updated x3!)" created="2019-06-11 14:15:00" updated="2019-06-11 14:15:00" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;c&gt;%{^CAPTURE_ALL}&lt;/c&gt; is documented to be an alias to [doc://%-], but it's clearly not. I think this qualifies as a bug. &lt;b&gt;&lt;c&gt;&lt;update2&gt;&lt;/c&gt;&lt;/b&gt; Yep: [https://rt.perl.org/Ticket/Display.html?id=131867|#131867] &lt;b&gt;&lt;c&gt;&lt;/update2&gt;&lt;/c&gt;&lt;/b&gt; &lt;b&gt;&lt;c&gt;&lt;update3&gt;&lt;/c&gt;&lt;/b&gt; Plus [https://rt.perl.org/Ticket/Display.html?id=134193|#134193] &lt;b&gt;&lt;c&gt;&lt;/update3&gt;&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+my $s = "a aa aaa aaaa";
+
+$s =~ /(?&lt;a&gt;a+) (?&lt;a&gt;a+) (?:(?&lt;a&gt;a+)bbb)?/;
+
+dd \%+;
+dd \%{^CAPTURE};
+
+dd \%-;
+dd \%{^CAPTURE_ALL};
+
+tie my %hash, "Tie::Hash::NamedCapture", all =&gt; 1;
+dd \%hash
+
+__END__
+
+{
+  # tied Tie::Hash::NamedCapture
+  a =&gt; "a",
+}
+{
+  # tied Tie::Hash::NamedCapture
+  a =&gt; "a",
+}
+{
+  # tied Tie::Hash::NamedCapture
+  a =&gt; ["a", "aa", undef],
+}
+{
+  # tied Tie::Hash::NamedCapture
+  a =&gt; "a",
+}
+{
+  # tied Tie::Hash::NamedCapture
+  a =&gt; ["a", "aa", undef],
+}
+&lt;/c&gt;
+&lt;p&gt;Note, from [doc://perlre]: "When different groups within the same pattern have the same name, any reference to that name assumes the leftmost defined group. ... Named captures are implemented as being aliases to numbered groups holding the captures ..." and I personally wouldn't use two named capture groups with the same name.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; [https://perl5.git.perl.org/perl.git/blob/4ec3954cc121fc76:/gv.c#l2024|The source] is confusing me even more...&lt;/p&gt;
+&lt;c&gt;
+            case '\003':        /* $^CHILD_ERROR_NATIVE */
+                if (memEQs(name, len, "\003HILD_ERROR_NATIVE"))
+		    goto magicalize;
+                                /* @{^CAPTURE} %{^CAPTURE} */
+                if (memEQs(name, len, "\003APTURE")) {
+                    AV* const av = GvAVn(gv);
+                    const Size_t n = *name;
+
+                    sv_magic(MUTABLE_SV(av), (SV*)n, PERL_MAGIC_regdata, NULL, 0);
+                    SvREADONLY_on(av);
+
+                    if (sv_type == SVt_PVHV || sv_type == SVt_PVGV)
+                        require_tie_mod_s(gv, '-', "Tie::Hash::NamedCapture",0);
+
+                } else          /* %{^CAPTURE_ALL} */
+                if (memEQs(name, len, "\003APTURE_ALL")) {
+                    if (sv_type == SVt_PVHV || sv_type == SVt_PVGV)
+                        require_tie_mod_s(gv, '+', "Tie::Hash::NamedCapture",0);
+                }
+		break;
+&lt;/c&gt;
+&lt;p&gt;And it appears &lt;c&gt;%{^CAPTURE_ALL}&lt;/c&gt; is not tested in the test suite, possibly explaining the issue...&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11101258</root_node>
+<parent_node field_name="parent_node">11101258</parent_node>
+<thread id="11101258">
+<node id="11101259"/>
+<node id="11101595"/>
+</thread></node>

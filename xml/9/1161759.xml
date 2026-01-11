@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1161759" title="Re: Restrict file search within current filessystem using wanted subroutine" created="2016-04-28 08:15:50" updated="2016-04-28 08:15:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [madparu],&lt;/p&gt;
+&lt;p&gt;There is a little-known feature of [doc://File::Find] from [doc://find2perl], the variable &lt;c&gt;$File::Find::topdev&lt;/c&gt;, which holds the device number of the path currently being searched under, which you can compare with the device number of the current file ([doc://stat]). Stick the following at the top of your &lt;c&gt;wanted&lt;/c&gt; function, and your search will be limited to the filesystems of the paths which you tell &lt;c&gt;File::Find::find&lt;/c&gt; to search under.&lt;/p&gt;
+&lt;c&gt;
+if ( $File::Find::topdev != (stat)[0] )
+   { $File::Find::prune = 1; return }
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Fixed &lt;c&gt;stat&lt;/c&gt; vs. &lt;c&gt;stat(_)&lt;/c&gt;, apologies. My test code was doing a [doc://stat] beforehand, so &lt;c&gt;stat(_)&lt;/c&gt; worked fine. But if the piece of code above is the very first thing in your &lt;c&gt;wanted&lt;/c&gt; function, you should [doc://stat] &lt;c&gt;$_&lt;/c&gt; first, and only then use the special filehandle &lt;c&gt;_&lt;/c&gt;. (The exception is when the &lt;c&gt;follow&lt;/c&gt; option is set, then [doc://File::Find] guarantees that an [doc://lstat] has been called.)&lt;/p&gt;
+&lt;p&gt;And by the way, [id://111088]!&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1161756</root_node>
+<parent_node field_name="parent_node">1161756</parent_node>
+<thread id="1161756">
+<node id="1161758"/>
+<node id="1161759"><node id="1161763"><node id="1161766"><node id="1161774"/>
+<node id="1162846"><node id="1162848"><node id="1162851"><node id="1162852"><node id="1162855"/>
+<node id="1163226"><node id="1163262"><node id="1163364"><node id="1163369"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1162893"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

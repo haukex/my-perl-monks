@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11107250" title="Re: Eliminate exact duplicates from array of hashes" created="2019-10-09 13:38:11" updated="2019-10-09 13:38:11" _doctext_mode="lenient"><type id="11">note</type>
+<author id="58196">Fletch</author>
+<doctext field_name="doctext">&lt;p&gt;
+It does work, it's just that you don't understand what it's comparing and why they look different to &lt;c&gt;uniq&lt;/c&gt;.  Each element in your &lt;c&gt;@test_data&lt;/c&gt; is a separate hashref which will compare differently with another hashref which might have identical contents.
+&lt;/p&gt;
+&lt;p&gt;
+For this particular usage with this (relatively small) amount of data you might could kludge something up by serializing items and then checking the serialized version. 
+&lt;/p&gt;
+&lt;p&gt;
+&lt;b&gt;Update:&lt;/b&gt; Ooops, forgot to enable sorting of keys with &lt;c&gt;canonical(1)&lt;/c&gt;.  Updated output as well.  I did say it was a kludge . . . 
+&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+use 5.018;
+use Data::Dumper;
+use JSON::XS;
+
+my @test_data = (
+    { Tag1 =&gt; "1", Tag2 =&gt; "a" },
+    { Tag1 =&gt; "1", Tag2 =&gt; "a" },
+    { Tag1 =&gt; "1", Tag2 =&gt; "b" },
+    { Tag1 =&gt; "1", Tag2 =&gt; "c" },
+    { Tag1 =&gt; "1", Tag2 =&gt; "a" },
+    { Tag1 =&gt; "2", Tag2 =&gt; "a" },
+    { Tag1 =&gt; "2", Tag2 =&gt; "d" },
+    { Tag1 =&gt; "2", Tag2 =&gt; "a" },
+    { Tag1 =&gt; "3"},
+    { Tag1 =&gt; "sun", Tag2 =&gt; "a" },
+    { Tag1 =&gt; "sun", Tag2 =&gt; "a" },
+);
+
+## showing the hashrefs are different regardless of contents
+say qq{idx: $_\tref: $test_data[$_]} for 0..2;
+
+my $j = JSON::XS-&gt;new-&gt;pretty(0)-&gt;ascii(1)-&gt;canonical(1);
+
+my %seen_items;
+my @unique;
+for my $item ( @test_data ) {
+  my $ser = $j-&gt;encode( $item );
+  push @unique, $item unless $seen_items{ $ser }++;
+}
+
+print Dumper \@unique;
+__END__
+idx: 0	ref: HASH(0x7fb3ac003ee8)
+idx: 1	ref: HASH(0x7fb3ac015cf8)
+idx: 2	ref: HASH(0x7fb3ac015dd0)
+$VAR1 = [
+          {
+            'Tag1' =&gt; '1',
+            'Tag2' =&gt; 'a'
+          },
+          {
+            'Tag2' =&gt; 'b',
+            'Tag1' =&gt; '1'
+          },
+          {
+            'Tag1' =&gt; '1',
+            'Tag2' =&gt; 'c'
+          },
+          {
+            'Tag1' =&gt; '2',
+            'Tag2' =&gt; 'a'
+          },
+          {
+            'Tag1' =&gt; '2',
+            'Tag2' =&gt; 'd'
+          },
+          {
+            'Tag1' =&gt; '3'
+          },
+          {
+            'Tag1' =&gt; 'sun',
+            'Tag2' =&gt; 'a'
+          }
+        ];
+
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-58196"&gt;
+&lt;p&gt;
+The cake is a lie.&lt;br /&gt;
+The cake is a lie.&lt;br /&gt;
+The cake is a lie.&lt;br /&gt;
+&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11107249</root_node>
+<parent_node field_name="parent_node">11107249</parent_node>
+<thread id="11107249">
+<node id="11107250"><node id="11107255"/>
+</node>
+<node id="11107251"><node id="11107254"/>
+</node>
+<node id="11107252"/>
+<node id="11107253"><node id="11107257"/>
+</node>
+<node id="11107258"><node id="11107277"/>
+</node>
+<node id="11107259"><node id="11107260"><node id="11107269"/>
+</node>
+</node>
+<node id="11107271"><node id="11107274"/>
+</node>
+</thread></node>

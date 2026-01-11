@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11138622" title="Re: xml to xml converter" created="2021-11-09 09:39:25" updated="2021-11-09 09:39:25" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Although my go-to XML module is [mod://XML::LibXML], [mod://XML::Twig] is useful for filtering XML files. The following produces your expected output for the given input:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::Twig;
+use XML::XPath;  # for findnodes
+
+my $filename = 'foo.xml';
+XML::Twig-&gt;new(
+	twig_print_outside_roots =&gt; 1,
+	keep_spaces =&gt; 1,
+	twig_roots =&gt; {
+		'/TestCode/TestCategory/Test' =&gt; sub {
+			my ($t, $elt) = @_;
+			if ( $elt-&gt;{att}{name} =~ /^CheckType_/ ) {
+				my @values = $elt-&gt;findnodes('./context/value');
+				# could theoretically also use XPath for the following
+				if ( grep { $_-&gt;text =~ /XYZ/ } @values )
+					{ $t-&gt;flush }
+				else { $t-&gt;purge }
+			}
+			else { $t-&gt;purge }
+		},
+	},
+)-&gt;parsefile($filename);
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11138619</root_node>
+<parent_node field_name="parent_node">11138619</parent_node>
+<thread id="11138619">
+<node id="11138622"><node id="11138623"><node id="11138624"><node id="11138629"/>
+</node>
+<node id="11138625"/>
+</node>
+</node>
+<node id="11138626"><node id="11138628"/>
+</node>
+<node id="11138632"/>
+<node id="11138642"/>
+<node id="11138673"/>
+<node id="11138657"/>
+</thread></node>

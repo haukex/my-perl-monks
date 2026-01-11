@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229315" title="Re^3: Calling subclass' method from superclass" created="2019-02-03 06:45:01" updated="2019-02-03 06:45:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I think example code would go a long way here. If you think it's likely that someone might want to subclass &lt;c&gt;Own&lt;/c&gt; and &lt;c&gt;Own::Dir&lt;/c&gt;, then in the following, consider that in &lt;c&gt;Own::parent&lt;/c&gt;, &lt;c&gt;Own::Dir-&gt;new&lt;/c&gt; is hardcoded, and so, someone who wants to override &lt;c&gt;Own::parent&lt;/c&gt; and call the superclass method, but wants to return their own subclass of &lt;c&gt;Own::Dir&lt;/c&gt;, would have to find some workaround to do so. OTOH, if &lt;c&gt;Own&lt;/c&gt; is some internal class, this case might be so unlikely that this may just be overthinking things.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use 5.012;
+
+package Own {
+	sub parent {
+		my $self = shift;
+		say "called Own::parent()"; # Debug
+		return Own::Dir-&gt;new('...');
+	}
+}
+
+package Own::File {
+	use parent -norequire, 'Own';
+	use parent 'Path::Class::File';
+}
+
+package Own::Dir {
+	use parent -norequire, 'Own';
+	use parent 'Path::Class::Dir';
+}
+
+say "Own::File-&gt;parent: ", Own::File-&gt;new('.')-&gt;parent;
+say "Own::Dir-&gt;parent: ", Own::Dir-&gt;new('.')-&gt;parent;
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1229163</root_node>
+<parent_node field_name="parent_node">1229312</parent_node>
+<thread id="1229163">
+<node id="1229164"><node id="1229312"><node id="1229315"/>
+</node>
+</node>
+<node id="1229168"><node id="1229433"/>
+</node>
+</thread></node>

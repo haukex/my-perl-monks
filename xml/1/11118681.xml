@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118681" title="Re^4: Reliably parsing an integer (updated)" created="2020-06-29 17:35:59" updated="2020-06-29 17:35:59" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;It's quite often possible to construct a regex to discriminate a number range, but this is usually more of an academic exercise than a practical solution.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Turns out to not be too difficult if you cheat a little with some embedded code &lt;c&gt;;-)&lt;/c&gt; (of course [hippo]'s [id://11118680|suggestion] is a lot more elegant &lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; if that's the limit one wants to implement)&lt;/p&gt;
+&lt;c&gt;
+use Config;
+use Math::BigInt;
+
+my $regex = do {
+	my $max = eval $Config{nv_overflows_integers_at} or die;
+	my $len1 = length($max) - 1;
+	my $range = substr $max, 0, 1;
+	$range = $range eq "1" ? "1" : "1-$range";
+	qr{ \A (?: (?!0) [0-9]{1,$len1}
+		| ( [$range] [0-9]{$len1} )
+			(?(?{ Math::BigInt-&gt;new($^N)-&gt;bgt($max) })(*F))
+	) \z }x }; 
+&lt;/c&gt;
+&lt;p&gt;One difference to my [id://11118679|first version] is that this regex doesn't allow zero (0).&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Updated benchmark and faster version of the code [id://11118708|here].&lt;/p&gt;
+&lt;readmore title="Tests"&gt;
+&lt;p&gt;Tests&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use Config;
+use Math::BigInt;
+
+my $regex = do {
+	my $max = eval $Config{nv_overflows_integers_at} or die;
+	my $len1 = length($max) - 1;
+	my $range = substr $max, 0, 1;
+	$range = $range eq "1" ? "1" : "1-$range";
+	qr{ \A (?: (?!0) [0-9]{1,$len1}
+		| ( [$range] [0-9]{$len1} )
+			(?(?{ Math::BigInt-&gt;new($^N)-&gt;bgt($max) })(*F))
+	) \z }x }; 
+
+use Test::More;
+
+diag explain $regex;
+
+unlike 0, $regex;
+  like 1, $regex;
+  like 3, $regex;
+unlike "", $regex;
+unlike "x", $regex;
+unlike "123y", $regex;
+unlike -1, $regex;
+unlike "-9999999999999999999999999999999", $regex;
+
+my $x = eval($Config{nv_overflows_integers_at})-1;
+like "$x", $regex, "max-1 ($x)";
+$x++;
+like "$x", $regex, "max works ($x)";
+$x++;
+unlike "$x", $regex, "max+1 fails ($x)";
+$x+=1_000;
+unlike "$x", $regex;
+
+unlike "999999999999999999999999999999999999", $regex;
+
+done_testing;
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;readmore title="Benchmark"&gt;
+&lt;p&gt;Benchmark (vs. my [id://11118679|first version]):&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Benchmark qw/cmpthese/;
+
+use feature 'state';
+use Carp;
+use Math::BigInt;
+use Config;
+use Regexp::Common qw/number/;
+
+sub validate_int {
+	my $str = shift;
+	state $max = Math::BigInt-&gt;new(
+		eval $Config{nv_overflows_integers_at} );
+	croak "not an integer"
+		unless defined $str &amp;&amp; $str=~/\A$RE{num}{int}\z/;
+	my $num = Math::BigInt-&gt;new($str);
+	croak "integer to small" if $num &lt; 0;
+	croak "integer too big" if $num &gt; $max;
+	return $num-&gt;numify;
+}
+
+sub validate_int2 {
+	my $str = shift;
+	state $regex = do {
+		my $max = eval $Config{nv_overflows_integers_at} or die;
+		my $len1 = length($max) - 1;
+		my $range = substr $max, 0, 1;
+		$range = $range eq "1" ? "1" : "1-$range";
+		qr{ \A (?: (?!0) [0-9]{1,$len1}
+			| ( [$range] [0-9]{$len1} )
+				(?(?{ Math::BigInt-&gt;new($^N)-&gt;bgt($max) })(*F))
+		) \z }x };
+	croak "bad integer" unless $str =~ $regex;
+	return 0+$str;
+}
+
+my $max = eval($Config{nv_overflows_integers_at});
+
+cmpthese(-1, {
+	first =&gt; sub {
+		validate_int(1)==1 or die;
+		validate_int(999)==999 or die;
+		validate_int($max-1)==$max-1 or die;
+		validate_int($max)==$max or die;
+		defined eval { validate_int($max+1) } and die;
+	},
+	second =&gt; sub {
+		validate_int2(1)==1 or die;
+		validate_int2(999)==999 or die;
+		validate_int2($max-1)==$max-1 or die;
+		validate_int2($max)==$max or die;
+		defined eval { validate_int2($max+1) } and die;
+	},
+});
+
+__END__
+
+          Rate  first second
+first   4403/s     --   -70%
+second 14902/s   238%     --
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">11118650</root_node>
+<parent_node field_name="parent_node">11118670</parent_node>
+<thread id="11118650">
+<node id="11118652"><node id="11118666"><node id="11118669"><node id="11118722"><node id="11118724"/>
+<node id="11118728"/>
+</node>
+</node>
+<node id="11118670"><node id="11118676"><node id="11118680"><node id="11118705"><node id="11118710"><node id="11118714"><node id="11118716"><node id="11118720"><node id="11118723"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11118712"><node id="11118721"><node id="11118730"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11118681"/>
+</node>
+<node id="11118679"/>
+</node>
+</node>
+<node id="11118658"/>
+<node id="11118671"><node id="11118673"><node id="11118678"/>
+<node id="11118698"/>
+</node>
+</node>
+<node id="11118708"/>
+<node id="11118880"/>
+</thread></node>

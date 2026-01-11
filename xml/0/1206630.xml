@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1206630" title="Re^2: WebSocket idle" created="2018-01-03 15:27:49" updated="2018-01-03 15:27:49" _doctext_mode="lenient"><type id="11">note</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;I've been using event loops, but I haven't been able to get the loop to triage to my sub when there are no other events. I've only been able to force my sub to run as a periodic event. Here is the code I have now, but it doesn't actually read any frames. Maybe the subscription isn't being sent correctly? It shows the logic I am trying to accomplish, though.&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use IO::Socket::SSL;
+use IO::Framed;
+use Net::WebSocket::Frame::text;
+use Net::WebSocket::Parser;
+use Net::WebSocket::Endpoint::Client;
+use Net::WebSocket::Handshake::Client ();
+use Net::WebSocket::HTTP_R ();
+use HTTP::Response;
+use JSON::XS;
+use Data::Dumper;
+
+my @prods = qw(BTC-USD LTC-USD ETH-USD);
+my $host = 'ws-feed.gdax.com';
+my $wssurl = "wss://$host/";
+my $port = 443;
+
+my $inet = IO::Socket::SSL-&gt;new("$host:$port")
+	or die "failed connect or ssl handshake: $!\n$SSL_ERROR";
+$inet-&gt;blocking(0);
+my $handshake = Net::WebSocket::Handshake::Client-&gt;new(
+    uri =&gt; $wssurl
+);
+print "REQ HEADERS:\n".$handshake-&gt;to_string()."\n";
+syswrite $inet, $handshake-&gt;to_string() or die $!;
+my $buffer = '';
+my $cnt = 0;
+my $line = &lt;$inet&gt;;
+while($line ne "\r\n") {
+	$buffer.= $line;
+	$line = &lt;$inet&gt;;
+}
+print "RESP HEADERS:\n$buffer\n";
+my $resp = HTTP::Response-&gt;parse($buffer);
+Net::WebSocket::HTTP_R::handshake_consume_response( $handshake, $resp );
+
+#See below about IO::Framed
+my $iof_r = IO::Framed-&gt;new($inet);
+$iof_r-&gt;allow_empty_read();
+my $parser = Net::WebSocket::Parser-&gt;new( $iof_r );
+my $iof_w = IO::Framed-&gt;new($inet);
+my $ept = Net::WebSocket::Endpoint::Client-&gt;new(
+	parser =&gt; $parser,
+	out =&gt; $iof_w,
+);
+
+my $subscribe = {
+	type =&gt; 'subscribe',
+	product_ids =&gt; \@prods,
+	channels =&gt; ['full']
+};
+my $payload = encode_json($subscribe);
+print $payload."\n";
+$iof_w-&gt;write(
+	Net::WebSocket::Frame::text-&gt;new( payload =&gt; $payload )
+);
+
+while(1) {
+	while(1) {
+		# we are catching up
+		print "get next frame\n";
+		my $frame = $ept-&gt;get_next_message();
+		print "\$frame = \"$frame\"\n";
+		last unless($frame);
+		load_frame(decode_json($frame));
+	}
+	# we are caught up
+	somethinghard();
+	# catch up again
+}
+
+sub somethinghard {
+	print "something hard\n";
+	sleep 1;
+}
+
+sub load_frame {
+	my ($frame) = @_;
+	my $data = decode_json($frame);
+	print Dumper($data);
+}
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">1206571</root_node>
+<parent_node field_name="parent_node">1206622</parent_node>
+<reputation field_name="reputation">6</reputation>
+<thread id="1206571">
+<node id="1206572"><node id="1206573"/>
+</node>
+<node id="1206622"><node id="1206630"><node id="1206674"><node id="1206689"/>
+<node id="1206690"/>
+</node>
+</node>
+</node>
+<node id="1206636"><node id="1206638"/>
+</node>
+<node id="1207567"><node id="1207572"><node id="1207613"><node id="1207619"><node id="1207676"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1208511"><node id="1208665"/>
+</node>
+</thread></node>

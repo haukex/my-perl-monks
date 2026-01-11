@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201132" title="XML Namespaces" created="2017-10-10 21:15:09" updated="2017-10-10 21:15:09" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1201130">simsrw73</author>
+<doctext field_name="doctext">I've been out of the loop a long time, and I'm having a little trouble wrapping my head around xml parsing &amp; namespaces. I'm trying to use XPathContext as I've read, but I still have to spell out everything in findnodes() and the context doesn't have any effect at all if I comment it out. What am I doing wrong? Is this the correct approach to parsing the document, to extract a single column of words from the table? The code below does work. I’m just not sure it’s the correct way to do it...
+
+&lt;code&gt;
+use strict;
+use warnings;
+
+use XML::LibXML;
+
+use open ':std', ':encoding(UTF-16)';
+
+use constant XML_WORD_COLUMN =&gt; 1;
+
+my $filename = 'Concordance.xml';
+open my $fh, '&lt;', $filename
+	or die "Can't open $filename: $!";
+binmode $fh, ':raw'; # drop PerlIO layers on this handle
+my $doc = XML::LibXML-&gt;load_xml(IO =&gt; $fh);
+
+# ===&gt; This doesn't matter &lt;===
+my $xpc = XML::LibXML::XPathContext-&gt;new($doc);
+$xpc-&gt;registerNs( o    =&gt; "urn:schemas-microsoft-com:office:office"      );
+$xpc-&gt;registerNs( x    =&gt; "urn:schemas-microsoft-com:office:excel"       );
+$xpc-&gt;registerNs( ss   =&gt; "urn:schemas-microsoft-com:office:spreadsheet" );
+$xpc-&gt;registerNs( html =&gt; "http://www.w3.org/TR/REC-html40"              );
+$xpc-&gt;registerNs( def  =&gt; "urn:schemas-microsoft-com:office:spreadsheet" );
+
+my $table = $xpc-&gt;findnodes(q{//ss:Worksheet[@ss:Name='Sheet 1']/ss:Table/ss:Row})
+	or die "Can't find table in Worksheet 'Sheet 1': $!";
+
+foreach my $row ($table-&gt;get_nodelist) {
+	my $col_index = 1;
+	foreach my $cell ($row-&gt;nonBlankChildNodes) {
+		if ($col_index++ == XML_WORD_COLUMN) {
+			my $d = $cell-&gt;find('./ss:Data');
+			print $d-&gt;to_literal, "\n";
+		}
+	}
+}
+
+__END__
+&lt;/code&gt;
+&lt;code&gt;
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;?mso-application progid="Excel.Sheet"?&gt;
+&lt;Workbook xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40" xmlns="urn:schemas-microsoft-com:office:spreadsheet"&gt;
+	&lt;Worksheet ss:Name="Sheet 1"&gt;
+		&lt;Table&gt;
+			&lt;Row&gt;
+				&lt;Cell&gt;
+					&lt;Data ss:Type="String"&gt;Word&lt;/Data&gt;
+				&lt;/Cell&gt;
+				&lt;Cell&gt;
+					&lt;Data ss:Type="String"&gt;Count&lt;/Data&gt;
+				&lt;/Cell&gt;
+			&lt;/Row&gt;
+			&lt;Row&gt;
+				&lt;Cell&gt;
+					&lt;Data ss:Type="String"&gt;Aaron&lt;/Data&gt;
+				&lt;/Cell&gt;
+				&lt;Cell&gt;
+					&lt;Data ss:Type="String"&gt;330&lt;/Data&gt;
+				&lt;/Cell&gt;
+			&lt;/Row&gt;
+			&lt;Row&gt;
+				&lt;Cell&gt;
+					&lt;Data ss:Type="String"&gt;Aaron’s&lt;/Data&gt;
+				&lt;/Cell&gt;
+				&lt;Cell&gt;
+					&lt;Data ss:Type="String"&gt;25&lt;/Data&gt;
+				&lt;/Cell&gt;
+			&lt;/Row&gt;
+			&lt;Row&gt;
+				&lt;Cell&gt;
+					&lt;Data ss:Type="String"&gt;Abaddon&lt;/Data&gt;
+				&lt;/Cell&gt;
+				&lt;Cell&gt;
+					&lt;Data ss:Type="String"&gt;7&lt;/Data&gt;
+				&lt;/Cell&gt;
+			&lt;/Row&gt;
+			&lt;!-- Blah Blah Blah --&gt;
+		&lt;/Table&gt;
+		&lt;x:WorksheetOptions&gt;
+			&lt;x:FreezePanes /&gt;
+			&lt;x:FrozenNoSplit /&gt;
+			&lt;x:SplitHorizontal&gt;1&lt;/x:SplitHorizontal&gt;
+			&lt;x:TopRowBottomPane&gt;1&lt;/x:TopRowBottomPane&gt;
+			&lt;x:ActivePane&gt;2&lt;/x:ActivePane&gt;
+		&lt;/x:WorksheetOptions&gt;
+	&lt;/Worksheet&gt;
+&lt;/Workbook&gt;
+&lt;/code&gt;</doctext>
+<thread id="1201132">
+<node id="1201137"><node id="1201140"/>
+</node>
+<node id="1201143"><node id="1201185"/>
+</node>
+<node id="1201147"/>
+</thread></node>

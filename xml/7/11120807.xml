@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11120807" title="Re: Inconsistent behavior of Getopt::Std" created="2020-08-16 04:58:58" updated="2020-08-16 04:58:58" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;parameter_check.pl -b -ddd&lt;/c&gt; produces non-intuitive result, where -ddd is eaten by -b and becomes the value of option -b.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This would be a mistake on the part of the user invoking the command. You've told the module that option &lt;c&gt;-b&lt;/c&gt; takes a value, so the module is simply doing what you asked: taking the next value in [doc://@ARGV] as the value of the option. Note that other command-line tools act the same way, e.g. &lt;c&gt;grep -e -i&lt;/c&gt; causes &lt;c&gt;-i&lt;/c&gt; to be taken as the value for the &lt;c&gt;-e&lt;/c&gt; option. This does not look like a bug in the library to me.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;parameter_check.pl -ddd -b&lt;/c&gt; the result is as expected: options('b') is set to zero length string.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This is actually an invalid command: option &lt;c&gt;-b&lt;/c&gt; requires a value, and it's not getting one. You're not checking the return value of &lt;c&gt;getopts&lt;/c&gt;, which would have told you something is wrong. A correct command line to specify the empty string for the option &lt;c&gt;-b&lt;/c&gt; would have been &lt;c&gt;parameter_check.pl -ddd -b ''&lt;/c&gt;.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;the behavior of this module varies depending on if the parameter is the last in the line or not&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Based on the above, this is not the correct conclusion to draw.&lt;/p&gt;
+&lt;p&gt;Not all command-line tools agree on a standard way of processing options, so if you want different behavior, you may have to use a different library or implement it yourself - though I wouldn't advise the latter, since you'd just be adding yet another differing way to process options to the mix.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;During testing I discovered that this module correctly processes setting the value of an option via repetition of the option letter , like -ddd. &lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Not really, it's simply taking &lt;c&gt;dd&lt;/c&gt; as the value of the &lt;c&gt;-d&lt;/c&gt; option. [doc://Getopt::Long] actually handles this as a separate case - otherwise, its behavior is identical to [doc://Getopt::Std] for the following test cases, plus it gives a helpful error message.&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Getopt::Std;
+# Note that removing posix_default and gnu_compat has no effect
+# on the output of this particular script.
+use Getopt::Long qw/ :config posix_default gnu_compat bundling /;
+use Data::Dump;
+
+my @tests = (
+	[qw/ -b -ddd /],
+	[qw/ -b -c -ddd /],
+	[qw/ -ddd -b /],
+	[qw/ -ddd -c -b /],
+	[qw/ -ddd -b -c /],
+	[qw/ -ddd -c -b -- /],
+	[qw/ -c -b -ddd /],
+	[qw/ -b -c -ddd /],
+);
+
+for my $t (@tests) {
+	print "##### "; dd $t;
+	{	local @ARGV = @$t;
+		if ( getopts("b:cd:", \my %opts) ) { dd \%opts }
+		else { warn "Bad options\n" }
+	}
+	{	local @ARGV = @$t;
+		if ( GetOptions(\my %opts, 'b=s', 'c', 'd+') ) { dd \%opts }
+		else { warn "Bad options\n" }
+	}
+}
+
+__END__
+
+##### ["-b", "-ddd"]
+{ b =&gt; "-ddd" }
+{ b =&gt; "-ddd" }
+##### ["-b", "-c", "-ddd"]
+{ b =&gt; "-c", d =&gt; "dd" }
+{ b =&gt; "-c", d =&gt; 3 }
+##### ["-ddd", "-b"]
+Bad options
+Option b requires an argument
+Bad options
+##### ["-ddd", "-c", "-b"]
+Bad options
+Option b requires an argument
+Bad options
+##### ["-ddd", "-b", "-c"]
+{ b =&gt; "-c", d =&gt; "dd" }
+{ b =&gt; "-c", d =&gt; 3 }
+##### ["-ddd", "-c", "-b", "--"]
+{ b =&gt; "--", c =&gt; 1, d =&gt; "dd" }
+{ b =&gt; "--", c =&gt; 1, d =&gt; 3 }
+##### ["-c", "-b", "-ddd"]
+{ b =&gt; "-ddd", c =&gt; 1 }
+{ b =&gt; "-ddd", c =&gt; 1 }
+##### ["-b", "-c", "-ddd"]
+{ b =&gt; "-c", d =&gt; "dd" }
+{ b =&gt; "-c", d =&gt; 3 }
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">11120805</root_node>
+<parent_node field_name="parent_node">11120805</parent_node>
+<thread id="11120805">
+<node id="11120806"><node id="11120813"><node id="11120815"/>
+</node>
+</node>
+<node id="11120807"><node id="11120819"><node id="11120821"/>
+</node>
+</node>
+</thread></node>

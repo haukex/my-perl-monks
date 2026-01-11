@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1187876" title="Re: search for particular elements of hash with multiple values" created="2017-04-13 16:00:39" updated="2017-04-13 16:00:39" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Either scan your data or build a lookup table (see [doc://perlreftut] and [doc://perldsc]), as follows. Which one is better in terms of the speed/memory tradeoff depends on how big the tables are and how many lookups you are performing.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my %barcode_hash = (
+	1 =&gt; ['AGCTCGTTGTTCGATCCA','GAGAGATAGATGATAGTG','TTTT_CCCC',0],
+	2 =&gt; ['AGCTCGTTGTTCGATCCA','GAGAGATAGATGATAGTG','TTTT_AAAA',0],
+	3 =&gt; ['AGCTCGTTGTTCGATCCA','GAGAGATAGATGATAGTG','TTTT_BBBB',0],
+	4 =&gt; ['AGCTCGTTGTTCGATCCA','GAGAGATAGATGATAGTG','TTTT_AAAA',0],
+);
+my $barcode_pair_35 = 'TTTT_AAAA';
+
+for my $key (sort keys %barcode_hash) {
+	print "Found at $key\n"
+		if $barcode_hash{$key}[2] eq $barcode_pair_35;
+}
+
+# - OR -
+
+my %lookup;
+for my $key (sort keys %barcode_hash) {
+	push @{ $lookup{ $barcode_hash{$key}[2] } }, $key;
+}
+print "Looked up at ".join(", ",@{$lookup{$barcode_pair_35}})."\n";
+
+__END__
+
+Found at 2
+Found at 4
+Looked up at 2, 4
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Updated:&lt;/b&gt; Replaced the hashref &lt;c&gt;$data&lt;/c&gt; with the hash &lt;c&gt;%barcode_hash&lt;/c&gt; to bring the code into line with your examples.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1187870</root_node>
+<parent_node field_name="parent_node">1187870</parent_node>
+<thread id="1187870">
+<node id="1187874"><node id="1187886"/>
+</node>
+<node id="1187876"><node id="1187905"><node id="1187907"/>
+<node id="1187919"/>
+</node>
+</node>
+<node id="1187912"/>
+<node id="1187913"><node id="1187977"/>
+</node>
+<node id="1188302"><node id="1188488"><node id="1188498"/>
+</node>
+</node>
+<node id="1188501"><node id="1188593"/>
+</node>
+</thread></node>

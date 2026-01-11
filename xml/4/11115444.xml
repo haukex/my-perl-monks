@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11115444" title="Re^3: Difficulty with UTF-8 and file contents" created="2020-04-13 06:47:50" updated="2020-04-13 06:47:50" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1129327">mldvx4</author>
+<doctext field_name="doctext">&lt;p&gt;
+Thanks, everybody. 
+&lt;/p&gt;
+&lt;p&gt;
+It came down to some gradual, one-step-at-a-time debugging combined with your advice above.
+&lt;/p&gt;
+&lt;p&gt;
+The wrong code which caused the problem:
+&lt;/p&gt;
+&lt;code&gt;
+    my $xhtml = HTML::TreeBuilder::XPath-&gt;new;
+    $xhtml-&gt;implicit_tags(1);
+    $xhtml-&gt;parse_file($file)
+        or die("Could not parse '$file' : $!\n");
+&lt;/code&gt;
+&lt;p&gt;
+The code which prevented the mutilation of the data:
+&lt;/p&gt;
+&lt;code&gt;
+    . . .
+    use open qw/:std :utf8/;
+    . . .
+
+    my $xhtml = HTML::TreeBuilder::XPath-&gt;new;
+    $xhtml-&gt;implicit_tags(1);
+    my $filehandle;
+    open ($filehandle, "&lt;", $file)
+        or die("Could not open file '$file' : error: $!\n");
+    $xhtml-&gt;parse_file($filehandle)
+        or die("Could not parse file handle for '$file' : $!\n");
+&lt;/code&gt;
+&lt;p&gt;
+So if I guess right, the use of a file handle which I have opened myself under the influence of the &lt;code&gt;use open qw/:std :utf8/;&lt;/code&gt; pragma forced the data going into HTML::TreeBuilder::XPath to be read as UTF-8?
+&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11115416</root_node>
+<parent_node field_name="parent_node">11115423</parent_node>
+<thread id="11115416">
+<node id="11115420"><node id="11115423"><node id="11115444"><node id="11115477"/>
+</node>
+</node>
+<node id="11115427"/>
+</node>
+<node id="11115431"/>
+<node id="11115454"><node id="11115495"/>
+</node>
+<node id="11115570"/>
+</thread></node>

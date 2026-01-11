@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227556" title="Re: Porting tqdm to Perl (updated)" created="2018-12-21 05:56:02" updated="2018-12-21 05:56:02" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The typical approach in Perl would be a &lt;c&gt;while&lt;/c&gt; loop...&lt;/p&gt;
+&lt;c&gt;
+my $it = tqdm(100);
+while (my $i = $it-&gt;next) {
+    ...
+}
+&lt;/c&gt;
+&lt;p&gt;Plenty of variations are possible, for example, &lt;c&gt;$it&lt;/c&gt; doesn't need to be an object, it could just be a code ref; or, if it is an object, it can overload the &lt;c&gt;&lt;&gt;&lt;/c&gt; operator (&lt;c&gt;while(&lt;$it&gt;)&lt;/c&gt;), etc.&lt;/p&gt;
+&lt;p&gt;BTW, [https://hop.perl.plover.com/|Higher-Order Perl] is great for this kind of stuff.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; One advantage of overloading &lt;c&gt;&lt;&gt;&lt;/c&gt; is that a &lt;c&gt;while(&lt;$it&gt;)&lt;/c&gt; is automatically translated to &lt;c&gt;while (defined($_ = readline $it))&lt;/c&gt;, meaning that only &lt;c&gt;undef&lt;/c&gt; terminates the sequence, and not other false values like &lt;c&gt;0&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+{
+	package Iterator;
+	use overload '&lt;&gt;' =&gt; sub {
+		my $self = shift;
+		if (wantarray) {
+			my @all;
+			while (defined( my $x = $self-&gt;() ))
+				{ push @all, $x }
+			return @all;
+		}
+		else { return $self-&gt;() }
+	};
+	sub new {
+		my $class = shift;
+		my @values = @_;
+		my $i=0;
+		return bless sub {
+			if ($i&gt;=@values) { $i=0; return }
+			return $values[$i++];
+		}, $class;
+	}
+}
+
+use Test::More tests=&gt;2;
+
+my $it1 = Iterator-&gt;new(-5..5);
+my @o1;
+while (&lt;$it1&gt;) {
+	push @o1, $_;
+}
+is_deeply \@o1, [-5,-4,-3,-2,-1,0,1,2,3,4,5];
+
+SKIP: {
+	skip "need Perl &gt;= v5.18 for overloaded &lt;&gt; in list context",
+		1 unless $] ge '5.018'; # [perl #47119]
+	my $it2 = Iterator-&gt;new(-5..5);
+	is_deeply [&lt;$it2&gt;], [-5,-4,-3,-2,-1,0,1,2,3,4,5];
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1227555</root_node>
+<parent_node field_name="parent_node">1227555</parent_node>
+<thread id="1227555">
+<node id="1227556"><node id="1227559"/>
+</node>
+<node id="1227558"><node id="1227563"><node id="1227564"><node id="1227567"/>
+</node>
+</node>
+</node>
+<node id="1227561"/>
+<node id="1227572"/>
+<node id="1227600"><node id="1227645"/>
+</node>
+</thread></node>

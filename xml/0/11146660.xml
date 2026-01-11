@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11146660" title="[Solved] Reading a timestamp and getting the written value" created="2022-09-03 11:32:41" updated="2022-09-03 11:32:41" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="436161">davies</author>
+<doctext field_name="doctext">&lt;p&gt;X: I want to write timestamps to a text file in a reasonably human-friendly format and then read them back, getting the same epoch second for comparison with &lt;c&gt;localtime&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Y: my first attempt with [mod://Time::Piece]:&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+use Time::Piece;
+use feature 'say';
+
+my $fmt = '%d %b %Y %T %Z';
+say localtime-&gt;strftime;
+say localtime-&gt;strftime($fmt);
+my $str = '03 Sep 2022 16:10:17 GMT Daylight Time';
+my $strtime = Time::Piece-&gt;strptime($str, $fmt);
+say localtime-&gt;epoch;
+say $strtime-&gt;epoch;
+&lt;/c&gt;
+&lt;p&gt;This returns:&lt;/p&gt;
+&lt;c&gt;
+Sat, 03 Sep 2022 16:10:35 GMT Daylight Time
+03 Sep 2022 16:10:35 GMT Daylight Time
+Garbage at end of string in strptime:  Daylight Time at C:/Strawberry/perl/lib/Time/Piece.pm line 598.
+Perhaps a format flag did not match the actual input? at C:/Strawberry/perl/lib/Time/Piece.pm line 598.
+1662217835
+1662221417
+&lt;/c&gt;
+&lt;p&gt;This is out by the timezone offset. The docs tell me to look at [https://www.unix.com/man-page/FreeBSD/3/strftime/], which says that &lt;c&gt;%z&lt;/c&gt; will be treated as a  numerical offset. For me, this gives the same as upper case Z, although I can't rule out the influence of Windows on this. [mod://DateTime] says it won't parse dates and gives no indication I could see of how to handle &lt;c&gt;localtime&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;I'd be happy with UTC, but Time::Piece does not seem to support it, which is why I think I may have an XY problem. I can't believe that no-one has invented this wheel, but my searches have been fruitless and all the wheels I have tried seem square. I know that clocks moving back at the end of next month will bite me. All help gratefully received.&lt;/p&gt;
+&lt;p&gt;Regards,&lt;/p&gt;
+&lt;p&gt;John Davies&lt;/p&gt;</doctext>
+<thread id="11146660">
+<node id="11146663"><node id="11146664"/>
+</node>
+</thread></node>

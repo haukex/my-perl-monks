@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11152141" title="mystery: Devel::Cover showing missing statement coverage on a line that is being run" created="2023-05-12 13:45:39" updated="2023-05-12 13:45:39" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1158292">pryrt</author>
+<doctext field_name="doctext">Given the SSCCE below, [METAMOD://Devel::Cover] v1.40 shows missing "statement" coverage for a line of code that is being run:
+&lt;c&gt;
+#!perl
+use 5.012; # strict, //
+use warnings;
+
+{
+    my $i = 1;
+    my $j = 2;
+    sub get {
+        $i + $j;
+    }
+}
+get();
+&lt;/c&gt;
+and running with
+&lt;c&gt;
+perl -MDevel::Cover x.pl 
+cover
+&lt;/c&gt;&lt;P&gt;
+
+why does it say only 90.9% coverage?
+&lt;c&gt;
+----- ------ ------ ------ ------ ------ ------ ------
+File    stmt   bran   cond    sub    pod   time  total
+----- ------ ------ ------ ------ ------ ------ ------
+x.pl    90.9    n/a    n/a  100.0    n/a  100.0   92.8
+Total   90.9    n/a    n/a  100.0    n/a  100.0   92.8
+----- ------ ------ ------ ------ ------ ------ ------
+&lt;/c&gt;&lt;P&gt;
+
+The coverage report shows the following table:
+&lt;table border="1" cellspacing="0"&gt;
+&lt;tr&gt;&lt;th&gt;line&lt;/th&gt;&lt;th&gt;stmt&lt;/th&gt;&lt;th&gt;bran&lt;/th&gt;&lt;th&gt;cond&lt;/th&gt;&lt;th&gt;sub&lt;/th&gt;&lt;th&gt;pod&lt;/th&gt;&lt;th&gt;time&lt;/th&gt;&lt;th&gt;code&lt;/th&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;1&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td class="s"&gt;#!perl&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;2&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;&lt;a href="#L2"&gt;1&lt;/a&gt;&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div&gt;0&lt;/div&gt;&lt;div&gt;0&lt;/div&gt;&lt;/td&gt;&lt;td class="s"&gt;use 5.012; # strict, //&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;3&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;&lt;a href="#L3"&gt;1&lt;/a&gt;&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div&gt;0&lt;/div&gt;&lt;div&gt;0&lt;/div&gt;&lt;div&gt;0&lt;/div&gt;&lt;/td&gt;&lt;td class="s"&gt;use warnings;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;4&lt;/td&gt;&lt;td colspan="7"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td class="h"&gt;5&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td class="s"&gt;{&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;6&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;div class="c0"&gt;0&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div&gt;0&lt;/div&gt;&lt;div&gt;0&lt;/div&gt;&lt;/td&gt;&lt;td class="s"&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;my $i = 1;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;7&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div&gt;0&lt;/div&gt;&lt;/td&gt;&lt;td class="s"&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;my $j = 2;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;8&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td class="s"&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;sub get {&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;9&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;&lt;a href="#L9"&gt;1&lt;/a&gt;&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td class="s"&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;$i + $j;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;10&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td class="s"&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;}&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;11&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td class="s"&gt;}&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;12&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div&gt;74157&lt;/div&gt;&lt;div&gt;0&lt;/div&gt;&lt;/td&gt;&lt;td class="s"&gt;get();&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;&lt;P&gt;
+
+... but I cannot see why line 6 has two rows in the table, or why it says that the second row for that line was never run; there's only one statement, as far as I can tell.  Removing the &lt;c&gt; = 1&lt;/c&gt; or changing the order of the declarations doesn't change the fact that the first row in that block claims to never run.&lt;P&gt;
+
+If I change to &lt;c&gt;do { ... };&lt;/c&gt; instead of just a block, then line 6 cleans up and only shows one row in the table, but now the line 4 &lt;c&gt;do {&lt;/c&gt; shows it was run 0 times:&lt;P&gt;
+
+&lt;table border="1" cellspacing="0"&gt;
+&lt;tr&gt;&lt;th&gt;line&lt;/th&gt;&lt;th&gt;stmt&lt;/th&gt;&lt;th&gt;bran&lt;/th&gt;&lt;th&gt;cond&lt;/th&gt;&lt;th&gt;sub&lt;/th&gt;&lt;th&gt;pod&lt;/th&gt;&lt;th&gt;time&lt;/th&gt;&lt;th&gt;code&lt;/th&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;1&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td class="s"&gt;#!perl&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;2&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;&lt;a href="#L2"&gt;1&lt;/a&gt;&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div&gt;5875&lt;/div&gt;&lt;div&gt;0&lt;/div&gt;&lt;/td&gt;&lt;td class="s"&gt;use 5.012; # strict, //&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;3&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;&lt;a href="#L3"&gt;1&lt;/a&gt;&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div&gt;0&lt;/div&gt;&lt;div&gt;0&lt;/div&gt;&lt;div&gt;0&lt;/div&gt;&lt;/td&gt;&lt;td class="s"&gt;use warnings;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;4&lt;/td&gt;&lt;td colspan="7"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td class="h"&gt;5&lt;/td&gt;&lt;td&gt;&lt;div class="c0"&gt;0&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div&gt;0&lt;/div&gt;&lt;/td&gt;&lt;td class="s"&gt;do {&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;6&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div&gt;0&lt;/div&gt;&lt;/td&gt;&lt;td class="s"&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;my $i = 1;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;7&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div&gt;0&lt;/div&gt;&lt;/td&gt;&lt;td class="s"&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;my $j = 2;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;8&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td class="s"&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;sub get {&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;9&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;&lt;a href="#L9"&gt;1&lt;/a&gt;&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td class="s"&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;$i + $j;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;10&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td class="s"&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;}&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;11&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div&gt;58427&lt;/div&gt;&lt;/td&gt;&lt;td class="s"&gt;};&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="h"&gt;12&lt;/td&gt;&lt;td&gt;&lt;div class="c3"&gt;1&lt;/div&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;div&gt;0&lt;/div&gt;&lt;/td&gt;&lt;td class="s"&gt;get();&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;&lt;P&gt;
+
+If I convert the block to a &lt;c&gt;sub init { ... } &lt;/c&gt; and then call it with &lt;c&gt;init()&lt;/c&gt;, then the &lt;c&gt;sub init {&lt;/c&gt; line shows as uncovered statement, just like the &lt;c&gt;do {&lt;/c&gt; version.&lt;P&gt;
+
+I can work around it by getting rid of the block, so eliminating the coverage-flag isn't a problem (but I want the block in my real code to encapsulate the &lt;C&gt;my&lt;/C&gt; variables to be private just for my &lt;C&gt;get&lt;/C&gt; function, so I'm not going to do that).  Or I can cheat with &lt;c&gt;# uncoverable statement count:2&lt;/c&gt;.  But my curiosity has been piqued as to why I should need a workaround at all.&lt;!-- Wiki2Monks {"version":1.161} --&gt;</doctext>
+<thread id="11152141">
+<node id="11152153"><node id="11152165"/>
+</node>
+</thread></node>

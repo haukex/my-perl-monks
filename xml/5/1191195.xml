@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1191195" title="Re: Regex problem" created="2017-05-25 05:49:34" updated="2017-05-25 05:49:34" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You will be doing yourself a huge favor if you use a module to parse HTML instead of regexes. I discussed some of the options for parsing HTML and gave some example code [id://1179336|here]: "Two classic modules are [mod://HTML::Parser] and [mod://HTML::TreeBuilder], but there are several others, such as [mod://Mojo::DOM]. If the input is always XHTML, there's [mod://XML::Twig] and many more XML-based modules."&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+use Mojo::DOM;
+
+my $html = &lt;&lt;'END_HTML';
+&lt;span class="remaining-data"&gt;54MB used&lt;/span&gt;
+&lt;span class="expires-data-right-align"&gt;1.44GB remaining&lt;/span&gt;
+END_HTML
+
+my $dom = Mojo::DOM-&gt;new($html);
+for my $e ($dom-&gt;find('span[class="remaining-data"]')-&gt;each) {
+	dd $e-&gt;text;
+	my ($val,$unit) = $e-&gt;text =~ /([+-]?(?:\d*\.)?\d+)(MB|GB) used/
+		or die "Couldn't parse '".$e-&gt;text."'";
+	dd $val, $unit;
+}
+
+__END__
+
+"54MB used"
+(54, "MB")
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1191188</root_node>
+<parent_node field_name="parent_node">1191188</parent_node>
+<thread id="1191188">
+<node id="1191191"/>
+<node id="1191195"/>
+</thread></node>

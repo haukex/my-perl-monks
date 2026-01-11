@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11107968" title="Portably unit testing scripts" created="2019-10-25 18:24:54" updated="2019-10-25 18:24:54" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="688543">wanna_code_perl</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Monks!&lt;/p&gt;
+
+&lt;p&gt;I have a script in my distribution that allows convenient CLI access to my library. It's handy, but it's not the main focus of my distribution. Still, I would like to get unit test coverage for it if I can.&lt;/p&gt;
+
+&lt;p&gt;The basic skeleton of my script is below, but it is built around the "modulino" approach of &lt;c&gt;main(@ARGV) unless caller&lt;/c&gt; suggested by blogs such as [https://perlmaven.com/modulino-both-script-and-module|this one] (Gabor Szabo). How can I add unit tests for things like:&lt;/p&gt;
+
+&lt;ul&gt;&lt;li&gt;Test that &lt;c&gt;--help&lt;/c&gt; and &lt;c&gt;--version&lt;/c&gt; output reasonable text and exiting with the correct value.&lt;/li&gt;
+&lt;li&gt;Test that &lt;c&gt;main()&lt;/c&gt; does the right thing if &lt;c&gt;@ARGV&lt;/c&gt; is not empty&lt;/li&gt;
+&lt;li&gt;Test that &lt;c&gt;main()&lt;/c&gt; accepts input from standard input if &lt;c&gt;@ARGV&lt;/c&gt; is empty.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;[mod://Test::Output] would get me part of the way there, but anything that actually &lt;c&gt;exit&lt;/c&gt;s, such as &lt;c&gt;pod2usage&lt;/c&gt;, exits the entire test script, which causes a failure. I could actually execute the script, but that isn't much of a "unit" test anymore and also defeats the purpose of the "modulino" style of unit testing scripts like this, and doing that portably would be tricky.&lt;/p&gt;
+
+&lt;p&gt;(Portability is a key requirement here.)&lt;/p&gt;
+
+&lt;p&gt;All of the searching I've done seems to stop at "shove everything into a sub, and unit test that", but I've not been able to find any useful examples that actually dive into the specifics of common tasks like &lt;c&gt;pod2usage&lt;/c&gt;, &lt;em&gt;anything&lt;/em&gt; that calls &lt;c&gt;exit&lt;/c&gt; for any reason, scripts that read from standard input, etc.&lt;/p&gt;
+
+&lt;p&gt;My script is handy and worthy of distribution, but it's still just a thin wrapper around my library. If I were to skip unit tests for those things, my script would have barely any useful unit tests, and then I might be inclined to not include it in the distribution at all.&lt;/p&gt;
+
+&lt;p&gt;How would you unit test something like this? I also obviously do my own integration testing before every release, but that serves a different purpose.&lt;/p&gt;
+
+&lt;readmore&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+
+use 5.010;
+use strict;
+use warnings;
+
+my $VERSION = '1.00';
+use Getopt::Long 'GetOptionsFromArray';
+use Pod::Usage;
+
+main(@ARGV) unless caller;
+
+sub main {
+    my $ARGV = \@_;
+
+    my %args = (
+        help    =&gt; sub { pod2usage -verbose =&gt; 1, -exitval =&gt; 0 },
+        version =&gt; sub { say "my_script version $VERSION\n"; exit },
+    );
+    GetOptionsFromArray($ARGV, \%args, qw&lt;host=s port=i password=s
+        help version&gt; ) or pod2usage(2);
+
+    if (@ARGV) {
+        do_something($_) for @ARGV;
+    } else {
+        while (&lt;STDIN&gt;) { chomp; do_something($_) }
+    }
+}
+
+sub do_something {
+    say "do_something: $_[0]";
+}
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<thread id="11107968">
+<node id="11107970"/>
+<node id="11107974"><node id="11107981"><node id="11107984"/>
+</node>
+</node>
+<node id="11107975"><node id="11107978"><node id="11107980"/>
+</node>
+<node id="11107985"><node id="11107986"/>
+</node>
+</node>
+<node id="11107989"/>
+<node id="11108001"/>
+</thread></node>

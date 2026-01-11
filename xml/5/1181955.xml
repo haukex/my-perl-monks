@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1181955" title="Interactive commands via ssh" created="2017-02-14 01:28:13" updated="2017-02-14 01:28:13" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1113129">Seq</author>
+<doctext field_name="doctext">I have few servers which needs updating and other kind of maintenance.&lt;p&gt;
+
+&lt;code&gt;xargs -a ~/servers -l1 -I'{}' ssh -t '{}' 'sudo aptitude full-upgrade'&lt;/code&gt;&lt;p&gt;
+
+Works, but it'll start to loose pty after one adds grep db ~servers|cut -d';' -f1 etc.&lt;br&gt; 
+Anyway I wanted to use database, so I can make my life more difficult.&lt;br&gt;
+
+Everything else works, but that ssh is bit off. Script below works ok, no worries, but I need more.&lt;p&gt;
+
+I can execute commands OR run shell, but I need both in a same time.&lt;p&gt;
+
+I want to get interactive with commands. ;) Like sudo aptitude full-upgrade, which asks Yes or No.&lt;br&gt;
+Ofc I can add -y to that aptitude but there are more questions. Like, do you want to save your configurations or something.&lt;p&gt;
+
+And expect is not an answer.&lt;p&gt;
+
+Basically I want inject my commands to that shell and want it to stop after it's done, cause there will be more servers...
+
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use Net::SSH::Perl;
+my $host = '172.16.9.40';
+my $username = 'power';
+my $ssh = Net::SSH::Perl-&gt;new($host,$username,options =&gt;["interactive yes","identity_files $ENV{HOME}/.ssh/id_dsa"]);
+
+
+$ssh-&gt;login($username);
+my $cmd;
+#my $cmd="sudo aptitude update";
+if ($cmd) {
+    my($out, $err, $exit) = $ssh-&gt;cmd($cmd);
+    print $out if $out;
+    print $err if $err;
+}
+else {
+    eval "use Term::ReadKey;";
+    ReadMode('raw');
+    eval "END { ReadMode('restore') };";
+    $ssh-&gt;shell;
+    print "Connection to $host closed.\n";
+}
+&lt;/code&gt;</doctext>
+<thread id="1181955">
+<node id="1181959"><node id="1181960"><node id="1181971"/>
+</node>
+</node>
+<node id="1181997"/>
+<node id="1182054"/>
+</thread></node>

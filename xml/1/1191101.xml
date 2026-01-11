@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1191101" title="Re: Best way to sum an array?" created="2017-05-24 11:45:49" updated="2017-05-24 11:45:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;[doc://List::Util] (the XS version) beats them all:&lt;/p&gt;
+&lt;c&gt;
+               Rate  recursive recursive2       eval  iterative   listutil
+recursive    1244/s         --        -4%       -68%       -97%      -100%
+recursive2   1297/s         4%         --       -67%       -97%      -100%
+eval         3930/s       216%       203%         --       -91%       -99%
+iterative   42708/s      3332%      3192%       987%         --       -85%
+listutil   281788/s     22544%     21622%      7071%       560%         --
+&lt;/c&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Benchmark qw/cmpthese/;
+use List::Util::XS;
+use List::Util qw/sum/;
+
+my @array = 1..1000;
+my $expect = sum(@array);
+
+{
+	use feature 'current_sub';
+	no warnings 'recursion';
+	sub SumArryRcs
+		{ 1==@_?$_[0]:1&gt;@_?die:shift(@_)+__SUB__-&gt;(@_) }
+	sub SumArryRcs2
+		{ @_ ? shift(@_) + __SUB__-&gt;(@_) : 0 }
+}
+
+cmpthese(-1, {
+	iterative =&gt; sub {
+		my $agg = 0;
+		$agg += $_ for @array;
+		$agg == $expect or die;
+	},
+	recursive =&gt;
+		sub { SumArryRcs(@array) == $expect or die },
+	recursive2 =&gt;
+		sub { SumArryRcs2(@array) == $expect or die },
+	eval =&gt;
+		sub { eval(join "+", @array) == $expect or die },
+	listutil =&gt;
+		sub { sum(@array) == $expect or die },
+});
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;The recursive approach is not a good solution, as I had to disable warnings on deep recursion and as the array gets longer it really blows up... only for short arrays does it outperform the &lt;c&gt;eval&lt;/c&gt; version.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1191095</root_node>
+<parent_node field_name="parent_node">1191095</parent_node>
+<thread id="1191095">
+<node id="1191097"><node id="1191100"><node id="1191102"/>
+</node>
+</node>
+<node id="1191098"/>
+<node id="1191101"><node id="1191103"><node id="1191114"/>
+<node id="1191127"/>
+</node>
+<node id="1191129"/>
+<node id="1191218"/>
+</node>
+<node id="1191107"/>
+<node id="1191108"/>
+<node id="1191109"/>
+<node id="1191110"/>
+<node id="1191120"><node id="1191138"><node id="1191142"/>
+</node>
+</node>
+<node id="1191207"><node id="1191208"><node id="1191209"><node id="1191210"/>
+<node id="1191226"><node id="1191228"><node id="1191274"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

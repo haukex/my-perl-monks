@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1223879" title="Re: Skript help needed - RegEx &amp; Hashes" created="2018-10-11 13:42:21" updated="2018-10-11 13:42:21" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1223788">PandaRaey</author>
+<doctext field_name="doctext">Thank you all so so much for your feedback and the help, you are my heros right now. The errors pointed out by [poj], [hippo] and [haukex] solved the issue, so when I only make those quick changes (the one variable change &lt;strike&gt; still can't believe I overlooked that I used the wrong variable all along &lt;/strike&gt; and the append mode) in my old script and it worked wonders. I get what I want and I could cry tears of happiness right now. You guys can not imagine the relief I am feeling right now.
+
+&lt;p&gt;However I do not just want a working script anymore but actually one that is also looking good. For that I would love to implement all the changes that have been suggested, however I am running in several problems while doing so.&lt;/p&gt;
+&lt;p&gt;1) when I try to declare the variables when I need them for some reasons I still get the following warning: &lt;i&gt;Global symbol "VARIABLE" requires explicit package name (did you forget to declare "my VARIABLE"?) &lt;/i&gt;&lt;/p&gt;
+&lt;p&gt;2) While trying to use the newer suggested way of opening files I get the following warning: &lt;i&gt;Scalar found where operator expected at new_reads.pl line 24, near """$folder" (Missing operator before $folder?)&lt;/i&gt; &lt;/p&gt;
+&lt;p&gt; I don't really understand why these errors are occurring, but I would love to get it fixed simply because I want my script not to be an "outdated" thing, using old ways of handling files and variables lol.&lt;/p&gt;
+&lt;p&gt; I copied the "newer" version of the script below and once again, thank all of you for your help.
+
+
+
+
+&lt;code&gt;
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+#Initiate all variables, hashes and co
+
+
+
+#Open folders in working directy
+
+my @folders = glob("*"); #to get all folders in directory; extension ("*") as wildcard to get all names
+foreach my $folder(@folders) #to speak to each element in directory
+	{
+	next if ($folder!~/^UNITAS_/); #skip elements which do not start with "UNITAS"
+	opendir(DIR,$folder)||die print$!; #open folder, end script when opening is not possible (DIR is the "filehandle" for the directory)
+	print"\n$folder";
+	while( my $file=readdir(DIR)) #returns content of folder
+		{
+		next if($file!~/\.mapped_sequences$/); #get the mapped_sequences file we need to read out the reads
+		print"\n$file"; #print out file names to make sure we get the right files
+
+		my $reads = 0; #set the number of reads to 0 for each run
+
+		open my $fileone, '&lt;', "$folder/$file" or die ""$folder/$file": $!";
+		
+		while(my $tocount=&lt;$fileone&gt;)#read file
+			{
+			chomp $tocount;
+			$tocount =~ s/&gt;//g; #remove all "&gt;"
+			next if ($tocount =~ /[A-Za-z]/); #skip lines which contain the sequence
+					
+			if ($tocount =~ /[0-9]/) #get the read-number
+				{
+				print"\n$tocount";
+				$reads = ($reads + $tocount); # add up all reads
+				}
+			print"\n$reads";
+
+			}
+		close $fileone;
+
+		my $trftable = 'unitas.tRF-table.txt'; #save file name in variable
+
+		open my $trf, '&lt;', "$folder/$trftable" or die ""$folder/$trftable": $!";
+
+		undef = &lt;$trf&gt; for 1 .. 4;
+
+		my %hash = (); #initiate empty hash
+
+		while( my $line=&lt;$trf&gt;)
+			{
+			chomp $line;
+			my @line=split("\t",$line);
+		
+			if($line[0]=~s/tRNA-[^-]+-...//) # "tRNA-"(matched tRNA und -) "[^-]+" beginning bis Ende, egal was "-..."(weiterer Strich bis Ende)
+				{
+				my $tRNAname=$line[0];
+				$tRNAname=$&amp;; # "$&amp;" = last pattern match
+				print"\n$tRNAname";
+				}
+			else
+				{
+				my $tRNAname=$line[0];
+				$tRNAname=~s/-ENS.+$//; # "-ENS.+$" ( matched allen die -ENS. bis Ende enthalten)
+				print"\n$tRNAname";
+				}
+		
+			my $hash{$tRNAname}{"5p-tR-halves"}+=$line[1]/$reads*1000000;
+			$hash{$tRNAname}{"5p-tRFs"}+=$line[3]/$reads*1000000;
+			$hash{$tRNAname}{"3p-tR-halves"}+=$line[5]/$reads*1000000;
+			$hash{$tRNAname}{"3p-CCA-tRFs"}+=$line[7]/$reads*1000000;
+			$hash{$tRNAname}{"3p-tRFs"}+=$line[9]/$reads*1000000;
+			$hash{$tRNAname}{"tRF-1"}+=$line[11]/$reads*1000000;
+			$hash{$tRNAname}{"tRNA-leader"}+=$line[13]/$reads*1000000;
+			$hash{$tRNAname}{"misc-tRFs"}+=$line[15]/$reads*1000000;
+			}
+
+		
+		open my $merge,"&gt;&gt;","$folder/$merge" or die "Could not open $folder/$merge : $!";
+		
+		my @tRF_types=("5p-tR-halves","5p-tRFs","3p-tR-halves","3p-CCA-tRFs","3p-tRFs","tRF-1","tRNA-leader","misc-tRFs");
+		foreach $tRNAname(sort{$a cmp $b}keys%hash) #sortiert die alphabetisch nach keys
+			{
+			print MERGE $tRNAname; # print tRNA name
+			foreach my $tRF_type(@tRF_types) 
+				{
+				print MERGE"\t$hash{$tRNAname}{$tRF_type}"; # print counts for each tRF type separated by tab
+				}
+			print MERGE"\n";# print newline
+			}
+
+		close TRF;
+		close MERGE;
+		close DIR;
+		}
+	}
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">1223791</root_node>
+<parent_node field_name="parent_node">1223791</parent_node>
+<thread id="1223791">
+<node id="1223793"/>
+<node id="1223794"><node id="1223795"><node id="1223796"/>
+</node>
+</node>
+<node id="1223798"/>
+<node id="1223816"><node id="1223839"/>
+</node>
+<node id="1223825"/>
+<node id="1223879"><node id="1223882"><node id="1223889"/>
+</node>
+<node id="1223883"/>
+<node id="1223913"><node id="1223917"><node id="1223919"/>
+</node>
+</node>
+</node>
+<node id="1224047"><node id="1224060"/>
+<node id="1224086"><node id="1224087"><node id="1224090"/>
+</node>
+</node>
+</node>
+</thread></node>

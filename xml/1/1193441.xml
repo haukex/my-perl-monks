@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193441" title="Re^2: Generate a report for every month for a year" created="2017-06-24 06:41:52" updated="2017-06-24 06:41:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+my $one_month_ago = DateTime
+    -&gt;now( time_zone =&gt; 'local' )
+    -&gt;subtract( days =&gt; 30 );
+&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I agree that [mod://DateTime] is a good choice, but note that "one month ago" is not the same as "30 days ago", and [man://date] math works the same as [mod://DateTime] in this case:&lt;/p&gt;
+&lt;c&gt;
+use DateTime;
+
+my $dt = DateTime-&gt;new(year=&gt;2017,month=&gt;3,day=&gt;1);
+print $dt-&gt;ymd, "\n";
+
+print "-30 days: ",
+	$dt-&gt;clone-&gt;subtract(days=&gt;30)-&gt;ymd, " ";
+system('date','+%Y-%m-%d','-d 2017-03-01 -30 days')==0 or die $?;
+
+print "-1 month: ",
+	$dt-&gt;clone-&gt;subtract(months=&gt;1)-&gt;ymd, " ";
+system('date','+%Y-%m-%d','-d 2017-03-01 -1 month')==0 or die $?;
+
+__END__
+
+2017-03-01
+-30 days: 2017-01-30 2017-01-30
+-1 month: 2017-02-01 2017-02-01
+&lt;/c&gt;
+&lt;p&gt;For [younggrasshopper13]: If you want to get the past 24 months starting with the current, here's one way:&lt;/p&gt;
+&lt;c&gt;
+use DateTime;
+my $dt = DateTime-&gt;now-&gt;truncate(to=&gt;'month');
+for (1..24) {
+	my $last = $dt-&gt;clone-&gt;add(months=&gt;1)-&gt;subtract(days=&gt;1);
+	print $dt-&gt;ymd," to ",$last-&gt;ymd,"\n";
+	$dt-&gt;subtract(months=&gt;1);
+}
+__END__
+2017-06-01 to 2017-06-30
+2017-05-01 to 2017-05-31
+2017-04-01 to 2017-04-30
+... etc.
+&lt;/c&gt;
+&lt;p&gt;And just for the sake of TIMTOWTDI, another, although not exactly the same:&lt;/p&gt;
+&lt;c&gt;
+use DateTime;
+my $now = DateTime-&gt;now;
+for ( my $dt = $now-&gt;clone-&gt;truncate(to=&gt;'month')
+		-&gt;subtract(years=&gt;2)-&gt;add(months=&gt;1);
+	  $dt &lt; $now;
+	  $dt-&gt;add(months=&gt;1) ) {
+		my $last = DateTime-&gt;last_day_of_month(year=&gt;$dt-&gt;year,
+			month=&gt;$dt-&gt;month,time_zone=&gt;$dt-&gt;time_zone);
+		print $dt-&gt;ymd," to ",$last-&gt;ymd,"\n";
+}
+__END__
+2015-07-01 to 2015-07-31
+2015-08-01 to 2015-08-31
+2015-09-01 to 2015-09-30
+...
+&lt;/c&gt;
+&lt;p&gt;Note that &lt;c&gt;DateTime-&gt;now&lt;/c&gt; defaults to using UTC, so if you want something else, specifying &lt;c&gt;DateTime-&gt;now(time_zone=&gt;...)&lt;/c&gt; like [thanos1983] showed is not a bad idea. But keep in mind that &lt;c&gt;time_zone=&gt;'local'&lt;/c&gt; will make it depend on the current configuration of the local machine, so if you want consistency, consider using a specific time zone like &lt;c&gt;time_zone=&gt;'America/Chicago'&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Changed the last example to use a &lt;c&gt;for(;;)&lt;/c&gt; loop, just to add some variety.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1193403</root_node>
+<parent_node field_name="parent_node">1193407</parent_node>
+<thread id="1193403">
+<node id="1193407"><node id="1193441"/>
+</node>
+<node id="1193410"/>
+<node id="1193491"/>
+<node id="1193598"><node id="1193628"><node id="1193737"><node id="1193746"/>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1176409" title="Re: Searching for duplication in legacy code (updated)" created="2016-11-23 06:26:56" updated="2016-11-23 06:26:56" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [yulivee07],&lt;/p&gt;
+&lt;p&gt;I've done a bit of work with [mod://PPI] and there is a chance it could be useful to you. This was an interesting question to me so I went off and whipped something up (&lt;i&gt;Update:&lt;/i&gt; that means please consider this a &lt;b&gt;beta&lt;/b&gt;) that finds identical &lt;c&gt;sub&lt;/c&gt;s, perhaps it's useful to you. [mod://PPI] could also be used for more powerful identification of duplicated code.&lt;/p&gt;
+&lt;readmore&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; I split the two example files out of the script and turned it into a usable standalone version. Apparently [mod://PPI] isn't keeping track of the filenames, so instead of figuring out exactly why that is I just added the filename tracking myself; otherwise the code is basically the same as the previously posted version.&lt;/p&gt;
+&lt;p&gt;File &lt;c&gt;one.pl&lt;/c&gt;&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+sub add {  # I am a comment
+	my $x = shift;
+	my $y = shift;  
+	my $sum = $x + $y;
+	return $sum;
+}
+sub subtr { return shift - shift; }
+sub foo { return 'foo'.shift }
+&lt;/c&gt;
+&lt;p&gt;File &lt;c&gt;two.pl&lt;/c&gt;&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+
+sub add {
+    my $x = shift;
+    my $y = shift;
+    my $sum = $x + $y;
+    return $sum;
+}
+sub subtract {
+	return shift-shift; # Hello, World
+}
+sub foo {
+	my $x = shift;
+	return "foo$x";
+}
+&lt;/c&gt;
+&lt;p&gt;And the script:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use PPI;
+use Digest::SHA qw/sha1_hex/;
+
+die "Usage: $0 FILENAMES\n" unless @ARGV;
+
+my %subs;
+for my $filename (@ARGV) {
+	my $doc = PPI::Document-&gt;new($filename);
+	$doc-&gt;index_locations;
+	for my $sub (get_subs($doc)) {
+		my $key = sha1_hex(delete $sub-&gt;{code});
+		$sub-&gt;{file} = $filename;
+		push @{ $subs{$key} }, $sub;
+	}
+}
+#use Data::Dump 'pp'; pp \%subs; # Debug
+for my $val (values %subs) {
+	next unless @$val&gt;1;
+	print "Potential Duplicates:\n";
+	for my $sub (@$val) {
+		printf "\tsub %s in file %s, line %d, col %d\n",
+			$sub-&gt;{name}, $sub-&gt;{file}//"unknown",
+			$sub-&gt;{loc}[0], $sub-&gt;{loc}[1];
+	}
+}
+
+sub get_subs {
+	my ($ppi_node) = @_;
+	my @subs;
+	for my $sub (@{ $ppi_node-&gt;find('Statement::Sub') }) {
+		next if $sub-&gt;forward;
+		my $str = $sub-&gt;block-&gt;content;
+		my $doc = PPI::Document-&gt;new(\$str);
+		# remove "insignificant" elements, note this isn't perfect,
+		# e.g. some significant whitespace may be removed
+		$doc-&gt;prune( sub { ! $_[1]-&gt;significant } );
+		push @subs, {name=&gt;$sub-&gt;name, loc=&gt;$sub-&gt;location,
+			code=&gt;$doc-&gt;serialize};
+	}
+	return @subs;
+}
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+$ ./subdupes.pl one.pl two.pl
+Potential Duplicates:
+	sub add in file one.pl, line 5, col 1
+	sub add in file two.pl, line 5, col 1
+Potential Duplicates:
+	sub subtr in file one.pl, line 11, col 1
+	sub subtract in file two.pl, line 11, col 1
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1176386</root_node>
+<parent_node field_name="parent_node">1176386</parent_node>
+<thread id="1176386">
+<node id="1176398"/>
+<node id="1176405"/>
+<node id="1176408"/>
+<node id="1176409"/>
+<node id="1176417"/>
+<node id="1176443"/>
+<node id="1176446"/>
+<node id="1176448"/>
+<node id="1176454"/>
+<node id="1199490"/>
+</thread></node>

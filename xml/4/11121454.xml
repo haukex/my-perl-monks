@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11121454" title="Unicode issues with emc uemcli" created="2020-09-07 13:35:12" updated="2020-09-07 13:35:12" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1182149">pritesh_ugrankar</author>
+<doctext field_name="doctext">&lt;p&gt;Hi,&lt;/p&gt;
+&lt;p&gt;I am getting this really weird output while printing out from "uemcli". 
+The uemcli is EMC's command line tool to manage some of their storage arrays. Now they have mentioned in the documentation that the latest version of the uemcli does have issues with Perl only on Windows and might show strange characters. I checked on the EMC forum and found a thread where someone has given a way to overcome this, but it does not work for me. This is how the output appears on the command line. Note the "yth" output appears all by itself.
+&lt;code&gt;
+C:\&gt;perl vnxe_1.pl
+ythS t o r a g e   s y s t e m   a d d r e s s :   1 9 2 . 1 6 8 . 1  . 1 2 3
+  S t o r a g e   s y s t e m   p o r t :   4 4 3
+  H T T P S   c o n n e c t i o n
+
+  1 :         S y s t e m   n a m e                       =   C D R - V N X e 1
+              M o d e l                                   =   V N X e 3 3 0 0
+              P l a t f o r m   t y p e                   =   E M C   S t o r a g e   S y s t e m
+              P r o d u c t   s e r i a l   n u m b e r   =   X Y Z  0 1 3 4 1 2 3 4 5 6 7
+              A u t o   f a i l b a c k                   =   o n
+              H e a l t h   s t a t e                     =   O K   ( 5 )
+              H e a l t h   d e t a i l s                 =   " T h e   s y s t e m   i s   o p e r a t i n g   n o r m a l l y . "
+
+
+&lt;/code&gt;
+&lt;/p&gt;
+&lt;p&gt;If the output is captured in a file, a lot of japanese characters show up. If I use utf-8, it still prints to file like how it's shown above.
+I know this is not a Perl problem, and I have tried utf-8 and utf-16 encoding/decoding and tried using Text::Unidecode, but either I am not using it right, or it is having no effect on the issue. Any help would be greatly appreciated.
+&lt;/p&gt;
+&lt;p&gt;
+Here's a snippet of the code I am trying. The username and password is being read from a separate file. I've removed a lot of code and only kept the code that displays the output shown earlier.
+&lt;/p&gt;
+&lt;code&gt;
+use strict;
+use warnings;
+use Text::Unidecode;
+
+my @arrayhealth = `uemcli -d $vnxe_ip -u $username -p $password /sys/general show -detail`;
+
+my ($system_name, $model, $platform_type, $product_serial_number, $auto_failback, $health_state, $health_details) = @arrayhealth;
+
+my @unidecode_arrayhealth = unidecode(@arrayhealth);
+
+print "@unidecode_arrayhealth\n";
+
+&lt;/code&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;code&gt;
+&lt;/code&gt;
+&lt;p&gt;
+&lt;/p&gt;</doctext>
+<thread id="11121454">
+<node id="11121456"><node id="11121460"><node id="11121461"><node id="11121463"><node id="11121482"/>
+</node>
+<node id="11121464"><node id="11121471"><node id="11121481"/>
+</node>
+<node id="11121483"><node id="11121487"><node id="11121488"><node id="11121489"><node id="11121495"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11121468"><node id="11121472"/>
+<node id="11121484"><node id="11121486"/>
+</node>
+</node>
+</thread></node>

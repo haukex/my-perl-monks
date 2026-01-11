@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193354" title="Re: get specific value of element using xpath in perl" created="2017-06-23 09:22:44" updated="2017-06-23 09:22:44" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I want to retrieve value of &amp;lt;release-date&amp;gt; element where &amp;lt;title&amp;gt; having value 'Solaris' and not other title elements. ... I tired XPath something like &lt;c&gt;my $title= $xp-&gt;find("/playlist/movie[title='Solaris']/release-date", $node);&lt;/c&gt; But result is not as expected OutPut ::2002-11-27&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If the question is what is the &lt;c&gt;&lt;release-date&gt;&lt;/c&gt; of the movie with the &lt;c&gt;&lt;title&gt;&lt;/c&gt; "Solaris", isn't the correct answer "2002-11-27"? Both [mod://XML::LibXML] and [mod://XML::XPath] seem to work fine for me with the exact XPath expression you've shown. &lt;small&gt;&lt;i&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/i&gt;&lt;/small&gt; All that the code you showed seems to try to do is build an array of hashes containing the &lt;c&gt;&lt;title&gt;&lt;/c&gt; elements' values, which doesn't seem to fit your problem statement. &lt;small&gt;&lt;i&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;c&gt;
+my $file = '/tmp/1193350.xml';
+my $xpath = q{/playlist/movie[title='Solaris']/release-date};
+
+use XML::LibXML;
+my $doc = XML::LibXML-&gt;load_xml(location=&gt;$file);
+for my $node ( $doc-&gt;findnodes($xpath) ) {
+	print "XML::LibXML: ",$node-&gt;textContent,"\n";
+}
+
+use XML::XPath;
+my $xp = XML::XPath-&gt;new(filename=&gt;$file);
+my $nodeset = $xp-&gt;find($xpath);
+for my $node ($nodeset-&gt;get_nodelist) {
+	print " XML::XPath: ",$node-&gt;string_value,"\n";
+}
+
+__END__
+
+XML::LibXML: 2002-11-27
+ XML::XPath: 2002-11-27
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1193350</root_node>
+<parent_node field_name="parent_node">1193350</parent_node>
+<thread id="1193350">
+<node id="1193354"><node id="1193425"/>
+<node id="1193668"><node id="1193669"><node id="1193671"/>
+</node>
+</node>
+</node>
+</thread></node>

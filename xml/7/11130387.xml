@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11130387" title="extracting sub elements from DOM by class" created="2021-03-26 10:30:56" updated="2021-03-26 10:30:56" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="174111">Discipulus</author>
+<doctext field_name="doctext">Hello folks,&lt;P&gt;
+
+I must admit: I dont understand the &lt;C&gt;DOM&lt;/C&gt; and scraping websites is a pain if you dont know it.&lt;P&gt;
+
+I'm using [METAMOD://Mojo::DOM] to parse a document, but I want to select and grab some sub element too, specifying their &lt;C&gt;class=&lt;/C&gt;&lt;P&gt;
+
+The following code is the best I was able to produce, but I want to know, for example, if a phone number comes from &lt;C&gt;class="fa fa fa-phone"&lt;/C&gt; or &lt;C&gt;class="fa fa fa-mobile-phone"&lt;/C&gt; (infact Francesco Petrarca has not a mobile) and I also want to grab the url of the avatar image.&lt;P&gt;
+
+I hope my code and data is not too big to read.&lt;P&gt;
+
+&lt;c&gt;
+use strict;
+use warnings;
+
+use Mojo::DOM;
+
+my $data = join '',&lt;DATA&gt;;
+my $dom = Mojo::DOM-&gt;new( $data );
+	
+foreach my $memb (  $dom-&gt;find('[id="members-list"] li')-&gt;each   ){ 
+	print "\n########\n";
+	my $writers_list = $memb
+		-&gt;find('*')
+		-&gt;map( 'text' )
+		-&gt;grep( qr/\S/ )		
+		-&gt;join("\n")
+	;
+	print $writers_list;
+}
+
+__DATA__
+&lt;ul id="members-list" class="item-list" role="main"&gt;
+	&lt;li&gt;
+		&lt;div class="item-avatar"&gt;
+			&lt;a href="https://intra.example.com/coworkers/dantealighieri/"&gt;&lt;img src="SRCURL/&gt;&lt;/a&gt;
+			&lt;span class="member-role"&gt;Sottoscrittore&lt;/span&gt;				
+		&lt;/div&gt; &lt;!-- .item-avatar --&gt;
+		&lt;div class="item"&gt;
+			&lt;div class="item-title"&gt;
+				&lt;a href="https://intra.example.com/coworkers/dantealighieri/" class="heading"&gt;&lt;h3&gt;Dante Alighieri&lt;/h3&gt;&lt;/a&gt;						
+			&lt;/div&gt;
+				&lt;div class="item-meta"&gt;&lt;span class="activity"&gt;active 6 days ago, 19 hours ago&lt;/span&gt;&lt;/div&gt;
+				&lt;div class="woffice-xprofile-list"&gt;
+					&lt;span&gt;&lt;i class="fa fa fa-phone"&gt;&lt;/i&gt;011111111&lt;/span&gt;
+					&lt;span&gt;&lt;i class="fa fa fa-mobile-phone"&gt;&lt;/i&gt;333333333&lt;/span&gt;
+					&lt;span&gt;&lt;i class="fa fa fa-envelope-o"&gt;&lt;/i&gt;dante.alighieri@example.com&lt;/span&gt;
+					&lt;span&gt;&lt;i class="fa fa fa-check"&gt;&lt;/i&gt;Poets and Writers&lt;/span&gt;
+				&lt;/div&gt;				
+			&lt;/div&gt;
+		&lt;div class="action"&gt;&lt;/div&gt;
+		&lt;div class="clear"&gt;&lt;/div&gt;
+	&lt;/li&gt;		
+	
+	&lt;li&gt;
+		&lt;div class="item-avatar"&gt;
+			&lt;a href="https://intra.example.com/coworkers/francescopetrarca/"&gt;&lt;img src="SRCURL/&gt;&lt;/a&gt;
+			&lt;span class="member-role"&gt;Sottoscrittore&lt;/span&gt;				
+		&lt;/div&gt; &lt;!-- .item-avatar --&gt;
+		&lt;div class="item"&gt;
+			&lt;div class="item-title"&gt;
+				&lt;a href="https://intra.example.com/coworkers/francescoptetrarca/" class="heading"&gt;&lt;h3&gt;Francesco Petrarca&lt;/h3&gt;&lt;/a&gt;						
+			&lt;/div&gt;
+				&lt;div class="item-meta"&gt;&lt;span class="activity"&gt;active 7 days ago, 22 hours ago&lt;/span&gt;&lt;/div&gt;
+				&lt;div class="woffice-xprofile-list"&gt;
+					&lt;span&gt;&lt;i class="fa fa fa-phone"&gt;&lt;/i&gt;02222222&lt;/span&gt;
+					&lt;span&gt;&lt;i class="fa fa fa-mobile-phone"&gt;&lt;/i&gt;&lt;/span&gt;
+					&lt;span&gt;&lt;i class="fa fa fa-envelope-o"&gt;&lt;/i&gt;francesco.petrarca@example.com&lt;/span&gt;
+					&lt;span&gt;&lt;i class="fa fa fa-check"&gt;&lt;/i&gt;Poets and Writers&lt;/span&gt;
+				&lt;/div&gt;				
+			&lt;/div&gt;
+		&lt;div class="action"&gt;&lt;/div&gt;
+		&lt;div class="clear"&gt;&lt;/div&gt;
+	&lt;/li&gt;		
+&lt;/ul&gt;
+&lt;/c&gt;&lt;P&gt;
+
+In my mind I'd like to populate an hash like:
+&lt;c&gt;
+my %members = (
+
+  'Dante Alighieri' =&gt; {
+    'avatar_url'            =&gt; 'URL',
+    'fa fa fa-phone'        =&gt; '02222222',
+    'fa fa fa-mobile-phone' =&gt; '333333333',
+    'fa fa fa-envelope-o'   =&gt; 'dante.alighieri@example.com'
+    'fa fa fa-check'        =&gt; 'Poets and Writers',
+  },
+
+  ...
+
+);
+
+
+&lt;/c&gt;&lt;P&gt;
+
+
+L*&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-174111"&gt;
+There are no rules, there are no thumbs..&lt;BR&gt;
+Reinvent the wheel, then learn The Wheel; may be one day you reinvent one of THE WHEELS.
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.16} --&gt;</doctext>
+<thread id="11130387">
+<node id="11130391"><node id="11130419"/>
+</node>
+<node id="11130401"/>
+<node id="11130477"/>
+</thread></node>

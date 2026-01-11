@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200044" title="Re: When modules install in perl5" created="2017-09-25 08:54:32" updated="2017-09-25 08:54:32" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Note that the [wp://Shebang (Unix)|shebang line] ("&lt;c&gt;#!...&lt;/c&gt;") specifies which &lt;c&gt;perl&lt;/c&gt; binary should get executed when the script is run from the command line via &lt;c&gt;/path/to/script.pl&lt;/c&gt; (and in a few other cases). Different &lt;c&gt;perl&lt;/c&gt; binaries usually have completely different module installation directories, i.e. completely different sets of [doc://@INC|&lt;c&gt;@INC&lt;/c&gt;]. You can see the &lt;c&gt;@INC&lt;/c&gt; directories with the commands &lt;c&gt;perl -V&lt;/c&gt; or &lt;c&gt;perl -le 'print for @INC'&lt;/c&gt;, and you'll see that typically, none of those are actually under &lt;c&gt;/usr/bin/perl&lt;/c&gt; (although there might theoretically be some exotic installations where that's not true).&lt;/p&gt;
+&lt;p&gt;I'm a little unclear on whether your question is about two different installations of Perl, each with their own sets of modules, or whether it is about a single Perl installation that you want to add another module directory to. It sounds to me like it's the latter, but just in case I'll briefly talk about the former first.&lt;/p&gt;
+&lt;p&gt;If you use a shebang line of "&lt;c&gt;#!/usr/bin/env perl&lt;/c&gt;", as I usually do, then the [man://env] tool will use whatever &lt;c&gt;perl&lt;/c&gt; comes first in your &lt;c&gt;PATH&lt;/c&gt; environment variable, which is the same thing as your shell would do when you type &lt;c&gt;perl script.pl&lt;/c&gt; at the command line. So then it's only a matter of managing the &lt;c&gt;PATH&lt;/c&gt; variable, which users would normally do in their &lt;c&gt;~/.profile&lt;/c&gt; or equivalent. Users can also install their own entire version of &lt;c&gt;perl&lt;/c&gt; (usually into their home directories) manually or using tools such as [https://perlbrew.pl/|perlbrew] or [https://github.com/tokuhirom/plenv|plenv], which will then take care of managing the different installations. &lt;i&gt;However,&lt;/i&gt; when scripts get run by a webserver, the server will typically set up its own environment, including its own &lt;c&gt;PATH&lt;/c&gt;. This means this method may not work for CGI scripts - I've found that when you want a script to use a specific installation of Perl, it's usually easiest to hardcode that into the shebang line, i.e. "&lt;c&gt;#!/absolute/path/to/perl&lt;/c&gt;" - note how I'm using an absolute path there. This will usually make sure that a webserver will run the script with that &lt;c&gt;perl&lt;/c&gt; binary.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;How would you do it if some "use xxx" are in /usr/bin/perl, and some in the second folder?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Two different installations of Perl would typically not share modules, and this is a good idea because modules compiled for different versions of Perl will often be incompatible! If you want the same modules available in both Perls, it's best to install them to both.&lt;/p&gt;
+&lt;p&gt;Now, as for a single installation of Perl with different module installation directories, there are several ways to tell Perl where to look for modules aside from the default locations it was compiled with, in other words, how to modify &lt;c&gt;@INC&lt;/c&gt;.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;From the command line: &lt;c&gt;perl -I/path/to/modules script.pl&lt;/c&gt; ([doc://perlrun])&lt;/li&gt;
+&lt;li&gt;From within each script individually: [doc://lib|&lt;c&gt;use lib '/path/to/modules';&lt;/c&gt;] (or by direct manipulation of [doc://@INC])&lt;/li&gt;
+&lt;li&gt;Using the [doc://perlrun#PERL5LIB] environment variable&lt;/li&gt;
+&lt;li&gt;Globally for the Perl installation: [doc://perlrun#*-f*|sitecustomize.pl] (only when [https://perl5.git.perl.org/perl.git/blob/60dfa515ef5:/INSTALL#l774|configured])&lt;/li&gt;
+&lt;li&gt;When building a new Perl, there are [https://perl5.git.perl.org/perl.git/blob/60dfa515ef5:/INSTALL|various options] (search for "@INC")&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;So which one should you use? Often, [doc://lib] is easiest, unless you have a lot of scripts that you need to modify, and/or you have installed a bunch of modules into one central location that all of your scripts need access to. I've found that usually, &lt;c&gt;PERL5LIB&lt;/c&gt; is easiest for "global" changes, since setting environment variables can also be limited to a per-user basis if desired, and you can usually configure your webserver to supply additional environment variables to CGI scripts. The things to be careful about is that if there are multiple places in the system that set &lt;c&gt;PERL5LIB&lt;/c&gt;, that they don't clobber each others' changes, and if you have multiple Perl installations, that you don't accidentally point the currently used Perl at the modules for a different version!&lt;/p&gt;
+&lt;p&gt;Note that it is also possible for users to install modules into their home directories. In this case, they can use &lt;c&gt;perl -I...&lt;/c&gt;, &lt;c&gt;PERL5LIB&lt;/c&gt;, and [doc://lib] to configure Perl to look for modules in their directories. There are also tools to make this easier, such as [mod://local::lib].&lt;/p&gt;
+&lt;p&gt;Sorry, I don't know much about suexec - if you're having a problem there, please post a more specific error message with instructions how to reproduce. As for permissions, your CGI scripts would typically have 0755, but that's not required for modules (&lt;c&gt;*.pm&lt;/c&gt; files), there 0644 is enough.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; I don't think this is the source of your problems, but for the sake of completeness, note that &lt;c&gt;@INC&lt;/c&gt; used to include the current working directory "&lt;c&gt;.&lt;/c&gt;", but [doc://perl5260delta#Removal-of-the-current-directory-(".")-from-@INC|as of Perl v5.26] it does not. &lt;small&gt;&lt;i&gt;(Also made a few more very minor ninja edits.)&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update 2:&lt;/i&gt; Although I'm going a bit overkill on the "for the sake of completeness", [id://1200087|here] is a new thread on using [doc://FindBin] for library paths that are always in the same place relative to the location of the script file. &lt;small&gt;&lt;i&gt;(Also added the sentence about not clobbering the env var.)&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1200039</root_node>
+<parent_node field_name="parent_node">1200039</parent_node>
+<thread id="1200039">
+<node id="1200040"/>
+<node id="1200041"/>
+<node id="1200042"><node id="1200043"><node id="1200051"/>
+</node>
+<node id="1200132"><node id="1200142"/>
+<node id="1200187"/>
+</node>
+</node>
+<node id="1200044"><node id="1200055"><node id="1200128"/>
+</node>
+<node id="1200127"/>
+</node>
+<node id="1200045"><node id="1200129"/>
+</node>
+<node id="1200060"/>
+<node id="11109615"/>
+</thread></node>

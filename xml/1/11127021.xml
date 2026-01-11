@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11127021" title="writing to filter giving me back GLOB(x)GLOB(x)..." created="2021-01-17 00:21:23" updated="2021-01-17 00:21:23" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="438862">perl-diddler</author>
+<doctext field_name="doctext">Have a mail filter that's worked / evolved for years, maybe 1st version around 1990 or there abouts.
+&lt;p&gt;
+Latest change is I need to filter out some google-clutter -- but instead of doing that last as I was, I find
+spamassassin is finding one of their hosts "offensive" (in a black list), so I need to run the de-googer before running SA.
+&lt;p&gt;
+Before ran SA 1st, so the SA-client just read the msg from STDIN and I read SA's stamped version using an open of 
+spamc with an output pipe that I read from.
+&lt;p&gt;
+Now, I have to read the incoming msg 1st, filter-it, then send it to SA(spamc), and then read spamc's "stamped" (w/the spamassassin markup) from the client.  The fact that I need to write to the client and read from it at the same time has me needing 
+at least 1 explicit pipe and a fork.
+&lt;p&gt;
+I might as well post the first bit of code here -- this is a mockup of the flow control to show my "algorithm".  The mockup is a condensation of about 80 lines, which I can post if needed.
+&lt;pre&gt;
+01   sub get_Spamc_msg($) {
+02     my $de_cluttered_msg = shift;
+03 
+04     pipe $from_spamc, $spamc_out;
+05 
+06     if ( ($stat=fork()) == 0) { # child will write msg to spamc
+07       close $from_spamc;        # parent will read from this
+08       open(\*STDOUT, "&gt;&amp;", $spamc_out)
+09       open (my $spamc_h , "|-", "$Spamc -u law")
+10       print $spamc_h for @$de_cluttered_msg;
+11       close($spamc_h)
+12       exit 0;                   # exit child
+13     } elsif ( $stat &gt; 0 ) {     # this is parent
+14       close $spamc_out;         # parent won't be writing to this
+15     }
+16     ...
+17     my @lines=&lt;$from_spamc&gt;;    # expects array to catch. (chked on entry)
+18     @lines
+19   }
+20   ...
+21   @msg=get_Spamc_msg(\@filtered)
+22 
+23   die P("No message? USE_SPAMC=%s, message too small:  msg=@msg\n", 
+24           $USE_SPAMC) if $#msg &lt; 2;
+25 ----
+26 output: 
+27 No message? USE_SPAMC=1, message too small:  msg=GLOB(0xb1b940)GLOB(0xb1b940)GLOB(0xb1b940)GLOB(0xb1b940)GLOB(0xb1b940)GLOB(0xb1b940)GLOB(0xb1b940)GLOB(0xb1b940)GLOB(0xb1b940)GLOB(0xb1b940)GLOB(0xb1b940)...
+&lt;/pre&gt;
+This is what I'm doing now...the message is passed in an ARRAY-ptr at the beginning.  Then create a pipe that is intended to be the output of spamc on the out-end + read by the main process (parent) from a child.
+&lt;p&gt;
+So next I fork -- child closes the 'from_spamc' end of the pipe so only parent holds it.  I then dup spamc_out into STDOUT.
+I originally had it without the '\*' - gave same output - so made no difference, but staring at the examples in perlfunc(open), that seems to be the right syntax for that.
+&lt;p&gt;
+Then I open a pipe for writing to spamc from the child, then print my decluttered msg in line 10 to the child, then close that
+file handle and then child exits.
+&lt;p&gt;Continuing in the parent, it closes the child side of the pipe so it only has the input handle from the pipe. From that input handle ($from_spamc), I grab the output into the "@lines" array and return that.  Back in the main line at #21, @msg receives the  output from the 'get_spamc_msg' sub, but I'm getting back a bunch of GLOB(0xb1b940) -- one for each line in the message.  I.e. instead of the msg, I get GLOB'd.
+Indeed, Trying to look at @lines in 17-18 above, the parent is only seeing the globs as 1 line.
+&lt;p&gt;
+So I have some I/O criss-crossed, but it looks correct.  I'm wondering if I'm really seeing the STDOUT from the spamc child or
+wondering if perl has played with the output of spamc in the open statement (ln#09).
+&lt;p&gt; Since I'm not certain if perl is playing with other than spamc's input handle, my next step is to move to another pipe and fork to do explicitly what perl should be doing in the "|-", $Spamc...
+&lt;p&gt;
+For fun, tried it with 'cat' instead of spamc -- got the same.
+&lt;p&gt;
+Anyone see what I'm doing wrong here? I mean it's not like its rocket science is it?...*sigh*
+&lt;p&gt;
+Thanks in advance...
+
+</doctext>
+<thread id="11127021">
+<node id="11127028"><node id="11127034"/>
+</node>
+</thread></node>

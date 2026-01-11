@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1182330" title="How to read compressed (gz) file in xml::twig" created="2017-02-20 04:47:30" updated="2017-02-20 04:47:30" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1136464">CSharma</author>
+<doctext field_name="doctext">Hi Monks,
+
+&lt;p&gt;Purpose: I've hundreds of compressed (.gz) xml files from which I've to create distribution of values of 'EstimatedCPC' tags from xml files. 
+Issue: I'm not sure how to read gzipped file in xml::twig; I don't want to unzip each file then read. Is there any way to read directly? Please help.
+Also code:2 is throwing "Wide character in print at /usr/local/share/perl/5.22.1/XML/Twig.pm line 8628." this error. How to fix this?
+&lt;p&gt;
+
+Perl Code 1:
+&lt;code&gt;
+my $file = 'file.xml';
+my $twig = new XML::Twig;	## Get twig object
+$twig-&gt;parsefile($file);	## parse the file to build twig
+
+
+my $root = $twig-&gt;root;		## Get the root element of twig
+my @elements = $root-&gt;children;	## Get elements list of twig
+
+foreach my $e (sort @elements){
+	my $cpc = ($e-&gt;first_child('EstimatedCPC')-&gt;text)*100;
+	print $cpc,"\n";
+}
+&lt;/code&gt;
+
+Perl Code 2:
+&lt;code&gt;
+
+$twig-&gt;parsefile( "file.xml");    # build the twig
+my $root= $twig-&gt;root;           # get the root of the twig (stats)
+my @players= $root-&gt;children;    # get the player list
+
+                                 # sort it on the text of the field
+my @sorted= sort {    $b-&gt;first_child( $field)-&gt;text 
+                  &lt;=&gt; $a-&gt;first_child( $field)-&gt;text }
+            @players;
+                                 
+print '&lt;?xml version="1.0"?&gt;';   # print the XML declaration
+print '&lt;!DOCTYPE stats SYSTEM "stats.dtd" []&gt;';
+print '&lt;stats&gt;';                 # then the root element start tag
+
+foreach my $player (@sorted)     # the sorted list 
+ { $player-&gt;print;               # print the xml content of the element 
+   print "\n"; 
+ }
+print "&lt;/stats&gt;\n";              # close the document
+&lt;/code&gt;
+
+Example of xml:
+&lt;code&gt;
+&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;
+&lt;CatalogListings&gt;
+	&lt;Offer id="af94bdd18ff9ffbf66afb5286dcb68fa"&gt;
+		&lt;Command&gt;new&lt;/Command&gt;
+		&lt;Title&gt;Puma Pitch Shorts&lt;/Title&gt;
+		&lt;Description&gt;Pitch Shorts: Let your football team look like pros and play like pros with these lightweight shorts from PUMA. Highly functional materials draw sweat away from your skin and help keep you dry and comfortable during exercise. Get ready for dry with dryCELL. Bio-based wicking finish to keep you dry.&lt;/Description&gt;
+		&lt;EstimatedCPC&gt;0.0434&lt;/EstimatedCPC&gt;
+		&lt;LastModified&gt;2017-02-15 21:31:41&lt;/LastModified&gt;
+		&lt;Images&gt;
+			&lt;Image available="true"&gt;
+				&lt;Url&gt;http://r.kelkoo.com/r/uk/11210623/100353523/90/90/http%3A%2F%2Fpumaecom.scene7.com%2Fis%2Fimage%2FPUMAECOM%2F702075_25_01_EEA%3F%24PUMA_GRID%24/d4qCltxt.0XARAbgLGRcGsAKxgSY3iHhaVcF_7bEuPg-&lt;/Url&gt;
+			&lt;/Image&gt;
+		&lt;/Images&gt;
+		&lt;Url&gt;http://ecs-uk.kelkoo.co.uk/ctl/go/offersearchGo?.ts=1487245527057&amp;amp;.sig=Ch1dMBKSr5hhrL8bNhlNkv_GMSg&amp;amp;catId=100353523&amp;amp;localCatId=100353523&amp;amp;comId=11210623&amp;amp;offerId=af94bdd18ff9ffbf66afb5
+286dcb68fa&amp;amp;searchId=null&amp;amp;affiliationId=96951977&amp;amp;country=uk&amp;amp;wait=true&amp;amp;contextLevel=2&amp;amp;service=11&lt;/Url&gt;
+		&lt;MobileFriendly&gt;false&lt;/MobileFriendly&gt;
+		&lt;Merchant id="11210623"/&gt;
+		&lt;Category id="100353523"&gt;
+			&lt;Name&gt;Miscellaneous&lt;/Name&gt;
+		&lt;/Category&gt;
+		&lt;Price currency="GBP"&gt;
+			&lt;Price&gt;20.0&lt;/Price&gt;
+			&lt;DeliveryCost&gt;3.95&lt;/DeliveryCost&gt;
+			&lt;TotalPrice&gt;23.95&lt;/TotalPrice&gt;
+		&lt;/Price&gt;
+		&lt;ProductClass&gt;0&lt;/ProductClass&gt;
+		&lt;Availability&gt;1&lt;/Availability&gt;
+		&lt;OffensiveContent&gt;false&lt;/OffensiveContent&gt;
+		&lt;Ean&gt;4055261425365&lt;/Ean&gt;
+		&lt;MerchantCategory&gt;Male|Mens  Sports  Football  Pants &amp;amp; Shorts&lt;/MerchantCategory&gt;
+		&lt;Brand&gt;Puma&lt;/Brand&gt;
+		&lt;BrandId&gt;2571&lt;/BrandId&gt;
+		&lt;Model&gt;Pitch Shorts&lt;/Model&gt;
+		&lt;Currency&gt;GBP&lt;/Currency&gt;
+	&lt;/Offer&gt;
+&lt;/CatalogListings&gt;
+&lt;/code&gt;</doctext>
+<thread id="1182330">
+<node id="1182332"><node id="1182342"><node id="1182343"/>
+<node id="1182354"><node id="1182488"/>
+</node>
+</node>
+</node>
+</thread></node>

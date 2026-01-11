@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1205629" title="hexadecimal division" created="2017-12-15 18:16:17" updated="2017-12-15 18:16:17" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="575005">holandes777</author>
+<doctext field_name="doctext">&lt;p&gt;Lift the veil of ignorance from my eyes&lt;/p&gt;
+&lt;P&gt;I am trying to follow am LRC computation (Longitudinal CRC computation) and have hit a bump&lt;/p&gt;
+&lt;code&gt;
+# Calculating the exclusive or of "202005"
+# V= X’32’ .XOR. X’30’ .XOR. X’32’ .XOR. X’30’ .XOR. X’30’ .XOR. X’35’ = X’05’
+
+my $command = '202005';
+print "$command length=" . length($command) . "\n";
+my $result = substr($command,0,1);
+for (my $i=1; $i&lt;length($command); $i++) {
+    my $c = substr($command,$i,1);
+    print "$i) " . sprintf("%02X ", ord($result)) . " xor ". sprintf("%02X ", ord($c));
+    $result = $result ^ $c;
+    print " gives " . sprintf("%02X ", ord($result)) . "\n";
+}
+print sprintf("%02X ", ord($result))  . "\n";
+if ( $result == "\x05" ) { print ":-)\n"; } else { print ":-(\n"; } 
+print "====\n";
+
+# THIS IS WHERE THE PROBLEM BEGINS:
+
+# Divide by X’10:
+# Y = INT ( X’05’ / X’10’ ) = X’00’
+
+my $dividend = $result;
+my $divisor = "\x10";
+my $result2;
+#$result2 = int($dividend/$divisor);
+#print sprintf("%02X ", ord($result2))  . "\n";
+# results in Illegal division by zero at kk.pl line 22.
+
+# and this results in character zero, not NUL:
+$result2 = int(ord($dividend)/ord($divisor));
+print sprintf("%02X ", ord($result2))  . "\n";
+
+&lt;/code&gt;&lt;p&gt;What concept did I miss? Thank you.&lt;/p&gt;
+
+&lt;p&gt;It has been pointed out I was noyt clear as to what I needed, and it is true! So allow me to clarify:&lt;/p&gt;
+&lt;p&gt;The result of the xor-ing is correct according to the API doc: they expect X'05' and if you run the code we have a display of 05 which is 0x05. It is the next step, where we divide this 0x05 result by X'10' (0x10). The code says:&lt;\p&gt;
+
+&lt;code&gt;$result2 = int($dividend/$divisor);&lt;/code&gt;
+
+&lt;p&gt; what I expect is 5/16 converted to an int which is the NUL characted (0x00) which the API show as X'00'. The result I AM getting is 30 (0x30 or the ascii charated zero). This is where I need your help, on the last statement.
+</doctext>
+<thread id="1205629">
+<node id="1205630"/>
+<node id="1205631"><node id="1205667"/>
+<node id="1205670"><node id="1205691"/>
+</node>
+</node>
+<node id="1205634"><node id="1205636"/>
+<node id="1205671"><node id="1205679"/>
+</node>
+</node>
+<node id="1205635"><node id="1205639"><node id="1205645"><node id="1205650"><node id="1205652"/>
+</node>
+</node>
+</node>
+<node id="1205644"><node id="1205646"><node id="1205647"/>
+<node id="1205648"><node id="1205649"><node id="1205654"><node id="1205656"><node id="1205682"/>
+</node>
+<node id="1205681"><node id="1205812"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1205653"/>
+<node id="1205689"><node id="1205690"><node id="1205695"><node id="1205699"/>
+</node>
+<node id="1205698"/>
+</node>
+</node>
+<node id="1205703"><node id="1205706"><node id="1205707"/>
+<node id="1205709"><node id="1205710"/>
+</node>
+</node>
+</node>
+<node id="1205713"><node id="1205714"><node id="1205715"><node id="1205718"/>
+</node>
+</node>
+</node>
+<node id="1205717"/>
+<node id="1205741"/>
+<node id="1205802"/>
+</thread></node>

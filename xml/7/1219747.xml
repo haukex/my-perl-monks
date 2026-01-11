@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1219747" title="Re^4: redacting from config hash" created="2018-08-02 19:09:18" updated="2018-08-02 19:09:18" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;i&gt;what steps would a user who downloads the package have to take to set it up? How would you describe those steps in your README for the user to follow? And then, what do you as the developer have to provide to make that as easy as possible?&lt;/i&gt;
+&lt;p&gt;It seems to me that a user would want a one session experience to populate his/her critical data. Thus, I've been removing hard-coded values one by one. What remains is a hard-coded path to an ini file, which I think is on the verge of working, but vexingly, does not. This is an analog to what I've used before to instantiate the sftp object. Perl thinks this is illegal:&lt;/p&gt;
+&lt;code&gt; 
+
+sub get_tiny{
+
+use 5.011;
+use warnings;
+use Net::SFTP::Foreign;
+use Config::Tiny;
+use Data::Dumper;
+
+
+
+my $ini_path = qw( /home/bob/Documents/html_template_data/3.values.ini );
+say "ini path is $ini_path";
+
+my $sub_hash = "my_sftp";
+my $Config = Config::Tiny-&gt;new;
+$Config = Config::Tiny-&gt;read( $ini_path , 'utf8' );
+say Dumper \%Config;
+my $domain = $Config{$sub_hash}-&gt;{'domain'};
+my $username = $Config{$sub_hash}-&gt;{'username'};
+my $password = $Config{$sub_hash}-&gt;{'password'};
+my $port = $Config{$sub_hash}-&gt;{'port'};
+
+
+#dial up the server
+
+say "values are $domain $username $password $port";
+my $sftp = Net::SFTP::Foreign-&gt;new( $domain, user =&gt; $username,
+port =&gt; $port, password =&gt; $password)
+  or die "Can't connect: $!\n";
+  return $sftp;
+}&lt;/code&gt;
+
+&lt;p&gt;List of compiler complaints:  &lt;/p&gt;
+&lt;code&gt;$ ./1.qy1.pl 
+Global symbol "%Config" requires explicit package name (did you forget to declare "my %Config"?) at template_stuff/html4.pm line 215.
+Global symbol "%Config" requires explicit package name (did you forget to declare "my %Config"?) at template_stuff/html4.pm line 216.
+Global symbol "%Config" requires explicit package name (did you forget to declare "my %Config"?) at template_stuff/html4.pm line 217.
+Global symbol "%Config" requires explicit package name (did you forget to declare "my %Config"?) at template_stuff/html4.pm line 218.
+BEGIN not safe after errors--compilation aborted at template_stuff/html4.pm line 239.
+Compilation failed in require at ./1.qy1.pl line 5.
+BEGIN failed--compilation aborted at ./1.qy1.pl line 5.
+$ 
+ &lt;/code&gt;&lt;p&gt;I just don't see where I'm not correctly imitating the syntax shown on [Config::Tiny].&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1219523</root_node>
+<parent_node field_name="parent_node">1219636</parent_node>
+<thread id="1219523">
+<node id="1219530"><node id="1219540"/>
+<node id="1219612"><node id="1219636"><node id="1219747"><node id="1219776"><node id="1219963"/>
+</node>
+<node id="1219777"><node id="1219962"/>
+</node>
+</node>
+</node>
+<node id="1219643"><node id="1219681"/>
+</node>
+</node>
+</node>
+</thread></node>

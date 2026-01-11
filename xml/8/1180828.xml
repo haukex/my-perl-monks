@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1180828" title="Re^6: Need sleep walking help" created="2017-02-02 03:47:14" updated="2017-02-02 03:47:14" _doctext_mode="lenient"><type id="11">note</type>
+<author id="732669">Marshall</author>
+<doctext field_name="doctext">No, I don't think so. I am not sure what your code has to do with anything. If you flush STDOUT after every write, that is same as un-buffering it.&lt;p&gt;
+
+Consider Program 1:
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+
+for my $i (1..5)
+{
+   $x+1; # here just to throw an error to STDERR
+   print "$i\n";
+}
+
+__END__
+Useless use of addition (+) in void context at C:\Projects_Perl\testing\demoStdErrorTiming1.pl line 6.
+Name "main::x" used only once: possible typo at C:\Projects_Perl\testing\demoStdErrorTiming1.pl line 6.
+Use of uninitialized value $x in addition (+) at C:\Projects_Perl\testing\demoStdErrorTiming1.pl line 6.
+Use of uninitialized value $x in addition (+) at C:\Projects_Perl\testing\demoStdErrorTiming1.pl line 6.
+Use of uninitialized value $x in addition (+) at C:\Projects_Perl\testing\demoStdErrorTiming1.pl line 6.
+Use of uninitialized value $x in addition (+) at C:\Projects_Perl\testing\demoStdErrorTiming1.pl line 6.
+Use of uninitialized value $x in addition (+) at C:\Projects_Perl\testing\demoStdErrorTiming1.pl line 6.
+1
+2
+3
+4
+5
+&lt;/c&gt;
+
+Consider Program 2:
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+$|=1;               ### BIG DEAL HERE ### Unbuffers STDOUT
+
+for my $i (1..5)
+{
+   $x+1; #here just to throw an error to STDERR
+   print "$i\n";
+}
+
+__END__
+Useless use of addition (+) in void context at C:\Projects_Perl\testing\demoStdErrorTiming2.pl line 7.
+Name "main::x" used only once: possible typo at C:\Projects_Perl\testing\demoStdErrorTiming2.pl line 7.
+Use of uninitialized value $x in addition (+) at C:\Projects_Perl\testing\demoStdErrorTiming2.pl line 7.
+1
+Use of uninitialized value $x in addition (+) at C:\Projects_Perl\testing\demoStdErrorTiming2.pl line 7.
+2
+Use of uninitialized value $x in addition (+) at C:\Projects_Perl\testing\demoStdErrorTiming2.pl line 7.
+3
+Use of uninitialized value $x in addition (+) at C:\Projects_Perl\testing\demoStdErrorTiming2.pl line 7.
+4
+Use of uninitialized value $x in addition (+) at C:\Projects_Perl\testing\demoStdErrorTiming2.pl line 7.
+5
+&lt;/c&gt;
+
+Program 1's error messages come out right way while stdout messages come later because the stdout's filehandle's output buffer is not ready to be "flushed", "printed".&lt;p&gt;
+Program 2's error messages are interleaved with "normal" prints because the normal prints are being prematurely flushed out.  There is a big,(can be HUGE) performance penalty for this but, this makes debugging easier. </doctext>
+<root_node field_name="root_node">1180738</root_node>
+<parent_node field_name="parent_node">1180821</parent_node>
+<thread id="1180738">
+<node id="1180739"><node id="1180740"><node id="1180741"/>
+<node id="1180742"><node id="1180745"/>
+<node id="1180812"><node id="1180821"><node id="1180828"><node id="1180830"><node id="1180831"><node id="1180832"><node id="1181036"><node id="1181064"><node id="1181098"><node id="1181167"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1180829"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1180794"><node id="1180815"/>
+</node>
+</thread></node>

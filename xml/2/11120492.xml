@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11120492" title="XML::LibXML::XPathContext-&gt;string_value - should ALL of the descendant's text be there?" created="2020-08-07 22:52:28" updated="2020-08-07 22:52:28" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="256744">bobn</author>
+<doctext field_name="doctext">&lt;p&gt;So I started playign around with XML parsing (well HTML but it's well enough formed I can use XML parsers on it).  I ran into something on the Perl side of things I don't understand.&lt;br/&gt;&lt;br/&gt;
+
+I get a nodeset, start walking through it and getting text out, but when it comes out, for each node I get &lt;b&gt;the text contained in node element AND the text of all of it's descendants (contained elements)&lt;/b&gt;.&lt;br/&gt;&lt;br/&gt;
+
+I'm getting this with XML::LibXML::XPathContext, but it happens with XML::XPath as well.  
+&lt;br/&gt;&lt;br/&gt;
+The event driven parsers I've tried don't seem to have this issue - they think that  Text belongs to the innermost containing element, just like I do.  lxml.etree in python, their binding for libxml2, does not do this, (though it definitely has oddities  of it's own - check out "tail text" sometime, it's a doozy!).
+&lt;br/&gt;&lt;br/&gt;
+I'm going to stop now, 'coz I'm becoming increasingly sure I'm just missing something stupidly.
+&lt;br/&gt;&lt;br/&gt;
+Is it supposed to do this, and if so, how do I get at just the text for the outermost element of my node?
+
+&lt;/p&gt;&lt;code&gt;
+#!/usr/bin/perl
+use XML::LibXML::XPathContext;
+
+our $contents = &lt;&lt;EOT;
+&lt;html&gt; 
+    &lt;head&gt; &lt;title&gt;Title_Text&lt;/title&gt; &lt;/head&gt; 
+    &lt;body&gt; 
+        &lt;p&gt;paragraph_text&lt;/p&gt;
+        &lt;div&gt; 
+            &lt;div&gt; 
+                innnermost_text
+            &lt;/div&gt;
+        &lt;/div&gt; 
+    &lt;/body&gt; &lt;/html&gt;
+EOT
+
+open my $fh, '&gt;', './x.html';
+print $fh $contents;
+close $fh;
+my $init_node = XML::LibXML-&gt;new-&gt;parse_file('./x.html');
+my $xp = XML::LibXML::XPathContext-&gt;new($init_node);
+
+my $i= 0;
+my $nodeset = $xp-&gt;findnodes('//*');
+for my $node ($nodeset-&gt;get_nodelist) 
+{
+    my $elname = $node-&gt;getName();
+    print qq[&lt;$elname&gt; node - $i\n];
+    my $text = '';
+    $text = $node-&gt;string_value();  
+       # this brings in text of 
+       # *all* descendant nodes
+    $text =~ s/(\s)+/$1/msg;
+    print 'Text = ', $text, "\n";
+    $i++;
+}
+&lt;/code&gt;
+
+Produces:
+
+&lt;code&gt;
+&lt;html&gt; node - 0
+Text =  Title_Text paragraph_text innnermost_text 
+&lt;head&gt; node - 1
+Text =  Title_Text 
+&lt;title&gt; node - 2
+Text = Title_Text
+&lt;body&gt; node - 3
+Text =  paragraph_text innnermost_text 
+&lt;p&gt; node - 4
+Text = paragraph_text
+&lt;div&gt; node - 5
+Text =  innnermost_text 
+&lt;div&gt; node - 6
+Text =  innnermost_text 
+&lt;/code&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-256744"&gt;
+&lt;p&gt;--Bob Niederman, &lt;/p&gt;
+&lt;p&gt;All code given here is UNTESTED unless otherwise stated.&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="11120492">
+<node id="11120496"><node id="11120507"><node id="11120517"><node id="11120533"/>
+</node>
+</node>
+</node>
+</thread></node>

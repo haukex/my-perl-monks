@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11122227" title="tr operator in eval -- updated" created="2020-09-25 22:55:43" updated="2020-09-25 22:55:43" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1088483">pgmer6809</author>
+<doctext field_name="doctext">&lt;p&gt;Using Perl 5.26.1 under Linux
+I want to use a variable in the searchlist of a tr operator expression.
+The example on p.76 of the camel book, has two things wrong with it&lt;/p&gt;
+&lt;p&gt;a) eval " ... code ... " as shown in the book gives an eval error message. To get rid of the message I need to put the code in braces.&lt;/p&gt;
+&lt;p&gt;b) even putting the code in braces it does not work. See this:&lt;/p&gt;
+&lt;code&gt;
+	$kards = -99;
+	$bad="AKQJT98765432KKKK";
+	$card='K';
+	eval {print "eval is testing for $card in $bad \n"; 
+		   $kards = $bad =~ tr/$card//; # tried also tr/$card/$card/; same bad result.
+		  };
+	print "Num of $card in $bad = $kards \n";
+	$king = $bad =~ tr/K//;
+	print "Num of K in $bad is = $king \n";
+=cut	
+	Returns the following:
+eval is testing for K in AKQJT98765432KKKK 
+Num of K in AKQJT98765432KKKK = 0 
+Num of K in AKQJT98765432KKKK is = 5 
+=end
+&lt;/code&gt;
+&lt;p&gt;
+Why isn't the variable $kards set to 5 as it should be?
+&lt;/p&gt;
+&lt;p&gt; UPDATE &lt;/p&gt;
+&lt;p&gt; The problem is that $kards should be set to the result of the eval execution, not put inside the eval execution. So this works:
+
+&lt;code&gt;	$kards = -99;
+	$bad="AKQJT98765432KKKK";
+	$card='K';
+	# this next bit works. xtr is just so I can print what eval is eval ing.
+	$xtr = "$bad =~ tr/$card//;" ;
+	$kards = eval "$bad =~ tr/$card//;";    #&lt;====== Note the ; " ; at the end. This seems required.
+        print "xtr kards = $kards from eval cmd : $xtr\n";
+	#output: xtr kards = 5 from eval cmd : AKQJT98765432KKKK =~ tr/K//;
+&lt;/code&gt;
+
+&lt;p&gt; but note that the code eval runs must be in double quotes, not in braces. so &lt;code&gt;$kards = eval {$xtr;} ;&lt;/code&gt; does NOT work. &lt;/p&gt;
+ </doctext>
+<thread id="11122227">
+<node id="11122228"/>
+<node id="11122229"><node id="11122230"/>
+</node>
+<node id="11122231"/>
+<node id="11122232"/>
+<node id="11122233"><node id="11122255"/>
+</node>
+<node id="11122235"/>
+<node id="11122241"><node id="11122256"><node id="11122259"/>
+</node>
+</node>
+<node id="11122242"><node id="11122257"><node id="11122260"/>
+<node id="11122264"/>
+</node>
+</node>
+</thread></node>

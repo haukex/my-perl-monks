@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1167928" title="Perl is ignoring fractional part sometimes" created="2016-07-17 18:32:44" updated="2016-07-17 18:32:44" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="955534">jinnicky</author>
+<doctext field_name="doctext">&lt;p&gt;I'm running Perl 5.20.1 on openSUSE 13.2. The application involves scaling dimensions for a model railroad.  So 12 by 14 inches should scale to 270 by 315 inches with a scale factor of 22.5 (G scale)&lt;/p&gt;
+&lt;p&gt;The calc subroutine shows 264 by 308, which is a scale of 22.0. The printed trace shows the correct x,y and scale values with the calculated values. When you change one of the inputs and hit enter, the fractional part is sometimes ignored.  It may be correct for one of the calculations and not the other.&lt;/p&gt;
+&lt;p&gt;It's a puzzlement!&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl -w
+
+use strict;
+use Tk;
+
+my $x = '12.0';
+my $y = '14.0';
+my $scale = '22.5';
+my $xmax = $x * $scale;
+my $ymax = $y * $scale;
+my $shouldBe = sprintf("Originally X=%4.1f, Y=%4.1f, scale=%4.1f X-max=%8.4f, Y-Max=%8.4f",$x,$y,$scale,$xmax,$ymax);
+my $results;
+
+my $mw = MainWindow-&gt;new;
+
+my $InFrame = $mw-&gt;Frame()-&gt;pack(-side=&gt;'top');
+   $InFrame-&gt;Label(-text=&gt;"X= ")-&gt;pack(-side=&gt;'left');
+   $InFrame-&gt;Entry(-textvariable=&gt;\$x)-&gt;pack(-side=&gt;'left');
+   $InFrame-&gt;Label(-text=&gt;" Y= ")-&gt;pack(-side=&gt;'left');
+   $InFrame-&gt;Entry(-textvariable=&gt;\$y)-&gt;pack(-side=&gt;'left');
+   $InFrame-&gt;Label(-text=&gt;"Scale= ")-&gt;pack(-side=&gt;'left');
+   $InFrame-&gt;Entry(-textvariable=&gt;\$scale)-&gt;pack(-side=&gt;'left');
+
+my $OutFrame = $mw-&gt;Frame()-&gt;pack(-side=&gt;'top');
+   $OutFrame-&gt;Label(-textvariable=&gt;\$results)-&gt;pack(-side=&gt;'top');
+   $OutFrame-&gt;Label(-textvariable=&gt;\$shouldBe)-&gt;pack(-side=&gt;'top');
+
+$mw-&gt;bind("&lt;Key-KP_Enter&gt;",\&amp;calc);
+$mw-&gt;bind("&lt;Key-Return&gt;",\&amp;calc);
+
+calc();
+MainLoop;
+
+sub calc {
+  $xmax = $x * $scale;
+  $ymax = $y * $scale;
+  $results = sprintf("Calculated X-max=%8.4f, Y-Max=%8.4f",$xmax,$ymax);
+  print "$x, $y, $scale, $xmax, $ymax\n";
+}
+&lt;/code&gt;
+&lt;p&gt;Can anyone explain this?&lt;/p&gt;</doctext>
+<thread id="1167928">
+<node id="1167930"><node id="1167932"/>
+</node>
+<node id="1167934"><node id="1167938"/>
+</node>
+<node id="1167949"><node id="1167986"><node id="1168065"/>
+</node>
+</node>
+</thread></node>

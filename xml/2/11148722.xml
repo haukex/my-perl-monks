@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11148722" title="Re: use of Backticks to catch console output" created="2022-12-10 16:49:20" updated="2022-12-10 16:49:20" _doctext_mode="lenient"><type id="11">note</type>
+<author id="861371">kcott</author>
+<doctext field_name="doctext">&lt;p&gt;G'day [id://1227811|Takamoto],&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;small&gt;&lt;p&gt;&lt;em&gt;&amp;#91;I created a quick &lt;c&gt;test.pdf&lt;/c&gt;, with just the text "Test for PM 11148715", for the tests below.
+I don't have &lt;c&gt;p2t&lt;/c&gt;, but I do have &lt;c&gt;pdftotext&lt;/c&gt;, 
+which appears to have the same functionality and accepts the same options.&amp;#93;&lt;/em&gt;&lt;/p&gt;&lt;/small&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;
+You appear to have got bogged down in absolute vs. relative paths and &lt;c&gt;eval&lt;/c&gt; code.
+&lt;/p&gt;
+
+&lt;p&gt;
+If your &lt;c&gt;p2t&lt;/c&gt; is in a directory listed in &lt;c&gt;$PATH&lt;/c&gt;, you don't technically need a path at all;
+however, using an absolute path avoids tainting.
+&lt;/p&gt;
+
+&lt;p&gt;
+If all you want to do is print the PDF text, you can use &lt;c&gt;system()&lt;/c&gt; or backticks like one of these:
+&lt;/p&gt;
+
+&lt;code&gt;
+$ perl -e 'system "pdftotext -nodiag -layout -enc UTF-8 test.pdf -"'
+Test for PM 11148715
+
+$ perl -e 'print `pdftotext -nodiag -layout -enc UTF-8 test.pdf -`'
+Test for PM 11148715
+&lt;/code&gt;
+
+&lt;p&gt;
+If you want something a little more robust, that avoids the overhead of using the shell,
+consider &lt;c&gt;capturex()&lt;/c&gt; from [https://metacpan.org/pod/IPC::System::Simple|IPC::System::Simple].
+Here's an example (&lt;c&gt;p2t_capturex.pl&lt;/c&gt;):
+&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use IPC::System::Simple 'capturex';
+
+my $p2t_exe = 'C:/cygwin64/bin/pdftotext.exe';
+my $pdf_doc = 'test.pdf';
+
+print capturex(
+    $p2t_exe =&gt; qw{-nodiag -layout -enc UTF-8}, $pdf_doc, '-'
+);
+&lt;/code&gt;
+
+&lt;p&gt;You get the same output as before:&lt;/p&gt;
+&lt;code&gt;
+$ ./p2t_capturex.pl
+Test for PM 11148715
+&lt;/code&gt;
+
+&lt;small&gt;
+&lt;p&gt;
+In case you were wondering, that's the same &lt;c&gt;pdftotext&lt;/c&gt; program throughout. Note the identical inode numbers:
+&lt;/p&gt;
+&lt;code&gt;
+$ ls -i1 `which pdftotext` C:/cygwin64/bin/pdftotext.exe
+844424931368301 /usr/bin/pdftotext
+844424931368301 C:/cygwin64/bin/pdftotext.exe
+&lt;/code&gt;
+&lt;/small&gt;
+
+&lt;p&gt;&lt;/p&gt;
+
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-861371"&gt;
+&lt;p&gt;&amp;mdash; Ken&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11148715</root_node>
+<parent_node field_name="parent_node">11148715</parent_node>
+<thread id="11148715">
+<node id="11148716"><node id="11148718"/>
+</node>
+<node id="11148717"/>
+<node id="11148722"><node id="11148734"><node id="11148738"><node id="11148739"><node id="11148741"><node id="11148747"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

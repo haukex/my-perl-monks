@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11141815" title="CPAN 2.29 stuck with Net::SSLeahy" created="2022-03-03 18:14:48" updated="2022-03-03 18:14:48" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Monks,&lt;/p&gt;
+&lt;p&gt;I'm trying to work up my game on a raspberry pi, a verifiable neophyte. So far, I'm trying to keep it running with the software as it came out of the package, because I am finding it equal amounts incredible, entertaining, and challenging. &lt;/p&gt;
+&lt;p&gt;I found some syntax that got me unstuck with updating:&lt;/p&gt;
+
+
+&lt;c&gt;sudo apt-get update --allow-releaseinfo-change
+&lt;/c&gt;
+&lt;p&gt;followed by&lt;/p&gt;
+&lt;c&gt;sudo apt -y full-upgrade&lt;/c&gt;
+&lt;p&gt;I realize that you can paste those commands together with &amp;&amp;, but that's hubris for the likes of me. Along the way, I also did:&lt;/p&gt;
+&lt;c&gt;install CPAN&lt;/c&gt;
+&lt;c&gt;reload CPAN&lt;/c&gt;
+&lt;p&gt;Trying to cover all the bases with necessary headers:&lt;/p&gt;
+&lt;c&gt;sudo apt-get install  perl-doc  build-essential&lt;/c&gt;
+
+
+&lt;p&gt;, and now I seem to be hung up on CPAN. This is not the first time recently that I've been hung up on CPAN, and I think some of it derives from the unusual measures that 2.29 addresses. I got stuck in what looks to be a similar mire with my droplet recently, and I ended up having to hit the reset button, which I do not want to do with this neato OS.&lt;/p&gt;
+&lt;c&gt;$ lsb_release -a
+No LSB modules are available.
+Distributor ID:	Raspbian
+Description:	Raspbian GNU/Linux 10 (buster)
+Release:	10
+Codename:	buster
+$ 
+&lt;/c&gt;
+&lt;p&gt;When I'm directed to &lt;c&gt;man apt-secure&lt;/c&gt;, I read:&lt;/p&gt;
+
+&lt;c&gt;       Notice that this is distinct from checking signatures on a per package
+       basis. It is designed to prevent two possible attacks:
+
+       •   Network "man in the middle" attacks. Without signature checking,
+           malicious agents can introduce themselves into the package download
+           process and provide malicious software either by controlling a
+           network element (router, switch, etc.) or by redirecting traffic to
+           a rogue server (through ARP or DNS spoofing attacks).
+
+       •   Mirror network compromise. Without signature checking, a malicious
+           agent can compromise a mirror host and modify the files in it to
+           propagate malicious software to all users downloading packages from
+           that host.
+&lt;/c&gt;
+&lt;p&gt;It would seem that these are similar to the considerations that pushed 2.29. Right now, I can't download any perl modules, and I'm scratching my head as to why. I try to recreate the cpan info faithfully, which means that it will be verbose, so I'll put that part in readmore tags for the intrepid:&lt;/p&gt;
+
+&lt;readmore&gt;
+
+&lt;p&gt;So, I thought that I walked through the new dialog for 2.29 correctly. I use an alias to invoke cpan:&lt;/p&gt;
+
+&lt;c&gt;$ alias sc
+alias sc='sudo cpan'
+$ &lt;/c&gt;
+
+
+&lt;c&gt;$ sc
+Loading internal logger. Log::Log4perl recommended for better logging
+
+Starting with version 2.29 of the cpan shell, a new download mechanism
+is the default which exclusively uses cpan.org as the host to download
+from. The configuration variable pushy_https can be used to (de)select
+the new mechanism. Please read more about it and make your choice
+between the old and the new mechanism by running
+
+    o conf init pushy_https
+
+Once you have done that and stored the config variable this dialog
+will disappear.
+Terminal does not support AddHistory.
+
+To fix that, maybe try&gt;  install Term::ReadLine::Perl
+
+
+cpan shell -- CPAN exploration and modules installation (v2.29)
+Enter 'h' for help.
+
+cpan[1]&gt; o conf init pushy_https
+Boolean. Defaults to true. If this option is true, the cpan shell will
+use https://cpan.org/ to download stuff from the CPAN. It will fall
+back to http://cpan.org/ if it can't handle https for some reason
+(missing modules, missing programs). Whenever it falls back to the
+http protocol, it will issue a warning.
+
+If this option is true, the option C&lt;urllist&gt; will be ignored.
+Consequently, if you want to work with local mirrors via your own
+configured list of URLs, you will have to choose no below.
+
+ &lt;pushy_https&gt;
+Do you want to turn the pushy_https behaviour on? [yes] 
+
+
+Please remember to call 'o conf commit' to make the config permanent!
+
+cpan[2]&gt; o conf commit
+commit: wrote '/root/.cpan/CPAN/MyConfig.pm'
+
+cpan[3]&gt; q
+Terminal does not support GetHistory.
+Lockfile removed.
+$ 
+$ sudo grep pushy /root/.cpan/CPAN/MyConfig.pm
+  'pushy_https' =&gt; q[1],
+$ 
+&lt;/c&gt;
+&lt;p&gt;Then:&lt;/p&gt;
+&lt;c&gt;reload CPAN&lt;/c&gt;
+
+&lt;p&gt;I think that I've gotten it but then I find myself back in the same Charybdis:&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;c&gt;cpan[1]&gt; install Regexp::Pattern
+Reading '/root/.cpan/Metadata'
+  Database was generated on Mon, 28 Feb 2022 23:41:02 GMT
+Running install for module 'Regexp::Pattern'
+Fetching with HTTP::Tiny:
+https://cpan.org/authors/id/P/PE/PERLANCAR/Regexp-Pattern-0.2.14.tar.gz
+HTTP::Tiny failed with an internal error: IO::Socket::SSL 1.42 must be installed for https support
+Net::SSLeay 1.49 must be installed for https support
+
+Giving up on '/root/.cpan/sources/authors/id/P/PE/PERLANCAR/Regexp-Pattern-0.2.14.tar.gz'
+Note: Current database in memory was generated on Mon, 28 Feb 2022 23:41:02 GMT
+
+cpan[2]&gt; install Log::Log4perl
+Running install for module 'Log::Log4perl'
+Fetching with HTTP::Tiny:
+https://cpan.org/authors/id/E/ET/ETJ/Log-Log4perl-1.54.tar.gz
+HTTP::Tiny failed with an internal error: IO::Socket::SSL 1.42 must be installed for https support
+Net::SSLeay 1.49 must be installed for https support
+
+Giving up on '/root/.cpan/sources/authors/id/E/ET/ETJ/Log-Log4perl-1.54.tar.gz'
+Note: Current database in memory was generated on Mon, 28 Feb 2022 23:41:02 GMT
+
+cpan[3]&gt; install Net::SSLeay
+Running install for module 'Net::SSLeay'
+Fetching with HTTP::Tiny:
+https://cpan.org/authors/id/C/CH/CHRISN/Net-SSLeay-1.92.tar.gz
+HTTP::Tiny failed with an internal error: IO::Socket::SSL 1.42 must be installed for https support
+Net::SSLeay 1.49 must be installed for https support
+
+Giving up on '/root/.cpan/sources/authors/id/C/CH/CHRISN/Net-SSLeay-1.92.tar.gz'
+Note: Current database in memory was generated on Mon, 28 Feb 2022 23:41:02 GMT
+
+cpan[4]&gt; 
+&lt;/c&gt;
+&lt;p&gt;So I need Net::SSLeahy to install it, and I'm at checkmate.&lt;/p&gt;
+&lt;p&gt;Nothing looks fishy or out of place with openssl:&lt;/p&gt;
+&lt;c&gt;$ openssl version -a
+OpenSSL 1.1.1d  10 Sep 2019
+built on: Wed Feb 23 16:50:26 2022 UTC
+platform: debian-armhf
+options:  bn(64,32) rc4(char) des(long) blowfish(ptr) 
+compiler: gcc -fPIC -pthread -Wa,--noexecstack -Wall -D__ARM_MAX_ARCH__=7 -Wa,--noexecstack -g -O2 -fdebug-prefix-map=/build/openssl-FuVaAp/openssl-1.1.1d=. -fstack-protector-strong -Wformat -Werror=format-security -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSL_CPUID_OBJ -DOPENSSL_BN_ASM_MONT -DOPENSSL_BN_ASM_GF2m -DSHA1_ASM -DSHA256_ASM -DSHA512_ASM -DKECCAK1600_ASM -DAES_ASM -DBSAES_ASM -DGHASH_ASM -DECP_NISTZ256_ASM -DPOLY1305_ASM -DNDEBUG -Wdate-time -D_FORTIFY_SOURCE=2
+OPENSSLDIR: "/usr/lib/ssl"
+ENGINESDIR: "/usr/lib/arm-linux-gnueabihf/engines-1.1"
+Seeding source: os-specific
+$ which openssl
+/usr/bin/openssl
+$ 
+&lt;/c&gt;
+&lt;p&gt;I think I've got the resources to make it work. Looking for any tips on how to get CPAN unstuck. Do I need headers?&lt;/p&gt;
+
+&lt;/readmore&gt;
+&lt;p&gt;Anyways, fishing for tips, tricks, and best policies. I hope this finds you all well, in particular those who are proximal to conflict.&lt;/p&gt;
+</doctext>
+<thread id="11141815">
+<node id="11141822"><node id="11142077"><node id="11142081"><node id="11142644"><node id="11142645"><node id="11142649"/>
+</node>
+<node id="11142646"><node id="11143147"/>
+</node>
+</node>
+<node id="11143148"><node id="11143164"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

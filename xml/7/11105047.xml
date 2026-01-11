@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11105047" title="Re: Using the second word in a line to split a file into multiple files" created="2019-08-26 03:27:16" updated="2019-08-26 03:27:16" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;There are unfortunately several issues with your code:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;You're using the second capture group as the filename, which according to the regex is actually the third word in the line. You probably meant something like &lt;c&gt;/^zone\s+(\w+)\W+\w+\s*$/&lt;/c&gt;, and then you can use the capture variable &lt;c&gt;$1&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;As [jcb] [id://11105019|mentioned], you've got a stray &lt;c&gt;&gt;&lt;/c&gt; in the regex.&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;sprintf($outfh'.txt',...&lt;/c&gt; is not valid syntax. Please make sure to always provide a &lt;i&gt;runnable&lt;/i&gt; [id://1177642|SSCCE] when asking questions.&lt;/li&gt;
+&lt;li&gt;I don't understand why you have a &lt;c&gt;$filecount&lt;/c&gt; variable, since according to your description, you want the filenames to be derived from just the section names.&lt;/li&gt;
+&lt;li&gt;Using the variable &lt;c&gt;$outfh&lt;/c&gt; to hold both the filename and the filehandle is not good practice, you should use a separate variable to hold the filename.&lt;/li&gt;
+&lt;li&gt;You [doc://print] to the output file unconditionally, even when it's not open yet. The same goes for the [doc://close].&lt;/li&gt;
+&lt;li&gt;You say you want the output files for this example input to contain six lines each, but you don't say &lt;i&gt;which&lt;/i&gt; of the seven input lines.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;If I fix these issues (keeping &lt;c&gt;$filecount&lt;/c&gt;), I get:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $infn = 'testdat.dat';
+open(my $infh, '&lt;', $infn) or die "$infn: $!";
+
+my $outfh;
+my $filecount = 0;
+while ( my $line = &lt;$infh&gt; ) {
+	if ( $line =~ /^zone\s+(\w+)\W+\w+\s*$/ ) {
+		close $outfh if $outfh;
+		my $outfn = sprintf '%s-%d.txt', $1, ++$filecount;
+		open($outfh, '&gt;', $outfn) or die "$outfn: $!";
+	}
+	if ($outfh) {
+		print {$outfh} $line or die "print: $!";
+	}
+}
+
+close($outfh) if $outfh;
+close($infh);
+&lt;/c&gt;
+&lt;p&gt;However, this produces output files that are 7 lines or longer, because they include the &lt;c&gt;endoffile&lt;/c&gt; marker and any lines following it. If you want the &lt;c&gt;endoffile&lt;/c&gt; to be excluded from the output, the fix is fairly simple:&lt;/p&gt;
+&lt;c&gt;
+	if ( $line =~ /^zone\s+(\w+)\W+\w+\s*$/ ) {
+		...
+	}
+	elsif ( $line =~ /^endoffile$/ ) {
+		close $outfh;
+		$outfh = undef;
+	}
+&lt;/c&gt;
+&lt;p&gt;If you want something more complex than this, then it'd be better to switch to a state machine type approach, which I showed some templates for at the top of [id://11103827|this] node.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11105015</root_node>
+<parent_node field_name="parent_node">11105015</parent_node>
+<thread id="11105015">
+<node id="11105019"/>
+<node id="11105047"><node id="11105066"><node id="11105068"/>
+</node>
+</node>
+<node id="11105093"/>
+<node id="11105184"/>
+</thread></node>

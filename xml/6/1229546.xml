@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229546" title="Re: Array of Hashes (updated)" created="2019-02-07 08:15:05" updated="2019-02-07 08:15:05" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;while ( $rowref =  $sth-&gt;fetchrow_hashref() ) {push @data, %{$rowref};}&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Without having tested yet, I think your problem is probably here*: You dereference &lt;c&gt;$rowref&lt;/c&gt; before pushing it into the array, and a hash used in list context will return its key/value pairs:&lt;/p&gt;
+&lt;c&gt;
+my $hr1 = { foo=&gt;'bar' };
+my $hr2 = { quz=&gt;'baz' };
+my @data;
+push @data, %{$hr1};
+push @data, %{$hr2};
+use Data::Dump;
+dd @data;  # ("foo", "bar", "quz", "baz")
+&lt;/c&gt;
+&lt;p&gt;Maybe you just want to &lt;c&gt;push @data, $rowref;&lt;/c&gt; instead?&lt;/p&gt;
+&lt;p&gt;You might also be interested in [mod://DBI]'s &lt;c&gt;fetchall_*&lt;/c&gt; methods?&lt;/p&gt;
+&lt;p&gt;* &lt;b&gt;Update:&lt;/b&gt; Also here:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;%row = $data[0]; ... foreach %row (@data)&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;These won't do what you expect. I think you want &lt;c&gt;@data&lt;/c&gt; to be an array of hashes, which means that the elements of &lt;c&gt;@data&lt;/c&gt; will contain &lt;i&gt;references&lt;/i&gt; to hashes. You can't just assign a hashref to a hash&lt;sup&gt;†&lt;/sup&gt;, you need to either de-reference the hashref (e.g. &lt;c&gt;my %hash = %{$hashref};&lt;/c&gt;, which is a bit expensive as it copies everything), or work with the hashref directly, e.g. &lt;c&gt;$hashref-&gt;{key}&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;I would strongly recommend having a look at [doc://perlreftut], [doc://perldsc], and [doc://perlref]. Also, if you're not doing so already, [id://111088]!&lt;/p&gt;
+&lt;p&gt;&lt;sup&gt;†&lt;/sup&gt; Newer versions of Perl have an &lt;i&gt;experimental&lt;/i&gt; feature called [doc://perlref#Assigning-to-References|refaliasing].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1229545</root_node>
+<parent_node field_name="parent_node">1229545</parent_node>
+<thread id="1229545">
+<node id="1229546"><node id="1229551"/>
+</node>
+<node id="1229547"><node id="1229552"><node id="1229553"/>
+</node>
+</node>
+<node id="1229554"><node id="1229562"><node id="1229587"/>
+</node>
+</node>
+</thread></node>

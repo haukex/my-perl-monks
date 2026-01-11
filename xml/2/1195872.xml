@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1195872" title="Re: printing complex data structures" created="2017-07-24 11:04:21" updated="2017-07-24 11:04:21" _doctext_mode="lenient"><type id="11">note</type>
+<author id="789891">stevieb</author>
+<doctext field_name="doctext">&lt;p&gt;First, don't use prototypes unless you know why you need them. Also, in Perl, you do not need to pre-declare your subroutines like you do in C for instance.&lt;/p&gt;
+
+&lt;p&gt;Now, you were trying to use &lt;c&gt;$planet&lt;/c&gt; as a hash reference, but it's actually a string (which you extract when you call &lt;c&gt;keys %$h_ref&lt;/c&gt;. So, you have to pass in a reference to a hash in the call to &lt;c&gt;base_code()&lt;/c&gt;, then inside the sub, you need to use the key name &lt;c&gt;$planet&lt;/c&gt; as the key to the encompassing &lt;c&gt;$h_ref&lt;/c&gt; to extract out the data you want:&lt;/p&gt;
+
+&lt;c&gt;
+use strict;
+use warnings;
+
+my %aas = (
+    'serine' =&gt; ['TCA', 'TCC', 'TCG', 'TCT'],
+    'proline' =&gt; ['CCA', 'CCC', 'CCG', 'CCT'] 
+);
+
+my %codes;
+$codes{'earth'} = \%aas;
+$codes{'mars'} = {
+	'serine' =&gt; ['QWZ', 'QWX', 'QWW'],
+	'proline' =&gt; ['ZXZ', 'ZXX', 'ZXQ', 'ZXW'] 
+};
+	
+base_code (\%codes);
+
+sub base_code {
+    my $h_ref = $_[0];
+    for my $planet (keys %$h_ref){
+        for my $aa (keys %{ $h_ref-&gt;{$planet} }){
+            for my $codon (@{ $h_ref-&gt;{$planet}{$aa} }){
+                print $codon, "\n";
+            }	
+        }
+    }
+}
+
+&lt;/c&gt;
+
+&lt;p&gt;Output:&lt;/p&gt;
+
+&lt;c&gt;
+CCA
+CCC
+CCG
+CCT
+TCA
+TCC
+TCG
+TCT
+ZXZ
+ZXX
+ZXQ
+ZXW
+QWZ
+QWX
+QWW
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1195870</root_node>
+<parent_node field_name="parent_node">1195870</parent_node>
+<thread id="1195870">
+<node id="1195872"><node id="1195877"><node id="1195881"/>
+</node>
+<node id="1195879"/>
+</node>
+<node id="1195873"/>
+<node id="1195874"/>
+<node id="1195875"><node id="1195882"/>
+<node id="1195884"/>
+<node id="1195896"><node id="1195900"/>
+</node>
+</node>
+</thread></node>

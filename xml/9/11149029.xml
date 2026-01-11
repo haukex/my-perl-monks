@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11149029" title="Re: Matching non-ASCII file contents with file name." created="2022-12-22 07:40:40" updated="2022-12-22 07:40:40" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;It is claimed that the inverted questionmark is \x00BF, which strangely is C2 BF in UTF-8 ... And those files show up in Apache2's access logs containing the escape sequence "%C2%BF" in the URL in place of the inverted question mark. Yet, shouldn't that be \x00BF all the way through?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;&lt;c&gt;C2 BF&lt;/c&gt; is the correct UTF-8 encoding for the unicode character &lt;c&gt;U+00BF INVERTED QUESTION MARK&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;This question is complicated by the fact that we don't know what your shell/terminal's encoding is, which is why I suspect most of the examples you showed aren't representative.&lt;/p&gt;
+&lt;p&gt;Plus, AFAIK, file name encodings are a very complicated topic, and therefore I think you might do yourself a favor by not using "¿" in filenames and URLs.&lt;/p&gt;
+&lt;p&gt;I'll take your &lt;i&gt;"While keeping UTF-8"&lt;/i&gt; to mean you want UTF-8 everywhere, so below is one way of getting that - at least on *NIX, where many tools assume UTF-8 filenames anyway and my shell and terminal are also UTF-8; these kind of filenames may be even more complicated on Windows, I'm not sure.&lt;/p&gt;
+&lt;p&gt;BTW, my personal preference is using Perl's &lt;c&gt;\x&lt;/c&gt; notation only for bytes in the range &lt;c&gt;00-FF&lt;/c&gt;, while using &lt;c&gt;\N{}&lt;/c&gt; for Unicode, as I do below. This is why I don't need the &lt;c&gt;use utf8;&lt;/c&gt;, this source code is entirely ASCII (but you could &lt;c&gt;use utf8;&lt;/c&gt; and then use &lt;tt&gt;&amp;iquest;&lt;/tt&gt; instead of &lt;c&gt;\N{U+BF}&lt;/c&gt; if you wanted). If you wanted this code to write UTF-8 to &lt;c&gt;STDOUT&lt;/c&gt;, like for example &lt;c&gt;print "Wrote file $newname\n";&lt;/c&gt;, you'd need to add a &lt;c&gt;use open qw/:std :encoding(UTF-8)/;&lt;/c&gt;.&lt;/p&gt;
+&lt;pre&gt;
+$ cat test.pl
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+my $fname = 'test.txt';
+my $newname = "new\N{U+BF}.txt";
+
+open my $fh, '&amp;gt;:raw:encoding(UTF-8)', $fname or die "$fname: $!";
+print $fh "Hello?\n";
+close $fh;
+
+open my $ofh, '&amp;gt;:raw:encoding(UTF-8)', $newname or die "$newname: $!";
+open my $ifh, '&amp;lt;:raw:encoding(UTF-8)', $fname or die "$fname: $!";
+while ( my $line = &amp;lt;$ifh&amp;gt; ) {
+	$line =~ s/\?/\N{U+BF}/g;
+	print $ofh $line;
+}
+close $ifh;
+close $ofh;
+
+$ perl test.pl
+$ hexdump -C new&amp;iquest;.txt 
+00000000  48 65 6c 6c 6f c2 bf 0a                           |Hello...|
+00000008
+&lt;/pre&gt;</doctext>
+<root_node field_name="root_node">11149027</root_node>
+<parent_node field_name="parent_node">11149027</parent_node>
+<thread id="11149027">
+<node id="11149028"><node id="11149041"><node id="11149042"><node id="11149044"/>
+</node>
+</node>
+</node>
+<node id="11149029"><node id="11149040"/>
+</node>
+</thread></node>

@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116960" title="Re: Converting Hashes to Objects" created="2020-05-20 02:42:48" updated="2020-05-20 02:42:48" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;i&gt;
+Inspiration whacked me in the head yesterday, and I realized that it was pretty easy to take an arbitrary hash reference and turn it into an object, so that instead of writing $hash-&gt;{key} I can just write $hash-&gt;key, saving two characters and giving me protection from typos. Enter Util::H2O:&lt;/i&gt;
+&lt;p&gt;I'm glad that you took the time and effort to create this software tool, as it seems to have gotten me unstuck on a line of code and with sitting on the fence in general. I know that meditations are typically where a person doesn't come to ask questions,  but I think a meditation gets bonus points when it solves a problem for someone else, that being me today. I like to conserve vertical space for the collective scrollfingers of the monastery so present output, source, and questions in readmore tags:&lt;/p&gt;
+
+&lt;readmore&gt;
+&lt;p&gt;I was trying to create a main data structure using a hash and ran aground in [id://11109897]. At the time I wrote:&lt;/p&gt;
+&lt;i&gt;So I'm mystified that
+
+ &lt;c&gt; $vars{max_tiles} = 7;&lt;/c&gt;
+does not initialize, even demoralized. I had wanted to create a central data structure, and thought a hash would be the ticket. Let me ask this:
+
+Would I have an easier time housing and calling this data if I created an object out of it?
+
+Right now, I have to pass a reference and receive it as well; I think it's hideous:
+
+$ref_var = init_vars($ref_var);
+How would $vars{max_tiles} look like if it were blessed into a class?&lt;/i&gt;
+&lt;p&gt;Well, I found out today. The install goes well&lt;/p&gt;
+&lt;c&gt;$ scm Util::H2O
+[sudo] password for hogan: 
+--&gt; Working on Util::H2O
+Fetching http://www.cpan.org/authors/id/H/HA/HAUKEX/Util-H2O-0.06.tar.gz ... OK
+Configuring Util-H2O-0.06 ... OK
+Building and testing Util-H2O-0.06 ... OK
+Successfully installed Util-H2O-0.06
+1 distribution installed
+$ 
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+
+&lt;c&gt;$ ./2.3.up.pl 
+abs is /home/hogan/Documents/hogan/2.3.up.pl
+path1 is /home/hogan/Documents/hogan
+path2 is /home/hogan/Documents/hogan/games
+This script will build the above path2. Proceed? (y|n)y
+exiting init
+7
+survived to read this
+Can't locate object method "x" via package "Util::H2O::_5620e865a5b8" at ./2.3.up.pl line 36.
+$ &lt;/c&gt;
+&lt;p&gt;Source:&lt;/p&gt;
+&lt;c&gt;#!/usr/bin/perl
+
+use strict;    # multiplayer upwords
+use warnings;
+use 5.016;
+use Path::Tiny;
+use Data::Dump;
+
+## paths and constraints
+
+@ARGV or @ARGV = qw( one two three four );    # for testing
+
+my $abs   = path(__FILE__)-&gt;absolute;
+my $path1 = Path::Tiny-&gt;cwd;
+
+my %var;                                      #main data structure
+my $ref_var = \%var;
+
+$var{abs} = $abs;
+$var{cwd} = $path1;
+
+$ref_var = init_vars($ref_var);
+my ( $board, $heights ) = create_board($ref_var);
+my @dictwords = create_dict($ref_var);
+my @drawpile = create_draw_pile();
+
+
+### re-wire for H2O
+use Util::H2O;
+my $hash = h2o $ref_var;
+print $hash-&gt;max_tiles, "\n"; 
+#$var{max_tiles} * @ARGV  &gt; @drawpile and die "too many players for tiles\n"; 
+# Can I get past this line?
+$hash-&gt;max_tiles* @ARGV  &gt; @drawpile and die "too many players for tiles\n"; 
+say "survived to read this";
+#$hash-&gt;x("z");  # setter
+dd $hash;
+
+sub x {
+
+my $value = shift;
+say "$value";
+
+}
+
+sub init_vars {
+
+  use Path::Tiny;
+  use Data::Dump;
+  use 5.016;
+  use warnings;
+  use POSIX qw(strftime);
+
+  my $rvars = shift;
+  my %vars  = %$rvars;
+
+  my $script = $vars{abs};
+  my $path1  = $vars{cwd};
+  my $games  = "games";
+  my $path2  = path( $path1, $games );
+  say "abs is $abs";
+  say "path1 is $path1";
+  say "path2 is $path2";
+  print "This script will build the above path2. Proceed? (y|n)";
+  my $prompt = &lt;STDIN&gt;;
+  chomp $prompt;
+  die unless ( $prompt eq "y" );
+
+  $vars{side}    = 9;
+  $vars{d_file}  = path( "my_data", 'enable1.txt' );
+  $vars{ca_name} = path( "my_data", "words.11108138.$vars{side}" );
+  my $munge = strftime( "%d-%m-%Y-%H-%M-%S", localtime );
+  $munge .= ".txt";
+  $vars{save_file} = path( $path2, $munge )-&gt;touchpath;
+  $vars{save_file}-&gt;append_utf8("Script executing is $script\n");
+
+  # other initializations
+  $vars{max_tiles} = 7;
+  $vars{n_1}       = $vars{side} + 1;
+  $rvars           = \%vars;
+  #dd $rvars;
+  say "exiting init";
+  return ($rvars);
+}
+
+sub create_board {
+
+  use warnings;
+  use 5.016;
+  my $rvars   = shift;
+  my %vars    = %$rvars;
+  my $board   = ( '.' x $vars{side} . "\n" ) x $vars{side};
+  my $heights = $board =~ tr/./0/r;
+  return ( $board, $heights );
+}
+
+sub create_dict {
+
+  my $rvars = shift;
+  my %vars  = %$rvars;
+
+  use strict;    # was 7.word.pl before becoming subroutine 
+  use warnings;
+  use Path::Tiny;
+  use Data::Dump;
+  use 5.016;
+  use POSIX qw(strftime);
+
+  my $cachefilename = path( "my_data", "upwords." . $vars{n_1} );
+
+  my $download_file = '/home/hogan/Documents/hogan/my_data/1.english.txt';
+  unless ( -s $cachefilename &amp;&amp; -s $download_file ) {
+
+    use LWP::Simple;
+
+    my $url =
+'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/dotnetperls-controls/enable1.txt';
+    say "execution was here";
+    getstore( $url, $download_file );
+
+  }
+## substitute q for qu
+
+  my $dictionaryfile = path($download_file);
+  my @dictwords;
+  if ( -s $cachefilename ) {
+    @dictwords = path($cachefilename)-&gt;lines( { chomp =&gt; 1 } );
+  }
+  unless ( -s $cachefilename ) {
+    print "sub q for qu";
+    @dictwords = path($dictionaryfile)-&gt;lines( { chomp =&gt; 1 } );
+    s/qu/q/g for @dictwords;
+    # some words shortened
+    # cache the ones of maxtiles length
+    @dictwords = grep( /^[a-z]{2,$vars{n_1}}\z/, @dictwords );
+    $cachefilename-&gt;spew( join "\n", @dictwords, '' );
+  }
+
+  my $refDict = \@dictwords;
+  return @dictwords;
+
+}
+
+sub create_draw_pile {
+
+  use List::Util qw( shuffle );
+  use warnings;
+  use 5.016;
+
+  my @drawpile = shuffle +    #  thanks to GrandFather 11108145
+    ('a') x 7, ('b') x 3, ('c') x 4, ('d') x 5, ('e') x 8, ('f') x 3,
+    ('g') x 3, ('h') x 3, ('i') x 7, ('j') x 1, ('k') x 2, ('l') x 5, ('m') x 5,
+    ('n') x 5, ('o') x 7, ('p') x 3, ('q') x 1, ('r') x 5, ('s') x 6, ('t') x 5,
+    ('u') x 5, ('v') x 2, ('w') x 2, ('x') x 1, ('y') x 2, ('z') x 1;
+  return @drawpile;
+}
+__END__
+
+&lt;/c&gt;
+&lt;p&gt;The big win here is getting this line:&lt;/p&gt;
+
+&lt;c&gt;$var{max_tiles} * @ARGV  &gt; @drawpile and die "too many players for tiles\n"; &lt;/c&gt;
+&lt;p&gt;from one that complained of unitialized values to&lt;/p&gt;
+
+&lt;c&gt;$hash-&gt;max_tiles* @ARGV  &gt; @drawpile and die "too many players for tiles\n"; &lt;/c&gt;
+&lt;p&gt;so we finally pass this sanity check.&lt;/p&gt;
+
+&lt;p&gt;I tried to understand &lt;/p&gt;
+&lt;c&gt;$hash-&gt;x("z");  # setter&lt;/c&gt;
+&lt;p&gt;by writing the following&lt;/p&gt;
+&lt;c&gt;sub x {
+
+my $value = shift;
+say "$value";
+
+}
+&lt;/c&gt;
+&lt;p&gt;, but this doesn't help the syntax not be an error so far.&lt;/p&gt;
+&lt;p&gt;Q1) How is a "setter" to be implemented?&lt;/p&gt;
+&lt;p&gt;Q2) Do I still have to pass this around as clumsily as I am with these hash references now. How do I edit out as much of that chaff as I can? &lt;/p&gt;
+&lt;p&gt;Q3) Is there now a better way to do this?&lt;/p&gt;
+&lt;c&gt;my $abs   = path(__FILE__)-&gt;absolute;
+my $path1 = Path::Tiny-&gt;cwd;
+
+my %var;                                      #main data structure
+my $ref_var = \%var;
+
+$var{abs} = $abs;
+$var{cwd} = $path1;&lt;/c&gt;
+
+
+
+&lt;/readmore&gt;
+
+&lt;p&gt;Again, thx, [haukex], for helping me off a dime.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11116851</root_node>
+<parent_node field_name="parent_node">11116851</parent_node>
+<thread id="11116851">
+<node id="11116852"><node id="11116853"><node id="11116854"><node id="11116856"/>
+</node>
+</node>
+<node id="11116890"/>
+</node>
+<node id="11116855"><node id="11116858"><node id="11116863"/>
+</node>
+</node>
+<node id="11116864"><node id="11116866"/>
+<node id="11116875"/>
+</node>
+<node id="11116886"><node id="11116887"/>
+</node>
+<node id="11116892"><node id="11116901"><node id="11116972"><node id="11116974"/>
+</node>
+</node>
+</node>
+<node id="11116937"><node id="11116938"/>
+</node>
+<node id="11116943"><node id="11116945"/>
+</node>
+<node id="11116960"><node id="11116966"/>
+</node>
+<node id="11116985"><node id="11117059"/>
+</node>
+</thread></node>

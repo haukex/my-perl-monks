@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11121483" title="Re^5: Unicode issues with emc uemcli" created="2020-09-08 03:01:47" updated="2020-09-08 03:01:47" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Of course, a loop would be a bit more elegant, here's just one example.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use IPC::Run3;
+use Encode qw/decode/;
+
+my @outputs;
+for my $loc ('/sys/general', '/env/bat', '/env/ps') {
+	run3 ['uemcli','-d',$vnxe_ip,'-u',$username,'-p',$password,
+		$loc,'show','-detail'], undef, \my $out;
+	my $str = decode('UTF-16', $out, Encode::FB_CROAK);
+	push @outputs, $str;
+}
+
+print $outputs[0], "\n";
+open my $fh, '&gt;', $textfile or die "$textfile: $!";
+print $fh $outputs[1];
+close $fh;
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Note that both [doc://print]s in this example assume you don't have any Unicode (non-ASCII) characters in the strings (as your [id://11121460|sample data] shows). If you did, you'd need to set an encoding on the filehandles you're writing the data to - that's &lt;c&gt;STDOUT&lt;/c&gt;, with for example &lt;c&gt;use open qw/:std :utf8/;&lt;/c&gt; or several variations on that, and for filehandles, for example &lt;c&gt;open my $fh, '&gt;:encoding(UTF-8)', $filename or die "$filename: $!";&lt;/c&gt;.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11121454</root_node>
+<parent_node field_name="parent_node">11121464</parent_node>
+<thread id="11121454">
+<node id="11121456"><node id="11121460"><node id="11121461"><node id="11121463"><node id="11121482"/>
+</node>
+<node id="11121464"><node id="11121471"><node id="11121481"/>
+</node>
+<node id="11121483"><node id="11121487"><node id="11121488"><node id="11121489"><node id="11121495"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11121468"><node id="11121472"/>
+<node id="11121484"><node id="11121486"/>
+</node>
+</node>
+</thread></node>

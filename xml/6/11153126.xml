@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11153126" title="Re: Carp: $! vs &quot;$!&quot; in croaking (updated)" created="2023-06-26 05:27:10" updated="2023-06-26 05:27:10" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;One of the first things [mod://Carp] [https://metacpan.org/dist/Carp/source/lib/Carp.pm#L282|does] is &lt;c&gt;local($!, $^E)&lt;/c&gt;, I assume because of what its documentation says: "&lt;c&gt;Carp&lt;/c&gt; takes care not to clobber the status variables &lt;c&gt;$!&lt;/c&gt; and &lt;c&gt;$^E&lt;/c&gt; in the course of assembling its error messages." &lt;strike&gt;I think what's going on is that since &lt;c&gt;@_&lt;/c&gt; are [id://11119164|aliases], this actually clears out the argument as well. Another thing to note is that [doc://$!] is like a dualvar, though I'm not sure if this has to do with the issue.&lt;/strike&gt; &lt;b&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/b&gt; Actually, in the following, [doc://$?] behaves the same way as [doc://$!], while [doc://$@], an [doc://our] variable, and an explicitly created [doc://Scalar::Util#dualvar] do not - so it probably does have to do with the variable's magic in combination with [doc://local] instead. &lt;b&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/b&gt; I suspect you'll have to work with &lt;c&gt;"$!"&lt;/c&gt;. This reproduces the issue:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+sub foo {
+	dd @_;
+	local $!;
+	dd @_;
+}
+
+$! = 2;
+foo($!);
+$! = 2;
+foo("$!");
+
+__END__
+
+"No such file or directory"
+""
+"No such file or directory"
+"No such file or directory"
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11153123</root_node>
+<parent_node field_name="parent_node">11153123</parent_node>
+<thread id="11153123">
+<node id="11153125"/>
+<node id="11153126"><node id="11153127"/>
+<node id="11153131"><node id="11153132"/>
+</node>
+</node>
+<node id="11153129"/>
+</thread></node>

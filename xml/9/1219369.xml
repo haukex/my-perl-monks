@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1219369" title="Re^2: system &amp; exec" created="2018-07-27 05:10:21" updated="2018-07-27 05:10:21" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;If the shell command you want to source sets some environment variables and you want to use them in your Perl script&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I've been waiting for an excuse to post this little hack I used recently &lt;c&gt;;-)&lt;/c&gt; A Perl script that needs some environment variables set by a shell script can write another shell script that sets the variables and then re-runs the Perl script... (currently written to rely on *NIX and &lt;c&gt;bash&lt;/c&gt;).&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use File::Temp qw/tempfile/;
+use Cwd qw/getcwd abs_path/;
+use String::ShellQuote qw/shell_quote/;
+
+my $SOURCE_FILE = '/tmp/test.sh';
+if (!$ENV{PERL_REEXECUTED}) {
+	my ($fh,$fn) = tempfile( DIR=&gt;getcwd, SUFFIX=&gt;'.sh' );
+	print $fh ". ", shell_quote($SOURCE_FILE), "\n";
+	print $fh "PERL_REEXECUTED=1 ", shell_quote($^X), " ",
+		shell_quote(abs_path($0)), " \"\$\@\"\n";
+	print $fh "rm -f ",shell_quote($fn),"\n";
+	close $fh;
+	exec('/bin/bash','--',$fn,@ARGV)==0 or die $?;
+}
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1219351</root_node>
+<parent_node field_name="parent_node">1219356</parent_node>
+<thread id="1219351">
+<node id="1219354"><node id="1219417"/>
+</node>
+<node id="1219356"><node id="1219369"/>
+</node>
+<node id="1219363"><node id="1219418"><node id="1219419"/>
+<node id="1219425"/>
+</node>
+</node>
+<node id="1219374"/>
+</thread></node>

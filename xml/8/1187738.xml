@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1187738" title="Re: Generate Hash of hashes by reading a large Input file" created="2017-04-12 04:59:32" updated="2017-04-12 04:59:32" _doctext_mode="lenient"><type id="11">note</type>
+<author id="832495">choroba</author>
+<doctext field_name="doctext">I'd create a state machine to parse the file. The state ($section in the below code) tells me what the parser expects to find. I also need to store the current zone and cluster to be able to attach the new information to the correct part of the structure.
+&lt;readmore&gt;&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+
+my %zone;
+
+my $section = 0;
+my ($current_zone, $current_cluster);
+
+while (&lt;&gt;) {
+    if (! $section) {
+        if (/^Zone ID/) {
+            $section = 'zones';
+
+        } elsif (/^Cluster ID/) {
+            $section = 'clusters';
+
+        } elsif (/^Host Name/) {
+            $section = 'hosts';
+
+        } elsif (my ($name) = /^(\S+)$/) {
+            if (exists $zone{$name}) {
+                $current_zone = $name;
+
+            } elsif (exists $zone{$current_zone}{cluster}{$name}) {
+                $current_cluster = $name;
+            }
+        }
+
+    } elsif ('zones' eq $section) {
+        if (my ($id, $name) = /(\S+)\s+(\S+)/) {
+            $zone{$name}{id} = $id;
+
+        } elsif (/^$/) {
+            $section = 0;
+        }
+
+    } elsif ('clusters' eq $section) {
+        if (my ($id, $name, $type, $mem, $cpu)
+            = /^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/
+        ) {
+            $zone{$current_zone}{cluster}{$name} = { id   =&gt; $id,
+                                                     type =&gt; $type,
+                                                     mem  =&gt; $mem,
+                                                     cpu  =&gt; $cpu };
+        } elsif (/^$/) {
+            $section = 0;
+        }
+
+    } elsif ('hosts' eq $section) {
+        if (my ($host, $vms, $status, $state)
+            = /^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/
+        ) {
+            $zone{$current_zone}{cluster}{$current_cluster}{host}{$host}
+                = { vms    =&gt; $vms,
+                    status =&gt; $status,
+                    state  =&gt; $state };
+
+        } elsif (/^$/) {
+            $section = 0;
+        }
+    }
+
+}
+
+use Data::Dumper; print Dumper \%zone;
+&lt;/c&gt;&lt;/readmore&gt;
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-832495"&gt;
+&lt;c&gt;($q=q:Sq=~/;[c](.)(.)/;chr(-||-|5+lengthSq)`"S|oS2"`map{chr |+ord
+}map{substrSq`S_+|`|}3E|-|`7**2-3:)=~y+S|`+$1,++print+eval$q,q,a,&lt;/c&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.1416} --&gt;</doctext>
+<root_node field_name="root_node">1187717</root_node>
+<parent_node field_name="parent_node">1187717</parent_node>
+<thread id="1187717">
+<node id="1187738"><node id="1188476"/>
+</node>
+<node id="1187741"><node id="1187796"/>
+</node>
+</thread></node>

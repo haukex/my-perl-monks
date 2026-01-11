@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100999" title="Re^5: Cwd::abs_path or FindBin::Bin?" created="2019-06-05 06:41:19" updated="2019-06-05 06:41:19" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The [doc://File::Basename] documentation says:&lt;/p&gt;
+&lt;blockquote&gt;&lt;c&gt;dirname()&lt;/c&gt; and &lt;c&gt;basename()&lt;/c&gt; emulate the behaviours, and quirks, of the shell and C functions of the same name. ... &lt;b&gt;&lt;c&gt;dirname&lt;/c&gt;&lt;/b&gt; ... This function is provided for compatibility with the Unix shell command &lt;c&gt;dirname(1)&lt;/c&gt; and has inherited some of its quirks. In spite of its name it does &lt;b&gt;NOT&lt;/b&gt; always return the directory name as you might expect.&lt;/blockquote&gt;
+&lt;p&gt;Although it doesn't say what exactly those quirks are. To get a directory &lt;c&gt;../lib&lt;/c&gt; relative to the script into [doc://@INC] using only core modules, I might suggest the following, although there may be some tricky symlink situations where they return different results (&lt;c&gt;abs_path&lt;/c&gt; goes out to the filesystem, the second code example does not). Then the question becomes how likely you think that might be. Test cases are best &lt;c&gt;:-)&lt;/c&gt;&lt;/p&gt;
+&lt;c&gt;
+use FindBin;
+use File::Spec::Functions qw/updir catdir/;
+use Cwd qw/abs_path/;
+use lib abs_path( catdir( $FindBin::RealBin, updir, 'lib' ) );
+
+# - or -
+
+use FindBin;
+use File::Spec::Functions qw/splitdir catdir/;
+use lib do { my @p = splitdir $FindBin::RealBin;
+	catdir @p[0 .. $#p-1], 'lib' };
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11100985</root_node>
+<parent_node field_name="parent_node">11100998</parent_node>
+<thread id="11100985">
+<node id="11100987"><node id="11100988"><node id="11100990"><node id="11100998"><node id="11100999"><node id="11101000"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11101122"/>
+</thread></node>

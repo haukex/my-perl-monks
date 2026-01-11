@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1213595" title="Modifying pos() from within (?{...})" created="2018-04-26 07:20:33" updated="2018-04-26 07:20:33" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1067793">mxb</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Monks&lt;/p&gt;
+
+&lt;p&gt;I'm onto move advanced regular expressions now and I'm playing with (?{...})&lt;/p&gt;
+
+&lt;p&gt;As a learning exercise I'm attempting to parse PNG files with a regex. Again, emphasis on the learning exercise :)&lt;/p&gt;
+
+&lt;p&gt;After an 8 byte header, PNG files contains a sequential list of chunks. Each chunk consists of a 32-bit big endian length field, 32-bit ASCII tag, n bytes of data, where n is the value set in the length field, and a 32-bit big endian CRC. The full specification, should you require it can be found &lt;a href="https://www.w3.org/TR/PNG/"&gt;here&lt;/a&gt; on w3.org&lt;/p&gt;
+
+&lt;p&gt; I have created the following test code, which loads a PNG from __DATA__, skips the header and attempts to extract chunks with my regex.&lt;/p&gt;
+
+&lt;p&gt; I am successfully unpacking the length field within the &lt;code&gt;(?{...})&lt;/code&gt;construct and extract the data to a scalar. I am also attempting to move the position with the regex by assigning to &lt;code&gt;pos()&lt;/code&gt;. While the assignment seems to work, as in there are no errors, it seems to have no affect. I am extracting the first four bytes of the data with the CRC value.&lt;/p&gt;
+
+&lt;p&gt; Is it not possible to move the position within the regex within a &lt;code&gt;(?{...})&lt;/code&gt; block? I originally thought to extract the data with a &lt;code&gt;(?&lt;data&gt;.{$len})&lt;/code&gt; construct, where &lt;code&gt;$len&lt;/code&gt; is set within the &lt;code&gt;(?{...})&lt;/code&gt; but this also didn't work. I assume this is because the value of &lt;code&gt;$len&lt;/code&gt; is set during regex compilation? (which would be undef)&lt;/p&gt;
+
+&lt;p&gt;I've also attempted to make a version which uses the &lt;code&gt;(??{...})&lt;/code&gt; construct, but this is very new to me. This seems simpler as you can unpack the length field and return a string which matches that many bytes, but it has an odd issue with matching the last chunk. Not too sure if I should include it within this node, but advice for why this doesn't work is also much appreciated.&lt;/p&gt;
+
+&lt;p&gt;Many thanks&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;(?{...})&lt;/code&gt; version:&lt;/p&gt;
+
+&lt;code&gt;#!/usr/bin/env perl
+use strict;
+use warnings;
+use 5.016;
+
+# Parsing vars
+my ($data);
+
+# Rebuild PNG image
+local $/;
+my $input = &lt;DATA&gt;;
+chomp $input;
+$input = pack "H*", $input;
+
+# Skip PNG Header
+$input = substr( $input, 8 );
+
+while ($input =~ /# four byte length
+		  (?&lt;len&gt;....)
+		  # four byte tag
+		  (?&lt;tag&gt;....)
+		  # variable length data
+		  (?{
+		      # unpack length
+		      my $len = unpack "N", $+{len};
+		      # extract data
+		      $data = substr($_, pos(), $len);
+		      # update position
+		      pos() += $len})
+		  # four byte crc
+		  (?&lt;crc&gt;....)/mgx) {
+    say "Chunk len:", unpack "N", $+{len};
+    say "Chunk tag:", $+{tag};
+    say "Chunk data:", unpack "H*", $data;
+    say "Chunk data len:", length $data;
+    say "Chunk CRC: ", unpack "H*", $+{crc};
+    say "---";
+}
+
+__END__
+
+
+__DATA__
+89504e470d0a1a0a0000000d4948445200000010000000100803000000282d0f530000015c504c544547704c4f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb44f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb34f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb44f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb54f7eb54f7eb34f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb44f7eb54f7eb54f7eb44f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb5a29b27fc0000007374524e5300242d75280b02fa8bae61fdf7fbf5e266d109dd6462faf9fc6b0dde6571b3d9b0031f01e0cd83d64505928fc51eb405582a426d052f12e5840e63ecea046ab248d0f6327c3e0c4ff311b67960822ef295f8a093af76e3683c3d7213eb02192cbb8106f190db5ad42cc19ba7504c36150ec28de1692647000000cb4944415418d3636040005b264b0614e0e7e50c24f595617ccf201e5f3706062e16289f8d39b0d83fc09521980bc237737011e6f370b260080fb1139011119555b0b6f7f671b7d2658808e3e665176397282e2e766404298de229860173539040226f71b18db43848401eac222db9983d9445925385bb584e0a2490915a1c13c9c0c0aac15fccc10612c8e1e74b8806d28682eacc60fb8b84d3536281b4910ea731588043303b330e481ba8ea690b8104720b05b2e2813413879a96124840282fbf2009c4d034615504520015a424be37c5c7be0000000049454e44ae426082&lt;/code&gt;
+
+&lt;p&gt;&lt;code&gt;(??{...})&lt;/code&gt; version:&lt;/p&gt;
+
+&lt;code&gt;#!/usr/bin/env perl
+use strict;
+use warnings;
+use 5.016;
+
+our $VERSION = 0.1;
+
+# Rebuild PNG image
+local $/;
+my $input = &lt;DATA&gt;;
+chomp $input;
+$input = pack "H*", $input;
+
+# Skip PNG Header
+$input = substr( $input, 8 );
+
+while (
+    my ( $len, $tag, $data, $crc ) =
+    $input =~ /
+		  # four byte length
+		  (....)
+		  # four byte tag
+		  (....)
+		  # variable length data
+		  (??{
+		      # unpack length
+		      my $len = unpack "N", $1;
+		      print STDERR "$2 $len\n";
+		      return "(.){$len}"})
+		  # four byte crc
+		  (....)/gx
+  )
+{
+    say "Chunk len:",  unpack "N",  $len;
+    say "Chunk tag:",  $tag;
+    say "Chunk data:", unpack "H*", $data;
+    say "Chunk data len:", length $data;
+    say "Chunk CRC: ", unpack "H*", $crc;
+}
+
+
+__DATA__
+89504e470d0a1a0a0000000d4948445200000010000000100803000000282d0f530000015c504c544547704c4f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb44f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb34f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb44f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb54f7eb54f7eb34f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb44f7eb54f7eb54f7eb44f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb54f7eb44f7eb54f7eb54f7eb5a29b27fc0000007374524e5300242d75280b02fa8bae61fdf7fbf5e266d109dd6462faf9fc6b0dde6571b3d9b0031f01e0cd83d64505928fc51eb405582a426d052f12e5840e63ecea046ab248d0f6327c3e0c4ff311b67960822ef295f8a093af76e3683c3d7213eb02192cbb8106f190db5ad42cc19ba7504c36150ec28de1692647000000cb4944415418d3636040005b264b0614e0e7e50c24f595617ccf201e5f3706062e16289f8d39b0d83fc09521980bc237737011e6f370b260080fb1139011119555b0b6f7f671b7d2658808e3e665176397282e2e766404298de229860173539040226f71b18db43848401eac222db9983d9445925385bb584e0a2490915a1c13c9c0c0aac15fccc10612c8e1e74b8806d28682eacc60fb8b84d3536281b4910ea731588043303b330e481ba8ea690b8104720b05b2e2813413879a96124840282fbf2009c4d034615504520015a424be37c5c7be0000000049454e44ae426082&lt;/code&gt;
+
+&lt;p&gt;output:&lt;/p&gt;
+
+&lt;code&gt;IHDR 13
+PLTE 348
+tRNS 115
+IDAT 203
+DAT 52041
+Quantifier in {,} bigger than 32766 in regex; marked by &lt;-- HERE in m/(.){ &lt;-- HERE 52041}/ at regex2.pl line 17, &lt;DATA&gt; chunk 1.&lt;/code&gt;
+
+&lt;p&gt;To me, this looks like the IDAT chunk match is failing so it's backtracking and seeking forwards&lt;/p&gt;</doctext>
+<thread id="1213595">
+<node id="1213598"><node id="1213604"><node id="1213606"/>
+</node>
+</node>
+<node id="1213599"><node id="1213602"/>
+</node>
+<node id="1213605"><node id="1213607"/>
+<node id="1213611"><node id="1213685"><node id="1213692"/>
+</node>
+</node>
+</node>
+</thread></node>

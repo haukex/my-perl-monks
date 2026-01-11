@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1225566" title="Re: Final Print Statement in Foreach Loop Prints Twice" created="2018-11-11 03:44:51" updated="2018-11-11 03:44:51" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hello [ScarletRoxanne], welcome to PerlMonks and Perl!&lt;/p&gt;
+&lt;p&gt;See #4 on the [id://745674]: print your data structures. For example, if I add &lt;c&gt;use Data::Dump; dd \%anaHash;&lt;/c&gt; just after the first loop, and enter &lt;c&gt;Hello&lt;/c&gt; and &lt;c&gt;World&lt;/c&gt;, the output I get is:&lt;/p&gt;
+&lt;c&gt;
+{ dlorw =&gt; ["world"], ehllo =&gt; ["hello"] }
+&lt;/c&gt;
+&lt;p&gt;Whereas if I enter &lt;c&gt;restful&lt;/c&gt; and &lt;c&gt;fluster&lt;/c&gt;, I get:&lt;/p&gt;
+&lt;c&gt;
+{ eflrstu =&gt; ["fluster", "restful"] }
+&lt;/c&gt;
+&lt;p&gt;Now if you look at your second loop, you're iterating over &lt;c&gt;values %anaHash&lt;/c&gt;, so I hope it becomes clear why the loop is executing twice?&lt;/p&gt;
+&lt;p&gt;I'm not exactly sure about what your requirements are, but I'm not sure why you need the second loop? Checking that the phrases are identical could be done with &lt;c&gt;eq&lt;/c&gt; on &lt;c&gt;$aWord&lt;/c&gt; and &lt;c&gt;$bWord&lt;/c&gt;, and whether or not the words are anagrams could be checked by looking at the number of [doc://keys] in the hash, no?&lt;/p&gt;
+&lt;p&gt;Some more general tips:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Instead of &lt;c&gt;#!/usr/bin/perl -w&lt;/c&gt;, do &lt;c&gt;use warnings;&lt;/c&gt; ([doc://warnings#What's-wrong-with-*-w*-and-$^W|What's wrong with &lt;b&gt;-w&lt;/b&gt; and &lt;c&gt;$^W&lt;/c&gt;] &lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Link fixed, thanks [Laurent_R]!&lt;/small&gt;).&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;$|=1;&lt;/c&gt; &lt;i&gt;I have to use this to make STDIN work. IDK why.&lt;/i&gt; - I'm not sure either, [doc://$OUTPUT_AUTOFLUSH|$|] doesn't have to do with &lt;c&gt;STDIN&lt;/c&gt;, I removed it and it worked fine on my end.&lt;/li&gt;
+&lt;li&gt;It's better if you don't declare all your variables at the top of the script, because then they're not much better than global variables. Instead, declare them at the smallest scope they are needed, such as &lt;c&gt;foreach my $sortWords (...)&lt;/c&gt; or &lt;c&gt;my $sortWord = join '', ...&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;$word =~ tr/A-Z/a-z/;&lt;/c&gt; - you might want to look at the [doc://lc] function.&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;@words = ($bWord, $aWord); foreach $word (@words)&lt;/c&gt; can be written as &lt;c&gt;foreach $word ($bWord, $aWord)&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;$aWord = &lt;STDIN&gt;; chomp $aWord;&lt;/c&gt; is fine, but is more commonly written as &lt;c&gt;chomp( my $aWord = &lt;STDIN&gt; );&lt;/c&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;&lt;i&gt;I can't get the script to print FALSE by, for example, setting a variable to '' or 0, etc. or saying return ''. Ideally, I wouldn't have to put "print TRUE/FALSE" in the script at all.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm not sure what you mean by this - Perl doesn't have any "TRUE" and "FALSE" constants like other languages, instead there are simply a couple of values that Perl interprets as being "false" in a "boolean context" (for example, in an &lt;c&gt;if (...)&lt;/c&gt; condition) - see [id://11104607]. These values don't get converted internally into anything else. If you want Perl to print the strings &lt;c&gt;TRUE&lt;/c&gt; and &lt;c&gt;FALSE&lt;/c&gt;, you'll need to tell it to do that, such as in &lt;c&gt;print $value?"TRUE":"FALSE"&lt;/c&gt;.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I'm curious why my m// expression doesn't work.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If I enter &lt;c&gt;hello&lt;/c&gt; and &lt;c&gt;hell o&lt;/c&gt;, then the regular expressions will be &lt;c&gt;/ +hello/&lt;/c&gt; and &lt;c&gt;/ +hell o/&lt;/c&gt;. Because both of them require spaces before the &lt;c&gt;h&lt;/c&gt;, which neither of the input strings have, neither regex will match. I suspect you may have wanted to match on the keys instead, but even then, I think you need to rethink the overall approach, because there would still be further modifications needed to make it work with regexes. (Hint: I would've made a copy of the strings and removed all the spaces.) Another regex tip: If you don't anchor your regular expressions with &lt;c&gt;^&lt;/c&gt; and &lt;c&gt;$&lt;/c&gt;, then remember that the regular expression will match anywhere in the string (e.g. &lt;c&gt;"foobar"=~/a/&lt;/c&gt; is true).&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update 2019-08-17:&lt;/i&gt; Updated the link to "Truth and Falsehood".&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1225564</root_node>
+<parent_node field_name="parent_node">1225564</parent_node>
+<thread id="1225564">
+<node id="1225565"/>
+<node id="1225566"/>
+<node id="1225570"/>
+<node id="1225572"/>
+<node id="1226188"/>
+</thread></node>

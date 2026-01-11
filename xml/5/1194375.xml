@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1194375" title="Re^5: Sort the hash array (updated)" created="2017-07-06 08:38:29" updated="2017-07-06 08:38:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;is there way i can use s/^\s+|\s+$//g only once for all the variables&lt;/i&gt;&lt;/blockquote&gt;
+&lt;c&gt;
+s/^\s+|\s+$//g for $severity, $ticketnum, $timereceived, ...;
+&lt;/c&gt;
+&lt;p&gt;Doesn't apply to &lt;c&gt;$remedyqueue&lt;/c&gt; though, one way to make that a little bit more idiomatic might be:&lt;/p&gt;
+&lt;c&gt;
+my $remedyqueue = [ map { $_-&gt;string_value=~s/^\s+|\s+$//gr }
+  $xp-&gt;find("./custom_attribute_list/custom_attribute[normalize-space(name)='SLB_RemedyQueue']/value", $node)
+    -&gt;get_nodelist ];
+&lt;/c&gt;
+&lt;p&gt;Or, for Perl versions before 5.14: &lt;c&gt;map { (my $x=$_-&gt;string_value)=~s/^\s+|\s+$//g; $x }&lt;/c&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;if i use sprintf("%.0f h", $diff_hours); gives me err in sorting statement Argument "2158 h" isn't numeric&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You didn't implement the suggestion I showed, instead you're attempting to sort by the field &lt;c&gt;event_age&lt;/c&gt;, which does contain strings like &lt;c&gt;"2158 h"&lt;/c&gt;, which are not plain numbers and therefore &lt;strike&gt;can't be compared by the numeric comparison operator &lt;c&gt;&lt;=&gt;&lt;/c&gt;&lt;/strike&gt; &lt;small&gt;&lt;b&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/b&gt;&lt;/small&gt; cause warnings when you try to use the numeric comparison operator &lt;c&gt;&lt;=&gt;&lt;/c&gt; to compare them. &lt;small&gt;&lt;b&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/b&gt;&lt;/small&gt; I would suggest you implement the suggestion I showed, and if you don't want that field to show up in the JSON, then after the sorting you could do &lt;c&gt;delete $_-&gt;{timereceived} for @records;&lt;/c&gt;. (While you could theoretically also remove the &lt;c&gt;" h"&lt;/c&gt; from the &lt;c&gt;event_age&lt;/c&gt; field and then sort that numerically, note that since you've rounded the value, I think you might find that the sorting will be unreliable for events that happened in the same hour.) Also, note that you should move the [doc://sort] entirely outside the loop, doing it on every iteration is not necessary.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1194360</root_node>
+<parent_node field_name="parent_node">1194372</parent_node>
+<thread id="1194360">
+<node id="1194365"><node id="1194370"><node id="1194374"><node id="1194474"/>
+</node>
+</node>
+</node>
+<node id="1194366"><node id="1194369"><node id="1194371"><node id="1194372"><node id="1194375"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

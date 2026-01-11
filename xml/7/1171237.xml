@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1171237" title="How to get a reference from an eval() string?" created="2016-09-06 05:26:17" updated="2016-09-06 05:26:17" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="930100">exilepanda</author>
+<doctext field_name="doctext">Code comes first:
+
+&lt;code&gt;
+use Data::Dumper;
+use strict;
+no warnings;
+no autovivification;
+
+my $return_from_sub = '{X}{Y}' ; # a result return from some sub
+my $to_process = '$x-&gt;' . $return_from_sub; # my local def
+
+my $x = {
+	Y =&gt; {
+		Z =&gt; 10,
+	}
+};
+
+# after some regex work on the $to_process
+my $lastPart = 'Y' ; # the last part from $to_process
+my $base = '$x-&gt;{X}' ; # before the $lastPart
+my $lastPartIs = "HASH" ; 
+my $newData = [qw/a b c/];
+
+my $ref = eval $base || eval "$base = {}"; # whatever it is, just make it referencable if not defined. 
+ 
+if ( $lastPartIs eq "HASH" ) {
+	$ref-&gt;{"$lastPart"} = $newData; # Remark 1
+}
+elsif ( $lastPartIs eq "ARRAY" ) {
+	$ref-&gt;["$lastPart"] = $newData; # Remark 1
+}
+print Dumper $x;
+&lt;/code&gt;
+&lt;p&gt;
+Above code demonstrated some sort what I want (but not entirely correct), however I have to make it one level up from the last "part". 
+&lt;p&gt;
+I know that I cannot directly get that reference via &lt;code&gt;eval&lt;/code&gt;. like :
+&lt;code&gt;
+$ref = eval '$base$return_from_sub';
+$ref = [/whatever/];
+&lt;/code&gt;
+&lt;p&gt;
+This just make &lt;code&gt;$ref&lt;/code&gt; pointed to something else so this won't work. But I wonder is there any trick can do something like :
+&lt;p&gt;
+&lt;code&gt;
+$ref = eval '\$refString';
+deference( $ref ) = $whatever ;# [] {} ""
+&lt;/code&gt;
+&lt;p&gt;
+
+Provided that, I don't know what will be returned from the sub, and I don't know what's gonna be stored. both (return_from_sub and to write) can be array ref, hash ref, code ref, whatever ref or simple scalar. 
+
+
+
+
+</doctext>
+<thread id="1171237">
+<node id="1171238"><node id="1171239"><node id="1171254"><node id="1171260"/>
+</node>
+</node>
+</node>
+<node id="1171246"><node id="1171256"><node id="1171313"/>
+</node>
+</node>
+<node id="1171262"/>
+</thread></node>

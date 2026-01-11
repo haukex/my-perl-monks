@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1233709" title="Re: Parsing Problems (updated)" created="2019-05-13 12:08:12" updated="2019-05-13 12:08:12" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I'd suggest creating a [id://1177642] - i.e. reducing both the input file and the code down to the bare minimum needed to reproduce the problem. That should help you narrow down the problem, and it also gives you something to post here. To remove all ambiguity, also use [man://hexdump] or [man://od] to show the input files, e.g. &lt;c&gt;hexdump -C input.txt&lt;/c&gt; or &lt;c&gt;od -tx1c input.txt&lt;/c&gt;*, and use [doc://Devel::Peek] to show the data once it is read into Perl. For example:&lt;/p&gt;
+&lt;c&gt;
+$ hexdump -C test.txt
+00000000  48 e2 82 ac 6c 6c 6f 2c  20 57 c3 b6 72 6c 64 21  |H...llo, W..rld!|
+00000010  0a                                                |.|
+00000011
+
+$ cat test.pl
+use warnings;
+use strict;
+use open qw/:std :encoding(UTF-8)/;
+use Devel::Peek;
+
+while (&lt;&gt;) {
+	chomp;
+	Dump($_);
+}
+
+$ perl test.pl test.txt
+SV = PV(0x55b66e50c080) at 0x55b66e547398
+  REFCNT = 1
+  FLAGS = (POK,pPOK,UTF8)
+  PV = 0x55b662e533d0 "H\342\202\254llo, W\303\266rld!"\0 [UTF8 "H\x{20ac}llo, W\x{f6}rld!"]
+  CUR = 16
+  LEN = 81
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; To look at the input file, you might also be interested in my script [https://bitbucket.org/haukex/htools/src/HEAD/enctool|enctool].&lt;/p&gt;
+&lt;p&gt;* &lt;b&gt;Update 2:&lt;/b&gt; On Windows, one simple open-source hex dump tool (of many) can be downloaded here: [https://github.com/hollasch/hex/releases/download/v1.1.0/hex.exe]&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1233707</root_node>
+<parent_node field_name="parent_node">1233707</parent_node>
+<thread id="1233707">
+<node id="1233708"><node id="1233711"><node id="1233714"/>
+</node>
+</node>
+<node id="1233709"><node id="1233719"><node id="1233720"><node id="1233723"/>
+</node>
+<node id="1233721"/>
+<node id="1233764"><node id="11100033"><node id="11100044"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1215457" title="Re^2: difference in regex" created="2018-05-30 09:32:44" updated="2018-05-30 09:32:44" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I'm all for TIMTOWTDI, but I wondered about performance. And it turns out that while a [doc://split] version is faster for short strings, performance suffers a lot the more commas there are in the string:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Benchmark qw/cmpthese/;
+
+my $str = join ',', 'a'..'z', 5;
+my $exp_path = join ',', 'a'..'z';
+my $exp_value = 5;
+
+cmpthese(-2, {
+	split =&gt; sub {
+		my @x = split /,/, $str;
+		my ($path, $value);
+		$value = pop @x if @x&gt;1;
+		$path = join ',', @x;
+		#die unless $path eq $exp_path &amp;&amp; $value eq $exp_value;
+	},
+	regex =&gt; sub {
+		my ($path, $value) =
+			$str=~/^ (?| ([^,]*) | (.*) , ([^,]*) ) $/x;
+		#die unless $path eq $exp_path &amp;&amp; $value eq $exp_value;
+	},
+} );
+
+__END__
+
+          Rate split regex
+split 326127/s    --  -66%
+regex 966896/s  196%    --
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; [id://1215459|This version] using [doc://rindex] beats both [doc://split] and the regex.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1215361</root_node>
+<parent_node field_name="parent_node">1215379</parent_node>
+<thread id="1215361">
+<node id="1215364"/>
+<node id="1215367"><node id="1215372"><node id="1215376"/>
+<node id="1215378"/>
+</node>
+</node>
+<node id="1215370"/>
+<node id="1215371"/>
+<node id="1215373"><node id="1215377"><node id="1215380"/>
+</node>
+</node>
+<node id="1215379"><node id="1215404"><node id="1215412"/>
+</node>
+<node id="1215457"/>
+</node>
+<node id="1215441"/>
+<node id="1215459"/>
+</thread></node>

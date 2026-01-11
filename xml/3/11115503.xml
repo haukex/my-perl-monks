@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11115503" title="Re: Do I need/want to close __DATA__?" created="2020-04-14 02:57:21" updated="2020-04-14 02:57:21" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1165397">bliako</author>
+<doctext field_name="doctext">&lt;p&gt;Thank you for the help and information. And from now on I will expect me and others to close DATA on finishing with it.&lt;/p&gt;
+
+&lt;p&gt;Here is what happens when 2 separate packages leave their DATA opened. &lt;c&gt;warn&lt;/c&gt; reports only the last one being opened. Is it because the interpreter will detect opened DATA and localise it?&lt;/p&gt;
+
+&lt;c&gt;
+package X;
+
+while(&lt;DATA&gt;){ print "X:".$_ }
+#close(DATA);
+
+sub check_data { return defined fileno(DATA) }
+
+1;
+__DATA__
+1
+2
+3
+&lt;/c&gt;
+
+&lt;c&gt;package Y;
+
+while(&lt;DATA&gt;){ print "Y:".$_ }
+#close(DATA);
+
+sub check_data { return defined fileno(DATA) }
+
+1;
+__DATA__
+10
+20
+30
+40
+50
+60
+&lt;/c&gt;
+
+&lt;c&gt;
+# main 
+use lib '.';
+use strict;
+use warnings;
+use X;
+use Y;
+
+warn "hehh";
+
+print "X opened: ".X::check_data()
+ ."\n"."Y opened: ".Y::check_data()
+ ."\n";
+&lt;/c&gt;
+
+&lt;c&gt;
+X:1
+X:2
+X:3
+Y:10
+Y:20
+Y:30
+Y:40
+Y:50
+Y:60
+hehh at x.pm line 7, &lt;DATA&gt; line 6.
+Y opened: 1
+Y opened: 1
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11115445</root_node>
+<parent_node field_name="parent_node">11115445</parent_node>
+<thread id="11115445">
+<node id="11115447"><node id="11115448"/>
+<node id="11115449"><node id="11115488"/>
+<node id="11115489"/>
+</node>
+</node>
+<node id="11115452"><node id="11115458"/>
+</node>
+<node id="11115455"><node id="11115496"/>
+</node>
+<node id="11115461"><node id="11115462"><node id="11115475"><node id="11115482"><node id="11115485"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11115480"/>
+<node id="11115503"><node id="11115508"><node id="11115550"/>
+</node>
+<node id="11115517"/>
+</node>
+</thread></node>

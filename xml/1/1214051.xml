@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1214051" title="Re: Text::Template and delayed use vars" created="2018-05-04 07:50:30" updated="2018-05-04 07:50:30" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1091361">frazap</author>
+<doctext field_name="doctext">Yes it's possible, reading Simon Cozens' Advanced Perl, I found this whitch work:
+&lt;code&gt;
+foreach my $f (@files) {
+    my $config = Config::YAML::Tiny-&gt;new( config =&gt; $f );
+    my @template_file = split( / /, $config-&gt;get_template );
+    foreach my $tf (@template_file) {
+        my @fields = split( / /, $config-&gt;get_fields );
+        for my $v ( @fields ) {
+            no strict 'refs';
+           
+             *{"T::$v"}= \$config-&gt;{$v};
+        
+        }
+        my $template = Text::Template-&gt;new(
+            TYPE   =&gt; 'FILE',
+            SOURCE =&gt; $tf
+
+        ) or die "Couldn't construct template: $Text::Template::ERROR";
+
+        my $result = $template-&gt;fill_in(  
+            PACKAGE =&gt; 'T',
+            PREPEND =&gt; 'use strict;'
+           );
+...
+&lt;/code&gt;
+&lt;p&gt;And in the template file(s) I had to change $value with $T::value, $pos with $T::pos&lt;/p&gt;
+
+&lt;b&gt;update&lt;/b&gt;
+In fact, with $T::pos in the template file, I loose the error if the variable name is wrong: $T:ops is just replace by nothing but no error is given. I have to use $pos or $value in the template.&lt;/p&gt;
+&lt;p&gt;The docs could be made clearer I think&lt;/p&gt;
+
+F.
+</doctext>
+<root_node field_name="root_node">1213997</root_node>
+<parent_node field_name="parent_node">1213997</parent_node>
+<thread id="1213997">
+<node id="1214051"/>
+</thread></node>

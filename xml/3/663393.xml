@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="663393" title="Perl Cannot Be Parsed: A Formal Proof" created="2008-01-21 11:06:16" updated="2008-01-21 06:06:16" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="641652">Jeffrey Kegler</author>
+<doctext field_name="doctext">&amp;#91 &lt;b&gt;UPDATE 27 Aug 2009:&lt;/b&gt; Readers interested in the topic of this node will want to look first (or instead) at the series of three articles I wrote for &lt;i&gt;The Perl Review&lt;/i&gt;, [href://http://www.jeffreykegler.com/Home/perl-and-undecidability|now available online].  They lay this proof out more carefully and with thorough explanations, in three different versions. &amp;#93  
+
+&lt;p&gt;&amp;#91 &lt;b&gt;At this point this post should be considered mainly of historical interest.&lt;/b&gt; One especial defect is that it frames the issue in terms of "static parsing", implying that there are no similar issues with "dynamic" parsing. &amp;#93
+
+&lt;p&gt;In the [mod://PPI|man page for PPI], Adam Kennedy conjectures that perl is unparseable, and suggests how to prove it.  Below I carry out a rigorous version of the proof, which should put the matter beyond doubt.
+
+&lt;p&gt;I've  become interested in the question because I've just released an alpha version of a general parser ([mod://Parse::Marpa|Parse::Marpa]) on CPAN, which I think will allow static parsing of large portions of Perl 5, and I wanted to know what is achievable.
+Parse::Marpa accepts any BNF that's free of infinite loops.  The BNF can be recursive, have empty productions or even be ambiguous.   If Marpa works for parsing Perl 5, it will do it with a lot less cruft than ad hoc solutions.  Parse::Marpa is based on new research into combining LR(0) precomputation with Earley's algorithm and so far speed seems good -- quite acceptable for utility purposes.
+
+&lt;p&gt;For those not familiar with the history of this discussion, the term "parse" here is being used in its strict sense to mean static parsing -- taking a piece of code and determining its structure without executing it.  In that strict sense the Perl program does not parse Perl.  The Perl program executes Perl code, but does not determine its structure.  Adam Kennedy gives a [mod://PPI|good account of the discussion].  Randal Schwartz played a key role in it, and [id://44722|one of his perlmonks nodes] is pivotal.
+
+&lt;p&gt;Static parsing of Perl 5 is of a lot more than academic interest, [mod://PPI|as Adam Kennedy shows].  It is needed for automated documentation tools, analyzers like Perl::Critic, presentation tools, automatic transformation of Perl code, etc.
+
+&lt;p&gt;The proof which follows meets the current level of rigor in Theory of Computation, but is written using Perl and Perl notation.  That would make the following unacceptable to a math journal, but they wouldn't take it anyway, because the theorem is a very straightforward consequence of Rice's Theorem.
+
+&lt;readmore&gt;&lt;b&gt;Theorem: Parsing Perl 5 is Undecidable&lt;/b&gt;
+
+&lt;p&gt;We first establish Adam Kennedy's conjecture as a lemma.
+The proof will follow immediately from that and the Halting Theorem.
+
+&lt;p&gt;&lt;b&gt;Kennedy's Lemma:&lt;/b&gt; If you can parse Perl, you can solve the Halting Problem.
+
+&lt;p&gt;To prove Kennedy's Lemma, we assume that we can parse Perl.  In particular this means we can take the following devilish snippet of code, concocted by Randal Schwartz, and determine the correct parse for it:
+
+&lt;blockquote&gt;
+&lt;code&gt;whatever  / 25 ; # / ; die "this dies!";&lt;/code&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Schwartz's Snippet can parse two different ways: if &lt;i&gt;whatever&lt;/I&gt; is nullary (that is,
+takes no arguments), the first statement is a division in void context,
+and the rest of the line is a comment.  If &lt;i&gt;whatever&lt;/i&gt; takes an argument,
+Schwartz's Snippet parses as a call to the &lt;i&gt;whatever&lt;/i&gt; function with
+the result of a match operator, then a call to the &lt;i&gt;die()&lt;/i&gt; function.
+
+&lt;p&gt;This means that, in order to statically parse Perl, 
+it must be possible to determine from a string of Perl 5
+code whether it establishes a nullary prototype for the &lt;i&gt;whatever&lt;/i&gt; subroutine.
+Since we've assumed we can parse Perl, we can assume that a subroutine to do this exists.
+Call the subroutine which takes as its only argument a Perl 5 code string, and returns true if and only if that code string establishes a nullary prototype for the &lt;i&gt;whatever&lt;/i&gt;
+subroutine,
+&lt;i&gt;is_whatever_nullary()&lt;/i&gt;.
+
+&lt;p&gt;To drag the Halting Theorem into this, we'll need to simulate a Turing machine or its equivalent.  It's very evident that Perl 5 is Turing-complete.
+No referee at a math journal would require something that obvious and that tedious to be proved.  The term used in these cases is "left as an exercise to the reader".  But in this case, there is an [mod://Acme::Turing], so the exercise apparently has already been done.
+
+&lt;p&gt;We wrap the Turing machine simulator of our choice in a routine that takes two strings as its arguments, and treats the first string as the representation of a Turing machine, and the second as its input.  Call this &lt;i&gt;run_turing_machine&lt;/i&gt;.
+
+&lt;p&gt;Now we write a routine, call it &lt;i&gt;halts()&lt;/i&gt;, which takes the description of a Turing machine
+and its input.  We have it create (but not run) a Perl 5 code string to run the Turing machine simulator on the machine description and input from our two arguments, and then establish a nullary prototype for &lt;i&gt;whatever&lt;/i&gt;.  We next ask &lt;i&gt;is_whatever_nullary()&lt;/i&gt; whether the nullary prototype for &lt;i&gt;whatever&lt;/i&gt; was established.
+
+Our &lt;i&gt;halts()&lt;/i&gt; routine might look like this:
+
+&lt;code&gt;
+sub halts {
+    my $machine = shift;
+    my $input = shift;
+    my $code_string_to_analyze = qq{
+          BEGIN {
+               run_turing_machine("\Q$machine\E", "\Q$input\E");
+               sub whatever() {};
+          }
+     };
+    is_whatever_nullary($code_string_to_analyze);
+}
+&lt;/code&gt;
+
+&lt;i&gt;$code_string_to_analyze&lt;/i&gt; is passed as an argument to &lt;i&gt;is_whatever_nullary()&lt;/i&gt;, which claims to be able to figure out, somehow, if the nullary &lt;i&gt;whatever&lt;/i&gt; prototype is established.  &lt;i&gt;is_whatever_nullary()&lt;/i&gt; does not necessarily run &lt;i&gt;$code_string_to_analyze&lt;/i&gt;.  In fact if the Turing machine simulation does not halt, &lt;i&gt;is_whatever_nullary()&lt;/i&gt; can't run &lt;i&gt;$code_string_to_analyze&lt;/i&gt;, not and live up to the assumption that it will tell us whether the prototype is established or not.  To do this, &lt;i&gt;is_whatever_nullary()&lt;/i&gt; must somehow figure out when &lt;i&gt;$machine&lt;/i&gt; does not halt with &lt;i&gt;$input&lt;/i&gt;.
+
+Since the next thing in &lt;i&gt;$code_string_to_analyze&lt;/i&gt; is the nullary prototype, if &lt;i&gt;$machine&lt;/i&gt; halts with &lt;i&gt;$input&lt;/i&gt;,
+&lt;i&gt;is_whatever_nullary()&lt;/i&gt; will return true.
+If &lt;i&gt;$machine&lt;/i&gt; does not halt with &lt;i&gt;$input&lt;/i&gt;,
+the statement establishing the nullary &lt;i&gt;whatever&lt;/i&gt; prototype will
+never be reached, and
+&lt;i&gt;is_whatever_nullary()&lt;/i&gt; must return false.
+
+&lt;p&gt;So, given the assumption that we can parse Perl, &lt;i&gt;halts()&lt;/i&gt; returns true if and only if the Turing machine &lt;i&gt;$machine&lt;/I&gt; halts with input &lt;i&gt;$input&lt;/i&gt;.  In other words, &lt;i&gt;halts()&lt;/i&gt; solves the Halting Problem.  Kennedy's Lemma was that, if you can parse Perl, you can solve the Halting Problem.  So this proves Kennedy's Lemma.
+
+&lt;p&gt;It's well known that the Halting Problem cannot be solved. Kennedy's Lemma establishes that if we can parse Perl 5, we can solve the Halting Problem. Therefore we cannot parse Perl 5.
+
+&lt;p&gt;QED
+&lt;/readmore&gt;
+
+&amp;#91 &lt;b&gt;UPDATE:&lt;/b&gt; Presentation improved based on feedback from tye. &amp;#93
+
+</doctext>
+<thread id="663393">
+<node id="663406"><node id="663408"/>
+<node id="663409"><node id="663465"><node id="788601"/>
+</node>
+</node>
+<node id="663415"><node id="1212838"/>
+</node>
+</node>
+<node id="663416"><node id="663417"/>
+<node id="663422"><node id="663423"/>
+</node>
+<node id="663480"><node id="663485"/>
+<node id="663504"><node id="663542"/>
+</node>
+</node>
+</node>
+<node id="663419"/>
+<node id="663435"><node id="663459"><node id="663566"><node id="667960"/>
+</node>
+<node id="663570"/>
+</node>
+</node>
+<node id="663489"/>
+<node id="663651"><node id="663662"/>
+<node id="790977"/>
+</node>
+<node id="664070"><node id="664375"/>
+<node id="664604"><node id="664611"/>
+<node id="664621"><node id="664631"/>
+</node>
+</node>
+</node>
+<node id="665231"><node id="788424"/>
+</node>
+<node id="691380"><node id="691584"><node id="770827"><node id="774095"/>
+<node id="788435"/>
+</node>
+</node>
+</node>
+<node id="788460"><node id="788492"/>
+<node id="788801"/>
+</node>
+<node id="838889"><node id="838894"/>
+</node>
+<node id="840133"/>
+</thread></node>

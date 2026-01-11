@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224997" title="Re: passing a hash ref in a sub" created="2018-10-31 11:13:12" updated="2018-10-31 11:13:12" _doctext_mode="lenient"><type id="11">note</type>
+<author id="281137">davido</author>
+<doctext field_name="doctext">&lt;p&gt;When you call &lt;c&gt;unfold_hash($data, $result_hr)&lt;/c&gt;, the special variable &lt;c&gt;@_&lt;/c&gt; contains two elements, each that are aliases to the things you passed in.  The first element is an alias to the variable that holds a reference to a datastructure. The second element is an alias to a variable that is not yet defined.
+&lt;/p&gt;
+The first thing you do is then assign &lt;c&gt;@_&lt;/c&gt; to two variables: &lt;c&gt;$raw_hr&lt;/c&gt; and &lt;c&gt;$res_hr&lt;/c&gt;. At this point you have moved away from the aliasing.  &lt;c&gt;$raw_hr&lt;/c&gt; still contains a reference to the datastructure that was referred to by &lt;c&gt;$data&lt;/c&gt;, but &lt;c&gt;$res_hr&lt;/c&gt; just contains undef. You can think of it like this: Each variable is assigned a value. The value assigned to the first variable is a reference.  The value assigned to the second variable is undef. The reference assigned to &lt;c&gt;$raw_hr&lt;/c&gt; is the same reference that &lt;c&gt;$data&lt;/c&gt; holds, so both of those variables independently refer to the same datastructure..&lt;/p&gt;
+
+&lt;p&gt;Aliasing no longer exists in these new variables. Yet you can modify the datastructure referred to by the reference that &lt;c&gt;$raw_hr&lt;/c&gt;, and that change propagates outward, because they refer to the same data structure.  On the other hand, if you assign a new reference to &lt;c&gt;$raw_hr&lt;/c&gt;, it would not have anything to do with the &lt;c&gt;$result_hr&lt;/c&gt; variable because no aliasing is in effect, and &lt;c&gt;$result_hr&lt;/c&gt; does not know of this reference.&lt;/p&gt;
+
+&lt;p&gt;When you autovivify a hashref and assign it into &lt;c&gt;$raw_hr&lt;/c&gt; there is no mechanism by which that hashref would propagate outward; there is no aliasing in effect here, and the reference was unknown outside of the subroutine.  In the case where you set &lt;c&gt;$result_hr = {}&lt;/c&gt;, you create a reference to an empty data structure, and the subroutine obtains a copy of that reference (not of the structure), which it can then manipulate such that changes to the structure propagate outward.  ...this is high risk behavior, however, as it changes the data structure... anyone referring to it will have the same change, because it is the same structure.&lt;/p&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-281137"&gt;
+&lt;br /&gt;&lt;p&gt;Dave&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1224994</root_node>
+<parent_node field_name="parent_node">1224994</parent_node>
+<thread id="1224994">
+<node id="1224996"/>
+<node id="1224997"><node id="1225064"/>
+</node>
+<node id="1224999"><node id="1225000"><node id="1225002"><node id="1225003"/>
+</node>
+</node>
+</node>
+<node id="1225004"/>
+<node id="1225055"/>
+<node id="1225083"/>
+</thread></node>

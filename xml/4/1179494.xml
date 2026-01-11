@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1179494" title="Cannot get Perl to replace a specific string in my textfile" created="2017-01-13 07:36:24" updated="2017-01-13 07:36:24" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1179447">skasch</author>
+<doctext field_name="doctext">Dear Monks,
+
+&lt;p&gt;Basically the same as my previous post but with a slightly modified problem, so content is mostly the same but this time
+perl does not replace what i want&lt;/p&gt;
+&lt;p&gt;I am a beginner with Perl and seek wisdom of the monks&lt;/p&gt;
+&lt;p&gt;What i want is to read a file, run a regex on its lines and when matching substitute some strings according to a map.&lt;/p&gt;
+&lt;p&gt;Mostly that does work but on a specific line, i cannot get my replacement to replace and I like to understand why&lt;/p&gt;
+
+&lt;p&gt;This is an excerpt of one of the files that should be processed&lt;/p&gt;
+&lt;code&gt;
+"user.name@domain.com:Calendar/personal" = &lt;*I0&gt;;
+};
+
+SubscribedFolders = (
+    "user@domain.com:Calendar/BCA-513DD600-1B-6967B200"
+);
+FoldersOrder = (
+     personal,
+     "user_A_domain_D_com_BCA-513DD600-1B-6967B200",
+     "7D03-5682B480-975-5FFE8000",
+     "7D03-5682B480-977-5FFE8000"
+);
+FreeBusyExclusions = {
+      "user.name@domain.com:Calendar/personal" = &lt;*I0&gt;;
+      "user@domain.com:Calendar/BCA-513DD600-1B-6967B200" = &lt;*I1&gt;;
+&lt;/code&gt;
+
+&lt;p&gt; And this is my Code&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use autodie;
+
+my %replacements = (
+        'user.name@domain.com' =&gt; 'uname',
+        'user@domain.com' =&gt; 'user',
+        # this is a new replacement
+        '_A_domain_D_com_' =&gt; '_',
+);
+
+open( my $readFile, '&lt;', "sampleFile" );
+
+while ( &lt;$readFile&gt; ) {
+# if contains :Calendar and is suffixed with / 
+# or :Contacts with same suffix or Users prefixed 
+# with / or is an email-address followed by " =
+   
+if ( m/:Calendar(?=\/)/ or
+     m/:Contacts(?=\/)/ or
+     m/(?&lt;=\"\/)Users/ or
+     m/.+@.+\"\s=/ or
+     m/_A_albertbauer_D_com/ ) {
+     # then replace every occurrence as in list
+       foreach my $key ( sort keys %replacements ) {
+            s/\b$key\b/$replacements{$key}/g;
+            }
+    }
+print $_;
+}
+&lt;/code&gt;
+
+&lt;p&gt;And this is the result&lt;/p&gt;
+
+&lt;code&gt;
+"uname:Calendar/personal" = &lt;*I0&gt;;
+};
+
+SubscribedFolders = (
+    "user@domain.com:Calendar/BCA-513DD600-1B-6967B200"
+    );
+    FoldersOrder = (
+    personal,
+    "user_A_domain_D_com_BCA-513DD600-1B-6967B200",
+    "7D03-5682B480-975-5FFE8000",
+    "7D03-5682B480-977-5FFE8000"
+    );
+FreeBusyExclusions = {
+     "uname:Calendar/personal" = &lt;*I0&gt;;
+     "user:Calendar/BCA-513DD600-1B-6967B200" = &lt;*I1&gt;;
+&lt;/code&gt;
+
+&lt;p&gt;I do not understand why the replacement under "user_A_domain_D_com_BCA-513DD600-1B-6967B200" does not 
+happen as it is defined in the mappings...
+I would expect the output to transform into this: "user_BCA-513DD600-1B-6967B200"
+when I write my "foreach" like this:&lt;/p&gt;
+&lt;code&gt;
+       foreach my $key ( sort keys %replacements ) {
+            s/\b$key\b/$replacements{$key}/g;
+            print "$key $replacements{$key}\n";
+            }
+&lt;/code&gt;
+&lt;p&gt; I can see that the replacement is done but i does not print in $_&lt;/p&gt;
+
+&lt;p&gt;any help is greatly appreciated&lt;/p&gt;
+
+cheers,
+Sascha</doctext>
+<thread id="1179494">
+<node id="1179496"><node id="1179524"/>
+</node>
+<node id="1179497"/>
+<node id="1179523"/>
+<node id="1179574"/>
+</thread></node>

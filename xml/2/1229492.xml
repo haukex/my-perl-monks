@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229492" title="Re: Fastest way to sort a list of integers into 0,1,2,3,-3,-2,-1 (updated)" created="2019-02-06 14:37:47" updated="2019-02-06 14:37:47" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi everyone,&lt;/p&gt;
+&lt;p&gt;Thank you for all the great submissions, this is really fascinating!&lt;/p&gt;
+&lt;p&gt;Just to comment on a few things that I saw asked:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Solutions with CPAN modules are welcome, although my personal order of preference is (1) pure Perl, (2) core modules only, (3) CPAN modules.&lt;/li&gt;
+&lt;li&gt;Yes, I did edit all the code to do &lt;c&gt;my @list = @input; @list = sort {...} @list;&lt;/c&gt; instead of &lt;c&gt;my @list = sort {...} @input;&lt;/c&gt;, this is just to be fair, because it's just test set-up and I think there is a significant performance difference.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I've reorganized the test code somewhat, so that tests and benchmarking happens in one run of the script (I'll keep a version history in [https://gist.github.com/haukex/b25031b1d957a9a5d700252780216d41|this gist]). I hope I've reproduced everyone's ideas faithfully, if I didn't please let me know! I also added some more varied test input (thanks to [Tux] for the idea), and unfortunately, it's causing some failures on some of the routines. I've excluded those from the benchmarks for now, feel free to send me your fixes &lt;c&gt;:-)&lt;/c&gt; (please send me a &lt;c&gt;/msg&lt;/c&gt; if you edit a node, as I might not catch it otherwise).&lt;/p&gt;
+&lt;p&gt;At the moment, the top contenders are by [Discipulus], [swl], [tybalt89], and [Eily], with [vr]'s solutions coming close depending on the data set - very nice!!&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+my %tehcodez = (
+	sortfirst =&gt; q{
+		@list = sort {$a&lt;=&gt;$b} @list;
+		@list = ( (grep {$_&gt;=0} @list), (grep {$_&lt;0} @list) );      },
+	grepfirst =&gt; q{
+		my @pos = grep {$_&gt;=0} @list;
+		my @neg = grep {$_&lt;0} @list;
+		@list = ( (sort {$a&lt;=&gt;$b} @pos), (sort {$a&lt;=&gt;$b} @neg) );   },
+	Corion =&gt; q{ # written by haukex, based on Corion's idea in the CB
+		@list = sort { $a&gt;=0&amp;&amp;$b&lt;0 ? -1
+			: ( $a&lt;0&amp;&amp;$b&gt;=0 ? 1 : $a&lt;=&gt;$b ) } @list;                },
+	choroba0 =&gt; q{ # from CB
+		@list = sort { (($b +.5 &lt;=&gt; 0) &lt;=&gt; ($a + .5 &lt;=&gt; 0))
+			|| ($a &lt;=&gt; $b) } @list;                                 },
+	choroba =&gt; q{ # https://www.perlmonks.org/?node_id=1229407
+		@list = sort { ((-1, 0, 1)[$a &lt;=&gt; 0] &lt;=&gt; (-1, 0, 1)[$b &lt;=&gt; 0])
+				|| ($a &lt;=&gt; $b) } @list;                             },
+	choroba2 =&gt; q{ # https://www.perlmonks.org/?node_id=1229407
+		@list = sort { ((($a &lt;=&gt; 0) &amp; 3) &lt;=&gt; (($b &lt;=&gt; 0) &amp; 3))
+			|| ($a &lt;=&gt; $b) } @list;                                 },
+	johngg =&gt; q{ # https://www.perlmonks.org/?node_id=1229410
+		@list = map { unpack q{xl&gt;}, $_ } sort map {
+			my $neg = $_ &lt; 0 ? 1 : 0; pack q{Cl&gt;}, $neg, $_ } @list },
+	Tux =&gt; q{ # https://www.perlmonks.org/?node_id=1229409
+		# (johngg made a similar suggestion in the CB first)
+		@list = map {unpack "l&gt;", $_} sort map {pack "l&gt;", $_} @list},
+	pryrt =&gt; q{ # https://www.perlmonks.org/?node_id=1229408
+		sub sgn { $_[0]&lt;0?-1:1 }
+		@list = (sort {(sgn($b) &lt;=&gt; sgn($a)) || ($a &lt;=&gt; $b)} @list) },
+	Eily =&gt; q{ # https://www.perlmonks.org/?node_id=1229411
+		@list = sort { ~$b &lt;=&gt; ~$a } @list;                         },
+	Eily2 =&gt; q{ # https://www.perlmonks.org/?node_id=1229462
+		@list = sort { ~$b &lt;=&gt; ~$a } sort { $a &lt;=&gt; $b } @list;      },
+	Eily3 =&gt; q{ # https://www.perlmonks.org/?node_id=1229458
+		# (edited to use List::MoreUtils::XS instead)
+		@list = sort { $a &lt;=&gt; $b } @list;
+		use List::MoreUtils::XS 'firstidx';
+		my $nb_neg = firstidx { $_ &gt;= 0 } @list;
+		push @list, splice @list, 0, $nb_neg;                       },
+	Eily3_pp =&gt; q{ # https://www.perlmonks.org/?node_id=1229458
+		@list = sort { $a &lt;=&gt; $b } @list;
+		my $i; for (0..$#list) { if($list[$_]&gt;=0){$i=$_;last} }
+		push @list, splice @list, 0, $i;                            },
+	Eily4 =&gt; q{ # https://www.perlmonks.org/?node_id=1229425
+		my $pos = grep { $_ &gt;= 0 } @list;
+		@list[$pos..$#list, 0..$pos-1] = sort {$a&lt;=&gt;$b} @list;      },
+	vr =&gt; q{ # https://www.perlmonks.org/?node_id=1229415
+		@list = unpack 'i*', pack 'I*', sort { $a &lt;=&gt; $b }
+			unpack 'I*', pack 'i*', @list;                          },
+	vr2 =&gt; q{ # https://www.perlmonks.org/?node_id=1229429
+		use Sort::Packed 'sort_packed';
+		sort_packed I =&gt; my $s = pack 'i*', @list;
+		@list = unpack 'i*', $s;                                    },
+	# (solution "Discipulus" was basically the same as grepfirst)
+	Discipulus2 =&gt; q{ # https://www.perlmonks.org/?node_id=1229419
+		@list = sort {$a&lt;=&gt;$b} @list;
+		push @list, shift @list until $list[0] &gt;= 0;                },
+	Discipulus3 =&gt; q{ # https://www.perlmonks.org/?node_id=1229419
+		@list = sort { (($a &gt;= 0 and $b &gt;= 0) or ($a &lt; 0 and $b &lt; 0))
+			? $a&lt;=&gt;$b : $b&lt;=&gt;$a } @list                             },
+	# ("Discipulus4b" is a fixed version of "Discipulus4")
+	Discipulus4b =&gt; q{ # https://www.perlmonks.org/?node_id=1229437
+		@list = sort {$a&lt;=&gt;$b} @list;
+		if ($list[0] &lt; 0 and $list[-1] &gt;= 0)
+			{ push @list, shift @list until $list[0] &gt;= 0 }         },
+	hdb =&gt; q{ # https://www.perlmonks.org/?node_id=1229420
+		@list = sort{$a*$b&gt;0?$a&lt;=&gt;$b:$b&lt;=&gt;$a} @list;                },
+	# ("haukex3b" is a fixed version of "haukex3")
+	haukex3b =&gt; q{ # based on sortfirst above
+		@list = sort {$a&lt;=&gt;$b} @list;
+		use List::MoreUtils::XS 'firstidx';
+		my $i = firstidx { $_&gt;=0 } @list;
+		@list = (@list[$i..$#list], @list[0..$i-1]) unless $i&lt;0     },
+	haukex3_pp =&gt; q{ # based on sortfirst above
+		@list = sort {$a&lt;=&gt;$b} @list;
+		my $i; for (0..$#list) { if($list[$_]&gt;=0){$i=$_;last} }
+		@list = (@list[$i..$#list], @list[0..$i-1]);                },
+	tybalt89 =&gt; q{ # https://www.perlmonks.org/?node_id=1229444
+		my $high = @list = sort { $a &lt;=&gt; $b } @list;
+		my $mid = my $low = 0;
+		$list[$mid = $low + $high &gt;&gt; 1] &lt; 0 ?
+			($low = $mid + 1) : ($high = $mid) while $low &lt; $high;
+		push @list, splice @list, 0, $low;                          },
+	# ("swl" at node_id=1229446 was superseded by "swl2")
+	# ("swl2" at node_id=1229505 was superseded by "swl3")
+	swl3 =&gt; q{ # https://www.perlmonks.org/?node_id=1229509
+		use List::MoreUtils 0.428 'bsearchidx';
+		@list = sort {$a&lt;=&gt;$b} @list;
+		if ($list[0] &lt; 0 &amp;&amp; $list[-1] &gt;= 0) {
+			my $i = bsearchidx {$_ &lt;=&gt; 0} @list;
+			if ($i &lt; 0)  #  no zero, find first positive
+				{ $i = 0; $i++ while ($list[$i]&lt;0); }
+			else  #  find start of zeroes
+				{ $i-- while !$list[$i]; $i++; }
+			push @list, splice @list, 0, $i;  }                     },
+	swl_pp =&gt; q{ # https://www.perlmonks.org/?node_id=1229447
+		@list = sort {$a&lt;=&gt;$b} @list;
+		my $i = 0; $i++ while ($list[$i]&lt;0);
+		push @list, splice @list, 0, $i;                            },
+	swl_pp2 =&gt; q{ # https://www.perlmonks.org/?node_id=1229512
+		# (adds all-negative check from Discipulus4)
+		@list = sort {$a&lt;=&gt;$b} @list;
+		if ($list[0] &lt; 0 &amp;&amp; $list[-1] &gt;= 0) {
+			my $i = 0; $i++ while ($list[$i]&lt;0);
+			push @list, splice @list, 0, $i;  }                     },
+);
+
+use List::Util 'shuffle';
+srand 123;
+my @tests = ( # first item here will be used in benchmark by default
+	[ [shuffle -52,-50..50,52,0], [0,0..50,52,-52,-50..-1], 'random'],
+	[ [-52,-50..50,52,0], [0,0..50,52,-52,-50..-1], 'ordered' ],
+	[ [shuffle -50..-1,1..50], [1..50,-50..-1], 'no zero'],
+	[ [shuffle -102,-100..-1], [-102,-100..-1], 'negative only' ],
+	[ [shuffle -102,-100..0], [0,-102,-100..-1],
+		'negative only with zero'],
+	[ [shuffle 0..100,102],[0..100,102],'positive only with zero' ],
+	[ [shuffle 1..100,102],[1..100,102],'positive only without zero'],
+	[ [shuffle((-4..4)x10)],
+		[ map({($_)x10} 0..4), map({($_)x10} -4..-1) ],
+		'many dupes' ],
+);
+
+use Getopt::Long qw/ :config posix_default gnu_compat bundling /;
+GetOptions( 'bench-all' =&gt; \(my $BENCH_ALL),
+	'test-only' =&gt; \(my $TEST_ONLY) );
+
+use Test::More;
+plan tests =&gt; 0+@tests;
+my %fails = ( # known failures to exclude from tests:
+	Discipulus2 =&gt; { 'negative only' =&gt; 'hangs' },  );
+for my $t (@tests) {
+	subtest $t-&gt;[2] =&gt; sub {
+		plan tests =&gt; 0+keys %tehcodez;
+		for my $k (sort keys %tehcodez) {
+			if ( exists $fails{$k} &amp;&amp; $fails{$k}{$t-&gt;[2]} )
+				{ fail "$k - $fails{$k}{$t-&gt;[2]}"; next }
+			eval qq{ my \@list = \@{\$t-&gt;[0]}; no warnings 'redefine';
+				$tehcodez{$k}; is_deeply \\\@list, \$t-&gt;[1], \$k
+					or \$fails{\$k}{\$t-&gt;[2]}++; 1 }
+						or die $@;
+		}
+	}
+}
+print "# ### Test Case Failures (excluded from benchmark) ###\n";
+print "# None!\n" if !keys %fails;
+for my $k (sort keys %fails) {
+	print "# $k: ", join(', ', sort keys %{$fails{$k}}), "\n";
+	delete $tehcodez{$k};
+}
+exit if $TEST_ONLY;
+
+use Benchmark 'cmpthese';
+for my $i ( $BENCH_ALL ? (0..$#tests) : (0) ) {
+	print "\n# ### Benchmarking with data set: $tests[$i][2] ###\n";
+	my %tests = %tehcodez;
+	$_ = eval qq{ sub { my \@list = \@{\$tests[$i][0]};
+		no warnings qw/redefine uninitialized/; $_; return } }
+			or die $@  for values %tests;
+	cmpthese(-2, \%tests);
+}
+
+__END__
+
+# Results on my machine (v5.28.1 built for x86_64-linux):
+
+# ### Test Case Failures (excluded from benchmark) ###
+# Discipulus2: negative only
+# Eily3: negative only
+# hdb: many dupes, ordered, positive only with zero, random
+
+# ### Benchmarking with data set: random ###
+                 Rate pryrt choroba0 choroba choroba2 johngg Corion Discipulus3  Tux Eily grepfirst Eily4 sortfirst Eily2 haukex3_pp   vr haukex3b  vr2 tybalt89 Eily3_pp Discipulus4b swl_pp2 swl_pp swl3
+pryrt         10093/s    --     -38%    -43%     -57%   -58%   -64%        -65% -68% -76%      -87%  -89%      -89%  -89%       -90% -91%     -91% -91%     -92%     -92%         -93%    -93%   -93% -94%
+choroba0      16213/s   61%       --     -9%     -31%   -32%   -42%        -44% -49% -62%      -79%  -83%      -83%  -83%       -85% -85%     -86% -86%     -88%     -88%         -88%    -88%   -88% -90%
+choroba       17768/s   76%      10%      --     -24%   -26%   -37%        -38% -44% -58%      -77%  -81%      -81%  -81%       -83% -84%     -84% -84%     -86%     -87%         -87%    -87%   -87% -89%
+choroba2      23530/s  133%      45%     32%       --    -1%   -17%        -18% -26% -44%      -69%  -75%      -75%  -75%       -78% -79%     -79% -79%     -82%     -82%         -83%    -83%   -83% -85%
+johngg        23863/s  136%      47%     34%       1%     --   -15%        -17% -25% -43%      -69%  -74%      -75%  -75%       -77% -78%     -79% -79%     -82%     -82%         -82%    -83%   -83% -85%
+Corion        28183/s  179%      74%     59%      20%    18%     --         -2% -11% -33%      -63%  -70%      -70%  -70%       -73% -74%     -75% -75%     -78%     -79%         -79%    -79%   -80% -82%
+Discipulus3   28840/s  186%      78%     62%      23%    21%     2%          --  -9% -32%      -62%  -69%      -69%  -70%       -72% -74%     -75% -75%     -78%     -78%         -79%    -79%   -79% -82%
+Tux           31807/s  215%      96%     79%      35%    33%    13%         10%   -- -25%      -58%  -66%      -66%  -66%       -70% -71%     -72% -72%     -75%     -76%         -76%    -77%   -77% -80%
+Eily          42234/s  318%     160%    138%      79%    77%    50%         46%  33%   --      -44%  -55%      -55%  -55%       -60% -62%     -63% -63%     -67%     -68%         -69%    -69%   -70% -73%
+grepfirst     76023/s  653%     369%    328%     223%   219%   170%        164% 139%  80%        --  -19%      -19%  -20%       -27% -31%     -33% -33%     -41%     -42%         -44%    -45%   -45% -52%
+Eily4         93329/s  825%     476%    425%     297%   291%   231%        224% 193% 121%       23%    --       -0%   -1%       -11% -15%     -18% -18%     -28%     -29%         -31%    -32%   -33% -41%
+sortfirst     93699/s  828%     478%    427%     298%   293%   232%        225% 195% 122%       23%    0%        --   -1%       -11% -15%     -18% -18%     -28%     -29%         -30%    -32%   -32% -41%
+Eily2         94575/s  837%     483%    432%     302%   296%   236%        228% 197% 124%       24%    1%        1%    --       -10% -14%     -17% -17%     -27%     -28%         -30%    -31%   -32% -40%
+haukex3_pp   104790/s  938%     546%    490%     345%   339%   272%        263% 229% 148%       38%   12%       12%   11%         --  -5%      -8%  -8%     -19%     -21%         -22%    -24%   -24% -34%
+vr           110136/s  991%     579%    520%     368%   362%   291%        282% 246% 161%       45%   18%       18%   16%         5%   --      -3%  -4%     -15%     -17%         -18%    -20%   -21% -31%
+haukex3b     113773/s 1027%     602%    540%     384%   377%   304%        294% 258% 169%       50%   22%       21%   20%         9%   3%       --  -0%     -12%     -14%         -15%    -17%   -18% -28%
+vr2          114302/s 1032%     605%    543%     386%   379%   306%        296% 259% 171%       50%   22%       22%   21%         9%   4%       0%   --     -12%     -13%         -15%    -17%   -18% -28%
+tybalt89     129709/s 1185%     700%    630%     451%   444%   360%        350% 308% 207%       71%   39%       38%   37%        24%  18%      14%  13%       --      -2%          -4%     -5%    -6% -18%
+Eily3_pp     132124/s 1209%     715%    644%     462%   454%   369%        358% 315% 213%       74%   42%       41%   40%        26%  20%      16%  16%       2%       --          -2%     -4%    -5% -17%
+Discipulus4b 134606/s 1234%     730%    658%     472%   464%   378%        367% 323% 219%       77%   44%       44%   42%        28%  22%      18%  18%       4%       2%           --     -2%    -3% -15%
+swl_pp2      137187/s 1259%     746%    672%     483%   475%   387%        376% 331% 225%       80%   47%       46%   45%        31%  25%      21%  20%       6%       4%           2%      --    -1% -13%
+swl_pp       138710/s 1274%     756%    681%     490%   481%   392%        381% 336% 228%       82%   49%       48%   47%        32%  26%      22%  21%       7%       5%           3%      1%     -- -13%
+swl3         158553/s 1471%     878%    792%     574%   564%   463%        450% 398% 275%      109%   70%       69%   68%        51%  44%      39%  39%      22%      20%          18%     16%    14%   --
+
+# ### Benchmarking with data set: ordered ###
+                 Rate johngg  Tux pryrt choroba0 choroba choroba2 Corion grepfirst Discipulus3 Eily2  vr2 sortfirst Eily4 haukex3_pp   vr Eily haukex3b tybalt89 swl_pp2 Eily3_pp Discipulus4b swl_pp swl3
+johngg        26794/s     -- -29%  -33%     -52%    -60%     -70%   -73%      -73%        -75%  -76% -77%      -77%  -78%       -81% -81% -82%     -82%     -85%    -85%     -85%         -86%   -86% -89%
+Tux           37660/s    41%   --   -6%     -32%    -44%     -58%   -63%      -63%        -65%  -67% -67%      -67%  -69%       -73% -73% -75%     -75%     -79%    -79%     -79%         -80%   -81% -84%
+pryrt         40007/s    49%   6%    --     -28%    -41%     -55%   -60%      -60%        -63%  -65% -65%      -65%  -67%       -71% -72% -73%     -73%     -78%    -78%     -78%         -79%   -79% -83%
+choroba0      55401/s   107%  47%   38%       --    -18%     -38%   -45%      -45%        -48%  -51% -52%      -52%  -55%       -60% -61% -63%     -63%     -69%    -70%     -70%         -71%   -72% -77%
+choroba       67300/s   151%  79%   68%      21%      --     -25%   -33%      -33%        -37%  -41% -41%      -42%  -45%       -52% -52% -55%     -55%     -63%    -63%     -63%         -64%   -65% -72%
+choroba2      89341/s   233% 137%  123%      61%     33%       --   -11%      -11%        -17%  -21% -22%      -23%  -27%       -36% -37% -40%     -40%     -51%    -51%     -51%         -53%   -54% -63%
+Corion       100481/s   275% 167%  151%      81%     49%      12%     --       -0%         -6%  -12% -13%      -13%  -18%       -28% -29% -33%     -33%     -45%    -45%     -45%         -47%   -48% -58%
+grepfirst    100486/s   275% 167%  151%      81%     49%      12%     0%        --         -6%  -12% -12%      -13%  -18%       -28% -29% -33%     -33%     -45%    -45%     -45%         -47%   -48% -58%
+Discipulus3  107182/s   300% 185%  168%      93%     59%      20%     7%        7%          --   -6%  -7%       -7%  -12%       -23% -24% -28%     -28%     -41%    -41%     -41%         -43%   -45% -55%
+Eily2        113797/s   325% 202%  184%     105%     69%      27%    13%       13%          6%    --  -1%       -1%   -7%       -18% -19% -24%     -24%     -37%    -38%     -38%         -40%   -42% -52%
+vr2          114841/s   329% 205%  187%     107%     71%      29%    14%       14%          7%    1%   --       -0%   -6%       -18% -18% -23%     -23%     -37%    -37%     -37%         -39%   -41% -52%
+sortfirst    115375/s   331% 206%  188%     108%     71%      29%    15%       15%          8%    1%   0%        --   -5%       -17% -18% -23%     -23%     -36%    -37%     -37%         -39%   -41% -52%
+Eily4        121963/s   355% 224%  205%     120%     81%      37%    21%       21%         14%    7%   6%        6%    --       -13% -13% -18%     -18%     -33%    -33%     -33%         -35%   -37% -49%
+haukex3_pp   139515/s   421% 270%  249%     152%    107%      56%    39%       39%         30%   23%  21%       21%   14%         --  -1%  -6%      -6%     -23%    -24%     -24%         -26%   -28% -42%
+vr           140831/s   426% 274%  252%     154%    109%      58%    40%       40%         31%   24%  23%       22%   15%         1%   --  -5%      -5%     -22%    -23%     -23%         -25%   -28% -41%
+Eily         148942/s   456% 295%  272%     169%    121%      67%    48%       48%         39%   31%  30%       29%   22%         7%   6%   --      -0%     -18%    -19%     -19%         -21%   -23% -38%
+haukex3b     148945/s   456% 295%  272%     169%    121%      67%    48%       48%         39%   31%  30%       29%   22%         7%   6%   0%       --     -18%    -19%     -19%         -21%   -23% -38%
+tybalt89     181302/s   577% 381%  353%     227%    169%     103%    80%       80%         69%   59%  58%       57%   49%        30%  29%  22%      22%       --     -1%      -1%          -4%    -7% -24%
+swl_pp2      183089/s   583% 386%  358%     230%    172%     105%    82%       82%         71%   61%  59%       59%   50%        31%  30%  23%      23%       1%      --       0%          -3%    -6% -24%
+Eily3_pp     183089/s   583% 386%  358%     230%    172%     105%    82%       82%         71%   61%  59%       59%   50%        31%  30%  23%      23%       1%      0%       --          -3%    -6% -24%
+Discipulus4b 188270/s   603% 400%  371%     240%    180%     111%    87%       87%         76%   65%  64%       63%   54%        35%  34%  26%      26%       4%      3%       3%           --    -3% -21%
+swl_pp       194564/s   626% 417%  386%     251%    189%     118%    94%       94%         82%   71%  69%       69%   60%        39%  38%  31%      31%       7%      6%       6%           3%     -- -19%
+swl3         239460/s   794% 536%  499%     332%    256%     168%   138%      138%        123%  110% 109%      108%   96%        72%  70%  61%      61%      32%     31%      31%          27%    23%   --
+
+# ### Benchmarking with data set: no zero ###
+                 Rate pryrt choroba0 choroba johngg choroba2 Corion Discipulus3  Tux Eily grepfirst sortfirst Eily4 Eily2 haukex3_pp   vr  vr2 haukex3b swl3 tybalt89 Eily3_pp Discipulus4b swl_pp2 swl_pp
+pryrt         10143/s    --     -40%    -45%   -58%     -59%   -65%        -65% -69% -78%      -88%      -89%  -90%  -90%       -91% -91% -91%     -91% -92%     -92%     -93%         -93%    -93%   -93%
+choroba0      16900/s   67%       --     -8%   -31%     -32%   -42%        -42% -48% -63%      -79%      -82%  -83%  -84%       -85% -85% -85%     -85% -87%     -87%     -88%         -88%    -88%   -88%
+choroba       18352/s   81%       9%      --   -25%     -26%   -37%        -38% -44% -60%      -78%      -80%  -81%  -82%       -83% -84% -84%     -84% -86%     -86%     -86%         -87%    -87%   -87%
+johngg        24431/s  141%      45%     33%     --      -2%   -16%        -17% -25% -47%      -70%      -74%  -75%  -76%       -78% -78% -79%     -79% -81%     -81%     -82%         -82%    -82%   -82%
+choroba2      24884/s  145%      47%     36%     2%       --   -14%        -15% -24% -46%      -70%      -73%  -74%  -76%       -77% -78% -79%     -79% -81%     -81%     -82%         -82%    -82%   -82%
+Corion        28976/s  186%      71%     58%    19%      16%     --         -1% -11% -37%      -65%      -69%  -70%  -72%       -74% -74% -75%     -75% -78%     -78%     -79%         -79%    -79%   -79%
+Discipulus3   29373/s  190%      74%     60%    20%      18%     1%          -- -10% -36%      -64%      -69%  -70%  -71%       -73% -74% -75%     -75% -77%     -78%     -78%         -78%    -79%   -79%
+Tux           32726/s  223%      94%     78%    34%      32%    13%         11%   -- -29%      -60%      -65%  -66%  -68%       -70% -71% -72%     -72% -75%     -75%     -76%         -76%    -76%   -76%
+Eily          45771/s  351%     171%    149%    87%      84%    58%         56%  40%   --      -44%      -51%  -53%  -56%       -58% -59% -61%     -61% -65%     -65%     -66%         -66%    -67%   -67%
+grepfirst     81819/s  707%     384%    346%   235%     229%   182%        179% 150%  79%        --      -13%  -16%  -20%       -26% -27% -29%     -30% -37%     -38%     -40%         -40%    -41%   -41%
+sortfirst     93782/s  825%     455%    411%   284%     277%   224%        219% 187% 105%       15%        --   -4%   -9%       -15% -16% -19%     -19% -28%     -29%     -31%         -31%    -32%   -33%
+Eily4         97356/s  860%     476%    431%   298%     291%   236%        231% 197% 113%       19%        4%    --   -5%       -12% -13% -16%     -16% -25%     -26%     -28%         -29%    -30%   -30%
+Eily2        102889/s  914%     509%    461%   321%     313%   255%        250% 214% 125%       26%       10%    6%    --        -7%  -8% -11%     -12% -21%     -22%     -24%         -25%    -26%   -26%
+haukex3_pp   110274/s  987%     552%    501%   351%     343%   281%        275% 237% 141%       35%       18%   13%    7%         --  -2%  -5%      -5% -15%     -16%     -18%         -19%    -21%   -21%
+vr           112214/s 1006%     564%    511%   359%     351%   287%        282% 243% 145%       37%       20%   15%    9%         2%   --  -3%      -4% -14%     -15%     -17%         -18%    -19%   -19%
+vr2          115920/s 1043%     586%    532%   374%     366%   300%        295% 254% 153%       42%       24%   19%   13%         5%   3%   --      -0% -11%     -12%     -14%         -15%    -17%   -17%
+haukex3b     116474/s 1048%     589%    535%   377%     368%   302%        297% 256% 154%       42%       24%   20%   13%         6%   4%   0%       -- -10%     -11%     -14%         -15%    -16%   -16%
+swl3         130028/s 1182%     669%    609%   432%     423%   349%        343% 297% 184%       59%       39%   34%   26%        18%  16%  12%      12%   --      -1%      -4%          -5%     -6%    -7%
+tybalt89     131518/s 1197%     678%    617%   438%     429%   354%        348% 302% 187%       61%       40%   35%   28%        19%  17%  13%      13%   1%       --      -3%          -4%     -5%    -6%
+Eily3_pp     135240/s 1233%     700%    637%   454%     443%   367%        360% 313% 195%       65%       44%   39%   31%        23%  21%  17%      16%   4%       3%       --          -1%     -3%    -3%
+Discipulus4b 136529/s 1246%     708%    644%   459%     449%   371%        365% 317% 198%       67%       46%   40%   33%        24%  22%  18%      17%   5%       4%       1%           --     -2%    -2%
+swl_pp2      138866/s 1269%     722%    657%   468%     458%   379%        373% 324% 203%       70%       48%   43%   35%        26%  24%  20%      19%   7%       6%       3%           2%      --    -0%
+swl_pp       139180/s 1272%     724%    658%   470%     459%   380%        374% 325% 204%       70%       48%   43%   35%        26%  24%  20%      19%   7%       6%       3%           2%      0%     --
+
+# ### Benchmarking with data set: negative only ###
+                 Rate pryrt choroba0 choroba choroba2 johngg Corion Discipulus3  Tux Eily grepfirst haukex3_pp sortfirst Eily4 swl_pp   vr Eily2 tybalt89 Eily3_pp  vr2 haukex3b swl3 swl_pp2 Discipulus4b
+pryrt         10438/s    --     -33%    -42%     -55%   -57%   -62%        -62% -68% -81%      -87%       -89%      -89%  -90%   -90% -90%  -91%     -91%     -92% -93%     -93% -95%    -95%         -95%
+choroba0      15677/s   50%       --    -12%     -33%   -35%   -43%        -43% -52% -71%      -81%       -83%      -84%  -85%   -86% -86%  -86%     -86%     -88% -89%     -90% -92%    -93%         -93%
+choroba       17845/s   71%      14%      --     -24%   -26%   -35%        -35% -45% -67%      -79%       -81%      -81%  -82%   -84% -84%  -85%     -85%     -86% -87%     -89% -91%    -92%         -92%
+choroba2      23421/s  124%      49%     31%       --    -3%   -15%        -15% -28% -57%      -72%       -74%      -75%  -77%   -78% -79%  -80%     -80%     -82% -83%     -85% -89%    -89%         -89%
+johngg        24206/s  132%      54%     36%       3%     --   -12%        -12% -25% -55%      -71%       -74%      -75%  -76%   -78% -78%  -79%     -79%     -82% -83%     -84% -88%    -89%         -89%
+Corion        27424/s  163%      75%     54%      17%    13%     --         -0% -15% -49%      -67%       -70%      -71%  -73%   -75% -75%  -76%     -76%     -79% -81%     -82% -87%    -87%         -87%
+Discipulus3   27529/s  164%      76%     54%      18%    14%     0%          -- -15% -49%      -67%       -70%      -71%  -73%   -75% -75%  -76%     -76%     -79% -81%     -82% -87%    -87%         -87%
+Tux           32423/s  211%     107%     82%      38%    34%    18%         18%   -- -40%      -61%       -65%      -66%  -68%   -70% -70%  -72%     -72%     -75% -77%     -79% -84%    -85%         -85%
+Eily          54094/s  418%     245%    203%     131%   123%    97%         96%  67%   --      -35%       -41%      -43%  -47%   -50% -51%  -53%     -53%     -59% -62%     -65% -74%    -75%         -75%
+grepfirst     83455/s  700%     432%    368%     256%   245%   204%        203% 157%  54%        --        -9%      -12%  -18%   -23% -24%  -28%     -28%     -37% -41%     -46% -60%    -61%         -61%
+haukex3_pp    91639/s  778%     485%    414%     291%   279%   234%        233% 183%  69%       10%         --       -4%  -10%   -16% -16%  -21%     -21%     -30% -35%     -41% -56%    -57%         -57%
+sortfirst     95019/s  810%     506%    432%     306%   293%   246%        245% 193%  76%       14%         4%        --   -7%   -13% -13%  -18%     -18%     -28% -33%     -39% -54%    -56%         -56%
+Eily4        101915/s  876%     550%    471%     335%   321%   272%        270% 214%  88%       22%        11%        7%    --    -6%  -7%  -12%     -12%     -23% -28%     -34% -51%    -52%         -52%
+swl_pp       108706/s  941%     593%    509%     364%   349%   296%        295% 235% 101%       30%        19%       14%    7%     --  -1%   -6%      -6%     -17% -23%     -30% -47%    -49%         -49%
+vr           109621/s  950%     599%    514%     368%   353%   300%        298% 238% 103%       31%        20%       15%    8%     1%   --   -5%      -5%     -17% -23%     -29% -47%    -49%         -49%
+Eily2        115920/s 1011%     639%    550%     395%   379%   323%        321% 258% 114%       39%        26%       22%   14%     7%   6%    --       0%     -12% -18%     -25% -44%    -46%         -46%
+tybalt89     115920/s 1011%     639%    550%     395%   379%   323%        321% 258% 114%       39%        26%       22%   14%     7%   6%    0%       --     -12% -18%     -25% -44%    -46%         -46%
+Eily3_pp     131575/s 1161%     739%    637%     462%   444%   380%        378% 306% 143%       58%        44%       38%   29%    21%  20%   14%      14%       --  -7%     -15% -36%    -39%         -39%
+vr2          141618/s 1257%     803%    694%     505%   485%   416%        414% 337% 162%       70%        55%       49%   39%    30%  29%   22%      22%       8%   --      -9% -31%    -34%         -34%
+haukex3b     155299/s 1388%     891%    770%     563%   542%   466%        464% 379% 187%       86%        69%       63%   52%    43%  42%   34%      34%      18%  10%       -- -25%    -28%         -28%
+swl3         206555/s 1879%    1218%   1057%     782%   753%   653%        650% 537% 282%      148%       125%      117%  103%    90%  88%   78%      78%      57%  46%      33%   --     -4%          -4%
+swl_pp2      214369/s 1954%    1267%   1101%     815%   786%   682%        679% 561% 296%      157%       134%      126%  110%    97%  96%   85%      85%      63%  51%      38%   4%      --          -0%
+Discipulus4b 214369/s 1954%    1267%   1101%     815%   786%   682%        679% 561% 296%      157%       134%      126%  110%    97%  96%   85%      85%      63%  51%      38%   4%      0%           --
+
+# ### Benchmarking with data set: negative only with zero ###
+                 Rate pryrt choroba0 choroba choroba2 johngg Discipulus3 Corion  Tux Eily grepfirst haukex3_pp sortfirst Discipulus4b swl_pp Eily4 Eily3_pp Eily2 haukex3b swl_pp2   vr tybalt89  vr2 swl3
+pryrt         10318/s    --     -36%    -43%     -55%   -58%        -61%   -61% -68% -80%      -87%       -89%      -89%         -90%   -90%  -90%     -90%  -90%     -90%    -90% -91%     -91% -92% -93%
+choroba0      16067/s   56%       --    -11%     -30%   -35%        -39%   -40% -50% -69%      -80%       -83%      -83%         -84%   -84%  -84%     -84%  -85%     -85%    -85% -85%     -86% -88% -88%
+choroba       18014/s   75%      12%      --     -21%   -27%        -31%   -33% -44% -65%      -78%       -81%      -81%         -82%   -82%  -82%     -82%  -83%     -83%    -83% -84%     -85% -87% -87%
+choroba2      22891/s  122%      42%     27%       --    -7%        -13%   -15% -29% -56%      -72%       -76%      -76%         -77%   -77%  -77%     -78%  -78%     -78%    -79% -79%     -81% -83% -84%
+johngg        24543/s  138%      53%     36%       7%     --         -6%    -8% -24% -53%      -70%       -74%      -74%         -76%   -76%  -76%     -76%  -76%     -76%    -77% -78%     -79% -82% -82%
+Discipulus3   26182/s  154%      63%     45%      14%     7%          --    -2% -19% -50%      -68%       -72%      -73%         -74%   -74%  -74%     -74%  -75%     -75%    -76% -76%     -78% -81% -81%
+Corion        26794/s  160%      67%     49%      17%     9%          2%     -- -17% -49%      -67%       -71%      -72%         -73%   -73%  -74%     -74%  -74%     -74%    -75% -75%     -77% -80% -81%
+Tux           32423/s  214%     102%     80%      42%    32%         24%    21%   -- -38%      -61%       -65%      -66%         -68%   -68%  -68%     -68%  -69%     -69%    -70% -70%     -73% -76% -77%
+Eily          52127/s  405%     224%    189%     128%   112%         99%    95%  61%   --      -37%       -44%      -46%         -48%   -48%  -49%     -49%  -50%     -50%    -52% -52%     -56% -62% -63%
+grepfirst     82160/s  696%     411%    356%     259%   235%        214%   207% 153%  58%        --       -12%      -14%         -18%   -19%  -19%     -20%  -21%     -21%    -24% -25%     -31% -40% -41%
+haukex3_pp    93618/s  807%     483%    420%     309%   281%        258%   249% 189%  80%       14%         --       -2%          -7%    -7%   -8%      -9%  -10%     -10%    -13% -14%     -21% -31% -33%
+sortfirst     95919/s  830%     497%    432%     319%   291%        266%   258% 196%  84%       17%         2%        --          -5%    -5%   -5%      -6%   -8%      -8%    -11% -12%     -19% -30% -31%
+Discipulus4b 100648/s  875%     526%    459%     340%   310%        284%   276% 210%  93%       23%         8%        5%           --    -0%   -1%      -2%   -3%      -3%     -7%  -8%     -15% -26% -28%
+swl_pp       100840/s  877%     528%    460%     341%   311%        285%   276% 211%  93%       23%         8%        5%           0%     --   -1%      -2%   -3%      -3%     -7%  -8%     -15% -26% -28%
+Eily4        101429/s  883%     531%    463%     343%   313%        287%   279% 213%  95%       23%         8%        6%           1%     1%    --      -1%   -3%      -3%     -6%  -7%     -14% -26% -27%
+Eily3_pp     102400/s  892%     537%    468%     347%   317%        291%   282% 216%  96%       25%         9%        7%           2%     2%    1%       --   -2%      -2%     -5%  -6%     -14% -25% -26%
+Eily2        104259/s  910%     549%    479%     355%   325%        298%   289% 222% 100%       27%        11%        9%           4%     3%    3%       2%    --      -0%     -4%  -5%     -12% -24% -25%
+haukex3b     104259/s  910%     549%    479%     355%   325%        298%   289% 222% 100%       27%        11%        9%           4%     3%    3%       2%    0%       --     -4%  -5%     -12% -24% -25%
+swl_pp2      108193/s  949%     573%    501%     373%   341%        313%   304% 234% 108%       32%        16%       13%           7%     7%    7%       6%    4%       4%      --  -1%      -9% -21% -22%
+vr           109226/s  959%     580%    506%     377%   345%        317%   308% 237% 110%       33%        17%       14%           9%     8%    8%       7%    5%       5%      1%   --      -8% -20% -22%
+tybalt89     118606/s 1049%     638%    558%     418%   383%        353%   343% 266% 128%       44%        27%       24%          18%    18%   17%      16%   14%      14%     10%   9%       -- -13% -15%
+vr2          136330/s 1221%     748%    657%     496%   455%        421%   409% 320% 162%       66%        46%       42%          35%    35%   34%      33%   31%      31%     26%  25%      15%   --  -2%
+swl3         139192/s 1249%     766%    673%     508%   467%        432%   419% 329% 167%       69%        49%       45%          38%    38%   37%      36%   34%      34%     29%  27%      17%   2%   --
+
+# ### Benchmarking with data set: positive only with zero ###
+                 Rate pryrt choroba0 choroba choroba2 johngg Corion Discipulus3  Tux Eily grepfirst sortfirst Eily4 Eily2   vr haukex3b haukex3_pp  vr2 tybalt89 Eily3_pp Discipulus4b swl_pp swl3 swl_pp2
+pryrt         10000/s    --     -37%    -44%     -59%   -59%   -63%        -68% -69% -74%      -88%      -89%  -90%  -90% -91%     -92%       -92% -93%     -93%     -95%         -95%   -95% -95%    -95%
+choroba0      15900/s   59%       --    -11%     -34%   -35%   -41%        -50% -50% -59%      -81%      -83%  -84%  -84% -86%     -88%       -88% -88%     -89%     -92%         -93%   -93% -93%    -93%
+choroba       17768/s   78%      12%      --     -26%   -27%   -35%        -44% -45% -54%      -79%      -81%  -82%  -82% -84%     -86%       -86% -87%     -88%     -91%         -92%   -92% -92%    -92%
+choroba2      24110/s  141%      52%     36%       --    -1%   -11%        -24% -25% -38%      -71%      -74%  -75%  -76% -79%     -81%       -81% -82%     -84%     -88%         -89%   -89% -89%    -89%
+johngg        24321/s  143%      53%     37%       1%     --   -10%        -23% -24% -37%      -71%      -74%  -75%  -76% -78%     -81%       -81% -82%     -84%     -88%         -89%   -89% -89%    -89%
+Corion        27151/s  172%      71%     53%      13%    12%     --        -14% -15% -30%      -67%      -71%  -72%  -73% -76%     -79%       -79% -80%     -82%     -87%         -87%   -87% -87%    -87%
+Discipulus3   31526/s  215%      98%     77%      31%    30%    16%          --  -2% -19%      -62%      -67%  -68%  -69% -72%     -75%       -76% -77%     -79%     -85%         -85%   -85% -85%    -85%
+Tux           32115/s  221%     102%     81%      33%    32%    18%          2%   -- -17%      -61%      -66%  -67%  -68% -71%     -75%       -75% -76%     -79%     -84%         -85%   -85% -85%    -85%
+Eily          38814/s  288%     144%    118%      61%    60%    43%         23%  21%   --      -53%      -59%  -60%  -61% -65%     -69%       -70% -71%     -74%     -81%         -82%   -82% -82%    -82%
+grepfirst     82977/s  730%     422%    367%     244%   241%   206%        163% 158% 114%        --      -12%  -15%  -18% -26%     -35%       -36% -39%     -45%     -60%         -61%   -61% -61%    -62%
+sortfirst     94134/s  841%     492%    430%     290%   287%   247%        199% 193% 143%       13%        --   -4%   -6% -16%     -26%       -27% -30%     -37%     -54%         -56%   -56% -56%    -56%
+Eily4         98192/s  882%     518%    453%     307%   304%   262%        211% 206% 153%       18%        4%    --   -2% -13%     -23%       -24% -27%     -34%     -52%         -54%   -54% -54%    -54%
+Eily2        100615/s  906%     533%    466%     317%   314%   271%        219% 213% 159%       21%        7%    2%    -- -10%     -21%       -22% -26%     -33%     -51%         -53%   -53% -53%    -53%
+vr           112244/s 1022%     606%    532%     366%   362%   313%        256% 250% 189%       35%       19%   14%   12%   --     -12%       -13% -17%     -25%     -45%         -47%   -47% -47%    -48%
+haukex3b     127240/s 1172%     700%    616%     428%   423%   369%        304% 296% 228%       53%       35%   30%   26%  13%       --        -2%  -6%     -15%     -38%         -40%   -40% -40%    -41%
+haukex3_pp   129705/s 1197%     716%    630%     438%   433%   378%        311% 304% 234%       56%       38%   32%   29%  16%       2%         --  -4%     -13%     -37%         -39%   -39% -39%    -40%
+vr2          135241/s 1252%     751%    661%     461%   456%   398%        329% 321% 248%       63%       44%   38%   34%  20%       6%         4%   --     -10%     -34%         -36%   -36% -37%    -37%
+tybalt89     149658/s 1397%     841%    742%     521%   515%   451%        375% 366% 286%       80%       59%   52%   49%  33%      18%        15%  11%       --     -27%         -29%   -30% -30%    -31%
+Eily3_pp     205775/s 1958%    1194%   1058%     753%   746%   658%        553% 541% 430%      148%      119%  110%  105%  83%      62%        59%  52%      37%       --          -3%    -3%  -4%     -5%
+Discipulus4b 212031/s 2020%    1234%   1093%     779%   772%   681%        573% 560% 446%      156%      125%  116%  111%  89%      67%        63%  57%      42%       3%           --    -0%  -1%     -2%
+swl_pp       212384/s 2024%    1236%   1095%     781%   773%   682%        574% 561% 447%      156%      126%  116%  111%  89%      67%        64%  57%      42%       3%           0%     --  -0%     -2%
+swl3         213372/s 2034%    1242%   1101%     785%   777%   686%        577% 564% 450%      157%      127%  117%  112%  90%      68%        65%  58%      43%       4%           1%     0%   --     -1%
+swl_pp2      215713/s 2057%    1257%   1114%     795%   787%   694%        584% 572% 456%      160%      129%  120%  114%  92%      70%        66%  60%      44%       5%           2%     2%   1%      --
+
+# ### Benchmarking with data set: positive only without zero ###
+                 Rate pryrt choroba0 choroba choroba2 johngg Corion  Tux Discipulus3 Eily grepfirst sortfirst Eily4 Eily2   vr haukex3_pp haukex3b  vr2 tybalt89 Eily3_pp swl_pp swl3 Discipulus4b swl_pp2
+pryrt         10029/s    --     -36%    -44%     -58%   -60%   -64% -69%        -70% -75%      -88%      -90%  -90%  -91% -91%       -92%     -92% -93%     -94%     -95%   -95% -95%         -95%    -95%
+choroba0      15728/s   57%       --    -12%     -35%   -37%   -43% -52%        -53% -61%      -81%      -84%  -84%  -85% -86%       -87%     -87% -89%     -90%     -92%   -93% -93%         -93%    -93%
+choroba       17931/s   79%      14%      --     -26%   -28%   -35% -45%        -46% -56%      -78%      -81%  -82%  -83% -84%       -86%     -86% -87%     -89%     -91%   -92% -92%         -92%    -92%
+choroba2      24092/s  140%      53%     34%       --    -3%   -13% -26%        -27% -40%      -71%      -75%  -76%  -77% -79%       -81%     -81% -83%     -85%     -88%   -89% -89%         -89%    -89%
+johngg        24889/s  148%      58%     39%       3%     --   -10% -24%        -25% -38%      -70%      -74%  -75%  -76% -78%       -80%     -80% -82%     -84%     -88%   -88% -89%         -89%    -89%
+Corion        27567/s  175%      75%     54%      14%    11%     -- -15%        -17% -32%      -67%      -72%  -73%  -74% -76%       -78%     -78% -80%     -82%     -87%   -87% -87%         -87%    -87%
+Tux           32581/s  225%     107%     82%      35%    31%    18%   --         -2% -19%      -61%      -66%  -68%  -69% -71%       -74%     -74% -76%     -79%     -84%   -85% -85%         -85%    -85%
+Discipulus3   33180/s  231%     111%     85%      38%    33%    20%   2%          -- -18%      -60%      -66%  -67%  -69% -71%       -73%     -74% -76%     -79%     -84%   -85% -85%         -85%    -85%
+Eily          40380/s  303%     157%    125%      68%    62%    46%  24%         22%   --      -51%      -58%  -60%  -62% -64%       -67%     -68% -71%     -74%     -81%   -81% -82%         -82%    -82%
+grepfirst     82977/s  727%     428%    363%     244%   233%   201% 155%        150% 105%        --      -14%  -17%  -21% -27%       -33%     -34% -40%     -47%     -60%   -61% -62%         -62%    -62%
+sortfirst     96837/s  866%     516%    440%     302%   289%   251% 197%        192% 140%       17%        --   -4%   -8% -14%       -22%     -23% -30%     -38%     -54%   -55% -56%         -56%    -56%
+Eily4        100486/s  902%     539%    460%     317%   304%   265% 208%        203% 149%       21%        4%    --   -5% -11%       -19%     -20% -27%     -36%     -52%   -53% -54%         -54%    -54%
+Eily2        105700/s  954%     572%    489%     339%   325%   283% 224%        219% 162%       27%        9%    5%    --  -7%       -15%     -16% -23%     -32%     -49%   -51% -52%         -52%    -52%
+vr           113253/s 1029%     620%    532%     370%   355%   311% 248%        241% 180%       36%       17%   13%    7%   --        -9%     -10% -18%     -28%     -46%   -47% -48%         -48%    -48%
+haukex3_pp   124065/s 1137%     689%    592%     415%   398%   350% 281%        274% 207%       50%       28%   23%   17%  10%         --      -1% -10%     -21%     -41%   -42% -43%         -43%    -43%
+haukex3b     125431/s 1151%     698%    600%     421%   404%   355% 285%        278% 211%       51%       30%   25%   19%  11%         1%       --  -9%     -20%     -40%   -42% -43%         -43%    -43%
+vr2          137841/s 1274%     776%    669%     472%   454%   400% 323%        315% 241%       66%       42%   37%   30%  22%        11%      10%   --     -12%     -34%   -36% -37%         -37%    -37%
+tybalt89     156392/s 1459%     894%    772%     549%   528%   467% 380%        371% 287%       88%       61%   56%   48%  38%        26%      25%  13%       --     -25%   -27% -28%         -29%    -29%
+Eily3_pp     208522/s 1979%    1226%   1063%     766%   738%   656% 540%        528% 416%      151%      115%  108%   97%  84%        68%      66%  51%      33%       --    -3%  -5%          -5%     -5%
+swl_pp       215376/s 2048%    1269%   1101%     794%   765%   681% 561%        549% 433%      160%      122%  114%  104%  90%        74%      72%  56%      38%       3%     --  -1%          -2%     -2%
+swl3         218452/s 2078%    1289%   1118%     807%   778%   692% 570%        558% 441%      163%      126%  117%  107%  93%        76%      74%  58%      40%       5%     1%   --          -0%     -0%
+Discipulus4b 219497/s 2089%    1296%   1124%     811%   782%   696% 574%        562% 444%      165%      127%  118%  108%  94%        77%      75%  59%      40%       5%     2%   0%           --     -0%
+swl_pp2      219498/s 2089%    1296%   1124%     811%   782%   696% 574%        562% 444%      165%      127%  118%  108%  94%        77%      75%  59%      40%       5%     2%   0%           0%      --
+
+# ### Benchmarking with data set: many dupes ###
+                 Rate pryrt choroba0 choroba johngg choroba2 Corion  Tux Discipulus3 Eily grepfirst Eily4 sortfirst Eily2 haukex3_pp  vr2   vr haukex3b tybalt89 Eily3_pp Discipulus4b swl_pp2 swl_pp swl3
+pryrt         11547/s    --     -36%    -44%   -57%     -60%   -66% -66%        -67% -76%      -87%  -89%      -89%  -90%       -91% -91% -91%     -91%     -92%     -93%         -93%    -93%   -93% -94%
+choroba0      17915/s   55%       --    -13%   -34%     -38%   -48% -48%        -48% -64%      -80%  -83%      -83%  -84%       -85% -85% -86%     -86%     -88%     -89%         -89%    -89%   -89% -90%
+choroba       20522/s   78%      15%      --   -24%     -30%   -40% -40%        -41% -58%      -77%  -80%      -81%  -81%       -83% -83% -84%     -84%     -86%     -87%         -87%    -87%   -88% -89%
+johngg        27163/s  135%      52%     32%     --      -7%   -20% -21%        -22% -45%      -70%  -74%      -75%  -75%       -78% -78% -78%     -79%     -82%     -83%         -83%    -83%   -84% -85%
+choroba2      29118/s  152%      63%     42%     7%       --   -15% -15%        -16% -41%      -68%  -72%      -73%  -74%       -76% -76% -77%     -77%     -81%     -81%         -82%    -82%   -82% -84%
+Corion        34128/s  196%      91%     66%    26%      17%     --  -0%         -2% -30%      -62%  -67%      -68%  -69%       -72% -72% -73%     -73%     -77%     -78%         -79%    -79%   -79% -81%
+Tux           34293/s  197%      91%     67%    26%      18%     0%   --         -1% -30%      -62%  -67%      -68%  -69%       -72% -72% -72%     -73%     -77%     -78%         -79%    -79%   -79% -81%
+Discipulus3   34714/s  201%      94%     69%    28%      19%     2%   1%          -- -29%      -61%  -66%      -68%  -69%       -72% -72% -72%     -73%     -77%     -78%         -78%    -79%   -79% -81%
+Eily          49091/s  325%     174%    139%    81%      69%    44%  43%         41%   --      -45%  -52%      -54%  -56%       -60% -60% -61%     -62%     -68%     -69%         -69%    -70%   -70% -73%
+grepfirst     89854/s  678%     402%    338%   231%     209%   163% 162%        159%  83%        --  -13%      -17%  -19%       -27% -27% -28%     -30%     -41%     -43%         -44%    -45%   -46% -51%
+Eily4        103275/s  794%     476%    403%   280%     255%   203% 201%        198% 110%       15%    --       -4%   -6%       -16% -16% -17%     -20%     -32%     -34%         -35%    -37%   -38% -43%
+sortfirst    107685/s  833%     501%    425%   296%     270%   216% 214%        210% 119%       20%    4%        --   -2%       -13% -13% -13%     -16%     -29%     -31%         -33%    -34%   -35% -41%
+Eily2        110402/s  856%     516%    438%   306%     279%   223% 222%        218% 125%       23%    7%        3%    --       -10% -11% -11%     -14%     -27%     -29%         -31%    -32%   -33% -39%
+haukex3_pp   123097/s  966%     587%    500%   353%     323%   261% 259%        255% 151%       37%   19%       14%   11%         --  -0%  -1%      -4%     -19%     -21%         -23%    -24%   -26% -32%
+vr2          123364/s  968%     589%    501%   354%     324%   261% 260%        255% 151%       37%   19%       15%   12%         0%   --  -1%      -4%     -18%     -21%         -23%    -24%   -25% -32%
+vr           124448/s  978%     595%    506%   358%     327%   265% 263%        258% 154%       38%   21%       16%   13%         1%   1%   --      -3%     -18%     -20%         -22%    -24%   -25% -32%
+haukex3b     128773/s 1015%     619%    527%   374%     342%   277% 276%        271% 162%       43%   25%       20%   17%         5%   4%   3%       --     -15%     -18%         -19%    -21%   -22% -29%
+tybalt89     151345/s 1211%     745%    637%   457%     420%   343% 341%        336% 208%       68%   47%       41%   37%        23%  23%  22%      18%       --      -3%          -5%     -7%    -9% -17%
+Eily3_pp     156390/s 1254%     773%    662%   476%     437%   358% 356%        351% 219%       74%   51%       45%   42%        27%  27%  26%      21%       3%       --          -2%     -4%    -5% -14%
+Discipulus4b 159722/s 1283%     792%    678%   488%     449%   368% 366%        360% 225%       78%   55%       48%   45%        30%  29%  28%      24%       6%       2%           --     -2%    -3% -12%
+swl_pp2      163008/s 1312%     810%    694%   500%     460%   378% 375%        370% 232%       81%   58%       51%   48%        32%  32%  31%      27%       8%       4%           2%      --    -1% -11%
+swl_pp       165413/s 1332%     823%    706%   509%     468%   385% 382%        377% 237%       84%   60%       54%   50%        34%  34%  33%      28%       9%       6%           4%      1%     --  -9%
+swl3         182255/s 1478%     917%    788%   571%     526%   434% 431%        425% 271%      103%   76%       69%   65%        48%  48%  46%      42%      20%      17%          14%     12%    10%   --
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;&lt;b&gt;Update 1:&lt;/b&gt; Updated with [swl]'s updates, and fixed &lt;c&gt;haukex3&lt;/c&gt;. [swl]'s code takes the lead! Any contenders, or other updates/fixes? &lt;c&gt;:-)&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; After a quick fix, [Discipulus]'s &lt;c&gt;Discipulus4&lt;/c&gt; is back in the race!&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1229406</root_node>
+<parent_node field_name="parent_node">1229406</parent_node>
+<thread id="1229406">
+<node id="1229407"/>
+<node id="1229408"/>
+<node id="1229409"/>
+<node id="1229410"/>
+<node id="1229411"><node id="1229428"/>
+<node id="1229462"/>
+</node>
+<node id="1229415"><node id="1229418"/>
+<node id="1229422"/>
+<node id="1229429"/>
+<node id="1229451"><node id="1229457"><node id="1229495"/>
+</node>
+</node>
+</node>
+<node id="1229416"><node id="1229417"/>
+</node>
+<node id="1229419"><node id="1229420"><node id="1229437"/>
+<node id="1229463"><node id="1229465"/>
+</node>
+</node>
+<node id="1229458"/>
+</node>
+<node id="1229425"/>
+<node id="1229444"><node id="1229448"/>
+</node>
+<node id="1229446"><node id="1229447"><node id="1229512"/>
+</node>
+<node id="1229454"><node id="1229505"><node id="1229509"/>
+</node>
+</node>
+</node>
+<node id="1229450"><node id="1229456"/>
+<node id="1229602"/>
+</node>
+<node id="1229466"/>
+<node id="1229492"><node id="1229511"/>
+<node id="1229529"/>
+</node>
+<node id="1229493"><node id="1229496"/>
+</node>
+<node id="1229500"/>
+</thread></node>

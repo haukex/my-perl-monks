@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1187524" title="Re^2: strange syntax error with map (unary plus)" created="2017-04-09 09:52:40" updated="2017-04-09 09:52:40" _doctext_mode="lenient"><type id="11">note</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">&lt;I&gt;&amp;gt; &lt;c&gt;  perl -wMstrict -le 'print map { +2, $_ } 1 .. 2'   &lt;/c&gt;&lt;/I&gt;&lt;P&gt;
+
+I'm not a big fan of the unary plus solution, since it's not easily understandable why the unary plus sometimes works or not.&lt;P&gt;
+
+Fun with Perl's parsing:&lt;P&gt;
+
+&lt;c&gt;
+ DB&lt;100&gt; map {+2,$_} 1..3   # +2 is not a hash key
+ =&gt; (2, 1, 2, 2, 2, 3)
+
+ DB&lt;101&gt; map {2,$_} 1..3    # 2 is a hash key 
+           ;;
+Not enough arguments for map at (eval 21)[multi_perl5db.pl:644] line
+2, near "} 1"
+syntax error at (eval 21)[multi_perl5db.pl:644] line 2, near "} 1"
+
+  DB&lt;102&gt; map {2,$_}, 1..3  # 2 is a hash key
+ =&gt; ({ 2 =&gt; 1 }, { 2 =&gt; 2 }, { 2 =&gt; 3 })
+
+  DB&lt;103&gt; map {+2,$_}, 1..3 # +2 is not a hash key
+           ;;
+syntax error at (eval 26)[multi_perl5db.pl:644] line 2, near "},"
+
+  DB&lt;104&gt; map {+2 =&gt; $_}, 1..3 # +2 is not a hash key even with fat comma
+           ;;
+syntax error at (eval 29)[multi_perl5db.pl:644] line 2, near "},"
+&lt;/c&gt;&lt;P&gt;
+
+so far so consistent, BUT&lt;P&gt;
+
+&lt;c&gt;
+  DB&lt;105&gt; map +{+2 =&gt; $_}, 1..3 # +2 IS A HASH KEY
+ =&gt; ({ 2 =&gt; 1 }, { 2 =&gt; 2 }, { 2 =&gt; 3 })
+
+  DB&lt;106&gt; map +{+2 , $_}, 1..3  # +2 IS A HASH KEY even without =&gt;
+ =&gt; ({ 2 =&gt; 1 }, { 2 =&gt; 2 }, { 2 =&gt; 3 })
+&lt;/c&gt;&lt;P&gt;
+
+see my point? :)&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language and [http://i.dailymail.co.uk/i/pix/2014/07/14/article-2690897-1F9F6C0E00000578-463_964x629.jpg|&amp;#9734;&amp;#9734;&amp;#9734;&amp;#9734;] :)
+&lt;br&gt; &lt;i&gt;[http://s3.freebeacon.com/up/2015/01/charliehebdo-540x342.png|Je suis Charlie]!&lt;/i&gt;
+&lt;/sub&gt; &lt;P&gt;
+
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.1416} --&gt;</doctext>
+<root_node field_name="root_node">1187520</root_node>
+<parent_node field_name="parent_node">1187521</parent_node>
+<thread id="1187520">
+<node id="1187521"><node id="1187522"/>
+<node id="1187523"><node id="1187574"><node id="1187585"/>
+</node>
+<node id="1187811"/>
+</node>
+<node id="1187524"><node id="1187527"/>
+</node>
+</node>
+</thread></node>

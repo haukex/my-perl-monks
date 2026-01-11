@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201959" title="Re^2: Regex: matching character which happens exactly once (updated)" created="2017-10-24 07:24:17" updated="2017-10-24 07:24:17" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Duh, it's actually much simpler, and this one even captures the single character(s)! (&lt;i&gt;Update 2:&lt;/i&gt; See [id://1201976])&lt;/p&gt;
+&lt;c&gt;
+/(.)(?!((?&lt;=(?!\1).(?=(?2)).|(?=\1)..))|.*\1)/s
+&lt;/c&gt;
+&lt;spoiler&gt;
+&lt;p&gt;Of course, right after I said I was "done" with this topic, I realized that the "recursive lookbehind" technique can be used on its own, without all that complicated lookahead logic, since that's what the regex engine and backtracking are for ;-)&lt;/p&gt;
+&lt;c&gt;
+qr{
+	(?&lt;cur&gt; . )
+	#(?(?= (?&amp;lookback) | .* \g{cur} )
+	#	(?{print "cur($+{cur}) seen before or after\n"})
+	#	(*FAIL)
+	#)
+	# simpler:
+	(?! (?&amp;lookback) | .* \g{cur} )
+	(?{ print "post: $-[0]&lt;$&amp;&gt;$+[0]\n" })
+	(?(DEFINE) (?&lt;lookback&gt;
+		(?&lt;=
+			(?&lt;prev&gt;  (?! \g{cur} ) . )
+			(?{ print "  prev: &lt;$+{prev}&gt; / $-[0]&lt;".($&amp;//'-')."&gt;$+[0]\n" })
+			(?=(?&amp;lookback)) .
+		|
+			(?= \g{cur} ) . .
+		)
+	) )
+}msx
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Another smaller simplification (&lt;c&gt;(*FAIL)&lt;/c&gt; isn't needed).&lt;/p&gt;
+&lt;/spoiler&gt;
+
+</doctext>
+<root_node field_name="root_node">1201795</root_node>
+<parent_node field_name="parent_node">1201958</parent_node>
+<thread id="1201795">
+<node id="1201796"><node id="1201799"/>
+</node>
+<node id="1201806"><node id="1201807"><node id="1201924"><node id="1201940"/>
+</node>
+</node>
+</node>
+<node id="1201823"><node id="1201849"><node id="1201853"><node id="1201863"/>
+</node>
+</node>
+<node id="1201850"/>
+</node>
+<node id="1201894"/>
+<node id="1201896"><node id="1201899"><node id="1201900"><node id="1201903"><node id="1201911"><node id="1201921"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1201938"><node id="1201951"><node id="1201972"/>
+</node>
+</node>
+</node>
+<node id="1201912"><node id="1201920"><node id="1201950"/>
+</node>
+</node>
+<node id="1201958"><node id="1201959"/>
+<node id="1203237"/>
+</node>
+</thread></node>

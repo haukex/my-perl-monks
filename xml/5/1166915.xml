@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1166915" title="Are &quot;use constant&quot; constants really inlined?" created="2016-06-30 03:14:15" updated="2016-06-30 03:14:15" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1058902">Darkwing</author>
+<doctext field_name="doctext">Hi,
+
+&lt;p&gt;the docu of &lt;code&gt;constant&lt;/code&gt; says that constants such as
+&lt;code&gt;
+use constant DEBUG =&gt; 0;
+&lt;/code&gt;
+are inlined. In &lt;code&gt;constant.pm&lt;/code&gt;, the corresponding lines of code are: 
+&lt;code&gt;
+...
+if (@_ == 1) {
+    my $scalar = $_[0];
+    *{"${pkg}::$name"} = sub () { $scalar };
+}
+...
+&lt;/code&gt;
+But here, a local variable is defined and then used within a sub defined in this block. This should result in a closure rather than in an inlinable subroutine: whenever this block is executed, a new &lt;code&gt;$scalar&lt;/code&gt; variable is created and it won't be removed since the subroutine accesses it. So, i understand closures to work. But then the body of the sub isn't a constant value, it is a variable, and so it should not result in an inlinable constant.&lt;/p&gt;
+
+&lt;p&gt;Well, i'm wrong? Are those constants really inlined? Bit if so, why does it work? Why aren't they closures?&lt;/p&gt;</doctext>
+<thread id="1166915">
+<node id="1166916"><node id="1166919"/>
+<node id="1166947"/>
+</node>
+<node id="1166918"><node id="1166920"/>
+</node>
+<node id="1166924"/>
+</thread></node>

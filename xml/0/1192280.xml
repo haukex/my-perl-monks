@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1192280" title="Parsing incorrect html" created="2017-06-07 10:18:27" updated="2017-06-07 10:18:27" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1139005">seki</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Monks,&lt;/p&gt;
+
+&lt;p&gt;I need to parse some (externally generated) html and ideally to get the contents of the body to produce some new content.&lt;/p&gt;
+
+&lt;p&gt;(For the curious, the current processing in production done by an indian-outsourced resource is to collect some files and to concatenate them into a single one (yes, with all individual doctypes, html, head and body tags), we are lucky that it even display something readable in a browser!)&lt;/p&gt;
+
+&lt;p&gt;So I thought about using HTML::TreeBuilder but some of the individual files are themselves not well-formed, with a content already wrapped in another file (Sure, when you have only a hammer, you see nails everywhere...) so my attempt to get the body results in a weird result:&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+use HTML::Tree;
+
+my $tree = HTML::TreeBuilder-&gt;new;
+$tree-&gt;warn(1);
+
+my $content;
+{
+    local $/ = undef; #slurp
+    $content = &lt;DATA&gt;;
+}
+
+$tree-&gt;parse($content);
+foreach my $tag ( $tree-&gt;look_down('_tag', 'body') ) {
+    print "------\n" . $tag-&gt;as_HTML;
+}
+
+$tree = $tree-&gt;delete; 
+
+__DATA__
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;script&gt;/*some ugly header stuff*/&lt;/script&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;html&gt;
+            &lt;head&gt;
+                &lt;script&gt;/*some embedded document*/&lt;/script&gt;
+            &lt;/head&gt;
+            &lt;body&gt;
+                &lt;h1&gt;Hello&lt;/h1&gt;
+                &lt;p&gt;this is a test&lt;/p&gt;
+                &lt;p&gt;this is a second test&lt;/p&gt;
+            &lt;/body&gt;
+        &lt;/html&gt;
+        &lt;p&gt;some kind of wrapped footer&lt;/p&gt;
+    &lt;/body&gt;
+&lt;/html&gt;
+&lt;/code&gt;
+Result (the two bodies seem mixed in a single item):
+&lt;code&gt;
+HTML::Parse: Found a nested &lt;html&gt; element
+HTML::Parse: Found a second &lt;head&gt; element
+HTML::Parse: Found a second &lt;body&gt; element
+------
+&lt;body&gt;&lt;h1&gt;Hello&lt;/h1&gt;&lt;p&gt;this is a test&lt;p&gt;this is a second test&lt;p&gt;some kind of wrapped footer &lt;/body&gt;
+&lt;/code&gt;
+
+&lt;p&gt;How would you proceed to get the content of the inner html document? Use another package? I have looked for the options of HTML::Parser used by TreeBuilder but did not seen something relevant&lt;/p&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1139005"&gt;
+The best programs are the ones written when the programmer is supposed to be working on something else. - Melinda Varian
+&lt;/div&gt;&lt;/div&gt;
+</doctext>
+<thread id="1192280">
+<node id="1192281"/>
+<node id="1192282"/>
+<node id="1192285"/>
+<node id="1192287"/>
+<node id="1192291"/>
+<node id="1192310"/>
+<node id="1192323"><node id="1192385"><node id="1192389"/>
+<node id="1192392"/>
+</node>
+</node>
+</thread></node>

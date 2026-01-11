@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11141221" title="Re: AnyEvent::Socket -&gt; Hosts File -&gt; CR/LF Issue on windows? (updated)" created="2022-02-08 04:28:22" updated="2022-02-08 04:28:22" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Is this a mistake in this module? Or have I somehow messed up and perl on windows? Is perl meant to treat '\n' in regex as '\r\n' when running on windows?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;As others have pointed out, Perl &lt;i&gt;normally&lt;/i&gt; uses the &lt;c&gt;:crlf&lt;/c&gt; [doc://PerlIO] layer on Windows. However, if you look at how &lt;c&gt;_parse_hosts&lt;/c&gt; [https://metacpan.org/dist/AnyEvent/source/lib/AnyEvent/Socket.pm#L712|gets called], it's using [mod://AnyEvent::IO]'s &lt;c&gt;aio_load&lt;/c&gt;, which [https://metacpan.org/release/MLEHMANN/AnyEvent-7.17/source/lib/AnyEvent/IO/Perl.pm#L29|does] &lt;c&gt;open $fh, "&lt;:raw:perlio"&lt;/c&gt;, or AFAICT its XS equivalent when the [mod://IO::AIO] backend is used. So while you could hack it by changing the file to use LF instead of CRLF - I have no idea whether other Windows libraries will like that, though! - or by monkey-patching [https://metacpan.org/dist/AnyEvent/source/lib/AnyEvent/Socket.pm#L669|&lt;c&gt;_parse_hosts&lt;/c&gt;]*, I'm not sure you'll be able to change this behavior without getting in touch with the module's author.&lt;/p&gt;
+&lt;p&gt;* Just for fun, this ugly hack should work:&lt;/p&gt;
+&lt;c&gt;
+{
+  my $oldsub = \&amp;AnyEvent::Socket::_parse_hosts;
+  no warnings 'redefine';
+  *AnyEvent::Socket::_parse_hosts = sub ($) {
+    (my $in = shift) =~ s/\r\n/\n/g; $oldsub-&gt;($in) };
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Looking at the code, another possible workaround is to point the environment variable &lt;c&gt;PERL_ANYEVENT_HOSTS&lt;/c&gt; at a hosts file that has only LF line endings.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11141216</root_node>
+<parent_node field_name="parent_node">11141216</parent_node>
+<thread id="11141216">
+<node id="11141218"><node id="11141270"/>
+</node>
+<node id="11141219"><node id="11141224"><node id="11141225"><node id="11141226"><node id="11141233"><node id="11141241"><node id="11141259"/>
+<node id="11141260"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11141221"><node id="11141269"/>
+</node>
+<node id="11141234"/>
+</thread></node>

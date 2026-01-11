@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1176791" title="Re: Regular Expression: search two times for the same number of any signs (updated)" created="2016-11-29 06:02:37" updated="2016-11-29 06:02:37" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi,&lt;/p&gt;
+&lt;p&gt;Disclaimer: I am not a regex wizzard, so I'm not sure if the following has any pitfalls, but it does appear to be possible with a single regex:&lt;/p&gt;
+&lt;c&gt;
+print $_, /(x(.*)x(??{ '.{'.length($2).'}' })x)/
+	? " matches, \$1 = $1\n" : " doesn't match\n"
+		for qw/ xxx x.x.x x12x..x x123x...x x1x2x...x
+			x123x.x.x x12x1x ax1x2xbx34x56xc /;
+
+__END__
+
+xxx matches, $1 = xxx
+x.x.x matches, $1 = x.x.x
+x12x..x matches, $1 = x12x..x
+x123x...x matches, $1 = x123x...x
+x1x2x...x matches, $1 = x1x2x...x
+x123x.x.x matches, $1 = x123x.x.x
+x12x1x doesn't match
+ax1x2xbx34x56xc matches, $1 = x1x2xbx34x56x
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Changing the first part of the regex to &lt;c&gt;x(.*?)x&lt;/c&gt; (non-greedy) will allow you to match all the substrings in that last example above (and the rest of the examples above will continue to work the same):&lt;/p&gt;
+&lt;c&gt;
+my $re = qr/(x(.*?)x(??{ '.{'.length($2).'}' })x)/;
+my $str = "ax1x2xbx34x56xc";
+while ($str=~/$re/g) {
+	print "found \"$1\"\n";
+}
+
+__END__
+
+found "x1x2x"
+found "x34x56x"
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1176775</root_node>
+<parent_node field_name="parent_node">1176775</parent_node>
+<thread id="1176775">
+<node id="1176776"><node id="1176780"><node id="1176783"/>
+</node>
+<node id="1176781"/>
+</node>
+<node id="1176779"/>
+<node id="1176782"><node id="1176786"><node id="1176795"/>
+</node>
+</node>
+<node id="1176787"><node id="1176790"/>
+<node id="1176793"><node id="1176794"/>
+</node>
+</node>
+<node id="1176791"><node id="1176796"/>
+<node id="1176799"><node id="1176803"><node id="1176822"/>
+</node>
+</node>
+</node>
+<node id="1176792"/>
+<node id="1176827"/>
+<node id="1176838"/>
+</thread></node>

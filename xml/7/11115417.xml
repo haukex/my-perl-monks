@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11115417" title="Re: glob() and dot files" created="2020-04-13 01:05:56" updated="2020-04-13 01:05:56" _doctext_mode="lenient"><type id="11">note</type>
+<author id="732669">Marshall</author>
+<doctext field_name="doctext">This glob thing can be a problem.  A long time ago I got tripped up with the 3 versions of glob that were in use at that time in the ActiveState version of Perl that I was using. I changed my code to use readdir() and that solved the problem. &lt;p&gt;
+
+Nowadays, Perl glob is a lot more uniform and well behaved. This prints all simple files, but skips directories.
+&lt;c&gt;
+my @files = glob ('*.*');
+print "",join("\n",@files),"\n"
+&lt;/c&gt;
+
+For what you want, I would consider File::Find.&lt;br&gt;
+Consider this code also.  
+&lt;c&gt;
+use strict;
+use warnings;
+
+
+opendir (my $dir, ".") or die "unable to open current directory $_";
+my @files;
+my @directories;
+
+foreach my $file (grep{ ($_ ne '.') and ($_ ne '..')} readdir $dir)
+{
+    if (-f $file )    {push @files, $file;}
+    elsif (-d $file)  {push @directories, $file;}
+    else { die "weird beast found! $file"}  
+}
+
+print "@files\n";
+print "@directories\n";
+&lt;/c&gt;
+
+I think in Unix there can be special things that are not simple files or directories. I would use a file test to see what this name actually means. &lt;br&gt;
+Note that if this is not the current directory, you need to spec the full path name for file tests.&lt;p&gt;
+
+Update:  File operations like "open file" or "open directory" are "expensive" in terms of performance. I would expect my code to run faster than the OP's code, but I did not benchmark this in any serious way.  If the directories are small and this is not done that often, I don't think that will make any difference at all.  Also be aware that there is a special variable for repeated file tests, "_". like &lt;c&gt; elsif (-d _) {do something{&lt;/c&gt; That tests the structure returned by the previous file test operation for a different flag.&lt;p&gt;
+
+Overall, unless there is a performance or other problem (special kinds of files), I see no problem with the OP's code. 
+
+
+</doctext>
+<root_node field_name="root_node">11115413</root_node>
+<parent_node field_name="parent_node">11115413</parent_node>
+<thread id="11115413">
+<node id="11115415"/>
+<node id="11115417"><node id="11115429"><node id="11115433"><node id="11115650"><node id="11115715"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11115428"><node id="11115439"><node id="11115441"><node id="11115446"/>
+</node>
+</node>
+</node>
+</thread></node>

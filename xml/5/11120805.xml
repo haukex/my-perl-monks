@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11120805" title="Inconsistent behavior of Getopt::Std" created="2020-08-16 01:42:10" updated="2020-08-16 01:42:10" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1203274">likbez</author>
+<doctext field_name="doctext">Who can propose modification to Getopt::Std which fixes the following behavior: in case you do not supply a value to the option which expect values (like "b:" below), the behavior of this module varies depending on if the parameter is the last in the line or not. If it is not the last, then the next option or argument is "eaten" as the value.  Which is clearly undesirable. BTW it eats "final options separator"('--') with the same appetite as the other options. 
+
+&lt;p&gt;NOTE: During testing I discovered that this module correctly processes setting the value of an option via repetition of the option letter , like -ddd.
+&lt;p&gt;Here is the test program that I used: 
+&lt;c&gt;
+[0]  # cat parameter_check.pl
+use v5.10;
+use warnings;
+use strict 'subs';
+use feature 'state';
+use Getopt::Std;
+
+getopts("b:cd:",\%options);
+
+if( exists $options{'b'} ){
+    if( $options{'b'} ){
+        say "option b $options{'b'}";
+    }else{
+        say "b is zero length string or equvalent";
+    }
+}else{
+   say 'key b does not exist';
+}
+say "option c:", $options{'c'};
+say "option d: ", $options{'d'};
+&lt;/c&gt;
+In short test run with parameters -b -ddd   
+&lt;c&gt;
+parameter_check.pl -b -ddd
+&lt;/c&gt;
+produces non-intuitive result, where -ddd is eaten by -b and becomes the value of option -b.  Please note that is the next option  is option without parameter, like "-b -c -ddd", then the option -c will be simply not set (it will become the value of -b), but option -ddd will be processed correctly, so such error will probably will not be detected :-) 
+&lt;p&gt;
+But if the parameter without the value is the last, like in: 
+&lt;c&gt;
+parameter_check.pl -ddd -b
+&lt;/c&gt;
+the result is as expected: &lt;tt&gt;options('b')&lt;/tt&gt; is set to zero length string.  
+&lt;p&gt;  
+Here are my test runs: 
+&lt;c&gt;
+[0]  # perl parameter_check.pl -ddd  -c -b
+b is zero length string or equivalent
+option c:1
+option d: dd
+
+
+[0]  # perl parameter_check.pl -ddd   -b -c
+option b: -c
+Use of uninitialized value in say at parameter_check.pl line 18.
+option c:
+option d: dd
+
+[0]  # perl parameter_check.pl -ddd -b -c
+option b -c
+Use of uninitialized value in say at parameter_check.pl line 18.
+option c:
+option d: dd
+
+[0]  # perl parameter_check.pl -ddd  -c -b --
+option b --
+option c:1
+option d: dd
+
+[0]  # perl parameter_check.pl -c -b -ddd
+option b -ddd
+option c:1
+Use of uninitialized value in say at parameter_check.pl line 19.
+option d:
+&lt;/c&gt;
+
+&lt;p&gt;The main loop in this module is just 60 lines of rather compact and terse Perl. I hope that one of Perl guru here can easily find elegant solution to this problem:  
+&lt;c&gt;
+sub getopts ($;$) {
+    my ($argumentative, $hash) = @_;
+    my (@args,$first,$rest,$exit);
+    my $errs = 0;
+    local $_;
+    local @EXPORT;
+
+    @args = split( / */, $argumentative );
+    while(@ARGV &amp;&amp; ($_ = $ARGV[0]) =~ /^-(.)(.*)/s) {
+	($first,$rest) = ($1,$2);
+	if (/^--$/) {	# early exit if --
+	    shift @ARGV;
+	    last;
+	}
+	my $pos = index($argumentative,$first);
+	if ($pos &gt;= 0) {
+	    if (defined($args[$pos+1]) and ($args[$pos+1] eq ':')) {
+		shift(@ARGV);
+		if ($rest eq '') {
+		    ++$errs unless @ARGV;
+		    $rest = shift(@ARGV);
+		}
+		if (ref $hash) {
+		    $$hash{$first} = $rest;
+		}
+		else {
+		    ${"opt_$first"} = $rest;
+		    push( @EXPORT, "\$opt_$first" );
+		}
+	    }
+	    else {
+		if (ref $hash) {
+		    $$hash{$first} = 1;
+		}
+		else {
+		    ${"opt_$first"} = 1;
+		    push( @EXPORT, "\$opt_$first" );
+		}
+		if ($rest eq '') {
+		    shift(@ARGV);
+		}
+		else {
+		    $ARGV[0] = "-$rest";
+		}
+	    }
+	}
+	else {
+	    if ($first eq '-' and $rest eq 'help') {
+		version_mess($argumentative, 'main');
+		help_mess($argumentative, 'main');
+		try_exit();
+		shift(@ARGV);
+		next;
+	    } elsif ($first eq '-' and $rest eq 'version') {
+		version_mess($argumentative, 'main');
+		try_exit();
+		shift(@ARGV);
+		next;
+	    }
+	    warn "Unknown option: $first\n";
+	    ++$errs;
+	    if ($rest ne '') {
+		$ARGV[0] = "-$rest";
+	    }
+	    else {
+		shift(@ARGV);
+	    }
+	}
+&lt;/c&gt; 
+&lt;p&gt;
+Thank you in advance for any help. 
+
+&lt;p&gt;&lt;small&gt;&lt;i&gt;2020-08-16 [Athanasius] changed &amp;lt;pre&amp;gt; to &amp;lt;c&amp;gt; tags.&lt;/small&gt;&lt;/p&gt;
+</doctext>
+<thread id="11120805">
+<node id="11120806"><node id="11120813"><node id="11120815"/>
+</node>
+</node>
+<node id="11120807"><node id="11120819"><node id="11120821"/>
+</node>
+</node>
+</thread></node>

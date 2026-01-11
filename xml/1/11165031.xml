@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11165031" title="Re: wrap abbreviations in XML element" created="2025-05-16 06:33:58" updated="2025-05-16 06:33:58" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You have two separate problems:&lt;/p&gt;
+&lt;ol&gt;
+	&lt;li&gt;&lt;b&gt;Do not use regular expressions to parse and manipulate XML or HTML, ever.&lt;/b&gt; [id://11116478]&lt;/li&gt;
+	&lt;li&gt;To help with your regex, we need a lot more examples of strings that should match and shouldn't match. See e.g. [id://1201201]&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;For 1, here is some code that will walk all text nodes in an XML document, match a regex against that text, and wrap the matching text in a new tag. (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; You didn't specify what should happen if there's a node in the match, e.g. &lt;c&gt;"Z.&lt;br/&gt;B."&lt;/c&gt;, so the code below currently doesn't handle that case.)&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+
+my $doc = XML::LibXML-&gt;load_xml(string =&gt; &lt;&lt;'XML');
+&lt;foo&gt;hello, foobar &lt;bar x="foo"&gt;world! foo&lt;/bar&gt; fo&lt;quz/&gt;oofoo&lt;/foo&gt;
+XML
+
+my $re = qr/foo/; # don't include any capturing parens in this!
+
+my @nodes = $doc-&gt;documentElement;
+while (my $node = pop @nodes) {
+	for my $c ($node-&gt;childNodes) {
+		if ($c-&gt;nodeType==XML_ELEMENT_NODE) { push @nodes, $c }
+		elsif ($c-&gt;nodeType==XML_TEXT_NODE || $c-&gt;nodeType==XML_CDATA_SECTION_NODE) {
+			my @parts = split /($re)/, $c-&gt;data;
+			next unless @parts&gt;1;
+			my $d = $doc-&gt;createDocumentFragment;
+			for my $i (0..$#parts) {
+				if ($i%2) {  # regex match
+					my $e = $doc-&gt;createElement('x');
+					$e-&gt;appendText($parts[$i]);
+					$d-&gt;appendChild($e);
+				}
+				else {  # text around match
+					$d-&gt;appendText($parts[$i]);
+				}
+			}
+			$node-&gt;replaceChild($d, $c);
+		}
+	}
+}
+
+print $doc-&gt;toString;
+
+__END__
+&lt;?xml version="1.0"?&gt;
+&lt;foo&gt;hello, &lt;x&gt;foo&lt;/x&gt;bar &lt;bar x="foo"&gt;world! &lt;x&gt;foo&lt;/x&gt;&lt;/bar&gt; fo&lt;quz/&gt;oo&lt;x&gt;foo&lt;/x&gt;&lt;/foo&gt;
+&lt;/c&gt;
+&lt;p&gt;For 2, I would recommend that just for the sake of explaining what you want to match and don't match, simplify the separators like &lt;c&gt;!!!hairsp;&lt;/c&gt; into something shorter, like a single &lt;c&gt;!&lt;/c&gt;, just to make things easier for us to read. The pitfalls you describe are indeed complicated, and in the end you might need to end up using some existing data like (just for example) this [wp://List of German abbreviations]. &lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; My node [id://1179840] might be useful in that regard.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11165030</root_node>
+<parent_node field_name="parent_node">11165030</parent_node>
+<thread id="11165030">
+<node id="11165031"><node id="11165032"><node id="11165033"/>
+</node>
+</node>
+</thread></node>

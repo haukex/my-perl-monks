@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201619" title="Re^2: Why doesn't this die with &quot;Can't use an undefined value as an ARRAY reference&quot;?&quot;" created="2017-10-18 16:56:45" updated="2017-10-18 16:56:45" _doctext_mode="lenient"><type id="11">note</type>
+<author id="779500">kikuchiyo</author>
+<doctext field_name="doctext">&lt;p&gt;Thanks for the investigation!&lt;/p&gt;
+
+&lt;p&gt;Some additional observations:&lt;/p&gt;
+
+&lt;code&gt;no autovivification qw/store/;&lt;/code&gt; causes the offending part (of your minimal example) to die with "Can't vivify reference at -e line 1.".
+
+&lt;p&gt;Reading the autovivification module's documentation gave me a hint: lvalue context. Searching that led me to a Perlmonks article from 12 years ago: [id://515098] Those who don't know history are doomed to repeat it, apparently.&lt;/p&gt;
+
+&lt;p&gt;The key phrase seems to be "arguments to subs are lvalues" and apparently this is a feature. Still, I find it surprising and confusing.&lt;/p&gt;
+
+&lt;p&gt;The linked thread mentions that "incidentally, builtin functions do not provide a similar service" (i.e. autovivification for their arguments) - this is not unconditionally true:&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Data::Dumper;
+
+my $h={};
+for my $x ("pop", "shift", "map {1}", "grep {1}", "chomp", "lc", "localtime", "cos") {
+	my $str = $x.q/ @{$h-&gt;{'/ . $x . qq/'}}\n/;
+	print $str;
+	eval $str;
+	print "\t".$@ if $@;
+}
+print Dumper $h;
+
+&lt;/code&gt;
+
+...results in:
+&lt;code&gt;
+pop @{$h-&gt;{'pop'}}
+shift @{$h-&gt;{'shift'}}
+map {1} @{$h-&gt;{'map {1}'}}
+grep {1} @{$h-&gt;{'grep {1}'}}
+chomp @{$h-&gt;{'chomp'}}
+lc @{$h-&gt;{'lc'}}
+	Can't use an undefined value as an ARRAY reference at (eval 7) line 1.
+localtime @{$h-&gt;{'localtime'}}
+	Can't use an undefined value as an ARRAY reference at (eval 8) line 1.
+cos @{$h-&gt;{'cos'}}
+	Can't use an undefined value as an ARRAY reference at (eval 9) line 1.
+$VAR1 = {
+          'chomp' =&gt; [],
+          'pop' =&gt; [],
+          'map {1}' =&gt; [],
+          'grep {1}' =&gt; [],
+          'shift' =&gt; []
+        };
+
+&lt;/code&gt;
+
+
+</doctext>
+<root_node field_name="root_node">1201610</root_node>
+<parent_node field_name="parent_node">1201611</parent_node>
+<thread id="1201610">
+<node id="1201611"><node id="1201619"><node id="1201627"/>
+</node>
+<node id="1201678"><node id="1201687"/>
+</node>
+</node>
+</thread></node>

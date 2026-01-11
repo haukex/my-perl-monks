@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198605" title="Re: Multi Line Regex Matches..." created="2017-09-03 03:59:51" updated="2017-09-03 03:59:51" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;If you want to match across multiple lines, you need to keep multiple lines in memory, but the problem is your &lt;c&gt;while (&lt;INFILE&gt;)&lt;/c&gt; only reads one line at a time. So for [Athanasius]'s [id://1198602|solution] to work, you need to read the entire file into memory ("slurp"), which you can do like this:&lt;/p&gt;
+&lt;c&gt;
+open my $ifh, '&lt;', $infile or die "$infile: $!";
+my $data = do { local $/; &lt;$ifh&gt; };
+close $ifh;
+&lt;/c&gt;
+&lt;p&gt;Note that you really should [id://111088], and some other more modern features like lexical filehandles and the three-argument [doc://open] like I am showing here.&lt;/p&gt;
+&lt;p&gt;Another approach is to read the file line-by-line, and keep some state in memory. Since you are reading from multiple input files, I suspect you might want to treat them as a continuous stream of input? If so, then for the above approach, you'd have to slurp all the files into memory and concatenate them, which might be a lot, depending on the size of the input files. But that's not necessary for the line-by-line approach:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use File::Glob ':bsd_glob';
+
+my @infiles = sort glob 'SBNUM_*.txt';
+my $outfile = 'v2test.txt';
+
+open my $ofh, '&gt;', $outfile or die "$outfile: $!";
+my ($prevleft,$prevright);
+for my $infile (@infiles) {
+	open my $ifh, '&lt;', $infile or die "$infile: $!";
+	while (&lt;$ifh&gt;) {
+		my ($left,$right) = /^(\d{3}),--&gt;(\d{3}),$/
+			or die "Couldn't match '$_'";
+		if (defined $prevleft) {
+			print $ofh "$prevleft,--&gt;$right,\n";
+		}
+		($prevleft,$prevright) = ($left,$right);
+	}
+	close $ifh;
+}
+close $ofh;
+&lt;/c&gt;
+&lt;p&gt;Or, just for fun, the same code as a oneliner:&lt;/p&gt;
+&lt;c&gt;
+perl -nle '/^(\d{3}),--&gt;(\d{3}),$/||die;defined$x&amp;&amp;print"$x,--&gt;$2,";$x=$1' SBNUM_*.txt &gt;v2test.txt
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1198601</root_node>
+<parent_node field_name="parent_node">1198601</parent_node>
+<thread id="1198601">
+<node id="1198602"/>
+<node id="1198605"/>
+<node id="1198615"><node id="1198628"><node id="1198630"/>
+</node>
+</node>
+<node id="1198640"/>
+</thread></node>

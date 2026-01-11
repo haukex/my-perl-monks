@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227912" title="Re: Class::Struct accessor function after Perl V5.16 (updated)" created="2019-01-02 06:11:35" updated="2019-01-02 06:11:35" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;This gives me an error when run with Perl versions after 5.16.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well technically, you're the one causing the error ;-) &lt;c&gt;die Dumper \@_;&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;I'm pretty sure the difference in behavior you're seeing is because bug [https://rt.perl.org/Public/Bug/Display.html?id=29230|#29230] was [https://perl5.git.perl.org/perl.git/commitdiff/a79a48c06297674602f44ec367c8b2768b1c997a|fixed] in [doc://Class::Struct] version 0.64, which was released with v5.18.0. It appears that the constructor is &lt;i&gt;supposed&lt;/i&gt; to initialize the fields &lt;small&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/small&gt; using the custom accessors &lt;small&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/small&gt;.&lt;/p&gt;
+&lt;p&gt;In &lt;c&gt;sub set_values&lt;/c&gt;, you expect there to be an even number of arguments that you assign to a hash (&lt;c&gt;my %args = @_;&lt;/c&gt;), but in &lt;c&gt;sub heights_agl&lt;/c&gt;, you do &lt;c&gt;-&gt;set_values(Variable=&gt;'heights_agl',@_)&lt;/c&gt;, which means that if &lt;c&gt;@_&lt;/c&gt; contains an odd number of elements, you'll get the "&lt;c&gt;Odd number of elements in hash assignment&lt;/c&gt;" warning (not a fatal error, but a useful warning).&lt;/p&gt;
+&lt;p&gt;I'm pretty sure this would happen &lt;i&gt;any&lt;/i&gt; time you assign &lt;small&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/small&gt; an array ref &lt;small&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/small&gt; to &lt;c&gt;heights_agl&lt;/c&gt; - so I think you need to rethink your logic anyway. Since you haven't shown what &lt;c&gt;set_values&lt;/c&gt; is actually doing, it's a little hard to tell what the best solution would be, but perhaps you might want to change the call to something like &lt;c&gt;$self-&gt;set_values(Variable=&gt;'heights_agl',Arguments=&gt;[@_]);&lt;/c&gt;?&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Note the documentation of [doc://Class::Struct]:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;b&gt;Array (&lt;c&gt;'@'&lt;/c&gt; or &lt;c&gt;'*@'&lt;/c&gt;)&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;The element is an array, initialized by default to &lt;c&gt;()&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;... As a special case, when the accessor is called with an array reference as the sole argument, this causes an assignment of the whole array element. The object reference is returned.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;So I guess you'll need to extend your &lt;c&gt;set_values&lt;/c&gt; to handle this case.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1227911</root_node>
+<parent_node field_name="parent_node">1227911</parent_node>
+<thread id="1227911">
+<node id="1227912"/>
+<node id="1227913"/>
+<node id="1227914"><node id="1227930"><node id="1227953"/>
+</node>
+</node>
+</thread></node>

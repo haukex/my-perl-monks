@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1219533" title="Re^2: searching for small Cookies example but found does not work" created="2018-07-31 03:01:48" updated="2018-07-31 03:01:48" _doctext_mode="lenient"><type id="11">note</type>
+<author id="835787">toohoo</author>
+<doctext field_name="doctext">&lt;p&gt;Hello,&lt;/p&gt;
+&lt;p&gt;I will post the examples here. Please be not angry, if I miss some rule. If I did not post it right, then plkease feel free to remove it.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;cookie-set.pl&lt;/b&gt;&lt;/p&gt;
+&lt;code&gt;
+#-------------------EXAMPLE OF SETTING A COOKIE---------------------------
+#!/usr/bin/perl
+require "/usr/local/apache/cgi-bin/cookie.pl";
+   $cookie=&amp;set_cookie("login","testuser",0,"/","www.domain.com");
+print "$cookie\n";
+print "Content-type: text/html\n\n";
+print "Have we a cookie?????\n";
+&lt;/code&gt;
+&lt;p&gt;&lt;b&gt;cookie-get.pl&lt;/b&gt;&lt;/p&gt;
+&lt;code&gt;
+#-------------------EXAMPLE OF GETTING A VALUE FROM A COOKIE--------------
+#!/usr/bin/perl
+require "/usr/local/apache/cgi-bin/cookie.pl";
+   print "Content-type: text/html\n\n";
+   $cookie=&amp;get_cookie("login");
+   if ($cookie ne "")
+    {
+     print "you have been authenticated as $cookie\n";
+    }
+   else
+    {
+     print "Somebody toss me a freakin' cookie....";
+    }
+&lt;/code&gt;
+&lt;p&gt;&lt;b&gt;cookie-del.pl&lt;/b&gt;&lt;/p&gt;
+&lt;code&gt;
+#-------------------EXAMPLE OF REMOVING A COOKIE--------------------------
+#!/usr/bin/perl
+require "/usr/local/apache/cgi-bin/cookie.pl";
+   $cookie=&amp;remove_cookie("login","/","www.domain.com");
+print "$cookie\n";
+print "Content-type: text/html\n\n";
+print "Have we removed a cookie?????\n";
+&lt;/code&gt;
+&lt;p&gt;&lt;b&gt;cookie.pl&lt;/b&gt;&lt;/p&gt;
+&lt;code&gt;
+#-------------------ROUTINE FILE STARTS HERE------------------------------
+#
+# This routine takes (name,value,minutes_to_live,path,domain) as arguments
+# to set a cookie.
+#
+# 0 minutes means a current browser session cookie life
+#
+sub set_cookie() {
+  my ($name,$value,$expires,$path,$domain) = @_;
+  $name=&amp;cookie_scrub($name);
+  $value=&amp;cookie_scrub($value);
+  $expires=$expires * 60;
+  my $expire_at=&amp;cookie_date($expires);
+  my $namevalue="$name=$value";
+  my $COOKIE="";
+  if ($expires != 0) {
+     $COOKIE= "Set-Cookie: $namevalue; expires=$expire_at; ";
+  }
+   else {
+     $COOKIE= "Set-Cookie: $namevalue; ";   #current session cookie if 0
+   }
+  if ($path ne ""){
+     $COOKIE .= "path=$path; ";
+  }
+  if ($domain ne ""){
+     $COOKIE .= "domain=$domain; ";
+  }
+   
+  return $COOKIE;
+}
+#
+# This routine removes cookie of (name) by setting the expiration
+# to a date/time GMT of (now - 24hours)
+#
+sub remove_cookie() {
+  my ($name,$path,$domain) = @_;
+  $name=&amp;cookie_scrub($name);
+  my $value="";
+  my $expire_at=&amp;cookie_date(-86400);
+  my $namevalue="$name=$value";
+  my $COOKIE= "Set-Cookie: $namevalue; expires=$expire_at; ";
+  if ($path ne ""){
+     $COOKIE .= "path=$path; ";
+  }
+  if ($domain ne ""){
+     $COOKIE .= "domain=$domain; ";
+  }
+  return $COOKIE;
+}
+#
+# given a cookie name, this routine returns the value component
+# of the name=value pair
+#
+sub get_cookie() {
+  my ($name) = @_;
+  $name=&amp;cookie_scrub($name);
+  my $temp=$ENV{'HTTP_COOKIE'};
+  @pairs=split(/\; /,$temp);
+  foreach my $sets (@pairs) {
+    my ($key,$value)=split(/=/,$sets);
+    $clist{$key} = $value;
+  }
+  my $retval=$clist{$name};
+  return $retval;
+}
+#
+# this routine accepts the number of seconds to add to the server
+# time to calculate the expiration string for the cookie. Cookie
+# time is ALWAYS GMT!
+#
+sub cookie_date() {
+  my ($seconds) = @_;
+  my %mn = ('Jan','01', 'Feb','02', 'Mar','03', 'Apr','04',
+            'May','05', 'Jun','06', 'Jul','07', 'Aug','08',
+            'Sep','09', 'Oct','10', 'Nov','11', 'Dec','12' );
+  my $sydate=gmtime(time+$seconds);
+  my ($day, $month, $num, $time, $year) = split(/\s+/,$sydate);
+  my    $zl=length($num);
+  if ($zl == 1) { 
+    $num = "0$num";
+  }
+  my $retdate="$day $num-$month-$year $time GMT";
+  return $retdate;
+}
+#
+# don't allow = or ; as valid elements of name or data
+#
+sub cookie_scrub() {
+  my($retval) = @_;
+  $retval=~s/\;//;
+  $retval=~s/\=//;
+  return $retval;
+}
+# usual kluge so require does not fail....
+     my $XyZ=1;
+#-------------------ROUTINE FILE ENDS HERE--------------------------------
+&lt;/code&gt;
+
+&lt;p&gt;I put these scripts in the &lt;b&gt;(existing-project)/cgi-bin&lt;/b&gt; directory. The other scripts in the project run successfully. If I run cookie-set.pl I get:
+&lt;b&gt;Have we a cookie?????&lt;/b&gt;
+... and nothing else.
+&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1219375</root_node>
+<parent_node field_name="parent_node">1219376</parent_node>
+<thread id="1219375">
+<node id="1219376"><node id="1219533"><node id="1219538"><node id="1219541"><node id="1219548"><node id="1219554"><node id="1219563"><node id="1219567"><node id="1219569"><node id="1219571"/>
+</node>
+<node id="1219907"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1219633"/>
+</node>
+</node>
+<node id="1219378"/>
+<node id="1219379"><node id="1219534"/>
+</node>
+<node id="1219592"><node id="1219640"/>
+</node>
+</thread></node>

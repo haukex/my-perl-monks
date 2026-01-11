@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="433614" title="Re: Displaying/buffering huge text files" created="2005-02-23 03:26:53" updated="2005-08-13 09:58:07" _doctext_mode="lenient"><type id="11">note</type>
+<author id="171588">BrowserUk</author>
+<doctext field_name="doctext">&lt;p&gt;This builds an index to a million line file in around 20 seconds, and accesses and prints 10,000 lines at random in under 1 second. 
+
+&lt;p&gt;If the 20 seconds is too long for startup, then you could always read enough to allow you to populate your listbox, and then push the rest of the index building off into a background thread to finish, while you populate the listbox with the first 1000 lines or so. 
+
+&lt;p&gt;The indexing could be sped up by a more intelligent indexer, that reads larger chunks and searched for the newlines, rather than reading one line at a time. 
+
+&lt;p&gt;The index requires just 8 MB of ram. That could be halved by using 'N' or 'V' as your pack format, rather than 'd', if your files will never go over 4GB. By using 'd' you are good for files up to around 8,500 Terabytes, which should see you through the next couple of machine changes or so:)
+
+&lt;code&gt;
+#! perl -slw
+use strict;
+$| = 1;
+
+open FILE, '&lt;', $ARGV[ 0 ] or die $!;
+
+print 'Before indexing: ', time;
+
+my $index = pack 'd', 0;
+$index .= pack 'd', tell FILE while &lt;FILE&gt;;
+
+print 'After indexing: ', time;
+
+print 'Size of index: ', length $index;
+
+for my $i ( map{ int rand( length( $index )/8 ) } 1 .. 10_000 ) {
+	my $line = unpack( 'd', substr $index, $i*8, 8 );
+	seek FILE, $line, 0;
+	chomp( $_ = &lt;FILE&gt; );
+	printf "\r$line : '%s'", $_; 
+}
+
+print "\nAfter reading 10,000 random lines: ", time;
+__END__
+P:\test&gt;433953 data\1millionlines.dat
+Before indexing: 1109146372
+After indexing: 1109146392
+Size of index: 8000008
+1865840 : '00186585'
+After reading 10,000 random lines: 1109146393
+&lt;/code&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-171588"&gt;
+&lt;hr /&gt;
+&lt;font size=1 &gt;
+&lt;div&gt;Examine what is said, not who speaks.&lt;/div&gt;
+&lt;div&gt;Silence betokens consent.&lt;/div&gt;
+&lt;div&gt;Love the truth but pardon error.&lt;/div&gt;
+&lt;/font&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">433593</root_node>
+<parent_node field_name="parent_node">433593</parent_node>
+<thread id="433593">
+<node id="433598"><node id="433616"><node id="498062"/>
+</node>
+</node>
+<node id="433614"><node id="433615"><node id="433617"><node id="433859"/>
+</node>
+</node>
+<node id="442925"/>
+<node id="944816"><node id="944878"><node id="944881"/>
+<node id="944886"/>
+</node>
+<node id="944883"/>
+</node>
+</node>
+<node id="433658"><node id="433728"/>
+</node>
+<node id="433704"><node id="435392"/>
+</node>
+<node id="433708"/>
+<node id="433903"/>
+<node id="433957"><node id="434313"/>
+</node>
+<node id="433966"/>
+<node id="944885"><node id="944887"><node id="944904"/>
+</node>
+</node>
+</thread></node>

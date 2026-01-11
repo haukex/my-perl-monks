@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1218965" title="PL_strtab/SHAREKEYS and copy-on-write leak" created="2018-07-20 17:11:31" updated="2018-07-20 17:11:31" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1218959">sezal</author>
+<doctext field_name="doctext">&lt;p&gt;
+Perl internally uses dedicated hash PL_strtab as shared storage for hash's keys, but in fork environment like apache/mod_perl this creates a big issue. Best practice says to preload modules in parent process, but nobody says it's eventually allocates memory for PL_strtab and these pages of memory tend to be implicitly modified in child processes. There are seems to be 2 major reasons of modification:
+&lt;/p&gt;
+&lt;p&gt;
+Reason 1: reallocation (hsplit()) may happen when PL_strtab growths in child process. 
+&lt;/p&gt;
+&lt;p&gt;
+Reason 2: REFCNT every time new reference created.
+&lt;/p&gt;
+
+&lt;p&gt;
+Example below shows 16MB copy-on-write leak in attempt to use hash. Attempts to recompile perl with -DNODEFAULT_SHAREKEYS fails (https://rt.perl.org/SelfService/Display.html?id=133384).
+I was able to get access to PL_strtab via XS module and ideally I'm looking for a way to downgrade all hashes created in parent to keep hash keys within a hash (HE object) rather than PL_strtab, i.e. turn off SHAREKEYS flag. This should allow to shrink PL_strtab to minimum possible size. Ideally it should have 0 keys in parent. Please let me know you think it's theoretically possible via XS.
+&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+use Linux::Smaps;
+
+$SIG{CHLD} = sub { waitpid(-1, 1) };
+
+# comment this block
+{
+    my %h;
+    # pre-growth PL_strtab hash, kind of: keys %$PL_strtab = 2_000_000;
+    foreach my $x (1 .. 2_000_000) {
+        $h{$x} = undef;
+    }
+}
+
+my $pid = fork // die "Cannot fork: $!";
+unless ($pid) {
+    # child
+
+    my $s = Linux::Smaps-&gt;new($$)-&gt;all;
+    my $before = $s-&gt;shared_clean + $s-&gt;shared_dirty;
+
+    {
+        my %h;
+        foreach my $x (1 .. 2_000_000) {
+            $h{$x} = undef;
+        }
+    }
+
+    my $s2 = Linux::Smaps-&gt;new($$)-&gt;all;
+    my $after = $s2-&gt;shared_clean + $s2-&gt;shared_dirty;
+    warn 'COPY-ON-WRITE: ' . ($before - $after) . ' KB';
+
+    exit 0;
+}
+
+sleep 1000;
+print "DONE\n";
+&lt;/code&gt;
+</doctext>
+<thread id="1218965">
+<node id="1218968"><node id="1219460"/>
+<node id="1220438"><node id="1220454"/>
+</node>
+</node>
+<node id="1218970"><node id="1219454"/>
+</node>
+<node id="1218980"><node id="1219005"><node id="1219006"><node id="1219007"><node id="1219008"/>
+<node id="1219012"/>
+<node id="1219018"/>
+</node>
+</node>
+<node id="1219015"/>
+<node id="1219034"/>
+</node>
+</node>
+<node id="1219011"><node id="1219458"/>
+</node>
+<node id="1219134"/>
+<node id="1220435"/>
+</thread></node>

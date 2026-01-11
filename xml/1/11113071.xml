@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11113071" title="Re: &quot;print&quot; of nonexistent element is actually altering a hash (updated)" created="2020-02-17 14:37:27" updated="2020-02-17 14:37:27" _doctext_mode="lenient"><type id="11">note</type>
+<author id="634253">AnomalousMonk</author>
+<doctext field_name="doctext">&lt;p&gt;
+Note also that in deeply nested hashes, [doc://exists] will autovivify &lt;i&gt;intermediate&lt;/I&gt; levels of the hash in the process of testing the existence of a low level element &lt;small&gt;(&lt;b&gt;update:&lt;/B&gt; but see [id://11113095|this] for further clarification)&lt;/SMALL&gt;.
+&lt;c&gt;
+c:\@Work\Perl\monks&gt;perl -wMstrict -MData::Dump -le
+"my %hash;
+ print 'yes' if exists $hash{'www'}{'xxx'}{'yyy'}{'zzz'};
+ dd \%hash;
+"
+{ www =&gt; { xxx =&gt; { yyy =&gt; {} } } }
+&lt;/C&gt;
+This effect is also avoided with &lt;c&gt; no autovivification; &lt;/C&gt; enabled.
+&lt;c&gt;
+c:\@Work\Perl\monks&gt;perl -wMstrict -MData::Dump -le
+"no autovivification;
+ ;;
+ my %hash;
+ print 'yes' if exists $hash{'www'}{'xxx'}{'yyy'}{'zzz'};
+ dd \%hash;
+"
+{}
+&lt;/C&gt;
+&lt;/P&gt;
+
+&lt;p&gt;
+&lt;b&gt;Update 1:&lt;/B&gt; See also the recent discussion threads [id://11112778] and [id://11110437] - both by the same monk!
+&lt;/P&gt;
+
+&lt;p&gt;
+&lt;b&gt;Update 2:&lt;/B&gt; To illustrate the behavior noted by [haukex] [id://11113095|here], consider:
+&lt;c&gt;
+c:\@Work\Perl\monks&gt;perl -wMstrict -MData::Dump -le
+"my %h;
+ ;;
+ $h{'www'}{'xxx'}{'yyy'}{'zzz'};
+ dd 'access in void context', \%h;
+ %h = ();
+ dd 'assigning empty list really does clear hash', \%h;
+ ;;
+ my $x = $h{'www'}{'xxx'}{'yyy'}{'zzz'};
+ dd 'access in assignment (rvalue) context', \%h;
+ %h = ();
+ ;;
+ 1 if $h{'www'}{'xxx'}{'yyy'}{'zzz'};
+ dd 'access in boolean context', \%h;
+ %h = ();
+ ;;
+ 1 for $h{'www'}{'xxx'}{'yyy'}{'zzz'};
+ dd 'access in aliased (lvalue) context', \%h;
+"
+Useless use of hash element in void context at -e line 1.
+("access in void context", { www =&gt; { xxx =&gt; { yyy =&gt; {} } } })
+
+("assigning empty list really does clear hash", {})
+
+(
+  "access in assignment (rvalue) context",
+  { www =&gt; { xxx =&gt; { yyy =&gt; {} } } },
+)
+
+(
+  "access in boolean context",
+  { www =&gt; { xxx =&gt; { yyy =&gt; {} } } },
+)
+
+(
+  "access in aliased (lvalue) context",
+  { www =&gt; { xxx =&gt; { yyy =&gt; { zzz =&gt; undef } } } },
+)
+&lt;/C&gt;
+In every case except the &lt;c&gt;for&lt;/C&gt;-loop (i.e., rvalue accesses), intermediate elements are created but not the lowest-level &lt;c&gt;'zzz'&lt;/C&gt; element. In the &lt;c&gt;for&lt;/C&gt;-loop case in which aliasing creates an lvalue access context, the &lt;c&gt;'zzz'&lt;/C&gt; element &lt;i&gt;is&lt;/I&gt; created.
+&lt;/P&gt;
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-634253"&gt;
+&lt;hr&gt;&lt;p&gt;Give a man a fish&lt;b&gt;:&lt;/B&gt; &lt;c&gt; &lt;%-{-{-{-&lt;&lt;/C&gt;&lt;/P&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11113064</root_node>
+<parent_node field_name="parent_node">11113064</parent_node>
+<thread id="11113064">
+<node id="11113065"/>
+<node id="11113066"/>
+<node id="11113067"/>
+<node id="11113070"><node id="11113080"/>
+<node id="11113084"><node id="11113115"/>
+</node>
+<node id="11113090"/>
+</node>
+<node id="11113071"><node id="11113095"/>
+</node>
+</thread></node>

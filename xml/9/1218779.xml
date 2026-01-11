@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1218779" title="Abuse of &quot;or next&quot; in expressions and &quot;next&quot; that returns value" created="2018-07-18 15:28:19" updated="2018-07-18 15:28:19" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1020196">vr</author>
+<doctext field_name="doctext">&lt;p&gt;Today I wrote a script, in which I preferred some logic expressed as 2nd fragment rather than the 1st:&lt;/p&gt;
+&lt;c&gt;
+for ( $x .. $y ) {          # some loop
+
+# ... skipped ...
+
+# fragment #1:
+
+    next unless exists $gs_val-&gt; { HT };
+
+    my $ht = $doc-&gt; getValue( $gs_val-&gt; { HT });
+    next unless exists $ht-&gt; { Default };
+
+    my $df = $doc-&gt; getValue( $ht-&gt; { Default });
+    next unless exists $df-&gt; { TransferFunction };
+
+    my $tf = $doc-&gt; getValue( $df-&gt; { TransferFunction });
+    next unless $tf eq 'Default;
+    
+# ... skipped ...
+
+# fragment #2:
+
+    next unless $doc-&gt; getValue( 
+                $doc-&gt; getValue( 
+                $doc-&gt; getValue( 
+        $gs_val-&gt; { HT }               || next )
+               -&gt; { Default }          || next )
+               -&gt; { TransferFunction } || next ) eq 'Default';
+
+# ... skipped ...
+}
+
+&lt;/c&gt;
+&lt;p&gt;As you see, I tried to improve the #1 with a few blank lines, but, to me, the #2 is more readable -- now, and I hope it will remain so in a year, when I have to try hard to remember what it all was about. Perhaps not everyone will agree.&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;p&gt;However, while experimenting and testing to see if such constructs are OK, I was surprised to find that Perl prefers even more unexpected form:&lt;/p&gt;
+&lt;c&gt;
+&gt;perl -we "for(\0,0){print${$_||next}}"
+0
+&gt;perl -MO=Deparse -we "for(\0,0){print${$_||next}}"
+BEGIN { $^W = 1; }
+foreach $_ (\0, 0) {
+    print ${next unless $_;};
+}
+-e syntax OK
+
+&gt;perl -we "for(\0,0){print${next unless $_}}"
+0
+&gt;
+
+&lt;/c&gt;
+&lt;p&gt;Looks like if "or next" is part of block that is supposed to return value, then Perl replaces it with "next unless" syntax. What's totally unexpected is that this "next unless" thing is actually valid and does return value.&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;p&gt;I can only guess that everything works the other way, in reality: "next unless" is optimized to "or next", therefore it returns value, and that for some strange reason &lt;c&gt;B::Deparse&lt;/c&gt; shows "||next" as "next unless". That is only way this can be sane... Or is it not so? :)&lt;/p&gt;
+</doctext>
+<thread id="1218779">
+<node id="1218784"><node id="1218798"/>
+</node>
+<node id="1218787"><node id="1218810"/>
+</node>
+<node id="1218788"/>
+<node id="1218789"/>
+<node id="1218844"/>
+</thread></node>

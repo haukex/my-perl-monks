@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11114315" title="Mojolicious waiting page" created="2020-03-15 18:06:37" updated="2020-03-15 18:06:37" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1208110">bartrad</author>
+<doctext field_name="doctext">&lt;p&gt;
+Hi, 
+I've got a Mojo app that runs some code in the background, taking roughly 60 seconds to complete. It's a simple app that has a "get" endpoint for "/" to display a form with a submit button that does a "post" to "/" where the sub routine does the stuff taking the 60 seconds before rendering a results template.
+&lt;/p&gt;
+&lt;p&gt;
+Is there a way to show a user a loading animation for those 60 seconds (without hardcoding the duration) while the data is collected before then presenting the results screen? I've seen loaders in JS or CSS but I'm not quite sure how to invoke them, since if I include them in the result template, Mojo will do the data collection before rendering the HTML in the results template. Could someone help explain how to make it so after hitting the form submit button, a loading animation is instantly rendered, and then when the data collection is done, the results template is rendered and the user forwarded?
+
+Thanks in advance!
+&lt;/p&gt;
+
+&lt;code&gt;
+get '/' =&gt; sub {
+  my $c = shift;
+  $c-&gt;render( template =&gt; 'index' );
+};
+
+post '/' =&gt; sub {
+  my $c = shift;
+  my ($opt) = $c-&gt;param('option');
+  app-&gt;log-&gt;info("Option $opt");
+  my $result = do_something($opt);
+  $c-&gt;render( template =&gt; 'result', c =&gt; $result );
+};
+
+&lt;/code&gt;
+&lt;code&gt;
+@@ index.html.ep
+
+%layout 'default';
+&lt;form method="post" action="." enctype="multipart/form-data"&gt;
+&lt;input name="option" size="40" type="text"&gt;&lt;/input&gt;&lt;br&gt;
+&lt;br&gt;&lt;input type="submit" name="submit" value="submit"&gt;&lt;br&gt;
+&lt;/form&gt;
+&lt;/code&gt;
+&lt;code&gt;
+@@ result.html.ep
+%layout 'default';
+&lt;div id="loader"&gt;&lt;/div&gt;
+&lt;div id="content"&gt;
+&lt;h2&gt;Result&lt;/h2&gt;
+&lt;pre&gt;
+&lt;%= $c %&gt;
+&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/code&gt;
+</doctext>
+<thread id="11114315">
+<node id="11114319"><node id="11114324"/>
+</node>
+<node id="11114330"/>
+<node id="11114417"/>
+</thread></node>

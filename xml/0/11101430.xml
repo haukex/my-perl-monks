@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101430" title="Re^3: Makefile.PL does not always install changed file" created="2019-06-16 05:48:40" updated="2019-06-16 05:48:40" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Thank you for updating your post, but unfortunately, I don't think it's representative, since it doesn't seem to reproduce the issue: it doesn't run because &lt;c&gt;WriteMakeFile&lt;/c&gt; should be &lt;c&gt;WriteMakefile&lt;/c&gt;, and at least on my version of [man://make], the &lt;c&gt;all: myconfig&lt;/c&gt; line causes problems. Anyway, the following jumps out at me:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+return &lt;&lt;END;
+\tperl -e 'open(IN, "&lt;" , "$tmpl"); open(OUT, "&gt;", "$config"); while(&lt;IN&gt;) { print OUT $_; } close(IN); close(OUT);'
+END
+&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Because the &lt;c&gt;$_&lt;/c&gt; will be interpolated, i.e. the generated &lt;c&gt;Makefile&lt;/c&gt; will look like "&lt;c&gt;while(&lt;IN&gt;) { print OUT ; }&lt;/c&gt;" (or worse, if &lt;c&gt;$_&lt;/c&gt; happens to contain a value, that'll become part of the &lt;c&gt;Makefile&lt;/c&gt;). To get what you intended in the &lt;c&gt;Makefile&lt;/c&gt;, you need to write &lt;c&gt;print OUT \$\$_;&lt;/c&gt; - the &lt;c&gt;\$&lt;/c&gt; to escape the backslashes for Perl, and the &lt;c&gt;$$&lt;/c&gt; to escape the &lt;c&gt;$&lt;/c&gt; for [man://make].&lt;/p&gt;
+&lt;p&gt;However, this is still brittle in several ways. Simply interpolating &lt;c&gt;"$tmpl"&lt;/c&gt; and &lt;c&gt;"$config"&lt;/c&gt; will fail if those variables contain any characters special to Perl or &lt;c&gt;make&lt;/c&gt;, and you're not checking the &lt;c&gt;open&lt;/c&gt; for errors. Plus, the command I quoted above is really just a [man://cp]. The first of those issues could theoretically be solved by using a module such as [mod://Data::Dump] to write the &lt;c&gt;$tmpl&lt;/c&gt; and &lt;c&gt;$config&lt;/c&gt; variables to a Perl file, but I agree with [stevieb] that this might be better handled using a configuration file in a different format.&lt;/p&gt;
+&lt;p&gt;Getting back to the problem you describe in the root node, since this doesn't seem to be a representative example, I can only guess: perhaps the &lt;c&gt;myconfig&lt;/c&gt; target isn't getting called every time?&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11101296</root_node>
+<parent_node field_name="parent_node">11101303</parent_node>
+<thread id="11101296">
+<node id="11101298"><node id="11101303"><node id="11101430"/>
+</node>
+</node>
+<node id="11101301"/>
+<node id="11101307"><node id="11101322"/>
+</node>
+<node id="11101324"/>
+</thread></node>

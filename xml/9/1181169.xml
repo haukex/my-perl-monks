@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1181169" title="Re: Regex error in the second last string" created="2017-02-06 04:39:29" updated="2017-02-06 04:39:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [t-rex],&lt;/p&gt;
+&lt;p&gt;I can't reproduce the issue with the code you showed. I tested with both the original code you posted (with dummy values inserted for the missing variables) and the following boiled down version.&lt;/p&gt;
+&lt;c&gt;
+my $inp = &lt;&lt;'END';
+&lt;%= my $capi = 'foo'; $capi; %&gt;
+&lt;%= my $marega = 'bar'; $marega; %&gt;
+END
+while($inp =~ /&lt;%=(.*?)%&gt;/s) {
+	print "Dollar 1 before eval = $1\n";
+	$inp =~ s/&lt;%=(.*?)%&gt;/eval $1/es;
+	print "INP after substitution = $inp\n";
+}
+
+__END__
+
+Dollar 1 before eval =  my $capi = 'foo'; $capi; 
+INP after substitution = foo
+&lt;%= my $marega = 'bar'; $marega; %&gt;
+
+Dollar 1 before eval =  my $marega = 'bar'; $marega; 
+INP after substitution = foo
+bar
+&lt;/c&gt;
+&lt;p&gt;Please try to boil down your problematic code into a [id://1177642] that reproduces the problem.&lt;/p&gt;
+&lt;p&gt;Perhaps &lt;c&gt;if (@{$ctxt{'capi_devices'}})&lt;/c&gt; is false, and that's why the &lt;c&gt;$capi&lt;/c&gt; output is not showing up? (Although based on your sample output that wouldn't fully explain why that code block is skipped - your sample output &lt;i&gt;appears&lt;/i&gt; to show only one iteration of the loop.)&lt;/p&gt;
+&lt;p&gt;You could try to insert debugging [doc://warn] statements at strategic places to see what does and doesn't get executed. See also the [id://745674].&lt;/p&gt;
+&lt;p&gt;Regards,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1181168</root_node>
+<parent_node field_name="parent_node">1181168</parent_node>
+<thread id="1181168">
+<node id="1181169"/>
+<node id="1181207"/>
+</thread></node>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1164108" title="Re: Regex substitute matches second match first?" created="2016-05-25 13:18:08" updated="2016-05-25 13:18:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Nick,&lt;/p&gt;
+&lt;p&gt;I believe what's going on is this, from [doc://perlre]:&lt;/p&gt;
+&lt;blockquote&gt;By default, a quantified subpattern is "greedy", that is, it will match as many times as possible (given a particular starting location) while still allowing the rest of the pattern to match. If you want it to match the minimum number of times possible, follow the quantifier with a &lt;c&gt;?&lt;/c&gt;.&lt;/blockquote&gt;
+&lt;p&gt;This works for me: &lt;c&gt;$line =~ s/.*?\]: //;&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;And although not necessary in this case, I personally prefer to be a little more explicit and I'd anchor the match: &lt;c&gt;$line =~ s/^.*?\]: //;&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;But I'm wondering, if you're just trying to match the IP address enclosed in those brackets, why not do something like what [stevieb] [id://1164107|suggested] - or, taking it even further (depending on personal taste this may be a bit overkill):&lt;/p&gt;
+&lt;c&gt;
+use Regexp::Common qw/net/;
+if ($line =~ /Relay access denied/) {
+	my @ips = $line=~/$RE{net}{IPv4}/g;
+	print "$_\n" for @ips;
+}
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1164105</root_node>
+<parent_node field_name="parent_node">1164105</parent_node>
+<thread id="1164105">
+<node id="1164107"><node id="1164109"><node id="1164111"><node id="1164113"/>
+</node>
+</node>
+<node id="1164115"/>
+<node id="1164127"/>
+</node>
+<node id="1164108"><node id="1164112"/>
+</node>
+<node id="1164116"/>
+<node id="1164135"><node id="1164136"/>
+</node>
+</thread></node>

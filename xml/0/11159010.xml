@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11159010" title="using TIEHASH as wrapper/proxy, while avoiding recursion and warnings" created="2024-04-21 13:52:12" updated="2024-04-21 13:52:12" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">Let's say I want to use [METAMOD://Tie::Hash] to have a temporary wrapper around an existent hash until I untie. &lt;P&gt;
+
+In the following example I'm simply returning any value enclosed in &lt;C&gt;&lt; &gt;&lt;/C&gt; .&lt;P&gt;
+
+I'm facing some "complications", which make me doubt I'm doing the right thing.
+&lt;UL&gt;
+&lt;LI&gt; to access the original data I have to pass the hash-ref again to the constructor, 
+there doesn't seem to be any reverse [DOC://tied|&lt;tt&gt;tied&lt;/tt&gt;] command helping here, so I need to explicitly store it in the object. °
+&lt;LI&gt; When internally accessing the data of the original hash, I have to explicitly untie and retie the hash again, otherwise I'm causing an infinite recursion (yikes)
+&lt;LI&gt; I'm getting an &lt;C&gt;untie attempted while 1 inner references still exist&lt;/C&gt; unless I undef the object prior, 
+I'm not sure what this warning is supposed to mean. &lt;strike&gt;And it only cares about other refs in the same scope.&lt;/strike&gt; SEE UPDATE ²
+&lt;/UL&gt;
+I'm sure I could kind of avoid all this by copying all data of the original hash when constructing the tie 
+inside TIEHASH, but this seems like a waste of resources.&lt;P&gt;
+
+Any more elegant approach???&lt;P&gt;
+
+&lt;c&gt;
+use v5.12;
+use warnings;
+
+
+package main;
+
+my %hash;
+@hash{"a".."c"} = 40 ..42;              # init
+
+tie                                     # bind wrapper
+  %hash,
+  'Data::Proxy::TieHash',
+  \%hash;                               # redundant, why?
+
+say $hash{a};
+
+say @hash{"a".."c"};
+
+delete $hash{b};
+
+say @hash{"a".."c"};
+
+untie %hash;                            # unbind wrapper
+
+say @hash{"a".."c"};
+
+
+BEGIN {
+    package Data::Proxy::TieHash;
+    require Tie::Hash;
+    use Scalar::Util qw/blessed/;
+
+    use Carp;
+    our @ISA = qw(Tie::ExtraHash);
+
+    # All methods provided by default, define 
+    # only those needing overrides
+    # Accessors access the storage in %{$_[0][0]};
+    # TIEHASH should return an array reference with the first element
+    # being the reference to the actual storage
+
+    sub _report {
+        #  uncomment to trace
+        #carp "Doing \U$_[0]\E of $_[1] at $_[2].\n"
+    };
+
+    sub DELETE {
+        my ($obj, $key) = @_;
+        my ($meta, $orig) =@$obj;
+        _report('DELETE', $orig, $key);
+
+        my $class = blessed $obj;
+        undef $obj;
+        untie %{$orig};
+        my $ret = delete $orig-&gt;{$key};
+        tie %{$orig}, $class, $orig;
+        return $ret;
+    }
+
+    sub FETCH {
+        goto &amp;FETCH1;                   # use implementation
+    }
+
+    sub FETCH0 {
+        _report('FETCH', $_[0][1], $_[1]); 
+
+        untie %{$_[0][1]};
+        my $ret = $_[0][1]-&gt;{$_[1]};
+        tie %{$_[0][1]}, 'Data::Proxy::TieHash', $_[0][1];
+        return "&lt;$ret&gt;" if defined $ret;
+        return undef;
+    }
+
+
+    sub FETCH1 {
+        my ($obj, $key) = @_;
+        my ($meta, $orig) =@$obj;
+
+        _report('FETCH', $orig, $key);
+
+        my $class = blessed $obj;
+        undef $obj;                     # avoid warning
+        untie %{$orig};
+        my $ret = $orig-&gt;{$key};
+        tie %{$orig}, $class, $orig;
+        return "&lt;$ret&gt;" if defined $ret;
+        return undef;
+    }
+
+}
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;
+
+&lt;c&gt;
+&lt;40&gt;
+&lt;40&gt;&lt;41&gt;&lt;42&gt;
+Use of uninitialized value in say at proxy_tiehash.pl line 21.
+&lt;40&gt;&lt;42&gt;
+Use of uninitialized value in say at proxy_tiehash.pl line 25.
+4042
+&lt;/c&gt;
+
+&lt;/i&gt;&lt;/blockquote&gt;&lt;P&gt;
+
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;!--nowiki--&gt;&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; see &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+
+&lt;/sub&gt; 
+&lt;!--nowiki--&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;P&gt;
+
+&lt;H5&gt; UPDATES&lt;/H5&gt;&lt;P&gt;
+
+°) this smells like internally causing a recursive data structure&lt;P&gt;
+
+²) OK I got it [HTTPs://perldoc.perl.org/perltie#The-untie-Gotcha,] untie is normally supposed to trigger DESTROY, but inf there are still other refs to the &lt;U&gt;underlying&lt;/U&gt; $object
+DESTROY can't be triggered. In my case it's actually better not to trigger DESTROY and better to silence the warning altogether.&lt;!-- Wiki2Monks {"version":1.161} --&gt;</doctext>
+<thread id="11159010">
+<node id="11159011"><node id="11159012"/>
+</node>
+<node id="11159024"><node id="11159026"><node id="11159037"/>
+</node>
+</node>
+</thread></node>

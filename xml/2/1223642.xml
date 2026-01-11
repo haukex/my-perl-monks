@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1223642" title="Using a git filter to Cache HTML Resources Locally" created="2018-10-07 14:50:20" updated="2018-10-07 14:50:20" _doctext_mode="strict"><type id="1042">CUFP</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;
+So I've been doing quite a bit of web development recently, and several of my HTML files use resources from CDNs, like jQuery or &lt;c&gt;normalize.css&lt;/c&gt;.
+While I'm developing, I refresh pages quite often, and also usually use my browser's development tools to disable caching.
+This means that I hit the CDNs quite often, and aside from the speed and bandwidth usage, one of the CDNs actually started rate limiting me... oops.
+In other projects, I'd usually just pull those resources onto my local server, keep them there, and be done with it.
+But the stuff I'm currently working on is for distribution, so I'd like to keep the CDN URLs in the HTML, and not have to rewrite them by hand.
+&lt;/p&gt;
+&lt;p&gt;
+Enter &lt;c&gt;git&lt;/c&gt; filters: Documented in the [https://git-scm.com/book/en/v2/Customizing-Git-Git-Attributes|Git Book Chapter 8.2] and in
+[https://git-scm.com/docs/gitattributes#_code_filter_code|gitattributes], they provide a way to pipe source code files through an external program
+on checkout, as well as on diff, checkin, and so on. This allows you to have one version of a file checked into the repository, but to
+use a filter to make changes to the files that actually end up in the working copy on your machine. These changes are also reversed by the filter
+and &lt;i&gt;not&lt;/i&gt; checked back into the repository on checkin, and don't show up in any commands like &lt;c&gt;git diff&lt;/c&gt;, &lt;c&gt;git status&lt;/c&gt;, etc.
+&lt;/p&gt;
+&lt;p&gt;
+So in this case, the files I want to have in the repository will have lines that look something like this:
+&lt;/p&gt;
+&lt;c&gt;
+&lt;link rel="stylesheet" href="https://example.com/example.css" /&gt;
+&lt;script src="https://example.com/example.js"&gt;&lt;/script&gt;
+&lt;/c&gt;
+&lt;p&gt;
+but when I check these files out into my local working copy, they should get rewritten into something like this:
+&lt;/p&gt;
+&lt;c&gt;
+&lt;link rel="stylesheet" href="_cache/example.css" /&gt;
+&lt;script src="_cache/example.js"&gt;&lt;/script&gt;
+&lt;/c&gt;
+&lt;p&gt;Of course, Perl to the rescue!&lt;/p&gt;
+
+&lt;readmore&gt;
+&lt;p&gt;
+There are two git filters: "smudge", which is applied when the files are checked out,
+and "clean", which is applied when the files are staged / checked in, or the working copy is compared against the repository, etc.
+Each filter script takes its input on &lt;c&gt;STDIN&lt;/c&gt; and provides the filtered output on &lt;c&gt;STDOUT&lt;/c&gt;.
+The filters are set up by setting &lt;tt&gt;git config filter.&lt;i&gt;filtername&lt;/i&gt;.smudge&lt;/tt&gt; and
+&lt;tt&gt;git config filter.&lt;i&gt;filtername&lt;/i&gt;.clean&lt;/tt&gt; to the scripts to be executed. Since the filter script tends to
+be local to your system and there might be arguments specific to the repository, it's probably best
+to use &lt;c&gt;git config --local&lt;/c&gt; so these are stored on a per-repository basis in &lt;c&gt;.git/config&lt;/c&gt;.
+Then, you set up a &lt;c&gt;.gitattributes&lt;/c&gt; file which specifies a line "&lt;tt&gt;&lt;i&gt;pattern&lt;/i&gt;&amp;nbsp;&amp;nbsp;filter=&lt;i&gt;filtername&lt;/i&gt;&lt;/tt&gt;",
+e.g. "&lt;tt&gt;*.html&amp;nbsp;&amp;nbsp;filter=myfilter&lt;/tt&gt;".
+(There are also more advanced ways to implement and configure filters, which is described in the docs I linked to above.)
+&lt;/p&gt;
+&lt;p&gt;
+So now, I can implement my filter with a regular Perl &lt;c&gt;while (&lt;&gt;) { print; }&lt;/c&gt; loop, applying whatever transformations I like.
+My "smudge" filter is the one that does the heavy lifting, looking for HTML tags like the above that are prefixed with
+&lt;c&gt;&lt;!--cacheable--&gt;&lt;/c&gt;, fetches those URLs into the local cache directory if they haven't been fetched before, and
+rewrites the tags to point to the local resources. It also records the original URL in a comment so that all the "clean" filter
+has to do is put that original URL back into the tag. And there we go, problem solved!
+&lt;/p&gt;
+&lt;p&gt;
+You can find my [https://bitbucket.org/haukex/htools/src/master/htmlrescache|code on Bitbucket as "htmlrescache"].
+I've implemented the "clean" and "smudge" filters in one script, and also implemented an "init" command that sets up
+the git configuration I described above.
+&lt;/p&gt;
+
+&lt;p&gt;For one real-world example, see [https://github.com/haukex/webperl/blob/07f72bd8dd/web/regex_tester.html#L29|this HTML file],
+which contains the line:&lt;/p&gt;
+&lt;c&gt;
+&lt;!--cacheable--&gt;&lt;link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css" integrity="sha256-oSrCnRYXvHG31SBifqP2PM1uje7SJUyX0nTwO2RJV54=" crossorigin="anonymous" /&gt;
+&lt;/c&gt;
+&lt;p&gt;However, checked out on my local machine, that line shows up as:&lt;/p&gt;
+&lt;c&gt;
+&lt;!-- CACHED FROM "https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css" --&gt;&lt;link rel="stylesheet" href="_cache/normalize.min.css" integrity="sha256-oSrCnRYXvHG31SBifqP2PM1uje7SJUyX0nTwO2RJV54=" crossorigin="anonymous" /&gt;
+&lt;/c&gt;
+&lt;p&gt;And yet:&lt;/p&gt;
+&lt;c&gt;
+$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+nothing to commit, working tree clean
+&lt;/c&gt;
+
+&lt;p&gt;
+(I also have an older git filter lying around somewhere that implements a couple of
+[http://svnbook.red-bean.com/en/1.7/svn.advanced.props.special.keywords.html#svn.advanced.props.special.keywords|SVN keywords]
+like &lt;c&gt;$Id$&lt;/c&gt; or &lt;c&gt;$Date$&lt;/c&gt; for git, but that's not really ready for publication at the moment.
+If someone is interested I could maybe find some time to prepare it.)
+&lt;/p&gt;</doctext>
+<thread id="1223642">
+<node id="1223855"><node id="1223857"><node id="1223860"/>
+</node>
+<node id="1223861"><node id="1223902"><node id="1223903"><node id="1223905"/>
+<node id="1223986"><node id="1223988"/>
+</node>
+</node>
+<node id="1223906"><node id="1223987"><node id="1223990"><node id="1224003"><node id="1224005"><node id="1224020"/>
+</node>
+</node>
+<node id="1224031"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

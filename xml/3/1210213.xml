@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1210213" title="Re^3: Did the JSON module change?" created="2018-03-01 20:35:09" updated="2018-03-01 20:35:09" _doctext_mode="lenient"><type id="11">note</type>
+<author id="524150">syphilis</author>
+<doctext field_name="doctext">&lt;I&gt;It's as if in the past, perl created a temporary variable, a copy of $var that was treated as a number, and used that in the math without messing with $var, and now that's not the case?&lt;/I&gt;&lt;br&gt;&lt;br&gt;
+All that's changing are the variable's flags, and also the contents of its IV (integer) and NV (float) slots . You can see those internals using the Devel::Peek module - eg:
+&lt;c&gt;
+use Devel::Peek;
+
+$var = "3";
+Dump $var;
+print "^^^^^^^^^^\n";
+
+$x = $var + 0;
+Dump $var;
+print "^^^^^^^^^^\n";
+
+$var += 0;
+Dump $var;
+print "^^^^^^^^^^\n";
+&lt;/c&gt;
+For me, that outputs:
+&lt;c&gt;
+SV = PV(0x4fae04) at 0x612d94
+  REFCNT = 1
+  FLAGS = (POK,pPOK)
+  PV = 0x5ffdcc "3"\0
+  CUR = 1
+  LEN = 12
+^^^^^^^^^^
+SV = PVIV(0x610f84) at 0x612d94
+  REFCNT = 1
+  FLAGS = (IOK,POK,pIOK,pPOK)
+  IV = 3
+  PV = 0x5ffdcc "3"\0
+  CUR = 1
+  LEN = 12
+^^^^^^^^^^
+SV = PVIV(0x610f84) at 0x612d94
+  REFCNT = 1
+  FLAGS = (IOK,pIOK)
+  IV = 3
+  PV = 0x5ffdcc "3"\0
+  CUR = 1
+  LEN = 12
+^^^^^^^^^^
+&lt;/c&gt;
+and you can see that the FLAGS have changed from each step to the next.
+&lt;br&gt;Those changes can have a bearing on the values that are printed out.
+&lt;br&gt;&lt;br&gt;Additionally, the flags that are currently set, and the ways in which they change have differed  over the years - so if JSON is looking at the flags then it is possible that
+behaviour may change from one version of perl to another.
+&lt;br&gt;And if JSON has actually changed the way it treats values based on the flags then that could also change behaviour.
+&lt;br&gt;&lt;br&gt;For example, wrt $var in the middle of the script where the flags are (IOK,POK,pIOK,pPOK), it may well have once been the case that the value would be displayed surrounded by quotes if the POK and pPOK flags were set, else no quotes. (This would make sense).
+&lt;br&gt;Subsequently, the condition could have changed to not surrounding the value with quotes if the IOK and pIOK flags were set, else surround with double quotes. (This would also make sense.)
+&lt;br&gt;Two different treatments - both sane.
+&lt;br&gt;&lt;br&gt;The changes to the flags are all part of perl's commitment to "least surprise". It generally works quite well, but there's no way of guaranteeing what programmers will do with the flags.
+&lt;br&gt;&lt;br&gt;Cheers,&lt;br&gt;Rob
+</doctext>
+<root_node field_name="root_node">1210167</root_node>
+<parent_node field_name="parent_node">1210208</parent_node>
+<thread id="1210167">
+<node id="1210172"><node id="1210208"><node id="1210213"/>
+</node>
+</node>
+<node id="1210175"><node id="1210206"/>
+</node>
+<node id="1210179"/>
+<node id="1210209"><node id="1210224"><node id="1210259"/>
+</node>
+</node>
+<node id="1210239"><node id="1210260"/>
+</node>
+</thread></node>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11123972" title="Re: Script fails to insert text and appends it towards the end of file." created="2020-11-21 08:26:15" updated="2020-11-21 08:26:15" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;However, my script is simply appending the text to the output file (after counting 11 lines from the end).&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I initially couldn't reproduce this, &lt;i&gt;but&lt;/i&gt; managed when running the script on Windows &lt;i&gt;and&lt;/i&gt; the files having LF (not CRLF) line endings. Using &lt;c&gt;tie @records, 'Tie::File', "output.fem", recsep=&gt;"\n";&lt;/c&gt; makes it work again. (See also the module's [https://metacpan.org/release/Tie-File/source/lib/Tie/File.pm#L1261|&lt;c&gt;_default_recsep&lt;/c&gt;].)&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;However,&lt;/i&gt; I would not implement this script this way, since it requires you to know the correct place to insert the lines beforehand, and it requires there to be enough space for the lines to be inserted, otherwise data will be overwritten. The following uses a [id://11103827|state machine pattern], and has the advantages that it does a bit of verification on the input file (it checks that there's only one section of &lt;c&gt;NODE&lt;/c&gt; lines) and that it doesn't care how many lines both the input files have. Also, it won't have the above issue, because normal [doc://open]s on Windows will normally do the right thing with line endings. Plus [mod://Tie::File] [id://1204204|adds significant overhead] to the program.&lt;/p&gt;
+&lt;p&gt;(&lt;i&gt;Update:&lt;/i&gt; Shameless plug: If you want to overwrite the input file, then see my module [mod://File::Replace] for an easier/safer way to do so.)&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $DATAFILE = 'data.txt';
+my $INSERTFILE = 'insert.txt';
+my $OUTFILE = 'output.txt';
+
+open my $ofh, '&gt;', $OUTFILE or die "$OUTFILE: $!";
+select($ofh); # "print"s will go to this handle now
+
+open my $dfh, '&lt;', $DATAFILE or die "$DATAFILE: $!";
+my $state = 'before nodes';
+while ( my $line = &lt;$dfh&gt; ) {
+	if ( $line =~ /^\s*NODE\b/ ) {
+		if ( $state eq 'before nodes' )
+			{ $state = 'in nodes'; }
+		elsif ( $state eq 'in nodes' ) { }
+		elsif ( $state eq 'after nodes' )
+			{ die "expected only one section of NODEs" }
+		else { die $state }
+	}
+	else {
+		if ( $state eq 'before nodes' ) { }
+		elsif ( $state eq 'in nodes' ) {
+			do_node_insert($INSERTFILE);
+			$state = 'after nodes';
+		}
+		elsif ( $state eq 'after nodes' ) { }
+		else { die $state }
+	}
+	print $line;
+}
+close $dfh;
+
+sub do_node_insert {
+	my $file = shift;
+	open my $ifh, '&lt;', $file or die "$file: $!";
+	while ( my $line = &lt;$ifh&gt; ) {
+		next unless $line =~ /^\s*NODE\b/;
+		print $line;
+	}
+	close $ifh;
+}
+&lt;/c&gt;
+&lt;readmore title="input and output files"&gt;
+&lt;p&gt;&lt;b&gt;&lt;c&gt;data.txt&lt;/c&gt;&lt;/b&gt;:&lt;/p&gt;
+&lt;c&gt;
+'Node ID            X              Y              Z    BC	
+ NODE			   1        4.51000        0.00000       79.00000
+ NODE 			   2        0.00000        0.00000       79.00000
+ NODE			   3        0.00000        0.00000       78.27000
+ NODE			   4       -1.88000        0.00000       78.27000
+'Elem ID     np1      np2   material   geom    lcoor    ecc1    
+ BEAM			  1        2        1        2       36       2
+ BEAM			  2        3        2        2       36       1
+ PIPE            19       4.489       0.022
+ PIPE            20       4.488       0.021
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;&lt;c&gt;insert.txt&lt;/c&gt;&lt;/b&gt;:&lt;/p&gt;
+&lt;c&gt;
+ NODE			  32        0.00000        0.00000       -1.90000
+ NODE			  33        0.00000        0.00000       -5.50000
+ BEAM			  26        27       26        1       14       1
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;&lt;c&gt;output.txt&lt;/c&gt;&lt;/b&gt;:&lt;/p&gt;
+&lt;c&gt;
+'Node ID            X              Y              Z    BC	
+ NODE			   1        4.51000        0.00000       79.00000
+ NODE 			   2        0.00000        0.00000       79.00000
+ NODE			   3        0.00000        0.00000       78.27000
+ NODE			   4       -1.88000        0.00000       78.27000
+ NODE			  32        0.00000        0.00000       -1.90000
+ NODE			  33        0.00000        0.00000       -5.50000
+'Elem ID     np1      np2   material   geom    lcoor    ecc1    
+ BEAM			  1        2        1        2       36       2
+ BEAM			  2        3        2        2       36       1
+ PIPE            19       4.489       0.022
+ PIPE            20       4.488       0.021
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">11123966</root_node>
+<parent_node field_name="parent_node">11123966</parent_node>
+<thread id="11123966">
+<node id="11123970"><node id="11123977"/>
+</node>
+<node id="11123972"><node id="11123976"/>
+</node>
+<node id="11124010"><node id="11124023"><node id="11124030"><node id="11124037"/>
+</node>
+</node>
+</node>
+<node id="11124032"/>
+</thread></node>

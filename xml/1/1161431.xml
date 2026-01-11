@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1161431" title="Re: How can I test for the representation of an integer?" created="2016-04-25 06:07:26" updated="2016-04-25 06:07:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [sm@sh],&lt;/p&gt;
+&lt;p&gt;I don't know much about the internals, but from what I do know I'd guess it might be looking at the POK/IOK flags:&lt;/p&gt;
+&lt;c&gt;
+$ perl -MDevel::Peek -e 'Dump(1); Dump("1")';
+SV = IV(0x21490e8) at 0x21490f8
+  REFCNT = 1
+  FLAGS = (IOK,READONLY,PROTECT,pIOK)
+  IV = 1
+SV = PV(0x2129fa0) at 0x2149168
+  REFCNT = 1
+  FLAGS = (POK,IsCOW,READONLY,PROTECT,pPOK)
+  PV = 0x218fef0 "1"\0
+  CUR = 1
+  LEN = 10
+  COW_REFCNT = 0
+$ perl -MDevel::Peek -e '$a=42; $a="Hello"; Dump($a)';
+SV = PVIV(0x83d2e0) at 0x8321f0
+  REFCNT = 1
+  FLAGS = (POK,IsCOW,pPOK)
+  IV = 42
+  PV = 0x834920 "Hello"\0
+  CUR = 5
+  LEN = 10
+  COW_REFCNT = 1
+&lt;/c&gt;
+&lt;p&gt;However, the much bigger question on my mind is &lt;i&gt;why&lt;/i&gt; you need to know this? Perl "casts" between strings and numbers transparently, except for the case where a string can't be converted to a number, which you can determine beforehand with [mod://Scalar::Util]'s &lt;c&gt;looks_like_number&lt;/c&gt;. Are you writing code that needs to peek behind the curtains more than that?&lt;/p&gt;
+&lt;p&gt;Regards,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1161427</root_node>
+<parent_node field_name="parent_node">1161427</parent_node>
+<thread id="1161427">
+<node id="1161430"/>
+<node id="1161431"><node id="1161433"><node id="1161434"><node id="1161436"><node id="1161441"/>
+<node id="1161442"/>
+<node id="1221528"/>
+</node>
+</node>
+<node id="1161435"><node id="1161437"><node id="1161439"/>
+</node>
+<node id="1161440"/>
+</node>
+</node>
+</node>
+<node id="1161438"><node id="1161455"><node id="1161502"/>
+</node>
+<node id="11124192"/>
+</node>
+<node id="1161445"><node id="1161458"/>
+</node>
+<node id="1161446"><node id="1161449"/>
+</node>
+<node id="1161447"/>
+</thread></node>

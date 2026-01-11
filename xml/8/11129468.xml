@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129468" title="Re: Persistent data structures -- why so complicated? (updated)" created="2021-03-11 13:53:32" updated="2021-03-11 13:53:32" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The thread "[id://1187512]" might be an interesting read, where the replies show how to store data structures using [doc://Storable], [mod://JSON], or [mod://Path::Class] (the latter only for simple arrays). As for editing a file "in-place", I showed several variations of that in [id://11120515|this node].&lt;/p&gt;
+&lt;p&gt;Note that, with modern databases supporting JSON*, and with modern Perl modules, databases are IMHO pretty nice to work with too. For example, given a Postgres table:&lt;/p&gt;
+&lt;c&gt;
+CREATE TABLE students (
+	name TEXT NOT NULL PRIMARY KEY,
+	hometown TEXT NOT NULL,
+	grade TEXT,
+	data JSONB NOT NULL DEFAULT '{}'::jsonb
+);
+&lt;/c&gt;
+&lt;p&gt;Here's some code using [mod://Mojo::Pg] showing &lt;c&gt;INSERT&lt;/c&gt;, &lt;c&gt;SELECT&lt;/c&gt;, and &lt;c&gt;UPDATE&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+use Mojo::Pg;
+
+my $pg = Mojo::Pg-&gt;new('postgres://localhost:54321/testing')
+	-&gt;password('BarFoo');
+
+$pg-&gt;db-&gt;insert('students', {
+	name =&gt; 'Bob Kowalski',
+	hometown =&gt; 'Vero Beach, FL',
+	data =&gt; { -json =&gt; {
+		hobbies =&gt; [ 'ham radio', 'Python programming', 'running' ],
+	} },
+});
+$pg-&gt;db-&gt;insert('students', {
+	name =&gt; 'Kranessa Evans',
+	hometown =&gt; 'Dallas, TX',
+	data =&gt; { -json =&gt; {
+		hobbies =&gt; [ 'Perl programming', 'writing', 'polo' ],
+	} },
+});
+
+my $res = $pg-&gt;db-&gt;select('students')-&gt;expand;
+while ( my $rec = $res-&gt;hash ) {
+	if ( grep {/perl/i} @{ $rec-&gt;{data}{hobbies} } ) {
+		$pg-&gt;db-&gt;update('students', { grade=&gt;'A' },
+			{ name=&gt;$rec-&gt;{name} } );
+	}
+}
+$res-&gt;finish;
+&lt;/c&gt;
+&lt;p&gt;For a database that doesn't even require a server, [mod://Mojo::SQLite] has &lt;del&gt;pretty much exactly the same&lt;/del&gt; &lt;ins&gt;a very similar&lt;/ins&gt; API as the above (&lt;small&gt;&lt;i&gt;Edit:&lt;/i&gt;&lt;/small&gt; though I haven't used JSON in SQLite yet).&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; I've modified the connection string in the above to be more useful than using the &lt;c&gt;postgres&lt;/c&gt; superuser - and normally one wouldn't hardcode the password of course, see e.g. [https://www.postgresql.org/docs/13/libpq-pgpass.html|&lt;c&gt;~/.pgpass&lt;/c&gt;]. The following is how I spun up the test database. I'm using port 54321 instead of the default 5432.&lt;/p&gt;
+&lt;c&gt;
+$ docker run --rm -p54321:5432 --name pgtestdb -e POSTGRES_PASSWORD=FooBar -d postgres:13
+# wait a few seconds for it to start
+$ echo "CREATE USER $USER PASSWORD 'BarFoo'; CREATE DATABASE testing; GRANT ALL PRIVILEGES ON DATABASE testing TO $USER;" | psql postgresql://postgres:FooBar@localhost:54321
+$ psql postgres://localhost:54321/testing
+# log in and create the above table
+# run the above Perl script
+$ PGPASSWORD=BarFoo psql postgres://localhost:54321/testing -c 'SELECT * FROM students'
+$ docker stop pgtestdb
+&lt;/c&gt;
+&lt;p&gt;* &lt;i&gt;Update 3:&lt;/i&gt; One more thought here: I'm definitely not advocating just dumping everything in an unstructured JSON blob - one should still try to follow the rules of good database design and normalization as much as possible. But &lt;i&gt;sometimes&lt;/i&gt; there are cases where nested data structures can be an advantage, in which case having support in the database for them can be very useful. &lt;small&gt;&lt;i&gt;Update 4:&lt;/i&gt;&lt;/small&gt; In that regard, [erix]'s [id://11129570|reply] below!&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11129456</root_node>
+<parent_node field_name="parent_node">11129456</parent_node>
+<thread id="11129456">
+<node id="11129458"/>
+<node id="11129459"><node id="11129460"><node id="11129550"/>
+</node>
+</node>
+<node id="11129463"/>
+<node id="11129466"><node id="11129473"><node id="11129490"/>
+</node>
+</node>
+<node id="11129468"><node id="11129486"><node id="11129489"><node id="11129568"><node id="11129573"/>
+</node>
+</node>
+</node>
+<node id="11129570"/>
+</node>
+<node id="11129495"/>
+</thread></node>

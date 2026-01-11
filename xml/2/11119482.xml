@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11119482" title="Re: Split does not behave like a subroutine" created="2020-07-18 04:26:44" updated="2020-07-18 04:26:44" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Sometimes there are contradictions. What applies to a list (list value), perhaps does not apply to a list (list value constructor)&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Can you show some examples?&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;In the documentation often list is used for both list value and list value constructor. This make it difficult to understand the documentation. ... The list concept and for all flattening should be described more clearly in the Perl documentation. ... The risk to lose a Positional argument should be explicit clarified&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I don't disagree that Perl's concept of lists can take some getting used to, and clarifying documentation is always useful. I should note though that, while Perl's documentation is often used as a reference, it's not always perfect, and I would suggest also looking into [https://www.oreilly.com/library/view/programming-perl-4th/9781449321451/|The Camel] and similar books (e.g. [https://www.oreilly.com/library/view/learning-perl-7th/9781491954317/|Learning Perl], [https://pragprog.com/titles/swperl/|Modern Perl]) to see if they help explain it better. In any case, documentation patches are usually a good thing; in my own experience, one might have to revise them a couple of times after feedback from P5P, but that should only help improve them.&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;Here I use: In a subroutine call the arguments are passed/bound to the parameters (formal argument) in the subroutine definition. The arguments for a call are evaluated, and the resulting values are passed to the corresponding parameters.
+I have always though, that the commas in a call to a subroutine, separate the argument list in sequence of values each corresponding to a parameter. call('P1', 'P2', 'P3').
+There can be Positional parameters in a subroutine definition.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;To me this seems to be the core of your question, and I have to say that what you write here is actually &lt;i&gt;not&lt;/i&gt; Perl's concept. You quoted it yourself:&lt;/p&gt;
+&lt;blockquote&gt;The Perl model for function call and return values is simple: all functions are passed as parameters one single flat list of scalars, and all functions likewise return to their caller one single flat list of scalars. Any arrays or hashes in these call and return lists will collapse, losing their identities ...&lt;/blockquote&gt;
+&lt;p&gt;You're saying that in &lt;c&gt;test( 'P1', nop1, 'P3' );&lt;/c&gt;, &lt;c&gt;nop1&lt;/c&gt; is a positional parameter, but the way Perl sees it is &lt;i&gt;after evaluation&lt;/i&gt;. You may also note that [doc://perlsub] makes no mention of "positional" (except in the section on the still-experimental signatures).&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;In conservative programming, there should be no subroutine calls in the argument list!?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It's something to be careful with, definitely; there have even been serious security [https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2014-1573|issues] related to this. There are workarounds though: Perl's [doc://scalar] can be used to force a single scalar value, and there are extensions like [mod://PerlX::Maybe] for pairs of arguments (which are like named parameters, though), and of course there's parameter validation using e.g. [mod://Type::Params]. &lt;small&gt;(I hesitate to mention it, because they should be used &lt;i&gt;very&lt;/i&gt; sparingly and only when one knows what one is doing, but [doc://perlsub#Prototypes] can also be used to force scalar context on arguments.)&lt;/small&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;Split look like a subroutine but does not behave like one.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Correct, there are a few Perl functions that are exceptions and parsed differently from the rest. As [LanX] [id://11119479|mentioned], they can generally be identified by [doc://prototype] returning &lt;c&gt;undef&lt;/c&gt;. The EXPR form of [doc://map] and [doc://grep] and similar (the BLOCK forms can be created using the &lt;c&gt;&amp;&lt;/c&gt; [doc://perlsub#Prototypes|prototype]). Note that [doc://split] does behave like there is an implicit &lt;c&gt;qr//&lt;/c&gt; on the pattern.&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;The meaning of the slashes in /PATTERN/ should be explained.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm not sure about this one, since it's just a regular expression like any other ([doc://perlop#Regexp-Quote-Like-Operators|perlop], [doc://perlretut], [doc://perlre]). (Okay, one exception that I can think of off the top of my head: the empty pattern &lt;c&gt;//&lt;/c&gt; is treated differently.)&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11119478</root_node>
+<parent_node field_name="parent_node">11119478</parent_node>
+<thread id="11119478">
+<node id="11119479"><node id="11119512"><node id="11119521"/>
+<node id="11119527"><node id="11119621"><node id="11119641"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11119482"><node id="11119495"><node id="11119503"><node id="11119504"/>
+</node>
+</node>
+<node id="11119656"><node id="11119672"/>
+<node id="11119675"/>
+</node>
+</node>
+<node id="11119489"/>
+</thread></node>

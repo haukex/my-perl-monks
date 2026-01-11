@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1175129" title="NMAP Parser very slow" created="2016-11-02 08:47:12" updated="2016-11-02 08:47:12" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1174130">Noosrep</author>
+<doctext field_name="doctext">I have generated an XML file with following command:
+&lt;code&gt;nmap -PE -oX - $range &gt; /home/users/axiroot/scripts/monitor-client/tmp/nmap.xml&lt;/code&gt;
+
+and parse it with following code:
+&lt;code&gt;
+my @IPsinrange = &amp;getAllIPs($range) ;
+my $np = new Nmap::Parser;
+$np-&gt;parsefile('/home/users/axiroot/scripts/monitor-client/tmp/nmap.xml'); #using filenames
+
+my $si = $np-&gt;get_session();
+#my @MACsinrange = &amp;getAllMACs($range,)
+foreach my $ip (@IPsinrange) {
+	$output .= "&lt;tr&gt;\n" ; 
+	$output .= "&lt;th&gt;$ip&lt;/th&gt;\n" ;	
+	for my $host_obj ($np-&gt;all_hosts()){
+		if ( $host_obj-&gt;ipv4_addr() eq $ip ){
+			my $state = "";
+			$state = $host_obj-&gt;status() ;
+			if ( $state eq "up" ) {
+				$output .= "&lt;td align='center'&gt;$state&lt;/td&gt;\n" ;			
+				my $hostname = $host_obj-&gt;hostname() ;
+				if ( $hostname eq 0 ) {
+					$hostname = "Hostname niet gekend" ;			
+				}
+				#print "hostname: $hostname \n" ; 
+				$output .= "&lt;td align='center'&gt;$hostname&lt;/td&gt;\n" ;
+				my $a  = nslookup(host =&gt; $ip, type =&gt; "PTR");
+				if ( $a eq ""){
+				$output .= "&lt;td align='center'&gt;Niet in DNS&lt;/td&gt;\n" ;				
+				} else {
+				$output .= "&lt;td align='center'&gt;$a&lt;/td&gt;\n" ;				
+				}
+				my $openPort = (join ',',$host_obj-&gt;tcp_ports('open'))."\n" ;
+				my @ports = split ',', $openPort;
+				$output .= "&lt;td align='left'&gt;";
+				foreach my $port (@ports) {
+					my $svc = $host_obj-&gt;tcp_service($port);
+					my $service = $svc-&gt;name() ;					
+					#$output .= "$port : $service &lt;/br&gt;" ;
+					$output .= "$port : $service &lt;/br&gt;" ;
+				}
+				$output .= "&lt;/td&gt;\n" ;				
+				my $mac = $host_obj-&gt;mac_addr() ;
+				$output .= "&lt;td align='center'&gt;$mac&lt;/td&gt;\n" ;				
+				my $type = $host_obj-&gt;mac_vendor() ;
+				$output .= "&lt;td align='center'&gt;$type&lt;/td&gt;\n" ;			
+			}			
+		}
+	}	
+	$output .= "&lt;tr&gt;\n" ;
+}
+&lt;/code&gt;
+
+When I delete the section of tcp ports, the script runs without any speed problems. However, as soon as I want to parse the tcp ports output, the script takes very long. For instance a range of 4 addresses takes up to 20 minutes for the script to complete. That's doable but with a /24, this is simply too long. Now I have read that this kind of nmap port scanning takes a long time but is there something wrong with my code that makes it very slow? 
+
+Perl newbie here so I think that could be the case :) </doctext>
+<thread id="1175129">
+<node id="1175133"/>
+<node id="1175134"><node id="1175150"/>
+<node id="1175166"/>
+</node>
+<node id="1175136"><node id="1175152"/>
+</node>
+</thread></node>

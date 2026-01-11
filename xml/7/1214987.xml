@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1214987" title="Re: XMLOut in XML::Simple returning unwanted xml format" created="2018-05-21 10:47:40" updated="2018-05-21 10:47:40" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;What do you think I should do?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I think you &lt;b&gt;shouldn't use [mod://XML::Simple]!&lt;/b&gt; There are lots of issues with that module, especially with writing XML. There are several much better modules for XML handling, such as [mod://XML::Rules] (which can often [id://1190869|replace] [mod://XML::Simple] for reading XML) or [mod://XML::Twig], but for writing XML, personally I like to use [mod://XML::LibXML] because it gives me the most control. (&lt;i&gt;Update:&lt;/i&gt; Note the following makes some assumptions about the input data format, such as that you don't have any arrayrefs, as well as the output format, because the sample data you've provided is pretty short, and you haven't explained what rules should be used for conversion. But I hope it's a starting point.)&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+
+my $hash = {
+	'root' =&gt; {
+		'item1' =&gt; {
+			'item1a' =&gt; 'n1', 'item1b'=&gt;'jh'
+		}
+	}
+};
+
+my $dom = XML::LibXML::Document-&gt;createDocument();
+
+# recursively convert hashes to elements
+my $frag = $dom-&gt;createDocumentFragment();
+my $hash2el; $hash2el = sub {
+	my ($n,$h) = @_;
+	for my $key (sort keys %$h) {
+		my $el = $dom-&gt;createElement($key);
+		if (ref $h-&gt;{$key} eq 'HASH')
+			{ $hash2el-&gt;($el, $h-&gt;{$key}) }
+		else { $el-&gt;appendText( ''.$h-&gt;{$key} ) }
+		$n-&gt;appendChild($el);
+	}
+};
+$hash2el-&gt;($frag, $hash);
+
+# either a single root node, or multiple nodes in a new root
+my @roots = $frag-&gt;nonBlankChildNodes();
+if (@roots==1) {
+	$dom-&gt;setDocumentElement( $roots[0] );
+}
+elsif (@roots&gt;1) {
+	my $root = $dom-&gt;createElement('root');
+	$root-&gt;appendChild($frag);
+	$dom-&gt;setDocumentElement( $root );
+}
+
+print $dom-&gt;toString(1);
+
+__END__
+
+&lt;?xml version="1.0"?&gt;
+&lt;root&gt;
+  &lt;item1&gt;
+    &lt;item1a&gt;n1&lt;/item1a&gt;
+    &lt;item1b&gt;jh&lt;/item1b&gt;
+  &lt;/item1&gt;
+&lt;/root&gt;
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1214985</root_node>
+<parent_node field_name="parent_node">1214985</parent_node>
+<thread id="1214985">
+<node id="1214987"><node id="1215055"><node id="1215068"><node id="1215074"/>
+</node>
+</node>
+</node>
+<node id="1214988"><node id="1215054"/>
+</node>
+<node id="1214989"/>
+</thread></node>

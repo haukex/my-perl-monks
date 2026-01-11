@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11155121" title="Re^3: Too many arguments for subroutine" created="2023-10-20 16:42:53" updated="2023-10-20 16:42:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The one place where [doc://perlsub#Prototypes] are useful* is if you want to write a replacement for a built-in function that has its arguments parsed in the same way as the builtin. For example, &lt;c&gt;prototype("CORE::lc")&lt;/c&gt; is &lt;c&gt;"_"&lt;/c&gt;, and let's say we want to write a replacement:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use feature 'say';
+use Data::Dump 'pp';
+
+sub mylc (_) {
+	print "in=", pp @_;
+	return lc $_[0]
+}
+sub mylc2 {  # no prototype for comparison
+	print "in=", pp @_;
+	return lc $_[0]
+}
+&lt;/c&gt;
+&lt;p&gt;The prototype does three things:&lt;/p&gt;
+&lt;ol&gt;
+	&lt;li&gt;
+		&lt;p&gt;There is only one argument. If [doc://lc] or its hypothetical replacement didn't have a prototype, then &lt;c&gt;lc "x", "y"&lt;/c&gt; would be the same as &lt;c&gt;lc("x", "y")&lt;/c&gt;, but because of the prototype, the former is the equivalent of &lt;c&gt;lc("x"), "y"&lt;/c&gt;. See also [doc://perlop#Named-Unary-Operators].&lt;/p&gt;
+&lt;c&gt;
+say "lc: out=", pp( lc "A","B" );
+print "mylc: "; say " out=", pp( mylc "A","B" );
+print "mylc2: "; say " out=", pp( mylc2 "A","B" );
+# lc: out=("a", "B")
+# mylc: in="A" out=("a", "B")
+# mylc2: in=("A", "B") out="a"
+&lt;/c&gt;
+	&lt;/li&gt;
+	&lt;li&gt;
+		&lt;p&gt;Like the &lt;c&gt;'$'&lt;/c&gt; prototype, the argument is forced into scalar context. If [doc://lc] didn't have a prototype, if you said &lt;c&gt;lc(@x)&lt;/c&gt;, its arguments &lt;c&gt;@_&lt;/c&gt; would be the elements of &lt;c&gt;@x&lt;/c&gt;. But because of the prototype, the former is actually equivalent to &lt;c&gt;lc(scalar(@x))&lt;/c&gt;, meaning it gets only one argument, the number of elements in &lt;c&gt;@x&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+my @x=qw/ X Y Z /;
+say "lc: out=", pp( lc @x,"B" );
+print "mylc: "; say " out=", pp( mylc @x,"B" );
+print "mylc2: "; say " out=", pp( mylc2 @x,"B" );
+# lc: out=(3, "B")
+# mylc: in=3 out=(3, "B")
+# mylc2: in=("X", "Y", "Z", "B") out="x"
+&lt;/c&gt;
+	&lt;/li&gt;
+	&lt;li&gt;
+		&lt;p&gt;It automagically uses [doc://$_] when no argument is passed to the function.&lt;/p&gt;
+&lt;c&gt;
+$_ = 'Z';
+say "lc: out=", pp( lc,"B" );
+print "mylc: "; say " out=", pp( mylc,"B" );
+print "mylc2: "; say " out=", pp( mylc2,"B" );
+# lc: out=("z", "B")
+# mylc: in="Z" out=("z", "B")
+# Use of uninitialized value $_[0] in lc at example.pl line 12.
+# mylc2: in=() out=("", "B")
+&lt;/c&gt;
+	&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;* &lt;b&gt;However:&lt;/b&gt;&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;this usage is quite rare in practice (unless you're &lt;i&gt;actually replacing&lt;/i&gt; a builtin, it's better to just use Perl's default &lt;c&gt;@_&lt;/c&gt; behavior, as this is the least surprising),&lt;/li&gt;
+	&lt;li&gt;not every Perl built-in actually can be modeled by prototypes (e.g. [doc://print] and [doc://split] get special parsing),&lt;/li&gt;
+	&lt;li&gt;they influence how Perl code is &lt;i&gt;parsed&lt;/i&gt; ([id://11109834|only &lt;c&gt;perl&lt;/c&gt; can parse Perl]),&lt;/li&gt;
+	&lt;li&gt;the above effects can be quite surprising to those who don't know about them ([id://1195441]), and&lt;/li&gt;
+	&lt;li&gt;people have often tried to use prototypes as a replacement for [doc://perlsub#Signatures] (which Perl finally has, but did not have for a very long time) and were surprised (we get questions here about it regularly),&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;therefore, they are firmly in the "only use this if you know what you are doing and can explain exactly why" category, or, rephrasing that for non-experts, &lt;i&gt;"Don't use subroutine prototypes"&lt;/i&gt;...&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Switched code from oneliners to a script.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11155099</root_node>
+<parent_node field_name="parent_node">11155117</parent_node>
+<thread id="11155099">
+<node id="11155100"/>
+<node id="11155106"><node id="11155117"><node id="11155121"/>
+<node id="11155123"/>
+<node id="11155129"><node id="11155135"/>
+</node>
+</node>
+</node>
+<node id="11155112"/>
+</thread></node>

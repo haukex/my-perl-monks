@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111582" title="Re: Processing an encoded file backwards" created="2020-01-18 15:23:53" updated="2020-01-18 15:23:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I've actually thought about this myself. [doc://seek], [doc://tell], [doc://sysseek], and [doc://sysread] all operate on bytes, while [doc://read] operates on bytes or characters depending on the I/O layers. So because we can only seek in bytes, I think the only way to approach it is to first read a chunk of bytes from the end of the file, and then look at what was read to determine whether a UTF-8 encoded character was chopped off - specifically, if the block of data begins with a byte of which the two high bits are &lt;c&gt;10xxxxxx&lt;/c&gt;, since that is a UTF-8 continuation byte. Discard those bytes, and you should then have a buffer that can be correctly decoded as UTF-8 and that you can inspect for how many characters it contains, how many lines, etc., depending on what you &lt;i&gt;actually&lt;/i&gt; want your window to be counted on. So I took this opportunity to finally express my idea in code &lt;c&gt;:-)&lt;/c&gt;&lt;/p&gt;
+&lt;c&gt;
+sub readbackwards_utf8 { # returns an iterator
+	my ($fn, $window) = @_;
+	die "Bad window $window" unless $window&gt;=4;
+	open my $fh, '&lt;:raw', $fn or die "open $fn: $!";
+	my $curpos = -s $fh;
+	return sub {
+		if ( $curpos&lt;1 ) { close $fh if $fh; $fh=undef; return }
+		my $bytes = $curpos &lt; $window ? $curpos : $window;
+		seek($fh, $curpos-=$bytes, 0) or die "seek $curpos $fn: $!";
+		read($fh, my $buf, $bytes) == $bytes
+			or die "read $bytes bytes at $curpos from $fn: $!";
+		while ( (ord(substr $buf, 0, 1) &amp; 0b11000000)==0b10000000 )
+			{ $buf = substr $buf, 1; $curpos++ }
+		utf8::decode($buf);
+		return $buf;
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;It would be pretty easy to wrap the iterator which the above code returns into another iterator that counts characters and lines, and returns chunks of that size. Of course, this is specific to UTF-8. For encodings with a fixed width, like UTF-16 or UTF-32, it would be somewhat easier.&lt;/p&gt;
+&lt;readmore title="tests"&gt;
+&lt;c&gt;
+use open qw/:std :utf8/;
+use Test::More;
+use File::Temp qw/tempfile/;
+
+my ($tempfh, $filename) = tempfile( UNLINK =&gt; 1 );
+binmode $tempfh, ':encoding(UTF-8)';
+print $tempfh "H\N{U+20AC}ll\N{U+00F6}, \N{U+1F5FA}!\n";
+close $tempfh;
+#system('hexdump','-C',$filename);
+
+my $four = readbackwards_utf8($filename, 4);
+is $four-&gt;(), "!\n";
+is $four-&gt;(), "\N{U+1F5FA}";
+is $four-&gt;(), "\N{U+00F6}, ";
+is $four-&gt;(), "ll";
+is $four-&gt;(), "H\N{U+20AC}";
+is $four-&gt;(), undef;
+is $four-&gt;(), undef;
+
+my $five = readbackwards_utf8($filename, 5);
+is $five-&gt;(), "!\n";
+is $five-&gt;(), " \N{U+1F5FA}";
+is $five-&gt;(), "ll\N{U+00F6},";
+is $five-&gt;(), "H\N{U+20AC}";
+is $five-&gt;(), undef;
+
+my $six = readbackwards_utf8($filename, 6);
+is $six-&gt;(), "\N{U+1F5FA}!\n";
+is $six-&gt;(), "ll\N{U+00F6}, ";
+is $six-&gt;(), "H\N{U+20AC}";
+is $six-&gt;(), undef;
+
+my $seven = readbackwards_utf8($filename, 7);
+is $seven-&gt;(), " \N{U+1F5FA}!\n";
+is $seven-&gt;(), "ll\N{U+00F6},";
+is $seven-&gt;(), "H\N{U+20AC}";
+is $seven-&gt;(), undef;
+
+for my $n (8..9) {
+	my $eight = readbackwards_utf8($filename, $n);
+	is $eight-&gt;(), ", \N{U+1F5FA}!\n";
+	is $eight-&gt;(), "H\N{U+20AC}ll\N{U+00F6}";
+	is $eight-&gt;(), undef;
+}
+
+my $ten = readbackwards_utf8($filename, 10);
+is $ten-&gt;(), "\N{U+00F6}, \N{U+1F5FA}!\n";
+is $ten-&gt;(), "H\N{U+20AC}ll";
+is $ten-&gt;(), undef;
+
+my $eleven = readbackwards_utf8($filename, 11);
+is $eleven-&gt;(), "l\N{U+00F6}, \N{U+1F5FA}!\n";
+is $eleven-&gt;(), "H\N{U+20AC}l";
+is $eleven-&gt;(), undef;
+
+for my $n (12..14) {
+	my $twelve = readbackwards_utf8($filename, $n);
+	is $twelve-&gt;(), "ll\N{U+00F6}, \N{U+1F5FA}!\n";
+	is $twelve-&gt;(), "H\N{U+20AC}";
+	is $twelve-&gt;(), undef;
+}
+
+my $fifteen = readbackwards_utf8($filename, 15);
+is $fifteen-&gt;(), "\N{U+20AC}ll\N{U+00F6}, \N{U+1F5FA}!\n";
+is $fifteen-&gt;(), "H";
+is $fifteen-&gt;(), undef;
+
+for my $n (16..17) {
+	my $sixteen = readbackwards_utf8($filename, 16);
+	is $sixteen-&gt;(), "H\N{U+20AC}ll\N{U+00F6}, \N{U+1F5FA}!\n";
+	is $sixteen-&gt;(), undef;
+}
+
+done_testing;
+&lt;/c&gt;
+&lt;/readmore&gt;
+</doctext>
+<root_node field_name="root_node">11111579</root_node>
+<parent_node field_name="parent_node">11111579</parent_node>
+<thread id="11111579">
+<node id="11111582"><node id="11111585"><node id="11111588"><node id="11111589"><node id="11111590"><node id="11111592"><node id="11111593"><node id="11111594"><node id="11111596"><node id="11111598"><node id="11111602"/>
+</node>
+<node id="11111600"/>
+</node>
+<node id="11111604"><node id="11111605"><node id="11111607"/>
+</node>
+</node>
+</node>
+<node id="11111595"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11111584"/>
+</thread></node>

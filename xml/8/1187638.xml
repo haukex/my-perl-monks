@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1187638" title="Strange behaviour when using glob in if condition" created="2017-04-11 09:21:44" updated="2017-04-11 09:21:44" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1117105">yulivee07</author>
+<doctext field_name="doctext">Hi fellow perlmonks,&lt;br&gt;
+I noticed a strange behaviour when using glob to expand filenames. I try to identify directories which contain nothing besides one special sort of file. I noticed that the return condition of my script failed to execute, even if glob returned something.&lt;br&gt;&lt;br&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+use File::Basename;
+
+sub remove_files_in_empty_directories($) {
+  my ($directory) = @_;
+
+  # do nothing if the directory is not empty
+  # This is the problematic part 
+  return if glob("$directory/*");
+
+  # directory is empty, remove the .Ecurep-Lenovo* files
+  foreach my $file ( glob("$directory/.EcuRep-Lenovo_*") ) {
+     print $file,"\n";
+  }
+}
+
+
+my $list_file = shift @ARGV;
+die "list_file is missing - Usage: $0 list_file\n" unless $list_file;
+open(F,"&lt;",$list_file) || die "can not open $list_file: $!\n";
+
+while (my $line = &lt;F&gt; ) {
+  chomp $line;
+  my $dir = dirname $line;
+
+  remove_files_in_empty_directories($dir);
+}
+
+&lt;/code&gt;
+
+I pass this script a file containing a list of directories (filename is test):
+&lt;code&gt;
+/ecurep/hw/7/7042/21/EC/21EC3EC/.EcuRep-Lenovo_outofscope
+/ecurep/hw/7/7042/21/EC/21EC41C/.EcuRep-Lenovo_outofscope
+/ecurep/hw/7/7042/21/EC/21EC4DC/.EcuRep-Lenovo_outofscope
+&lt;/code&gt;
+&lt;br&gt;
+I call the script like this: perl test_perl test
+&lt;br&gt;&lt;br&gt;
+Output:
+&lt;code&gt;
+/ecurep/hw/7/7042/21/EC/21EC4DC/.EcuRep-Lenovo_outofscope
+&lt;/code&gt;
+&lt;br&gt;&lt;br&gt;
+This is kinda unexpected, as all three directories contain other directories.  When I step through with the debugger, I can evaluate the glob with x, and it returns a list of directories every single time. If I evaluate x scalar glob("$directory/*") it also evaluates to the first entry from the list every time. But in case if the last pathname it steps further into the function anyway instead of executing my return statement. I cannot get my head wrapped around this - what is happening here?
+&lt;br&gt;&lt;br&gt;
+Further testing of the problem:&lt;br&gt;
+If I delete the first line of the testfile, thereby removing the first directory from the list of directories to be one shorter, it works.
+&lt;br&gt;&lt;br&gt;test2:
+&lt;code&gt;
+/ecurep/hw/7/7042/21/EC/21EC3EC/.EcuRep-Lenovo_outofscope
+/ecurep/hw/7/7042/21/EC/21EC41C/.EcuRep-Lenovo_outofscope
+&lt;/code&gt;
+perl test_perl test2 
+No Output (as expected)
+&lt;br&gt;&lt;br&gt;
+File Permissions to the directories:&lt;br&gt;
+&lt;code&gt;
+drwxr-s---    4 root     swsupt          512 Apr 08 04:53 21EC3EC
+drwxr-s---    4 root     swsupt          512 Apr 08 05:24 21EC41C
+drwxr-s---    5 root     swsupt          512 Apr 11 12:12 21EC4DC
+[1:root@itcaix23:]/ecurep/tmp/perl_test # ls -l /ecurep/hw/7/7042/21/EC/21EC41C
+total 0
+-rw-r--r--    1 root     swsupt           25 Jun 24 2016  .EcuRep-Lenovo_outofscope
+drwxr-s---    2 root     swsupt          512 Mar 31 09:06 2017-03-31
+drwxr-s---    2 root     swsupt          512 Apr 07 09:05 2017-04-07
+[1:root@itcaix23:]/ecurep/tmp/perl_test # ls -l /ecurep/hw/7/7042/21/EC/21EC4DC
+total 0
+-rw-------    1 root     swsupt           29 Apr 11 12:12 .EcuRep-Lenovo_outofscope
+drwxr-s---    2 root     swsupt          512 Mar 28 09:48 2017-03-28
+drwxr-s---    2 root     swsupt          512 Apr 04 09:49 2017-04-04
+drwxr-s---    2 root     swsupt          512 Apr 11 09:48 2017-04-11
+[1:root@itcaix23:]/ecurep/tmp/perl_test # ls -l /ecurep/hw/7/7042/21/EC/21EC3EC
+total 0
+-rw-r--r--    1 root     swsupt           25 Nov 04 05:26 .EcuRep-Lenovo_outofscope
+drwxr-s---    2 root     swsupt          512 Mar 31 06:26 2017-03-31
+drwxr-s---    2 root     swsupt          512 Apr 07 06:26 2017-04-07
+&lt;/code&gt;
+
+I am working with perl on AIX here. I have tested with perl 5.20 on AIX7.2 and perl 5.8.8 on AIX6.1. The behaviour is the same.&lt;br&gt;
+I tried the following variations on the code (just substituting the problematic part):
+&lt;code&gt;
+# makes no difference
+return if  glob "'${directory}/*'";
+
+# with this construct it works!
+my @files = glob("$directory/*");
+return if scalar @files;
+
+# doesn't work either - prints "hi hi &lt;directory-name&gt;
+if ( glob("$directory/*") ) {
+print "hi\n";
+return;
+}
+
+&lt;/code&gt;
+
+I am not shure if I am misusing glob here of if there is a problem with my perl-version. Can someone help me understanding what is going on?&lt;br&gt;&lt;br&gt;
+
+Kind regards,
+Yulivee</doctext>
+<thread id="1187638">
+<node id="1187642"/>
+<node id="1187644"/>
+<node id="1187675"><node id="1187691"/>
+</node>
+</thread></node>

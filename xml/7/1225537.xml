@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1225537" title="Re^3: Subroutine Reference in a Regexp?" created="2018-11-10 09:44:28" updated="2018-11-10 09:44:28" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I don't know how to check that but doesn't that stringify then recompile the precompiled regexes?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Hm, that's a good question, I'm not sure at the moment how to check either... hopefully inspiration will strike later :-)&lt;/p&gt;
+&lt;p&gt;Your and [jwkrahn]'s posts did remind me of a possibly important caveat: &lt;c&gt;(??{...})&lt;/c&gt; will re-execute the block of code every time, while interpolation will only execute it once:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+#use re 'debug';
+
+my $str = "foobar";
+
+sub getit {
+	print "Getit! pos=",pos($str)//"undef","\n";
+	return qr/[aeiou]/i;
+}
+
+print "### haukex\n";
+print "Matches: &lt;", $str=~/(??{getit})/g, "&gt;\n";
+
+print "### jwkrahn\n";
+my $reg_str = getit();
+print "Matches: &lt;", $str=~/$reg_str/g,    "&gt;\n";
+
+print "### Eily\n";
+print "Matches: &lt;", $str=~/@{[getit]}/g,  "&gt;\n";
+
+__END__
+
+### haukex
+Getit! pos=0
+Getit! pos=1
+Getit! pos=2
+Getit! pos=3
+Getit! pos=4
+Getit! pos=5
+Getit! pos=6
+Matches: &lt;ooa&gt;
+### jwkrahn
+Getit! pos=undef
+Matches: &lt;ooa&gt;
+### Eily
+Getit! pos=undef
+Matches: &lt;ooa&gt;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1225454</root_node>
+<parent_node field_name="parent_node">1225493</parent_node>
+<thread id="1225454">
+<node id="1225457"><node id="1225459"/>
+<node id="1225493"><node id="1225537"/>
+</node>
+</node>
+<node id="1225473"/>
+<node id="1225494"/>
+</thread></node>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116970" title="What does a failed regular expression match actually return?" created="2020-05-20 05:29:04" updated="2020-05-20 05:29:04" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;According to the perlop documentation the regular expression match operator (m//) will return true if it finds a match or false if doesn't. Usually where Perl operators return false they do so by either returning an empty string or 0, however this doesn't appear to be the case for failed regular expression matches.&lt;/p&gt;
+
+&lt;p&gt;Normally it doesn't matter as Perl being Perl just does what I intended, but earlier today I encountered a bug when assigning the result of regular expression match as part of initialising a hash - the following code exhibits the issue:&lt;/p&gt;
+
+&lt;code&gt;
+use Data::Dumper;
+
+warn Dumper(
+    {
+        a =&gt; "a" =~ m/b/,
+        b =&gt; 'asdf'
+    }
+);
+&lt;/code&gt;
+
+&lt;p&gt;Running this code results in:&lt;/p&gt;
+
+&lt;code&gt;
+$VAR1 = {
+    'asdf' =&gt; undef,
+    'a' =&gt; 'b'
+};
+&lt;/code&gt;
+
+&lt;p&gt;Eventually I realised that the failed match for the regular expression was somehow tricking the first comma to be evaluated in a scalar context, rather than a list context (note that if the regular expression matches then it returns 1 and the comma is evaluated in a list context). With this information I was able to fix the bug I had, but curiosity lead me to dig deeper into what was happening, so tried the following code:&lt;/p&gt;
+
+&lt;code&gt;
+use Data::Dumper;
+
+print Dumper( "a" =~ m/a/ );  # outputs 1
+print Dumper( "a" =~ m/b/ );  # No Output For This Line!
+print Dumper( "a" eq "a" );   # outputs 1
+print Dumper( "a" eq "b" );   # outputs an empty string ('')
+print Dumper( "a" !~ m/a/ );  # outputs an empty string ('')
+print Dumper( "a" !~ m/b/ );  # outputs 1
+
+my $a = "a" =~ m/a/;
+print Dumper( $a );           # outputs 1
+
+my $b = "a" =~ m/b/;
+print Dumper( $b );           # outputs an empty string ('')
+&lt;/code&gt;
+
+&lt;p&gt;From running this code it seems that the failed regular expression match is returning something that isn't really a traditional Perl value, but which does evaluate to false in most situations - a sort of "phantom" false value.&lt;/p&gt;
+
+&lt;p&gt;Which leaves me with two questions:&lt;/p&gt;
+
+&lt;ol&gt;
+    &lt;li&gt;What is the actual value returned by a failed regular expression match?&lt;/li&gt;
+    &lt;li&gt;Why does =~ return this "phantom" version of false, while !~ returns the more common empty string version?&lt;/li&gt;
+&lt;/ol&gt;</doctext>
+<reputation field_name="reputation">13</reputation>
+<thread id="11116970">
+<node id="11116971"/>
+<node id="11116982"><node id="11116999"/>
+</node>
+<node id="11116998"/>
+<node id="11117009"/>
+</thread></node>

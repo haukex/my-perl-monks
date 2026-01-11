@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228887" title="Re^5: system commands/shell and perl variables." created="2019-01-23 15:15:21" updated="2019-01-23 15:15:21" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Since I don't have all the commands you're using on my system, here are just some general tips. Your &lt;c&gt;command | fgrep | awk&lt;/c&gt; sequences can be rewritten in Perl in the following manner, using &lt;c&gt;xl list&lt;/c&gt; as an example. You can write these loops one after the other, first getting the ID, then the VNC port, and finally for the IP address.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use IPC::System::Simple qw/capturex/;
+
+my $vm_run = 'zabbix';
+
+my $id;
+for ( capturex('xl','list') ) {  # loop over lines of command output
+	chomp;          # remove newline
+	my @F = split;  # split the line into fields on whitespace (like awk)
+	if ( $F[0] eq $vm_run ) {  # match on the first field
+		$id = $F[1];       # store the second field
+		#last;             # would be the equivalent of fgrep -m1
+	}
+}
+
+print "ID: $id\n";  # prints "ID: 2" in this example
+&lt;/c&gt;
+&lt;p&gt;Also, I suspect &lt;c&gt;print `$DOMID`;&lt;/c&gt; isn't right, you probably don't want to execute the contents of the &lt;c&gt;$DOMID&lt;/c&gt; as a command (that's what the backticks will do)? You probably want a simple &lt;c&gt;print "$DOMID\n";&lt;/c&gt; instead.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1228783</root_node>
+<parent_node field_name="parent_node">1228836</parent_node>
+<thread id="1228783">
+<node id="1228784"><node id="1228794"/>
+</node>
+<node id="1228802"/>
+<node id="1228819"><node id="1228827"><node id="1228829"><node id="1228836"><node id="1228887"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1228846"/>
+</thread></node>

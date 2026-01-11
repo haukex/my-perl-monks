@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11131810" title="Align given substring(s) in lines" created="2021-04-28 14:55:05" updated="2021-04-28 14:55:05" _doctext_mode="lenient"><type id="1042">CUFP</type>
+<author id="11131807">johnaj</author>
+<doctext field_name="doctext">&lt;p&gt;I chose not to use strict for this one, and it was actually kind of nice for a simple script like this one. Especially the autovivification. Note that the script doesn't work too well if the alignment points you specify don't appear in the same order as you specify them. The script could also be optimized by getting rid of the separate first pass.&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl -w
+
+# align -- align given substrings in standard input lines
+
+use Getopt::Std;
+$Getopt::Std::STANDARD_HELP_VERSION = 1;
+getopts('a', \%opt);
+
+sub VERSION_MESSAGE {}
+sub HELP_MESSAGE {
+        print &lt;&lt;OPT;
+usage: $0 [-s] [string ...]
+  -a    add an extra space before split
+
+You should put the strings in the order that they occur in each line.
+Note that only the last string is guaranteed to align.
+OPT
+}
+
+@splits = @ARGV;                 # alignment points
+@splits = (' #') if not @splits; # default (Perl comment)
+
+while (&lt;STDIN&gt;) {
+        chomp;
+        push @lines, $_;
+}
+
+for $split (@splits) {
+        $max = 0;
+
+        # Find max column for split string
+        for (@lines) {
+                if (/(.+?)(\Q$split\E)(.*)/) {
+                        $max = length $1 if length $1 &gt; $max;
+                        $_ = [$1, "$2$3"];
+                }
+        }
+
+        # Add one extra space before split
+        $max++ if $opt{a};
+
+        # Add spaces before split
+        for (@lines) {
+                $_ = sprintf("%-${max}s%s", $_-&gt;[0], $_-&gt;[1]) if ref;
+        }
+}
+
+print "$_\n" for @lines;
+&lt;/code&gt;
+
+&lt;p&gt;Here is an example of how to use the script from the UNIX shell:&lt;/p&gt;
+
+&lt;code&gt;
+$ cat example
+my $string = 'some value';  # these
+my $int = 12; # are
+my $float = 1.2; # scalars
+$ cat example | ./align = \#
+my $string = 'some value';  # these
+my $int    = 12;            # are
+my $float  = 1.2;           # scalars
+&lt;/code&gt;
+
+&lt;p&gt;I personally use it to great effect in vi, so that I can type &lt;tt&gt;!}align&lt;/tt&gt; to align the comments in the next block of code.&lt;/p&gt;</doctext>
+<thread id="11131810">
+<node id="11131815"><node id="11131820"><node id="11131827"/>
+</node>
+</node>
+<node id="11131829"/>
+<node id="11131828"><node id="11131830"><node id="11131841"><node id="11131857"><node id="11131867"><node id="11131871"><node id="11131872"><node id="11131878"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

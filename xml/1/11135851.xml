@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11135851" title="Re: Match last word in a sentence" created="2021-08-15 06:20:15" updated="2021-08-15 06:20:15" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Two things that haven't been mentioned yet:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I guess the regular expression needs to start from right to left correct?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The regex engine always operates from left to right. The solutions provided here using the &lt;c&gt;$ &lt;/c&gt; anchor don't change that - the regex engine is still operating from left to right, but it's only matching on the last word because of the anchor.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Trying to get the last word in a sentence&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note that &lt;c&gt;"This is my list"&lt;/c&gt; is missing punctuation. It's unclear from your question if your sentences are already split, but if you were to process text like &lt;c&gt;"I took the medicine that Dr. Wall recommended to me. It tasted like onions."&lt;/c&gt;, you'd want that to be split into two sentences, not three - modules like [mod://Lingua::Sentence] will do that for you.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Lingua::Sentence;
+use Data::Dump;
+
+my $text = "I took the medicine that Dr. Wall recommended to me. It tasted like onions.";
+my $splitter = Lingua::Sentence-&gt;new("en");
+my @sentences = $splitter-&gt;split_array($text);
+dd @sentences;
+
+for my $sentence (@sentences) {
+	if ( $sentence =~ /\s(\w+)[^\w\s]?$/ ) {
+		dd $1;
+	}
+	else { warn "Failed to get last word from: $sentence" }
+}
+
+__END__
+
+(
+  "I took the medicine that Dr. Wall recommended to me.",
+  "It tasted like onions.",
+)
+"me"
+"onions"
+&lt;/c&gt;
+&lt;p&gt;(This uses the somewhat simplistic &lt;c&gt;[^\w\s]&lt;/c&gt; to try and match any final punctuation, it may need to be adjusted depending on the input data.)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11135816</root_node>
+<parent_node field_name="parent_node">11135816</parent_node>
+<thread id="11135816">
+<node id="11135818"/>
+<node id="11135819"/>
+<node id="11135822"/>
+<node id="11135826"><node id="11135834"><node id="11135835"/>
+</node>
+</node>
+<node id="11135828"/>
+<node id="11135829"/>
+<node id="11135837"/>
+<node id="11135840"/>
+<node id="11135851"/>
+</thread></node>

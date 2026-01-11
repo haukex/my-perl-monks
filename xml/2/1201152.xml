@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201152" title="XML data extraction" created="2017-10-11 07:31:08" updated="2017-10-11 07:31:08" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1193343">snehit.ar</author>
+<doctext field_name="doctext">Hello,
+
+I have complex XML file (around 1000 of records) and need to retrieve few elements based on the condition...
+
+&lt;p&gt;1.want to read node only where ciType="application" &lt;/p&gt;
+&lt;p&gt;2.read the value of entry where key="Last Status Change"  o/p:10/2/2017 10:16 PM  &lt;/p&gt;
+
+&lt;code&gt;
+&lt;nodes&gt;
+	&lt;node name="ABC" id="1" ciType="null"&gt;
+		&lt;children&gt;
+			&lt;node name="Business Systems" classification="null" ciType="ci_collection"&gt;
+					&lt;dimension name="Unresolved Events" status="-2" id="3232"&gt;
+					&lt;/dimension&gt;
+					&lt;dimension name="Availability" status="10" id="12313"&gt;
+					&lt;/dimension&gt;
+				&lt;children&gt;
+					&lt;node name="3YP (421)" classification="null" ciType="application" &gt;
+							&lt;dimension name="Availability" status="20" id="2312"&gt;
+							&lt;body&gt;
+							&lt;entry key="Status"&gt;
+							&lt;![CDATA[ OK  ]]&gt; 
+							&lt;/entry&gt;
+							&lt;entry key="Business Rule"&gt;	
+							&lt;![CDATA[ Percentage Rule  ]]&gt; 
+							&lt;/entry&gt;
+							&lt;entry key="Last Status Change"&gt;
+							&lt;![CDATA[ 10/2/2017 10:16 PM  ]]&gt; 
+							&lt;/entry&gt;
+							&lt;/body&gt;
+							&lt;/dimension&gt;
+					&lt;/node&gt;		
+				&lt;/children&gt; 
+			&lt;/node&gt;	
+		&lt;/children&gt;
+	&lt;/node&gt;
+&lt;/nodes&gt;
+&lt;/code&gt;
+
+&lt;p&gt; sample code &lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use XML::XPath;
+use XML::LibXML::NodeList;
+use Data::Dumper;
+
+my @records;
+
+	my $bamxml = 'OpenApi.xml';
+	my $bamxp = XML::XPath-&gt;new(filename =&gt; $bamxml);
+	my $bamxpath =  $bamxp-&gt;findnodes('//nodes/node/children/node/children/node');
+	my $pattern = shift;
+	my $matches = XML::LibXML::NodeList-&gt;new;
+	
+	foreach my $bamnode ($bamxpath-&gt;get_nodelist) {
+		
+		my $name   = $bamxp-&gt;find('./@name',$bamnode)-&gt;string_value;
+	        my $citype = $bamxp-&gt;find('./@ciType',$bamnode)-&gt;string_value;
+		my $status = $bamxp-&gt;find('./dimension/@status',$bamnode)-&gt;string_value;
+		my $time = $bamxp-&gt;find("./dimension/body/entry",$bamnode)-&gt;string_value;
+		
+		s/^\s+|\s+$//g for $name,$citype,$status,$time;
+			push @records, {
+				name =&gt; $name,
+				citype =&gt; $citype,
+				status =&gt; $status,
+				Time =&gt; $time
+			};
+	
+	}
+&lt;/code&gt;
+
+&lt;p&gt;Required Output &lt;/p&gt; 
+&lt;code&gt;
+$VAR1 = [
+          {
+            'status' =&gt; '20',
+            'citype' =&gt; 'application',
+            'name' =&gt; '3YP (421)',
+            'Time' =&gt; '10/2/2017 10:16 PM'
+          }
+        ];
+
+&lt;/code&gt;</doctext>
+<thread id="1201152">
+<node id="1201153"><node id="1201154"/>
+</node>
+<node id="1201156"><node id="1201194"><node id="1201197"><node id="1201199"><node id="1201202"/>
+<node id="1201203"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1201157"><node id="1201158"/>
+<node id="1201162"><node id="1201163"><node id="1201164"/>
+<node id="1201166"><node id="1201173"/>
+</node>
+</node>
+</node>
+<node id="1201165"/>
+</node>
+<node id="1201159"/>
+<node id="1201174"><node id="1201218"><node id="1201235"><node id="1201495"><node id="1201496"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

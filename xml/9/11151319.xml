@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11151319" title="Re: use Mojo::IOLoop::Subprocess - cannot pass argument to the subprocess" created="2023-03-29 06:15:05" updated="2023-03-29 06:15:05" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I want to get an idea of what I do wrong&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The problem with your first piece of code boils down to &lt;c&gt;sub {}-&gt;()&lt;/c&gt;. This creates an anonymous &lt;c&gt;sub&lt;/c&gt; and then &lt;i&gt;immediately calls&lt;/i&gt; it, and &lt;c&gt;-&gt;run_p()&lt;/c&gt; gets the &lt;i&gt;return value&lt;/i&gt; of this &lt;c&gt;sub&lt;/c&gt; as its argument instead of the &lt;c&gt;sub&lt;/c&gt; itself, as it should.&lt;/p&gt;
+&lt;p&gt;This shows how important [id://1177642|SSCCE] along with the [id://745674] are, especially boiling down the code and adding more [doc://print] statements. If you inspect the output of the following code, you'll see how the &lt;c&gt;sub&lt;/c&gt;s are being called immediately in the same process as the IO loop.&lt;/p&gt;
+&lt;c&gt;
+use Mojo::Base -strict, -signatures;
+use Mojo::IOLoop;
+
+Mojo::IOLoop-&gt;next_tick(sub ($loop) {
+	say time-$^T, "s Loop PID is $$";
+	for my $i (0..1) {
+		say time-$^T, "s Start of loop $i";
+		$loop-&gt;subprocess-&gt;run_p(
+			sub ($j) {
+				say time-$^T,
+					"s Hello, from loop $i (arg $j) in PID $$!";
+				sleep 2;
+				say time-$^T, "s Good bye, from PID $$!";
+				return "Return value of $i";
+			}-&gt;($i)
+		)-&gt;then(sub ($result) {
+			say time-$^T, "s Result from loop $i: $result";
+		})-&gt;catch(sub ($err) {
+			say time-$^T, "s Subprocess error: $err";
+		});
+		say time-$^T, "s End of loop $i";
+	}
+});
+Mojo::IOLoop-&gt;start;
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+0s Loop PID is 8353
+0s Start of loop 0
+0s Hello, from loop 0 (arg 0) in PID 8353!
+2s Good bye, from PID 8353!
+2s End of loop 0
+2s Start of loop 1
+2s Hello, from loop 1 (arg 1) in PID 8353!
+4s Good bye, from PID 8353!
+4s End of loop 1
+4s Subprocess error: Can't locate object method "Return value of 0" via package "Mojo::IOLoop::Subprocess" at /opt/perl5.28/lib/site_perl/5.28.1/Mojo/IOLoop/Subprocess.pm line 53.
+4s Subprocess error: Can't locate object method "Return value of 1" via package "Mojo::IOLoop::Subprocess" at /opt/perl5.28/lib/site_perl/5.28.1/Mojo/IOLoop/Subprocess.pm line 53.
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;and how to make it work, please!&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Some frameworks allow passing arguments to functions like this, but I don't see anything in the [mod://Mojo::IOLoop::Subprocess] documentation to indicate that Mojo does. So the answer is as you have already [id://11151267|discovered]: closures. If you have a complex function that you want to call with different arguments in the subprocess, then simply write it as a separate sub and call it from the closure (e.g. &lt;c&gt;-&gt;run_p(sub { my_complex_func($arg1, $arg2) })&lt;/c&gt;).&lt;/p&gt;
+&lt;p&gt;I already laid out the above code as a closure, so all you need to do for it to work is simply remove the &lt;c&gt;-&gt;($i)&lt;/c&gt; in the above, and the output is what you probably expect:&lt;/p&gt;
+&lt;c&gt;
+0s Loop PID is 8462
+0s Start of loop 0
+0s End of loop 0
+0s Start of loop 1
+0s End of loop 1
+0s Hello, from loop 0 (arg Mojo::IOLoop::Subprocess=HASH(0x55ba4daf9530)) in PID 8463!
+0s Hello, from loop 1 (arg Mojo::IOLoop::Subprocess=HASH(0x55ba4eebd138)) in PID 8464!
+2s Good bye, from PID 8463!
+2s Good bye, from PID 8464!
+2s Result from loop 0: Return value of 0
+2s Result from loop 1: Return value of 1
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11151265</root_node>
+<parent_node field_name="parent_node">11151265</parent_node>
+<thread id="11151265">
+<node id="11151267"/>
+<node id="11151319"><node id="11151450"/>
+</node>
+</thread></node>

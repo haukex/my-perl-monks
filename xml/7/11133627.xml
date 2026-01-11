@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11133627" title="Re: rel2abs of a path with env (updated)" created="2021-06-07 11:16:44" updated="2021-06-07 11:16:44" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I agree with [hippo] that this seems to be moving into XY Problem territory. What about &lt;c&gt;/a/b/c/\$USER&lt;/c&gt;? Or &lt;c&gt;/a/b/c/\\$USER&lt;/c&gt;? Or malformed inputs like &lt;c&gt;/a/b/c/${USER&lt;/c&gt;? And what other possible inputs haven't you told us about?&lt;/p&gt;
+&lt;p&gt;Enough rope to shoot yourself in the foot:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+sub interpolate {
+	local $_ = shift;
+	my $vars = shift;
+	my @out;
+	pos=undef;
+	while (1) {
+		if ( m{\G ( [^\\\$]+ ) }xmsgc ) { push @out, $1 }
+		elsif ( m{\G \$ (?| (\w+) | \{(\w+)\} ) }xmsgc )
+			{ push @out, $vars-&gt;{$1} }
+		elsif ( m{\G \\ (.) }xmsgc ) {
+			$1 eq "\\" or $1 eq "\$"
+				or die "unexpected backslash escape";
+			push @out, $1;
+		}
+		else { last }
+	}
+	die "parse of '$_' failed at pos ".(pos//0)
+		if !defined pos || pos!=length;
+	return join '', @out;
+}
+
+use Test::More;
+sub exception (&amp;) { eval { shift-&gt;(); 1 } ? undef : ($@ || die) }
+
+my %env = ( USER =&gt; "foobar", quz =&gt; "\$baz \\\\ \\\$" );
+
+is interpolate("USER", \%env), "USER";
+like exception { interpolate("\\USER"), \%env },
+	qr/\bunexpected backslash\b/;
+is interpolate("\\\\USER", \%env), "\\USER";
+is interpolate("\$USER", \%env), "foobar";
+is interpolate("\${USER}", \%env), "foobar";
+is interpolate("\\\$USER", \%env), "\$USER";
+is interpolate("\\\\\$USER", \%env), "\\foobar";
+is interpolate("\\\\\\\$USER", \%env), "\\\$USER";
+is interpolate("\\\\\\\\\$USER", \%env), "\\\\foobar";
+is interpolate("\\\\\\\\\${USER}", \%env), "\\\\foobar";
+is interpolate("\$quz", \%env), "\$baz \\\\ \\\$";
+like exception { interpolate("USER\$"), \%env },
+	qr/\bparse of 'USER\$' failed\b/;
+like exception { interpolate("\${USER"), \%env },
+	qr/\bparse of '\$\{USER' failed\b/;
+
+done_testing;
+&lt;/c&gt;
+&lt;p&gt;I wouldn't necessarily recommend doing much more (e.g. [mod://String::Interpolate]), as otherwise you may end up opening a security hole.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; I realized that the code I posted originally (below) would also unescape backslashes and &lt;c&gt;$&lt;/c&gt;s in the values of variables interpolated into the string, so I rewrote the parser using &lt;c&gt;m/\G/gc&lt;/c&gt; regexes above. It should now also be more roboust in the face of invalid inputs. The only minor downside is that now integrating [mod://String::Unescape] isn't quite as easy.&lt;/p&gt;
+&lt;readmore title="Original code"&gt;
+&lt;p&gt;Original code:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More;
+sub exception (&amp;) { eval { shift-&gt;(); 1 } ? undef : ($@ || die) }
+
+my %_interp_map = ( '\\'=&gt;'\\', '$'=&gt;'$' ); # or use String::Unescape
+sub interpolate {
+	my $str = shift;
+	$str =~ s{ (?&lt;!\\) ((?:\\\\)*) \$ (?| (\w+) | \{(\w+)\} ) }
+		{ $1.$ENV{$2} }xeg;
+	$str =~ s{ \\ (.) }
+		{ $_interp_map{$1} || die "unexpected backslash escape" }xeg;
+	return $str;
+}
+
+local $ENV{USER} = "foobar";
+
+is interpolate("USER"), "USER";
+like exception { interpolate("\\USER") }, qr/unexpected backslash/i;
+is interpolate("\\\\USER"), "\\USER";
+is interpolate("\$USER"), "foobar";
+is interpolate("\${USER}"), "foobar";
+is interpolate("\\\$USER"), "\$USER";
+is interpolate("\\\\\$USER"), "\\foobar";
+is interpolate("\\\\\\\$USER"), "\\\$USER";
+is interpolate("\\\\\\\\\$USER"), "\\\\foobar";
+is interpolate("\\\\\\\\\${USER}"), "\\\\foobar";
+
+done_testing;
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">11133617</root_node>
+<parent_node field_name="parent_node">11133617</parent_node>
+<thread id="11133617">
+<node id="11133618"><node id="11133623"><node id="11133625"/>
+</node>
+</node>
+<node id="11133619"><node id="11133622"><node id="11133624"/>
+<node id="11133629"/>
+<node id="11133639"/>
+<node id="11133680"/>
+</node>
+</node>
+<node id="11133626"><node id="11133676"/>
+</node>
+<node id="11133627"/>
+</thread></node>

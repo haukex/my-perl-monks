@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1169289" title="perl XML::LibXML help reading an xml file that uses namespaces" created="2016-08-07 08:51:44" updated="2016-08-07 08:51:44" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="396691">HeadScratcher</author>
+<doctext field_name="doctext">&lt;p&gt;I'm a humble peasant seeking the wisdom of the holy ones please enlighten me&lt;/p&gt;
+
+&lt;p&gt;I'm attempting to extract elements from an XML file&lt;/p&gt;
+
+&lt;p&gt;in the code bellow how do I adapt it so I can tell the difference between the 2 'title' fields and how do I get the value of point? &lt;/p&gt;
+
+&lt;p&gt; I'm hoping if I can work this out I can use the same principle to extract other items like author&lt;/p&gt; 
+&lt;code&gt;
+#!C:\strawberry\perl\bin\perl.exe
+
+use strict;
+use warnings;
+use XML::LibXML;
+use XML::LibXML::XPathContext;
+use Data::Dump qw(dump);
+
+
+my $filename = 'georss.xml';
+
+my $dom = XML::LibXML-&gt;load_xml(location =&gt; $filename);
+my $xpc = XML::LibXML::XPathContext-&gt;new($dom);
+$xpc-&gt;registerNs(dft =&gt; "http://www.w3.org/2005/Atom");
+$xpc-&gt;registerNs(georss =&gt; "http://www.georss.org/georss");
+
+my $title =  $xpc-&gt;findnodes('//dft:title');
+print "title $title\n";
+
+my $point = $xpc-&gt;findnodes('//georss:where/point');
+   print "point $point\n";
+
+&lt;/code&gt;
+
+&lt;p&gt;OUTPUT from above code&lt;/p&gt;
+
+&lt;p&gt;title EarthquakesM 3.2, Mona Passage&lt;/p&gt;
+&lt;p&gt;point&lt;/p&gt;
+
+&lt;p&gt;georss.xml&lt;/p&gt;
+
+&lt;code&gt;
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;feed xmlns="http://www.w3.org/2005/Atom" xmlns:georss="http://www.georss.org/georss" xmlns:gml="http://www.opengis.net/gml"&gt;
+  &lt;title&gt;Earthquakes&lt;/title&gt;
+  &lt;subtitle&gt;International earthquake observation labs&lt;/subtitle&gt;
+  &lt;link href="http://example.org/" /&gt;
+  &lt;updated&gt;2005-12-13T18:30:02Z&lt;/updated&gt;
+  &lt;author&gt;
+    &lt;name&gt;Dr. Thaddeus Remor&lt;/name&gt;
+    &lt;email&gt;tremor@quakelab.edu&lt;/email&gt;
+  &lt;/author&gt;
+  &lt;id&gt;urn:uuid:60a76c80-d399-11d9-b93C-0003939e0af6&lt;/id&gt;
+  &lt;entry&gt;
+    &lt;title&gt;M 3.2, Mona Passage&lt;/title&gt;
+    &lt;link href="http://example.org/2005/09/09/atom01" /&gt;
+    &lt;id&gt;urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a&lt;/id&gt;
+    &lt;updated&gt;2005-08-17T07:02:32Z&lt;/updated&gt;
+    &lt;summary&gt;We just had a big one.&lt;/summary&gt;
+    &lt;georss:where&gt;
+      &lt;point&gt;45.256 -71.92&lt;/point&gt;
+    &lt;/georss:where&gt;
+  &lt;/entry&gt;
+&lt;/feed&gt;
+&lt;/code&gt;</doctext>
+<thread id="1169289">
+<node id="1169291"><node id="1169292"/>
+</node>
+</thread></node>

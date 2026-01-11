@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1221520" title="Re: Reset meaning of empty pattern?" created="2018-09-01 08:31:44" updated="2018-09-01 08:31:44" _doctext_mode="lenient"><type id="11">note</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">This is one of the magic edge cases which confuse me in Perl. :(&lt;P&gt;
+
+They are nice for short scripts but a source of errors in larger apps, because they break orthogonality.&lt;P&gt;
+
+Anyway I'm confused about the result you are expecting... the empty pattern would always match for every position&lt;P&gt;
+
+&lt;c&gt;
+use strict;
+use warnings;
+use feature 'say';
+
+
+my $run=0;
+
+sub test {
+    $run++;
+    my $regex = 'm{}g';                 # user input
+    my $text = 'xx';                    # user input
+    print "--- run $run\n";
+    pos($text)=0;
+    eval &lt;&lt;"__CODE__";
+        say pos(\$text),"&lt;\$&amp;&gt;" while \$text =~ $regex;
+__CODE__
+}
+
+test();
+
+say "successful /g/" if 'g' =~ /g/;
+test();
+
+say "successful /x/" if 'x' =~ /x/;
+test();
+
+my $empty='';
+say "successful //" if ' ' =~ /$empty/;
+test();
+&lt;/c&gt;
+&lt;c&gt;
+--- run 1
+0&lt;&gt;
+1&lt;&gt;
+2&lt;&gt;
+successful /g/
+--- run 2
+successful /x/
+--- run 3
+1&lt;x&gt;
+2&lt;x&gt;
+--- run 4
+1&lt;x&gt;
+2&lt;x&gt;
+&lt;/c&gt;&lt;P&gt;
+
+so you are looking for a way to reproduce run 1?&lt;P&gt;
+
+I wasn't able to reset the regex engine here&lt;P&gt;
+
+&lt;H5&gt; update&lt;/H5&gt;&lt;P&gt;
+
+tybalt's suggestions seem to work well:&lt;P&gt;
+
+&lt;c&gt;
+...
+for my $tybalt (qw/ () | (?:) g{0}/) {
+    'g' =~ /g/;
+    say "successful /$tybalt/" if ' ' =~ /$tybalt/;
+    test();
+}
+&lt;/c&gt;&lt;P&gt;
+
+&lt;c&gt;
+successful /()/
+--- run 5
+0&lt;&gt;
+1&lt;&gt;
+2&lt;&gt;
+successful /|/
+--- run 6
+0&lt;&gt;
+1&lt;&gt;
+2&lt;&gt;
+successful /(?:)/
+--- run 7
+0&lt;&gt;
+1&lt;&gt;
+2&lt;&gt;
+successful /g{0}/
+--- run 8
+0&lt;&gt;
+1&lt;&gt;
+2&lt;&gt;
+&lt;/c&gt;&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;small&gt;&lt;strike&gt;Football&lt;/strike&gt;Perl is like chess, only without the dice&lt;/small&gt;
+&lt;/sub&gt; &lt;P&gt;
+
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.142} --&gt;</doctext>
+<root_node field_name="root_node">1221517</root_node>
+<parent_node field_name="parent_node">1221517</parent_node>
+<thread id="1221517">
+<node id="1221518"><node id="1221537"><node id="1221541"><node id="1221543"/>
+</node>
+</node>
+</node>
+<node id="1221519"><node id="1221534"/>
+<node id="1221540"/>
+</node>
+<node id="1221520"><node id="1221542"><node id="1221544"><node id="1221546"/>
+</node>
+</node>
+</node>
+<node id="1221563"/>
+</thread></node>

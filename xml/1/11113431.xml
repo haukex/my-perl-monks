@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11113431" title="Variable scope issue- effect of &quot;my&quot; on hash ref keys, values" created="2020-02-26 06:29:05" updated="2020-02-26 06:29:05" _doctext_mode="lenient"><type id="11">note</type>
+<author id="222702">parv</author>
+<doctext field_name="doctext">&lt;p&gt;I hate the software that does not keep the return value consistent. Short of asking a parser for an array reference (somehow) regardless of number of items present, however, I do not see a parser to always return an array reference in the situation described. &lt;i&gt;With that out of the way ...&lt;/i&gt;&lt;/p&gt;
+
+
+&lt;p&gt;Your problem seems to be of variable scope. Why do you have "&lt;c&gt;my&lt;/c&gt;" in ...
+
+&lt;c&gt;
+if (exists($data-&gt;{channel}-&gt;{title})) {
+  ...
+  my $data-&gt;{channel}-&gt;{item}-&gt;[0]=$mydata;
+  ...
+}
+&lt;/c&gt;
+
+&lt;p&gt; ...? After the end of the if-block, &lt;c&gt;$data-&gt;{channel}-&gt;{item}-&gt;[0]&lt;/c&gt; ceases to exist [doc://perlsub#Private-Variables-via-my()|due to] [doc://my] operator.
+&lt;/p&gt;
+
+&lt;strike&gt;
+&lt;readmore title="I had forgotten my Perl"&gt;
+&lt;p&gt;Try ...
+
+&lt;c&gt;
+use strict; use warnings; use Data::Dumper;
+
+my $x;
+{
+   my $x-&gt;{a}-&gt;[0] = "no you don't!";
+   #  my op also affects unrelated keys. Why?
+      $x-&gt;{c}-&gt;[0] = "try this with previous 'my' for extra fun";
+}
+{
+   $x-&gt;{b}-&gt;[0] = "now you see";
+}
+print Dumper $x;
+
+__END__
+$VAR1 = {
+          'b' =&gt; [
+                   'now you see'
+                 ]
+        };
+&lt;/c&gt;
+
+&lt;p&gt;In perl 5.30.1, I am disturbed by the fact that "extra fun" does not make into the Dumper output (but not disturbed enough to file a problem report myself).
+&lt;/p&gt;
+&lt;/readmore&gt;
+&lt;/strike&gt;
+
+
+&lt;p&gt;After [id://11113436|tobyink] &amp; [id://11113435|haukex] had set me straight, please ignore the above code; try this ...
+
+&lt;c&gt;
+use strict; use warnings; use Data::Dumper;
+
+my $x;
+{
+   my $x-&gt;{a}-&gt;[0] = "no you don't!";
+}
+{
+   $x-&gt;{b}-&gt;[0] = "now you see";
+}
+print Dumper $x;
+
+__END__
+$VAR1 = {
+          'b' =&gt; [
+                   'now you see'
+                 ]
+        };
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11113429</root_node>
+<parent_node field_name="parent_node">11113429</parent_node>
+<thread id="11113429">
+<node id="11113430"/>
+<node id="11113431"><node id="11113435"/>
+<node id="11113436"><node id="11113438"/>
+</node>
+<node id="11113437"/>
+</node>
+<node id="11113439"><node id="11113446"><node id="11113451"><node id="11113541"><node id="11113542"/>
+<node id="11113553"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

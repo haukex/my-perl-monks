@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1177161" title="Re: portability / system / elegance (updated)" created="2016-12-04 10:58:54" updated="2016-12-04 10:58:54" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [skendric],&lt;/p&gt;
+&lt;p&gt;In my experience, the best thing is to use modules to help you. A quick glance at the source of [mod://File::Which] shows that it uses [doc://File::Spec] internally, so the filenames that &lt;c&gt;which&lt;/c&gt; is returning should already be in the native format. You can test this via &lt;c&gt;use Data::Dumper; $Data::Dumper::Useqq=1; print Dumper($tshark_binary);&lt;/c&gt; (although keep in mind that the output will be in Perl's notation, so e.g. &lt;c&gt;$VAR1 = "C:\\Foo\\Bar.txt"&lt;/c&gt; means that the string is actually &lt;c&gt;C:\Foo\Bar.txt&lt;/c&gt;).&lt;/p&gt;
+&lt;p&gt;As for calling external commands, I would not recommend the &lt;c&gt;system(STRING)&lt;/c&gt; form, but instead the &lt;c&gt;system(LIST)&lt;/c&gt; form (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; that is, [doc://system] called with more than one argument, or even better, the &lt;c&gt;system PROGRAM LIST&lt;/c&gt; form), or even better, a module such as [mod://IPC::Run3], which allows you to dodge most shell quoting and escaping issues (on Linux, it can avoid the shell completely, and on Windows, it automatically uses [mod://Win32::ShellQuote]).&lt;/p&gt;
+&lt;p&gt;&lt;strike&gt;Unfortunately I can't test this on Windows at the moment, but I think this should work (it works on Linux):&lt;/strike&gt; &lt;b&gt;Updated:&lt;/b&gt; Tested and works on both Linux and Windows. On Windows, &lt;c&gt;which('tshark')&lt;/c&gt; does indeed return &lt;c&gt;"C:\\Program Files\\Wireshark\\tshark.EXE"&lt;/c&gt; as I suspected above. Also, as I mentioned below, if [man://tshark] is already in your &lt;c&gt;PATH&lt;/c&gt;, you don't need the &lt;c&gt;which&lt;/c&gt;, it works fine without (&lt;c&gt;run3 ['tshark', ...&lt;/c&gt;) on both OSes.&lt;/p&gt;
+&lt;c&gt;
+use File::Which qw/which/;
+use IPC::Run3 qw/run3/;
+run3 [which('tshark'), '-r', $pcap, qw/ -e frame.number
+  -e frame.time_epoch -e ip.src -e ip.id -T text
+  -T fields -E /,'separator=,'], undef, $temp_file;
+&lt;/c&gt;
+&lt;p&gt;Although, if [man://tshark] is already in your &lt;c&gt;$ENV{PATH}&lt;/c&gt;, why use &lt;c&gt;which&lt;/c&gt; at all?&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1177153</root_node>
+<parent_node field_name="parent_node">1177153</parent_node>
+<thread id="1177153">
+<node id="1177159"><node id="1177162"/>
+</node>
+<node id="1177161"><node id="1177181"/>
+</node>
+<node id="1177186"/>
+</thread></node>

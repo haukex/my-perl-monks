@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1219121" title="Re^3: how to stop command" created="2018-07-23 13:39:16" updated="2018-07-23 13:39:16" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I don't think this particular &lt;c&gt;eval&lt;/c&gt; is likely to suffer from the issues you mentioned.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;True, in this case it's probably fine. But I think it's still a good habit to get into - even seemingly innocent pieces of code can trigger the problematic behavior:&lt;/p&gt;
+&lt;c&gt;
+eval { $foo = `some_bad_command` or die "blam" };
+warn $@ if $@;
+&lt;/c&gt;
+&lt;p&gt;won't print anything if &lt;c&gt;$foo&lt;/c&gt; happened to be an object with the problematic &lt;c&gt;DESTROY&lt;/c&gt; on a problematic version of Perl.&lt;/p&gt;
+&lt;readmore&gt;
+&lt;p&gt;The following doesn't print anything until Perl v5.26.0.&lt;/p&gt;
+&lt;c&gt;
+use strict;
+
+sub Foo::DESTROY { eval { 1 } }
+
+my $foo = bless {}, 'Foo';
+
+eval { $foo = `some_bad_command` or die "blam" };
+warn $@ if $@;
+&lt;/c&gt;
+&lt;p&gt;(Interestingly, according to a bisect, the commit that changed this behavior is [https://perl5.git.perl.org/perl.git/commitdiff/a0833292cfd2e6c3e7390b655122d7e033b70793|a0833292cf], which has nothing to do with fixing &lt;c&gt;$@&lt;/c&gt; issues, so it appears to just be a side effect.)&lt;/p&gt;
+&lt;/readmore&gt;
+</doctext>
+<root_node field_name="root_node">1219040</root_node>
+<parent_node field_name="parent_node">1219072</parent_node>
+<thread id="1219040">
+<node id="1219041"><node id="1219042"><node id="1219043"/>
+</node>
+</node>
+<node id="1219060"><node id="1219072"><node id="1219121"/>
+</node>
+<node id="1219104"><node id="1219124"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193300" title="Re: Pulling from a list and inserting into XML documents" created="2017-06-22 10:39:43" updated="2017-06-22 10:39:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Two modules you should look at are [mod://Text::CSV] and [mod://XML::Twig]. There are several other good XML modules, but this one is well-suited for processing XML documents as a stream. What is unclear to me is whether your XML input files are all different, because if they're all the same, that means you're basically doing some template processing, and maybe a system like [dist://Template-Toolkit] might be better for this. Also, it's not clear to me how you want to match up input files to rows of CSV data. Anyway, here's a quick sample to get you started, updating this to read/write from actual files is left as an exercise for the reader ;-)&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Text::CSV;
+use XML::Twig;
+
+my %data;
+my $twig = XML::Twig-&gt;new(
+	twig_print_outside_roots =&gt; 1,
+	twig_roots =&gt; {
+		'HOST_NAME' =&gt; sub { $_[1]-&gt;set_text($data{host})-&gt;print },
+		'HOST_IP'   =&gt; sub { $_[1]-&gt;set_text($data{ip}  )-&gt;print },
+		'HOST_MAC'  =&gt; sub { $_[1]-&gt;set_text($data{mac} )-&gt;print },
+	} );
+
+my $XML = &lt;&lt;'END_XML'; # just for demo
+&lt;root&gt;
+	&lt;HOST_NAME&gt;&lt;/HOST_NAME&gt;
+	&lt;HOST_IP&gt;&lt;/HOST_IP&gt;
+	&lt;HOST_MAC&gt;&lt;/HOST_MAC&gt;
+&lt;/root&gt;
+END_XML
+
+my $csv = Text::CSV-&gt;new({binary=&gt;1,auto_diag=&gt;2});
+while ( my $row = $csv-&gt;getline(*DATA) ) {
+	@data{"host","ip","mac"} = @$row;
+	# here's where you'd need to match up XML file with data row
+	$twig-&gt;parse($XML);
+}
+$csv-&gt;eof or $csv-&gt;error_diag;
+
+__DATA__
+hosta,1.1.1.1,00000C123456,
+hostb,2.2.2.2,00000C123457,
+hostc,3.3.3.3,00000C123458,
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+&lt;root&gt;
+	&lt;HOST_NAME&gt;hosta&lt;/HOST_NAME&gt;
+	&lt;HOST_IP&gt;1.1.1.1&lt;/HOST_IP&gt;
+	&lt;HOST_MAC&gt;00000C123456&lt;/HOST_MAC&gt;
+&lt;/root&gt;
+&lt;root&gt;
+	&lt;HOST_NAME&gt;hostb&lt;/HOST_NAME&gt;
+	&lt;HOST_IP&gt;2.2.2.2&lt;/HOST_IP&gt;
+	&lt;HOST_MAC&gt;00000C123457&lt;/HOST_MAC&gt;
+&lt;/root&gt;
+&lt;root&gt;
+	&lt;HOST_NAME&gt;hostc&lt;/HOST_NAME&gt;
+	&lt;HOST_IP&gt;3.3.3.3&lt;/HOST_IP&gt;
+	&lt;HOST_MAC&gt;00000C123458&lt;/HOST_MAC&gt;
+&lt;/root&gt;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1193291</root_node>
+<parent_node field_name="parent_node">1193291</parent_node>
+<thread id="1193291">
+<node id="1193297"/>
+<node id="1193300"/>
+<node id="1193316"><node id="1193337"/>
+</node>
+<node id="1193388"/>
+</thread></node>

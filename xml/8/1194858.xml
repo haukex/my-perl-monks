@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1194858" title="Re^7: Perl Modules -- abstraction and interfaces: exporter and @ISA" created="2017-07-11 15:25:14" updated="2017-07-11 15:25:14" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;is this "good practice" - i mean the bit before the first sub?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I would answer this with "no". As you said, it might work, but there are two main reasons I would recommend against it.&lt;/p&gt;
+&lt;p&gt;First a practical point: usually, when you write a module like that, you'd be loading it with [doc://use]. However, as documented in [doc://use], that code gets run in a [doc://perlmod#BEGIN,-UNITCHECK,-CHECK,-INIT-and-END|BEGIN] block, that is, while the calling code is still being complied. For some code, it will still work, but on the other hand you may get some unexpected effects (e.g. [id://1156603|this thread]). Also, modules might not yet be loaded and/or initialized depending on the order of the &lt;c&gt;use&lt;/c&gt; statements in the calling code! (Even if you use [doc://require] to load modules at runtime instead of compile time, note that this will lead to other possibly unexpected effects, like the code in that module still being executed only once, or you having to use parentheses on all your subroutine calls imported from that module.) This is why modules that are intended to be [doc://use]d usually limit themselves to declarations of &lt;c&gt;sub&lt;/c&gt;s and package variables (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; and often the exporting of those subs into the caller's namespace, e.g. [doc://Exporter]), and if they do have initialization code, it is limited to things that are internal to that module without externally visible side effects. (&lt;i&gt;Update 2:&lt;/i&gt; Note I'm ignoring more complicated things like custom [doc://perlpragma|pragmas] here, which are also just special kinds of modules.)&lt;/p&gt;
+&lt;p&gt;Second, something to do more with convention: When I load a module with [doc://use], I don't expect that call to have any side effects other than loading that module, but the code you showed not only [doc://print]s something, it may even kill my whole program with [doc://exit]!&lt;/p&gt;
+&lt;p&gt;So what can you do instead? If you want to write a module that is intended to be loaded with [doc://use], then it's easiest when it only contains &lt;c&gt;sub&lt;/c&gt; definitions and perhaps declarations of package variables ([doc://our]). If it does execute code on loading, then it should only be for its internal initialization, i.e. it shouldn't have any side effects visible to outside code, and it needs to consider that it is being executed in a &lt;c&gt;BEGIN&lt;/c&gt; block, as I explained above (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; i.e., I wouldn't mess with cookies or CGI params that that point yet). If you want to include initialization code with effects visible to the outside code, then for example, put it in a &lt;c&gt;sub init&lt;/c&gt; that the user has to explicitly call.&lt;/p&gt;
+&lt;p&gt;Another approach, which I would consider to be less elegant, would be to use [doc://do] to explicitly execute another Perl file. Unlike [doc://require], that Perl file will be executed every time you call [doc://do] instead of only once, so it's more like calling a &lt;c&gt;sub&lt;/c&gt; than loading a module. However, in that case it's not necessarily the best place to put &lt;c&gt;sub&lt;/c&gt;s etc., so you'd have to consider splitting the code you showed into two parts. (So as you can tell, it's probably easier to just put the init code in a &lt;c&gt;sub init&lt;/c&gt; instead.)&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1193152</root_node>
+<parent_node field_name="parent_node">1194820</parent_node>
+<thread id="1193152">
+<node id="1193154"/>
+<node id="1193155"><node id="1193162"><node id="1193188"><node id="1193733"/>
+</node>
+</node>
+</node>
+<node id="1193157"><node id="1193163"><node id="1193165"><node id="1193176"><node id="1193184"><node id="1193186"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1193158"><node id="1193178"><node id="1193189"><node id="1193732"><node id="1193790"><node id="1194820"><node id="1194858"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1193159"><node id="1193166"><node id="1193171"><node id="1193174"><node id="1193179"><node id="1193181"/>
+</node>
+</node>
+</node>
+<node id="1193180"><node id="1193187"><node id="1193191"/>
+<node id="1193198"/>
+</node>
+<node id="1193197"><node id="1193200"/>
+<node id="1193225"><node id="1193229"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1193182"/>
+</node>
+</thread></node>

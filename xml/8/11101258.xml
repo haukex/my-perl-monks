@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101258" title="%{^CAPTURE}, %{^CAPTURE_ALL} and %- don't produce expected output" created="2019-06-11 13:39:28" updated="2019-06-11 13:39:28" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1020196">vr</author>
+<doctext field_name="doctext">&lt;c&gt;
+use strict;
+use warnings;
+use Data::Dump 'dd';
+
+my $s = "a aa aaa aaaa";
+
+$s =~ /(?&lt;a&gt;a+) (?&lt;a&gt;a+) (?:(?&lt;a&gt;a+)bbb)?/;
+
+dd \@{^CAPTURE};        # all captured groups
+dd $+{a};               # leftmost defined "a"
+dd ${^CAPTURE}{a};      # ditto
+dd $-{a};               # all defined "a"'s groups
+dd ${^CAPTURE_ALL}{a};  # ditto
+
+__END__
+
+["a", "aa"]             # correct
+"a"                     # correct
+undef
+["a", "aa", undef]
+"a"
+
+&lt;/c&gt;
+
+&lt;p&gt;&lt;a href="https://metacpan.org/pod/distribution/perl/pod/perlvar.pod#Variables-related-to-regular-expressions"&gt;Documentation&lt;/a&gt; is not very verbose about new &lt;c&gt;%{^CAPTURE}&lt;/c&gt;, &lt;c&gt;%{^CAPTURE_ALL}&lt;/c&gt; variables, they are listed as if they are English synonyms to old &lt;c&gt;%+&lt;/c&gt; and &lt;c&gt;%-&lt;/c&gt;, but they are obviously not, they look plain wrong to me.&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;p&gt;The "aaa" was deleted from &lt;c&gt;@{^CAPTURE}&lt;/c&gt; array (or was not even added to begin with), when rightmost cluster failed to match, and deleted as array element from &lt;c&gt;@{$-{a}}&lt;/c&gt;, but the &lt;c&gt;$#{$-{a}}&lt;/c&gt; was not changed from wrong 2 to expected 1, hence unexpected undefined element in &lt;c&gt;@{$-{a}}&lt;/c&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Actually, w/r/t &lt;c&gt;%-&lt;/c&gt;, re-reading the docs, there's no phrase "all defined "a"'s groups" as I stated above.&lt;/p&gt; 
+&lt;blockquote&gt;&lt;i&gt;
+To each capture group name found in the regular expression, it associates a reference to an array containing the list of values captured by all buffers with that name (should there be several of them), in the order where they appear.
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, they say "all buffers with that name", but can &lt;c&gt;undef&lt;/c&gt; be said to be "captured"? Can failed sub-expression "capture"? It's ambiguous.&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; Mixing these "CAPTURE" things is broken:&lt;/p&gt;
+&lt;c&gt;
+#dd \@{^CAPTURE};
+dd \%{^CAPTURE};
+&lt;/c&gt;
+&lt;p&gt;is OK, but un-commenting 1st line results in empty unblessed hash in the 2nd.&lt;/p&gt;
+
+
+</doctext>
+<thread id="11101258">
+<node id="11101259"/>
+<node id="11101595"/>
+</thread></node>

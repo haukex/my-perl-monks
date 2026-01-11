@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11135874" title="Re: Create sort function from a text file" created="2021-08-16 08:15:48" updated="2021-08-16 08:15:48" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;First, note that running untrusted code from a text file is a &lt;b&gt;security risk&lt;/b&gt;. Your requirement seems a bit unusual, so perhaps you can explain a bit more about why you (think you) need this?&lt;/p&gt;
+&lt;p&gt;All your current &lt;c&gt;sub gSort&lt;/c&gt; is doing is returning the string of code. To turn a string of Perl code into compiled code, you need [doc://eval]. Here's one way to do this using a code reference:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $filename = 'globalSort.txt';
+open my $fh, '&lt;', $filename or die "$filename: $!";
+chomp( my $codestr = do { local $/; &lt;$fh&gt; } ); # slurp
+close $fh;
+
+my $sort = eval "sub $codestr"
+	or die "Failed to parse code from $filename: $@";
+print "Sorting with code: $codestr\n";
+
+my @data = (7,3,9,1);
+print " Input: @data\n";
+my @sorted = sort $sort @data;
+print "Output: @sorted\n";
+
+__END__
+
+Sorting with code: { $a &lt;=&gt; $b }
+ Input: 7 3 9 1
+Output: 1 3 7 9
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11135872</root_node>
+<parent_node field_name="parent_node">11135872</parent_node>
+<thread id="11135872">
+<node id="11135873"/>
+<node id="11135874"><node id="11135875"><node id="11135879"/>
+<node id="11135880"><node id="11135904"><node id="11135933"/>
+</node>
+<node id="11135950"><node id="11135952"><node id="11135957"><node id="11135958"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11135898"/>
+<node id="11135938"/>
+</node>
+</node>
+<node id="11135876"><node id="11135877"><node id="11135878"/>
+</node>
+</node>
+<node id="11135882"/>
+</thread></node>

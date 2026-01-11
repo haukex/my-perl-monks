@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118360" title="Re^4: Efficient way to verify scalar contents" created="2020-06-22 08:04:56" updated="2020-06-22 08:04:56" _doctext_mode="lenient"><type id="11">note</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">Though for the sake of readability I'd rather go for a hash of boundaries.&lt;P&gt;
+
+you may also want to limit the max length of your password.
+ 
+&lt;c&gt; 
+use strict;
+use warnings;
+use Data::Dump qw/pp dd/;
+use List::Util qw/min/;
+
+
+
+sub pw_not_ok {
+    my $pw  = shift;
+
+    my $short     =
+      sub { "is too short" };
+
+    my $lowercase =
+      sub { /[a-z]/ ? "" : "has no lowercase character" };
+
+    my $uppercase =
+      sub { /[A-Z]/ ? "" : "has no uppercase character" };  ### UPDATED
+
+    my $number =
+      sub { /[0-9]/ ? "" : "has no number" };
+
+    my $special =
+      sub {
+          if (
+              /[\x21-\x2F]/ ||
+              /[\x3A-\x40]/ ||
+              /[\x5B-\x60]/ ||
+              /[\x7B-\x7E]/
+             ) {
+              return "";
+          } else {
+              return "has no special characters";
+          }
+      };
+
+    my $pass = sub {""};
+
+
+
+    my %rules_by_max_length =
+      (
+       7 =&gt;  [ $short ],
+       11 =&gt; [ $lowercase, $uppercase, $number ,$special ],
+       15 =&gt; [ $lowercase, $uppercase, $number           ],
+       19 =&gt; [ $lowercase, $uppercase                    ],
+       50 =&gt; [ $pass ]
+      );
+
+    my $len = length $pw;
+
+    return "too long" if $len &gt;= 50;
+
+    my @boundaries = sort { $a &lt;=&gt; $b } keys %rules_by_max_length;
+
+    for my $boundary ( @boundaries ) {
+        next if $len &gt; $boundary;
+        my $rules = $rules_by_max_length{$boundary};
+
+        for my $rule ( @$rules ) {
+            $_ = $pw;
+            if ( my $err = $rule-&gt;() ) {
+                return $err;
+            }
+        }
+    }
+    return;
+}
+
+# --------- Tests
+
+for my $pw (
+            "A" x 3 ,
+            "A" x 7 ,
+            "A" x 11,
+            "a" x 5 . "A" x 3,
+            "a" x 5 . "A" x 3 . "1",
+            "a" x 5 . "A" x 3 . "1" .":",
+            "a" x 24,
+            "a" x 100,
+           ){
+    if ( my $err = pw_not_ok($pw) ){
+        warn "ERROR: $pw is $err\n";
+    } else {
+        print "OK: $pw\n"
+    }
+}
+&lt;/c&gt;&lt;P&gt;
+
+&lt;blockquote&gt;&lt;i&gt;
+
+&lt;c&gt;
+ERROR: AAA is is too short
+ERROR: AAAAAAA is is too short
+ERROR: AAAAAAAAAAA is has no lowercase character
+ERROR: aaaaaAAA is has no number
+ERROR: aaaaaAAA1 is has no special characters
+ERROR: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa is too long
+OK: aaaaaAAA1:
+OK: aaaaaaaaaaaaaaaaaaaaaaaa
+&lt;/c&gt;
+
+&lt;/i&gt;&lt;/blockquote&gt;&lt;P&gt;
+
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;!--nowiki--&gt;&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;/sub&gt; 
+&lt;!--nowiki--&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;P&gt;
+
+&lt;H5&gt; UPDATE&lt;/H5&gt;&lt;P&gt;
+
+see [id://11118364]&lt;!-- Wiki2Monks {"version":1.16} --&gt;</doctext>
+<root_node field_name="root_node">11118334</root_node>
+<parent_node field_name="parent_node">11118358</parent_node>
+<thread id="11118334">
+<node id="11118336"><node id="11118337"><node id="11118341"/>
+<node id="11118358"><node id="11118360"><node id="11118363"><node id="11118364"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11118340"/>
+<node id="11118347"><node id="11118386"><node id="11118387"><node id="11118389"/>
+</node>
+</node>
+</node>
+<node id="11118354"><node id="11118361"><node id="11118362"/>
+</node>
+</node>
+<node id="11118365"><node id="11118366"><node id="11118367"/>
+</node>
+</node>
+<node id="11118369"/>
+<node id="11118395"><node id="11118408"><node id="11118433"><node id="11118485"/>
+</node>
+</node>
+</node>
+</thread></node>

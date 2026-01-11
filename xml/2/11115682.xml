@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11115682" title="5.24 -&gt; 5.28 -- what has changed in autovivification?" created="2020-04-17 09:42:09" updated="2020-04-17 09:42:09" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1164259">leszekdubiel</author>
+<doctext field_name="doctext">&lt;p&gt;Hello!&lt;/p&gt; 
+
+&lt;p&gt;Here is the program, and below results for perl 5.24 and 5.28: &lt;/p&gt; 
+
+&lt;code&gt;
+#!/usr/bin/perl -CSDA
+
+use utf8; 
+use Modern::Perl qw{2017}; 
+no autovivification qw{fetch store exists delete}; 
+
+my $h = {
+	'a' =&gt; {
+		'p' =&gt; 2,
+		'q' =&gt; 3,
+	},
+};
+
+print "perl ver $]:\n"; 
+$$h{a} and print "a ok\n"; 
+! $$h{b} and print "b not\n"; 
+! $$h{a}{x} and print "a/x not\n"; 
+! $$h{a}{x}{z} and print "a/x/z not\n"; 
+
+
+
+perl ver 5.024001:
+a ok
+b not
+a/x not
+a/x/z not
+
+
+perl ver 5.028001:
+a ok
+b not
+a/x not
+Can't vivify reference at ./atest line 18.
+
+&lt;/code&gt; 
+
+&lt;p&gt;Could someone please explain what has changed between 5.24 and 5.28 in regard of autovivification? And what would be the proper way to check existence of value in last line in ver 5.28?&lt;/p&gt;
+
+&lt;code&gt; 
+ver 5.24 good way: 
+
+! $$h{a}{x}{z} and print "a/x/z not\n"; 
+
+
+
+ver 5.28 good (?) way: 
+
+! ( $$h{a} &amp;&amp; $$h{a}{$x} &amp;&amp; $$h{a}{x}{z}) and print "a/x/z not\n";   # ?? any better idea? 
+
+&lt;/code&gt;
+
+
+&lt;p&gt;PS. I have to prevent perl from modifying my data structure "behind the scenes", because that structures get mapped to textual data that goes to manufacturing management system, and if any undef is inside data structure then error is thrown, because that means that someone made something wrong. &lt;/p&gt;  
+
+</doctext>
+<thread id="11115682">
+<node id="11115685"><node id="11115694"><node id="11115704"><node id="11115717"><node id="11115744"><node id="11115749"/>
+<node id="11115752"><node id="11115812"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11144549" title="Re: Change Carp's output to Mojo::Log" created="2022-06-09 08:06:29" updated="2022-06-09 08:06:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;If you look at the [https://metacpan.org/dist/Mail-IMAPClient/source/lib/Mail/IMAPClient.pm#L16|source] of [mod://Mail::IMAPClient], you'll see this comment: "&lt;c&gt;#local $SIG{__WARN__} = \&amp;Carp::cluck; #DEBUG&lt;/c&gt;" which hints that the author uses [doc://%SIG|&lt;c&gt;$SIG{__WARN__}&lt;/c&gt;] for this purpose (and [mod://Tk::Carp], pointed out by [Corion], appears to work the same way). The following seems to work for me, though it's always worth noting that changes to &lt;c&gt;$SIG{__WARN__}&lt;/c&gt; are global, so it's possible you might step on another module's toes or that one might step on yours. This is true even with [doc://local], unless you know &lt;i&gt;exactly&lt;/i&gt; what the call stack looks like. You can of course limit the effects by using &lt;c&gt;local $SIG{__WARN__}&lt;/c&gt; only in those blocks where you actually make calls to [mod://Mail::IMAPClient], that should help limit your exposure to such potential problems.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+package Foo {
+	use Carp;
+	sub bar {
+		carp "Foo Bar";
+	}
+}
+
+use Mojo::Log;
+
+my $log = Mojo::Log-&gt;new;
+local $SIG{__WARN__} = sub { $log-&gt;warn(@_) };
+
+Foo::bar();
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11144544</root_node>
+<parent_node field_name="parent_node">11144544</parent_node>
+<thread id="11144544">
+<node id="11144546"/>
+<node id="11144549"><node id="11144619"/>
+</node>
+<node id="11144555"/>
+<node id="11144599"/>
+</thread></node>

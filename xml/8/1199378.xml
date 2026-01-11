@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1199378" title="Re: Sorting Text File for HTML Output (updated x2)" created="2017-09-14 03:21:34" updated="2017-09-14 03:21:34" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I would recommend a module like [mod://Text::CSV] to read a delimited file like this, as it automatically takes over the handling of quotes, escaped delimiters, etc. But since this question is about sorting, let's leave &lt;strike&gt;it at that for now&lt;/strike&gt; that for the update below. First, to sort, it's easiest to read the entire file into memory (unless it's too big for that, but I'm going to assume for now it's not).&lt;/p&gt;
+&lt;c&gt;
+my $file = 'books/bookLIST.txt';
+open my $info, '&lt;', $file or die "Could not open $file: $!";
+my @lines = &lt;$info&gt;;
+close $info;
+&lt;/c&gt;
+&lt;p&gt;I have used the three-argument form of [doc://open] here, which is generally recommended nowadays. Next, you should build the data structure you want to sort, I'll build an [doc://perldsc#ARRAYS-OF-HASHES|array of hashes]. It's also possible to combine this with the above step and build the data structure directly while you're reading the file, saving the intermediate &lt;c&gt;@lines&lt;/c&gt; array, like you're doing in the original code (I would've probably written it that way to begin with, I guess my morning caffeine hadn't fully kicked in yet when I wrote this node &lt;c&gt;;-)&lt;/c&gt;&amp;nbsp;).&lt;/p&gt;
+&lt;c&gt;
+my @vlinks;
+for my $line (@lines) {
+	chomp($line);
+	my %row;
+	@row{qw/title title2 pages author/} = split /:/, $line, 4;
+	push @vlinks, \%row;
+}
+
+use Data::Dump;
+dd \@vlinks;
+&lt;/c&gt;
+&lt;p&gt;You should use [doc://chomp] instead of [doc://chop]. The &lt;c&gt;@row{...}&lt;/c&gt; syntax is a [doc://perldata#Slices|hash slice], and I limited the number of fields [doc://split] will split into so no data gets lost. I wasn't sure what the difference between the first two fields in your file is, so you might want to pick a more descriptive name than I did (&lt;c&gt;title2&lt;/c&gt;). You can then use [doc://Data::Dumper] or [mod://Data::Dump] to look at your data structure, as I showed above. Next the interesting part: the sorting. The technique is described in the FAQ [doc://perlfaq4#How-do-I-sort-an-array-by-(anything)?] - You compare the primary sort field, but if that comparison returns 0 (meaning they are equal), you move on to the next criteria, and so on. Note I am using the numerical comparison operator &lt;c&gt;&lt;=&gt;&lt;/c&gt; instead of the string comparison operator &lt;c&gt;cmp&lt;/c&gt; (see [doc://perlop]) on the &lt;c&gt;pages&lt;/c&gt; field, as I assume it's numeric.&lt;/p&gt;
+&lt;c&gt;
+@vlinks = sort {
+		   $a-&gt;{title}  cmp $b-&gt;{title}
+		or $a-&gt;{pages}  &lt;=&gt; $b-&gt;{pages}
+		or $a-&gt;{author} cmp $b-&gt;{author}
+	} @vlinks;
+&lt;/c&gt;
+&lt;p&gt;Then you can output your data (but see "Update 2" below!).&lt;/p&gt;
+&lt;c&gt;
+for my $vlink (@vlinks) {
+	print "&lt;tr&gt;&lt;td&gt;&lt;a href=\"bookDETAIL.cgi?book=$vlink-&gt;{title2}\"&gt;"
+		."$vlink-&gt;{title}&lt;/a&gt;&lt;/td&gt;&lt;td&gt;$vlink-&gt;{pages}&lt;/td&gt;"
+		."&lt;td&gt;$vlink-&gt;{author}&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;\n"
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Here's how to do it with [mod://Text::CSV] (also install [mod://Text::CSV_XS] for speed), note this also takes care of building the array of hashes for you, i.e. it replaces the first two pieces of code above. However, there is one minor difference, it does not limit the number of fields to four as the above code does.&lt;/p&gt;
+&lt;c&gt;
+use Text::CSV;
+
+my $file = 'books/bookLIST.txt';
+open my $info, '&lt;', $file or die "Could not open $file: $!";
+my $csv = Text::CSV-&gt;new({binary=&gt;1, auto_diag=&gt;2,
+	sep_char=&gt;":", allow_whitespace=&gt;1 });
+$csv-&gt;column_names(qw/title title2 pages author/);
+my @vlinks;
+while ( my $row = $csv-&gt;getline_hr($info) ) {
+	push @vlinks, $row;
+}
+$csv-&gt;eof or $csv-&gt;error_diag;
+close $info;
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; In your HTML generation, you should guard against any special characters in the input file messing up your HTML, such as quotes or angle brackets. Depending on where your input data is coming from, you may also be exposing yourself to a [wp://Cross-site scripting] (XSS) attack ([https://excess-xss.com/|longer explanation]) if you don't escape the special characters. The very minimum is [mod://HTML::Entities] as I show here, but you can also look into other ways to "safely" generate HTML like maybe using [mod://HTML::Tiny], [mod://Template::Toolkit], or even one of the many web frameworks.&lt;/p&gt;
+&lt;c&gt;
+use HTML::Entities qw/encode_entities/;
+for my $vlink (@vlinks) {
+	print "&lt;tr&gt;&lt;td&gt;&lt;a href=\"bookDETAIL.cgi?book="
+		.encode_entities($vlink-&gt;{title2})."\"&gt;"
+		.encode_entities($vlink-&gt;{title})."&lt;/a&gt;&lt;/td&gt;&lt;td&gt;"
+		.encode_entities($vlink-&gt;{pages})."&lt;/td&gt;&lt;td&gt;"
+		.encode_entities($vlink-&gt;{author})."&lt;/td&gt;&lt;/tr&gt;\n"
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update 3:&lt;/i&gt; Added the two comments about building the structure in one step and the potential security issue.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1199374</root_node>
+<parent_node field_name="parent_node">1199374</parent_node>
+<thread id="1199374">
+<node id="1199378"><node id="1199428"><node id="1199444"><node id="1199445"><node id="1199457"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1199393"/>
+<node id="1199408"/>
+<node id="1199410"/>
+<node id="1199462"/>
+<node id="1199507"/>
+</thread></node>

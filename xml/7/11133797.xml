@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11133797" title="Replacing crypt() for password login via a digest - looking for stronger alternative" created="2021-06-11 15:14:50" updated="2021-06-11 15:14:50" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="200239">davebaker</author>
+<doctext field_name="doctext">&lt;p&gt;Yikes. Another &lt;a href="https://www.techrepublic.com/article/billions-of-passwords-leaked-online-from-past-data-breaches/"&gt;8-1/2 billion passwords have been leaked&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Have a login system for my web app that has a couple hundred users. To log in, a user enters a password, the submitted password is run through my authentication script that uses crypt() and compares the result to a hashed string (i.e., a digest) stored in a text file on my server (because crypt() had created that digest when the user first created his or her account). If the crypt() result is the same as the digest, we have a match, so c'mon in.&lt;/p&gt;
+&lt;p&gt;I've done enough research to see that such a system is a commonly-used one and has the advantage of not storing passwords in plain text, or even storing passwords at all, but that crypt() uses an encryption method that isn't very strong, at least nowadays.&lt;/p&gt;
+&lt;p&gt;So I'm thinking there is a security vulnerability in the event a black hat were to obtain the plain text file by breaking into my server. Then the black hat runs a rainbow table against each user's digest to find a password that produces that same string. Then the black hat takes the user's password to the user's bank web site and uses that same password to empty the account, because so many people use the same password for multiple websites. It's not so much the user's information on my website that's confidential, it's the empty-the-bank-account scenario that's troubling.&lt;/p&gt;
+&lt;p&gt;This issue always has been present with the use of a digest for purposes of password checking, but I'm thinking it becomes more of an issue when a couple billion more possible passwords are released that can be used to make the rainbow table more effective. Hence the risks of damages to my users has gone up, and my risk of getting sued has gone up. Do you agree?&lt;/p&gt;
+&lt;p&gt;So I'm thinking that it would be good to replace:&lt;/p&gt;
+&lt;code&gt;
+grant_website_access() if ( $password_entered_on_web_form eq crypt( $user_specific_hash_stored_in_text_file_on_server, $password_entered_on_web_form );
+&lt;/code&gt;
+&lt;p&gt;with&lt;/p&gt;
+&lt;code&gt;
+grant_website_access() if ( $password_entered_on_web_form eq something_stronger_than_crypt( $user_specific_hash_stored_in_text_file_on_server, $password_entered_on_web_form );
+&lt;/code&gt;
+&lt;p&gt;An article on &lt;a href="http://perlgems.blogspot.com/2012/05/password-storage-with-salted-hashes.html"&gt;Password Storage with Salted Hashes&lt;/a&gt; recommends &lt;a href="https://metacpan.org/pod/Crypt::SaltedHash"&gt;Crypt::SaltedHash&lt;/a&gt;, with an example that seems to use the module's methods to achieve the same effect as my code. The author also recommends the use of SHA-512 with Crypt::SaltedHash rather than the considerably less secure SHA-1 or MD-5.&lt;/p&gt;
+&lt;p&gt;That's a good solution, it appears, to my perceived problem. I've checked threads back through 2012 here on PM and find none better, although &lt;a href="https://metacpan.org/pod/Authen::Passphrase::BlowfishCrypt"&gt;Authen::Passphrase::BlowfishCrypt&lt;/a&gt; is intriguing.&lt;/p&gt;</doctext>
+<thread id="11133797">
+<node id="11133799"><node id="11133991"><node id="11133992"><node id="11133994"/>
+</node>
+</node>
+</node>
+<node id="11133800"/>
+<node id="11133802"/>
+<node id="11133806"/>
+<node id="11133826"><node id="11133898"><node id="11133899"><node id="11133900"><node id="11133901"/>
+</node>
+<node id="11133909"><node id="11133933"><node id="11133944"><node id="11133962"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11133990"><node id="11134027"><node id="11134032"/>
+<node id="11134255"/>
+</node>
+</node>
+</node>
+<node id="11133907"><node id="11133917"><node id="11133919"/>
+<node id="11133920"/>
+</node>
+</node>
+<node id="11133964"/>
+</thread></node>

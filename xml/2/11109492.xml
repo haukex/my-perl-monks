@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109492" title="Re^3: Best way to a parse a big binary file" created="2019-11-30 15:47:53" updated="2019-11-30 15:47:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Or is it a bad style to pass a file handle to a constructor?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, it's fine, as long as you're using lexical filehandles (&lt;c&gt;open my $fh ...&lt;/c&gt;). It only gets difficult if any code that is reading from the filehandle either needs to look back at something that was already read from the file, or needs to look ahead further into the file into a section that is supposed to be parsed by another piece of code - in cases like that, it's usually more appropriate to use an approach similar to what I showed above.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Because of this I would prefer to have the parse logic in each class.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sure, that's fine too. Here's one quick example*:&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+use warnings;
+use 5.012; # for "package BLOCK" syntax
+
+BEGIN { $INC{'MyUtils.pm'}=__FILE__; # emulate "use"
+	package MyUtils {
+		use Exporter 'import';
+		our @EXPORT_OK = qw/ binread /;
+		
+		sub binread { # helper function for read+unpack
+			my ($fh, $bytes, $templ) = @_;
+			read($fh, my $data, $bytes) == $bytes
+				or die "failed to read $bytes bytes";
+			return unpack($templ, $data);
+		}
+	}
+}
+
+package Packet {
+	use Moo;
+	use MyUtils qw/binread/;
+	
+	has type =&gt; ( is =&gt; 'ro' );
+	has length =&gt; ( is =&gt; 'ro' );
+	
+	my %packet_types = ( 0x01 =&gt; 'MainHeader', 0x02 =&gt; 'ExtHeader',
+		0x13 =&gt; 'Section' );
+	sub parse {
+		my ($class, $fh) = @_;
+		my ($type, $length) = binread($fh, 2, "CC");
+		die "Unknown packet type $type" unless $packet_types{$type};
+		return $packet_types{$type}
+			-&gt;new( type=&gt;$type, length=&gt;$length )-&gt;parse($fh);
+	}
+}
+
+package MainHeader {
+	use Moo;
+	use MyUtils qw/binread/;
+	extends 'Packet';
+	
+	has foo =&gt; ( is =&gt; 'rwp' );
+	
+	sub parse {
+		my ($self, $fh) = @_;
+		my ($foo) = binread($fh, $self-&gt;length, 'Z*');
+		$self-&gt;_set_foo($foo);
+		return $self;
+	}
+}
+
+package ExtHeader {
+	use Moo;
+	use MyUtils qw/binread/;
+	extends 'Packet';
+	
+	has bar =&gt; ( is =&gt; 'rwp' );
+	
+	sub parse {
+		my ($self, $fh) = @_;
+		my ($bar) = binread($fh, $self-&gt;length, 'N');
+		$self-&gt;_set_bar($bar);
+		return $self;
+	}
+}
+
+package Section {
+	use Moo;
+	use MyUtils qw/binread/;
+	extends 'Packet';
+	
+	has quz =&gt; ( is =&gt; 'rwp' );
+	
+	sub parse {
+		my ($self, $fh) = @_;
+		my ($quz) = binread($fh, $self-&gt;length, 'n');
+		$self-&gt;_set_quz($quz);
+		return $self;
+	}
+}
+
+sub parsefile {
+	my $file = shift;
+	open my $fh, '&lt;:raw', $file or die $!;
+	my @pkts;
+	while (!eof($fh)) {
+		push @pkts, Packet-&gt;parse($fh);
+	}
+	close $fh;
+	return @pkts;
+}
+
+my $binfile =
+	 "\x01\x06Hello\0"
+	."\x02\x04\0\x12\x34\x56"
+	."\x13\x02\xBE\xEF";
+my @packets = parsefile(\$binfile);
+
+use Data::Dump;
+dd @packets;
+__END__
+(
+  bless({ foo =&gt; "Hello", length =&gt; 6, type =&gt; 1 }, "MainHeader"),
+  bless({ bar =&gt; 1193046, length =&gt; 4, type =&gt; 2 }, "ExtHeader"),
+  bless({ length =&gt; 2, quz =&gt; 48879, type =&gt; 19 }, "Section"),
+)
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;blockquote&gt;&lt;i&gt;But would be interesting what would you recommend if I had to compute a checksum over all sections although I would like to have the parse logic in each class instead of one central place&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, if by that you mean you want to checksum the entire file, then probably the above &lt;c&gt;sub parsefile&lt;/c&gt; is a good place, perhaps devising a way to keep track of the bytes already read or computing the checksum while reading - like for example, an object that wraps the filehandle and exposes the &lt;c&gt;binread&lt;/c&gt; method I showed to read from the file could calculate the checksum as the file is read piece by piece. But in my experience it's more common to see checksums on a per-packet basis, in which case, in the above code, &lt;c&gt;Packet::parse&lt;/c&gt; could take over the checksum reading and checking.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;But I want to learn how to solve my tasks with a better design and in a better way.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;* There are a whole bunch of possible variations on the above code. For example, I could've used [mod://Moo]'s features like &lt;c&gt;BUILDARGS&lt;/c&gt; to have the constructor do the parsing, instead of a separate &lt;c&gt;sub parse&lt;/c&gt; (although the former solution makes it a little more tricky to create packets in code that haven't been parsed from a file). Or, I could have structured the classes differently: If this was like a network protocol and each "packet" has a header, then it would make sense for the class &lt;c&gt;Packet&lt;/c&gt; to have a &lt;c&gt;header&lt;/c&gt; field that is populated with a corresponding class, instead of having the &lt;c&gt;*Header&lt;/c&gt; classes be subclasses of &lt;c&gt;Packet&lt;/c&gt;. Or I could've defined a [wp://Trait (computer programming)|role] that requires each class to have a &lt;c&gt;parse&lt;/c&gt; method. And so on.&lt;/p&gt;
+&lt;p&gt;So in general, the usual software design principles apply: reduce repetition, design your OO "isa" and "has" relationships in a sensible manner, make &lt;i&gt;judicious&lt;/i&gt; use of factory methods, and so on. If you feel like something is getting too difficult, then it's best to step back and see if there might be some architecture changes that would help the situation, instead of plowing on, because the more code you write, the more reluctant you'll be to make larger architecture changes.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11109453</root_node>
+<parent_node field_name="parent_node">11109488</parent_node>
+<thread id="11109453">
+<node id="11109455"><node id="11109488"><node id="11109492"><node id="11109974"/>
+</node>
+</node>
+</node>
+<node id="11109469"/>
+<node id="11109533"/>
+</thread></node>

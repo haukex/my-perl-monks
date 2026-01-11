@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1221170" title="Another date question" created="2018-08-27 06:06:05" updated="2018-08-27 06:06:05" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1221164">sshingor</author>
+<doctext field_name="doctext">&lt;p&gt;
+Hello Perl gurus,
+&lt;/p&gt;
+&lt;p&gt;
+I did read few threads on PerMonks before posting this question here.
+&lt;/p&gt;
+Friday 01-01-2016, starts and ends the week. Inspite of this being the first day in the first week of year, the week indicated by DateTime is 53. 
+&lt;p&gt;
+I also tried using localtime function and evantually calculating week# based of yearday. Although, it returns week 1, the calculation based on yearday, returns week 1 for the week beginning 04/01/2016 - 08/01/2016, which is actually week 2.
+&lt;/p&gt;
+
+&lt;p&gt;
+cal -w 1 2016 command starts with week 1 and goes on .. finally shows last week of 2016 as week 53, which as per me is correct.
+&lt;/p&gt;
+&lt;p&gt;
+I think most of you would agree that the cal command output is correct.
+&lt;/p&gt;
+&lt;p&gt;
+Question is, how do I get it right in perl ?
+&lt;/p&gt;
+
+&lt;code&gt;
+====
+#!/usr/bin/env perl
+
+#use 5.012;
+use strict;
+use warnings;
+
+use DateTime;
+use Time::Local;
+
+my $dt = DateTime-&gt;new(year =&gt; 2016, month =&gt; 1, day =&gt; 1);
+
+print "DateTIme confirms that 01-01-2016 was a =&gt; " . $dt-&gt;day_name . "\n";
+print "DateTime return the Week no for 01-01-2016 =&gt; " . $dt-&gt;week . "\n";
+
+$dt = DateTime-&gt;new(year =&gt; 2016, month =&gt; 1, day =&gt; 4);
+print "DateTIme confirms that 04-01-2016 was a =&gt; " . $dt-&gt;day_name . "\n";
+print "DateTime return the Week no for 04-01-2016 =&gt; " . $dt-&gt;week . "\n";
+
+my ($MONTHDAY, $WEEKDAY, $YEARDAY) = (localtime (timelocal(0,0,0,1,0,2016)))[3,6,7];
+my $WEEKNUM = int($YEARDAY / 7) + 1;
+
+print "using localtime to calculate weekno (01/01/2016) =&gt; " . $WEEKNUM . "\n";
+
+($MONTHDAY, $WEEKDAY, $YEARDAY) = (localtime (timelocal(0,0,0,4,0,2016)))[3,6,7];
+$WEEKNUM = int($YEARDAY / 7) + 1;
+
+print "using localtime to calculate weekno (04/01/2016) =&gt; " . $WEEKNUM . "\n";
+
+print "UNIX system cal command output for 1st month \n";
+system("cal -w 1 2016");
+===
+&lt;/code&gt;
+
+&lt;p&gt;
+Output:
+&lt;/p&gt;
+&lt;p&gt;
+Perl DateTIme confirms that 01-01-2016 was a =&gt; Friday &lt;br&gt;
+Perl DateTime return the Week no for 01-01-2016 =&gt; 53
+&lt;/p&gt;
+&lt;p&gt;
+Perl DateTIme confirms that 04-01-2016 was a =&gt; Monday &lt;br&gt;
+Perl DateTime return the Week no for 04-01-2016 =&gt; 1
+&lt;/p&gt;
+&lt;p&gt;
+using localtime to calculate weekno (01/01/2016) =&gt; 1 &lt;br&gt;
+using localtime to calculate weekno (04/01/2016) =&gt; 1
+&lt;/p&gt;
+&lt;p&gt;
+UNIX system cal command output for 1st month 
+&lt;/p&gt;
+
+&lt;p&gt;      January 2016     &lt;/p&gt;
+&lt;p&gt;    Su Mo Tu We Th Fr Sa   &lt;/p&gt;
+&lt;p&gt;  1                 1  2   &lt;/p&gt; 
+&lt;p&gt;  2  3  4  5  6  7  8  9   &lt;/p&gt;
+&lt;p&gt;  3 10 11 12 13 14 15 16   &lt;/p&gt;
+&lt;p&gt;  4 17 18 19 20 21 22 23   &lt;/p&gt;
+&lt;p&gt;  5 24 25 26 27 28 29 30   &lt;/p&gt;
+&lt;p&gt;  6 31                     &lt;/p&gt;
+</doctext>
+<thread id="1221170">
+<node id="1221175"/>
+<node id="1221176"/>
+<node id="1221182"><node id="1221189"><node id="1221195"/>
+</node>
+</node>
+<node id="1221184"/>
+</thread></node>

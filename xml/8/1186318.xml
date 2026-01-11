@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1186318" title="Re: HTTP::Tiny ssl opt" created="2017-03-29 03:08:08" updated="2017-03-29 03:08:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The [mod://HTTP::Tiny] doc says:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;c&gt;verify_SSL&lt;/c&gt; - A boolean that indicates whether to validate the SSL certificate of an https-connection (default is false)&lt;/p&gt;
+&lt;p&gt;... &lt;b&gt;By default, HTTP::Tiny does not verify server identity.&lt;/b&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;It works as expected for me, see below (note the PerlMonks SSL certificate is valid for &lt;c&gt;perlmonks.pair.com&lt;/c&gt;, but not &lt;c&gt;perlmonks.com&lt;/c&gt;). Could you provide an [id://1177642|SSCCE] for the problem?&lt;/p&gt;
+&lt;c&gt;
+$ perl -MHTTP::Tiny -le 'print HTTP::Tiny-&gt;new()-&gt;get("https://perlmonks.com/")-&gt;{status};'
+200
+$ perl -MHTTP::Tiny -le 'print HTTP::Tiny-&gt;new()-&gt;get("https://perlmonks.pair.com/")-&gt;{status};'
+200
+$ perl -MHTTP::Tiny -le 'print HTTP::Tiny-&gt;new(verify_SSL=&gt;1)-&gt;get("https://perlmonks.com/")-&gt;{status};'
+599
+$ perl -MHTTP::Tiny -le 'print HTTP::Tiny-&gt;new(verify_SSL=&gt;1)-&gt;get("https://perlmonks.pair.com/")-&gt;{status};'
+200
+$ perl -MHTTP::Tiny -le 'print HTTP::Tiny-&gt;new(verify_SSL=&gt;0)-&gt;get("https://perlmonks.com/")-&gt;{status};'
+200
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1186247</root_node>
+<parent_node field_name="parent_node">1186247</parent_node>
+<thread id="1186247">
+<node id="1186251"/>
+<node id="1186252"><node id="1186261"><node id="1186275"><node id="1186283"><node id="1186284"><node id="1186285"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1186318"/>
+</thread></node>

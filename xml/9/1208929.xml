@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1208929" title="Re: Is there any (performance) benefit to importing functions?" created="2018-02-10 17:40:39" updated="2018-02-10 17:40:39" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I've noticed that there are some functions that don't require &lt;c&gt;use&lt;/c&gt;-ing or &lt;c&gt;require&lt;/c&gt;-ing to use: for instance, the &lt;c&gt;Time::HiRes::&lt;/c&gt; functions, the &lt;c&gt;utf8::&lt;/c&gt; utility functions, &lt;c&gt;Cwd::getcwd()&lt;/c&gt;, etc.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This isn't quite correct - the only one of those that is loaded automatically by Perl is [doc://utf8]:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -le 'print Time::HiRes::gettimeofday()'
+Undefined subroutine &amp;Time::HiRes::gettimeofday called at -e line 1.
+$ perl -wMstrict -le 'print Cwd::getcwd()'
+Undefined subroutine &amp;Cwd::getcwd called at -e line 1.
+$ perl -wMstrict -le 'print utf8::valid("foo")'
+1
+&lt;/c&gt;
+&lt;p&gt;However, if you have noticed this behavior in a longer script, then note that if &lt;i&gt;any&lt;/i&gt; other piece of code you've loaded does e.g. &lt;c&gt;use Cwd;&lt;/c&gt; or &lt;c&gt;require Cwd;&lt;/c&gt;, then you will be able to do &lt;c&gt;Cwd::getcwd()&lt;/c&gt; in your code regardless of whether or not you have loaded [doc://Cwd] yourself. This is because of the way Perl's [doc://perlmod#Symbol-Tables] work: once Perl sees &lt;c&gt;package Cwd; sub getcwd { ... }&lt;/c&gt; or equivalent, then the symbol table entry &lt;c&gt;&amp;Cwd::getcwd&lt;/c&gt; will exist.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;where do I find a reference/list of these functions which require no require or use to use?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It's pretty rare that Perl loads modules automatically, and I don't think there is a reference other than a few mentions sprinkled throughout the docs. Really the only one I can think of off the top of my head at the moment is [doc://utf8], as I showed above. Then there are those that are loaded on demand only, such as [doc://File::Glob] - note how I have to use the [doc://glob] operator &lt;c&gt;&lt;*&gt;&lt;/c&gt; before I can access &lt;c&gt;File::Glob::*&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -le '     print join ",", File::Glob::bsd_glob("{x,y}={a,b}")'
+Undefined subroutine &amp;File::Glob::bsd_glob called at -e line 1.
+$ perl -wMstrict -le '&lt;*&gt;; print join ",", File::Glob::bsd_glob("{x,y}={a,b}")'
+x=a,x=b,y=a,y=b
+&lt;/c&gt;
+&lt;p&gt;Then there are those that are documented to be loaded automatically, such as [doc://IO::Handle] and [doc://charnames] (at least in recent versions of Perl), but some quick testing seems to show that these don't behave like [doc://File::Glob] in that I still have to [doc://use] them explicitly if I want to access the functions in the modules.&lt;/p&gt;
+&lt;p&gt;Also, note there isn't really a standard behavior for modules in Perl. [id://1198421|In this node] I wrote at length about how importing from modules works, and note some of the general statements such as "Because Perl is very flexible in what it allows module authors to do, it isn't easy to give some general rules as to how modules act, beyond some guidelines and best practices about how modules &lt;i&gt;should&lt;/i&gt; be written, and based on that some rules of thumb of what to expect. So you'll have to look at the documentation of each of the modules to see what effects [doc://use]ing them will have." I also recommend a thorough read of [doc://perlmod].&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;What does this mean?&lt;/b&gt; I would recommend that you always explicitly [doc://use] modules whose functions you want to use in your code. That way, a reader of the code won't be confused where those functions are coming from, and you wouldn't be relying on any action-at-a-distance behavior, as I think you are when you talk about e.g. &lt;c&gt;Cwd::getcwd()&lt;/c&gt; being loaded automatically. The only exception to this rule might be [doc://utf8], because &lt;c&gt;use utf8;&lt;/c&gt; has the special effect of declaring the source code to be encoded in UTF-8. (If I think of or am reminded of any other such exceptions I can update this node.)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;But that got me thinking also about (2nd question) whether or not it makes a performance difference when using "long" package names&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;A [doc://Benchmark] with the following constructed single test case on my machine seems to show that there is no significant difference between the two across various versions of Perl.&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Benchmark qw/cmpthese/;
+
+{
+	package Foo;
+	sub bar { return $_[0] + $_[1] }
+}
+BEGIN { *bar = \&amp;Foo::bar } # import
+
+cmpthese(-2, {
+	imported =&gt; sub {
+		bar(2,3)==5 or die;
+	},
+	package =&gt; sub {
+		Foo::bar(2,3)==5 or die;
+	},
+});
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;blockquote&gt;&lt;i&gt;I mean does perl have to convert long names into paths or something to locate the function everytime&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, although I'm not an expert on the internals, I'm pretty sure Perl does not have to do that. In my example code above, note that the function call &lt;c&gt;bar()&lt;/c&gt; is basically just short for &lt;c&gt;main::bar()&lt;/c&gt; (since the default package is &lt;c&gt;main&lt;/c&gt;), and both &lt;c&gt;main::bar()&lt;/c&gt; and &lt;c&gt;Foo::bar()&lt;/c&gt; refer to the same piece of code.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;What does this mean?&lt;/b&gt; In my opinion the performance difference is small enough that it should be ignored. What shouldn't be ignored is that imported functions save typing. (Another smaller factor to consider might be testing: If you use the full package name, mocking those functions is a little more annoying because you have to override them in the originating package instead of just the package under test.)&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Typo fix and minor re-wording for clarity.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1208921</root_node>
+<parent_node field_name="parent_node">1208921</parent_node>
+<thread id="1208921">
+<node id="1208922"><node id="1208925"><node id="1208926"><node id="1208931"/>
+</node>
+</node>
+</node>
+<node id="1208928"/>
+<node id="1208929"><node id="1208932"/>
+</node>
+<node id="1209005"/>
+</thread></node>

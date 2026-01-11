@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1232306" title="Easy way to check if a file is open needed." created="2019-04-08 13:48:40" updated="2019-04-08 13:48:40" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1232304">Apt_Addiction</author>
+<doctext field_name="doctext">&lt;p&gt; I'm writing a script to run on macOS that will rename all illegal files in a tree,  so they can go to OneDrive and Dropbox without jamming the processes.&lt;/p&gt;
+&lt;p&gt;I'm new to Perl and only a beginner hobby coder, dipping my toes into Perl, but I've learned a lot and asked a lot and have come up with this, which does everything but two things - check if a file is already open before renaming it. and avoid dot files.&lt;/p&gt;
+&lt;p&gt;I'm aware of &lt;b&gt;lsof&lt;/b&gt; but I'm wondering if there's an easier and quicker way to check if any process in the system has a handle on a file open?&lt;/p&gt;
+
+&lt;code&gt;use warnings;
+use File::Find;
+use 5.010;
+use POSIX;
+
+find(\&amp;dirRecurs, '/users/my-dir/tree-to-work-on');
+sub dirRecurs{
+
+		if ((my $txt = $_) =~ s/^\ | (?=\.)|[\/!#%^:&lt;&gt;?*&amp;()\\]| $//g &amp;&amp; -f != m/^\./) {
+    			my $filename = '/users/my-dir/fix_names_report.txt';
+				open(my $fh, '&gt;&gt;', $filename); 
+				if (! -e $txt){
+					rename($_, $txt);
+					say $fh (strftime "%Y-%m-%d %H:%M:%S", localtime time)," \: ", $_, " =&gt; ", $txt;
+				}
+				else {
+					say $fh ("!!! ", strftime "%Y-%m-%d %H:%M:%S", localtime time)," \: ", $_, " =&gt; NOT RENAMED =&gt;", $txt, " already exists.";
+				}
+				close $fh;    			
+        }
+       
+}
+&lt;/code&gt;
+
+&lt;p&gt;Any advice or suggestions?&lt;/p&gt;</doctext>
+<thread id="1232306">
+<node id="1232309"><node id="1232332"><node id="1232336"/>
+</node>
+<node id="1232346"/>
+</node>
+<node id="1232310"/>
+<node id="1232315"><node id="1232317"><node id="1232320"><node id="1232341"/>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1182354" title="Re^3: How to read compressed (gz) file in xml::twig" created="2017-02-20 11:07:06" updated="2017-02-20 11:07:06" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [CSharma],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;but script takes a lot time in providing the output&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;How long does it take to [man://gunzip] the file and then process it with your existing script? How much longer does the above code take? To get a somewhat decent comparison, try piping the output of [man://gunzip] into your script (it'll need a slight modification to read from &lt;c&gt;STDIN&lt;/c&gt;).&lt;/p&gt;
+&lt;p&gt;One thing that might* speed things up is if you make use of [mod://XML::Twig]'s ability to parse an XML file in chunks, instead of reading the whole thing into memory like you're currently doing.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use IO::Uncompress::Gunzip ();
+use XML::Twig;
+
+my $z = IO::Uncompress::Gunzip-&gt;new('in.xml.gz')
+    or die "gunzip failed: $IO::Uncompress::Gunzip::GunzipError\n";
+my $twig = XML::Twig-&gt;new(
+	twig_roots =&gt; {
+		'/CatalogListings/Offer/EstimatedCPC' =&gt; sub {
+			my ($t, $elt) = @_;
+			print $elt-&gt;text*100, "\n";
+			$t-&gt;purge;
+		},
+	},
+);
+$twig-&gt;parse($z);
+$z-&gt;close;
+&lt;/c&gt;
+&lt;p&gt;This produces the same output as before, but discards each &lt;c&gt;&lt;EstimatedCPC&gt;&lt;/c&gt; element when it's done processing it, and ignores the other elements.&lt;/p&gt;
+&lt;p&gt;(* The code works, but I haven't had the chance to do a performance test.)&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1182330</root_node>
+<parent_node field_name="parent_node">1182342</parent_node>
+<thread id="1182330">
+<node id="1182332"><node id="1182342"><node id="1182343"/>
+<node id="1182354"><node id="1182488"/>
+</node>
+</node>
+</node>
+</thread></node>

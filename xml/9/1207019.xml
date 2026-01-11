@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1207019" title="Re^2: bullet proof SLURP file" created="2018-01-09 16:53:04" updated="2018-01-09 16:53:04" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Shouldn't something like this catch them all?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Doesn't look like it, sorry :-( A look at [https://metacpan.org/source/DAGOLDEN/Path-Tiny-0.104/lib/Path/Tiny.pm#L1767|the Path::Tiny source] shows it seems to do no error checking on the reads at all.&lt;/p&gt;
+&lt;readmore title="Demo code"&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Data::Dump;
+use Path::Tiny;
+use Try::Tiny;
+use autodie qw(:all);
+
+package ReadFail {
+	use parent 'Tie::Handle::Base';
+	sub READLINE { $! = 1; return }
+	sub READ { $! = 1; return undef }
+}
+
+my $orig = \&amp;Path::Tiny::filehandle;
+my $wrap = sub { ReadFail-&gt;new( $orig-&gt;(@_) ) };
+{ no warnings 'redefine'; *Path::Tiny::filehandle = $wrap }
+
+try { dd "slurp_utf8", path('mydata.txt')-&gt;slurp_utf8 }
+catch { dd "error", $_ };
+
+__END__
+
+("slurp_utf8", undef)
+&lt;/c&gt;
+&lt;/readmore&gt;
+</doctext>
+<root_node field_name="root_node">1207003</root_node>
+<parent_node field_name="parent_node">1207016</parent_node>
+<thread id="1207003">
+<node id="1207009"><node id="1207014"><node id="1207017"/>
+<node id="1207024"/>
+</node>
+</node>
+<node id="1207013"><node id="1207018"/>
+</node>
+<node id="1207016"><node id="1207019"><node id="1207048"/>
+</node>
+</node>
+<node id="1207038"><node id="1207089"/>
+</node>
+</thread></node>

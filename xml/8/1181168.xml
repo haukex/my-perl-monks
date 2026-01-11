@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1181168" title="Regex error in the second last string" created="2017-02-06 04:15:06" updated="2017-02-06 04:15:06" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1165687">t-rex</author>
+<doctext field_name="doctext">&lt;p&gt; hello&lt;/p&gt;
+&lt;p&gt; I have a template from which I extract few parameters by using perl regex as follows &lt;/p&gt;
+&lt;code&gt;
+
+template 1:
+
+&lt;%=
+my $capi = '';
+if (@{$ctxt{'capi_devices'}}){
+$capi =
+'afu_op=grpcapp' . "\n" .
+'capp=1' . "\n" .
+'icnt=200' . "\n" .
+'capi_dev=' . join(' ', @{$ctxt{'capi_devices'}})."\n".
+'capi_cards=' . @{$ctxt{'capi_devices'}};
+}
+$capi;
+%&gt;
+
+&lt;%=
+my $marega = '';
+if (@{$ctxt{'test'}}){
+$marega =
+'splthid=' . join(' ' ,@spthid_a). "\n" .
+'splthjobops=' . join(' ', @{$ctxt{'test'}}). "\n" ;
+}
+$marega;
+%&gt;
+
+&lt;/code&gt;
+&lt;p&gt;
+Now I have a generic function which processes this template ( it has many parameters but avoiding for the sake of simplicity ), the problem is when i try to extract the &lt;b&gt;$capi&lt;/b&gt; some how it gets bypassed and I get the &lt;b&gt;$marega&lt;/b&gt;.
+Here is the code for processing template
+&lt;code&gt;
+while($inp =~ /&lt;%=(.*?)%&gt;/s)
+      {
+         print "Dollar 1 before eval = $1\n";
+         $inp =~ s/&lt;%=(.*?)%&gt;/eval $1/es;
+         print"INP after substitution = $inp\n";
+      }
+
+# only the concerned part of code with this extraction is written here 
+&lt;/code&gt;
+&lt;p&gt; the output i get here is &lt;/p&gt;
+&lt;code&gt;
+
+Dollar 1 before eval =
+my $capi = '';
+if (@{$ctxt{'capi_devices'}}){
+$capi =
+'afu_op=grpcapp' . "\n" .
+'capp=1' . "\n" .
+'afusched=1 1 1 0 0 0 0 0' . "\n" .
+'afu_type=1 1 1 0 0 0 0 0' . "\n" .
+'icnt=200' . "\n" .
+'capi_dev=' . join(' ', @{$ctxt{'capi_devices'}})."\n".
+'capi_cards=' . @{$ctxt{'capi_devices'}};
+}
+$capi;
+
+INP after substitution = 
+splthid=7
+splthjobops=0 2 1 1 4 0 2 6 0 3 8 0 4 0 0
+
+# here i expect the $1 contents after evaluation to come that is $capi should be printed but instead $marega is executed.
+&lt;/code&gt;
+&lt;p&gt; i hope i can convey what problem i am facing by this writeup, thanks&lt;/p&gt;</doctext>
+<thread id="1181168">
+<node id="1181169"/>
+<node id="1181207"/>
+</thread></node>

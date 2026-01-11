@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11122233" title="Re: tr operator in eval -- updated" created="2020-09-26 04:37:12" updated="2020-09-26 04:37:12" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;The example on p.76 of the camel book&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;What edition of the book are you looking at? In the fourth edition, the example that I &lt;i&gt;think&lt;/i&gt; you're referring to is on page 191, and in the third edition, the page number is similarly high. From the 4th ed, it's:&lt;/p&gt;
+&lt;c&gt;
+$count = eval "tr/$oldlist/$newlist/";
+die if $@; # propagates exception from illegal eval contents
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;a) eval " ... code ... " as shown in the book gives an eval error message.&lt;/i&gt; [id://11122229|and] &lt;i&gt;&lt;c&gt;eval "tr/$oldlist/$newlist/;"&lt;/c&gt; This does not work.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, there is nothing wrong with that example code in the second, third, and fourth editions of the book. (Nitpicks: under [doc://strict], the variables obviously need to be predeclared, and the &lt;c&gt;if $@&lt;/c&gt; pattern is [id://1153468|not recommended].)&lt;/p&gt;
+&lt;p&gt;This means that the code you're running is not exactly the code from the book, and you haven't shown an example of the code that does produce the error you're referring to, nor the error message itself. [id://174051] and [id://510718]&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;even putting the code in braces it does not work.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;There is a significant difference between &lt;c&gt;eval STRING&lt;/c&gt; and &lt;c&gt;eval BLOCK&lt;/c&gt;. The latter is basically just an exception trapping mechanism, it does not delay the compilation of the code inside the block until runtime, which is what the former does, and it is required in this case, since as the book explains, the pattern is built at compile time.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;The problem is that $kards should be set to the result of the eval execution, not put inside the eval execution.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, that at least gives a hint as to what might have been going wrong. So you probably wrote &lt;c&gt;eval "$kards = $bad =~ tr/$card//;"&lt;/c&gt;? Note that what [doc://eval|&lt;c&gt;eval STRING&lt;/c&gt;] does is compile a string of Perl code and execute it. If you take a close look at the string you're giving it, &lt;c&gt;"$kards = $bad =~ tr/$card//;"&lt;/c&gt;, note that since it's in double quotes, all the variables inside are interpolated. In other words, using the values you've shown here, the string you're actually handing to &lt;c&gt;eval&lt;/c&gt; to compile and run is &lt;c&gt;'-99 = AKQJT98765432KKKK =~ tr/K//;'&lt;/c&gt;, which of course doesn't make sense. You meant for &lt;c&gt;eval&lt;/c&gt; to execute the Perl code &lt;c&gt;'$kards = $bad =~ tr/K//;'&lt;/c&gt;, i.e. only the value of &lt;c&gt;$card&lt;/c&gt; should be interpolated, which means you need to prevent the other two variables from being interpolated, for example by putting backslashes in front of the sigils, as in &lt;c&gt;"\$kards = \$bad =~ tr/$card//;"&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;This also means that your second example code, &lt;c&gt;$kards = eval "$bad =~ tr/$card//;";&lt;/c&gt;, has the same issue, because you're asking Perl to execute the piece of code &lt;c&gt;'AKQJT98765432KKKK =~ tr/K//;'&lt;/c&gt;. This only &lt;i&gt;happens&lt;/i&gt; to work if you're not using [doc://strict], because Perl is taking &lt;c&gt;AKQJT98765432KKKK&lt;/c&gt; as a "bareword", a feature that is not allowed under [doc://strict|strict "subs"]. And since one shoud always [id://111088], you should escape &lt;c&gt;$bad&lt;/c&gt; in this code as well.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11122227</root_node>
+<parent_node field_name="parent_node">11122227</parent_node>
+<thread id="11122227">
+<node id="11122228"/>
+<node id="11122229"><node id="11122230"/>
+</node>
+<node id="11122231"/>
+<node id="11122232"/>
+<node id="11122233"><node id="11122255"/>
+</node>
+<node id="11122235"/>
+<node id="11122241"><node id="11122256"><node id="11122259"/>
+</node>
+</node>
+<node id="11122242"><node id="11122257"><node id="11122260"/>
+<node id="11122264"/>
+</node>
+</node>
+</thread></node>

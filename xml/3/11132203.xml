@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11132203" title="Re: RSA encrypt but no decrypt. What is the problem? (updated)" created="2021-05-07 04:12:00" updated="2021-05-07 04:12:00" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;It appears to be a problem* with the key you've provided. Adding &lt;c&gt;die "invalid key" unless $rsa-&gt;check_key;&lt;/c&gt; causes the script to die. The following works for me:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Crypt::OpenSSL::RSA;
+use Crypt::OpenSSL::Bignum;
+use Data::Dump;
+
+my $rsa = Crypt::OpenSSL::RSA-&gt;generate_key(1024);
+my $priv = $rsa-&gt;get_private_key_string;
+my $ciphertext = $rsa-&gt;encrypt("Hello");
+
+my $rsa2 = Crypt::OpenSSL::RSA-&gt;new_private_key($priv);
+my $plaintext = $rsa2-&gt;decrypt($ciphertext);
+dd $plaintext;
+
+my %params;
+@params{qw/n e d p q/, 'd mod (p-1)', 'd mod (q-1)', '1/q mod p'}
+	= map { $_-&gt;to_hex } $rsa-&gt;get_key_parameters;
+dd \%params;
+&lt;/c&gt;
+&lt;p&gt;* &lt;b&gt;Update:&lt;/b&gt; Specifically, when I replace your &lt;c&gt;d&lt;/c&gt; and &lt;c&gt;n&lt;/c&gt; parameters with newly generated ones, your code works for me (as long as both sides use &lt;c&gt;pkcs1_padding&lt;/c&gt; or &lt;c&gt;pkcs1_oaep_padding&lt;/c&gt;, the latter being the default). Note that &lt;c&gt;$rsa-&gt;check_key&lt;/c&gt; checks for the presence of the parameters &lt;c&gt;n&lt;/c&gt;, &lt;c&gt;e&lt;/c&gt;, &lt;c&gt;d&lt;/c&gt;, &lt;c&gt;p&lt;/c&gt;, and &lt;c&gt;q&lt;/c&gt;, you're not giving it &lt;c&gt;p&lt;/c&gt; and &lt;c&gt;q&lt;/c&gt; (though the decryption still works). If you were to provide [mod://Crypt::OpenSSL::RSA] with &lt;i&gt;only&lt;/i&gt; &lt;c&gt;n&lt;/c&gt; and &lt;c&gt;e&lt;/c&gt;, that would tell the module it's a public key only. I'm not sure why you're working with keys the way you've shown in your post?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11132146</root_node>
+<parent_node field_name="parent_node">11132146</parent_node>
+<thread id="11132146">
+<node id="11132157"><node id="11132175"><node id="11132192"><node id="11132198"><node id="11132201"/>
+</node>
+<node id="11132221"/>
+</node>
+</node>
+<node id="11132177"/>
+</node>
+<node id="11132202"><node id="11132267"/>
+</node>
+<node id="11132203"><node id="11132271"><node id="11132279"><node id="11132281"><node id="11132282"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1184494" title="eval NoOp on cmd.exe line expr" created="2017-03-13 18:37:47" updated="2017-03-13 18:37:47" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">Trying to replicate example 4 in "Larry's filename fixer"
+(Perl Cookbook, 9.9), I've tried several variants of his expr: 
+&lt;code&gt;
+  'print "$_: "; s/foo/bar/ if &lt;STDIN&gt; =~ /^y/i'
+&lt;/code&gt;
+and get,for example, the following error:  
+&lt;code&gt;
+  The system cannot find the file specified.
+&lt;/code&gt;
+Running ActivePerl-5.24 on W10, here's the code:
+&lt;code&gt;
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+use 5.010;
+
+# Larry's filename fixer [Cookbook 9.9, mod crt for ActiveState/W10]
+
+my $op = shift or die 
+  "Usage: perl rename expr [files]\n";
+
+chomp(@ARGV = &lt;STDIN&gt;) unless @ARGV;
+@ARGV = map glob, @ARGV;
+
+for (@ARGV) {
+  my $was = $_;
+  eval $op;
+  die $@ if $@; 
+  rename ($was, $_) unless $was = $_;
+}
+&lt;/code&gt;
+Where have I gone astray?
+</doctext>
+<reputation field_name="reputation">5</reputation>
+<thread id="1184494">
+<node id="1184502"/>
+<node id="1184503"/>
+<node id="1184586"/>
+<node id="1184593"/>
+</thread></node>

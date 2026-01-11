@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203051" title="Re: Translation Substring Error (updated)" created="2017-11-09 10:47:55" updated="2017-11-09 10:47:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;c&gt;@seqarray&lt;/c&gt; and &lt;c&gt;$seqarray&lt;/c&gt; are two different variables, and you never assign anything to &lt;c&gt;$seqarray&lt;/c&gt;, so using [doc://substr] on it does not make much sense, I suspect you just want to look directly at &lt;c&gt;$seq&lt;/c&gt; instead of [doc://split]ting it (BTW, to get multiple elements out of an array, use [doc://perldata#Slices] or [doc://splice]). Also, note that you overwrite &lt;c&gt;$amino_acid&lt;/c&gt; on every loop iteration. The following minimal changes make your code work for me:&lt;/p&gt;
+&lt;c&gt;
+	my $seq = shift;
+	my $amino_acid;
+	for (my $i=0; $i&lt;=length($seq)-3; $i=$i+3) {
+		my $codon = substr($seq,$i,3);
+		$amino_acid .= $genetic_code{$codon};
+	}
+	return $amino_acid;
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;&lt;c&gt;&lt;update2&gt;&lt;/c&gt;&lt;/b&gt; Fixed an off-by-one error in the above code; I initially incorrectly translated your &lt;c&gt;$#seqarray-2&lt;/c&gt; into &lt;c&gt;length($seq)-2&lt;/c&gt; (&lt;c&gt;$#seqarray&lt;/c&gt; returns the last index of the array, not its length like &lt;c&gt;scalar(@seqarray)&lt;/c&gt; does, or [doc://length] does for strings). That's a good argument against the classic &lt;c&gt;for(;;)&lt;/c&gt; and for the two solutions below instead :-) &lt;b&gt;&lt;c&gt;&lt;/update2&gt;&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;If you output the return value from &lt;c&gt;OneFrameTranslation&lt;/c&gt; (your current code is ignoring the return value), this gives you:&lt;/p&gt;
+&lt;c&gt;
+print OneFrameTranslation('ATGCCCGTAC'),"\n";
+print OneFrameTranslation('GCTTCCCAGCGC'),"\n";
+__END__
+MPV
+ASQR
+&lt;/c&gt;
+&lt;p&gt;By the way, you can probably move your &lt;c&gt;%genetic_code&lt;/c&gt; to the top of your code (outside of the &lt;c&gt;sub&lt;/c&gt;), so that it only gets initialized once instead of on every call to the &lt;c&gt;sub&lt;/c&gt;, and making its name uppercase is the usual convention to indicate it is a constant that should not be changed.&lt;/p&gt;
+&lt;p&gt;Another way to break up a string is using regular expressions, the following also works - it matches three characters, and then matches again at the position that the previous match finished, and so on:&lt;/p&gt;
+&lt;c&gt;
+	my $amino_acid;
+	while ($seq=~/\G(...)/sg) {
+		$amino_acid .= $genetic_code{$1};
+	}
+	return $amino_acid;
+&lt;/c&gt;
+&lt;p&gt;Or, possibly going a little overboard, here's a technique I describe in [id://1179840] to make the replacements using a single regex. I have left out the [doc://quotemeta] and [doc://sort] steps only because I know for certain that all keys are three-character strings without any special characters, if you have any doubts about the input data, put those steps back in!&lt;/p&gt;
+&lt;c&gt;
+	# build the regex, this only needs to be done once
+	my ($genetic_regex) = map qr/$_/, join '|', keys %genetic_code;
+	# apply the regex
+	(my $amino_acid = $seq) =~ s/($genetic_regex)/$genetic_code{$1}/g;
+	return $amino_acid;
+&lt;/c&gt;
+&lt;p&gt;However, note this produces slightly different output for the first input: "&lt;c&gt;MPVC&lt;/c&gt;" (the leftover &lt;c&gt;C&lt;/c&gt; remains unchanged). Whether or not you want this behavior or not is up to you; it can also be accomplished in the first two solutions (although slightly less elegantly than with a regex). &lt;i&gt;Update:&lt;/i&gt; Also, in the first two solutions you haven't defined what would happen if a code happens to not be available in the table; the third regex solution would simply leave it unchanged. &lt;small&gt;&lt;i&gt;Also minor edits for clarification.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203047</root_node>
+<parent_node field_name="parent_node">1203047</parent_node>
+<thread id="1203047">
+<node id="1203051"><node id="1203058"><node id="1203059"/>
+<node id="1203061"/>
+</node>
+</node>
+<node id="1203052"><node id="1203055"><node id="1203057"/>
+</node>
+</node>
+<node id="1203054"><node id="1203056"/>
+</node>
+<node id="1203088"/>
+<node id="1203167"/>
+<node id="1203374"/>
+</thread></node>

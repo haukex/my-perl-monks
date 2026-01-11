@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11128780" title="Re: You won't believe what this regular expression does!" created="2021-02-25 08:01:05" updated="2021-02-25 08:01:05" _doctext_mode="lenient"><type id="11">note</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">Lets dissect this into smaller problems.&lt;P&gt;
+
+
+&lt;H5&gt; Simplification&lt;/H5&gt;&lt;P&gt;
+
+I tried to simplify the case to avoid misunderstandings&lt;P&gt;
+
+&lt;c&gt;
+  DB&lt;32&gt; p "hello" =~ s/o*$/O/gr;
+hellOO
+  DB&lt;33&gt; $_="hello"; s/o*$/O/g; print       # for older Perls
+hellOO
+  DB&lt;34&gt;
+&lt;/c&gt;&lt;P&gt;
+
+Surprise: the &lt;C&gt;o&lt;/C&gt; is replaced twice.&lt;P&gt;
+
+&lt;H5&gt; Explanation so far&lt;/H5&gt;&lt;P&gt;
+
+You and Hauke already  [id://11128777|explained] that 
+&lt;UL&gt;
+&lt;LI&gt; [DOC://pos|&lt;tt&gt;pos&lt;/tt&gt;] isn't changing after the first match b/c of the zero-width of $
+&lt;LI&gt; the empty o* is matching again °
+&lt;/UL&gt;&lt;P&gt;
+
+ (And I agree that the referenced [HTTP://perldoc.perl.org/perlre.html#Repeated-Patterns-Matching-a-Zero-length-Substring|perlre#Repeated-Patterns-Matching-a-Zero-length-Substring] needs a rewrite)&lt;P&gt;
+
+&lt;c&gt;
+  DB&lt;41&gt; $_="hello"; say pos,"($1)" while m/(o*$)/g;   # pos doesn't change
+5(o)
+5()
+
+  DB&lt;42&gt; p "hello" =~ s/x*$/O/gr;                      # empty match (no x)
+ helloO
+&lt;/c&gt;&lt;P&gt;
+
+&lt;H5&gt; Disappointments&lt;/H5&gt;&lt;P&gt;
+
+Now, why is it surprising?&lt;P&gt;
+
+I think your case is that &lt;C&gt;$&lt;/C&gt; in combination with the &lt;C&gt;/m&lt;/C&gt; modifier should act differently. Correct? 
+&lt;UL&gt;
+&lt;LI&gt; Would this be consistent?
+&lt;LI&gt; Are there already examples of zero-width assertions who does it that way?
+&lt;LI&gt; Are there work-arounds to achieve what you want? (i.e. skipping zero-length matches)
+&lt;/UL&gt;
+&lt;H5&gt; Workarounds&lt;/H5&gt;&lt;P&gt;
+
+Here a guess for the last question&lt;P&gt;
+
+&lt;c&gt;
+  DB&lt;44&gt; p "hello\nfoo" =~ s/o*\n/O/gmr;
+hellOfoo
+  DB&lt;45&gt; p "hello\nfoo\n" =~ s/o*\n/O/gmr;    # added \n at the end of input
+hellOfO
+  DB&lt;46&gt;
+&lt;/c&gt;&lt;P&gt;
+
+&lt;H5&gt; Meta&lt;/H5&gt;&lt;P&gt;
+
+Question @all: Is the problem better understood now? :) &lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;!--nowiki--&gt;&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;/sub&gt; 
+&lt;!--nowiki--&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;P&gt;
+
+&lt;H5&gt; edit&lt;/H5&gt;&lt;P&gt;
+
+added more code&lt;P&gt;
+
+&lt;H5&gt; update&lt;/H5&gt;&lt;P&gt;
+
+added headlines for structuring&lt;P&gt;
+
+°) because empty patterns are always matching&lt;P&gt;
+
+compare
+&lt;c&gt;
+  DB&lt;59&gt; p "12345" =~ s/x*/ /gmr;
+ 1 2 3 4 5
+  DB&lt;60&gt;
+&lt;/c&gt;&lt;!-- Wiki2Monks {"version":1.16} --&gt;</doctext>
+<root_node field_name="root_node">11128774</root_node>
+<parent_node field_name="parent_node">11128774</parent_node>
+<thread id="11128774">
+<node id="11128776"><node id="11128778"/>
+</node>
+<node id="11128777"/>
+<node id="11128780"><node id="11128781"><node id="11128786"><node id="11128821"><node id="11128826"><node id="11128830"/>
+<node id="11128831"><node id="11128839"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11128785"/>
+</thread></node>

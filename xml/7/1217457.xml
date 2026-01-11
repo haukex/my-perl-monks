@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217457" title="Re: Suppressing desired warnings from output of Test::NoWarnings" created="2018-06-26 15:02:44" updated="2018-06-26 15:02:44" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;Test::NoWarnings&lt;/c&gt; is throwing a warning.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Which warning is that? Please show an [id://1177642|SSCCE] that reproduces the issue.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More tests=&gt;2;
+use Test::NoWarnings;
+use Test::Warn;
+
+sub Foo::get_member_id_by_name { warn "foo than bar" };
+my $obj = bless {}, 'Foo';
+
+warning_like ( sub { $obj-&gt;get_member_id_by_name('smith'); },
+	qr/than/, 'warns when more than one name returned' );
+
+__END__
+
+1..2
+ok 1 - warns when more than one name returned
+ok 2 - no warnings
+&lt;/c&gt;
+&lt;p&gt;By the way, here's the code I use to test warnings:&lt;/p&gt;
+&lt;c&gt;
+sub warns (&amp;) {
+	my $sub = shift;
+	my @warns;
+	{ local $SIG{__WARN__} = sub { push @warns, shift }; $sub-&gt;() }
+	return wantarray ? @warns : scalar @warns;
+}
+
+print "&lt;$_&gt;\n" for warns { warn "Hello"; warn "World" }
+
+__END__
+&lt;Hello at - line 8.
+&gt;
+&lt;World at - line 8.
+&gt;
+&lt;/c&gt;
+&lt;p&gt;And I've learned it's not a good idea to expect a specific number of warnings, since different versions of Perl may issue different warnings. Just do &lt;c&gt;my @warns = warns {...};&lt;/c&gt; and then &lt;c&gt;grep&lt;/c&gt; the array for the warning(s) you do or don't expect.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update: Typo fix.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1217447</root_node>
+<parent_node field_name="parent_node">1217447</parent_node>
+<thread id="1217447">
+<node id="1217449"/>
+<node id="1217450"/>
+<node id="1217457"><node id="1217490"/>
+</node>
+<node id="1217569"/>
+</thread></node>

@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109831" title="Perl script compressor" created="2019-12-07 23:54:45" updated="2019-12-07 23:54:45" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1166559">harangzsolt33</author>
+<doctext field_name="doctext">I am trying to write a perl script which can compress a perl script without breaking it. Its job is to remove comments, new line characters, and unnecessary whitespace.
+
+&lt;P&gt;I have gotten so far that I can remove most comments and spaces, but I don't know how to interpret lines which contain regex and quotes and double-quotes. Everybody knows that I can't just chop off everything that comes after the '#' character, because if it's within a print statement, then the script no longer works:
+
+&lt;P&gt;&lt;TT&gt;&amp;nbsp; print "\nHello World ###";
+&lt;BR&gt;&amp;nbsp; return;
+&lt;BR&gt;}&lt;/TT&gt;
+
+&lt;P&gt;would become:
+
+&lt;P&gt;&lt;TT&gt;print"\nHello Worldreturn;}&lt;/TT&gt;
+
+&lt;P&gt;So, I need to come up with a logic that can interpret a line of complex perl code and remove comments and spaces in such a way that it won't break the code.
+
+&lt;P&gt;I just started learning perl 3 years ago, so I am not even sure what kind of complicated code patterns may exist in a perl script. I always see something new and marvel "What in the world is this code!! I've never seen anything like it." Lol
+
+&lt;P&gt;Ok, here is what I have done so far:
+
+&lt;CODE&gt;
+#!/usr/bin/perl -w
+
+#
+# This perl script can compress itself by getting rid
+# of comments, spaces, tabs, new lines, and reducing
+# the perl code to its minimal size where it will
+# still function.
+# Written by Zsolt on Dec. 7, 2019. &lt;zsnp@juno.com&gt;
+# Tested on TinyPerl 5.8 (Windows XP).
+#
+# When $WRITE_FILE is true, it will save the output to
+# a file called OUTPUT##.pl where ## is a number.
+#
+##################################################
+
+use strict;
+use warnings;
+
+my $WRITE_FILE = 0;
+
+my $SELF   = ReadFile(__FILE__);
+my $SHRUNK = CompactPerl($SELF);
+
+my $ORIGINAL_SIZE = length($SELF);
+my $SHRUNK_SIZE   = length($SHRUNK);
+my $DIFF = $ORIGINAL_SIZE - $SHRUNK_SIZE;
+
+print '&gt;' x 78;
+print "\n", $SHRUNK;
+print '^' x 78;
+print "\n\nFILE NAME   : ", __FILE__;
+print "\nFILE SIZE   : $ORIGINAL_SIZE bytes";
+print "\nSHRUNK SIZE : $SHRUNK_SIZE bytes";
+WriteOutput($SHRUNK) if ($WRITE_FILE);
+if ($SHRUNK_SIZE &lt; $ORIGINAL_SIZE)
+{ print "\n\nYou could eliminate $DIFF bytes by compressing this script.\n"; }
+
+print &lt;&lt;'END_OF_MESSAGE';
+
+Wow, this script is amazing!
+ * * * * * * * * * * * * * * * *
+   Yes, it really is!  :D
+
+END_OF_MESSAGE
+exit;
+
+##################################################
+#
+# Creates and overwrites a file in binary mode.
+# Returns 1 on success or 0 if something went wrong.
+# Usage: INTEGER = CreateFile(FILE_NAME, CONTENT)
+#
+sub CreateFile
+{
+  defined $_[0] or return 0;
+  my $F = $_[0];
+  $F =~ tr#\"\0*?|&lt;&gt;##d;	# Remove special characters
+  length($F) or return 0;
+  local *FH;
+  open(FH, "&gt;$F") or return 0;
+  binmode FH;
+  if (defined $_[1] ? length($_[1]) : 0) { print FH $_[1]; }
+  close FH or return 0;
+  print "\n$F was saved.\n";
+  return 1;
+}
+##################################################
+#
+# This function reads the entire contents of a file
+# in binary mode and returns it as a string. If an
+# errors occur, an empty string is returned silently.
+# A second argument will move the file pointer before
+# reading. And a third argument limits the number
+# of bytes to read.
+# Usage: STRING = ReadFile(FILENAME, [START, [LENGTH]])
+#
+sub ReadFile
+{
+  my $NAME = defined $_[0] ? $_[0] : '';
+  $NAME =~ tr/\"\0*?|&lt;&gt;//d;	# Remove special characters
+  -e $NAME or return '';
+  -f $NAME or return '';
+  my $SIZE = -s $NAME;
+  $SIZE or return '';
+  my $LEN = defined $_[2] ? $_[2] : $SIZE;
+  $LEN &gt; 0 or return '';
+  local *FH;
+  sysopen(FH, $NAME, 0) or return '';
+  binmode FH;
+  my $POS = defined $_[1] ? $_[1] : 0;
+  $POS &lt; $SIZE or return '';
+  $POS &lt; 1 or sysseek(FH, 0, $POS);	# Move file ptr
+  my $DATA = '';
+  sysread(FH, $DATA, $LEN);		# Read file
+  close FH;
+  return $DATA;
+}
+##################################################
+#                                       v2019.8.25
+# Removes whitespace from before and after STRING.
+# Whitespace is here defined as any byte whose
+# ASCII value is less than 33. That includes
+# tabs, esc, null, vertical tab, new lines, etc.
+# Usage: STRING = Trim(STRING)
+#
+sub Trim
+{
+  defined $_[0] or return '';
+  my $L = length($_[0]);
+  $L or return '';
+  my $P = 0;
+  while ($P &lt;= $L &amp;&amp; vec($_[0], $P++, 8) &lt; 33) {}
+  for ($P--; $P &lt;= $L &amp;&amp; vec($_[0], $L--, 8) &lt; 33;) {}
+  substr($_[0], $P, $L - $P + 2)
+}
+##################################################
+#
+# Saves the shrunk code in a file named output##.pl
+# where ## is a number. If output1.pl already
+# exists, then it will create output2.pl...
+# Usage: WriteOutput(CONTENT)
+#
+sub WriteOutput
+{
+  defined $_[0] or return;
+  length($_[0]) or return;
+
+  my $OUTPUT_FILENAME;
+  for (my $i = 1; $i &lt; 100; $i++)
+  {
+    $OUTPUT_FILENAME = "compact$i.pl";
+    -e $OUTPUT_FILENAME
+      or return CreateFile($OUTPUT_FILENAME, $_[0]);
+  }
+}
+##################################################
+# This function returns 1 if STRING ends with any
+# of the characters in LIST.
+# Usage: INTEGER = EndsWithChar(STRING, LIST)
+#
+sub EndsWithChar
+{
+  (@_ == 2 &amp;&amp; defined $_[0] &amp;&amp; defined $_[1] &amp;&amp; length($_[1]) &amp;&amp; length($_[0])) ? (index($_[1], substr($_[0], length($_[0]) - 1)) &lt; 0 ? 0 : 1) : 0;
+}
+##################################################
+#
+# This function receives one line of perl code
+# which contains one or more of the following:
+# quotes, double-quotes, a regex pattern, and
+# may also contain a comment at the end of the line.
+# The job of this function is to remove the
+# comments and spaces without breaking the code!
+# Usage: STRING = CompactLine(STRING)
+#
+sub CompactLine
+{
+  defined $_[0] or return '';
+  length($_[0]) or return '';
+
+  my $OUTPUT = Trim($_[0]);
+
+  $OUTPUT .= "\n";
+
+# &lt;&lt;&lt; THIS PART IS UNDER CONSTRUCTION &gt;&gt;&gt;
+
+  return $OUTPUT;
+}
+
+##################################################
+#
+# This function trims whitespace from before and after
+# a list of perl operators... This function modifies
+# the first argument and does not return anything.
+# Usage: TrimOperators(STRING)
+#
+# Example: TrimOperators($LINE)
+# This will look for ' + ' in $LINE and replace it
+# with '+' It will then look for ' - ' and replace
+# it with '-' and so forth with all the characters
+# listed in $OP.
+#
+sub TrimOperators
+{
+  defined $_[0] or return;
+  length($_[0]) or return;
+#  print "\nTrimOperators&gt;", $_[0];
+  my $c;
+  my $OP = '+-,.|&amp;*/&lt;&gt;?:;!%^()[]{}=';
+  for (my $i = 0; $i &lt; length($OP); $i++)
+  {
+    $c = substr($OP, $i, 1);
+    $_[0] =~ s/\s*\Q$c\E\s*/$c/g;
+  }
+#  print "\nTrimOperators&gt;", $_[0], "\n";
+}
+##################################################
+#                                       v2019.12.7
+# This function takes regular perl source code
+# as an input string and outputs compact perl code
+# that has spaces and comments removed.
+# Usage: STRING = CompactPerl(STRING)
+#
+sub CompactPerl
+{
+  defined $_[0] or return '';
+
+  my $CODE = $_[0];
+  $CODE =~ tr|\r||d;
+  my @A = split(/\n/, $CODE);    # Split lines
+
+  my $OP = '+-,.|&amp;*/&lt;&gt;?:;!%^()[]{}=';
+  my $STRIP;        # Part of a line that comes before '#'
+
+  my $P;
+  my $LINE;
+  my $TRIMMED;
+  my $END_MARKER = '';
+  my $MULTILINE_STRING = 0;
+  my $STOP = 0;
+
+  $A[0] .= "\n";		# Skip shebang
+  for (my $i = 1; $i &lt; @A; $i++)
+  {
+    $LINE = $A[$i];
+
+    # Remove everything after the '#' sign for easier processing
+    $P = index($LINE, '#');
+    $STRIP = Trim( ($P &lt; 0) ? $LINE : substr($LINE, 0, $P) );
+
+    # Skip here-documents
+    if ($MULTILINE_STRING == 0 &amp;&amp; $STRIP =~ m/\s*&lt;&lt;['"]+([_A-Za-z0-9]*)['"]+/) { $END_MARKER = $1; $MULTILINE_STRING = 2; $A[$i] .= "\n"; next; }
+    if ($MULTILINE_STRING == 2) { index($LINE, $END_MARKER) &lt; 0 or $MULTILINE_STRING = 0; $A[$i] .= "\n"; next; }
+
+    # Skip processing qq{ } text blocks
+    if ($MULTILINE_STRING == 0 &amp;&amp; index($STRIP, 'qq{') &gt;= 0) { $MULTILINE_STRING = 1; }
+    if ($MULTILINE_STRING == 1) { if (index($LINE, '}') &lt; 0) { $A[$i] .= "\n"; } else { $MULTILINE_STRING = 0; } next; }
+
+    # Remove everything after __END__
+    if ($STRIP eq '__END__') { $STOP = 1; $MULTILINE_STRING = -1; }
+    if ($STOP == 1) { $A[$i] = ''; next; }
+
+    # Skip __DATA__ section
+    if ($MULTILINE_STRING == 0 &amp;&amp; $STRIP eq '__DATA__') { $A[$i] = "\n__DATA__"; $MULTILINE_STRING = 3; }
+    if ($MULTILINE_STRING == 3) { $A[$i] .= "\n"; next; }
+
+    # Remove comment lines
+    if (length($STRIP) == 0) { $A[$i] = ''; next; }
+
+    # Any line that contains the characters ' " or ~
+    # is going to be processed by CompactLine() instead
+    if ($LINE =~ m/[~\"\']+/)
+    {
+      $A[$i] = CompactLine($LINE);
+      next;
+    }
+
+    $TRIMMED = Trim($STRIP);
+    $TRIMMED =~ s/([a-z])\s+\(/$1\(/g;	# Reduce 'my ($A'  --&gt; 'my($A'
+    $TRIMMED =~ s/([a-z])\s+\%/$1\%/g;	# Reduce 'my %A'   --&gt; 'my%A'
+    $TRIMMED =~ s/([a-z])\s+\$/$1\$/g;	# Reduce 'my $A'   --&gt; 'my$A'
+    $TRIMMED =~ s/([a-z])\s+\@/$1\@/g;	# Reduce 'my @A'   --&gt; 'my@A'
+    TrimOperators($TRIMMED);		# Reduce '$A + $B' --&gt; '$A+$B'
+
+    # If a line ends with a letter and the next line starts with
+    # the word 'or' then we'll break the code if we join the two.
+    # So, unless a line ends with an operator symbol,
+    # we should add a space.
+    EndsWithChar($TRIMMED, $OP)
+      or $TRIMMED .= ' ';
+
+# Here is an example:
+    $LINE
+      or $LINE;
+
+
+    $A[$i] = $TRIMMED;
+  }
+  return join('', @A);
+}
+##################################################
+
+__DATA__
+Everything after this point will not get compacted.
+It gets written
+   ....
+
+ AS
+  IS.	No change.
+
+__END__  # This is the end of file and whatever
+comes after this point gets discarded forever.....
+............
+
+&lt;/CODE&gt;</doctext>
+<thread id="11109831">
+<node id="11109833"/>
+<node id="11109834"/>
+<node id="11109839"><node id="11109849"><node id="11109851"><node id="11109853"/>
+<node id="11109869"><node id="11109888"><node id="11109892"><node id="11109896"><node id="11109899"/>
+</node>
+<node id="11109900"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11109842"><node id="11109844"><node id="11109859"><node id="11109860"><node id="11109865"/>
+<node id="11109875"/>
+</node>
+</node>
+</node>
+<node id="11109845"><node id="11109847"/>
+<node id="11109850"/>
+<node id="11109857"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1220606" title="Remove all duplicates after regex capture" created="2018-08-19 05:45:05" updated="2018-08-19 05:45:05" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1201390">Maire</author>
+<doctext field_name="doctext">&lt;p&gt; Hello, Monks. I'm hoping that you can help me with what is probably quite a simple problem, but which is completely stumping me! &lt;/p&gt;
+
+&lt;p&gt;I'm trying to work with text files which are fairly disorganized in terms of structure, and which have been stored in a hash. What I want from each file is to extract the line of text which begins "title:#" and ends with a "#" and store this text in a scalar to be used later. &lt;/p&gt;
+
+&lt;p&gt;The problem arises because, within some of the text files, there are multiple lines which begin and end with "title#" and "#" respectively. What distinguishes the "titles" I want is that they only ever appear in each text file once, whereas the "titles" I do not want appear at least twice (but sometimes three or four times) in the same text file.&lt;/p&gt;
+
+&lt;p&gt; So this is the basic script that I am using, which prints out all the titles
+&lt;code&gt;
+use warnings;
+use strict;
+
+my %mycorpus = (
+    a =&gt; "&lt;blah blah blah 
+blah
+title:#this is text I want 1#
+blah blah blah",
+
+    b =&gt; "blah
+title:#this is text I do not want# blah
+title:#this is text I want 2#
+blah
+title:#this is text I do not want#
+blah",
+
+    c =&gt; "blah blah
+title:#this is text I want 3#
+title:#this is text I do not want#
+title:#this is text I do not want#
+title:#this is text I do not want#
+blah",
+);
+
+
+foreach my $filename (sort keys %mycorpus) {
+        my $titles = '';
+
+
+         while ($mycorpus{$filename} =~ /title:#(.*?)#/g){
+				$titles = $1;		
+	
+			print  "$titles \n";	
+			}
+			}
+&lt;/code&gt; &lt;/p&gt;
+
+The script above, obviously, prints out all 8 captured lines which begin with "title", but my desired output is: 
+&lt;code&gt;
+this is text I want 1
+this is text I want 2
+this is text I want 3
+&lt;/code&gt;
+
+&lt;readmore&gt;
+
+&lt;p&gt;I thought it might work to add a line in after the titles have been captured which (was supposed to!) remove all lines which appeared multiple times, but my attempts at this failed &lt;/p&gt;
+&lt;code&gt;
+use warnings;
+use strict;
+
+my %mycorpus = (
+    a =&gt; "&lt;blah blah blah 
+blah
+title:#this is text I want 1#
+blah blah blah",
+
+    b =&gt; "blah
+title:#this is text I do not want# blah
+title:#this is text I want 2#
+blah
+title:#this is text I do not want#
+blah",
+
+    c =&gt; "blah blah
+title:#this is text I want 3#
+title:#this is text I do not want#
+title:#this is text I do not want#
+title:#this is text I do not want#
+blah",
+);
+
+
+foreach my $filename (sort keys %mycorpus) {
+        my $titles = '';
+
+
+         while ($mycorpus{$filename} =~ /title:#(.*?)#/g){
+				$titles = $1;
+		                $titles =~ s/(\b\w+\b)(?:\s*\1)+/$1/g; 
+	
+			print  "$titles \n";	
+			}
+			}
+&lt;/code&gt;
+
+
+
+&lt;p&gt;I hope that makes sense: I have been working on this for about 9 hours now, so I'm a bit frazzled! Any help/pointers here would be very much appreciated! Thank you!&lt;/p&gt;
+
+&lt;/readmore&gt;</doctext>
+<thread id="1220606">
+<node id="1220607"><node id="1220609"><node id="1220612"><node id="1220655"/>
+</node>
+</node>
+</node>
+<node id="1220614"><node id="1220675"/>
+</node>
+<node id="1220645"><node id="1220674"/>
+</node>
+<node id="1220666"><node id="1220677"/>
+</node>
+</thread></node>

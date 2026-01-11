@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200499" title="POE::Filter::Line seems to be buffering ??? input from some command line programs but not others?" created="2017-10-02 01:17:59" updated="2017-10-02 01:17:59" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1200497">KaiLoi</author>
+<doctext field_name="doctext">&lt;p&gt; Hey all, long time user, first time poster. I'm writing a program in libPOE to grab some input from a command line program and then do some stuff with it. I've grabbed a pretty generic sample from the POE cookbook site and it works GREAT with clearly terminating output like the output from an "ls" or something. But the min I make the input the equivilent of a pipe (so the input is coming in line by line but the source program doesn't terminate) the Filter seems to "buffer" the input and doesn't hand it back to my stdio catch until about 35 lines have gone by. &lt;/p&gt;
+
+&lt;p&gt;I'm mostly ttying to cpature the line by line output of "udevadm monitor" on a Ubuntu 16 box. I want to do various things based on the output of the UDEV lines. But it just won't hand it back for a period of input and I can't figure out why. It basically doesn't display anything to terminal until I plug and unplug a USB key multiple times and get about 35 lines of output from udevadm. Any help would be greatly appreciated. Code below. &lt;/p&gt;
+
+&lt;code&gt;
+
+#!/usr/bin/perl
+use warnings;
+use strict;
+use POE qw( Wheel::Run Filter::Line );
+
+# Start the session.  Spawn a simple program, and describe the events
+# it will generate as it does things.
+sub _start {
+  my ($kernel, $heap) = @_[KERNEL, HEAP];
+  $heap-&gt;{child} = POE::Wheel::Run-&gt;new(
+    Program =&gt; ["udevadm monitor"],    # Program to run.
+    StdioFilter  =&gt; POE::Filter::Line-&gt;new(),    # Child speaks in lines.
+    StderrFilter =&gt; POE::Filter::Line-&gt;new(),    # Child speaks in lines.
+    StdoutEvent  =&gt; "got_child_stdout",          # Child wrote to STDOUT.
+    StderrEvent  =&gt; "got_child_stderr",          # Child wrote to STDERR.
+    CloseEvent   =&gt; "got_child_close",           # Child stopped writing.
+  );
+  $kernel-&gt;sig_child($heap-&gt;{child}-&gt;PID, "got_sigchld");
+}
+
+# Deal with information the child wrote to its STDOUT.
+sub got_child_stdout {
+  my $stdout = $_[ARG0];
+  print "STDOUT: $stdout\n";
+}
+
+# Deal with information the child wrote to its STDERR.  These are
+# warnings and possibly error messages.
+sub got_child_stderr {
+  my $stderr = $_[ARG0];
+  $stderr =~ tr[ -~][]cd;
+  print "STDERR: $stderr\n";
+}
+
+# The child has closed its output filehandles.  It will not be sending
+# us any more information, so destroy it.
+sub got_child_close {
+  my $heap = $_[HEAP];
+  print "child closed.\n";
+  delete $heap-&gt;{child};
+}
+
+# Handle SIGCHLD, otherwise the child process will not be reaped.
+# Don't do anything significant, but do catch the signal so the child
+# process is reaped.
+sub got_sigchld {
+  print "SIGCHLD reaped.\n";
+}
+
+# A list of functions that will handle the events they're named after.
+my @handlers = qw(
+  _start got_child_stdout got_child_stderr got_child_close
+  got_sigchld
+);
+
+# Start a session where each event is handled by a function with the
+# same name.  Run POE's Kernel (and thus all its sessions) until done.
+POE::Session-&gt;create(package_states =&gt; [main =&gt; \@handlers]);
+POE::Kernel-&gt;run();
+exit 0;
+
+&lt;/code&gt;</doctext>
+<thread id="1200499">
+<node id="1200502"><node id="1200559"/>
+</node>
+</thread></node>

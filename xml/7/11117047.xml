@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117047" title="LWP::UserAgent &amp; match" created="2020-05-21 11:28:50" updated="2020-05-21 11:28:50" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1207004">vskatusa</author>
+<doctext field_name="doctext">Here is my code
+&lt;code&gt;
+use LWP::UserAgent;
+use feature 'say';
+
+my $todaysQuoteStr = ' data-reactid="49"&gt;&lt;span class="Trsdu(0.3s) Fw(b) Fz(36px) Mb(-4px) D(ib)" data-reactid="50"&gt;';
+$todaysQuoteStr =~ quotemeta($todaysQuoteStr); ## I believe this escapes all characters that need to be escaped
+
+my $url = 'https://finance.yahoo.com/quote/AAPL?p=AAPL&amp;.tsrc=fin-srch';
+
+my $ua = LWP::UserAgent-&gt;new();
+my $req = HTTP::Request-&gt;new(GET =&gt; $url);
+$ua-&gt;agent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36');
+
+my $response = $ua-&gt;request($req);
+#die $response-&gt;code if ! $response-&gt;is_success;
+$string = $response-&gt;decoded_content;
+
+say "\t\t\t=&gt;searching for todays quote pattern [$todaysQuoteStr]";	
+
+if ($string =~ m/$todaysQuoteStr/) {
+	my $quoteStr = substr $string, $position, 20;
+	my @quotes   = split(/&lt;\/span&gt;/,$quoteStr);
+	$price = $quotes[0];
+	say "\t\t\t[price = $price]"; 
+} else {
+	say "\t\t\t pattern not found";
+}
+&lt;/code&gt;
+
+What is interesting is that when I view the source of html in the browser and search for the pattern I do get a match but programmatically it is not working. Obviously I am doing something wrong...but unable to troubleshoot. Any help would be much appreciated.</doctext>
+<thread id="11117047">
+<node id="11117050"/>
+<node id="11117051"><node id="11117053"><node id="11117057"><node id="11117084"/>
+</node>
+</node>
+</node>
+<node id="11117058"/>
+<node id="11117062"/>
+</thread></node>

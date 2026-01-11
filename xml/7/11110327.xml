@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110327" title="Re^2: Cannot use foreach on array of hashes" created="2019-12-18 05:58:57" updated="2019-12-18 05:58:57" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1193553">MeinName</author>
+<doctext field_name="doctext">&lt;p&gt;Hi hippo,&lt;br&gt;
+it seems to be kind of like that. I suspect that to be the case, because of how I initialized the array, but I'm puzzled as to why it occurs right now. It worked just last week.&lt;/p&gt;
+&lt;p&gt;The way this array comes to be is as follows:&lt;br&gt;
+I have a large hash with lots of information on an activity. It has an ID, multiple status values, an associated object, possibly multiple associated contacts and multiple instances of so-called activityData, which is the concrete content of the activity.&lt;/p&gt;
+&lt;p&gt;The content looks like this:&lt;/p&gt;
+&lt;code&gt;
+$VAR1 = { 
+	'activityContacts' =&gt; [ 
+		{ 'foo' =&gt; 'bar', 'baz' =&gt; 'foo', ... }, 
+		{ 'foo' =&gt; 'bar', 'baz' =&gt; 'foo', ... }
+	],
+	'currentAgent' =&gt; { 
+		'foo' =&gt; 'bar', 
+		'baz' =&gt; 'foo', 
+		...
+	}, 
+	'activityData' =&gt; [
+		{ 'textfeldMini' =&gt; ' ', 'fragebogen_id' =&gt; '4388', 'aktivitaet_data_id' =&gt; '48541093', 'zahlfeld' =&gt; '0.0', 'aktivitaetId' =&gt; '48541091' }, 
+		{ 'fragebogen_id' =&gt; '4389', 'aktivitaet_data_id' =&gt; '48541094', 'zahlfeld' =&gt; '0.0', 'aktivitaetId' =&gt; '48541091' }, 
+		{ 'fragebogen_id' =&gt; '4390', 'aktivitaet_data_id' =&gt; '48541095', 'zahlfeld' =&gt; '0.0', 'aktivitaetId' =&gt; '48541091' }, 
+		{ 'fragebogen_id' =&gt; '4391', 'textfeldStandard' =&gt; ' ', 'aktivitaet_data_id' =&gt; '48541096', 'zahlfeld' =&gt; '0.0', 'aktivitaetId' =&gt; '48541091' }, 
+		{ 'fragebogen_id' =&gt; '4392', 'textfeldStandard' =&gt; ' ', 'aktivitaet_data_id' =&gt; '48541097', 'zahlfeld' =&gt; '0.0', 'aktivitaetId' =&gt; '48541091' }, 
+		{ 'textfeldMini' =&gt; ' ', 'fragebogen_id' =&gt; '4393', 'aktivitaet_data_id' =&gt; '48541098', 'zahlfeld' =&gt; '0.0', 'aktivitaetId' =&gt; '48541091' }, 
+		{ 'textfeldMini' =&gt; 'k.A.', 'fragebogen_id' =&gt; '4394', 'aktivitaet_data_id' =&gt; '48541099', 'zahlfeld' =&gt; '0.0', 'aktivitaetId' =&gt; '48541091' }, 
+		{ 'fragebogen_id' =&gt; '4395', 'textfeldStandard' =&gt; ' ', 'aktivitaet_data_id' =&gt; '48541100', 'zahlfeld' =&gt; '0.0', 'aktivitaetId' =&gt; '48541091' }, 
+		{ 'fragebogen_id' =&gt; '4396', 'textfeldStandard' =&gt; ' ', 'aktivitaet_data_id' =&gt; '48541101', 'zahlfeld' =&gt; '0.0', 'aktivitaetId' =&gt; '48541091' }, 
+		{ 'fragebogen_id' =&gt; '4397', 'textfeldStandard' =&gt; ' ', 'aktivitaet_data_id' =&gt; '48541102', 'zahlfeld' =&gt; '0.0', 'aktivitaetId' =&gt; '48541091' }, 
+		{ 'textfeldMini' =&gt; 'k.A.', 'fragebogen_id' =&gt; '4398', 'aktivitaet_data_id' =&gt; '48541103', 'zahlfeld' =&gt; '0.0', 'aktivitaetId' =&gt; '48541091' }, 
+		{ 'fragebogen_id' =&gt; '4399', 'textfeldStandard' =&gt; ' ', 'aktivitaet_data_id' =&gt; '48541104', 'zahlfeld' =&gt; '0.0', 'aktivitaetId' =&gt; '48541091' }, 
+		{ 'datumfeld' =&gt; '2000-01-01T00:00:00+01:00', 'fragebogen_id' =&gt; '4400', 'aktivitaet_data_id' =&gt; '48541105', 'zahlfeld' =&gt; '0.0', 'aktivitaetId' =&gt; '48541091' }, 
+		{ 'datumfeld' =&gt; '2000-01-01T01:00:00+01:00', 'fragebogen_id' =&gt; '4401', 'aktivitaet_data_id' =&gt; '48541106', 'zahlfeld' =&gt; '0.0', 'aktivitaetId' =&gt; '48541091' }, 
+		{ 'textfeldClob' =&gt; ' ', 'fragebogen_id' =&gt; '4402', 'aktivitaet_data_id' =&gt; '48541107', 'zahlfeld' =&gt; '0.0', 'aktivitaetId' =&gt; '48541091' }, 
+		{ 'textfeldClob' =&gt; ' ', 'fragebogen_id' =&gt; '4403', 'aktivitaet_data_id' =&gt; '48541108', 'zahlfeld' =&gt; '0.0', 'aktivitaetId' =&gt; '48541091' }
+	], 
+	'activity' =&gt; { 
+		'foo' =&gt; 'bar', 
+		'baz' =&gt; 'foo', 
+		...
+	}
+};
+&lt;/code&gt;
+&lt;p&gt;Then I'm breaking that hash up like this:&lt;/p&gt;
+&lt;code&gt;
+my $aktAkt = $aktivitaet-&gt;{'activity'};
+my @aktData = $aktivitaet-&gt;{'activityData'};
+my $aktAgent = $aktivitaet-&gt;{'currentAgent'};
+&lt;/code&gt;
+&lt;p&gt;But that obviously doesn't work.&lt;br&gt;
+With your help I could figure it out why, now: Looking at the entire hash, the part of it that I want is encapsulated in a list, which can't be interated in the same way as an array can (square brackets instead of wavy ones). Changing my code to the following helped:&lt;/p&gt;
+&lt;code&gt;
+my $aktData = $aktivitaet-&gt;{'activityData'}; #Note the scalar variable
+...
+foreach my $data (@$aktData) 
+{
+	if ($data-&gt;{'fragebogen_id'} == $feedbackId)
+	{
+		#doStuff
+	}
+}
+&lt;/code&gt;
+&lt;p&gt;Thanks for your help!&lt;/p&gt;
+&lt;p&gt;Now, I just have to figure out where that weird list comes from. I certainly didn't put it there...&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11110325</root_node>
+<parent_node field_name="parent_node">11110326</parent_node>
+<thread id="11110325">
+<node id="11110326"><node id="11110327"><node id="11110330"/>
+<node id="11110334"/>
+</node>
+</node>
+<node id="11110335"/>
+</thread></node>

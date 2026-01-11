@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129209" title="Re: How to parse not closed HTML tags that don't have any attributes?" created="2021-03-06 15:01:02" updated="2021-03-06 15:01:02" _doctext_mode="lenient"><type id="11">note</type>
+<author id="324763">marto</author>
+<doctext field_name="doctext">&lt;p&gt;Consider this [metamod://Mojo::DOM] example, I've made some assumptions as your source data does not seem complete:&lt;/p&gt;
+&lt;c&gt;
+cat dragnet.pl 
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Mojo::DOM;
+use feature 'say';
+
+my $html = '&lt;div class="phone"&gt;
+&lt;div class="icon"&gt;&lt;/div&gt;
+&lt;p class="title"&gt;Telephone&lt;/p&gt;
+&lt;p&gt;0123-4 56 78 90&lt;/p&gt;          
+&lt;p class="title"&gt;Telefax&lt;/p&gt;
+&lt;p&gt;just the fax ma\'am&lt;/p&gt;
+&lt;/div&gt;';
+
+my $dom = Mojo::DOM-&gt;new( $html );
+my $phone = $dom-&gt;at('div.phone &gt; p:nth-of-type(2)')-&gt;text;
+say $phone;
+my $fax = $dom-&gt;at('div.phone &gt; p:nth-of-type(4)')-&gt;text;
+say $fax;
+&lt;/c&gt;
+&lt;p&gt;Prints:&lt;/p&gt;
+&lt;c&gt;
+0123-4 56 78 90
+just the fax ma'am
+&lt;/c&gt;
+&lt;p&gt;Let us know if you have any problems or your input data is somehow weirder.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Sorry, late in the day on a Saturday here. Since the HTML isn't valid, and I'm guessing you can't change that try:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Mojo::DOM;
+use Mojo::Util qw(trim);
+use feature 'say';
+
+my $html = '&lt;div class="phone"&gt;
+&lt;div class="icon"&gt;&lt;/div&gt;
+&lt;p class="title"&gt;Telephone&lt;/p&gt;
+&lt;p&gt;0123-4 56 78 90          
+&lt;p class="title"&gt;Telefax&lt;/p&gt;
+&lt;p&gt;just the fax ma\'am
+&lt;/div&gt;';
+
+my $dom = Mojo::DOM-&gt;new( $html );
+my $phone = trim( $dom-&gt;at('div.phone &gt; p:nth-of-type(2)')-&gt;text );
+say $phone;
+my $fax = trim( $dom-&gt;at('div.phone &gt; p:nth-of-type(4)')-&gt;text );
+say $fax;&lt;/c&gt;
+&lt;p&gt;Which still prints:&lt;/p&gt;
+&lt;c&gt;
+0123-4 56 78 90
+just the fax ma'am
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11129207</root_node>
+<parent_node field_name="parent_node">11129207</parent_node>
+<thread id="11129207">
+<node id="11129209"/>
+<node id="11129210"><node id="11129269"><node id="11129273"><node id="11129285"><node id="11129287"><node id="11129335"><node id="11129345"><node id="11129373"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11129328"><node id="11129340"/>
+</node>
+</node>
+<node id="11129211"/>
+<node id="11129215"/>
+<node id="11129218"><node id="11129241"/>
+</node>
+<node id="11129220"><node id="11129221"/>
+<node id="11129242"/>
+</node>
+<node id="11129230"/>
+</thread></node>

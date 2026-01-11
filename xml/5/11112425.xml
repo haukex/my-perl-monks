@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112425" title="Re^3: Inheritance when subclass passed as a parameter" created="2020-02-05 06:27:04" updated="2020-02-05 06:27:04" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I'm pretty sure that a factory method is what I need. I've never used them before, so I have some googling to do. Are there any especially good (or bad) docs?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm not sure, probably [wp://Factory method pattern|Wikipedia] is a good start - but the basic concept is pretty simple, it's a class method in a central place somewhere that simply dispatches to the appropriate constructor depending on the arguments. The advantage is that the code calling the factory doesn't have to have any knowledge of the subclasses that exist, or their names. In a strongly typed language the factory method would simply be returning an object that is-a &lt;c&gt;Service&lt;/c&gt;.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;My problem with &lt;c&gt;Service::XML-&gt;new&lt;/c&gt; is that I really need to call it as &lt;c&gt;Service::$var-&gt;new&lt;/c&gt;, as I don't know which service will be used until I get the data. I tried various forms of that and got various syntax errors.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That'll only work if the entire class name is a string, as in &lt;c&gt;my $class="Service::$var"; my $obj=$class-&gt;new;&lt;/c&gt;. Which is certainly an option, but if you want some flexibility in &lt;c&gt;$var&lt;/c&gt; and/or better error messages in case of invalid &lt;c&gt;$var&lt;/c&gt; values, then a factory method is probably better.&lt;/p&gt;
+&lt;p&gt;These tests pass:&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;h3&gt;&lt;c&gt;lib/Service.pm&lt;/c&gt;:&lt;/h3&gt;
+&lt;c&gt;
+package Service;
+use warnings;
+use strict;
+use Module::Find 'useall';
+
+sub create {
+	my $class = shift;
+	my $type = shift;
+	my @found = useall $class;
+	for my $plugin (@found) {
+		if ($plugin =~ /::\Q$type\E\z/i) {
+			return $plugin-&gt;new(@_);
+		}
+	}
+	die "No $class found for type '$type'";
+}
+
+sub _new {
+	my ($class, $data) = @_;
+	my $self = { data =&gt; $data };
+	return bless $self, $class;
+}
+
+sub populate {
+	my $self = shift;
+	$self-&gt;{template} =~ s/\[data\]/$self-&gt;{data}/msi;
+}
+
+1;
+&lt;/c&gt;
+&lt;h3&gt;&lt;c&gt;lib/Service/JSON.pm&lt;/c&gt;:&lt;/h3&gt;
+&lt;c&gt;
+package Service::JSON;
+use warnings;
+use strict;
+use parent 'Service';
+
+sub new {
+	my $class = shift;
+	my $self = $class-&gt;SUPER::_new(@_);
+	$self-&gt;{template} = '{"data": [data]}';
+	return $self;
+}
+
+1;
+&lt;/c&gt;
+&lt;h3&gt;&lt;c&gt;lib/Service/XML.pm&lt;/c&gt;:&lt;/h3&gt;
+&lt;c&gt;
+package Service::XML;
+use warnings;
+use strict;
+use parent 'Service';
+
+sub new {
+	my $class = shift;
+	my $self = $class-&gt;SUPER::_new(@_);
+	$self-&gt;{template} = '&lt;data&gt;[data]&lt;/data&gt;';
+	return $self;
+}
+
+1;
+&lt;/c&gt;
+&lt;h3&gt;&lt;c&gt;t/00.t&lt;/c&gt;:&lt;/h3&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More tests=&gt;3;
+
+use_ok 'Service';
+
+my $xml = Service-&gt;create('xml', 'xmldata');
+$xml-&gt;populate;
+is $xml-&gt;{template}, '&lt;data&gt;xmldata&lt;/data&gt;', 'XML';
+
+my $json = Service-&gt;create('json', 'jsondata');
+$json-&gt;populate;
+is $json-&gt;{template}, '{"data": jsondata}', 'JSON';
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11112418</root_node>
+<parent_node field_name="parent_node">11112423</parent_node>
+<thread id="11112418">
+<node id="11112419"/>
+<node id="11112420"/>
+<node id="11112421"/>
+<node id="11112422"><node id="11112423"><node id="11112425"><node id="11112437"/>
+</node>
+</node>
+</node>
+<node id="11112427"><node id="11112428"><node id="11112481"/>
+</node>
+</node>
+</thread></node>

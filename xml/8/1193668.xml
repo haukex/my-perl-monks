@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193668" title="Re^2: get specific value of element using xpath in perl" created="2017-06-27 04:22:54" updated="2017-06-27 04:22:54" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1193343">snehit.ar</author>
+<doctext field_name="doctext">I have tired with your code but not getting expected result .
+
+My samlple.xml
+
+&lt;code&gt;
+&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;
+&lt;event_list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.hp.com/2009/software/opr/data_model" total_size="34" page_size="20" start_index="1" self="https://testurl/event_list?query=title+LIKE+%22PROBING%28100%29%2425%22" type="urn:x-hp:2009:software:data_model:opr:type:event_list" version="1.1"&gt;
+	&lt;drilldown_url&gt;
+https://testurl/opr-web/opr-evt-browser&lt;/drilldown_url&gt;
+	&lt;event relationships_included="true" self="https://testurl/event_list/031c3c70-4ace-71e7-0b5b-88fb83170000" type="urn:x-hp:2009:software:data_model:opr:type:event" version="1.3"&gt;
+		
+		&lt;state&gt;
+open&lt;/state&gt;
+		&lt;severity&gt;
+critical&lt;/severity&gt;
+		&lt;priority&gt;
+medium&lt;/priority&gt;
+		&lt;category&gt;
+SAR_OP_Service&lt;/category&gt;
+		&lt;application&gt;
+business_transaction_group&lt;/application&gt;
+		&lt;time_created&gt;
+2017-06-06T15:37:13Z&lt;/time_created&gt;
+		&lt;time_changed&gt;
+2017-06-20T10:37:20.098Z&lt;/time_changed&gt;
+		&lt;time_received&gt;
+2017-06-20T10:37:20.156Z&lt;/time_received&gt;
+		&lt;time_first_received&gt;
+2017-06-06T15:37:17.414Z&lt;/time_first_received&gt;
+		&lt;custom_attribute_list self="https://testurl/event_list/031c3c70-4ace-71e7-0b5b-88fb83170000/custom_attribute_list" type="urn:x-hp:2009:software:data_model:opr:type:event:custom_attribute_list" version="1.0"&gt;
+			&lt;custom_attribute self="https://testurl/event_list/031c3c70-4ace-71e7-0b5b-88fb83170000/custom_attribute_list/SAR_RemedyIncident" type="urn:x-hp:2009:software:data_model:opr:type:event:custom_attribute" version="1.0"&gt;
+				&lt;name&gt;
+SAR_RemedyIncident&lt;/name&gt;
+				&lt;value&gt;
+INC000018745375&lt;/value&gt;
+			&lt;/custom_attribute&gt;
+			&lt;custom_attribute self="https://testurl/event_list/031c3c70-4ace-71e7-0b5b-88fb83170000/custom_attribute_list/SAR_RemedyQueue" type="urn:x-hp:2009:software:data_model:opr:type:event:custom_attribute" version="1.0"&gt;
+				&lt;name&gt;
+SAR_RemedyQueue&lt;/name&gt;
+				&lt;value&gt;
+Coll@borate-L3&lt;/value&gt;
+			&lt;/custom_attribute&gt;
+			&lt;custom_attribute self="https://testurl/event_list/031c3c70-4ace-71e7-0b5b-88fb83170000/custom_attribute_list/SAR_RemedyStatus" type="urn:x-hp:2009:software:data_model:opr:type:event:custom_attribute" version="1.0"&gt;
+				&lt;name&gt;
+SAR_RemedyStatus&lt;/name&gt;
+				&lt;value&gt;
+Assigned&lt;/value&gt;
+			&lt;/custom_attribute&gt;
+			&lt;custom_attribute self="https://testurl/event_list/031c3c70-4ace-71e7-0b5b-88fb83170000/custom_attribute_list/SAR_SSRID" type="urn:x-hp:2009:software:data_model:opr:type:event:custom_attribute" version="1.0"&gt;
+				&lt;name&gt;
+SAR_SSRID&lt;/name&gt;
+				&lt;value&gt;
+957&lt;/value&gt;
+			&lt;/custom_attribute&gt;
+			&lt;custom_attribute self="https://testurl/event_list/031c3c70-4ace-71e7-0b5b-88fb83170000/custom_attribute_list/Service%20Name" type="urn:x-hp:2009:software:data_model:opr:type:event:custom_attribute" version="1.0"&gt;
+				&lt;name&gt;
+Service Name&lt;/name&gt;
+				&lt;value&gt;
+IPT&lt;/value&gt;
+			&lt;/custom_attribute&gt;
+		&lt;/custom_attribute_list&gt;
+	
+		&lt;time_created_label&gt;
+6/6/2017 03:37:13 PM&lt;/time_created_label&gt;
+		&lt;time_changed_label&gt;
+6/20/2017 10:37:20 AM&lt;/time_changed_label&gt;
+		&lt;time_received_label&gt;
+6/20/2017 10:37:20 AM&lt;/time_received_label&gt;
+		&lt;time_first_received_label&gt;
+6/6/2017 03:37:17 PM&lt;/time_first_received_label&gt;
+	&lt;/event&gt;
+&lt;/event_list&gt;
+&lt;/code&gt;
+
+Suggested code @haukex
+
+&lt;code&gt;
+#!/usr/bin/perl                        
+use warnings;
+use strict;
+
+use XML::XPath;
+my $file = 'C:/Users/snehit.rahate/Perl/events.xml';
+my $xpath = q{//custom_attribute_list/custom_attribute[name='Service Name']/value}; # return no result
+my $xp = XML::XPath-&gt;new(filename=&gt;$file);
+my $nodeset = $xp-&gt;find($xpath);
+for my $node ($nodeset-&gt;get_nodelist) {
+    print " XML::XPath: ",$node-&gt;string_value,"\n";
+}
+
+&lt;/code&gt;
+
+I want to concatenate service name and slb_ssrid into one value $appname as shown in below.xml .But not able to fetch the value of tag &lt;name&gt; Service Name&lt;/name&gt;
+
+my $appname = IPT(957)
+
+Please suggest and correct me i am wrong.
+
+Thanks a Ton !
+</doctext>
+<root_node field_name="root_node">1193350</root_node>
+<parent_node field_name="parent_node">1193354</parent_node>
+<thread id="1193350">
+<node id="1193354"><node id="1193425"/>
+<node id="1193668"><node id="1193669"><node id="1193671"/>
+</node>
+</node>
+</node>
+</thread></node>

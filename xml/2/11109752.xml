@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109752" title="Re: Avoiding circular references" created="2019-12-06 09:27:22" updated="2019-12-06 09:27:22" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Note that circular references are not intrinsically bad, only when they become memory leaks are they bad. There are a couple of approaches to handling circular references:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Avoid them in the first place - not always practical or possible&lt;/li&gt;
+&lt;li&gt;Use weak references - is most practical in a few situations, such as if there is a clear relationship between the objects such that one will always be destroyed before the other, or in caches&lt;/li&gt;
+&lt;li&gt;Manual cleanup - always works, &lt;i&gt;iff&lt;/i&gt; the coder remembers to clean up the references in every situation, which is unfortunately easy to forget or mess up&lt;/li&gt;
+&lt;li&gt;Ignore them - &lt;i&gt;only&lt;/i&gt; makes any sense if only a handful of such object are created, they exist for the whole run of the program, and you're not relying on anything during their destruction&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Personally, I prefer weak references. In this case, if your object of type &lt;c&gt;Helper&lt;/c&gt; will only exist during the lifetime of the object of type &lt;c&gt;A&lt;/c&gt;, then the following is one approach where the &lt;c&gt;Helper&lt;/c&gt; object is a "child" of the &lt;c&gt;A&lt;/c&gt; object, and a weak reference works fine, because the anonymous &lt;c&gt;sub&lt;/c&gt; isn't closing over &lt;c&gt;$self&lt;/c&gt;. Weakening &lt;c&gt;$self-&gt;{parent}&lt;/c&gt; in &lt;c&gt;Helper&lt;/c&gt; is fine, because we know the parent object will exist for the entire lifetime of the &lt;c&gt;Helper&lt;/c&gt;, &lt;i&gt;and&lt;/i&gt; we want the helper to be destroyed when the parent is destroyed.&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+use Devel::Cycle;
+
+package A;
+
+sub new {
+	my ($class, $href) = @_;
+	my $self = { dbi =&gt; $$href{dbi} };
+	$self-&gt;{helper_child} = Helper-&gt;new(
+		parent =&gt; $self,
+		helper_function =&gt; sub {
+			my $parent = shift;
+			$parent-&gt;this_is_in_A(@_);
+		}, );
+	bless $self, $class;
+}
+
+sub do_something {
+	my $self = shift;
+	$self-&gt;{helper_child}-&gt;do_helper();
+}
+
+sub this_is_in_A {
+	my ($self, $arg) = @_;
+	print "this_is_in_A, arg: $arg, dbi is $self-&gt;{dbi}\n";
+}
+
+sub DESTROY { print shift."-&gt;DESTROY\n" }
+
+package Helper;
+use Scalar::Util qw/weaken/;
+
+sub new {
+	my $class = shift;
+	my $self = { @_ };
+	weaken( $self-&gt;{parent} );
+	bless $self, $class;
+}
+
+sub do_helper {
+	my $self = shift;
+	$self-&gt;{helper_function}-&gt;($self-&gt;{parent}, "param from Helper");
+}
+
+sub DESTROY { print shift."-&gt;DESTROY\n" }
+
+package main;
+my $x = A-&gt;new( { dbi =&gt; "some dbi object" } );
+$x-&gt;do_something();
+$x-&gt;do_something();
+
+find_cycle($x);
+
+print "undef'ing \$x\n";
+$x = undef;
+print "End\n";
+
+__END__
+
+this_is_in_A, arg: param from Helper, dbi is some dbi object
+this_is_in_A, arg: param from Helper, dbi is some dbi object
+undef'ing $x
+A=HASH(0x55e36742fc88)-&gt;DESTROY
+Helper=HASH(0x55e36742fdc0)-&gt;DESTROY
+End
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Note that in &lt;c&gt;sub do_helper&lt;/c&gt;, we could also have done &lt;c&gt;$self-&gt;{helper_function}-&gt;($self, "param from Helper");&lt;/c&gt;, so that the &lt;c&gt;helper_function&lt;/c&gt; is called as if it were a method on the &lt;c&gt;Helper&lt;/c&gt; class.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11109738</root_node>
+<parent_node field_name="parent_node">11109738</parent_node>
+<thread id="11109738">
+<node id="11109744"><node id="11109749"><node id="11109754"><node id="11109755"><node id="11109775"/>
+</node>
+</node>
+</node>
+<node id="11109779"><node id="11109781"><node id="11109782"/>
+</node>
+</node>
+</node>
+<node id="11109748"/>
+<node id="11109752"/>
+<node id="11109861"/>
+</thread></node>

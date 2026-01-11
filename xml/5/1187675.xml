@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1187675" title="Re: Strange behaviour when using glob in if condition" created="2017-04-11 14:02:51" updated="2017-04-11 14:02:51" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I looked into this further and was able to reproduce the issue using your code, and find an explanation and workaround. [doc://glob] in scalar context acts like an iterator. However, the iterator state is attached to the [doc://glob] call site, &lt;i&gt;even&lt;/i&gt; when the argument to [doc://glob] changes. Here's a simple way to reproduce the issue:&lt;/p&gt;
+&lt;c&gt;
+$ touch foo bar
+$ perl -MData::Dump -e '
+  sub myglob {scalar glob($_[0])}
+  dd myglob($_) for qw/foo bar/   '
+"foo"
+undef
+&lt;/c&gt;
+&lt;p&gt;One might expect the output here to be &lt;c&gt;"foo"&lt;/c&gt; and &lt;c&gt;"bar"&lt;/c&gt;. There is an excellent discussion in [https://rt.perl.org/Public/Bug/Display.html?id=123404|RT#123404], and it doesn't sound like this behavior is going to change, as potentially confusing as it is.&lt;/p&gt;
+&lt;p&gt;A simple workaround is to force list context:&lt;/p&gt;
+&lt;c&gt;
+return if ()=glob("$directory/*");
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1187638</root_node>
+<parent_node field_name="parent_node">1187638</parent_node>
+<thread id="1187638">
+<node id="1187642"/>
+<node id="1187644"/>
+<node id="1187675"><node id="1187691"/>
+</node>
+</thread></node>

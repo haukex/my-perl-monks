@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1168798" title="Re^4: No tools? Use Perl?!" created="2016-07-29 03:14:34" updated="2016-07-29 03:14:34" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [Boyd.Ako],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I don't know the specifics as to how &lt;c&gt;/g&lt;/c&gt; works.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;&lt;c&gt;/g&lt;/c&gt; on an &lt;c&gt;m//&lt;/c&gt; match is documented in [doc://perlop#m/_PATTERN_/msixpodualngc|perlop], in this case: "In scalar context, each execution of &lt;c&gt;m//g&lt;/c&gt; finds the next match, returning true if it matches, and false if there is no further match." Since the regexp is being used in a &lt;c&gt;while&lt;/c&gt; loop, without the &lt;c&gt;/g&lt;/c&gt; modifier it would simply match the first occurrence every time and the loop would never end. With &lt;c&gt;/g&lt;/c&gt;, the match advances through the string.&lt;/p&gt;
+&lt;p&gt;Alternatively: "The &lt;c&gt;/g&lt;/c&gt; modifier specifies global pattern matching--that is, matching as many times as possible within the string. ... In list context, it returns a list of the substrings matched by any capturing parentheses in the regular expression." Without &lt;c&gt;/g&lt;/c&gt;, it would only find the first match.&lt;/p&gt;
+&lt;p&gt;When you add the &lt;c&gt;/g&lt;/c&gt; and the capturing group to [codiac]'s code it works:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $text = &lt;&lt;'END';
+&lt;y&gt;&lt;ReportHost&gt;one&lt;/ReportHost&gt;
+&lt;x&gt;test&lt;/x&gt;&lt;/y&gt;
+&lt;ReportHost&gt;
+two
+&lt;/ReportHost&gt;
+	&lt;ReportHost&gt;&lt;z&gt;thr&lt;/z&gt;ee&lt;/ReportHost&gt;
+END
+
+# m//g in scalar context
+while ($text=~ m{&lt;ReportHost[^&gt;]*&gt;((?:(?!&lt;/ReportHost&gt;).)*)&lt;/ReportHost&gt;}sg) {
+	print "a: \"$1\"\n";
+}
+
+# m//g in list context
+my @m = $text=~ m{&lt;ReportHost[^&gt;]*&gt;((?:(?!&lt;/ReportHost&gt;).)*)&lt;/ReportHost&gt;}sg;
+print "b: \"$_\"\n" for @m;
+
+__END__
+a: "one"
+a: "
+two
+"
+a: "&lt;z&gt;thr&lt;/z&gt;ee"
+b: "one"
+b: "
+two
+"
+b: "&lt;z&gt;thr&lt;/z&gt;ee"
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1168692</root_node>
+<parent_node field_name="parent_node">1168782</parent_node>
+<thread id="1168692">
+<node id="1168693"><node id="1168780"><node id="1168785"/>
+<node id="1168786"/>
+</node>
+</node>
+<node id="1168717"><node id="1168720"/>
+<node id="1168721"><node id="1168782"><node id="1168798"/>
+</node>
+</node>
+<node id="1168781"/>
+</node>
+<node id="1168779"><node id="1168784"><node id="1168827"/>
+</node>
+</node>
+<node id="1168928"><node id="1168940"><node id="1168995"/>
+</node>
+</node>
+</thread></node>

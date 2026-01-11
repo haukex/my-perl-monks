@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228764" title="Re^2: Error: Attempt to reload module.. while testing failing require" created="2019-01-21 04:39:01" updated="2019-01-21 04:39:01" _doctext_mode="lenient"><type id="11">note</type>
+<author id="174111">Discipulus</author>
+<doctext field_name="doctext">Thanks [haukex] for your crystalline suggestions,&lt;P&gt;
+
+now I see: a module returning 0 will be automatically removed from &lt;C&gt;%INC&lt;/C&gt; while a module that explicitly die will be not:&lt;P&gt;
+
+
+&lt;c&gt;
+
+echo die &gt; Whatever.pm
+
+perl -wMstrict -MData::Dump -I. -e  "my $ret;eval {$ret=require Whatever};dd $ret; dd %$INC{$_} for grep{/Whatever/} keys %INC;"
+
+undef                   # &lt;--- require returned value
+("Whatever.pm", undef)  # die in the module will leaves the entry in %INC
+
+
+
+echo 0 &gt; Whatever.pm
+
+perl -wMstrict -MData::Dump -I. -e  "my $ret;eval {$ret=require Whatever};dd $ret; dd %$INC{$_} for grep{/Whatever/} keys %INC;"
+
+undef                   # &lt;--- require returned value
+
+&lt;/c&gt;&lt;P&gt;
+
+
+So i have no chanche at all to make the [DOC://require|&lt;tt&gt;require&lt;/tt&gt;] or [DOC://use|&lt;tt&gt;use&lt;/tt&gt;] to fail (in the right, intended way, aka leaving &lt;C&gt;%INC&lt;/C&gt; clean)?&lt;P&gt;
+
+Yes you pointed to the right source of &lt;C&gt;Win32::Backup::Robocopy&lt;/C&gt; (thanks!) but as I'm now git aware ( ;) the env branch was not online: [https://github.com/LorenzoTa/Win32-Backup-Robocopy/tree/env|now is there]&lt;P&gt;
+
+Definitevely put the check in the &lt;C&gt;new&lt;/C&gt; is better: but I'd avoid the &lt;C&gt;our&lt;/C&gt; solution: are not to avoid these in modules? In the new call I can put a &lt;C&gt;_check_robocopy&lt;/C&gt; but definetively I have to [DOC://die|&lt;tt&gt;die&lt;/tt&gt;] or &lt;C&gt;croack&lt;/C&gt; if what is set in &lt;C&gt;%ENV&lt;/C&gt; is invalid.&lt;P&gt;
+
+In the test I have to delete from &lt;C&gt;%INC&lt;/C&gt; anyway..&lt;P&gt;
+
+Thanks!&lt;P&gt;
+
+L*&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-174111"&gt;
+There are no rules, there are no thumbs..&lt;BR&gt;
+Reinvent the wheel, then learn The Wheel; may be one day you reinvent one of THE WHEELS.
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.142} --&gt;</doctext>
+<root_node field_name="root_node">1228758</root_node>
+<parent_node field_name="parent_node">1228760</parent_node>
+<thread id="1228758">
+<node id="1228760"><node id="1228764"><node id="1228768"/>
+</node>
+<node id="1228765"/>
+</node>
+</thread></node>

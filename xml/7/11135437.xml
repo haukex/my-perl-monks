@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11135437" title="XML round-trip with comments and prolog" created="2021-07-28 11:40:51" updated="2021-07-28 11:40:51" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1158292">pryrt</author>
+<doctext field_name="doctext">&lt;p&gt;I want to automate changing some settings in an app which uses XML config files, but I am not an XML expert and don't have real experience with any of the XML modules (other than knowing from reading here that I need to avoid XML::Simple). I like starting from "known good" code as examples, and playing around until I understand it better.  I found some of [haukex]'s examples with [metamod://XML::Rules], especially [id://1232006] and [id://11131501], which got me to the point that I could get the XML parsed into an initial data structure which seems reasonable to me.&lt;/p&gt;
+&lt;p&gt;But my next goal was to round-trip the config file: to see if I could get an output file that's compatible with the input, so it's still usable as a config file for the app.  So far, I've got a short example of:&lt;c&gt;
+#!perl
+
+use 5.012; # strict, //
+use warnings;
+use Data::Dump;
+use XML::Rules;
+
+my $xml_doc = &lt;&lt;EOXML;
+&lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+&lt;!-- important instructions to manual editors --&gt;
+&lt;root&gt;
+    &lt;group name="blah"&gt;
+        &lt;!-- important instructions for group "blah" --&gt;
+        &lt;tag/&gt;
+    &lt;/group&gt;
+    &lt;group name="second"&gt;
+        &lt;!-- important instructions for group "second" --&gt;
+        &lt;differentTag/&gt;
+    &lt;/group&gt;
+&lt;/root&gt;
+EOXML
+
+my $parser = XML::Rules-&gt;new(
+    stripspaces =&gt; 3|4,
+    rules =&gt; [
+        _default =&gt; 'raw',
+    ],
+);
+
+#dd
+my $data = $parser-&gt;parse($xml_doc);
+
+print
+my $out = $parser-&gt;ToXML($data, 0, "  ", "") . "\n";
+
+__DATA__
+
+&lt;root&gt;
+  &lt;group name="blah"&gt;
+    &lt;tag/&gt;
+  &lt;/group&gt;
+  &lt;group name="second"&gt;
+    &lt;differentTag/&gt;
+  &lt;/group&gt;
+&lt;/root&gt;
+&lt;/c&gt;
+&lt;/p&gt;
+&lt;p&gt;... But there are two things I haven't figured out how to do, as evidenced by the differences between the input text and the output text.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;How do I keep the &lt;c&gt;&lt;?xml ...?&gt;&lt;/c&gt; [abbr://at least, that's what google tells me it's called|prolog]?  That is, if the original XML tells me it's encoding="UTF-8" or encoding="Windows-1252", I want to be able to preserve that in my XML output.  I searched [metamod://XML::Rules] for &lt;c&gt;&lt;?xml&lt;/c&gt; or &lt;c&gt;prolog&lt;/c&gt; and couldn't find anything.  So is it possible to have XML::Rules include that during its parsing?&lt;/li&gt;
+&lt;li&gt;Is it possible to maintain comments, and their relationship to the existing tags?  I searched for &lt;c&gt;comment&lt;/c&gt; or &lt;c&gt;&lt;!--&lt;/c&gt;, but again couldn't find anything.  This is important, because as the dummy data shows, the comments are important instructions to the user who is manually editing the config file, and I don't want to lose that information as I round-trip through my perl-based config-file editor.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;So, is XML::Rules the right choice for this? (And if so, how do I accomplish it?)  If not, which module is better equipped for my goals?  (And could you provide a similar example, showing how to round-trip through the data structure and still have prolog and comments?) &lt;/p&gt;
+
+&lt;p&gt;Thank you.&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;edit: fixed missing sentence separator and missing paragraph indicators; fix title&lt;/b&gt;&lt;/p&gt;</doctext>
+<thread id="11135437">
+<node id="11135438"><node id="11135441"><node id="11135443"/>
+</node>
+</node>
+<node id="11135442"><node id="11135444"/>
+<node id="11135448"/>
+</node>
+<node id="11135526"><node id="11135527"><node id="11135528"/>
+</node>
+</node>
+</thread></node>

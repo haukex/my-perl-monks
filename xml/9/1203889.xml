@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203889" title="Re: Loading a part of the file to array using Tie::File (updated)" created="2017-11-21 09:56:14" updated="2017-11-21 09:56:14" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;[doc://Tie::File] does not read the entire file into memory, it only caches a certain number of lines. See its &lt;c&gt;memory&lt;/c&gt; option for controlling the cache size.&lt;/p&gt;
+&lt;c&gt;
+use Tie::File;
+tie my @array, 'Tie::File', $filename or die $!;
+my $l = 9;  # line 10
+while (defined( my $line = $array[$l] )) {
+    print "&lt;$line&gt;\n";
+} continue { $l++ }
+&lt;/c&gt;
+&lt;p&gt;Note that I am not accessing the size of the array with &lt;c&gt;$#array&lt;/c&gt;, or &lt;c&gt;@array&lt;/c&gt; in scalar context, as this would require the module to scan the entire file once (but again, not load all of it into memory at once).&lt;/p&gt;
+&lt;p&gt;If you are interested in reading only a certain number of lines from the end of a file, perhaps [mod://File::ReadBackwards] would be of interest.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; I should also say that if you're only interested in reading the file sequentially, not doing random access or modifying it, [doc://Tie::File] doesn't give you a great advantage as it introduces extra overhead, and a simple &lt;c&gt;while(&lt;&gt;)&lt;/c&gt; loop like [glasswalk3r] [id://1203890|showed] would likely be much more efficient. You can use [doc://$.] to keep track of the current line number.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; Here's one way to skip &lt;i&gt;N&lt;/i&gt; lines (not based on the current line number):&lt;/p&gt;
+&lt;c&gt;
+open my $fh, '&lt;', $filename or die "$filename: $!";
+scalar &lt;$fh&gt; for 1..9;  # skip 9 lines
+while (&lt;$fh&gt;) {
+    chomp;
+    print "&lt;$_&gt;\n";
+}
+close $fh;
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update 3 &lt;small&gt;(last one, I think &lt;c&gt;;-)&lt;/c&gt;&amp;nbsp;)&lt;/small&gt;:&lt;/i&gt; To operate only on certain ranges of lines based on their line number, you can use Perl's [doc://perlop#Range-Operators], for example &lt;c&gt;next if 5 .. 10;&lt;/c&gt; will skip lines 5 through 10. Note this is a different form of the operator used above. &lt;small&gt;&lt;i&gt;Also minor edits for clarity.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203885</root_node>
+<parent_node field_name="parent_node">1203885</parent_node>
+<thread id="1203885">
+<node id="1203889"/>
+<node id="1203890"/>
+<node id="1203892"/>
+<node id="1203893"/>
+<node id="1203939"/>
+<node id="1203985"><node id="1203993"><node id="1204087"><node id="1204115"><node id="1204124"><node id="1204125"><node id="1204127"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1204007"/>
+<node id="1204044"><node id="1204128"><node id="1204130"><node id="1204137"><node id="1204223"><node id="1204228"/>
+</node>
+</node>
+</node>
+<node id="1204162"><node id="1204193"><node id="1204201"><node id="1204262"/>
+</node>
+<node id="1204204"><node id="1204210"><node id="1204246"><node id="1204272"><node id="1204273"/>
+</node>
+</node>
+</node>
+<node id="1204224"/>
+<node id="1204263"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1204180"/>
+</thread></node>

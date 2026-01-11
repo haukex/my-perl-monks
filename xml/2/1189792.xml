@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1189792" title="Re^2: problem retrieving return code of an execution with back ticks (updated)" created="2017-05-08 06:05:42" updated="2017-05-08 06:05:42" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1107912">luxAeterna</author>
+<doctext field_name="doctext">First of all Thank you very much for your reply 
+&lt;p&gt;The most frustrated thing that can happen to a developer did happen: I was trying to debug the error following your advise (checking the value of the signal to verify whether if the script completed, printing the content of the output @flush)... When the error disappeared. The machine is the same and I have only introduced debugging lines, so now I have the unsettling feeling that my code hides a spurious bug.
+&lt;/p&gt;  
+&lt;p&gt;
+But at least it is safer and it will be easier to find what is going on with the lines you suggested the next time it fails  :)
+&lt;/p&gt;
+&lt;p&gt;
+I also realised thanks to your observations that it is useless and even redundant to execute start before the script, since start is precisely the executable file that sets the value of $UNXEXSCRIPT, it's own path.
+&lt;/p&gt;
+&lt;p&gt;
+The script iax_0tasksimp.pl is simply a launcher of script with a timeout and check of return code and output.
+&lt;/p&gt;
+The script iax_0taskchklog.pl is a launcher of script with a timeout check of return code, output and line in a log.
+&lt;p&gt;
+These lauchers do verify the whole $??, and I did the timeout with a countdown child and interruption to the father, who kills the child performing the main task (but not the grandchildren, that is tricky for my level). Surely perl has a built-in library to do the same (launching a script with a timeout/kill and return code verification).
+&lt;/p&gt;
+&lt;p&gt;
+The script that encapsulates them just launch these "launchers" sequentially. 
+They are generic mini tools that I reuse for multiple purposes. 
+&lt;/p&gt;
+
+&lt;p&gt;
+Just in case you are curious, in this case I am using these little tools to redefine a Tomcat instance, for that I have a perl script that launchs  sequentially: 
+&lt;/p&gt;
+
+&lt;p&gt;
+- 1) iax_0taskchklog.pl launching a certain script tbtom.sh stop_all /users/iax00/exploit/data/tom85/admin_portal.xml, with a timeout of 15 seconds, expecting it to return a code 0 and looking for the message "Command successful. Status: 0." to appear in its log. If it is successful, it goes on, if not, it aborts. 
+&lt;/p&gt;
+&lt;p&gt;
+- 2) iax_0taskchklog.pl launching tbtom.sh delete_all /users/iax00/exploit/data/tom85/admin_portal.xml, with a timeout of 15 seconds, expecting it to return a code 0 and looking for the message "Command successful. Status: 0." to appear in its log. If it is successful, it goes on, if not, it aborts. 
+&lt;/p&gt;
+&lt;p&gt;
+- 3) iax_0taskchklog.pl launching tbtom.sh define_all /users/iax00/exploit/data/tom85/admin_portal.xml, with a timeout of 15 seconds, expecting it to return a code 0 and looking for the message "Command successful. Status: 0." to appear in its log. If it is successful, it goes on, if not, it aborts. 
+&lt;/p&gt;
+
+&lt;p&gt;
+- 4) iax_0taskchklog.pl launching tbtom.sh start_all /users/iax00/exploit/data/tom85/admin_portal.xml, with a timeout of 15 seconds, expecting it to return a code 0 and looking for the message "Command successful. Status: 0." to appear in its log. If it is successful, it goes on, if not, it aborts. 
+&lt;/p&gt;
+
+&lt;p&gt;
+- Finally, iax_0tasksimp.pl launching a verifTomcatAdminPortal.sh, which returns 0 if there is one and only one instance tomcat called admin_portal running (I do this with a simple ps | grep ), and 5 if it fails. The problem was that there was no tomcat running, and the verification was still ok, manually, my iax_0tasksimp.pl launching verifTomcatAdminPortal.sh returned 5, but within the sequence of tasks, it said the return code was 0.
+&lt;/p&gt;
+
+&lt;p&gt; 
+The previous steps tbtom.sh give all an OK and they should not, they should return an error at some point, as the tomcat instance has not started, but I have checked that they indeed return 0, and its log has a happy final line "Command successful. Status: 0." at each execution. tbtom.sh is not my script tho, and I am not allowed to touch it, just to report its malfunction (the same way that I expect that my colleagues report my bugs if they use my launchers. And I don't mind at all if they touch them, although generally they do not have the time :)
+&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1189731</root_node>
+<parent_node field_name="parent_node">1189736</parent_node>
+<thread id="1189731">
+<node id="1189736"><node id="1189792"><node id="1189943"/>
+</node>
+</node>
+</thread></node>

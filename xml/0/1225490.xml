@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1225490" title="[WEBPERL] dynamically importing non-bundled modules via http" created="2018-11-09 10:07:04" updated="2018-11-09 10:07:04" _doctext_mode="lenient"><type id="1042">CUFP</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">&lt;small&gt;(in continuation to [id://1225419])&lt;/small&gt;&lt;P&gt;
+
+Webperl requires at the moment to statically bundle all needed modules.&lt;P&gt;
+
+The following Proof of Concept shows how to dynamically [DOC://use|&lt;tt&gt;use&lt;/tt&gt;] non-bundled modules.&lt;P&gt;
+
+The modules need to be pure Perl and have to be present inside the $WEBLIB directory on your server (respecting the same domain policy avoids much trouble)&lt;P&gt;
+
+I just copied the desired libs from my installation and listed allowed modules to %INC_FETCH (to limit unnecessary traffic) .&lt;P&gt;
+
+
+The following page demonstrate how to use [METAMOD://Data::Dump] from weblib.&lt;P&gt;
+
+
+[METAMOD://Data::Dump] is currently not bundled with Web-Perl.
+([METAMOD://Data::Dumper] is since it's core)&lt;P&gt;
+
+
+
+The mechanism of adding a call-back to @INC to dynamically fetch modules from various sources is described in [DOC://require|&lt;tt&gt;require&lt;/tt&gt;]&lt;P&gt;
+
+&lt;c&gt;
+&lt;!doctype html&gt;
+&lt;html lang="en-us"&gt;
+&lt;head&gt;
+&lt;meta http-equiv="Content-Type" content="text/html; charset=utf-8"&gt;
+&lt;title&gt;WebPerl &amp;lt;script&amp;gt; Demos&lt;/title&gt;
+
+
+
+&lt;script type="text/javascript"&gt;
+
+function xfetch(url) {
+    var req = new XMLHttpRequest();
+    req.open('GET', url , false);
+    req.send(null);
+    if(req.status == 200) {
+        return req.responseText;
+    } else {
+        return "";
+    }
+}
+
+// alert(xfetch('http://localhost:5000/lib/Data/Dump.pm'));
+// alert(xfetch('http://localhost:5000/webperl.js'));
+
+&lt;/script&gt;
+
+
+&lt;script src="webperl.js"&gt;&lt;/script&gt;
+
+&lt;!-- Please see the documentation at http://webperl.zero-g.net/using.html --&gt;
+
+&lt;script type="text/perl"&gt;
+use warnings;
+use strict;
+use Data::Dumper;
+
+use WebPerl qw/js/;
+
+
+BEGIN {
+
+    my $WEBLIB = 'localhost:5000/lib';
+
+    # gather source of module
+    my $fetch = sub {
+        my ($module_path) = @_;
+        return js("window.xfetch('http://$WEBLIB/$module_path')");
+    };
+
+    # allowed modules in weblib
+    my %INC_FETCH =
+      (
+       'Data/Dump.pm' =&gt; 1,
+      );
+
+    # loader hook for @INC
+    my $loader = sub {
+        my ($sub,$filename) = @_;
+        if ( $INC_FETCH{$filename}) {
+
+            my $source = $fetch-&gt;($filename);
+
+            unless ($source) {
+                warn "Fetching $filename from $WEBLIB failed";
+                return;
+            }
+
+            open my $fh_source, "&lt;", \$source;
+
+            my $pre = '';
+            #$pre = qq{warn '*** Loading $filename ***';};
+
+            return (\$pre, $fh_source);
+        }
+        return;
+    };
+
+    push @INC, $loader;
+
+}
+
+use Data::Dump qw/pp/;
+
+
+my $HoA = { map { $_ =&gt; [reverse 1..5] } "a".."d" };
+
+warn pp $HoA;
+
+#use Data::Dumper;
+#warn Dumper $HoA;
+
+
+
+
+&lt;/script&gt;
+
+
+&lt;!-- Optional STDOUT/STDERR text area (if you don't use this, output goes to Javascript console) --&gt;
+
+
+&lt;script&gt;
+window.addEventListener("load", function () {
+	document.getElementById('output')
+		.appendChild( Perl.makeOutputTextarea() );
+});
+&lt;/script&gt;
+
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;p&gt;This is a demo of &lt;a href="http://webperl.zero-g.net" target="_blank"&gt;WebPerl&lt;/a&gt;!&lt;/p&gt;
+
+&lt;div id="output"&gt;&lt;/div&gt;
+&lt;div id="buttons"&gt;
+	&lt;button id="my_button"&gt;Testing!&lt;/button&gt;
+&lt;/div&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/c&gt;&lt;P&gt;
+
+OUTPUT:
+&lt;c&gt;
+{
+  a =&gt; [5, 4, 3, 2, 1],
+  b =&gt; [5, 4, 3, 2, 1],
+  c =&gt; [5, 4, 3, 2, 1],
+  d =&gt; [5, 4, 3, 2, 1],
+} at /tmp/scripts.pl line 56.
+&lt;/c&gt;&lt;P&gt;
+
+DISCLAIMER: This code is beta and follows the release often paradigm.&lt;P&gt;
+
+Successfully tested with Chrome AND Firefox. &lt;strike&gt; FF showed new "Content Security Policy" problems, I didn't have the time to dig into and install the necessary PLACK CORS modules.&lt;/strike&gt; °&lt;P&gt;
+
+The principle is universal, as soon as webperl can run in a browser and has the capacity to dynamically fetch code, using unbundled (pure) Perl modules becomes trivial. &lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;small&gt;&lt;strike&gt;Football&lt;/strike&gt;Perl is like chess, only without the dice&lt;/small&gt;
+&lt;/sub&gt; &lt;P&gt;
+
+&lt;/div&gt;&lt;/div&gt;&lt;P&gt;
+
+°) works like a charm in FF , forgot to disable "noscript" filtering for localhost! ;)
+&lt;!-- Wiki2Monks {"version":1.142} --&gt;</doctext>
+<thread id="1225490">
+<node id="1225495"/>
+<node id="1225538"><node id="1225542"/>
+</node>
+<node id="1228828"/>
+<node id="1231099"/>
+</thread></node>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11130401" title="Re: extracting sub elements from DOM by class" created="2021-03-26 17:14:54" updated="2021-03-26 17:14:54" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt; I must admit: I dont understand the DOM and scraping websites is a pain if you dont know it.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The basics of DOM are actually not all too difficult - it's basically a tree structure with nodes of different types. They're often represented as objects with a base "node" class that supports methods like "what are the children of this node", and the different node types are implemented as subclasses of this node ([mod://XML::LibXML] works this way; [mod://Mojo::DOM] AFAIK doesn't, but these are just implementation details). The two most common are "element" nodes, that represent &lt;c&gt;&lt;elements&gt;&lt;/c&gt;s (including their attributes), and text nodes, that represent any text in between elements. There's also "comment" nodes that represent &lt;c&gt;&lt;!-- comments --&gt;&lt;/c&gt;, etc.&lt;/p&gt;
+&lt;p&gt;In my experience, probably one of the most common things to confuse people is that this structure is very formal and rigid, asking a question like "what is the text content of &lt;c&gt;&lt;p&gt;Hello, &lt;b&gt;cool&lt;/b&gt; World!&lt;/p&gt;&lt;/c&gt;?" is not as obvious as one might think. This &lt;c&gt;&lt;p&gt;&lt;/c&gt; element has three children: the text &lt;c&gt;"Hello, "&lt;/c&gt;, the element &lt;c&gt;&lt;b&gt;&lt;/c&gt;, and the text &lt;c&gt;" World!"&lt;/c&gt;. To get all the text content means to walk down the tree and include the text child node &lt;c&gt;"cool"&lt;/c&gt; of the &lt;c&gt;&lt;b&gt;&lt;/c&gt; element too. Most libraries have functions that do this for you though.&lt;/p&gt;
+&lt;p&gt;Anyway, one nice thing about [mod://Mojo::DOM] is that it supports CSS selectors. This is related to the DOM of course, but actually simplifies finding things in the DOM a &lt;i&gt;lot&lt;/i&gt;. They're a little bit like a more flexible XPath. See [mod://Mojo::DOM::CSS]: &lt;c&gt;id&lt;/c&gt;s can be selected via &lt;c&gt;#idname&lt;/c&gt; and classes can be selected via &lt;c&gt;.classname&lt;/c&gt;, with automatic handling of multiple classes, e.g. your &lt;c&gt;class="fa fa fa-mobile-phone"&lt;/c&gt; can be selected via e.g. &lt;c&gt;.fa-mobile-phone&lt;/c&gt; or perhaps &lt;c&gt;.fa.fa-mobile-phone&lt;/c&gt;, though interestingly I don't see a mention of the latter in the docs (it's in the [https://www.w3.org/TR/selectors-3/#class-html|W3C specs] though).&lt;/p&gt;
+&lt;p&gt;Your HTML appears to be structured as a &lt;c&gt;class="item-list"&lt;/c&gt; with &lt;c&gt;&lt;div class="item"&gt;&lt;/c&gt;s containing the data, so that's what I'd start with. What I think is quite strange is &lt;c&gt;&lt;span&gt;&lt;i class="fa fa fa-phone"&gt;&lt;/i&gt;011111111&lt;/span&gt;&lt;/c&gt;, it's unclear to me why the &lt;c&gt;class="fa fa fa-phone"&lt;/c&gt; isn't on the &lt;c&gt;&lt;span&gt;&lt;/c&gt; that actually contains the data but is instead on the &lt;i&gt;empty&lt;/i&gt; &lt;c&gt;&lt;i&gt;&lt;/c&gt; in front of it. But oh well, we can deal with that too. (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; Oh, they're [https://fontawesome.com/|Font Awesome] icons.)&lt;/p&gt;
+&lt;c&gt;
+use Mojo::Base -strict, -signatures;
+use Mojo::DOM;
+use Mojo::Util qw/trim dumper/;
+
+my $dom = Mojo::DOM-&gt;new( do { local $/; &lt;DATA&gt; } );
+
+my %members;
+$dom-&gt;find('#members-list .item')-&gt;map(sub {
+	# assume only one .item-title (use -&gt;find instead of -&gt;at otherwise)
+	my $name = trim( $_-&gt;at('.item-title')-&gt;all_text );
+	$_-&gt;find('.woffice-xprofile-list .fa')-&gt;map(sub {
+		my $class = $_-&gt;attr('class');
+		# go up one node from the &lt;i&gt; to the &lt;span&gt;
+		my $content = $_-&gt;parent-&gt;all_text;
+		# assume no duplicates
+		$members{$name}{$class} = $content;
+	});
+});
+print dumper(\%members);
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11130387</root_node>
+<parent_node field_name="parent_node">11130387</parent_node>
+<thread id="11130387">
+<node id="11130391"><node id="11130419"/>
+</node>
+<node id="11130401"/>
+<node id="11130477"/>
+</thread></node>

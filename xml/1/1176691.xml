@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1176691" title="Re^5: Grab input from the user and Open the file" created="2016-11-28 05:38:10" updated="2016-11-28 05:38:10" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [valerydolce],&lt;/p&gt;
+&lt;p&gt;Designing your own regex is certainly very good practice. For a production system I'd recommend existing modules, for example [mod://Regexp::Common] to find URIs and [mod://URI] to parse them. For example:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $str = &lt;&lt;'END_STR';
+I am an example http://www.perlmonks.org/?parent=1176663;node_id=3333 text
+that contains &lt;https://perlmonks.pair.com/?node_id=1176651&gt; two URIs
+END_STR
+
+use Regexp::Common qw/URI/;
+use URI;
+
+while ($str=~/$RE{URI}{-keep}/g) {
+	my $uri = URI-&gt;new($1);
+	print "$uri\n";
+	print "  Scheme: ", $uri-&gt;scheme, "\n";
+	print "    Host: ", $uri-&gt;host,   "\n";
+	print "    Path: ", $uri-&gt;path,   "\n";
+	print "   Query: ", $uri-&gt;query,  "\n";
+}
+&lt;/c&gt;
+&lt;p&gt;See the [mod://URI] documentation for lots more ways to access the different parts of the URI. I did notice that unfortunately [mod://Regexp::Common] apparently doesn't match the &lt;c&gt;#fragment&lt;/c&gt; part of the URI, so here's an attempt at an alternate solution, using a regex based on the characters allowed in URIs from [https://tools.ietf.org/html/rfc3986#section-2|RFC 3986].&lt;/p&gt;
+&lt;c&gt;
+# NOTE this is based on a quick skim of RFC 3986 and may not be complete!
+my $url_re = qr{
+	# https://tools.ietf.org/html/rfc3986#section-2
+	# URI = scheme ":" hier-part ...;  hier-part = "//" ...
+	# scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+	[A-Za-z][A-Za-z0-9+\-.]* ://
+	# gen-delims = ":" / "/" / "?" / "#" / "[" / "]" / "@"
+	# sub-delims = "!" / "$" / "&amp;" / "'" / "(" / ")"
+	#     / "*" / "+" / "," / ";" / "="
+	# unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
+	( [:/?#\[\]@!\$&amp;'()*+,;=A-Za-z0-9\-._~]
+	# pct-encoded = "%" HEXDIG HEXDIG
+	| %[0-9A-Fa-f]{2} )*
+}x;
+
+while ($str=~/($url_re)/g) {
+	my $uri = URI-&gt;new($1);
+	print "$uri\n";
+}
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1176613</root_node>
+<parent_node field_name="parent_node">1176663</parent_node>
+<thread id="1176613">
+<node id="1176614"/>
+<node id="1176615"/>
+<node id="1176626"><node id="1176651"><node id="1176652"/>
+<node id="1176655"><node id="1176661"/>
+<node id="1176663"><node id="1176668"/>
+<node id="1176691"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1176636"/>
+<node id="1176718"><node id="1176812"/>
+</node>
+</thread></node>

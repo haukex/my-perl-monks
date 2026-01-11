@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1194784" title="multiple for loop to extract required xml nodes" created="2017-07-11 04:05:48" updated="2017-07-11 04:05:48" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1193343">snehit.ar</author>
+<doctext field_name="doctext">Please do help me with this query ... i am getting eventid and name in diff arrays.. But Now i want out put as part of single array list :
+required output
+&lt;code&gt;
+$VAR1 = [
+          {
+            'eventid' =&gt; '957',
+            'name' =&gt; 'aaaa'  
+          },
+          {
+            'eventid' =&gt; '2667',
+            'name' =&gt; 'bbbb'
+          },
+          {
+            'eventid' =&gt; '2667'
+            'name' =&gt; 'bbbb'
+          },
+          {
+            'eventid' =&gt; '1503'
+            'name' =&gt; 'cccc'
+          },
+          {
+            'eventid' =&gt; '1103'
+            'name' =&gt; 'dddd'
+          },
+          {
+            'eventid' =&gt; '1503'
+            'name' =&gt; 'cccc'
+          }
+        ];
+&lt;/code&gt;
+How can i do with multiple loop :
+&lt;code&gt;
+#!/usr/bin/env perl       
+use strict;
+use warnings;
+use XML::XPath;
+use Data::Dumper;
+
+my $xml = 'ApplicationList.xml';
+my $xp = XML::XPath-&gt;new(filename =&gt; $xml);
+my $appxpath =  $xp-&gt;findnodes("//application_list/application/");
+
+my %appid = ();
+foreach my $appnodeset ($appxpath-&gt;get_nodelist) {
+  my $id   = $xp-&gt;find('./@id',$appnodeset)-&gt;string_value;
+  my $name = $xp-&gt;find('./@name',$appnodeset)-&gt;string_value;
+  s/^\s+|\s+$//g for $id,$name;
+  $appid{$id} = $name;
+}
+print Dumper \%appid;
+
+my $eventxml = 'events.xml';
+my $evenxp = XML::XPath-&gt;new(filename =&gt; $eventxml);
+my $xpath = "//event/custom_attribute_list/custom_attribute[normalize-
++space(name)='SLB_SSRID']/value";
+
+my @eventrecords = ();
+foreach my $node ($evenxp-&gt;findnodes($xpath)) { 
+  my $ssrid = $node-&gt;string_value;
+  $ssrid =~ s/^\s+|\s+$//g ;
+  if ( exists $appid{$ssrid} ){
+    push @eventrecords, 
+      { eventid =&gt; $ssrid };
+  } 
+}
+print Dumper \@eventrecords;
+&lt;/code&gt;
+
+---application.xml
+&lt;code&gt;
+&lt;application_list&gt;
+
+&lt;application id="2667" external-id="EAR-AA-2667" name="aaaa"&gt;&lt;/applica
++tion&gt;
+&lt;application id="1103" external-id="EAR-AA-1103" name="bbbb"&gt;&lt;/applica
++tion&gt;
+&lt;application id="957" external-id="EAR-AA-957" name="cccc"&gt;&lt;/applicati
++on&gt;
+&lt;application id="1250" external-id="EAR-AA-1250" name="dddd"&gt;&lt;/applica
++tion&gt;
+
+&lt;/application_list&gt;
+&lt;/code&gt;
+
+-----Events.xml
+&lt;code&gt;
+&lt;event_list&gt;
+&lt;event&gt;
+&lt;name&gt;
+Incident&lt;/name&gt;
+&lt;value&gt;
+INC0004532345324&lt;/value&gt;
+&lt;name&gt;
+SSRID&lt;/name&gt;
+&lt;value&gt;
+957&lt;/value&gt;
+&lt;/event&gt;
+&lt;/event_list&gt;
+&lt;/code&gt;
+</doctext>
+<thread id="1194784">
+<node id="1194795"><node id="1194798"/>
+</node>
+<node id="1194805"><node id="1194810"><node id="1194814"><node id="1194819"><node id="1194824"><node id="1194889"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

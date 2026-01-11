@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1204924" title="Re: Tie::File with absolute path of the file" created="2017-12-05 01:13:22" updated="2017-12-05 01:13:22" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;In a recent [id://1203885|thread] I was sufficiently convinced by other monks that [doc://Tie::File] - even though I still think it's kind of "neat" - is not a good choice in a serious application. On a large file it's much too inefficient, and even on a small file it's still more efficient to just read the entire file into an array and write it back out after modifying. So either:&lt;/p&gt;
+&lt;c&gt;
+open my $ifh, '&lt;', $filename or die "$filename: $!";
+chomp( my @array = &lt;$ifh&gt; );
+close $ifh;
+
+# modify @array here
+
+open my $ofh, '&gt;', $filename or die "$filename: $!";
+print $ofh $_,"\n" for @array;
+close $ofh;
+&lt;/c&gt;
+&lt;p&gt;Or, to demonstrate a &lt;c&gt;while(&lt;&gt;)&lt;/c&gt; loop and plug one of my own modules &lt;sup&gt;&lt;tt&gt;;-)&lt;/tt&gt;&lt;/sup&gt; see [mod://File::Replace]:&lt;/p&gt;
+&lt;c&gt;
+use File::Replace;
+ 
+my $repl = File::Replace-&gt;new($filename);
+my $infh = $repl-&gt;in_fh;
+while (my $line = &lt;$infh&gt;) {
+    chomp($line);
+    # modify $line here
+    print {$repl-&gt;out_fh} $line, "\n";
+}
+$repl-&gt;finish;
+&lt;/c&gt;
+&lt;p&gt;As for the problem you're having with [doc://Tie::File], I think both [tangent] and [toolic] have a very good point about write permissions. I would also add that perhaps using proper modules to handle file names platform independently might help with mitigating headaches about slashes etc. in filenames: either the core [doc://File::Spec], or, with a much nicer interface, [mod://Path::Class] (there's also [mod://Path::Tiny] with a similar interface, but be aware that that's restricted to Windows an *NIX).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1204905</root_node>
+<parent_node field_name="parent_node">1204905</parent_node>
+<thread id="1204905">
+<node id="1204909"><node id="1204915"/>
+</node>
+<node id="1204911"><node id="1204953"/>
+</node>
+<node id="1204924"/>
+</thread></node>

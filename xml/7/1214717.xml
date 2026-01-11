@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1214717" title="Re^3: Importing a variable into a package (updated)" created="2018-05-17 04:35:30" updated="2018-05-17 04:35:30" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Your understanding is &lt;small&gt;&lt;b&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/b&gt;&lt;/small&gt; &lt;i&gt;almost&lt;/i&gt; correct, just your reason for needing the &lt;c&gt;BEGIN&lt;/c&gt; in the root node is a little off, the problem happens at the compile time of the &lt;c&gt;print $y&lt;/c&gt;. It's probably best if you look at compile time vs. run time more in general. &lt;small&gt;&lt;b&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/b&gt;&lt;/small&gt;&lt;/p&gt; 
+&lt;p&gt;Perl of course has to parse and compile a piece of code like &lt;c&gt;*T::x=\"x";&lt;/c&gt; when it encounters it. However, that piece of code isn't &lt;i&gt;run&lt;/i&gt; until runtime, that is, the assignment to the glob doesn't happen until after the entire surrounding code is compiled and while it is being executed.&lt;/p&gt;
+&lt;p&gt;So if the assignment is immediately followed by &lt;c&gt;print $x;&lt;/c&gt;, when Perl tries to &lt;i&gt;compile&lt;/i&gt; that statement, it does not yet know about &lt;c&gt;$x&lt;/c&gt;!&lt;/p&gt;
+&lt;p&gt;That's why in your example code you need to move the &lt;i&gt;execution&lt;/i&gt; of the assignment into the compile time of the surrounding code via &lt;c&gt;BEGIN&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;And in the case of the module, which does indeed appear to use [doc://eval]: &lt;c&gt;eval STRING&lt;/c&gt; needs to &lt;i&gt;compile and run&lt;/i&gt; the code it is given, but it does not do so until the &lt;c&gt;eval&lt;/c&gt; itself is executed, that is, the runtime of the &lt;c&gt;eval&lt;/c&gt; statement. So in this case, if the assignment to the glob happens at run time instead of compile time, as long as it happens before the &lt;c&gt;eval&lt;/c&gt;, this will still work, because the assignment is still happening before the compile time of the code that was given to &lt;c&gt;eval&lt;/c&gt;. &lt;/p&gt;
+&lt;p&gt;Note that this way, with &lt;c&gt;BEGIN&lt;/c&gt; and &lt;c&gt;eval&lt;/c&gt; in Perl it's possible to basically have as many compile and run times as one wants.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Also a few updates for clarity.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1214558</root_node>
+<parent_node field_name="parent_node">1214621</parent_node>
+<thread id="1214558">
+<node id="1214559"><node id="1214621"><node id="1214717"/>
+</node>
+</node>
+</thread></node>

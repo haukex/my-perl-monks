@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1206277" title="Net::LDAP::LDIF-&gt;new Chokes on large LDIF because of comments every 5k lines" created="2017-12-27 12:06:59" updated="2017-12-27 12:06:59" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="274551">3dbc</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;i&gt;Original post:&lt;/i&gt;&lt;/p&gt;
+
+Hi Perl Monks,&lt;BR&gt;&lt;BR&gt; Trying to figure out a way to do an &lt;c&gt;my $ldif = Net::LDAP::LDIF-&gt;new( "../packages/ldapsearch.ldif", "r") or die "file not exits\n";&lt;/c&gt; on the output of an &lt;c&gt;exec qx[customldapsearch_from_vendor command]&lt;/c&gt;. &lt;BR&gt; I want to use perl to process the large ldif it creates and format it into a csv report. Have most of it done, but want to be able to dynamically control the exec win32 command from perl and then immediately pass the output into the new LDAP LDIF. &lt;BR&gt; Right now the exec doesn't release the file so I can than process it in perl through the ldif call and I'm getting an error when opening the file. &lt;BR&gt; &lt;BR&gt;&lt;BR&gt; Thanks!! 
+
+&lt;br /&gt;&lt;br /&gt;
+&lt;hr /&gt;
+&lt;br /&gt;
+
+Hi Perl Monks,&lt;BR&gt;&lt;BR&gt;
+
+Having an issue reading in a huge LDIF with comments every 5 thousand lines, how do I ignore those when opening the ldif with net::LDAP::ldif-&gt;new? 
+
+&lt;BR&gt;&lt;BR&gt;
+example of LDIF with comments:
+
+&lt;code&gt;
+# userid2, help, perl.monks
+dn: uid=userid2,ou=help,dc=perl,dc=monks
+FriendlyId: crazyID2
+IdCreatedOn: 28-02-2015 04:40:55
+
+#BELOW IS THE COMMENTS PERL CHOKES ON EVERY 5k lines with LDIF MODULE
+# search result
+# search: 2
+# result: 0 Success
+control: 1.2.840.113556.1.4.319 false BLAHBLAH
+# extended LDIF
+#
+# LDAPv3
+# base &lt;ou=help,dc=perl,dc=monks&gt; with scope subtree
+# filter: (|(Id1=*)(Id2=*))
+# requesting: FriendlyId IdCreatedOn 
+# with pagedResults critical control: size=1000
+#
+
+# userid, help, perl.monks
+dn: uid=userid,ou=help,dc=perl,dc=monks
+FriendlyId: crazyID
+IdCreatedOn: 28-02-2015 04:40:55
+
+&lt;/CODE&gt;
+Do I have to parse these out of the ldif before reading it in with net ldap ldif? 
+&lt;CODE&gt;
+
+my $ldif = Net::LDAP::LDIF-&gt;new( "../packages/ldapsearch.ldif", "r") or die "file not exits\n";
+while( not $ldif-&gt;eof( ) ) {
+    my $entry = $ldif-&gt;read_entry( );
+	
+&lt;/CODE&gt;
+
+
+Right now it's reading in the file it generates but only gets like a quarter of the way through it then throws an error entry not valid on the line with this: $entry = $ldif-&gt;read_entry()
+&lt;BR&gt;&lt;BR&gt;
+Shouldn't NET LDAP LDIF conform to the &lt;a href="https://docs.oracle.com/cd/E10773_01/doc/oim.1014/e10531/ldif_appendix.htm"&gt;standard&lt;/a&gt;
+&lt;BR&gt;&lt;BR&gt;
+UPDATE:
+&lt;BR&gt;&lt;BR&gt;
+Never mind found out my own issue, as you can see in the comments section every 5k lines it has one un-commented line in the middle. so the ldif I'm using doesn't conform to the standard. wish I could use LDIF module to create the ldif, but need to page the results every 1k search results. 
+ 
+&lt;p&gt;&lt;small&gt;&lt;i&gt;2017-12-28 [Athanasius] restored original content and added code tags&lt;/small&gt;&lt;/p&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-274551"&gt;
+- 3dbc
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1206277">
+<node id="1206291"><node id="1206293"><node id="1206332"/>
+</node>
+</node>
+<node id="1206294"><node id="1206338"/>
+</node>
+</thread></node>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11114976" title="Re: Perl seems to mistreat &quot;PerlIO&quot; environment variable (Windows)" created="2020-04-03 03:16:15" updated="2020-04-03 03:16:15" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I updated your code to the following, and added the output I got as comments after every command (Win 10, Perl 5.28).&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+@echo off
+set PERLIO=
+perl -E "print STDERR PerlIO::get_layers(STDOUT),qq(\n); print qq(\n)" &gt;&gt; tmp
+REM unixcrlf 0d0a
+perl -E "binmode STDOUT; print STDERR PerlIO::get_layers(STDOUT),qq(\n); print qq(\n)" &gt;&gt; tmp
+REM unixcrlf 0a
+set PERLIO=:raw
+perl -E "print STDERR PerlIO::get_layers(STDOUT),qq(\n); print qq(\n)" &gt;&gt; tmp
+REM unix 0d0a
+perl -E "binmode STDOUT; print STDERR PerlIO::get_layers(STDOUT),qq(\n); print qq(\n)" &gt;&gt; tmp
+REM unix 0d0a
+perl -E "binmode STDOUT, ':crlf'; print STDERR PerlIO::get_layers(STDOUT),qq(\n); print qq(\n)" &gt;&gt; tmp
+REM unixcrlf 0d0d0a
+set PERLIO=:raw:crlf:pop
+perl -E "print STDERR PerlIO::get_layers(STDOUT),qq(\n); print qq(\n)" &gt;&gt; tmp
+REM unix 0a
+perl -E "binmode STDOUT; print STDERR PerlIO::get_layers(STDOUT),qq(\n); print qq(\n)" &gt;&gt; tmp
+REM unix 0a
+perl -E "binmode STDOUT, ':crlf'; print STDERR PerlIO::get_layers(STDOUT),qq(\n); print qq(\n)" &gt;&gt; tmp
+REM unixcrlf 0d0a
+set PERLIO=
+perl -Mopen=IO,raw -E "say unpack 'H*', $_ while &lt;ARGV&gt;" tmp
+del tmp
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;In [https://github.com/Perl/perl5/issues/17160|a bug] I reported a while back, I got this explanation in regards to the &lt;c&gt;:crlf&lt;/c&gt; layer on Windows:&lt;/p&gt;
+&lt;blockquote&gt;
+:crlf is not just a translation layer on top of the buffering system,
+it's an alternative buffering system that will optionally do the
+translation. Calling binmode will disable that translation but not the
+layer.
+
+For extra confusion, on Linux binmode will pop off the crlf layer,
+because it's not presumed to be the only buffering layer.
+&lt;/blockquote&gt;
+&lt;p&gt;What I &lt;i&gt;think&lt;/i&gt; this means is that anytime the &lt;c&gt;:crlf&lt;/c&gt; layer is missing on Windows, the behavior may be wonky. This appears to be triggered by &lt;c&gt;PERLIO=:raw&lt;/c&gt;, and may very well be a bug. Is there any way you can avoid that environment variable being set and only use [doc://binmode]?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11114964</root_node>
+<parent_node field_name="parent_node">11114964</parent_node>
+<thread id="11114964">
+<node id="11114976"><node id="11114987"/>
+</node>
+</thread></node>

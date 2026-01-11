@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129784" title="Re: Can't get \n or other character/translation escapes to interpolate if originally read from a data file" created="2021-03-16 13:46:55" updated="2021-03-16 13:46:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Considering your responses further down in the thread, where you say you're actually looking to store sequences of search strings and replacements, I think perhaps it might be better to look at existing data serialization formats instead of inventing your own. For example, JSON is very common nowadays, or YAML is sometimes a bit more human-readable. In addition, since your search strings appear to be fairly similar, it's worth investigating whether a regex or two can match your search strings with more flexibility instead of listing all the search strings.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use JSON::PP;
+use YAML::PP;
+
+my $data = [
+	{ search=&gt;"Reach Holly Smith for help by sending an email\nto hollysmith\@nosuchdomain.com.", replacement=&gt;"For more information, contact Holly Smith." },
+	{ search=&gt;"For more information, contact Holly Smith at\nhollysmith\@nosuchdomain.com.", replacement=&gt;"For more information, contact Holly Smith." },
+	{ search=&gt;"For more information, contact Holly Smith at (800) 555-1212 or\nvia email to hollysmith\@nosuchdomain.com", replacement=&gt;"For more information, contact Holly Smith." },
+];
+
+my $json = JSON::PP-&gt;new-&gt;pretty;
+print $json-&gt;encode($data);
+
+my $yaml = YAML::PP-&gt;new;
+print $yaml-&gt;dump_string($data);
+
+__END__
+
+[
+   {
+      "search" : "Reach Holly Smith for help by sending an email\nto hollysmith@nosuchdomain.com.",
+      "replacement" : "For more information, contact Holly Smith."
+   },
+   {
+      "replacement" : "For more information, contact Holly Smith.",
+      "search" : "For more information, contact Holly Smith at\nhollysmith@nosuchdomain.com."
+   },
+   {
+      "replacement" : "For more information, contact Holly Smith.",
+      "search" : "For more information, contact Holly Smith at (800) 555-1212 or\nvia email to hollysmith@nosuchdomain.com"
+   }
+]
+---
+- replacement: For more information, contact Holly Smith.
+  search: |-
+    Reach Holly Smith for help by sending an email
+    to hollysmith@nosuchdomain.com.
+- replacement: For more information, contact Holly Smith.
+  search: |-
+    For more information, contact Holly Smith at
+    hollysmith@nosuchdomain.com.
+- replacement: For more information, contact Holly Smith.
+  search: |-
+    For more information, contact Holly Smith at (800) 555-1212 or
+    via email to hollysmith@nosuchdomain.com
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11129681</root_node>
+<parent_node field_name="parent_node">11129681</parent_node>
+<thread id="11129681">
+<node id="11129682"/>
+<node id="11129683"><node id="11129686"><node id="11129712"><node id="11129715"/>
+</node>
+</node>
+<node id="11129693"><node id="11129711"/>
+</node>
+</node>
+<node id="11129687"/>
+<node id="11129692"/>
+<node id="11129720"><node id="11129733"><node id="11129736"/>
+</node>
+</node>
+<node id="11129735"><node id="11129755"><node id="11129759"/>
+<node id="11129796"/>
+</node>
+</node>
+<node id="11129784"/>
+<node id="11129798"><node id="11129799"/>
+</node>
+</thread></node>

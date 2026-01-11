@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11130435" title="Re: last_insert_id did not work" created="2021-03-27 03:36:43" updated="2021-03-27 03:36:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;[Corion] [id://11130433|is right] that the method should be called on &lt;c&gt;$dbh&lt;/c&gt; (though in my test it worked on &lt;c&gt;$sth&lt;/c&gt; too, so I'm not sure that's the problem here). Note the documentation: "The &lt;c&gt;last_insert_id&lt;/c&gt; method was added in DBI 1.38." - what version do you have?&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use feature 'say';
+use DBI;
+
+my $dbh = DBI-&gt;connect(
+	"DBI:mysql:database=testing;host=127.0.0.1", $ENV{USER},
+	'barfoo', { RaiseError =&gt; 1, AutoCommit =&gt; 1 });
+$dbh-&gt;do('DROP TABLE IF EXISTS coacttran');
+$dbh-&gt;do(&lt;&lt;'ENDSQL');
+CREATE TABLE coacttran (
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	foo VARCHAR(256) 
+);
+ENDSQL
+
+for my $i (1..10) {
+	my $req = qq{ INSERT INTO `coacttran` SET foo=? };
+	my $sth = $dbh-&gt;prepare($req);
+	my $row = $sth-&gt;execute("bar$i");
+	say $dbh-&gt;last_insert_id;
+}
+&lt;/c&gt;
+&lt;p&gt;I spun up the test database with Docker the same way I showed [id://11123492|here].&lt;/p&gt;
+&lt;p&gt;Also note that I don't know how you're generating &lt;c&gt;$_pstmt&lt;/c&gt;, but you really should use [mod://DBI#Placeholders-and-Bind-Values|placeholders]! See [https://bobby-tables.com/|Bobby Tables].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11130432</root_node>
+<parent_node field_name="parent_node">11130432</parent_node>
+<thread id="11130432">
+<node id="11130433"><node id="11130434"/>
+<node id="11130472"/>
+</node>
+<node id="11130435"><node id="11130439"><node id="11130440"/>
+</node>
+</node>
+<node id="11130438"><node id="11130441"/>
+<node id="11130464"/>
+</node>
+<node id="11130468"><node id="11130488"><node id="11130491"><node id="11130497"/>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1210569" title="Many children, but never more than a fixed number at once." created="2018-03-09 09:45:13" updated="2018-03-09 09:45:13" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;Hi monks,
+I would like to go further: a tcp producer/consumer + fork.
+And run no more than &lt;b&gt;n&lt;/b&gt; processes at the same time on the client side.&lt;/p&gt;
+
+&lt;code&gt;
+### tcp server
+use DBI;
+use IO::Socket::INET;
+
+### flush after every write
+$|= 1;
+
+### infinite loop
+while(1) {
+  my($socket, $client_socket);
+  my($peeraddress, $peerport);
+  my($row, $data);
+  my @processes= ('one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten');
+
+  # creating object interface of IO::Socket::INET modules which internally does
+  # socket creation, binding and listening at the specified port address.
+  $socket = new IO::Socket::INET (
+    LocalHost=&gt; '127.0.0.1',
+    LocalPort=&gt; '5000',
+    Proto=&gt; 'tcp',
+    Listen=&gt; 5,
+    Reuse=&gt; 1
+  ) or die "ERROR in Socket creation: $!\n";
+
+  print "I am waiting clients to connect on port 5000.\n";
+  while($row= shift(@processes)) {
+    $client_socket = $socket-&gt;accept();
+    $peeraddress = $client_socket-&gt;peerhost();
+    print "Sending $row to $peeraddress:$peerport)... ";
+
+    # write to the newly accepted client.
+    print $client_socket "$row\n";
+
+    # read from the newly accepted client.
+    $data = &lt;$client_socket&gt;;
+    chomp($data);
+    print "got $data from client.\n";
+
+    $client_socket-&gt;close();
+  }
+  $socket-&gt;close();
+}
+&lt;/code&gt;
+
+&lt;code&gt;
+### tcp client
+use strict;
+use warnings 'all';
+
+sub sfork($&amp;) {
+  my($max, $code)= @_;
+
+  foreach my $c (1..$max) {
+    wait unless $c&lt;=$max;
+    die "Cannot fork: $!\n" unless defined(my $pid= fork);
+    exit $code-&gt;($c) unless $pid;
+  }
+  1 until -1 == wait;
+}
+
+sfork 2, sub {
+  sub getFromProducer {
+    use IO::Socket::INET;
+
+    my($socket, $data);
+    $socket= new IO::Socket::INET (
+      PeerHost=&gt; '127.0.0.1',
+      PeerPort=&gt; '5000',
+      Proto=&gt; 'tcp'
+    ) or die "ERROR in Socket creation: $!\n";
+    $socket-&gt;autoflush(1);
+    $data= &lt;$socket&gt;;
+    chomp($data);
+    $socket-&gt;close();
+    return $data;
+  }
+
+  my $data= &amp;getFromProducer;
+  print "($$) Got $data from procucer.\n";
+}
+&lt;/code&gt;
+&lt;p&gt;This is not exactly what I would like to obtain,
+any suggestion is well appreciated.&lt;p&gt;
+&lt;p&gt;I would like the client to iterate asking, until the end of the list.&lt;/p&gt;
+
+A new monk is in search of wisdom.
+Paolo F.
+
+&lt;p&gt;&lt;small&gt;&lt;i&gt;2018-03-12 [Athanasius] promoted to root node; formerly a reply to [id://180219]&lt;/p&gt;
+</doctext>
+<reputation field_name="reputation">0</reputation>
+<thread id="1210569">
+<node id="1210607"/>
+</thread></node>

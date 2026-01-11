@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1184769" title="How best to validate the keys of hashref arguments?" created="2017-03-15 16:43:13" updated="2017-03-15 16:43:13" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1183826">cbeckley</author>
+<doctext field_name="doctext">&lt;p&gt;
+I have a subroutine in a module that uses Net::OpenSSH to run administration commands remotely.  This sub gets its arguments through a hash ref.
+&lt;/p&gt;
+&lt;p&gt;&lt;blockquote&gt;&lt;code&gt;
+sub ops_do_ssh_shell {
+   my ($cmd) = @_;
+#etc ...
+}
+&lt;/code&gt;&lt;/blockquote&gt;&lt;/p&gt;
+
+&lt;readmore title="the full function"&gt;&lt;p&gt;&lt;blockquote&gt;&lt;code&gt;
+sub ops_do_ssh_shell {
+   my ($cmd) = @_;
+
+   my $ssh;
+   my $key_path = defined $cmd-&gt;{key} ? $cmd-&gt;{key} : $ENV{HOME} . '/.ssh/id_rsa';
+
+   if ( ops_cmd_status($cmd) ) {
+      $ssh = Net::OpenSSH-&gt;new($cmd-&gt;{host}, user =&gt; $cmd-&gt;{user}, key_path =&gt; $key_path);
+      if ( $ssh-&gt;error ) {
+         $cmd-&gt;{status} = 'failure';
+         ($cmd-&gt;{ssh_retcode}, $cmd-&gt;{ssh_retmsg}) = (0 + $ssh-&gt;error, '' . $ssh-&gt;error);
+      }
+   }
+
+   if ( ops_cmd_status($cmd) ) {
+      ($cmd-&gt;{output}, $cmd-&gt;{std_err}) = $ssh-&gt;capture2($cmd-&gt;{command});
+      $cmd-&gt;{cmd_ret_code} = 0 + $ssh-&gt;error;
+      if ( $ssh-&gt;error ) {
+         $cmd-&gt;{status} = 'failure';
+         $cmd-&gt;{cmd_ret_msg} = '' . $ssh-&gt;error;
+      }
+      chomp $cmd-&gt;{output};
+      chomp $cmd-&gt;{std_err};
+   }
+
+   return $cmd;
+}
+&lt;/code&gt;&lt;/blockquote&gt;&lt;/p&gt;&lt;/readmore&gt;
+
+&lt;p&gt;
+And I invoke it like this:
+&lt;/p&gt;
+
+&lt;p&gt;&lt;blockquote&gt;&lt;code&gt;
+my $cmd_status = ops_do_ssh_shell($cmd);
+&lt;/code&gt;&lt;/blockquote&gt;&lt;/p&gt;
+
+&lt;readmore title="fuller listing"&gt;&lt;p&gt;&lt;blockquote&gt;&lt;code&gt;
+my @commands = (
+   { name =&gt; 'command_name1',
+     user =&gt; 'user1',
+     host =&gt; 'server1.foo.com',
+     command =&gt; 'rsync_command yadda yadda'
+   },
+   { name =&gt; 'command_name2',
+     user =&gt; 'user2',
+     host =&gt; 'server2.foo.com',
+     command =&gt; 'rsync_command yadda yadda'
+   }
+);
+
+for my $cmd (@commands) {
+   if ($state-&gt;{status} eq 'success') {
+      my $cmd_status = ops_do_ssh_shell($cmd);
+      if ( (!defined $cmd_status-&gt;{cmd_ret_code}) or ($cmd_status-&gt;{cmd_ret_code} != 0) ) {
+         $state-&gt;{status} = 'failure';
+         $state-&gt;{stack_trace} = $cmd_status;
+      }
+   }
+}
+&lt;/code&gt;&lt;/blockquote&gt;&lt;/p&gt;&lt;/readmore&gt;
+
+&lt;p&gt;
+The keys in the $cmd hashref don't benefit from "use strict" and "use warnings".  I've found Params::Check and Params::Validate, but is manual validation, even with  help of these modules, the best way to achieve this "strictness"?
+&lt;/p&gt;
+
+&lt;p&gt;
+Or is my $cmd hash approaching the level of complexity that would benefit from implementing it as an object?  Am I correct in thinking that would get the validation as a side effect?
+&lt;/p&gt;
+
+&lt;p&gt;
+Thank you for taking the time to look at this.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;br&gt;Thanks,
+&lt;br&gt;cbeckley
+&lt;/p&gt;
+</doctext>
+<thread id="1184769">
+<node id="1184776"><node id="1184791"><node id="1184885"/>
+</node>
+</node>
+<node id="1184790"><node id="1184913"><node id="1184915"><node id="1184980"/>
+</node>
+</node>
+</node>
+<node id="1184792"/>
+<node id="1184851"><node id="1184901"><node id="1184910"><node id="1184916"><node id="1184920"/>
+</node>
+<node id="1184918"><node id="1184921"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="847959" title="Re^3: Perl Rename" created="2010-07-04 04:02:43" updated="2010-07-04 04:02:43" _doctext_mode="lenient"><type id="11">note</type>
+<author id="747201">afoken</author>
+<doctext field_name="doctext">&lt;p&gt;You've hit a much deeper problem here:&lt;/p&gt;
+&lt;h2&gt;Passing Arguments&lt;/h2&gt;
+&lt;p&gt;On Systems derived from Unix (Linux, *BSD, and nearly every operating system with an X in its name, except for Windows XP), a program is invoked with an (ordered) &lt;b&gt;list&lt;/b&gt; of arguments. This list was called the argument vector (from the mathematical term "vector" as a one-dimensional array of values), or short &lt;c&gt;argv&lt;/c&gt; in C or &lt;c&gt;@ARGV&lt;/c&gt; in perl. There is a minor difference between &lt;c&gt;argv&lt;/c&gt; and &lt;c&gt;@ARGV&lt;/c&gt;: The first element of &lt;c&gt;argv&lt;/c&gt; is the name of the invoked program, the remaining elements are the "real" arguments. Perl's &lt;c&gt;@ARGV&lt;/c&gt; contains only the "real" arguments, the program name is in &lt;c&gt;$0&lt;/c&gt;, the result of a simple shift operation happening long before your code starts.&lt;/p&gt;
+&lt;p&gt;On Systems derived from DOS (MS-DOS, DR-DOS, FreeDOS, all versions of Windows, OS/2, and nearly every operating system with "DOS" in its name), things are different: A program is invoked with a &lt;b&gt;single&lt;/b&gt; argument &lt;b&gt;string&lt;/b&gt;. In old times, it was limited to as few as 126 bytes, but I think the new limit is way larger with the Windows API. There originally was no way to know the name that was used to invoke the program. Later DOS versions (starting at 4.01 or so) stored that information in a well-known location in memory, Windows has an API function to get that information.&lt;/p&gt;
+&lt;h2&gt;The Shells&lt;/h2&gt;
+&lt;p&gt;Imagine something simple like &lt;c&gt;perl whipeout.pl *.secret&lt;/c&gt; typed into the shell:&lt;/p&gt;
+&lt;p&gt;On DOS systems (including all Windows versions), the shell searches for perl.bat, perl.com, perl.exe (and a few more extensions on NT-based Windows versions), and invokes the first found, giving it a command line string of &lt;c&gt;whipeout.pl *.secret&lt;/c&gt;. That's all.&lt;/p&gt;
+&lt;p&gt;On Unix systems, the shell searches for a file named perl that has at least one of the executable bits (x in ls -l output) set. Then, it expands all arguments. The string &lt;c&gt;whileout.pl&lt;/c&gt; contains no placeholders, so it is not modified. &lt;c&gt;*.secret&lt;/c&gt; is replaced with a &lt;b&gt;list&lt;/b&gt; of all files in the current directory whose names end with &lt;c&gt;.secret&lt;/c&gt; if such files exist, else it is passed as is.&lt;/p&gt;
+&lt;h2&gt;Runtime Library&lt;/h2&gt;
+&lt;p&gt;On Unix systems, nothing special happens. After some housekeeping for the runtime, control is passed to main().&lt;/p&gt;
+&lt;p&gt;On DOS systems, the runtime splits the command line string into elements, and some rare implementations also expand the elements. Both splitting and expanding depend on the runtime library implementation, there is no formal specification. Most split on space and tabs, and if they expand, they use rules similar to those the shell uses for its build-in commands. Finally, control is passed to &lt;c&gt;main()&lt;/c&gt;, with the splitted and sometimes expanded command line string passed in &lt;c&gt;argv&lt;/c&gt;. Depending on the compiler and the compiler flags used, it is also possible that the WinMain() function is invoked instead, without any processing of command line arguments, leaving that to the application. In both cases, the application can get the original command line string and parse it independant from the runtime.&lt;/p&gt;
+&lt;h2&gt;Application&lt;/h2&gt;
+&lt;p&gt;Perl uses the &lt;c&gt;main()&lt;/c&gt; interface, so it expects its arguments splitted into &lt;c&gt;argv&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;On both systems, the Perl interpreter starts, consideres &lt;c&gt;argv&lt;/c&gt;, initialises &lt;c&gt;$0&lt;/c&gt; and &lt;c&gt;@ARGV&lt;/c&gt; from &lt;c&gt;argv&lt;/c&gt;, loads &lt;c&gt;whipeout.pl&lt;/c&gt; from the current directory, and runs it.&lt;/p&gt;
+&lt;p&gt;On Unix, &lt;c&gt;@ARGV&lt;/c&gt; is either a one-element array containing &lt;c&gt;*.secret&lt;/c&gt;, this happens when the shell could not expand &lt;c&gt;*.secret&lt;/c&gt;, because there were no *.secret files. Or &lt;c&gt;@ARGV&lt;/c&gt; is an array containing one or more file names, all ending with &lt;c&gt;.secret&lt;/c&gt;. Note that the first case highly depends on the shell, and it would be ok for a shell to pass no value at all in this case.&lt;/p&gt;
+&lt;p&gt;On DOS, &lt;c&gt;@ARGV&lt;/c&gt; is always a one-element array containing &lt;c&gt;*.secret&lt;/c&gt;, simply because no code expanded it.&lt;/p&gt;
+&lt;p&gt;The big difference here is that on Unix, the shell is responsible for parsing and expanding user input, whereas on DOS, the shell parses the user input only partially, and passes the remaining input (nearly) unmodified to the application. It is the job of each single application to parse and expand user input. This causes lots of trouble, because the parsing is not predictable. It depends on the runtime library and the application itself.&lt;/p&gt;
+&lt;h2&gt;Workaround&lt;/h2&gt;
+&lt;p&gt;One workaround is to use [mod://Win32::Autoglob], which takes care of expanding &lt;c&gt;@ARGV&lt;/c&gt; automatically only on Windows and not when the cygwin perl is used (cygwin expands the arguments). Unlike most other modules from the &lt;c&gt;Win32::&lt;/c&gt; namespace, it should run with any perl 5 on any operating system. Note that Win32::Autoglob does not work on DOS and OS/2 ports of perl, simply because the author forgot to check &lt;c&gt;($^O eq 'dos') or ($^O eq 'os2')&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Simply calling &lt;c&gt;glob&lt;/c&gt; for every element of &lt;c&gt;@ARGV&lt;/c&gt; that contains &lt;c&gt;*&lt;/c&gt; or &lt;c&gt;?&lt;/c&gt; is a bad idea, especially when it is done independant from the operating system. In the best case, you are only wasting time, in the worst case, you are damaging your arguments. Remember that Unix shells may also pass &lt;c&gt;*&lt;/c&gt; and &lt;c&gt;?&lt;/c&gt; literally when the user told them to do so, like in &lt;c&gt;perl -e 'print join " ",@ARGV' \* \&lt;-- this is a star, isn\'t it\?&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;Alexander&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-747201"&gt;
+--&lt;br&gt;
+Today I will gladly share my knowledge and experience, for there are no sweeter words than "I told you so". ;-)
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">847883</root_node>
+<parent_node field_name="parent_node">847892</parent_node>
+<thread id="847883">
+<node id="847884"><node id="847889"><node id="847891"/>
+</node>
+</node>
+<node id="847885"><node id="847892"><node id="847922"/>
+<node id="847959"/>
+<node id="848057"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="464990" title="Re: How do I use a sort routine from a different package/module?" created="2005-06-09 03:34:39" updated="2005-08-14 17:56:06" _doctext_mode="lenient"><type id="11">note</type>
+<author id="375665">bobf</author>
+<doctext field_name="doctext">&lt;p&gt;
+There are (at least) two ways to access sort routines in a different package:
+&lt;ul&gt;
+&lt;li&gt;Prototype the sort subfunction and pass the values as arguments, which can then be accessed by directly indexing @_
+&lt;/li&gt;
+&lt;li&gt;Fully qualifying $a and $b in the sort routine with the package name of the caller (this works because prior to Perl 6 the elements to be compared are passed to the sort routine in the package global variables $a and $b)
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+use my_sort_routines;
+
+package myprogram;
+
+my @data = ( 4, 2, 1, 3 );
+
+my @sorted_proto = sort my_sort_routines::prototyped  @data;
+my @sorted_qual  = sort my_sort_routines::qualify_pkg @data;
+
+print @sorted_proto, "\n"; #1234
+print @sorted_qual,  "\n"; #1234
+
+
+package my_sort_routines;
+
+sub prototyped ($$)
+{
+    # Access the arguments directly by indexing @_
+
+    $_[0] &lt;=&gt; $_[1];
+}
+
+sub qualify_pkg
+{
+    # Qualify $a and $b with the name of the calling package
+    # Symbolic refs require "no strict refs" here
+    # Symbol::qualify could simplify this, but this illustrates
+    # how to do it without an additional module
+
+    my $pkg = caller;
+    no strict 'refs';
+    ${"${pkg}::a"} &lt;=&gt; ${"${pkg}::b"};
+}
+&lt;/code&gt;
+&lt;/p&gt;
+
+&lt;p&gt;
+Links:
+&lt;ul&gt;
+&lt;li&gt;
+[doc://sort]
+&lt;/li&gt;
+&lt;li&gt;
+[doc://caller]
+&lt;/li&gt;
+&lt;li&gt;
+[doc://perlsub] (subroutines and prototypes)
+&lt;/li&gt;
+&lt;li&gt;
+[doc://perlmod] (packages and modules)
+&lt;/li&gt;
+&lt;li&gt;
+[id://410243] (contains benchmark data for prototyping vs non-prototyping)
+&lt;/li&gt;
+&lt;li&gt;
+[id://378553] (discussion of $a and $b)
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">464989</root_node>
+<parent_node field_name="parent_node">464989</parent_node>
+<thread id="464989">
+<node id="464990"><node id="465067"/>
+</node>
+</thread></node>

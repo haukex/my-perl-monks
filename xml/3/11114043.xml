@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11114043" title="Re: 302 Found Location Message" created="2020-03-09 16:45:37" updated="2024-01-30 10:07:14" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Here's an implementation of a login system with [mod://Mojolicious::Lite] and [mod://Mojo::SQLite]. It may seem fairly long, but some of that code is because I added password encryption using [mod://PBKDF2::Tiny] and [mod://Crypt::Random::Source] (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; and of course because it's entirely self-contained, it includes all the templates etc.). The security could even be expanded, such as adding brute force attack prevention (often done via a delay on unsuccessful attempts), or even hashing the password on the client side. Download the following code as e.g. &lt;c&gt;mojo_login_example.pl&lt;/c&gt;, install the aforementioned modules, and then run the command: &lt;c&gt;morbo --listen=http://127.0.0.1:3000 --listen=https://127.0.0.1:4430 mojo_login_example.pl&lt;/c&gt;&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use 5.028;
+use Mojolicious::Lite -signatures;
+use Mojo::SQLite;
+use PBKDF2::Tiny qw/derive_hex verify_hex/;
+use Crypt::Random::Source qw/get_strong/;
+
+#app-&gt;secrets(['A Login Example - TODO: set this string!']);
+app-&gt;sessions-&gt;secure(1);
+
+# disable template cache in development mode (e.g. under morbo):
+app-&gt;renderer-&gt;cache-&gt;max_keys(0) if app-&gt;mode eq 'development';
+
+helper sql =&gt; sub { state $db = Mojo::SQLite-&gt;new('sqlite:/tmp/test.db') };
+
+# Database setup:
+app-&gt;sql-&gt;migrations-&gt;from_string(&lt;&lt;'END_MIGRATIONS')-&gt;migrate;
+-- 1 up
+CREATE TABLE Users ( Username TEXT, Salt TEXT, Password TEXT );
+-- 1 down
+DROP TABLE IF EXISTS Users;
+END_MIGRATIONS
+# for testing, insert a sample user if the DB is empty:
+if ( not app-&gt;sql-&gt;db-&gt;query('SELECT COUNT(*) FROM Users')-&gt;arrays-&gt;[0][0] ) {
+	my $salt = unpack 'H*', get_strong(64);
+	app-&gt;sql-&gt;db-&gt;insert('Users', { Username =&gt; 'Foo', Salt =&gt; $salt,
+		Password =&gt; derive_hex('SHA-512', 'Bar', $salt, 5000) } );
+}
+
+helper logged_in =&gt; sub ($c) {
+	length( $c-&gt;session('username') ) ? $c-&gt;session : undef };
+
+any '/' =&gt; sub ($c) { $c-&gt;render('index') } =&gt; 'index';
+
+group { # everything in this group requires HTTPS b/c of this "under":
+	under sub ($c) {
+		return 1 if $c-&gt;req-&gt;is_secure;
+		$c-&gt;redirect_to( $c-&gt;url_for-&gt;to_abs-&gt;scheme('https')-&gt;port(4430) );
+		return undef;
+	};
+	
+	get '/login' =&gt; sub ($c) { $c-&gt;render('login') } =&gt; 'login';
+	post '/login' =&gt; sub ($c) { # form handler
+		return $c-&gt;render(text =&gt; 'Bad CSRF token!', status =&gt; 403)
+			if $c-&gt;validation-&gt;csrf_protect-&gt;has_error('csrf_token');
+		# WARNING: This does not (yet) protect against brute-force attacks!
+		eval {
+			my $u = $c-&gt;sql-&gt;db-&gt;select( 'Users', ['Salt','Password'],
+				{ Username =&gt; $c-&gt;param('username') } )-&gt;hashes;
+			die "Username not found" unless @$u==1;
+			utf8::encode( my $salt = $u-&gt;[0]{Salt} );
+			utf8::encode( my $pass = $c-&gt;param('password') );
+			die "Incorrect password" unless verify_hex(
+				$u-&gt;[0]{Password}, 'SHA-512', $pass, $salt, 5000);
+			$c-&gt;session( username =&gt; $c-&gt;param('username') );
+			$c-&gt;redirect_to('secure');
+		;1} or do {
+			$c-&gt;flash(login_error =&gt; 'Wrong username or password');
+			$c-&gt;redirect_to('login');
+		};
+	} =&gt; 'login';
+	any '/logout' =&gt; sub ($c) {
+		delete $c-&gt;session-&gt;{username};
+		$c-&gt;redirect_to('index');
+	} =&gt; 'logout';
+	
+	group { # everything in this group requires login
+		under sub ($c) {
+			return 1 if $c-&gt;logged_in;
+			$c-&gt;redirect_to('login');
+			return undef;
+		};
+		
+		any '/secure' =&gt; sub ($c) { $c-&gt;render('secure') } =&gt; 'secure';
+	};
+};
+
+app-&gt;start;
+
+__DATA__
+
+@@ layouts/main.html.ep
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+&lt;nav style="margin-bottom:1em;"&gt;&lt;small&gt;
+[ &lt;%= link_to Main =&gt; 'index' %&gt; | &lt;%= link_to Secure =&gt; 'secure' %&gt; ]
+% if ( my $s = logged_in ) {
+	[ Logged in as &lt;%= $s-&gt;{username} %&gt; | &lt;%= link_to Logout =&gt; 'logout' %&gt; ]
+% } else {
+	[ &lt;%= link_to Login =&gt; 'login' %&gt; ]
+% }
+&lt;/small&gt;&lt;/nav&gt;
+&lt;main&gt;
+&lt;%= content %&gt;
+&lt;/main&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+
+@@ index.html.ep
+% layout 'main', title =&gt; 'Hello, World!';
+&lt;div&gt;Hello, World!&lt;/div&gt;
+
+@@ login.html.ep
+% layout 'main', title =&gt; 'Login';
+% if ( flash 'login_error' ) {
+	&lt;div style="margin-bottom:1em;"&gt;&lt;strong&gt;&lt;%= flash 'login_error' %&gt;&lt;/strong&gt;&lt;/div&gt;
+% }
+&lt;div&gt;
+%= form_for login =&gt; ( method =&gt; 'post' ) =&gt; begin
+%= csrf_field
+%= label_for username =&gt; 'Username'
+%= text_field username =&gt; ( placeholder=&gt;"Username", required=&gt;'required' )
+%= label_for password =&gt; 'Password'
+%= password_field password =&gt; ( placeholder=&gt;"Password", required=&gt;'required' )
+%= submit_button 'Login'
+%= end
+&lt;/div&gt;
+
+@@ secure.html.ep
+% layout 'main', title =&gt; 'Top Secret';
+&lt;div&gt;You've accessed the top secret area!&lt;/div&gt;
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11114021</root_node>
+<parent_node field_name="parent_node">11114021</parent_node>
+<thread id="11114021">
+<node id="11114025"><node id="11114027"/>
+</node>
+<node id="11114043"/>
+<node id="11114048"/>
+</thread></node>

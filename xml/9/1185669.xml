@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1185669" title="Re: DateTime::Format::Flexible; for Log Parse with multiple formatted lines" created="2017-03-23 15:25:41" updated="2017-03-23 15:25:41" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;In your code, you slurp the entire file into an array, then join all the lines using a fixed string, and then use a regex that specifically includes the fixed string as the last thing to match. I don't quite understand why you're doing it this way, I don't see the advantage of this over a normal &lt;c&gt;while (&lt;$filehandle&gt;) { ... }&lt;/c&gt; loop? I didn't really test your code because the sample log entry you provided doesn't actually match your regex, but from what I can tell, your code will silently skip any log entries that don't match the regex, including that it will always skip the last log entry.&lt;/p&gt;
+&lt;p&gt;I see a couple of other issues with your code: You don't [id://111088], and you don't check some [doc://open]s for errors. In your regexes, you don't need to put &lt;c&gt;(...)&lt;/c&gt; capturing groups around things you don't actually want to capture into the &lt;c&gt;$1, $2, ...&lt;/c&gt; variables, e.g. you can say &lt;c&gt;/...T.../&lt;/c&gt; instead of &lt;c&gt;/...(T).../&lt;/c&gt;. You might also want to look into the &lt;c&gt;/x&lt;/c&gt; regex modifier ([doc://perlre]) to make your regexes easier to read and follow. Also, I'd strongly recommend using an appropriate module such as [mod://Text::CSV] for CSV output.&lt;/p&gt;
+&lt;p&gt;I'm not sure I fully understand your questions. Instead, I can show you how I might have coded this. Personally, I like to validate the format of input files a little bit as I read them. Instead of [mod://DateTime::Format::Flexible], I'd use several [mod://DateTime::Format::Strptime] parsers, and first use a heuristic to decide which format the log line has. It seems from your sample inputs that the log line formats are quite different, which is why I've duplicated the parsing and output logic in the &lt;c&gt;if&lt;/c&gt; statements below, but if your log lines are instead similar, you should of course not duplicate that code and move the common parsing code outside of the &lt;c&gt;if&lt;/c&gt;s.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use 5.010; # for /p and ${^MATCH}
+use DateTime;
+use DateTime::Format::Strptime;
+use Text::CSV;
+
+my $strp_one = DateTime::Format::Strptime-&gt;new(on_error=&gt;'croak',
+	time_zone=&gt;'UTC', pattern =&gt; '%Y-%m-%dT%H:%M:%S.%6N');
+my $strp_two = DateTime::Format::Strptime-&gt;new(on_error=&gt;'croak',
+	time_zone=&gt;'UTC',  pattern =&gt; '%a %b %d %H:%M:%S %Y');
+my $csv = Text::CSV-&gt;new({binary=&gt;1, always_quote=&gt;1, blank_is_undef=&gt;1,
+	eol=&gt;$/, auto_diag=&gt;2});
+
+while (&lt;DATA&gt;) {
+	chomp;
+	if (/^\d{4,}-[\d\-T\:\.]+(?=\s+)/p) {
+		my ($dts,$rest) = (${^MATCH}, ${^POSTMATCH});
+		my $dt = $strp_one-&gt;parse_datetime($dts);
+		# parse "$rest" and break it into more fields here
+		$csv-&gt;print(select, [
+			$dt-&gt;strftime('%Y-%m-%d-%H-%M-%S-%6N-%Z'),
+			$rest ] );
+	}
+	elsif (/^\w+\s+\w+\s+\d+\s+[\d\:]+\s+\d{4,}(?=\s+)/p) {
+		my ($dts,$rest) = (${^MATCH}, ${^POSTMATCH});
+		my $dt = $strp_two-&gt;parse_datetime($dts);
+		# parse "$rest" and break it into more fields here
+		$csv-&gt;print(select, [
+			$dt-&gt;strftime('%Y-%m-%d-%H-%M-%S-%6N-%Z'),
+			$rest ] );
+	}
+	else
+		{ warn "Skipping unknown line format: $_" }
+}
+
+__DATA__
+2017-02-20T09:30:53.177000 20[] 0000000000000000 Error Description One
+Mon Feb 20 09:31:25 2017 [INFO] [AGENTEXEC] Error Description Two
+2017-02-20T09:30:53.177000 20[] 0000000000000000 Error Description Three
+Mon Feb 20 09:31:25 2017 [INFO] [AGENTEXEC] Error Description Four
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+"2017-02-20-09-30-53-177000-UTC"," 20[] 0000000000000000 Error Description One"
+"2017-02-20-09-31-25-000000-UTC"," [INFO] [AGENTEXEC] Error Description Two"
+"2017-02-20-09-30-53-177000-UTC"," 20[] 0000000000000000 Error Description Three"
+"2017-02-20-09-31-25-000000-UTC"," [INFO] [AGENTEXEC] Error Description Four"
+&lt;/c&gt;
+&lt;p&gt;One disadvantage of the above approach is that if you have a lot of different date/time formats in your log files, you'd have to add more and more parsers. So if that's the case, you can also try using [mod://DateTime::Format::Flexible], and the same basic idea as above (use a regex to pull the date/time string from the beginning of the line before attempting to parse it) applies.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1185654</root_node>
+<parent_node field_name="parent_node">1185654</parent_node>
+<thread id="1185654">
+<node id="1185665"><node id="1185672"><node id="1185683"/>
+<node id="1185690"/>
+</node>
+</node>
+<node id="1185669"><node id="1186075"><node id="1186082"><node id="1186096"><node id="1186102"/>
+<node id="1186112"/>
+<node id="1186147"/>
+</node>
+</node>
+</node>
+<node id="1186994"><node id="1186995"/>
+<node id="1186996"/>
+</node>
+</node>
+</thread></node>

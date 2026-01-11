@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116061" title="convert JSON to JSON Paths -- try not to reinvent the wheel (?)" created="2020-04-25 16:01:28" updated="2020-04-25 16:01:28" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1164259">leszekdubiel</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Monks! If could anyone during perl-meditation put a light on the problem, then I would be grateful...&lt;/p&gt;
+
+&lt;p&gt;Background:  there are some multi-level structured data in JSON for our internal web page. I told marketing people that the data is in JSON and they could edit that data in Notepad++. They are not happy with that. They want Excel. So I decided that I will convert JSON to Excel, they will edit Excel table, and I will read that table back to JSON data. Me and marketing people agreed to have complicated column names... -- these column names would be just JSON Paths.&lt;/p&gt; 
+
+&lt;p&gt;So I need to read JSON data, and emit pairs -- JSON path and value under this path. Here is the program to write such data. &lt;/p&gt; 
+
+&lt;p&gt;What is my question? Where do I need help? Is there a simpler way of doing such conversion JSON --&gt; path/values? How to tell Perl to dive into JSON and find all simple data (scalars...) and return paths and values of them... &lt;/p&gt; 
+
+&lt;code&gt; 
+
+
+
+#!/usr/bin/perl -CSDA
+
+use utf8; 
+use Modern::Perl qw{2019}; 
+use JSON; 
+use Data::Dumper; 
+
+sub extract_paths_values { 
+	my ($cur_node, $top_path, $put_here) = @_; 
+
+	$top_path //= "\$"; 
+	$put_here //= {}; 
+
+	if (ref $cur_node eq "HASH") { 
+		extract_paths_values($$cur_node{$_}, "$top_path\['$_'\]", $put_here)
+			for keys %$cur_node; 
+	} elsif (ref $cur_node eq "ARRAY") { 
+		extract_paths_values($$cur_node[$_], "$top_path\[$_\]", $put_here) 
+			for 0 .. @$cur_node - 1; 
+	} else { 
+		$$put_here{$top_path} = $cur_node; 
+	} 
+
+	return $put_here; 
+} 
+
+my $json = '
+{
+	"store" : {
+		"files": [ 
+			["alfa.txt", "about first letter in greek"], 
+			["model.dxf", "for architects"], 
+			["errors.txt", "no need for that normally"], 
+		], 
+		"book" : [
+			{
+				"category" : "reference",
+				"title" : "Sayings of the Century",
+				"author" : "Nigel Rees",
+				"price" : 8.95
+			},
+			{
+				"author" : "Evelyn Waugh",
+				"title" : "Sword of Honour",
+				"price" : 12.99,
+				"category" : "fiction"
+			},
+		],
+		"bicycle" : [
+			{
+				"price" : 19.95,
+				"color" : "red"
+			}
+		]
+	}, 
+	"status" : { 
+		"curr" : "Okey", 
+		"code" :  232, 
+	}
+}
+'; 
+
+my $paths_values = extract_paths_values(
+	JSON-&gt;new-&gt;relaxed-&gt;decode($json) 
+); 
+
+print "$_ ~~~~&gt; $$paths_values{$_}\n"
+	for sort keys %$paths_values; 
+
+print "Hurray! Done that  \n"; 
+
+
+&lt;/code&gt; 
+
+&lt;p&gt;result:&lt;/p&gt; 
+
+&lt;code&gt;
+$['status']['code'] ~~~~&gt; 232
+$['status']['curr'] ~~~~&gt; Okey
+$['store']['bicycle'][0]['color'] ~~~~&gt; red
+$['store']['bicycle'][0]['price'] ~~~~&gt; 19.95
+$['store']['book'][0]['author'] ~~~~&gt; Nigel Rees
+$['store']['book'][0]['category'] ~~~~&gt; reference
+$['store']['book'][0]['price'] ~~~~&gt; 8.95
+$['store']['book'][0]['title'] ~~~~&gt; Sayings of the Century
+$['store']['book'][1]['author'] ~~~~&gt; Evelyn Waugh
+$['store']['book'][1]['category'] ~~~~&gt; fiction
+$['store']['book'][1]['price'] ~~~~&gt; 12.99
+$['store']['book'][1]['title'] ~~~~&gt; Sword of Honour
+$['store']['files'][0][0] ~~~~&gt; alfa.txt
+$['store']['files'][0][1] ~~~~&gt; about first letter in greek
+$['store']['files'][1][0] ~~~~&gt; model.dxf
+$['store']['files'][1][1] ~~~~&gt; for architects
+$['store']['files'][2][0] ~~~~&gt; errors.txt
+$['store']['files'][2][1] ~~~~&gt; no need for that normally
+Hurray! Done that :) 
+&lt;/code&gt;
+
+</doctext>
+<thread id="11116061">
+<node id="11116062"/>
+<node id="11116063"/>
+<node id="11116064"/>
+<node id="11116065"/>
+<node id="11116092"/>
+<node id="11116095"/>
+<node id="11116148"><node id="11116158"/>
+</node>
+<node id="11117473"/>
+</thread></node>

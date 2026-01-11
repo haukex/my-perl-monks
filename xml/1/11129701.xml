@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129701" title="Re^2: How is the default &quot;Input Record Separator&quot; set?" created="2021-03-15 14:19:32" updated="2021-03-15 14:19:32" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;[id://11106693|We've been over this at length:] &lt;b&gt;Test before posting.&lt;/b&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Unless you are using binmode, you will never see a &amp;lt;CR&amp;gt;. I am not even sure that you can even set $/ to CRLF. Please show some code where you think that you did that.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dumper;
+$Data::Dumper::Useqq=1;
+
+open my $fh, '&gt;:raw', 'test.txt' or die $!;
+print $fh "x\ry\r\n";
+close $fh;
+
+open $fh, '&lt;', 'test.txt' or die $!;
+my $in = &lt;$fh&gt;;
+close $fh;
+print Dumper($in);  # "x\ry\n"
+
+open $fh, '&lt;:raw', 'test.txt' or die $!;
+local $/ = "\r\n";
+chomp( $in = &lt;$fh&gt; );
+close $fh;
+print Dumper($in);  # "x\ry"
+&lt;/c&gt;
+&lt;p&gt;Which also means that you meant with &lt;i&gt;"The text I/O layers will take out &amp;lt;CR&amp;gt; and what Perl sees is just &amp;lt;LF&amp;gt;."&lt;/i&gt; is wrong, the &lt;c&gt;:crlf&lt;/c&gt; layer doesn't just strip all CRs.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11129690</root_node>
+<parent_node field_name="parent_node">11129694</parent_node>
+<thread id="11129690">
+<node id="11129691"><node id="11129723"/>
+</node>
+<node id="11129694"><node id="11129701"><node id="11129839"/>
+</node>
+</node>
+<node id="11129708"><node id="11129709"/>
+</node>
+<node id="11129717"><node id="11129869"><node id="11129907"><node id="11129969"/>
+</node>
+</node>
+</node>
+</thread></node>

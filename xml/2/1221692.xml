@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1221692" title="Re: which data structure do I need for this grouping problem?" created="2018-09-04 09:53:55" updated="2018-09-04 09:53:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Here's one way: If there is a character that you &lt;i&gt;know&lt;/i&gt; doesn't occur in either the name or the date (like a tab), you can use that to separate the two and make a single hash key out of it. Note that in the sample data that you've posted here, you don't have any tabs, so I've had to guess that all of your columns are separated by tabs. However, in that case, &lt;c&gt;my ( $name, $rest ) = split /\t/;&lt;/c&gt; is only grabbing the first two columns. Also, you probably want to [doc://chomp] your lines.&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+
+my %res;
+while (&lt;DATA&gt;) {
+	chomp;
+	my ( $name, $date, @rest ) = split /\t/;
+	push @{ $res{"$name\t$date"} }, @rest;
+}
+for my $key ( sort keys %res ) {
+	my ( $name, $date ) = split /\t/, $key, 2;
+	print "$name,$date:", join( "|", @{ $res{$key} } ), "\n";
+}
+
+__DATA__
+nick	20/5/1950	one
+john	18/2/1980	two	two and a half
+nick	19/6/1978	three
+nick	20/5/1950	four
+nick	12/9/2000	five
+john	15/6/1997	six
+nick	20/5/1950	seven	eight
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+john,15/6/1997:six
+john,18/2/1980:two|two and a half
+nick,12/9/2000:five
+nick,19/6/1978:three
+nick,20/5/1950:one|four|seven|eight
+&lt;/c&gt;
+&lt;p&gt;In the above code, using &lt;c&gt;\t&lt;/c&gt; to separate the hash key is safe, because of the &lt;c&gt;split /\t/&lt;/c&gt; I know that none of the strings will contain tabs. If you choose a separator character of which you're not sure if it's contained in the strings, like say &lt;c&gt;|&lt;/c&gt;, you may want to add a check like &lt;c&gt;die $name if $name=~/\|/; die $date if $date=~/\|/;&lt;/c&gt; to play it safe. Also, you can use a separator that is very unlikely to appear, like &lt;c&gt;$/&lt;/c&gt; or &lt;c&gt;\0&lt;/c&gt; (but again, if you want to code defensively, check for its presence anyway). (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; [doc://$/] is the input record separator, which [doc://chomp] removes for you. &lt;small&gt;&lt;i&gt;Also made minor fix to the latter two regexes.&lt;/i&gt;&lt;/small&gt;)&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update 2:&lt;/i&gt; I should also mention that using a module like [mod://Text::CSV] is generally better for reading this kind of data, because it handles things like quoted fields and escaped characters for you (also install [mod://Text::CSV_XS] for speed).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1221691</root_node>
+<parent_node field_name="parent_node">1221691</parent_node>
+<thread id="1221691">
+<node id="1221692"><node id="1221694"/>
+<node id="1221709"/>
+</node>
+<node id="1221697"><node id="1221708"/>
+</node>
+<node id="1221726"/>
+<node id="1221786"/>
+</thread></node>

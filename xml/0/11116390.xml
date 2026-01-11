@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116390" title="Re^5: Error binmode() on unopened filehandle" created="2020-05-03 11:41:15" updated="2020-05-03 11:41:15" _doctext_mode="lenient"><type id="11">note</type>
+<author id="732669">Marshall</author>
+<doctext field_name="doctext">Ok, spent some more time fiddling with this. I now see what you mean (code attached).&lt;br&gt;
+I have never read a binary file with the &lt;&gt; angle operator. That idea would have never have occured to me.  I have always used a read() specifying the num of bytes to read as shown below.  This implies that although this "angle read" appeared to work in my .jpg example, there could be some CRLF sequence in the data that would cause this .jpg read to fail.  I find that interesting to know.  Good point.&lt;p&gt;
+
+I guess bottom line: Don't use &lt;&gt; bracket when reading binary files!
+&lt;c&gt;
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+my $data = &lt;&lt;EOF;
+first
+second
+EOF
+
+print "data var in text mode - this works...\n";
+print "$data\n";
+print "----\n";
+
+open my $fh, '&lt;', \$data;
+binmode $fh;
+my $num_bytes = read ($fh, my $buf, 20000);
+print "read () binary doesn't completely work..the normal way to read binary\n";
+print "this is Windows machine and I don't see both CR and LF characters\n";
+print "but I think that is due to Perl translation of line endings\n";
+print "bytes read = $num_bytes\n"; 
+print '',$buf;
+
+print "----\n";
+print "using angle operator for binary read doesn't work\n";
+print "I've never tried this before and I'm not sure why\n";
+print "this doesn't work - need explanation of the angle &lt;&gt;op.\n";
+close $fh;
+open $fh, '&lt;', \$data or die "$!";
+binmode $fh;
+my $bdata = &lt;$fh&gt;;
+print '',$bdata;
+
+__END__
+data var in text mode - this works...
+first
+second
+
+----
+read () binary doesn't completely work..the normal way to read binary
+this is Windows machine and I don't see both CR and LF characters
+but I think that is due to Perl translation of line endings
+bytes read = 13
+first
+second
+----
+using angle operator for binary read doesn't work
+I've never tried this before and I'm not sure why
+this doesn't work - need explanation of the angle &lt;&gt;op.
+first
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11116367</root_node>
+<parent_node field_name="parent_node">11116385</parent_node>
+<thread id="11116367">
+<node id="11116368"/>
+<node id="11116370"/>
+<node id="11116376"><node id="11116380"><node id="11116383"><node id="11116385"><node id="11116387"><node id="11116389"/>
+<node id="11116416"/>
+</node>
+<node id="11116390"><node id="11116392"/>
+<node id="11116394"><node id="11116408"><node id="11116412"><node id="11116528"/>
+</node>
+<node id="11116414"><node id="11116527"/>
+</node>
+</node>
+</node>
+<node id="11116418"><node id="11116525"><node id="11116555"><node id="11116595"><node id="11116600"><node id="11116657"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11116393"><node id="11116411"/>
+</node>
+<node id="11116417"/>
+</node>
+</node>
+</node>
+</thread></node>

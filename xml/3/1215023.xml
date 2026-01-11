@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1215023" title="Re: Modifying $_ in foreach (%hash) (updated)" created="2018-05-22 02:04:18" updated="2018-05-22 02:04:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;b&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/b&gt; The same question, with several good answers: [id://1138082] &lt;b&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;The best I can do at the moment is this quote from [doc://perlref] - although your question is really about &lt;i&gt;aliases&lt;/i&gt; and not "hard" references, so I may be off here.&lt;/p&gt;
+&lt;blockquote&gt;
+As a special case, &lt;c&gt;\(@foo)&lt;/c&gt; returns a list of references to the contents of &lt;c&gt;@foo&lt;/c&gt;, not a reference to &lt;c&gt;@foo&lt;/c&gt; itself. Likewise for &lt;c&gt;%foo&lt;/c&gt;, except that the key references are to copies (since the keys are just strings rather than full-fledged scalars).
+&lt;/blockquote&gt;
+&lt;p&gt;Also, note that the behavior when passed a hash (which is kind of unusual BTW, why do you want to do that?) is consistent between [doc://chomp] and a custom &lt;c&gt;sub&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+sub antichomp (@) {
+	for (@_) {
+		$_ .= $/;
+	}
+}
+
+my %hash = (x=&gt;'Hello',y=&gt;'World!');
+antichomp(%hash);
+dd \%hash;
+
+%hash = ("x\n"=&gt;"Hello\n","y\n"=&gt;"World!\n");
+chomp(%hash);
+dd \%hash;
+
+__END__
+
+{ x =&gt; "Hello\n", y =&gt; "World!\n" }
+{ "x\n" =&gt; "Hello", "y\n" =&gt; "World!" }
+&lt;/c&gt;
+&lt;p&gt;[doc://prototype|&lt;c&gt;prototype("CORE::chomp")&lt;/c&gt;] does return &lt;c&gt;undef&lt;/c&gt;, indicating that there isn't an exact equivalent, but I do think that you can get pretty close.&lt;/p&gt;
+&lt;p&gt;As for all the other behaviors, at least those are defined:&lt;/p&gt;
+&lt;p&gt;Hashes in list context return a list of their key/value pairs. Excerpts from [doc://perldata]:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;... hashes included as parts of other lists (including parameters lists and return lists from functions) always flatten out into key/value pairs.&lt;/p&gt;
+&lt;p&gt;LISTs do automatic interpolation of sublists. That is, when a LIST is evaluated, each element of the list is evaluated in list context, and the resulting list value is interpolated into LIST just as if each individual element were a member of LIST. Thus arrays and hashes lose their identity in a LIST--the list&lt;/p&gt;
+&lt;c&gt;
+(@foo,@bar,&amp;SomeSub,%glarch)
+&lt;/c&gt;
+&lt;p&gt;contains all the elements of @foo followed by all the elements of @bar, followed by all the elements returned by the subroutine named SomeSub called in list context, followed by the key/value pairs of %glarch.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;The behavior of &lt;c&gt;foreach&lt;/c&gt; loops in regards to the iterator variable is defined in [doc://perlsyn#Foreach-Loops|perlsyn]:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;The &lt;c&gt;foreach&lt;/c&gt; loop iterates over a normal list value and sets the scalar variable VAR to be each element of the list in turn. ... the variable is implicitly local to the loop and regains its former value upon exiting the loop. ... This implicit localization occurs &lt;i&gt;only&lt;/i&gt; in a &lt;c&gt;foreach&lt;/c&gt; loop. ... If VAR is omitted, $_ is set to each value.&lt;/p&gt;
+&lt;p&gt;If any element of LIST is an lvalue, you can modify it by modifying VAR inside the loop. ...  In other words, the &lt;c&gt;foreach&lt;/c&gt; loop index variable is an implicit alias for each item in the list that you're looping over.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Arguments to subroutines are also aliases to the original values, as long as you access the &lt;i&gt;elements&lt;/i&gt; of &lt;c&gt;@_&lt;/c&gt; directly, without first doing the typical assignment like &lt;c&gt;my ($x,$y) = @_;&lt;/c&gt; or &lt;c&gt;my $x = shift;&lt;/c&gt;. From [doc://perlsub]:&lt;/p&gt;
+&lt;blockquote&gt;
+Any arguments passed in show up in the array &lt;c&gt;@_&lt;/c&gt;. ... The array &lt;c&gt;@_&lt;/c&gt; is a local array, but its elements are aliases for the actual scalar parameters. In particular, if an element &lt;c&gt;$_[0]&lt;/c&gt; is updated, the corresponding argument is updated (or an error occurs if it is not updatable). ... Assigning to the whole array &lt;c&gt;@_&lt;/c&gt; removes that aliasing, and does not update any arguments. 
+&lt;/blockquote&gt;
+&lt;p&gt;Prototypes are discussed in [doc://perlsub#Prototypes|perlsyn], and it's easy enough to test and see the same behavior of hashes flattening into a list of unordered key/value pairs here too:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+sub foo (@) { dd \@_ }
+
+my %hash = (x=&gt;'Hello',y=&gt;'World!');
+foo(%hash);
+
+__END__
+
+["y", "World!", "x", "Hello"]
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1215016</root_node>
+<parent_node field_name="parent_node">1215016</parent_node>
+<thread id="1215016">
+<node id="1215020"/>
+<node id="1215023"/>
+<node id="1215044"/>
+<node id="1215046"/>
+<node id="1215060"/>
+</thread></node>

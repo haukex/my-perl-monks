@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11102237" title="Re^3: Side effect of using undefined variable in regex" created="2019-07-01 09:23:06" updated="2019-07-01 09:23:06" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Ok, I've looked at it a little further now. I omitted a bit in my quote from [doc://perlop#Regexp-Quote-Like-Operators|perlop]:&lt;/p&gt;
+&lt;blockquote&gt;If the &lt;i&gt;PATTERN&lt;/i&gt; evaluates to the empty string, the last &lt;i&gt;successfully&lt;/i&gt; matched regular expression is used instead. ... If no match has previously succeeded, this will (silently) act instead as a genuine empty pattern (which will always match).&lt;/blockquote&gt;
+&lt;p&gt;I think there is something omitted from the documentation - [AnomalousMonk] [id://11102231|describes] this as well:&lt;/p&gt;
+&lt;c&gt;
+$ perl -le'print"x"=~//?"yes":"no"; "y"=~/y/; print"x"=~//?"yes":"no"'
+yes
+no
+$ perl -le'print"x"=~//?"yes":"no";{"y"=~/y/} print"x"=~//?"yes":"no"'
+yes
+yes
+&lt;/c&gt;
+&lt;p&gt;So in other words, the "last successfully matched regular expression" means the "last successfully matched regular expression &lt;i&gt;in this scope&lt;/i&gt;", which explains why the successful match when &lt;c&gt;$last&lt;/c&gt; is &lt;c&gt;"Config"&lt;/c&gt; doesn't affect the other matches. I stumbled on this at first; I think it might be worth a documentation patch...&lt;/p&gt;
+&lt;p&gt;Anyway, that means in the OP's example, we can remove &lt;c&gt;startStandardServices('Config')&lt;/c&gt; since that's working as expected, and since the other two calls of &lt;c&gt;startStandardServices&lt;/c&gt; and &lt;c&gt;startGeneralServices&lt;/c&gt; are seeing the same issue each, the script can be reduced to:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use 5.014;
+
+my @stoppedGeneralServices = ('OP Mover', 'OP Monitor');
+
+my $supported = '4.0.0,4.0.1,4.1.0,4.1.1,4.1.2';
+$supported =~ /\Q4.1.2/ if @ARGV;
+
+startGeneralServices();
+sub startGeneralServices {
+	my $last = shift;
+	my $name;
+	while (@stoppedGeneralServices) {
+		$name = pop @stoppedGeneralServices;
+		say '  Starting $name=\'', $name, '\' $last=',
+			defined $last ? "'$last'" : 'undef',
+			' ($name=~/$last/i)=', ($name =~ /$last/i) ? 1 : 0;
+		last if $name =~ /$last/i;
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;And taking that a few steps further:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use 5.014;
+
+'4.1.1,4.1.2' =~ /\Q4.1.2/ if @ARGV;
+my $last = '';
+my $name = 'OP Mover';
+say '$name=\'', $name, '\' $last=',
+	defined $last ? "'$last'" : 'undef',
+	', $name=~/$last/i = ', ($name =~ /$last/i) ? 1 : 0;
+&lt;/c&gt;
+&lt;c&gt;
+$ perl 11102215.pl
+$name='OP Mover' $last='', $name=~/$last/i = 1
+$ perl 11102215.pl all
+$name='OP Mover' $last='', $name=~/$last/i = 0
+&lt;/c&gt;
+&lt;p&gt;Which shows that:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;If &lt;c&gt;@ARGV&lt;/c&gt; is false, there is no previously executed regex, so &lt;c&gt;/$last/&lt;/c&gt; aka &lt;c&gt;//&lt;/c&gt; acts like the empty pattern, which always matches.&lt;/li&gt;
+&lt;li&gt;If &lt;c&gt;@ARGV&lt;/c&gt; is true, then &lt;c&gt;//&lt;/c&gt; means to use the previous successful regex, &lt;c&gt;/\Q4.1.2/&lt;/c&gt;, which does not match the string &lt;c&gt;'OP Mover'&lt;/c&gt;.&lt;/li&gt;
+&lt;/ul&gt;</doctext>
+<root_node field_name="root_node">11102215</root_node>
+<parent_node field_name="parent_node">11102217</parent_node>
+<thread id="11102215">
+<node id="11102216"><node id="11102217"><node id="11102237"><node id="11102239"><node id="11102241"><node id="11102244"><node id="11102251"/>
+</node>
+</node>
+</node>
+<node id="11102250"><node id="11102253"/>
+</node>
+</node>
+</node>
+<node id="11102223"/>
+</node>
+<node id="11102231"/>
+<node id="11102285"/>
+</thread></node>

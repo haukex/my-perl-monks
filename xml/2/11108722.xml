@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108722" title="Re^4: Correct Perl settings for sending zipfile to browser" created="2019-11-15 04:10:26" updated="2019-11-15 04:10:26" _doctext_mode="lenient"><type id="11">note</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;Thank you, &lt;b&gt;thank you!&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;I'm now making some progress.  I could live with it as-is, I think, but would like, if possible, one more improvement: The Content-Length.  I suppose, however, that is not possible when compressing on the fly.&lt;/p&gt;
+&lt;p&gt;I was already using Encode, so there was little more to adjust.  I have now downloaded a zipped file successfully, which can be opened normally, with the following code.&lt;/p&gt;
+&lt;code&gt;
+sub exportdatabase { 
+
+fork: {
+
+my ($recnum,$revnum,$book,$chap,$verse,$text) = '';
+my @resp = ();
+my $timestamp = "$curdate_$curtime";
+$timestamp =~ s/[\/:.]/-/g;
+my $to_windows = '';
+my $CRLF = "\n";
+     if ($OS eq "Windows") { 
+     	$to_windows = '--to-crlf'; # SAME AS -l
+     	$CRLF = "\r\n";
+} 
+my $zipfile = "$db_export_file.zip";
+my $encoding = "UTF-8";
+
+$statement = qq| SELECT a.RecordNum, a.RevisionNum, a.Book, a.Chapter, a.Verse, a.Text from $table a INNER JOIN (SELECT RecordNum, max(RevisionNum) RevisionNum FROM $table GROUP BY RecordNum) b USING (RecordNum,RevisionNum); |;
+
+&amp;connectdb('exportdatabase');
+
+push @resp, "RECORD#\tREVISION#\tBOOK#\tCHAP#\tVERSE#\tTEXT, AS EDITED BY: $curdate $curtime (Pacific Time)$CRLF"; 
+
+while (($recnum,$revnum,$book,$chap,$verse,$text) = $quest-&gt;fetchrow_array()) {
+			push @resp, "$recnum\t$revnum\t$book\t$chap\t$verse\t$text$CRLF"; 
+	}
+	
+binmode STDOUT;  # just to play it safe
+        print qq|Content-Type: application/zip, application/octet-stream$CRLF|;
+        print qq|Cache-Control: no-cache, no-store, must-revalidate$CRLF|;
+	print qq|Accept-Ranges: bytes$CRLF|;
+	print qq|Content-Language: utf8$CRLF|;
+	#print qq|Content-Length: | . (stat $zipfile)[7] . "$CRLF";
+	print qq|Content-Disposition: attachment; filename="$zipfile";$CRLF$CRLF|;
+
+my $z = IO::Compress::Zip-&gt;new('-', # STDOUT
+    Name =&gt; "$db_export_file" )
+        or die "zip failed: $ZipError\n";
+	
+for my $line (@resp) {
+    $z-&gt;print( encode($encoding, $line,
+        Encode::FB_CROAK|Encode::LEAVE_SRC) );
+}
+$z-&gt;close();
+
+} #END fork
+} # END SUB exportdatabase
+&lt;/code&gt;
+&lt;p&gt;Without the Content-Length header, the client does not know how large the file being downloaded is, nor how long it will take.  But, at least the file arrives intact!&lt;/p&gt;
+
+</doctext>
+<root_node field_name="root_node">11108658</root_node>
+<parent_node field_name="parent_node">11108716</parent_node>
+<reputation field_name="reputation">8</reputation>
+<thread id="11108658">
+<node id="11108660"/>
+<node id="11108663"><node id="11108712"><node id="11108713"><node id="11108715"/>
+</node>
+<node id="11108761"/>
+</node>
+</node>
+<node id="11108666"><node id="11108710"><node id="11108726"/>
+</node>
+</node>
+<node id="11108673"/>
+<node id="11108692"><node id="11108714"><node id="11108716"><node id="11108722"><node id="11108732"><node id="11108832"><node id="11108833"><node id="11108836"><node id="11108837"/>
+</node>
+</node>
+<node id="11108856"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

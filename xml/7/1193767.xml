@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193767" title="Re: Minimally changing combinations (updated!)" created="2017-06-28 03:40:05" updated="2017-06-28 03:40:05" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;strike&gt;I think you're looking for [wp://Heap's algorithm], although a quick search on CPAN and a look on [https://rosettacode.org/wiki/Permutations#Perl|Rosettacode] doesn't yet show me an existing Perl implementation.&lt;/strike&gt; &lt;i&gt;Update:&lt;/i&gt; Sorry, that was permutations, you're looking for combinations.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2019-10-05:&lt;/b&gt; I've just released this as [mod://Algorithm::Odometer::Gray]!&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; Knuth's "The Art of Computer Programming", "Generating all n-tuples", Algorithm H, "Loopless reflected mixed-radix Gray generation". Best I can do at the moment is an implementation in Python from the Sage project, [https://github.com/sagemath/sage/blob/master/src/sage/combinat/gray_codes.py#L19|here]. &lt;i&gt;Update 3:&lt;/i&gt; The exact same algorithm appears to be described in this freely available paper: [https://www.researchgate.net/publication/221440132_Loopless_Functional_Algorithms|Loopless Functional Algorithms] as "Algorithm C" in the section "9.5. Non-binary Gray codes".&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Final Update:&lt;/b&gt; I think I've implemented the algorithm as described:&lt;/p&gt;
+&lt;c&gt;
+sub mixedgray_it {
+	my @w = @_;
+	my @m = map { 0+@$_ } @w;
+	die "all items must have at least two positions"
+		if grep {$_&lt;2} @m;
+	my @a = (0) x @m;
+	my @f =  0 .. @m;
+	my @o = (1) x @m;
+	my $done;
+	return sub {
+		return undef if $done;
+		my $rv = [map {$w[$_][$a[$_]]} 0..$#w];
+		if ($f[0]==@w) { $done=1; return $rv }
+		my $j = $f[0]; $f[0] = 0;
+		$a[$j] += $o[$j];
+		if ($a[$j]==0 || $a[$j]==$m[$j]-1) {
+			$o[$j] = -$o[$j];
+			$f[$j] = $f[$j+1];
+			$f[$j+1] = $j+1;
+		}
+		return $rv;
+	}
+}
+
+use Data::Dump;
+my $it = mixedgray_it(['a','b','c'],[1,2]);
+while (defined( my $c = $it-&gt;() ))
+	{ dd $c }
+
+__END__
+
+["a", 1]
+["b", 1]
+["c", 1]
+["c", 2]
+["b", 2]
+["a", 2]
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1193761</root_node>
+<parent_node field_name="parent_node">1193761</parent_node>
+<thread id="1193761">
+<node id="1193767"><node id="1193783"/>
+</node>
+<node id="1193771"/>
+<node id="1193772"/>
+<node id="1193779"><node id="1193780"/>
+</node>
+<node id="1193782"><node id="1193849"/>
+</node>
+</thread></node>

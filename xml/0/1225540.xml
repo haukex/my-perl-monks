@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1225540" title="Re^7: webperl: fetching data over the web" created="2018-11-10 11:54:31" updated="2018-11-10 11:54:31" _doctext_mode="lenient"><type id="11">note</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">&lt;I&gt;&amp;gt; There is obviously something very inefficient going on with the &lt;textarea&gt;, I'll take a guess that it's this line: ta.value = ta.value + str;.&lt;/I&gt;&lt;P&gt;
+
+I've testet it in pure JS inside your webperl/plack environment.&lt;P&gt;
+
+Adding the whole of emperl.js to a textarea works without problem in my FF.&lt;P&gt;
+
+But appending 3000 lines in a loop creates an "out of memory" exception (adding only half the lines still works)&lt;P&gt;
+
+So buffering output (think &lt;C&gt;$|&lt;/C&gt; ) might be a solution.&lt;P&gt;
+
+I'm expecting your &lt;C&gt;ta.scrollTop = ta.scrollHeight;&lt;/C&gt; to mean even more trouble. *&lt;P&gt;
+
+
+&lt;readmore&gt;
+&lt;c&gt;
+&lt;!doctype html&gt;
+&lt;html lang="en-us"&gt;
+  &lt;head&gt;
+    &lt;meta http-equiv="Content-Type" content="text/html; charset=utf-8"&gt;
+    &lt;title&gt;WebPerl &amp;lt;script&amp;gt; Demos&lt;/title&gt;
+
+
+
+    &lt;script type="text/javascript"&gt;
+
+function xfetch(url) {
+    var req = new XMLHttpRequest();
+    req.open('GET', url , false);
+    req.send(null);
+    if(req.status == 200) {
+        return req.responseText;
+    } else {
+        return "";
+    }
+}
+
+
+    &lt;/script&gt;
+
+
+  &lt;/head&gt;
+  &lt;body&gt;
+
+    &lt;textarea id="test" cols=100 rows=80&gt;
+    &lt;/textarea&gt;
+
+    &lt;script&gt;
+    
+var data = xfetch('http://localhost:5000/emperl.js');
+var ta   = document.getElementById("test");
+
+// --- add one big chunk
+//ta.value += data;
+
+// --- add line by line
+var lines = data.split(/;/);
+ta.value += "lines.length: " + lines.length + "\n\n\n";
+if (true)
+    for (var i=0; i&lt;lines.length; i++)
+        ta.value+=lines[i]+";";
+
+    &lt;/script&gt;
+    
+  &lt;/body&gt;
+&lt;/html&gt;
+&lt;/c&gt;
+&lt;/readmore&gt;&lt;P&gt;
+
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;small&gt;&lt;strike&gt;Football&lt;/strike&gt;Perl is like chess, only without the dice&lt;/small&gt;
+&lt;/sub&gt; &lt;P&gt;
+
+&lt;/div&gt;&lt;/div&gt;&lt;P&gt;
+
+
+*) indeed scrolling makes the whole unresponsive with much smaller line-counts already.&lt;!-- Wiki2Monks {"version":1.142} --&gt;</doctext>
+<root_node field_name="root_node">1225419</root_node>
+<parent_node field_name="parent_node">1225440</parent_node>
+<thread id="1225419">
+<node id="1225420"><node id="1225424"><node id="1225426"><node id="1225429"/>
+</node>
+</node>
+</node>
+<node id="1225422"><node id="1225423"><node id="1225425"><node id="1225430"><node id="1225439"><node id="1225440"><node id="1225443"><node id="1225444"/>
+</node>
+<node id="1225445"><node id="1225447"/>
+</node>
+<node id="1225540"><node id="1225567"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1225491"/>
+</thread></node>

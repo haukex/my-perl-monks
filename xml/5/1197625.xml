@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1197625" title="Generic/Variable/Dynamic Subroutines? (Not a redefine)" created="2017-08-18 14:50:05" updated="2017-08-18 14:50:05" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1197623">mlewando</author>
+<doctext field_name="doctext">I am working on some code for Nagios automations and was curious if there is a way to generalize the following:
+
+&lt;code&gt;
+sub WriteLine {
+	my $self = shift;
+	my $it = $self-&gt;OStream-&gt;WriteLine($_[0]);
+		$self-&gt;Trace(_CallerStr($it));
+	return $it;
+};
+		
+sub Select {
+	my $self = shift;
+	my $it = $self-&gt;OStream-&gt;Select($_[0]);
+		$self-&gt;Trace(_CallerStr($it)); 
+	return $it;
+};
+
+sub Add {
+	my $self = shift;
+	my $it = $self-&gt;OStream-&gt;Add($_[0]);
+		$self-&gt;Trace(_CallerStr($it)); 
+	return $it;
+};
+&lt;/code&gt;
+
+To something along the line of:
+
+&lt;code&gt;
+sub &lt;Call&gt; {
+	my $self = shift;
+	my $it = $self-&gt;OStream-&gt;&lt;Call&gt;($_[0]);
+		$self-&gt;Trace(_CallerStr($it));
+	return $it;
+};
+&lt;/code&gt;
+
+&lt;p&gt;Such that, I can use $Wrapper-&gt;Remove($item) and the function '&lt;Call&gt;' is executed and &lt;Call&gt; is substituted with 'Remove'. I can only think of using callbacks and a dispatcher but it seems like I would still have to generate all of the 
+callback subs which I kind of want to avoid. Don't get me wrong it's not like copy/pasting is the end of the world, but why copy paste redundancy if there exists a method where I can almost template it? I would also like the simplicity in $X-&gt;Y-&gt;Z($item) and not have to work a dispatch and sub-call, which I have done before by passing a dispatch function a 'function name' like: &lt;/p&gt;
+
+&lt;code&gt; if(defined $dev_desc{$tcp_data-&gt;Dispatch((USF::Modbus::Modbus::CB_NUMBERS))}) &lt;/code&gt;
+
+&lt;p&gt; But then I end up checking function name and data followed by execution, whereas I want something like (kind of a bad example but the point is there): &lt;/p&gt;
+
+&lt;code&gt; if(defined $dev_desc{$tcp_data-&gt;Dispatch-&gt;Numbers($tcp_data-&gt;Value)}) &lt;/code&gt;
+
+&lt;p&gt;Maybe an overload? But then I would still have to have overload functions where all I really want to do is have it intuitively fill in the blacks since all of the functions will be doing the same thing since it is essentially a proxy class with subroutine tracing built-in for logging/debugging traceability. If it's not possible then oh well I guess, I just feel like there should be a better solution to excessive redundancy (especially when I am already using a proxy). I also feel it isn't entirely a thing since it would be a nightmare for the interpreter.&lt;/p&gt;
+
+&lt;p&gt; Thanks &lt;/p&gt;
+</doctext>
+<thread id="1197625">
+<node id="1197627"/>
+<node id="1197628"/>
+<node id="1197673"><node id="1197748"><node id="1197749"><node id="1197751"><node id="1197752"><node id="1197753"><node id="1197755"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

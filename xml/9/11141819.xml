@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11141819" title="How to pass a folder name to Windows external commands?" created="2022-03-03 20:05:52" updated="2022-03-03 20:05:52" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="964205">freonpsandoz</author>
+<doctext field_name="doctext">&lt;p&gt;I'm trying to pass paths that are folder names and that may contain non-ANSI characters to external commands in Windows. I've tried both Win32::GetANSIPathName and Win32::LongPath::shortpathL. The former seems to always return the original path and the latter seems to always return an empty string. What am I doing wrong? Thanks.&lt;/p&gt;
+
+&lt;code&gt;
+use v5.16;
+use strict;
+use warnings;
+use Win32 ();
+use Win32::Console ();
+use Win32::LongPath qw(shortpathL);
+
+Win32::Console::OutputCP(65001); # Request Windows console command output in UTF-8  
+my $top = shift;
+
+foreach my $foldername ( map { chomp $_; $_ } qx(dir /b /a:d "$top") ) {
+	my $path = "$top\\$foldername";
+	test( "GetANSIPathName", $path, Win32::GetANSIPathName("$path") );
+	test( "shortpathL", $path, shortpathL($path) );
+}
+
+sub test {
+	my ($name, $path, $testpath) = @_;
+	my @report = qx(robocopy /njh /nfl /ndl /np /l /s "$testpath" "x:\\nodir");
+	print( qq($name path "$testpath" didn't work for "$path"\n) )
+		unless grep(/^ *Bytes/, @report);
+}
+&lt;/code&gt;</doctext>
+<thread id="11141819">
+<node id="11141821"><node id="11141828"><node id="11141913"><node id="11141922"/>
+</node>
+</node>
+</node>
+<node id="11141825"><node id="11141826"><node id="11141914"><node id="11141949"/>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1209020" title="Re: Using XML::XPath to change values" created="2018-02-12 16:59:00" updated="2018-02-12 16:59:00" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The following does what you want, although I don't think it's particularly pretty. I think that [mod://XML::Twig] (as recommended by [Cristoforo]), or at least [mod://XML::LibXML] would be much better. Note that both [mod://XML::XPath] and [mod://XML::Twig] use the same underlying parser, [mod://XML::Parser], which in turn uses Expat.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::XPath;
+
+my $xml = &lt;&lt;'ENDXML';
+&lt;includes&gt;
+	&lt;include&gt;
+		&lt;priority&gt;9990&lt;/priority&gt;
+		&lt;required&gt;true&lt;/required&gt;
+		&lt;location&gt;/efs/dist/tpcommon/itrstemplates/latest/common/templates/equities.xml&lt;/location&gt;
+	&lt;/include&gt;
+	&lt;include disabled="true"&gt;
+		&lt;priority&gt;10001&lt;/priority&gt;
+		&lt;required&gt;true&lt;/required&gt;
+		&lt;location&gt;/efs/dist/itrs/tools/latest/common/templates/global_authentication.xml&lt;/location&gt;
+	&lt;/include&gt;
+&lt;/includes&gt;
+ENDXML
+
+my $xp = XML::XPath-&gt;new(xml =&gt; $xml);
+my $nodes = $xp-&gt;find('//includes/include');
+for my $include ($nodes-&gt;get_nodelist) {
+	for my $p ($xp-&gt;findnodes('./priority', $include)) {
+		my $priority = $p-&gt;string_value;
+		$p-&gt;removeChild($_) for $p-&gt;getChildNodes;
+		$p-&gt;appendChild( XML::XPath::Node::Text-&gt;new($priority+1) );
+	}
+}
+my ($root) = $xp-&gt;findnodes('/');
+print $root-&gt;toString, "\n";
+&lt;/c&gt;
+&lt;p&gt;In regards to the last two lines above, I haven't yet found an easy way to print back out the XML document, maybe I'm missing something obvious. Anyway, for comparison, here's an [mod://XML::Twig] solution:&lt;/p&gt;
+&lt;c&gt;
+use XML::Twig;
+open my $ofh, '&gt;', \my $outxml or die $!;
+my $twig = XML::Twig-&gt;new(
+	twig_print_outside_roots =&gt; $ofh,
+	twig_roots =&gt; {
+		'/includes/include/priority' =&gt; sub {
+			my ($twig, $elt) = @_;
+			$elt-&gt;set_text( $elt-&gt;text+1 );
+			$elt-&gt;flush($ofh);
+		},
+	} );
+$twig-&gt;parse($xml);
+close $ofh;
+print $outxml;
+&lt;/c&gt;
+&lt;p&gt;I've written some things a little longer than they need to be in this code for clarity, the code could be shortened quite a bit, and also the output doesn't need to go to a string, it could be sent to a file directly.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1209014</root_node>
+<parent_node field_name="parent_node">1209014</parent_node>
+<thread id="1209014">
+<node id="1209018"/>
+<node id="1209019"/>
+<node id="1209020"/>
+<node id="1209050"/>
+<node id="1209061"/>
+</thread></node>

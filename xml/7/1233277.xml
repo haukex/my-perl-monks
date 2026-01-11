@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1233277" title="Re: Arrays and Handles Problem (updated)" created="2019-05-02 07:57:14" updated="2019-05-02 07:57:14" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;To give a little more information in addition to [holli]'s [id://1233276|answer]: &lt;c&gt;foreach (@testarray)&lt;/c&gt; loops over the array and assigns each element to &lt;tt&gt;[doc://$_]&lt;/tt&gt;, plus that iterator variable &lt;c&gt;$_&lt;/c&gt; is an alias to each original element of the array (see [doc://perlsyn#Foreach-Loops]), meaning that assigning to &lt;c&gt;$_&lt;/c&gt; changes the value in the original array. &lt;c&gt;while (&lt;DATA&gt;)&lt;/c&gt; is actually &lt;c&gt;while (defined($_ = readline DATA))&lt;/c&gt; ([doc://perlop#I/O-Operators]), i.e. it is assigning to the same &lt;tt&gt;[doc://$_]&lt;/tt&gt; variable.&lt;/p&gt;
+&lt;p&gt;If you use an explicit loop variable in the &lt;c&gt;foreach&lt;/c&gt;, e.g. &lt;c&gt;foreach my $elem (@testarray)&lt;/c&gt;, the problem goes away, and you can also do the same in the &lt;c&gt;while&lt;/c&gt;, e.g. &lt;c&gt;while ( my $line = &lt;DATA&gt; )&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Here you can see &lt;c&gt;@testarray&lt;/c&gt; getting clobbered. The &lt;c&gt;undef&lt;/c&gt; comes from the fact that &lt;c&gt;&lt;DATA&gt;&lt;/c&gt; returns &lt;c&gt;undef&lt;/c&gt; when it hits EOF (end of file).&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+my @testarray = ([10,20],[30,40]);
+
+dd "A", @testarray;
+foreach (@testarray) {
+	dd "B", @testarray;
+	while ( &lt;DATA&gt; ) {
+		dd "C", @testarray;
+	}
+	dd "D", @testarray;
+}
+dd "E", @testarray;
+
+__DATA__
+hello
+world
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+("A", [10, 20], [30, 40])
+("B", [10, 20], [30, 40])
+("C", "hello\n", [30, 40])
+("C", "world\n", [30, 40])
+("D", undef, [30, 40])
+("B", undef, [30, 40])
+("D", undef, undef)
+("E", undef, undef)
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1233275</root_node>
+<parent_node field_name="parent_node">1233275</parent_node>
+<thread id="1233275">
+<node id="1233276"><node id="1233279"><node id="1233280"/>
+</node>
+</node>
+<node id="1233277"/>
+</thread></node>

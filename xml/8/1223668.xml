@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1223668" title="Process Monitoring Madness" created="2018-10-08 07:21:36" updated="2018-10-08 07:21:36" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1223666">woland</author>
+<doctext field_name="doctext">Hi
+&lt;p&gt;
+I start all my processes via crontab using init scripts. One day I was investigating process monitoring and had epiphany - why bother adding another set of monitoring rules when the crontab describes perfectly when a process should and shouldn't be running?
+&lt;/p&gt;
+&lt;p&gt;
+I came up with the below which almost seems too simple for such great benefit
+&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl -w
+
+use strict;
+
+use File::Basename;
+use POSIX 'strftime';
+use Sys::Syslog;
+
+sub logit($);
+
+logit('starting up');
+
+my $cron_cmd = 'crontab -l';
+
+while ( 1 ) {
+  my $now   = strftime('%H%M', localtime);
+  my $today = strftime('%w', localtime);
+
+  for ( qx/$cron_cmd/ ) {
+    if ( /^([\d*]+)\s+([\d*]+)\s+([\d*]+)\s+([\d*]+)\s+([\d\-*]+)\s+(.*)/ ) {
+      my ( $min, $hour, $day, $mon, $dow, $cmd ) = ( $1, $2, $3, $4, $5, $6 );
+      my $pattern;
+
+      if ( $dow =~ m/\-/ ) {
+        $pattern = "[$dow]";
+      } elsif ( $dow =~ m/,/ ) {
+        $dow =~ s/,//;
+        $pattern = "[$dow]";
+      } elsif ( $dow =~ m/^\d$/ ) {
+        $pattern = "^$dow";
+      } else {
+        $pattern = ".*";
+      }
+
+      next unless $today =~ qr/$pattern/;
+
+      if ( $cmd =~ m#(/etc/init.d/[^\s]+)\s+(start|stop)# ) {
+        my ( $init, $mode ) = ( $1, $2 );
+        if ( $mode eq 'start' ) {
+          $schedule{$init}{start} = "$hour$min";
+        } else {
+          $schedule{$init}{stop}  = "$hour$min";
+        }
+      }
+    }
+  }
+  for ( keys %schedule ) {
+    if ( $now &gt; $schedule{$_}{start} &amp;&amp; $now &lt; $schedule{$_}{stop} ) {
+      if ( system("$_ status &gt;/dev/null") ) {
+        if ( $schedule{$_}{status} ne 'FAIL' || !$schedule{$_}{status} ) {
+          logit("$_ isnt running");
+          $schedule{$_}{status} = 'FAIL';
+        }
+      } else {
+          if ( defined $schedule{$_}{status} &amp;&amp; $schedule{$_}{status} eq 'FAIL' ) {
+            logit("$_ is back to normal");
+          }
+          $schedule{$_}{status} = 'OK';
+      }
+    }
+  }
+  sleep 5;
+}
+logit('shutting down');
+
+sub logit($) {
+  my $msg = shift;
+  openlog(basename($0), '', 'LOG_DAEMON');
+  syslog('info', $msg);
+  closelog();
+}
+&lt;/code&gt;
+
+This seems to work exactly how I expect but there seems to be an issue with it falsely identifying processes which shouldn't be running anyway. For instance processes which should only be running on Sunday are falsely being flagged as not running today (Monday) when they shouldn't be anyway?
+&lt;p&gt;
+The below is triggering alerts today even though date +%w == 1
+&lt;/p&gt;
+&lt;code&gt;
+00 05 * * 0 /etc/init.d/foo start
+00 22 * * 0 /etc/init.d/foo stop
+&lt;/code&gt;
+&lt;p&gt;
+the below crontab have so far caused no alerts today
+&lt;/p&gt;
+&lt;code&gt;
+00 05 * * 1-5 /etc/init.d/foo2 start
+00 22 * * 1-5 /etc/init.d/foo2 stop
+&lt;/code&gt;
+&lt;p&gt;
+I can't spot the issue myself and appeal for help. Other improvements are very much appreciated also
+&lt;/p&gt;
+&lt;p&gt;
+Thank you
+&lt;/p&gt;</doctext>
+<thread id="1223668">
+<node id="1223671"><node id="1223672"><node id="1223673"><node id="1223674"/>
+<node id="1223675"><node id="1223676"><node id="1223680"><node id="1223681"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1223689"/>
+</node>
+</node>
+<node id="1223683"/>
+</thread></node>

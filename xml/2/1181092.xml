@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1181092" title="Re: Redefine the sub of a subref?" created="2017-02-04 09:08:05" updated="2017-02-04 09:08:05" _doctext_mode="lenient"><type id="11">note</type>
+<author id="5348">Corion</author>
+<doctext field_name="doctext">&lt;p&gt;Don't "embed" the subroutine in the first place, but make it a parameter (or a global variable if you must).&lt;/p&gt;
+&lt;p&gt;I assume you have something like this:&lt;/p&gt;
+&lt;c&gt;
+sub foo { print 'Foo!' };
+
+sub bar {
+    my( $output ) = @_;
+    $output-&gt;();
+};
+
+bar( \&amp;foo );
+&lt;/c&gt;
+&lt;p&gt;If you want to change what &lt;c&gt;bar()&lt;/c&gt; does, change its calling site:&lt;/p&gt;
+&lt;c&gt;
+sub foo1 { print 'Foo! One' };
+sub foo2 { print 'Foo! Two' };
+
+bar( \&amp;foo1 );
+bar( \&amp;foo2 );
+&lt;/c&gt;
+&lt;p&gt;If you really, really want the action at a distance, use a global variable:&lt;/p&gt;
+&lt;c&gt;
+
+sub foo1 { print 'Foo! One' };
+sub foo2 { print 'Foo! Two' };
+
+use vars '$output';
+sub bar {
+    $output-&gt;();
+};
+
+local $output = \&amp;foo1;
+bar();
+
+local $output = \&amp;foo2;
+bar();
+&lt;/c&gt;
+&lt;p&gt;If you really, really, really feel that what you want to do is to override &lt;c&gt;foo&lt;/c&gt; on a completely global level, you can do the following, but know that I consider this a practice last resort which might be incredibly useful but if you control the source code of &lt;c&gt;foo&lt;/c&gt; and &lt;c&gt;bar&lt;/c&gt;, while cute this practice will lead to hard to understand control flow:&lt;/p&gt;
+&lt;c&gt;
+sub foo { print 'Foo!' };
+
+sub bar {
+    foo();
+};
+
+bar();
+{
+    local *foo = sub {
+        print 'Foo! reloaded!';
+    };
+    bar();
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1181091</root_node>
+<parent_node field_name="parent_node">1181091</parent_node>
+<thread id="1181091">
+<node id="1181092"/>
+<node id="1181093"><node id="1181120"/>
+</node>
+</thread></node>

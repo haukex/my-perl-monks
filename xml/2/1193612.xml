@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193612" title="Re: Escaping double quotes in complete document" created="2017-06-26 13:46:18" updated="2017-06-26 13:46:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I haven't yet had much experience with [mod://CGI].pm and UTF-8 issues, so I can't comment much on that, except that using [doc://Devel::Peek] has been a useful tool for me a few times when dealing with UTF-8 issues, as it helps you see what Perl thinks the string contains. Usually, if you get the encoding right at those points where the data enters and leaves the script, Perl should handle Unicode just fine. Anyway,&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;the HTML textboxes see the double quote as an end marker for the textbox value&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This sounds to me like you might be building your HTML by interpolation, as in &lt;c&gt;print qq{&lt;input type="text" name="foo" value="$val"&gt;};&lt;/c&gt;? If so, that is certainly the source of the problem and you should use one of the available APIs to write your HTML instead, as they will do the escaping for you. Back before [mod://CGI].pm was discouraged, one way to do it was with its HTML generation functions (which are now deprecated). So nowadays the following is &lt;i&gt;not&lt;/i&gt; recommended for new scripts, but note how the attribute is properly escaped:&lt;/p&gt;
+&lt;c&gt;
+use CGI qw/:html :form/;
+my $val = q{ "Hello" &lt;world&gt; &amp;amp; };
+print textfield('foo',$val), "\n";
+__END__
+&lt;input type="text" name="foo" value=" &amp;quot;Hello&amp;quot; &amp;lt;world&amp;gt; &amp;amp;amp; " /&gt;
+&lt;/c&gt;
+&lt;p&gt;Currently, [mod://CGI::HTML::Functions] recommends [mod://HTML::Tiny], which I haven't yet had the chance to try, and of course there are frameworks like [mod://Template::Toolkit] or even [mod://Mojolicious], although the latter is meant to replace everything that [mod://CGI].pm does.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1193555</root_node>
+<parent_node field_name="parent_node">1193555</parent_node>
+<thread id="1193555">
+<node id="1193559"><node id="1193562"><node id="1193565"><node id="1193658"/>
+</node>
+</node>
+</node>
+<node id="1193609"><node id="1193659"/>
+</node>
+<node id="1193612"><node id="1193657"><node id="1193662"/>
+<node id="1193663"/>
+<node id="1193676"><node id="1193694"/>
+</node>
+</node>
+</node>
+<node id="1193698"><node id="1193699"><node id="1193702"/>
+</node>
+</node>
+<node id="1193806"><node id="1193808"/>
+</node>
+</thread></node>

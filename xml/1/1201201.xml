@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201201" title="Re: How to ask better questions using Test::More and sample data" created="2017-10-12 06:31:23" updated="2017-10-12 06:31:23" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;This post makes excellent points! Just to expand a little on regex testing - having many test cases helps:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Test::More;
+#use re 'debug'; # optional
+
+my $regex = qr/(foo|bar)(quz|baz)?$/;
+
+# "match / doesn't match" tests
+like   "foo",          $regex;
+like   "bar",          $regex;
+like   "foobar",       $regex;
+like   "fooquz",       $regex;
+like   "foobaz",       $regex;
+like   "barbaz",       $regex;
+like   "foobarquz",    $regex;
+like   "foobarfooquz", $regex;
+unlike "foobarquzbaz", $regex;
+unlike "quzbaz",       $regex;
+unlike "hello",        $regex;
+unlike "foo ",         $regex;
+# etc.
+
+# check capture groups
+ok "foobar"    =~ $regex;
+is $1, "bar";
+is $2, undef;
+ok "foobarquz" =~ $regex;
+is $1, "bar";
+is $2, "quz";
+ok "foobaz"    =~ $regex;
+is $1, "foo";
+is $2, "baz";
+# etc.
+
+# and/or check return values in list context
+is_deeply [ "foobar" =~ $regex ],
+	[ "bar", undef ];
+is_deeply [ "fooquz" =~ $regex ],
+	[ "foo", "quz" ];
+is_deeply [ "barbaz" =~ $regex ],
+	[ "bar", "baz" ];
+# etc.
+
+# an example with /g return values
+is_deeply [ "foobarquzbaz" =~ /[aeiou]/g ],
+	[ "o", "o", "a", "u", "a" ];
+# same thing, written differently:
+my @matches = "foobarquzbaz" =~ /[aeiou]/g;
+is_deeply \@matches, [ "o", "o", "a", "u", "a" ];
+
+done_testing;
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1154672</root_node>
+<parent_node field_name="parent_node">1154672</parent_node>
+<thread id="1154672">
+<node id="1154695"><node id="1154696"/>
+</node>
+<node id="1201201"/>
+</thread></node>

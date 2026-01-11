@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203679" title="Need a second set of eyes: Very odd failure" created="2017-11-17 11:57:53" updated="2017-11-17 11:57:53" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="72516">blue_cowdawg</author>
+<doctext field_name="doctext">&lt;p&gt;
+I must be missing something here so I'm asking for more eyes on something.  
+&lt;/p&gt;
+&lt;p&gt;
+I built a fairly simple straightforward module here and yet it is failing to work.  This module does curls to an API (The Foreman) to extract some data from it. Nothing fancy here....  Here are the most important bits:
+&lt;code&gt;
+package NCS::PuppetDB::Data;
+
+use 5.010000;
+use strict;
+use warnings;
+use JSON;
+
+our $curl="/usr/bin/curl -G 'http://localhost:8080/v3";
+our $VERSION = '0.5.2';
+
+sub new {
+    my $self={};
+    bless $self,"NCS::PupptDB::Data";
+    return $self;
+}
+
+sub getHosts {
+    my $self = shift;
+    my $cmd=sprintf("%s/nodes 2&gt;/dev/null",$curl);
+    my $json = JSON-&gt;new-&gt;allow_nonref;
+    my $jsonData=`$cmd`;
+    my $decoded = $json-&gt;decode($jsonData);
+    my $retval=[];
+    for my $entry(@$decoded){
+	push @$retval,$entry-&gt;{name};
+    }
+
+    return sort $retval;
+}
+
+sub getHostFacts {
+    my $self = shift;
+    my $host = shift;
+
+    my $cmd=sprintf("%s/nodes/%s/facts' 2&gt;/dev/null",$curl,$host);
+    my $json = JSON-&gt;new-&gt;allow_nonref;
+    my $jsonData=`$cmd`;
+    my $decoded = $json-&gt;decode($jsonData);
+    my $retval = {};
+
+    for my $fact(@$decoded){
+	$retval-&gt;{$fact-&gt;{name}} = $fact-&gt;{value};
+    }
+
+    return $retval;
+}
+
+sub getFact {
+    my ($self,$host,$factname)=@_;
+    my $facts=getHostFacts($host);
+    return $facts-&gt;{$factname};
+}
+
+1;
+&lt;/code&gt;
+
+The one and only script using it (so far) is complaining: 
+&lt;code&gt;
+Can't locate object method "getHosts" via package "NCS::PupptDB::Data"
+&lt;/code&gt;
+What am I missing? 
+&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-72516"&gt;
+&lt;hr&gt;
+&lt;font size="-2"&gt;
+
+Peter L. Berghold  -- Unix Professional&lt;br&gt;
+Peter -at- Berghold -dot- Net; 
+Blog: http://blog.berghold.net Warning:  No political correctness allowed.
+&lt;/font&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1203679">
+<node id="1203680"/>
+<node id="1203681"><node id="1203687"><node id="1203688"/>
+<node id="1203690"/>
+<node id="1203721"/>
+</node>
+</node>
+<node id="1203689"/>
+<node id="1203699"/>
+<node id="1203702"/>
+</thread></node>

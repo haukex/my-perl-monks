@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11123492" title="Re^3: DBI search for forward slash" created="2020-11-08 03:18:38" updated="2020-11-08 03:18:38" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Anyway - LIKE is fail as well &lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sorry, but that is not an adequate problem description. Please see [id://174051] and [id://510718], and provide a [id://1177642], like the following. Note how it is exactly the code you posted, except that it works fine for me.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use feature 'say';
+use DBI;
+
+my $dbh = DBI-&gt;connect(
+	"DBI:mysql:database=testing;host=127.0.0.1", $ENV{USER},
+	'barfoo', { RaiseError =&gt; 1, AutoCommit =&gt; 1 });
+$dbh-&gt;do('DROP TABLE IF EXISTS texts');
+$dbh-&gt;do(&lt;&lt;'ENDSQL');
+CREATE TABLE texts (
+	string VARCHAR(256) 
+);
+ENDSQL
+$dbh-&gt;do('INSERT INTO texts (string) VALUES ("/a/b/c");');
+
+# ---
+ my $string = '/a/b/c';
+ my $req = qq{ SELECT * FROM `texts` WHERE `string`=?};
+ my $sth = $dbh-&gt;prepare($req);
+ my $row = $sth-&gt;execute($string);
+ say "row = $row";
+# ---
+
+my $sth2 = $dbh-&gt;prepare(
+	q{ SELECT * FROM texts WHERE string LIKE '%/a/b/c%' });
+$sth2-&gt;execute;
+say "row = $row";
+
+&lt;/c&gt;
+&lt;p&gt;This prints &lt;c&gt;row = 1&lt;/c&gt; twice, as expected.&lt;/p&gt;
+&lt;p&gt;This is how I spun up a fresh test MySQL instance. To change the server's port number, change the &lt;c&gt;-p3306:3306&lt;/c&gt; to something like &lt;c&gt;-p13306:3306&lt;/c&gt; in the &lt;c&gt;docker&lt;/c&gt; command, add the argument &lt;c&gt;--port=13306&lt;/c&gt; to the &lt;c&gt;mysql&lt;/c&gt; command, and add the argument &lt;c&gt;;port=13306&lt;/c&gt; to the DBI connection string in the Perl code.&lt;/p&gt;
+&lt;pre&gt;
+$ docker run --rm --name testmysql -p3306:3306 -e MYSQL_ROOT_PASSWORD=foobar -d mysql:5
+# wait a few seconds for it to start
+$ echo "CREATE USER '$USER' IDENTIFIED BY 'barfoo'; CREATE DATABASE testing; GRANT ALL PRIVILEGES ON testing.* TO '$USER';" | mysql --protocol=TCP --user=root --password=foobar
+# after testing:
+$ docker stop testmysql
+&lt;/pre&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Several smaller edits to add more information.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11123483</root_node>
+<parent_node field_name="parent_node">11123487</parent_node>
+<thread id="11123483">
+<node id="11123484"><node id="11123485"><node id="11123490"><node id="11123494"/>
+</node>
+</node>
+</node>
+<node id="11123486"><node id="11123487"><node id="11123492"><node id="11123493"><node id="11123495"><node id="11123496"><node id="11123497"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11123502"/>
+</thread></node>

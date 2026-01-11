@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11131876" title="Re^6: Referencing the locals" created="2021-04-29 10:37:40" updated="2021-04-29 10:37:40" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Wouldn't a shallow copy by faster for large arrays, since the data isn't actually being copied?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;"Shallow" in this case refers to the fact that the elements of the array would be copied, hence it'd be slow and burn memory for large arrays, but if any of those elements are references to other data structures, then copying of those references means that the copies of the references in the new array still refer to the same data structures.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+my %animals = ( cat =&gt; [ 1,2,3, ["nested","array"] ] );
+my @cat = @{$animals{'cat'}};
+
+push @cat, 4;
+$cat[1] = 9;
+$cat[3][0] = 'Nested';
+
+dd \%animals;
+dd \@cat;
+
+__END__
+
+{ cat =&gt; [1, 2, 3, ["Nested", "array"]] }
+[1, 9, 3, ["Nested", "array"], 4]
+&lt;/c&gt;
+&lt;p&gt;Note how the 9 and 4 only affected &lt;c&gt;@cat&lt;/c&gt;, while the modification of &lt;c&gt;"Nested"&lt;/c&gt; is visible via both &lt;c&gt;%animals&lt;/c&gt; and &lt;c&gt;@cat&lt;/c&gt;. &lt;c&gt;["nested","array"]&lt;/c&gt; is a single anonymous array stored somewhere in memory, if you copy a reference to that array, the copy of that reference still points to the same anonymous array. A deep copy can be achieved with, for example, &lt;c&gt;dclone&lt;/c&gt; from [doc://Storable] (often used because it's a core module), or e.g. [mod://Clone] from CPAN.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;And "changes to the array"... oh, right, as opposed to changes to the elements of the array?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Both!&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; I should add that the distinction between shallow and deep copies usually bites people in that they write &lt;c&gt;my %copy = %data;&lt;/c&gt; and want a deep copy instead of a shallow one. But if you say that your copies are meant to be read-only (and the arrays are small), then indeed a shallow copy doesn't really hurt - though I &lt;i&gt;still&lt;/i&gt; would recommend using references instead of shallow copies.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11131804</root_node>
+<parent_node field_name="parent_node">11131875</parent_node>
+<thread id="11131804">
+<node id="11131813"/>
+<node id="11131811"><node id="11131822"><node id="11131825"><node id="11131839"/>
+</node>
+<node id="11131840"/>
+<node id="11131826"/>
+</node>
+</node>
+<node id="11131833"/>
+<node id="11131835"><node id="11131848"><node id="11131864"><node id="11131866"><node id="11131875"><node id="11131876"><node id="11131881"><node id="11131887"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11131809"><node id="11131814"><node id="11131816"><node id="11131818"/>
+</node>
+</node>
+</node>
+<node id="11131805"/>
+</thread></node>

@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118593" title="Re^6: Calculated position incorrect when using regex in text file that also contains binary info" created="2020-06-27 02:41:12" updated="2020-06-27 02:41:12" _doctext_mode="lenient"><type id="11">note</type>
+<author id="11117262">geertvc</author>
+<doctext field_name="doctext">Hi [haukex|haukex],
+&lt;p&gt;
+I have to make a really big confession...  After all, we're in a monastery.  With monks.  So it should be possible, allowed and doable, right? ;-)
+&lt;br&gt;
+&lt;br&gt;
+I made a horrible mistake by checking the size of the calculated offset in my text editor (NPP) instead of comparing it with the XREF table which is part of the PDF itself.  If I do this, then all is working perfect.  I'm a bit of a dumb now...
+&lt;br&gt;
+&lt;br&gt;
+Since I'm so pissed off (of myself, I mean) I stubbornly refused to give up and moved forward with making my SSCCE (as promised), even if it's only to "prove" myself I'm able to do this... :-)
+&lt;br&gt;
+&lt;br&gt;
+And here's the result (in case it might be useful for someone else in the future that doesn't make such a silly mistake as I did...)
+&lt;br&gt;
+&lt;br&gt;
+I've tried to assemble an example that should (hopefully) be SSCCE-compliant.  Fingers crossed I got it right this time.
+&lt;br&gt;
+&lt;br&gt;
+First, the original, uncompressed PDF file.  It's a simple and very small PDF document called &lt;c&gt;example_uncompressed.pdf&lt;/c&gt;.  It's been made with LibreOffice and saved as PDF.  It contains only one line of text: "A small PDF.".
+&lt;br&gt;
+&lt;br&gt;
+Here goes the content of the uncompressed file.  I've put it between the "readmore" and "code" tags as advised by you and others, I do hope it works (running the risk of being keelhauled if it isn't...):
+&lt;br&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+%PDF-1.5
+%âãÏÓ
+1 0 obj 
+&lt;&lt;
+/Group 
+&lt;&lt;
+/CS /DeviceRGB
+/I true
+/S /Transparency
+&gt;&gt;
+/Parent 2 0 R
+/MediaBox [0 0 595.303937007874 841.889763779528]
+/Resources 3 0 R
+/pdftk_PageNum 1
+/Contents 4 0 R
+/Type /Page
+&gt;&gt;
+endobj 
+4 0 obj 
+&lt;&lt;
+/Length 150
+&gt;&gt;
+stream
+0.1 w
+q 0 0.028 595.275 841.861 re
+W* n
+q 0 0 0 rg
+BT
+42.6 788.189 Td /F1 12 Tf[&lt;01&gt;55&lt;0203&gt;-2&lt;04&gt;2&lt;05&gt;1&lt;06&gt;-5&lt;06&gt;2&lt;0207&gt;-1&lt;08&gt;-2&lt;09&gt;81&lt;0A&gt;]TJ
+ET
+Q
+Q 
+endstream 
+endobj 
+2 0 obj 
+&lt;&lt;
+/MediaBox [0 0 595 841]
+/Resources 3 0 R
+/Kids [1 0 R]
+/Count 1
+/Type /Pages
+&gt;&gt;
+endobj 
+5 0 obj 
+&lt;&lt;
+/Length 9744
+/Length1 9744
+&gt;&gt;
+stream
+true ␌ € ␃ @cmap"
+␋␒   Ì  ␁␒cvt =O␕;  ␁à  ␂Òfpgmš·\ô  ␄´  ␇´glyf␙¦€A  ␌h  	Àhead=␘/  ␖(   6hheaQþy␇  ␖`   $hmtx&lt;␃É*  ␖„   ,locat␐r
+  ␖°   ␘maxp*␄@␂  ␖È    name ?␄H  ␖è  ␋vpostd $ÿ  "`    prepLšbÅ  "€  ␃   ␁ ␁     ␌  ␁␆   ␁␂␃␄␅␆␇␈	
+                                                                                                                                                                                                                                                       ␅ ␕ H␅= ␏ p␅= ␏              ␃¬ ␙ ™  ÿì    ÿì    ÿì  þLÿú                                                                            ␈      ˜ ¦ ´  Ù ]       F P i u Ù             Á Ñ i     P Z ª Š                       ¬ ¸ Z     P `  ™                       P — ³ Ç Ù           P m {  µ Ù␁1 É  ␁o ò␁␈  Å ¸ ò␁1 M                    ␂␎   f     f          ␂Û ›␂‹ J␂ä   ™ f  ␂/␂␐ Ä œ␁^  ␁t F        F &lt;                 ‡ }   S h v ‡      ␅=üÚ 	ÿó  } J ‚ A l           ¼␁Ÿ␃
+  ␃T Ÿ ¦ Á     /        ␇H␃j␂¶␂␂ý“   ‘ g ‘ a␁Ù  ␂␃A                                                                        ␃U 
+␁)␃% 	                    ␂4 ␏þú␂2ÿô␃$ 
+ Uÿð  ␂4 ␏þúÿKÿó␃aþn␄_␄␜␅=␄Ë                            ␆‘␄m 
+  ÿåþ{þd␅N␅¦ µ ¨  @G[ZYXUTSRQPONMLKJIHGFEDCBA@?&gt;=&lt;;:9876510/.-,('&amp;%$#"!␟␘␔␑␐␏␎
+␋
+	␈␇␆␅␄␃␂␁ , °␁`E°␃% ␑Fa#E#aH-, E␘hD-,E#F`° a °F`°␄&amp;#HH-,E#F#a° ` °&amp;a° a°␄&amp;#HH-,E#F`°@a °f`°␄&amp;#HH-,E#F#a°@` °&amp;a°@a°␄&amp;#HH-,␁␐ &lt; &lt;-, E# °ÍD# ¸␁ZQX# °D#Y °íQX# °MD#Y °␄&amp;QX# °
+D#Y!!-,  E␘hD °␁` E°FvhŠE`D-,␁±␋
+C#Ce
+-, ±
+␋C#C␋-, °(#p±␁(&gt;␁°(#p±␂(E:±␂ ␈
+-, E°␃%Ead°PQXED␛!!Y-,I°␎#D-, E° C`D-,␁°␆C°␇Ce
+-, i°@a° ‹ ±,ÀŠŒ¸␐ b`+␌d#da\X°␃aY-,Š␃EŠŠ‡°␑+°)#D°)zä␘-,Ee°,#DE°+#D-,KRXED␛!!Y-,KQXED␛!!Y-,␁°␅%␐# Šõ °␁`#íì-,␁°␅%␐# Šõ °␁a#íì-,␁°␆%␐õ íì-,°␂C°␁RX!!!!!␛F#F`ŠŠF# FŠ`Ša¸ÿ€b# ␐#Š±␌␌ŠpE` ° PX°␁a¸ÿº‹␛°FŒY°␐`h␁:Y-, E°␃%FRK°␓Q[X°␂%F ha°␃%°␃%?#!8␛!␑Y-, E°␃%FPX°␂%F ha°␃%°␃%?#!8␛!␑Y-, °␇C°␆C␋-,!!␌d#d‹¸@ b-,!°€QX␌d#d‹¸  b␛² @/+Y°␂`-,!°ÀQX␌d#d‹¸␕Ub␛² €/+Y°␂`-,␌d#d‹¸@ b`#!-,KSXŠ°␄%Id#Ei°@‹a°€b° aj°␎#D#␐°␎ö␛!#Š␒␑ 9/Y-,KSX °␃%Idi °␅&amp;°␆%Id#a°€b° aj°␎#D°␄&amp;␐°␎öŠ␐°␎#D°␎ö°␎#D°␎í␛Š°␄&amp;␑␒ 9# 9//Y-,E#E`#E`#E`#vh␘°€b -,°H+-, E° TX°@D E°@aD␛!!Y-,E±0/E#Ea`°␁`iD-,KQX°/#p°␔#B␛!!Y-,KQX °␃%EiSXD␛!!Y␛!!Y-,E°␔C° `c°␁`iD-,°/ED-,E# EŠ`D-,E#E`D-,K#QX¹ 3ÿà±4 ␛³3 4 YDD-,°␖CX°␃&amp;EŠXdf°␟`␛d° `f X␛!°@Y°␁aY#XeY°)#D#␐°)à␛!!!!!Y-,°␂CTXKS#KQZX8␛!!Y␛!!!!Y-,°␖CX°␄%Ed° `f X␛!°@Y°␁a#X␛eY°)#D°␅%°␈%␈ X␂␛␃Y°␄%␐°␅% F°␄%#B&lt;°␄%°␇%␈°␇%␐°␆% F°␄%°␁`#B&lt; X␁␛ Y°␄%␐°␅%°)à°) EeD°␇%␐°␆%°)à°␅%°␈%␈ X␂␛␃Y°␅%°␃%CH°␄%°␇%␈°␆%°␃%°␁`CH␛!Y!!!!!!!-,␂°␄%  F°␄%#B°␅%␈°␃%EH!!!!-,␂°␃% °␄%␈°␂%CH!!!-,E# E␘ ° P X#e#Y#h °@PX!°@Y#XeYŠ`D-,KS#KQZX EŠ`D␛!!Y-,KTX EŠ`D␛!!Y-,KS#KQZX8␛!!Y-,° !KTX8␛!!Y-,°␂CTX°F+␛!!!!Y-,°␂CTX°G+␛!!!Y-,°␂CTX°H+␛!!!!Y-,°␂CTX°I+␛!!!Y-, Š␈#KSŠKQZX#8␛!!Y-, °␂%I° SX °@8␑␛!Y-,␁F#F`#Fa# ␐ FŠa¸ÿ€bŠ±@@ŠpE`h:-, Š#IdŠ#SX&lt;␛!Y-,KRX}␛zY-,°␒ K␁KTB-,±␂ B±#␁ˆQ±@␁ˆSZX¹␐   ˆTX²␂␁␂C`BY±$␁ˆQX¹   @ˆTX²␂␂␂C`B±$␁ˆTX²␂ ␂C`B K␁KRX²␂␈␂C`BY␛¹@  €ˆTX²␂␄␂C`BY¹@  €c¸␁ ˆTX²␂␈␂C`BY¹@ ␁ c¸␂ ˆTX²␂␐␂C`BY±&amp;␁ˆQX¹@ ␂ c¸␄ ˆTX²␂@␂C`BY¹@ ␄ c¸␈ ˆTX²␂€␂C`BYYYYYY± ␂CTX@
+␅@␈@	@␌␂
+␂␛±␁␂CTX²␅@␈º␁  	␁ ³␌␁
+␁␛±€␂CRX²␅@␈¸␁€±	@␛²␅@␈º␁€ 	␁@Y¹@  €ˆU¹@ ␂ c¸␄ ˆUZX³␌ 
+␁␛³␌ 
+␁YYYBBBBB-,E␘h#KQX# E d°@PX|YhŠ`YD-,° ␖°␂%°␂%␁°␁#&gt; °␂#&gt;±␁␂␆␌°
+#eB°␋#B␁°␁#? °␂#?±␁␂␆␌°␆#eB°␇#B°␁␖␁-,°€°␂CP°␁°␂CT[X!#␐° ␚É␛Š␐íY-,°Y+-,Š␐å- ␂ ␔  ␅¸␅H ␏ ␒␁_@ò␑␎␏␏␄␒
+␐␌␌␇␇␐␄␃␓␔
+␎␑␎`Y␒␑␑␁␐␆␅␄␌␇␄␏␁␏_Y
+␁␒ô␔␁ä␔␁Ô␔␁Ä␔␁´␔␁¤␔␁”␔␁„␔␁t␔␁d␔␁T␔␁D␔␁4␔␁$␔␁␔␔␁␄␔␁ô␔␁ä␔␁Ô␔␁Ä␔␁´␔␁¤␔␁”␔␁„␔␁t␔␁d␔␁T␔␁D␔␁4␔␁$␔␁␔␔␁␄␔␁9ô␔␁ä␔␁Ô␔␁Ä␔␁´␔␁¤␔␁”␔␁„␔␁t␔␁T␔␁D␔␁4␔␁$␔␁␄␔␁Ô␔␁À␔␁␂°␔␁ ␔␁␔␁€␔␁p␔␁P␔␁@␔␁0␔␁ ␔␁␐␔␁à␔␁À␔␁ ␔␁␔␁€␔␁p␔␁P␔␁O␔␁]]]]]]]]qqqqqqqqqq_qqrrrrrrrrrrrrrr^]]]]]]]]]]]]]]]]qqqqqqqqqqqqqqqq ?3+␑ 333␘?33␒9/3+ .3␑␒␁␗9␑3␑␒99␑3␑9910%␕!57␁3␁␗␕!57␃!␃␁␃!␁ÍþG˜␁É¾␁ÛªýÉ´…ýð‡␁‹æ␁Ó555␛␄øû␈␛55␛␁ƒþ}␄hýu    ␁ Tÿì␂Ó␃Å ( Y@4!␇␔␚
+ ␔ )*
+!␃␗␗␞PY␛␗␐␃␋PY␇␃␖€*␁p*␁`*␁P*␁ *␁¯*␁_*␁O*␁]]]qqqqq ?3+ ␘?3+␑␒ 99␑␒␁99␑33␑3310␁␔␆#"&amp;'53␗␖3254/␁.␂54632␗␕#'&amp;#"␆␕␔␖␗␞␃␂Ó±­F©0-1KxÂ™Ye\2©g›/*5rQUMN“Z?#␁␈Œ␝␒çƒD¦z4␝!DcF|␟Ím/PD9N␚2.CV   ␁ +  ␆␙␃Å 1␁²@ÿ␑␌␆␜␜! ((--!␌␃321.PY1␏(!␜␑␌-+-PY␟␏+␕␙␆␆		␔RY	␐'  ␃␃%RY␃␐v3␁V3␁63␁$3␁␖3␁␆3␁ö3␁ä3␁Ô3␁Æ3␁¤3␁–3␁b3␁␁P3␁D3␁03␁$3␁␔3␁␄3␁hð3␁ä3␁Ô3␁´3␁t3␁@3␁43␁$3␁␄3␁ô3␁Û3␁À3␁°3␁¤3␁„3␁d3␁P3␁D3␁43␁$3␁␐3␁␄3␁ô3␁Ð3␁Ä3␁«3␁3␁„3␁k3␁;3␁ 3␁␔3␁␄3␁8ä3␁Ô3␁ 3␁`3␁T3␁@3␁43␁␔3␁ô3␁ä3␁Ä3␁”3␁€3␁t@+3␁T3␁@3␁43␁␛3␁␄3␁ä3␁À3␁␂°3␁€3␁p3␁P3␁␐3␁␏3␁␈^]]]]]]_]]qqqqqqqqqqqrrrrrrrr^]]]]]]]]]]]qqqqqqqqqqqqqrrrrrrrrr^]]]]]]_]]]]]]]qqqqqq ?+␑ 3␑3␘?+␑ 3␑3␘?33+␑ 33333␘?+␑␒␁␗9␑3␑3␑3␑3␑310␁&gt;␁32␖␗&gt;␁32␙␁␗␕!57␑4#"␎␂␇␖␕␑␗␕!57␑4&amp;#"␇␑␗␕!57␑'5!␁FK¨@Eu␝MÏDðyþUŒ ␚EE?␕␑þB‹UUXƒþVww␁␓␃`+:49+Bþëý–␙--␙␂X¬␈
+
+␄6Aý–␙--␙␂XSY␝ý␙␙--␙␃ ␙-    ␂ Hÿì␃q␃Á ␛ % m@?␑␈%%␄ ␌␌␙␄␃'&amp;%"
+"QY␘␕␑␑␜PY␏␑␟␑␂␌␃␑␑ ␈
+␖␇␄PY␇␕ ␕PY ␐€'␁_'␁@'␁€'␁]qrr ?+ ␘?+ ␘?3␒9/_^]+␑␒ 9+␑ 3␑␒␁␗9␑3␑3␑3310␁2␖␕␑␗␕!'␆#"␑4&gt;␁?␁54&amp;#"␏␁#56␁␇␎␁␕␔3267␁Ñš‘uþþ␓r±ñI ˜GJdS"8¢␁ ƒ†_Dc2␃Á~‚ý…␙-^r␁␘^{A␃␄“a\/uÍ#þ␞␄␅^n°␟␘  ␁ )  ␂␐␅ 	 ¢@p␅␋
+	␆PY	  ␅␃␅PY␃␕Ô␋␁Ä␋␁´␋␁¤␋␁”␋␁„␋␁t␋␁d␋␁$␋␁␔␋␁␄␋␁9ô␋␁Ä␋␁␋␁␂p␋␁`␋␁P␋␁@␋␁À␋␁°␋␁ ␋␁P␋␁␐␋␁ ␋␁ð␋␁ ␋␁␋␁p␋␁`␋␁P␋␁@␋␁]]]]]]]qqqqqqrrrr_rrr^]]]]]]]]]]] ?+␑ 3␘?+␑␒␁910%␗␕!57␑'5!␁o¡þ␙  ␁FF␙--␙␅␂␘- ␂ ;  ␄!␅= ␈ ␘ À@€ ␕␅
+
+␏␕␏␚␙	␆`Y		
+␒␒␃`Y␒␐_Y␒␃
+␏
+␏_Y
+␒␚␁␚␁o␚␁/␚␁␏␚␁ß␚␁¿␚␁Ÿ␚␁o␚␁O␚␁?␚␁/␚␁ÿ␚␁ß␚␁Ï␚␁o␚␁_␚␁␏␚␁8ß␚␁¿␚␁¿␚␁␚␁/␚␁␏␚␁¯␚␁Ÿ␚␁␚␁?␚␁␟␚␁␏␚␁␈^]]]]]]qqqqrr^]]]]]]qqqqqqqrrrrr ?+␑ 3␘?++␑␒ 9␘/+␑␒␁99␑3␑3␑310␁4&amp;+␁␑326␅␑␗␕!57␑'5! ␑␔␆#␃Zš¶bh©¡þNÕýËŸ¬␁ú␁ìùé␃°¥Žý…šôþB␛55␛␄ž␚5þuÎÖ ␂ ;ÿü␅u␅= 	 ␗ L@/␅␔ 
+␔
+␘␙␗␕_Y␗␄`Y␗␃␐␔_Y␐␇`Y␐␒ ␙␁?@␙␁ ␙␁à␙␁ ␙␁p␙␁]]]qr^] ?++ ␘?++␑␒␁99␑3␑310␁␐ !#␑␖32␒␁  ␑␐ !%#57␑'5␄¤þÑþç´x¥öéýø␁s␁fþ§þ©þ"¬¬¬␂¨␁␙␁"û{␈␁"␃Åþµþ´þ°þ¦␄5␛␄ž␚5   ␁ ;  ␄)␅= ␗ ô@¦␖␒␒␔␑␁␁␆␆␔␋␃␙␘␑ `Y_␑o␑␂-␑␁␃ ␑␐␑␂	␅␑␑␆		␐`Y	␇_Y	␃␁␆␄␆_Y␄␒´␙␁¤␙␁”␙␁€␙␁t␙␁d␙␁␄␙␁ð␙␁ä␙␁Ô␙␁”␙␁t␙␁`␙␁T␙␁D␙␁Ð␙␁Ä␙␁´␙␁¤␙␁”␙␁„␙␁t␙␁d␙␁T␙␁@␙␁0␙␁ ␙␁␔␙␁␄␙␁9ô␙␁ä␙␁¤␙␁”␙␁␄␙␁À␙␁␂°␙␁q_qrrrrr^]]]]]]]]]]]]]]qqqqqqqqrrrrrrr ?+␑ 3␘?++␑␒ 9␘/_^]_]]+␑␒␁␗9␑3␑3␑3␑310␁␑␗␕!57␑'5!␑#'&amp;+␁␑!73␑#'␁¨ßýÁŸ¬␃îB pÔÛ␁‹␟==␟␂Zýö␛55␛␄ž␚5þ¿Ù␎ýÑ þd¢ ␁ ‡ÿã␁y Õ ␋ ␘@␋ ␆␆␌
+␃	›[␃␓ ?+␑␒␁9␑310%␔␆#"&amp;54632␖␁yE44EF33F\1HH13FF ␁   ␂  0]O␐_␏&lt;õ␂␟␈     ÈDÐÎ          ÿã␆␙␅   ␈         ␁  ␇!þE W         ␁               ␋␆9  ␅Ç ␔␂   ␃␝ T␆9 +␃ H␂9 )␄s ;␅Ç ;␄s ;␂  ‡     Ø Ø␁@␂d␂Ö␃&lt;␃Æ␄␜␄¾␄à ␁   ␋ 2 ␂     ␂ ␐ / \  ␂Ã␃Æ ␃ ␁   ␞␁n ␁       V   ␁     ␁ ␐ V ␁     ␂ ␇ f ␁     ␃ ␛ m ␁     ␄ ␐ ˆ ␁     ␅ ␎ ˜ ␁     ␆ ␏ ¦ ␁     ␇ z µ ␁     ␈ ␔␁/ ␁     	 ␎␁C ␁     
+␁n␁Q ␁     ␋ ␜␂¿ ␁     ␌ .␂Û ␁     
+ 5␃	 ␁     ␎ ␚␃&gt; ␃ ␁␄	   ¬␃X ␃ ␁␄	 ␁  ␄␄ ␃ ␁␄	 ␂ ␎␄$ ␃ ␁␄	 ␃ 6␄2 ␃ ␁␄	 ␄  ␄h ␃ ␁␄	 ␅ ␜␄ˆ ␃ ␁␄	 ␆ ␞␄¤ ␃ ␁␄	 ␇ ô␄Â ␃ ␁␄	 ␈ (␅¶ ␃ ␁␄	 	 ␜␅Þ ␃ ␁␄	 
+␂Ü␅ú ␃ ␁␄	 ␋ 8␈Ö ␃ ␁␄	 ␌ \	␎ ␃ ␁␄	 
+ j	j ␃ ␁␄	 ␎ 4	ÔDigitized data copyright (c) 2010 Google Corporation.
+Copyright (c) 2012 Red Hat, Inc.Liberation SerifRegularAscender - Liberation SerifLiberation SerifVersion 2.00.3LiberationSerifLiberation is a trademark of Red Hat, Inc. registered in U.S. Patent and Trademark Office and certain other jurisdictions.Ascender CorporationSteve MattesonBased on Tinos, which was designed by Steve Matteson as an innovative, refreshing serif design that is metrically compatible with Times New Romanª. Tinos offers improved on-screen readability characteristics and the pan-European WGL character set and solves the needs of developers looking for width-compatible fonts to address document portability across platforms.http://www.ascendercorp.com/http://www.ascendercorp.com/typedesigners.htmlLicensed under the SIL Open Font License, Version 1.1http://scripts.sil.org/OFL D i g i t i z e d   d a t a   c o p y r i g h t   ( c )   2 0 1 0   G o o g l e   C o r p o r a t i o n . 
+ C o p y r i g h t   ( c )   2 0 1 2   R e d   H a t ,   I n c . L i b e r a t i o n   S e r i f R e g u l a r A s c e n d e r   -   L i b e r a t i o n   S e r i f L i b e r a t i o n   S e r i f V e r s i o n   2 . 0 0 . 3 L i b e r a t i o n S e r i f L i b e r a t i o n   i s   a   t r a d e m a r k   o f   R e d   H a t ,   I n c .   r e g i s t e r e d   i n   U . S .   P a t e n t   a n d   T r a d e m a r k   O f f i c e   a n d   c e r t a i n   o t h e r   j u r i s d i c t i o n s . A s c e n d e r   C o r p o r a t i o n S t e v e   M a t t e s o n B a s e d   o n   T i n o s ,   w h i c h   w a s   d e s i g n e d   b y   S t e v e   M a t t e s o n   a s   a n   i n n o v a t i v e ,   r e f r e s h i n g   s e r i f   d e s i g n   t h a t   i s   m e t r i c a l l y   c o m p a t i b l e   w i t h   T i m e s   N e w   R o m a n!" .   T i n o s   o f f e r s   i m p r o v e d   o n - s c r e e n   r e a d a b i l i t y   c h a r a c t e r i s t i c s   a n d   t h e   p a n - E u r o p e a n   W G L   c h a r a c t e r   s e t   a n d   s o l v e s   t h e   n e e d s   o f   d e v e l o p e r s   l o o k i n g   f o r   w i d t h - c o m p a t i b l e   f o n t s   t o   a d d r e s s   d o c u m e n t   p o r t a b i l i t y   a c r o s s   p l a t f o r m s . h t t p : / / w w w . a s c e n d e r c o r p . c o m / h t t p : / / w w w . a s c e n d e r c o r p . c o m / t y p e d e s i g n e r s . h t m l L i c e n s e d   u n d e r   t h e   S I L   O p e n   F o n t   L i c e n s e ,   V e r s i o n   1 . 1 h t t p : / / s c r i p t s . s i l . o r g / O F L   ␃      ÿ! d                    ±	PAb␁e ␁␁h␁g ␓ ␟␁` N␁_ U␁A =␁@ U␁@ ␁␁B U␁C =␁B U␁.␁= € ␟␁= ␁␁&gt; U␁&lt; =␁; U ␟␁; ?␁; O␁; ␁; ␄␁; ␁␁&gt; U␁0 =␁/ U␁/ ␁␁&gt; U␁- =␁, U Ï␁, ␁␁, ␁␁&gt; U␁? =␁&gt; U␁J ␁␁H U␁G ␁␁H U␁F =␁E U␁E ␁␁H U␁I =␁H U `␁␇ ␁ ?␁␇ ␁ ¿␁␄@³␁àý␁Ïý␁ ý␁û␁Pû␁€òò␂ñð)␟¯ð¿ð␂Oï_ï¯ï␃0ï␁␏ï␁␈ í␐íPí`ípí í␆
+␏ì␁␌ ë␁␑ãà8␟ß=ÝUÞ=ÜU Ý␁&lt; Ý0ÝPÝ€Ý°Ý␅Ý␁␃UÜ␃␖␟␐À À0ÀpÀ€ÀÐÀàÀðÀ␈€¾¾␂½¼/␟␏¼␟¼␂␟³O³³␃`¨␁␏¨␟¨␂P›`›␂œ␁␏œ␟œ/œ␃š™.␟™G␞␟—–'␟à–ð–␂¸ÿÀ³–
+␑F¼␁O␁L = ␟␁N³␃ÿ␟¯A␕␁M ␁ ␏␁M ␟␁M /␁M O␁M o␁M ␁M ␆ ␏␁L ␟␁L /␁L@8␃_•␁␋’␛’+’{’‹’␅p†€††␃€……␂¯v¿v␂sP)␟on+␟nG*␟␙3␘U␇3␃U␆␃ÿ␟¸ÿÀ@Ib%(F`_@␟_P)␟[Z0␟ZG)␟␓3␒U␅␁␃U␄3␃U␏␃␟␃?␃O␃o␃␃¿␃␇␈RP␞␟QP␞␟àPðP␂@P	␌F␏O␟O/O␃¸ÿà@eK!(F`JpJ€J␃IF)␟HG8␟␏G␟G/GÏGßGïG␆_G␁ŸG␁ŸF¯F¿F␃@F)/F@F␞!F␜H␛U␖3␕U␑␁␏U␐3␏U␂␁ U␁3 U/␏ÿ␏␂␏␏_␏␏␃␏ ? ␂€␖␁␅␁¸␁±TS++K¸␇ÿRK°␈P[°␁ˆ°%S°␁ˆ°@QZ°␆ˆ° UZ[X±␁␁ŽY… B␝K°2SX°`␝YK°dSX°@␝YK°€SX°␐␝±␖ BYsst++++++␁++sstu++s +u+t++^s+++␁++ ++++++␁++ +s␁ss sssst++␁+s+++ss sss␁s s+␁ss ++s^s++␁+^s^s ^s^sss␁s+s sssss␁sss +++++++s++++s++++++++s␘^
+endstream 
+endobj 
+6 0 obj 
+&lt;&lt;
+/FontName /BAAAAA+LiberationSerif
+/StemV 80
+/FontFile2 5 0 R
+/Ascent 891
+/Flags 6
+/Descent -216
+/ItalicAngle 0
+/FontBBox [-543 -303 1278 982]
+/Type /FontDescriptor
+/CapHeight 981
+&gt;&gt;
+endobj 
+7 0 obj 
+&lt;&lt;
+/Length 438
+&gt;&gt;
+stream
+/CIDInit/ProcSet findresource begin
+12 dict begin
+begincmap
+/CIDSystemInfo&lt;&lt;
+/Registry (Adobe)
+/Ordering (UCS)
+/Supplement 0
+&gt;&gt; def
+/CMapName/Adobe-Identity-UCS def
+/CMapType 2 def
+1 begincodespacerange
+&lt;00&gt; &lt;FF&gt;
+endcodespacerange
+10 beginbfchar
+&lt;01&gt; &lt;0041&gt;
+&lt;02&gt; &lt;0020&gt;
+&lt;03&gt; &lt;0073&gt;
+&lt;04&gt; &lt;006D&gt;
+&lt;05&gt; &lt;0061&gt;
+&lt;06&gt; &lt;006C&gt;
+&lt;07&gt; &lt;0050&gt;
+&lt;08&gt; &lt;0044&gt;
+&lt;09&gt; &lt;0046&gt;
+&lt;0A&gt; &lt;002E&gt;
+endbfchar
+endcmap
+CMapName currentdict /CMap defineresource pop
+end
+end
+
+endstream 
+endobj 
+8 0 obj 
+&lt;&lt;
+/LastChar 10
+/BaseFont /BAAAAA+LiberationSerif
+/Subtype /TrueType
+/ToUnicode 7 0 R
+/FontDescriptor 6 0 R
+/Widths [777 722 250 389 777 443 277 556 722 556 250]
+/Type /Font
+/FirstChar 0
+&gt;&gt;
+endobj 
+9 0 obj 
+&lt;&lt;
+/F1 8 0 R
+&gt;&gt;
+endobj 
+3 0 obj 
+&lt;&lt;
+/Font 9 0 R
+/ProcSet [/PDF /Text]
+&gt;&gt;
+endobj 
+10 0 obj 
+&lt;&lt;
+/Lang (nl-BE)
+/OpenAction [1 0 R /XYZ null null 0]
+/Pages 2 0 R
+/ViewerPreferences 
+&lt;&lt;
+/DisplayDocTitle true
+&gt;&gt;
+/Type /Catalog
+&gt;&gt;
+endobj 
+11 0 obj 
+&lt;&lt;
+/Creator &lt;feff005700720069007400650072&gt;
+/Title &lt;feff00440065006600610075006c00740020004700560043002000740065006d0070006c006100740065002d0055004b&gt;
+/Producer &lt;feff004c0069006200720065004f0066006600690063006500200036002e0034&gt;
+/CreationDate (D:20200626184830+02'00')
+&gt;&gt;
+endobj xref
+0 12
+0000000000 65535 f 
+0000000015 00000 n 
+0000000422 00000 n 
+0000011269 00000 n 
+0000000218 00000 n 
+0000000522 00000 n 
+0000010335 00000 n 
+0000010537 00000 n 
+0000011029 00000 n 
+0000011236 00000 n 
+0000011326 00000 n 
+0000011477 00000 n 
+trailer
+
+&lt;&lt;
+/Info 11 0 R
+/Root 10 0 R
+/Size 12
+/ID [&lt;e96dcc1e51afc88fdd4e014ad07cc03b&gt; &lt;e96dcc1e51afc88fdd4e014ad07cc03b&gt;]
+&gt;&gt;
+startxref
+11763
+%%EOF
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;br&gt;
+&lt;br&gt;
+I just added it so that you could see the correct start locations of the different objects.  The list of object starting positions can be found at the end of the above document (copy/paste it in an editor should reveal this...) and is also given below for clarity.  There are apparently 11 COS (first line must be ignored) and e.g. the 3rd COS has an offset of 11269 bytes from the beginning of the file (that one is already &lt;b&gt;after&lt;/b&gt; a section that has binary content in it).
+&lt;br&gt;
+&lt;br&gt;
+&lt;c&gt;
+0000000000 65535 f 
+0000000015 00000 n 
+0000000422 00000 n 
+0000011269 00000 n 
+0000000218 00000 n 
+0000000522 00000 n 
+0000010335 00000 n 
+0000010537 00000 n 
+0000011029 00000 n 
+0000011236 00000 n 
+0000011326 00000 n 
+0000011477 00000 n 
+&lt;/c&gt;
+&lt;br&gt;
+&lt;br&gt;
+Now for the dumped version of the above, I've used your script and sent the output to a file.  This is the result (same here, used "readmore" and "code" to void the direct visibility of it):
+&lt;br&gt;
+&lt;br&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+my $data = do {
+  require MIME::Base64;
+  MIME::Base64::decode("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IDAgb2JqCjw8L1RpdGxlPEZFRkYwMDQ0MDA2NTAwNjYwMDYxMDA3NTAwNkMwMDc0MDAyMDAwNDcwMDU2MDA0MzAwMjAwMDc0MDA2NTAwNkQwMDcwMDA2QzAwNjEwMDc0MDA2NTAwMkQwMDU1MDA0Qj4KL0NyZWF0b3I8RkVGRjAwNTcwMDcyMDA2OTAwNzQwMDY1MDA3Mj4KL1Byb2R1Y2VyPEZFRkYwMDRDMDA2OTAwNjIwMDcyMDA2NTAwNEYwMDY2MDA2NjAwNjkwMDYzMDA2NTAwMjAwMDM2MDAyRTAwMzQ+Ci9DcmVhdGlvbkRhdGUoRDoyMDIwMDYyNjE4NDgzMCswMicwMCcpPj4KZW5kb2JqCgp4cmVmCjAgMTQKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDA2Nzg4IDAwMDAwIG4gCjAwMDAwMDAwMTkgMDAwMDAgbiAKMDAwMDAwMDIxOSAwMDAwMCBuIAowMDAwMDA2OTU3IDAwMDAwIG4gCjAwMDAwMDAyMzkgMDAwMDAgbiAKMDAwMDAwNTk0NiAwMDAwMCBuIAowMDAwMDA1OTY3IDAwMDAwIG4gCjAwMDAwMDYxNjIgMDAwMDAgbiAKMDAwMDAwNjUwMSAwMDAwMCBuIAowMDAwMDA2NzAxIDAwMDAwIG4gCjAwMDAwMDY3MzMgMDAwMDAgbiAKMDAwMDAwNzA1NiAwMDAwMCBuIAowMDAwMDA3MTk4IDAwMDAwIG4gCnRyYWlsZXIKPDwvU2l6ZSAxNC9Sb290IDEyIDAgUgovSW5mbyAxMyAwIFIKL0lEIFsgPEU5NkRDQzFFNTFBRkM4OEZERDRFMDE0QUQwN0NDMDNCPgo8RTk2RENDMUU1MUFGQzg4RkRENEUwMTRBRDA3Q0MwM0I+IF0KL0RvY0NoZWNrc3VtIC9BRTk0RDREMDE2Mjg2RUQ4MUY5QkFDQ0FGOEVCN0U3OAo+PgpzdGFydHhyZWYKNzQ3OAolJUVPRgo=");
+};
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;br&gt;
+&lt;br&gt;
+And finally, the code I've used to search for the different locations where &lt;c&gt;x 0 obj&lt;/c&gt; occurs.  &lt;c&gt;x&lt;/c&gt; is a number going from &lt;c&gt;1&lt;/c&gt; to - in this example - &lt;c&gt;11&lt;/c&gt;.
+&lt;br&gt;
+&lt;br&gt;
+To use it, first the above content (full or dumped code) has to be saved into a file of your choice and then call the script using &lt;c&gt;perl sscce.pl &lt;filename&gt;&lt;/c&gt;.
+&lt;br&gt;
+&lt;br&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+use 5.010;
+use strict;
+use warnings;
+
+use Path::Tiny;
+
+my $data = path($ARGV[0])-&gt;slurp_raw;
+my $outcome = get_nr_of_cos_objects();
+find_obj_blocks($outcome);
+
+
+# Returns the number of COS items found in an uncompressed PDF file
+# We're looking for a line that starts with "/Size", followed by a
+# number that indicates the number of objects found.
+# Note that we have to subtract 1 from the result found since the first
+# item in the XREF table is referring to a non-obj block (root)
+sub get_nr_of_cos_objects {
+    my $regex = qr/(\/Size \d*)/;
+    my $result = $1 if ($data =~ $regex) or -1;
+    $result = $1 if $result =~ /(\d+)/;
+    $result -= 1;
+
+    # $1 is the result of the above regex execution.
+    say "Number of COS: " . $result . ".";
+    
+    return $result;
+}
+
+
+# Searches for the occurences of patterns like "^x 0 obj" where x is
+# a number from 1 to nr of objects passed as a parameter.
+sub find_obj_blocks {
+    my @counter = (1..$_[0]);
+    my $result;
+    
+    for (@counter) {
+        if ($data =~ qr/^\Q$_\E 0 obj/mp) {
+            $result = $_;
+            printf("Begin of Block [%5d] found at position [$-[0]]\n", $_);
+            printf("End   of Block [%5d] found at position [$+[0]]\n\n", $_);
+        }
+    }
+}
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;/p&gt;
+&lt;p&gt;
+Since all is going well now, I was able to scan my whole PDF file and compared to the speed I had with Python to do the same, it's &lt;b&gt;&lt;u&gt;blazing fast&lt;/u&gt;&lt;/b&gt; in Perl!!!  What took "forever" in Python - say, half an hour or so?  dunno really, since I never got the patience to wait until it was finished - takes not even half a minute in Perl...
+&lt;br&gt;
+&lt;br&gt;
+Indeed, once again it's proven Perl is much, much better, powerful and faster for text processing than almost any other language (apart from pure C, I guess)!
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;&lt;i&gt;&lt;u&gt;Thanks anyway for your patience and willingness to help me.  Much, much appreciated!  Others too!&lt;/u&gt;&lt;/i&gt;&lt;/b&gt;
+&lt;/p&gt;
+
+
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-11117262"&gt;
+Best rgds,&lt;br/&gt;
+Geert
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11118037</root_node>
+<parent_node field_name="parent_node">11118322</parent_node>
+<thread id="11118037">
+<node id="11118039"><node id="11118163"><node id="11118174"><node id="11118213"/>
+</node>
+<node id="11118308"><node id="11118318"><node id="11118319"/>
+<node id="11118322"><node id="11118325"/>
+<node id="11118593"><node id="11118656"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11118042"><node id="11118166"><node id="11118181"/>
+<node id="11118249"/>
+</node>
+</node>
+<node id="11118048"><node id="11118165"/>
+</node>
+<node id="11118070"><node id="11118164"><node id="11118218"/>
+</node>
+</node>
+</thread></node>

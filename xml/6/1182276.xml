@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1182276" title="To splice or not to splice? What implementation is more readable, efficient, etc.?" created="2017-02-18 12:33:55" updated="2017-02-18 12:33:55" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1020196">vr</author>
+<doctext field_name="doctext">&lt;p&gt;I'm asking for advice on style, rather than how to solve a problem. How a professional would do it? What's readable to others -- and myself, in a year? So, all answers are maybe just opinion based and are welcome :-).&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;p&gt;There's usual complex data structure AoHoAH... , not very deep. We can assume root is&lt;/p&gt;
+&lt;c&gt;
+$root = { value =&gt; [ ... ]};
+&lt;/c&gt;
+&lt;p&gt;Two types of array elements are "interesting":&lt;/p&gt;
+&lt;c&gt;
+{ type =&gt; 'items', value =&gt; [ ... ]}   # and other key-value pairs
+{ type =&gt; 'foo',   value =&gt; { ... }}   # and other key-value pairs
+&lt;/c&gt;
+&lt;p&gt;"Items" hash "points to" another array and is to be processed recursively. "Foo" hash is to be checked and &lt;i&gt;may&lt;/i&gt; be replaced (split) with several hashes. Other "uninteresting" elements can be anything (but always hashrefs) and are to be left "as is".&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;p&gt;The next sub is to be called as &lt;c&gt;foobar( $root )&lt;/c&gt;, and hopefully will do everything right:&lt;/p&gt;
+&lt;c&gt;
+sub foobar {
+    my $href = shift;
+    
+    $href-&gt; { value } = [ map {
+        foobar( $_ ) 
+            if $_-&gt; { type } eq 'items';
+        $_-&gt; { type } eq 'foo' 
+            ? SPLIT_FOO( $_ )
+            : $_ 
+    } @{ $href-&gt; { value }}];
+}
+&lt;/c&gt;
+&lt;p&gt;Or even shorter, moving a check out of sight:&lt;/p&gt;
+&lt;c&gt;
+sub foobaz {
+    my $href = shift;
+    
+    $href-&gt; { value } = [ map {
+        foobar( $_ ) 
+            if $_-&gt; { type } eq 'items';
+        SPLIT_IF_FOO( $_ )
+    } @{ $href-&gt; { value }}];
+}
+&lt;/c&gt;
+&lt;p&gt;The next sub has slightly less "punctuation noise" and skips assignment, and is to be called &lt;c&gt;fooqux( $root-&gt; { value })&lt;/c&gt;, i.e. now arrayref can serve as "root" instead of structure above.&lt;/p&gt;
+&lt;c&gt;
+sub fooqux {
+    $aref = shift;
+    
+    splice @$aref, 0, @$aref, map {
+        fooqux( $_-&gt; { value }) 
+            if $_-&gt; { type } eq 'items';
+        SPLIT_IF_FOO( $_ )
+    } @$aref
+}
+&lt;/c&gt;
+&lt;p&gt;What I'm not sure about all these, is they always rebuild any array within original structure, even if there's no "foo" elements at all. With condition checking moved to SPLIT, the SPLIT_IF_FOO is always called for all elements, regardless. Next sub prevents these shortcomings, but uses Perl's "no-no" -- the C-style loop.&lt;/p&gt;
+&lt;c&gt;
+sub fooquux {
+    $aref = shift;
+    
+    for ( my $i = 0; $i &lt; @$aref; $i ++ ) {
+        my $item = $aref-&gt; [ $i ];
+
+        fooquux( $item-&gt; { value }) 
+            if $item-&gt; { type } eq 'items';
+        
+        next unless $item-&gt; { type } eq 'foo';
+        my @list = SPLIT_FOO( $item );
+        splice @$aref, $i, 1, @list;
+        $i += $#list
+    }
+}
+&lt;/c&gt;
+&lt;p&gt;And, not sure what's worse, to splice potentially many times or to always replace with new array. Or maybe there's "best" idiomatic way to solve such problem?&lt;/p&gt;
+</doctext>
+<thread id="1182276">
+<node id="1182282"><node id="1182286"/>
+</node>
+<node id="1182284"/>
+<node id="1182288"/>
+<node id="1182289"><node id="1182304"/>
+</node>
+<node id="1182290"/>
+<node id="1182295"/>
+<node id="1182320"/>
+</thread></node>

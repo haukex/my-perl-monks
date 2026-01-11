@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1205217" title="The problem of &quot;the&quot; default shell" created="2017-12-09 08:17:05" updated="2017-12-09 08:17:05" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="747201">afoken</author>
+<doctext field_name="doctext">&lt;p&gt;I've got a little bit tired of searching my [http://perlmonks.org/?node_id=3989;BIT=default%20shell;a=afoken|"avoid the default shell"] postings over and over again, so I wrote this meditation to sum it up.&lt;/p&gt;
+
+&lt;h1&gt;What is wrong with the default shell?&lt;/h1&gt;
+
+&lt;p&gt;In an ideal world, nothing. The default shell &lt;c&gt;/bin/sh&lt;/c&gt; would have a consistent, well-defined behaviour across all platforms, including quoting and escaping rules. It would be quite easy and unproblematic to use.&lt;/p&gt;
+
+&lt;p&gt;But this is the real world. Different platforms have different default shells, and they change the default shell over time. Also, shell behaviour changed over time. Remember that the [wp://Unix] family of operating systems has evolved since the 1970s, and of course, this includes the shells. Have a look at "[https://www.in-ulm.de/~mascheck/various/shells/|Various system shells]" to get a first impression. Don't even assume that operating systems keep using the same shell as default shell.&lt;/p&gt;
+
+&lt;p&gt;And yes, there is more than just the huge Unix family. MS-DOS copied concepts from CP/M and also a very little bit of Unix. OS/2 and the Windows NT family (including 2000, XP, Vista, 7, 10) copied from MS-DOS. Windows 1-3, 9x, ME still ran on top of DOS. From this tree of operating systems, we got &lt;c&gt;command.com&lt;/c&gt; and &lt;c&gt;cmd.exe&lt;/c&gt;.&lt;/p&gt;
+
+&lt;p&gt;By the way: Modern MacOS variants (since MacOS X) are part of the Unix family, and so is Android (after all, it's just a heavily customized Linux).&lt;/p&gt;
+
+&lt;p&gt;Some ugly details:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;[https://www.in-ulm.de/~mascheck/various/shebang/|The #! magic, details about the shebang/hash-bang mechanism on various Unix flavours]&lt;/li&gt;
+&lt;li&gt;[https://www.in-ulm.de/~mascheck/various/bourne_args/|What does ${1+"$@"} mean]&lt;/li&gt;
+&lt;li&gt;[https://www.in-ulm.de/~mascheck/various/echo+printf/|echo and printf] shell buit-ins&lt;/li&gt;
+&lt;li&gt;[https://www.in-ulm.de/~mascheck/various/cmd-subst/|$() command substitution vs. embedded )]&lt;/li&gt;
+&lt;li&gt;[https://www.in-ulm.de/~mascheck/various/ifs/|IFS handling in various shells concerning $* and $@]&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;And when it comes to Windows (and DOS, OS/2), legacy becomes [id://811535|really ugly].&lt;/p&gt;
+
+&lt;p&gt;So, to sum it up, there is no thing like &lt;b&gt;"the"&lt;/b&gt; default shell. There are a lot of default shells, all with more or less different behaviour. You can't even hope that the default shell resembles a well-known family of shells, like bourne. So there is much potential for nasty surprises.&lt;/p&gt;
+
+&lt;h1&gt;Why and how does that affect Perl?&lt;/h1&gt;
+
+&lt;p&gt;Perl has several ways to execute external commands, some more obvious, some less. In the very basic form, you pass a string to perl that roughly ressembles what you would type into your favorite shell:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;system('echo hello');&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;exec('echo hello');&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;open my $pipe,'echo hello |' or die "Can't open pipe: $!"; my $hello=do { local $/; &lt;$pipe&gt; }; close $pipe;&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;my $hello=qx(echo hello);&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;my $hello=`echo hello`;&lt;/c&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Looks pretty innocent, doesn't it? And it is, until you want to start doing real-world things, like passing arguments containing quotes, dollar signs, or backslashes to an external program. You need to know the quoting rule of whatever shell happens to be the default shell.&lt;/p&gt;
+
+&lt;p&gt;For those cases, perl is expected to pass the string to &lt;c&gt;/bin/sh&lt;/c&gt; for execution. Except that in this innocent case, and several other cases, perl does not invoke the default shell at all. Burried deep in the perl sources, there is some heuristics happening. If perl thinks that it can start the executable on its own, because the command does not contain what is [doc://exec|documented] as "shell metacharacters", perl splits the command on its own and can avoid invoking the default shell.&lt;/p&gt;
+
+&lt;p&gt;Why? Because perl can easily figure out what the shell would do, and do it by itself instead. This avoids a lot of overhead and so is faster and does not use as much memory as invoking the shell would.&lt;/p&gt;
+
+&lt;p&gt;Unfortunately, the documentation is a little bit short on details. See "Perl guessing" in [id://1186708]: From the code of &lt;c&gt;Perl_do_exec3()&lt;/c&gt; in &lt;c&gt;doio.c&lt;/c&gt; (perl 5.24.1), it seems that the word "exec" inside the command string triggers a different handling, and some of the logic also depends on how perl was compiled (preprocessor symbol &lt;c&gt;CSH&lt;/c&gt;).&lt;/p&gt;
+
+&lt;p&gt;If you don't need support from the default shell, you can help perl by passing &lt;c&gt;system()&lt;/c&gt;, &lt;c&gt;exec()&lt;/c&gt;, and &lt;c&gt;open()&lt;/c&gt; a list of arguments instead of a string. This "multi-argument" or "list form" of the commands always avoids the shell, and it completely avoids any need to quote.&lt;/p&gt;
+
+&lt;p&gt;(Well, at least on Unix. Windows is a completely different beast. See [id://847959] and [id://1199235]. It should be safe to pretend that you are on Unix even if you are on Windows. Perl should do the right thing with the "list form".)&lt;/p&gt;
+
+&lt;p&gt;So our examples now look like this:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;system('echo','hello','here','is','a','dollar:','$');&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;exec('echo','hello','here','is','a','dollar:','$');&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;open my $pipe,'-|','echo','hello','here','is','a','dollar:','$' or die "Can't open pipe: $!"; my $hello=do { local $/; &lt;$pipe&gt; }; close $pipe;&lt;/c&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Did you notice that &lt;c&gt;qx()&lt;/c&gt; and its shorter alias &lt;c&gt;``&lt;/c&gt; don't support a list form? That sucks, but we can work around that by using open instead. Writing a small function that wraps open is quite easy. See "Safe pipe opens" in [doc://perlipc].&lt;/p&gt;
+
+
+&lt;h1&gt;Edge cases&lt;/h1&gt;
+
+&lt;p&gt;OK, let's assume I've convinced you to use the list forms of system, exec, and open. You want to start a program named "&lt;c&gt;foo bar&lt;/c&gt;", and it needs an argument "baz". Yes, the program has a space in its name. This is unusual but legal in the Unix family, and quite common on Windows.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;system('foo bar','baz');&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;exec('foo bar','baz');&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;open my $pipe,'-|','foo bar','baz' or die ...&lt;/c&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;or even:&lt;/p&gt;
+
+&lt;p&gt;&lt;c&gt;my @command=('foo bar','baz');&lt;/c&gt; and one of:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;system @command;&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;exec @command;&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;open my $pipe,'-|',@command or die ...&lt;/c&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;All is well. Perl does what you expect, no default shell is ever involved.&lt;/p&gt;
+
+&lt;p&gt;Now, "&lt;c&gt;foo bar&lt;/c&gt;" get's an update, and you no longer have to pass the "baz" argument. In fact, you must not pass the "baz" argument at all. Should be easy, right?&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;system 'foo bar';&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;exec 'foo bar';&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;open my $pipe,'-|','foo bar' or die ...&lt;/c&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;or:&lt;/P&gt;
+
+&lt;p&gt;&lt;c&gt;my @command=('foo bar');&lt;/c&gt; and one of:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;system @command;&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;exec @command;&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;open my $pipe,'-|',@command or die ...&lt;/c&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Wrong! [doc://system], [doc://exec], and even [doc://open] in the three-argument form now see a single scalar value as the command, and start once again guessing what you want. And they will wrongly guess that you want to start "foo" with an argument of "bar".&lt;/p&gt;
+
+&lt;p&gt;The solution for system and exec is hidden in [doc://exec|the documentation of exec]: Pass the executable name using indirect object syntax to system or exec, and perl will treat the single-argument list as list, and not a single command string.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;system { 'foo bar' } 'foo bar';&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;exec { 'foo bar' } 'foo bar';&lt;/c&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;or:&lt;/p&gt;
+
+&lt;p&gt;&lt;c&gt;my @command=('foo bar');&lt;/c&gt; and one of:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;system { $command[0] } @command;&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;exec { $command[0] } @command;&lt;/c&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;If the command list is not guaranteed to contain at least two elements (e.g. because arguments come from the user or the network), you should always use the indirect object notation to avoid this trap.&lt;/p&gt;
+
+&lt;p&gt;Did you notice that we lost another way of invoking external commands here? There is (currently) no way in perl to use pipe open with a single-element command list without triggering the default shell heuristics. That's why I wrote [id://1186687].  Yes, you can work around by using the code shown in "Safe pipe opens" in [doc://perlipc] and using exec with indirect object notation in the child process. But that takes 10 to 20 lines of code just because perl tries to be smart instead of being secure.&lt;/p&gt;
+
+&lt;h1&gt;Avoiding external programs&lt;/h1&gt;
+
+&lt;p&gt;Why do you want to run external programs? Perl can easily replace most of the basic Unix utilities, by using internal functions or existing modules. And as an additional extra, you don't depend on the external programs. This makes your code more portable. For example, Windows does not have [man://ls], [man://grep], [man://awk], [man://sed], [man://test], [man://cat], [man://head], or [man://tail] out of the box, and find is not [man://find], but a poor excuse for [man://grep]. If you use perl functions and modules, that does not matter at all. Likewise, not all members of the Unix family have the GNU variant of those utilities. Again, if you use perl functions and modules, it does not matter.&lt;/p&gt;
+
+&lt;table border=1&gt;
+&lt;tr&gt;&lt;th&gt;Tool&lt;/th&gt;&lt;th&gt;Perl replacement&lt;/th&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;echo&lt;/td&gt;&lt;td&gt;[doc://print], [doc://say]&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;rm&lt;/td&gt;&lt;td&gt;[doc://unlink]&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;rm -r&lt;/td&gt;&lt;td&gt;[mod://File::Path]&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;mkdir&lt;/td&gt;&lt;td&gt;[doc://mkdir]&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;mkdir -p&lt;/td&gt;&lt;td&gt;[mod://File::Path]&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;rmdir&lt;/td&gt;&lt;td&gt;[doc://rmdir]&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;grep&lt;/td&gt;&lt;td&gt;[doc://grep] (note: you need to open and read files manually)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;awk&lt;/td&gt;&lt;td&gt;[doc://a2p]&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;sed&lt;/td&gt;&lt;td&gt;[doc://s2p]&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;ls, find&lt;/td&gt;&lt;td&gt;[mod://File::Find], [doc://glob], [doc://stat], [doc://lstat], [doc://opendir], [doc://readdir], [doc://closedir]&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;test, &amp;#91;, &amp;#91;&amp;#91;&lt;/td&gt;&lt;td&gt;[doc://stat], [doc://lstat], [doc://-X], [mod://File::stat]&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;cat, head, tail&lt;/td&gt;&lt;td&gt;[doc://open], [doc://readline], [doc://print], [doc://say], [doc://close], [doc://seek], [doc://tell]&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;ln&lt;/td&gt;&lt;td&gt;[doc://link], [doc://symlink]&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;chmod&lt;/td&gt;&lt;td&gt;[doc://chmod]&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;chown&lt;/td&gt;&lt;td&gt;[doc://chown]&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;touch&lt;/td&gt;&lt;td&gt;[doc://utime]&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;curl, wget, ftp&lt;/td&gt;&lt;td&gt;[mod://LWP::UserAgent] and friends&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;ftp&lt;/td&gt;&lt;td&gt;[mod://Net::FTP]&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;ssh&lt;/td&gt;&lt;td&gt;[mod://Net::SSH2], [mod://Net::OpenSSH]&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Note: The table above is far from being complete.&lt;/p&gt;
+&lt;p&gt;Alexander&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-747201"&gt;
+--&lt;br&gt;
+Today I will gladly share my knowledge and experience, for there are no sweeter words than "I told you so". ;-)
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1205217">
+<node id="1205218"/>
+<node id="1205223"/>
+<node id="1205245"/>
+<node id="1205283"/>
+<node id="1205543"><node id="1205728"><node id="11152818"/>
+</node>
+</node>
+<node id="11152817"/>
+</thread></node>

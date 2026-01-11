@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1214952" title="Re: Embedding command-line arguments within source code" created="2018-05-20 14:04:37" updated="2018-05-20 14:04:37" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Therefore one idea that strikes me is to manually set the contents of &lt;c&gt;$ARGV[n]&lt;/c&gt; at the top of the source before any other code is run. Would this approach work?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sure, that's fine, just make sure to only set it when you're running under the debugger, so as to not override any command line options later set by the user. There isn't really anything that magical about [doc://@ARGV], most functions and modules only read it at runtime, and you can write to it whenever you like. If in theory you had a module that accessed &lt;c&gt;@ARGV&lt;/c&gt; when you [doc://use] it, you'd need to set it in a &lt;c&gt;BEGIN&lt;/c&gt; block &lt;i&gt;before&lt;/i&gt; you &lt;c&gt;use&lt;/c&gt; that module, but I haven't come across a module that does this yet.&lt;/p&gt;
+&lt;c&gt;
+use Data::Dump;
+use Getopt::Long;
+
+@ARGV = qw/ --foo --bar=123 --quz=Hello /;
+GetOptions(\my %OPTS1, 'foo|f', 'bar|b=i', 'quz|q=s') or die;
+dd \%OPTS1;
+
+@ARGV = qw/ -q World /;
+GetOptions(\my %OPTS2, 'foo|f', 'bar|b=i', 'quz|q=s') or die;
+dd \%OPTS2;
+
+__END__
+
+{ bar =&gt; 123, foo =&gt; 1, quz =&gt; "Hello" }
+{ quz =&gt; "World" }
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1214951</root_node>
+<parent_node field_name="parent_node">1214951</parent_node>
+<thread id="1214951">
+<node id="1214952"/>
+<node id="1214954"><node id="1214955"/>
+</node>
+<node id="1214957"><node id="1214958"/>
+</node>
+<node id="1214970"/>
+</thread></node>

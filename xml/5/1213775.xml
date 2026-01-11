@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1213775" title="Re^3: Setting a Variable from filename" created="2018-04-29 18:00:58" updated="2018-04-29 18:00:58" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;As always, There Is More Than One Way To Do It. If you're &lt;i&gt;certain&lt;/i&gt; that the &lt;c&gt;grep&lt;/c&gt; condition will always match exactly one element of &lt;c&gt;@files&lt;/c&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;$ScontrolFile = (grep {/_CF_/} @files)[0];&lt;/c&gt; - create a "temporary" list and get its first element&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;($ScontrolFile) = grep {/_CF_/} @files;&lt;/c&gt; - use assignment in list context&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;use List::Util qw/first/; $ScontrolFile = first {/_CF_/} @files;&lt;/c&gt; - use &lt;c&gt;first&lt;/c&gt; from the core module [doc://List::Util], which has the advantage that it stops looking once it finds a match&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;i&gt;However,&lt;/i&gt; none of the above solutions provide protection against the case that &lt;c&gt;@files&lt;/c&gt; does not contain exactly one string matching the pattern, which is why I [id://1213763|suggested] the extra array. &lt;small&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/small&gt; [AnomalousMonk] [id://1213778|showed] a way to add the check to the second of my examples above. To add a check to the other two, &lt;small&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/small&gt; you could theoretically search the array a second time, using [doc://grep] in scalar context (&lt;c&gt;if ( grep({/_CF_/} @files)!=1 ) { die ... }&lt;/c&gt;), but that's fairly wasteful and you'll have duplicated code (the &lt;c&gt;grep&lt;/c&gt; block). Of course, you can also write an explicit loop:&lt;/p&gt;
+&lt;c&gt;
+my $ScontrolFile;
+for my $file (@files) {
+    if ( $file =~ /_CF_/ ) {
+        die "more than one _CF_ file found in: @files"
+            if defined $ScontrolFile;
+        $ScontrolFile = $file;
+    }
+}
+die "_CF_ file not found in: @files" unless defined $ScontrolFile;
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Added check for &amp;gt;1 file in the above code, and see update in text.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1213761</root_node>
+<parent_node field_name="parent_node">1213766</parent_node>
+<thread id="1213761">
+<node id="1213762"/>
+<node id="1213763"><node id="1213766"><node id="1213771"/>
+<node id="1213775"/>
+<node id="1213778"/>
+</node>
+</node>
+</thread></node>

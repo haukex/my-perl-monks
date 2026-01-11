@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129285" title="Re^4: How to parse not closed HTML tags that don't have any attributes? (updated)" created="2021-03-07 11:40:09" updated="2021-03-07 11:40:09" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1182568">Rantanplan</author>
+<doctext field_name="doctext">Many thanks haukex!
+
+&lt;p&gt;That it's not reproducable is due to my own terrible incompetence. :-) I had tried to modify your example for the phone/fax section in such a way, that it would put these pairs into %hash:&lt;/p&gt;
+
+&lt;code&gt;
+{"Street name" =&gt; "Sample Street",
+"House number" =&gt; "123",
+"ZIP Code" =&gt; "45678",
+"City name" =&gt; "Randomcity"}
+&lt;/code&gt;
+
+&lt;p&gt;With all the things I had tried, I only managed to get the string "Sample Street 12345678 Randomcity" into one of the fields, and the other one then was left empty, like:&lt;/p&gt;
+
+&lt;code&gt;
+{"Sample Street 12345678 Randomcity" =&gt; ""}
+&lt;/code&gt;
+
+&lt;p&gt;I guess my main mistake was to assume, that it's necessary to start out from the $dom all over again, for each and every HTML element. The crazy idea I had was to somehow grab "Sample Street 123" into one variable (starting from the "address" element), and "45678 Randomcity" into another, by somehow targeting, and starting from, the first &lt;code&gt;&lt;br/&gt;&lt;/code&gt; element after the "address" element.&lt;/p&gt;
+
+&lt;p&gt;I'm still not sure why my &lt;code&gt;&lt;br/&gt;&lt;/code&gt; always got stripped away, maybe because of my misunderstanding of how the "map" works:&lt;/p&gt;
+
+&lt;code&gt;
+use warnings;
+use strict;
+use Mojo::DOM;
+use Mojo::Util qw/trim/;
+use Data::Dump;
+
+my $dom = Mojo::DOM-&gt;new(&lt;&lt;'HTML');
+  &lt;div class="address"&gt;
+          &lt;div class="icon"&gt;&lt;/div&gt;
+          &lt;address&gt;
+            Sample Street 123&lt;br/&gt;45678 Randomcity          &lt;/address&gt;
+        &lt;/div&gt;
+HTML
+
+my %hash_address = @{ $dom-&gt;find('address')-&gt;map(sub {
+return ( trim($_-&gt;text), "This_is_the_address_content" ) }) };
+dd \%hash_address;
+
+__END__
+
+{
+  "Sample Street 12345678 Randomcity" =&gt; "This_is_the_address_content",
+}
+&lt;/code&gt;
+
+&lt;p&gt;Your solution is very elegant indeed, many thanks! :-)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11129207</root_node>
+<parent_node field_name="parent_node">11129273</parent_node>
+<thread id="11129207">
+<node id="11129209"/>
+<node id="11129210"><node id="11129269"><node id="11129273"><node id="11129285"><node id="11129287"><node id="11129335"><node id="11129345"><node id="11129373"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11129328"><node id="11129340"/>
+</node>
+</node>
+<node id="11129211"/>
+<node id="11129215"/>
+<node id="11129218"><node id="11129241"/>
+</node>
+<node id="11129220"><node id="11129221"/>
+<node id="11129242"/>
+</node>
+<node id="11129230"/>
+</thread></node>

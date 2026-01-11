@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117793" title="Re: Logic Help - Output to csv" created="2020-06-07 18:11:40" updated="2020-06-07 18:11:40" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Assuming none of the &lt;c&gt;downloads&lt;/c&gt;, &lt;c&gt;group&lt;/c&gt;, or &lt;c&gt;group_items&lt;/c&gt; elements can be repeated in a single &lt;c&gt;product&lt;/c&gt;, here's a slightly simpler way with [mod://XML::Rules] (but [mod://XML::LibXML] would probably still be my personally preferred solution):&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::Rules;
+use Text::CSV;
+
+my $parser = XML::Rules-&gt;new(
+	stripspaces =&gt; 3|4,
+	rules =&gt; [ 'products|downloads|group|group_items' =&gt; 'pass',
+		product =&gt; 'by sku', 'sku|name|url' =&gt; 'content',
+		item =&gt; sub { $_[1]-&gt;{name} =&gt; $_[1]-&gt;{url} },
+		_default =&gt; sub { die "Unknown tag $_[0]" } ],
+);
+my $itms = $parser-&gt;parse_file('example.xml');
+
+my @columns = sort keys %{{map {$_=&gt;1} map {keys %$_} values %$itms}};
+
+my $csv = Text::CSV-&gt;new({binary=&gt;1, auto_diag=&gt;2, eol=&gt;$/,
+	always_quote=&gt;1 });
+$csv-&gt;print(select, ["sku", @columns]);
+for my $sku (sort keys %$itms) {
+	$csv-&gt;print(select, [$sku, map { $itms-&gt;{$sku}{$_} } @columns ]);
+}
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11117783</root_node>
+<parent_node field_name="parent_node">11117783</parent_node>
+<thread id="11117783">
+<node id="11117785"><node id="11117788"/>
+</node>
+<node id="11117789"/>
+<node id="11117793"><node id="11117794"><node id="11117806"/>
+<node id="11117831"/>
+</node>
+</node>
+<node id="11117800"><node id="11117814"/>
+</node>
+</thread></node>

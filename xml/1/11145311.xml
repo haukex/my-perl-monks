@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11145311" title="Filehandle in subroutine in use VRML.pm" created="2022-07-06 16:15:36" updated="2022-07-06 16:15:36" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1166936">smittypaddler</author>
+<doctext field_name="doctext">&lt;p&gt;I have this code in my DrillPressTable.pl file:&lt;/p&gt;
+&lt;code&gt;
+ #!/usr/bin/perl -w
+ use strict 'vars';
+ use VRML;
+ ...
+ my $Dir="vrmlstuff";
+ my $Subdir="DrillPressTable";
+ my $LumberFile="$Dir/$Subdir/lumber.wrl";
+ &amp;mystart($LumberFile,LF);
+ ...
+ sub mystart {
+   my($file,$fh)=@_;
+   open($fh,"&gt; $file")
+    || die("ERROR: Unable to open $file for output");
+   my @lines=split(/\n/,&lt;&lt;END);
+#VRML V2.0 utf8
+NavigationInfo { headlight TRUE }
+DirectionalLight { # First child
+ direction 0 0 -1 # Light illuminating the scene
+}
+END
+   my $i=0;
+   if($i==0) {
+     foreach my $line (@lines) {
+       print $fh "$line\n";
+     }
+   } elsif($i==1) {
+      &amp;myprint(\@lines,$fh);
+   } elsif($i==2) {
+      &amp;printout(\@lines,$fh);
+   }
+ } # end mystart
+ ...
+ sub myprint(
+   my($lines,$fh)=@_;
+   foreach my $line (@{$lines}) {
+     print $fh "$line\n";
+   }
+ } # End myprint;
+
+file VRML.pm contains this code:
+ package VRML;
+ BEGIN {
+   @EXPORT = qw(... &amp;printout ...);
+ }
+ use strict 'vars';
+ ...
+ sub printout {
+   my($lines,$fh)=@_;
+   $fh=STDOUT unless($fh);
+   foreach my $line (@{$lines}) {
+     print $fh "$line\n";
+   }
+} # End printout;
+&lt;/code&gt;
+&lt;p&gt;If I set $i=0 or 1 in subroutine mystart it works perfectly, and the
+proper lines are written to lumber.wrl. But if I set $i=2 I get this
+error message:
+
+ print() on unopened filehandle LF at .../VRML.pm line 2886
+
+Line 2886 in VRML.pm is in printout; the line is:&lt;/p&gt;
+&lt;code&gt;
+print $fh "$line\n";
+&lt;/code&gt;
+&lt;p&gt;How do I declare $fh in subroutine printout so it recognizes the intended
+filehandle?&lt;/p&gt;
+
+</doctext>
+<thread id="11145311">
+<node id="11145313"><node id="11145316"><node id="11145324"/>
+</node>
+</node>
+<node id="11145322"><node id="11145325"><node id="11145345"/>
+<node id="11145428"><node id="11145440"/>
+</node>
+</node>
+</node>
+<node id="11145348"><node id="11145564"><node id="11145573"/>
+<node id="11145605"/>
+</node>
+</node>
+<node id="11145353"><node id="11145380"><node id="11145386"><node id="11145398"><node id="11145399"/>
+</node>
+</node>
+<node id="11145439"/>
+</node>
+</node>
+</thread></node>

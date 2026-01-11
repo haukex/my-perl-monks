@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1156540" title="Mind the meta!" created="2016-03-01 11:08:24" updated="2016-03-01 11:08:24" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;I was a little surprised that in a recent thread no one seemed to flinch at code that was essentially the equivalent of &lt;c&gt;$logged_in = $expect_pass=~/$FORM{pass}/i;&lt;/c&gt;.&lt;/p&gt;
+
+&lt;p&gt;If you happen to be wondering "Why is that bad?" - Because &lt;c&gt;$FORM{pass}&lt;/c&gt; most likely comes from an HTML form (or at the very least could contain user input), and its contents will be interpolated into and interpreted as a regular expression, leaving the user free to input "&lt;c&gt;.*&lt;/c&gt;", which of course matches anything, and so the user is always logged in!&lt;/p&gt;
+
+&lt;p&gt;One solution is to use &lt;c&gt;/\Q$FORM{pass}\E/&lt;/c&gt;, which causes characters that would normally be special in a regular expression to be escaped - see [doc://quotemeta]. In addition, the regex should probably be anchored, to prevent partial matches: &lt;c&gt;/^\Q$FORM{pass}\E$/&lt;/c&gt;. Of course, in this example the much easier solution is to just use &lt;c&gt;$expect_pass eq $FORM{pass}&lt;/c&gt; instead of a regex!&lt;/p&gt;
+
+&lt;p&gt;I feel like &lt;c&gt;\Q...\E&lt;/c&gt; is forgotten too often when interpolating variables into regexes, and it seems to be often overlooked here on PerlMonks when people post code like the above. In fact, I see it forgotten often enough that I think instead &lt;b&gt;&lt;c&gt;\Q...\E&lt;/c&gt; should be everyone's default thought when interpolating variables into regular expressions&lt;/b&gt;, only to be left off when one has a good reason to (like dynamically building regexes - but of course doing that with unchecked user input is dangerous!).&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;So please, mind the meta(characters) and remember &lt;c&gt;\Q...\E&lt;/c&gt;!&lt;/b&gt;&lt;/p&gt;
+</doctext>
+<reputation field_name="reputation">35</reputation>
+<thread id="1156540">
+<node id="1156630"/>
+<node id="1156733"/>
+<node id="1156776"><node id="1156799"><node id="1156800"><node id="1156801"><node id="1156804"><node id="1156807"/>
+</node>
+<node id="1156811"/>
+<node id="1156816"><node id="1156821"><node id="1156825"><node id="1156829"><node id="1156839"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

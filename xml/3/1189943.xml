@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1189943" title="Re^3: problem retrieving return code of an execution with back ticks" created="2017-05-09 15:22:05" updated="2017-05-09 15:22:05" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;now I have the unsettling feeling that my code hides a spurious bug&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, that's a good argument for more defensive coding - you said that your scripts are mainly task launchers, so I'll repeat my suggestion to check all possible error conditions, or use a module to do it for you (e.g. [mod://IPC::System::Simple]). One thing I'd also check is that the processes' &lt;c&gt;STDOUT&lt;/c&gt; and &lt;c&gt;STDERR&lt;/c&gt; is properly monitored - there are some cases where tools might exit with a code of zero, but have printed some serious warnings to &lt;c&gt;STDERR&lt;/c&gt;. Of course it's also a good argument for writing tests for your code :-)&lt;/p&gt;
+&lt;p&gt;For example, until I wrote my own module to simplify this, I'd sometimes write code something like this:&lt;/p&gt;
+&lt;c&gt;
+use IPC::Run3 'run3';
+sub myrun {
+	my ($cmd) = @_;
+	run3 $cmd, undef, \my $out, \my $err
+		or die "run3 failed";
+	my $rv=$?;
+	chomp($err);
+	die "command '$$cmd[0]' wrote to STDERR: '$err'" if $err;
+	die "command '$$cmd[0]' exit value indicates error: \$?=$rv"
+		unless $rv==0;
+	return $out;
+}
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;Surely perl has a built-in library to do the same (launching a script with a timeout/kill and return code verification).&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;For timeout support, you could take a look at [mod://IPC::Run].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;launching a verifTomcatAdminPortal.sh ... a simple ps | grep&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note that unless you do &lt;c&gt;set -e&lt;/c&gt; or equivalent in the shell script, you might be missing errors there, which goes against my aforementioned advice to code defensively. It's something you can do in Perl - for example, you could use [mod://IPC::System::Simple]'s &lt;c&gt;capturex&lt;/c&gt; to run &lt;c&gt;ps&lt;/c&gt; and use Perl's [doc://grep]. And of course there are modules too, e.g. [mod://Proc::ProcessTable].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1189731</root_node>
+<parent_node field_name="parent_node">1189792</parent_node>
+<thread id="1189731">
+<node id="1189736"><node id="1189792"><node id="1189943"/>
+</node>
+</node>
+</thread></node>

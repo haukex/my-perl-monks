@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1194360" title="Sort the hash array" created="2017-07-06 06:02:28" updated="2017-07-06 06:02:28" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1193343">snehit.ar</author>
+<doctext field_name="doctext">I want to sort the array data based on the value of $timereceived .
+Also the output of array list is random ,list order of variable in array is not constant .
+
+
+&lt;code&gt;
+
+##!/usr/bin/perl                        
+use warnings;
+use strict;
+                               
+use XML::XPath;
+use Data::Dumper;
+use LWP::UserAgent;
+use JSON;
+use DateTime;
+use Math::Round;
+
+use DateTime::Duration;
+use DateTime::Format::Duration;
+use DateTime::Format::Strptime;
+use Cpanel::JSON::XS qw(encode_json);
+my $xml = 'events.xml';
+my $xp = XML::XPath-&gt;new(filename =&gt; $xml);
+my $nodeset = $xp-&gt;findnodes('//event');
+my $records = [];
+my $json;	
+
+my $count=0; # Counter to set the Line variable
+
+foreach my $node ($nodeset-&gt;get_nodelist) {
+		
+		my $severity    = $xp-&gt;find('./severity', $node);
+		$severity =~ s/\n//; # Remove prefix newline \n character  
+		my $ticketnum  = $xp-&gt;find("./custom_attribute_list/custom_attribute[normalize-space(name)='SLB_RemedyIncident']/value", $node);
+		$ticketnum=~ s/\n//;
+		my $timereceived = $xp-&gt;find('./time_first_received', $node);
+		$timereceived=~ s/\n//;
+		my $service_name = $xp-&gt;find("./custom_attribute_list/custom_attribute[normalize-space(name)='Service Name']/value", $node);
+		$service_name=~ s/\n//;
+		my $ssrid = $xp-&gt;find("./custom_attribute_list/custom_attribute[normalize-space(name)='SLB_SSRID']/value", $node);
+		$ssrid=~ s/\n//;
+	        my $remedyqueue = $xp-&gt;find("./custom_attribute_list/custom_attribute[normalize-space(name)='SLB_RemedyQueue']/value", $node);
+		$remedyqueue = [ map $_-&gt;string_value =~ s/\n//r, $remedyqueue-&gt;get_nodelist ];
+				
+		#Format Time received
+		$timereceived =~ s/T/ /; #removing the T
+		$timereceived =~ s/\.\d+Z//; #removing the Z	
+		
+		#Calculate the time difference
+		my $dtnow = DateTime-&gt;now;
+		my $strp = DateTime::Format::Strptime-&gt;new(on_error=&gt;'croak',pattern =&gt; '%Y-%m-%d %H:%M:%S', time_zone=&gt;'UTC');
+		my $dtevent = $strp-&gt;parse_datetime($timereceived);
+		my $diff_sec = $dtnow-&gt;subtract_datetime_absolute($dtevent)-&gt;in_units('seconds');
+		my $diff_hours = $diff_sec/(60*60);
+		#print "$diff_sec s / $diff_hours h\n";
+		
+		
+		
+		if ($diff_hours&gt;2000) { # Get the event details which are more then 2 hours
+			$count ++;	
+			 push @$records, {
+				 line =&gt; $count,
+				 severity    =&gt; $severity,
+				 ticketnum  =&gt; $ticketnum,
+				 appname =&gt; $service_name . "(" . $ssrid . ")",
+				 remedy_queue =&gt; $remedyqueue,
+				 event_age =&gt; round($diff_hours) . " h",
+			 }
+		}
+		
+}
+
+print Dumper(@$records);
+
+# Convert into JSON format
+	 $json = encode_json \@$records;
+	# print $json;
+
+	# my $uri = 'http://test/dims/line/tags/availability';
+	# my $jsondata = $json;
+	# my $req = HTTP::Request-&gt;new( 'POST', $uri );
+	# $req-&gt;header( 'Content-Type' =&gt; 'application/json');
+	# $req-&gt;content( $json );
+
+	# my $lwp = LWP::UserAgent-&gt;new;
+	# $lwp-&gt;request( $req );
+
+print "Data send to Dashboard";
+
+&lt;/code&gt;</doctext>
+<thread id="1194360">
+<node id="1194365"><node id="1194370"><node id="1194374"><node id="1194474"/>
+</node>
+</node>
+</node>
+<node id="1194366"><node id="1194369"><node id="1194371"><node id="1194372"><node id="1194375"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1168860" title="Re: Perl: info from database into a form(HTML)" created="2016-07-30 10:59:45" updated="2016-07-30 10:59:45" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [alen129],&lt;/p&gt;
+&lt;p&gt;By "different DB", do you mean a second database on the same server, or does it need to be submitted to a different server?&lt;/p&gt;
+&lt;p&gt;There are several ways to approach this problem. One "classic" way would be to have your [mod://CGI] script read from the database via [mod://DBI] (you've already got code for that), generate HTML (looks like you've already got some of that, I'll make a suggestion below), and when the HTML form is submitted back to the same or a different CGI script, that script can write it to the second database.&lt;/p&gt;
+&lt;p&gt;Another possible approach, which I'm suggesting because you're already using jQuery, is to have most of the code written in JavaScript as part of the HTML page, and then have the Perl CGI script not generate any HTML, but only access the databases (again via [mod://DBI]), and it could speak to the script in the browser with [mod://JSON::MaybeXS|JSON] (see e.g. [http://api.jquery.com/jQuery.ajax/|jQuery.ajax()]).&lt;/p&gt;
+&lt;p&gt;The latter approach is the way many modern websites work, but it requires a good understanding of JavaScript. The first approach is the "classic" way of doing web forms, which doesn't necessarily require any JavaScript and therefore works in just about any browser.&lt;/p&gt;
+&lt;p&gt;To get back to your question, it sounds to me like what you're missing [id://1168834|here] is how to get the data from the database into the HTML? Here's one way:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use CGI qw/ escapeHTML /;
+
+# this is the data you'd normally get from the DB
+my @cols = ( "foo", "bar", "q\"&gt;&lt;uz" );
+
+print qq{&lt;table&gt;\n&lt;tr&gt;\n};
+for my $col (@cols) {
+	print qq{\t&lt;td&gt;&lt;input type="text" value="},
+		escapeHTML($col), qq{"&gt;&lt;/td&gt;\n};
+};
+print qq{&lt;/tr&gt;\n&lt;/table&gt;\n};
+
+__END__
+Output:
+
+&lt;table&gt;
+&lt;tr&gt;
+	&lt;td&gt;&lt;input type="text" value="foo"&gt;&lt;/td&gt;
+	&lt;td&gt;&lt;input type="text" value="bar"&gt;&lt;/td&gt;
+	&lt;td&gt;&lt;input type="text" value="q&amp;quot;&amp;gt;&amp;lt;uz"&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/c&gt;
+&lt;p&gt;However, there are also much better ways to generate HTML than a bunch of [doc://print]s, just one example of many is [mod://Template::Toolkit], or even modern web frameworks like [mod://Dancer], [mod://Catalyst], or [mod://Mojolicious]. For simple stuff I like the latter, there are some tutorials [http://mojolicious.org/perldoc/Mojolicious/Guides/Tutorial|here].&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1168832</root_node>
+<parent_node field_name="parent_node">1168832</parent_node>
+<thread id="1168832">
+<node id="1168833"><node id="1168834"><node id="1168839"><node id="1168848"/>
+</node>
+</node>
+</node>
+<node id="1168860"/>
+</thread></node>

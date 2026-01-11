@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11147321" title="Re: Why can't some of my modules do log output to a file?" created="2022-10-10 05:50:15" updated="2022-10-10 05:50:15" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;it should work, right?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In addition to the comments by the others, I would suggest using [doc://flock], turning on [doc://Data::Dumper]'s &lt;c&gt;Useqq&lt;/c&gt; option, and adding more error checking.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Fcntl qw/:flock/;
+use Data::Dumper;
+
+sub write_log {
+	my ($file, $obj) = @_;
+	open my $fh, '&gt;&gt;', $file or die "open $file: $!";
+	flock($fh, LOCK_EX) or die "flock $file: $!";
+	print {$fh} Data::Dumper-&gt;new([$obj])-&gt;Useqq(1)-&gt;Dump
+		or die "print $file: $!";
+	close $fh or die "close $file: $!";
+}
+
+write_log("/tmp/log.txt", {hello=&gt;"world"});
+&lt;/c&gt;
+&lt;p&gt;If that didn't work or die, personally I would assume the code really wasn't being run, or perhaps that some other process was messing with the logfile. (Note it's been a while since I've used [doc://flock] on Windows, but I assume you're on *NIX based on your filename.)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;There's definitely nothing wrong with the logfile&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well now that you've said that, I have to ask ;-) Are you sure? SELinux? Are all the processes spawned by the script running as the same user?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11147310</root_node>
+<parent_node field_name="parent_node">11147310</parent_node>
+<thread id="11147310">
+<node id="11147313"/>
+<node id="11147316"><node id="11147361"><node id="11147364"/>
+<node id="11147367"/>
+</node>
+</node>
+<node id="11147321"><node id="11147324"><node id="11147325"><node id="11147331"><node id="11147338"/>
+</node>
+</node>
+</node>
+<node id="11147345"/>
+<node id="11147360"><node id="11147365"/>
+<node id="11147366"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227555" title="Porting tqdm to Perl" created="2018-12-21 05:37:31" updated="2018-12-21 05:37:31" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1098601">perlancar</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;a href="https://pypi.org/project/tqdm/"&gt;tqdm&lt;/a&gt; is a Python progress bar/meter library which has a simple interface: you just wrap an iterable:
+
+&lt;pre&gt;for i in range(100): ...&lt;/pre&gt;
+
+&lt;p&gt;with:
+
+&lt;pre&gt;for i in tqdm(range(100)): ...&lt;/pre&gt;
+
+&lt;p&gt;and voila, you have a progress bar. I wonder how we can do something similar in Perl. If we create a tqdm() function which returns a tied array, e.g.:
+
+&lt;pre&gt;for (tqdm(1..100)) { ... }&lt;/pre&gt;
+
+&lt;p&gt;then Perl will FETCH all the items first before starting the loop, defeating the progress measuring. 
+
+&lt;p&gt;We can make tqdm() function return a tied scalar for every element, but that will be more inefficient and introduce additional side effects.
+
+&lt;p&gt;We can have tqdm() return a tied scalar, something like:
+
+&lt;pre&gt;for (my $i = tqdm(100); $i &lt; 100; $i++) { ... }&lt;/pre&gt;
+
+&lt;p&gt;but: 1) $i is still a tied scalar; 2) C-style loop is less nice and less often used; 3) the above syntax is repetitive.
+
+&lt;p&gt;Any ideas?
+
+&lt;p&gt;&lt;b&gt;UPDATE 2019-04-16:&lt;/b&gt; We did it! In Perl we can indeed support the same syntax by using a combination of tied array and lvalue wrapper. Read all about it in [id://1232642].</doctext>
+<thread id="1227555">
+<node id="1227556"><node id="1227559"/>
+</node>
+<node id="1227558"><node id="1227563"><node id="1227564"><node id="1227567"/>
+</node>
+</node>
+</node>
+<node id="1227561"/>
+<node id="1227572"/>
+<node id="1227600"><node id="1227645"/>
+</node>
+</thread></node>

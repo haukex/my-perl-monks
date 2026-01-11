@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198421" title="Re: Which &quot;use&quot; statements in a module do &quot;bubble up&quot; to the callers? (updated)" created="2017-08-31 11:44:39" updated="2017-08-31 11:44:39" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;obviously, using the constant TESTCONST in script.pl works as expected&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Actually, that's not so obvious from what you've written so far. &lt;c&gt;use Test::Test1;&lt;/c&gt; on its own should not cause &lt;c&gt;TESTCONST&lt;/c&gt; to be exported from &lt;c&gt;Test::Test1&lt;/c&gt; into the current package unless there is additional code you haven't told us about, such as if you're using [mod://Exporter] or your &lt;c&gt;script.pl&lt;/c&gt; begins with &lt;c&gt;package Test::Test1;&lt;/c&gt;. (&lt;i&gt;Update 2:&lt;/i&gt; Ok, as per your reply, you don't have a &lt;c&gt;package Test::Test1;&lt;/c&gt; at the top of &lt;c&gt;Test1.pm&lt;/c&gt;, that explains it too. I wrote this post with the assumption that your &lt;c&gt;Test1.pm&lt;/c&gt; begins with &lt;c&gt;package Test::Test1;&lt;/c&gt;.)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Is there an overview about which of the various "use ..." statements&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Unfortunately, no. There are some rough rules of thumb, such as modules whose names are lowercase are "pragmas" and their effect is often (but not always!) lexically scoped ([doc://warnings] and [doc://strict] being the two most common), and regular modules will usually at most export a few functions into your package (although there are lots of exceptions to this rule of thumb). So the short answer is you'll have to look at each module's documentation to see what [doc://use]ing it will do. The long answer is:&lt;/p&gt;
+&lt;p&gt;Once you understand what's going on under the hood, the mechanisms that Perl uses for modules and pragmas are actually relatively transparent in that there isn't a ton of magic involved, and one can see all the moving parts. When you [doc://use] a module that you write yourself, here's a rough overview of the mechanisms involved:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;When you write &lt;c&gt;use Test::Test1;&lt;/c&gt;, then what Perl actually does is &lt;c&gt;BEGIN { require Test::Test1; Test::Test1-&gt;import(); }&lt;/c&gt; (documented in [doc://use]), and what [doc://require] does is explained in detail in its docs, but simplifying a bit, it will search for a file named &lt;c&gt;Test/Test1.pm&lt;/c&gt; in the directories listed in [doc://@INC] and parse and run that file if it hasn't previously done so. Usually, this file will contain a &lt;c&gt;package Test::Test1;&lt;/c&gt;, although there is no hard requirement for this. Then, &lt;c&gt;Test::Test1-&gt;import()&lt;/c&gt; means to call the &lt;c&gt;sub import&lt;/c&gt; in the package &lt;c&gt;Test::Test1&lt;/c&gt;, passing the string &lt;c&gt;"Test::Test1"&lt;/c&gt; as the first parameter (a "class method"), and if there are any parameters in the &lt;c&gt;use&lt;/c&gt; statement after the module name and version, pass those as the remaining arguments to &lt;c&gt;import&lt;/c&gt;. So you see the basic mechanism here is finding a file, loading it, and calling a &lt;c&gt;sub&lt;/c&gt; in that file, which is then free to do whatever it wants, and this is where the "magic" of ex/importing happens.&lt;/li&gt;
+&lt;li&gt;While you can write a &lt;c&gt;sub import&lt;/c&gt; yourself*, that's uncommon because there are several standard implementations, a very common one being the one provided by [doc://Exporter]. So if in your &lt;c&gt;package Test::Test1;&lt;/c&gt; you have written &lt;c&gt;our @ISA = qw/Exporter/;&lt;/c&gt;, &lt;c&gt;use base 'Exporter';&lt;/c&gt;, or &lt;c&gt;use Exporter 'import';&lt;/c&gt;, then your package will be getting [doc://Exporter]'s &lt;c&gt;sub import&lt;/c&gt;. What [doc://Exporter]'s &lt;c&gt;import&lt;/c&gt; will do is, again very simplified, take the &lt;c&gt;sub&lt;/c&gt;s and variables you have listed in the package variable &lt;c&gt;@Test::Test1::EXPORT&lt;/c&gt; (among others), and install those in the package that &lt;i&gt;called&lt;/i&gt; the &lt;c&gt;sub import&lt;/c&gt;, i.e. in the package that called the &lt;c&gt;use&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;Now as for your question, the effect of &lt;c&gt;use warnings;&lt;/c&gt; is limited to the enclosing lexical scope, which in this case is the file, which is why it only affects your &lt;c&gt;Test1.pm&lt;/c&gt;. The effect of &lt;c&gt;use constant TESTCONST =&gt; 1;&lt;/c&gt; is to set up a &lt;c&gt;sub TESTCONST () { 1 }&lt;/c&gt;, which means that just like any other &lt;c&gt;sub&lt;/c&gt; this definition should be limited to the current &lt;c&gt;package&lt;/c&gt; (it is &lt;c&gt;Test::Test1::TESTCONST()&lt;/c&gt;), unless you've set up an export/import mechanism like the one I described above to copy it out of that package and into whatever package &lt;c&gt;script.pl&lt;/c&gt; uses (&lt;c&gt;main&lt;/c&gt; by default).&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;So you can have modules that export functions in the way I described above, you can have modules that export nothing (usually OO modules), or your own custom "pragmatic" modules that, like [doc://warnings], only have an effect in the current lexical scope (documented in [doc://perlpragma]), or even mixes of these kinds of modules. A close reading of [doc://perlmod] and the other documentation referenced therein should explain most of this in more detail. Because Perl is very flexible in what it allows module authors to do, it isn't easy to give some general rules as to how modules act, beyond some guidelines and best practices about how modules &lt;i&gt;should&lt;/i&gt; be written, and based on that some rules of thumb of what to expect. So you'll have to look at the documentation of each of the modules to see what effects [doc://use]ing them will have. Luckily, most modules have good documentation and the "Synopsis" and further descriptions at the top will usually tell you right away.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I have dozens of scripts which all should use the same basic settings&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The recent thread [id://1197705] and the threads linked therein (like [id://1167705]) should help you there. In particular, I have myself used [mod://Syntax::Collector] and it's a nice module. The only minor drawback is that it uses [mod://Exporter::Tiny] instead of [mod://Exporter], so you can't export variables, only &lt;c&gt;sub&lt;/c&gt;s (including [doc://constant]s). And just for completeness, here's the code that does what you want without using an extra module:&lt;/p&gt;
+&lt;c&gt;
+package Test::Test1;
+use warnings;
+use strict;
+
+use constant TESTCONST =&gt; 123;
+
+use base 'Exporter';
+our @EXPORT = qw/TESTCONST/;
+
+sub import {
+	warnings-&gt;import;
+	strict-&gt;import;
+	__PACKAGE__-&gt;export_to_level(1, @_);
+	return;
+}
+&lt;/c&gt;
+&lt;p&gt;Then, in code that does &lt;c&gt;use Test::Test1;&lt;/c&gt;, [doc://warnings] and [doc://strict] are enabled and &lt;c&gt;sub TESTCONST&lt;/c&gt; is exported as well.&lt;/p&gt;
+&lt;p&gt;* &lt;b&gt;Update:&lt;/b&gt; The basis of what most &lt;c&gt;sub import&lt;/c&gt; implementations do is described in the section "[doc://perlmod#Symbol-Tables]" in [doc://perlmod] - basically you take the entry for the &lt;c&gt;sub whatever&lt;/c&gt; in the current package, &lt;c&gt;&amp;Current::Package::whatever&lt;/c&gt;, and copy it to the symbol table of the target module (e.g. &lt;c&gt;main&lt;/c&gt;), so that both &lt;c&gt;&amp;main::whatever&lt;/c&gt; and &lt;c&gt;&amp;Current::Package::whatever&lt;/c&gt; refer to the same piece of code. For completeness, here is an &lt;i&gt;extremely&lt;/i&gt; minimalistic implementation of &lt;c&gt;sub import&lt;/c&gt;, but this is the basis of what [doc://Exporter] and related modules do:&lt;/p&gt;
+&lt;c&gt;
+our @EXPORT = qw/ ... /;
+sub import {
+	my $callerpackage = caller;
+	for my $export (@EXPORT) {
+		no strict 'refs';
+		*{$callerpackage."::".$export} = \&amp;{$export};
+	}
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1198411</root_node>
+<parent_node field_name="parent_node">1198411</parent_node>
+<thread id="1198411">
+<node id="1198416"><node id="1198417"><node id="1198420"><node id="1198426"><node id="1198430"><node id="1198530"><node id="1198533"/>
+<node id="1198537"><node id="1198543"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1198419"/>
+<node id="1198421"><node id="1198433"><node id="1198441"><node id="1198499"><node id="1198503"/>
+<node id="1198508"><node id="1198571"><node id="1198572"><node id="1198582"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1198424"/>
+<node id="1198435"/>
+<node id="1198516"/>
+<node id="1198517"><node id="1198519"><node id="1198522"><node id="1198525"/>
+</node>
+</node>
+</node>
+</thread></node>

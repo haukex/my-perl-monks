@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1097676" title="Croak, return et al." created="2014-08-16 11:39:39" updated="2014-08-16 11:39:39" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="869699">packetstormer</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Monks&lt;/p&gt;
+&lt;p&gt;I have a 'best practice' query. Suppose the simple script below. I want to (or maybe I don't!) create a module that might fail under certain circumstances. However, I would like to continue on from the calling script. I realise I could use 'return' but then I'd have to catch that value&lt;/p&gt;
+&lt;p&gt;So, with that in mind does anyone have any thoughts on how the package below might be rewritten to allow the calling script continue? I could also just &lt;code&gt;print "SPLAT";return&lt;/code&gt; but I am unsure what the norm is. &lt;br /&gt;
+You can see that I could use eval (commented out) but again, I am unsure of the best practice!?&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use Data::Dumper;
+
+my @r = (1..5);
+
+foreach (@r) {
+	print "Start for $_\n";
+	my $splat = Splat-&gt;new();
+	#eval { $splat-&gt;splat() };
+	#if ($@) {next}
+	
+	if ($_ ==1) {
+		print "Never getting this far\n"
+	}
+}
+
+print "Nor this far\n";
+
+package Splat;
+use Carp qw(croak);
+
+sub new {
+	my $class	= shift;
+	my $self	= {};
+	bless $self,$class;
+	return $self;
+}
+
+sub splat {
+	my $self = shift;
+	croak "SPLAT!" if ! $self-&gt;{splat} 
+}
+
+
+1;
+&lt;/code&gt;</doctext>
+<thread id="1097676">
+<node id="1097680"><node id="1097692"><node id="1097697"/>
+</node>
+</node>
+<node id="1097681"><node id="1097694"/>
+</node>
+<node id="1097701"/>
+</thread></node>

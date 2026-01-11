@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111688" title="Perl regex txt file new line (not recognised?)" created="2020-01-21 10:23:35" updated="2020-01-21 10:23:35" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11111685">thurinus</author>
+<doctext field_name="doctext">&lt;p&gt;Dear Monks, &lt;/p&gt;
+
+&lt;p&gt;I am struggling with text files, which I want to modify with regex. I converted a pdf file to a text file which then contains the following text:&lt;/p&gt;
+&lt;p&gt;"Inventories&lt;/p&gt;
+&lt;p&gt;Trade receivables &lt;/p&gt;
+&lt;p&gt;Assets&lt;/p&gt;
+&lt;p&gt;This item includes impairment losses."&lt;/p&gt;
+
+&lt;p&gt;I now want to remove all lines which are not ending with a period (lines Inventories, Trade receivables, Assets) and have the following code:&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+use File::Copy;
+
+my $destination = "/directory/originalinputfiles/";
+
+my @files = glob ("/directoy/*.txt");
+
+
+foreach my $file (@files) {
+
+  my $newfile = $file.".tmp";
+
+  open (IN,'&lt;:encoding(UTF-8)', $file) or die "Could not open '$file' $!";
+  open (OUT,'&gt;:encoding(UTF-8)', $newfile) or die "Could not open '$newfile' $!";
+
+
+    while (my $text = &lt;IN&gt;) {
+
+      $text =~ s/^[a-z].*[a-z]$//gmi;
+
+      print OUT $text;
+
+    }
+
+  close (IN) or die "Could not close input file: '$file' $!";
+  close (OUT) or die "Could not close output file '$newfile' $!";
+
+
+  move $file, $destination or die "Could move the orignal input file: $file to the folder: '$destination' $!";
+
+  rename $newfile, $file or die "Could not rename file: '$newfile' $!";
+
+  print "\n done \n";
+
+} &lt;/code&gt;
+
+&lt;p&gt;If I run this script the first three lines are not identified and removed (Inventories, Trade receivables, Assets). However, adding a paragraph manually in the text file after every new line leads to the identification and removal of these lines (Inventories, Trade receivables, Assets) (which is not an option as I have thousands of text files).&lt;/p&gt;
+
+&lt;p&gt; I already tried to add a line after every line with regex, which also does not work &lt;/p&gt;
+&lt;code&gt; $text =~ s/$/\n/;&lt;/code&gt;
+
+&lt;p&gt; Why is my code not working and how can I solve it?&lt;/p&gt; </doctext>
+<thread id="11111688">
+<node id="11111689"><node id="11111691"><node id="11111693"/>
+<node id="11111694"/>
+<node id="11111706"/>
+</node>
+</node>
+<node id="11111700"><node id="11111702"/>
+<node id="11111726"><node id="11111727"/>
+</node>
+</node>
+<node id="11111717"><node id="11111719"/>
+</node>
+</thread></node>

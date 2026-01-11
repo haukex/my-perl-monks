@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1168859" title="Re: removing the need for tmp files from script" created="2016-07-30 10:15:50" updated="2016-07-30 10:15:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [novice2015],&lt;/p&gt;
+&lt;p&gt;I don't think in-memory files like you are trying to use [id://1168836|here] are necessary, they overcomplicate the solution. Just use a normal Perl array to hold the data in between loops.&lt;/p&gt;
+&lt;p&gt;What is unclear to me is this: If you don't want to use any of the files in &lt;c&gt;/tmp&lt;/c&gt;, where will the data that you are currently reading from &lt;c&gt;/tmp/bpl.txt&lt;/c&gt; and &lt;c&gt;/tmp/lst.txt&lt;/c&gt; come from? In order to answer your original question, I could assume the data you are reading from those two files is available in &lt;c&gt;@words&lt;/c&gt; and &lt;c&gt;@data&lt;/c&gt;, respectively. Then I can answer the original question and rewrite your original script like so:&lt;/p&gt;
+&lt;c&gt;
+# get @words and @data from somewhere
+my $pattern = join '|', @words;
+my @lines;
+for (@data) {
+	push @lines, $_ if /$pattern/;
+}
+# do something with @lines
+&lt;/c&gt;
+&lt;p&gt;By the way, are you using [doc://warnings] and [doc://strict]? In your original code you wrote &lt;c&gt;open my $bpl_fh, ...&lt;/c&gt; but then &lt;c&gt;close $bplist_fh;&lt;/c&gt;. Also, in your later posts it looks like you're closing &lt;c&gt;$bpfh1;&lt;/c&gt; too soon, inside the loop, which should give you a warning. So always [id://111088]!&lt;/p&gt;
+&lt;p&gt;Now, if I understand your later posts, you then want to take the lines that you've previously matched with &lt;c&gt;/$pattern/&lt;/c&gt; and stored in &lt;c&gt;@lines&lt;/c&gt; and operate on those. If I take your code from [id://1168836|here] and rewrite it, I get:&lt;/p&gt;
+&lt;c&gt;
+for (@lines) {
+	my @fields = split /,/;
+	if ( $fields[2] eq '1' || $fields[2] eq '0' ) {
+		print "THESE ARE THE&gt;&gt;$fields[4]\n" if /MONTHLY/ &amp;&amp; !/,-,/;
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;But then my question is, do you need &lt;c&gt;@lines&lt;/c&gt; at all? You could skip the creation of that array and do:&lt;/p&gt;
+&lt;c&gt;
+my $pattern = join '|', @words;
+for (@data) {
+	next unless /$pattern/;
+	my @fields = split /,/;
+	if ( $fields[2] eq '1' || $fields[2] eq '0' ) {
+		print "THESE ARE THE&gt;&gt;$fields[4]\n" if /MONTHLY/ &amp;&amp; !/,-,/;
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;If you have further questions, I strongly recommend you read [http://www.sscce.org/|Short, Self Contained, Correct Example] and [id://174051] - without input data, runnable code, expected output or exact error messages, it's a guessing game.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1168369</root_node>
+<parent_node field_name="parent_node">1168369</parent_node>
+<thread id="1168369">
+<node id="1168373"/>
+<node id="1168375"/>
+<node id="1168416"><node id="1168511"><node id="1168516"><node id="1168836"/>
+</node>
+<node id="1168558"/>
+</node>
+</node>
+<node id="1168859"/>
+</thread></node>

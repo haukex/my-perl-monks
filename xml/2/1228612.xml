@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228612" title="Re: SIGALRM in perl" created="2019-01-15 14:49:36" updated="2019-01-15 14:49:36" _doctext_mode="lenient"><type id="11">note</type>
+<author id="510280">shmem</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Hi Expert, I am using the PERL language with the PostgreSQL (...) however yesterday we faced the issue where PARL had sent the SIGALRM signal
+&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;
+First, to nitpick a bit, The Language is called "Perl" while the binary is called "perl" or "perl.exe", but that's just flavours. End of nitpick.
+&lt;/p&gt;
+&lt;p&gt;Most likely, your embedded perl procedure got a SIGALRM from somwhere else, terminated, and sent that signal upstream where you could see it. In your code, there isn't anything handling an ALARM signal. To debug, set &lt;c&gt;$SIG{ALRM}&lt;/c&gt; to some subroutine which reports its arguments, probably along with other stuff, like timestamps or the state of some (global or local) variables or structures:
+&lt;code&gt;
+CREATE OR REPLACE FUNCTION sendclaimcoversheet(
+    text,
+    text)
+  RETURNS integer AS
+$BODY$
+
+    use strict;
+    use warnings;
+    use SOAP::Lite;
+    use Try::Tiny;
+    use Time::Piece;
+    local $SIG{ALRM} = sub {
+        die "function sendclaimcoversheet caught ALRM with:\n(",
+            join( ",",@_)),")\n";
+    };
+&lt;/code&gt;
+&lt;p&gt;You should see the message "function sendclaimcoversheet caught ALRM" in the place where STDERR is collected. Go on from there.&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-510280"&gt;
+&lt;small&gt;perl -le'print map{pack c,($-++?1:13)+ord}split//,ESEL'&lt;/small&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1228585</root_node>
+<parent_node field_name="parent_node">1228585</parent_node>
+<thread id="1228585">
+<node id="1228612"><node id="1228769"><node id="1228770"><node id="1228772"/>
+</node>
+</node>
+</node>
+</thread></node>

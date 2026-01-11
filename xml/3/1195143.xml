@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1195143" title="Re^2: Monkey patching all subs with a basic 'starting subname' message" created="2017-07-14 19:35:45" updated="2017-07-14 19:35:45" _doctext_mode="lenient"><type id="11">note</type>
+<author id="789891">stevieb</author>
+<doctext field_name="doctext">&lt;p&gt;I responded on that thread, so I'll go another round.&lt;/p&gt;
+
+&lt;p&gt;When I first started with Perl, I was dropped into a situation where I had a less-than-sane codebase. The very first thing I desired to design was something that could tell me stuff about code. I got familiar with the tools others have mentioned, but still wanted to figure it out.&lt;/p&gt;
+
+&lt;p&gt;[metamod://Devel::Trace::Subs] was the creation of that, after having to go on another huge tangent with [metamod://Devel::Examine::Subs] as its backbone.&lt;/p&gt;
+
+&lt;p&gt;This is intrusive; it literally writes to library files:&lt;/p&gt;
+
+&lt;c&gt;
+perl -MDevel::Trace::Subs=install_trace -e 'install_trace(file =&gt; "Data::Dump")'
+&lt;/c&gt;
+
+&lt;p&gt;At this point, you've infected your &lt;c&gt;../Data/Dump.pm&lt;/c&gt; file. This is a global example, you can fine-tune what you're tracing. So a script that looked like this:&lt;/p&gt;
+
+&lt;c&gt;
+use warnings;
+use strict;
+
+use Data::Dump qw(dd);
+
+three();
+
+sub one {
+    return {a =&gt; 1, b =&gt; 2};
+}
+sub two {
+    return one();
+}
+sub three {
+    dd two();
+}
+&lt;/c&gt;
+
+&lt;p&gt;That output this:&lt;/p&gt;
+
+&lt;c&gt;
+{ a =&gt; 1, b =&gt; 2 }
+&lt;/c&gt;
+
+&lt;p&gt;...now looks like this:&lt;/p&gt;
+
+&lt;c&gt;
+use warnings;
+use strict;
+
+use Data::Dump qw(dd);
+use Devel::Trace::Subs qw(trace_dump);
+
+$ENV{DTS_ENABLE} = 1;
+
+three();
+
+trace_dump();
+
+sub one {
+    return {a =&gt; 1, b =&gt; 2};
+}
+sub two {
+    return one();
+}
+sub three {
+    dd two();
+}
+&lt;/c&gt;
+
+&lt;p&gt;... and outputs:&lt;/p&gt;
+
+&lt;c&gt;
+{ a =&gt; 1, b =&gt; 2 }
+
+Code flow:
+
+    1: Data::Dump::dd
+    2: Data::Dump::dump
+    3: Data::Dump::_dump
+    4: Data::Dump::tied_str
+    5: Data::Dump::_dump
+    6: Data::Dump::_dump
+    7: Data::Dump::format_list
+
+Stack trace:
+
+    in:      Data::Dump::dd
+    sub:     main::three
+    file:    script.pl
+    line:    20
+    package: main
+
+    in:      Data::Dump::dump
+    sub:     Data::Dump::dd
+    file:    /usr/local/share/perl/5.22.1/Data/Dump.pm
+    line:    84
+    package: Data::Dump
+
+    in:      Data::Dump::_dump
+    sub:     Data::Dump::dump
+    file:    /usr/local/share/perl/5.22.1/Data/Dump.pm
+    line:    36
+    package: Data::Dump
+
+    in:      Data::Dump::tied_str
+    sub:     Data::Dump::_dump
+    file:    /usr/local/share/perl/5.22.1/Data/Dump.pm
+    line:    292
+    package: Data::Dump
+
+    in:      Data::Dump::_dump
+    sub:     Data::Dump::_dump
+    file:    /usr/local/share/perl/5.22.1/Data/Dump.pm
+    line:    331
+    package: Data::Dump
+
+    in:      Data::Dump::_dump
+    sub:     Data::Dump::_dump
+    file:    /usr/local/share/perl/5.22.1/Data/Dump.pm
+    line:    331
+    package: Data::Dump
+
+    in:      Data::Dump::format_list
+    sub:     Data::Dump::dump
+    file:    /usr/local/share/perl/5.22.1/Data/Dump.pm
+    line:    65
+    package: Data::Dump
+&lt;/c&gt;
+
+&lt;p&gt;You can then just revert your changes:&lt;/p&gt;
+
+&lt;c&gt;
+perl -MDevel::Trace::Subs=remove_trace -e 'remove_trace(file =&gt; "Data::Dump")'
+&lt;/c&gt;
+
+&lt;p&gt;The output is kind of configurable in that there are two very basic templates with the ability to send in an html flag for rendering. You can also limit the output to flow or trace.&lt;/p&gt;
+
+&lt;p&gt;There are many other tools that do this kind of thing that are far better and far more widespread, and unless one is brave, they'd use a non-intrusive [metamod://Devel::NYTProf|proper profiler] or something that's been through the ropes. I just like how OP is proud of their &lt;c&gt;__dbg()&lt;/c&gt; hijacker, so I thought I'd share :)&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;update&lt;/b&gt;: Mentioned [metamod://Devel::NYTProf] as a profiler, but if OP wants to get into examining files/code itself, invest in learning some [metamod://PPI].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1195131</root_node>
+<parent_node field_name="parent_node">1195137</parent_node>
+<thread id="1195131">
+<node id="1195132"><node id="1195136"><node id="1195141"><node id="1195278"/>
+</node>
+</node>
+</node>
+<node id="1195133"><node id="1195139"><node id="1195140"><node id="1195273"><node id="1195275"><node id="1195326"><node id="1195344"><node id="1195454"/>
+</node>
+<node id="1195977"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1195135"/>
+<node id="1195137"><node id="1195143"><node id="1195281"/>
+</node>
+</node>
+</thread></node>

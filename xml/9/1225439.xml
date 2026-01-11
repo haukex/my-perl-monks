@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1225439" title="Re^5: webperl: fetching data over the web" created="2018-11-08 12:39:00" updated="2018-11-08 12:39:00" _doctext_mode="lenient"><type id="11">note</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">OK I'm back online. :)&lt;P&gt;
+
+I created the following page called weblib_demo.html inside the deflated zip-dir (webperl_prebuilt_v0.07-beta.zip) from your [HTTPs://webperl.zero-g.net/|webpage:]
+&lt;readmore&gt;
+&lt;c&gt;&lt;!doctype html&gt;
+&lt;html lang="en-us"&gt;
+&lt;head&gt;
+&lt;meta http-equiv="Content-Type" content="text/html; charset=utf-8"&gt;
+&lt;title&gt;WebPerl &amp;lt;script&amp;gt; Demos&lt;/title&gt;
+
+
+
+&lt;script type="text/javascript"&gt;
+
+function xfetch(url) {  
+    var req = new XMLHttpRequest();
+    req.open('GET', 'http://localhost:5000/emperl.js', false);
+    req.send(null);
+    if(req.status == 200) {
+        return req.responseText;
+    } else {
+        return "FAILED";
+    }
+}
+
+alert(xfetch('http://localhost:5000/emperl.js'));
+
+&lt;/script&gt;
+
+
+&lt;script src="webperl.js"&gt;&lt;/script&gt;
+
+&lt;!-- Please see the documentation at http://webperl.zero-g.net/using.html --&gt;
+
+&lt;script type="text/perl"&gt;
+use warnings;
+use strict;
+use WebPerl qw/js/;
+
+print js('window.xfetch("http://localhost:5000/emperl.js")');
+
+&lt;/script&gt;
+
+
+&lt;!-- Optional STDOUT/STDERR text area (if you don't use this, output goes to Javascript console) --&gt;
+&lt;script&gt;
+window.addEventListener("load", function () {
+	document.getElementById('output')
+		.appendChild( Perl.makeOutputTextarea() );
+});
+&lt;/script&gt;
+
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;p&gt;This is a demo of &lt;a href="http://webperl.zero-g.net" target="_blank"&gt;WebPerl&lt;/a&gt;!&lt;/p&gt;
+
+&lt;div id="output"&gt;&lt;/div&gt;
+&lt;div id="buttons"&gt;
+	&lt;button id="my_button"&gt;Testing!&lt;/button&gt;
+&lt;/div&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/c&gt;
+&lt;/readmore&gt;
+It shows the alert box from JS but the Perl execution blocks the tab till I get a "Tab crashed" message (in German) after a minute or so.&lt;P&gt;
+
+Reproducible in FF and chrome.&lt;P&gt;
+
+I'm suspecting it has to do with error handling of the deprecation warning.&lt;P&gt;
+
+I tried to copy the [HTTPs://github.com/haukex/webperl/tree/master/web/democode|democode] directory directly from github, but calling demo.html creates an endless loop of "Perl initializing" and "ended" messages.&lt;P&gt;
+
+I suppose the webperl versions are not compatible and I need to clone the whole github rep.&lt;P&gt;
+
+That's the messages I get on the console
+&lt;readmore&gt;
+&lt;c&gt;
+127.0.0.1 - - [08/Nov/2018:18:33:51 +0100] "GET /webperl.js HTTP/1.1" 200 13452 "http://localhost:5000/democode/perlrunner.html" "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:61.0) Gecko/20100101 Firefox/61.0"
+127.0.0.1 - - [08/Nov/2018:18:33:51 +0100] "GET /emperl.js HTTP/1.1" 200 404633 "http://localhost:5000/democode/perlrunner.html" "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:61.0) Gecko/20100101 Firefox/61.0"
+127.0.0.1 - - [08/Nov/2018:18:33:51 +0100] "GET /emperl.data HTTP/1.1" 200 11957600 "-" "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:61.0) Gecko/20100101 Firefox/61.0"
+127.0.0.1 - - [08/Nov/2018:18:33:51 +0100] "GET /emperl.wasm HTTP/1.1" 200 3743906 "-" "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:61.0) Gecko/20100101 Firefox/61.0"
+127.0.0.1 - - [08/Nov/2018:18:33:51 +0100] "GET /emperl.wasm HTTP/1.1" 200 3743906 "-" "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:61.0) Gecko/20100101 Firefox/61.0"
+127.0.0.1 - - [08/Nov/2018:18:33:51 +0100] "GET /democode/perlrunner.html HTTP/1.1" 200 6168 "http://localhost:5000/democode/demo.html" "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:61.0) Gecko/20100101 Firefox/61.0"
+127.0.0.1 - - [08/Nov/2018:18:33:52 +0100] "GET /webperl.js HTTP/1.1" 200 13452 "http://localhost:5000/democode/perlrunner.html" "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:61.0) Gecko/20100101 Firefox/61.0"
+127.0.0.1 - - [08/Nov/2018:18:33:52 +0100] "GET /emperl.js HTTP/1.1" 200 404633 "http://localhost:5000/democode/perlrunner.html" "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:61.0) Gecko/20100101 Firefox/61.0"
+127.0.0.1 - - [08/Nov/2018:18:33:52 +0100] "GET /emperl.data HTTP/1.1" 200 11957600 "-" "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:61.0) Gecko/20100101 Firefox/61.0"
+127.0.0.1 - - [08/Nov/2018:18:33:52 +0100] "GET /emperl.wasm HTTP/1.1" 200 3743906 "-" "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:61.0) Gecko/20100101 Firefox/61.0"
+Terminating on signal SIGINT(2)
+&lt;/c&gt;
+&lt;/readmore&gt;&lt;P&gt;
+
+I think creating a new zip including the [HTTPs://webperl.zero-g.net/democode/|"democode"] stuff would be helpful for causal tests.&lt;P&gt;
+
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;small&gt;&lt;strike&gt;Football&lt;/strike&gt;Perl is like chess, only without the dice&lt;/small&gt;
+&lt;/sub&gt; &lt;P&gt;
+
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.142} --&gt;</doctext>
+<root_node field_name="root_node">1225419</root_node>
+<parent_node field_name="parent_node">1225430</parent_node>
+<thread id="1225419">
+<node id="1225420"><node id="1225424"><node id="1225426"><node id="1225429"/>
+</node>
+</node>
+</node>
+<node id="1225422"><node id="1225423"><node id="1225425"><node id="1225430"><node id="1225439"><node id="1225440"><node id="1225443"><node id="1225444"/>
+</node>
+<node id="1225445"><node id="1225447"/>
+</node>
+<node id="1225540"><node id="1225567"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1225491"/>
+</thread></node>

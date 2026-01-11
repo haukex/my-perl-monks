@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1197627" title="Re: Generic/Variable/Dynamic Subroutines? (Not a redefine)" created="2017-08-18 15:27:58" updated="2017-08-18 15:27:58" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;This will generate those three subs you showed (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; see [doc://perlref#Function-Templates] and [doc://perlobj#Method-Names-as-Strings]):&lt;/p&gt;
+&lt;c&gt;
+for my $meth (qw/ WriteLine Select Add /) {
+	my $sub = sub {
+		my $self = shift;
+		my $it = $self-&gt;OStream-&gt;$meth($_[0]);
+		$self-&gt;Trace(_CallerStr($it));
+		return $it;
+	};
+	no strict 'refs';
+	*$meth = $sub;
+}
+&lt;/c&gt;
+&lt;p&gt;Optionally put that in a &lt;c&gt;BEGIN { ... }&lt;/c&gt; block if you want to be able to call the &lt;c&gt;sub&lt;/c&gt;s without parens.&lt;/p&gt;
+&lt;p&gt;Here's a simple wrapper class that uses [doc://perlsub#Autoloading], although autoloading can be a bit dangerous and have some caveats (e.g. the following doesn't overload [doc://UNIVERSAL] methods like &lt;c&gt;can&lt;/c&gt;, although it probably should for completeness; &lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; also this example always calls the method in scalar context, although that could be changed by inspecting [doc://wantarray]; plus obviously wrapper and wrapped objects have completely different classes, so &lt;c&gt;isa&lt;/c&gt; and especially [doc://ref] checks would break), so I would recommend the above solution instead. Use this like &lt;c&gt;my $wrapper = Wrapper-&gt;new($object);&lt;/c&gt; and you should be able to call the original methods from &lt;c&gt;$object&lt;/c&gt; on &lt;c&gt;$wrapper&lt;/c&gt; instead. &lt;i&gt;Update 2:&lt;/i&gt; I guess I should be more clear that the following is really just a demonstration of the (sometimes scary) power of &lt;c&gt;AUTOLOAD&lt;/c&gt;ing and not something I'd recommend for wide use. You might want to look at something like &lt;c&gt;around&lt;/c&gt; from [mod://Class::Method::Modifiers] instead.&lt;/p&gt;
+&lt;c&gt;
+package Wrapper;
+use Carp;
+sub new {
+	my ($class,$wrapped) = @_;
+	return bless \$wrapped, $class;
+}
+sub AUTOLOAD {
+	my $wrapped = shift;
+	(my $meth = our $AUTOLOAD) =~ s/.*:://;
+	croak "Wrapped object $$wrapped doesn't have a method $meth"
+		unless $$wrapped-&gt;can($meth);
+	# do stuff here
+	my $returnval = $$wrapped-&gt;$meth(@_); # call wrapped method
+	# and more stuff here
+	return $returnval;
+}
+sub DESTROY {} # don't autoload DESTROY
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1197625</root_node>
+<parent_node field_name="parent_node">1197625</parent_node>
+<thread id="1197625">
+<node id="1197627"/>
+<node id="1197628"/>
+<node id="1197673"><node id="1197748"><node id="1197749"><node id="1197751"><node id="1197752"><node id="1197753"><node id="1197755"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

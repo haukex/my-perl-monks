@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1204204" title="Re^5: Loading a part of the file to array using Tie::File" created="2017-11-24 14:10:22" updated="2017-11-24 14:10:22" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Or do you see any serious use cases for it?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Dunno, I think that for random access of small files (say, maybe, under a megabyte) in situations where performance is not critical, the ease of implementation can still outweigh the cost. On the other hand, at least in my experience such files are rare. For example, when inserting lines somewhere, one usually has to scan the file to locate the insertion point anyway, so in such cases a &lt;c&gt;while(&lt;&gt;)&lt;/c&gt; loop would still feel more natural to me than a linear search in an array. It's maybe a nice module to show off some of the power (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; as in expressiveness / TIMTOWTDI, not speed) of Perl to newcomers, although then one might cause the problem of "if all you have is a hammer, everything looks like a nail".&lt;/p&gt;
+&lt;p&gt;Of course [ikegami] has a good point. There is a huge difference between reading even a ~1MB file into in array, vs. reading it with [doc://Tie::File]:&lt;/p&gt;
+&lt;c&gt;
+$ cp -L /usr/share/dict/words /tmp/test.txt
+$ wc -l /tmp/test.txt
+99132 /tmp/test.txt
+$ du -sh /tmp/test.txt
+920K	/tmp/test.txt
+
+$ time perl -MTie::File -e 'open F, "/tmp/test.txt" or die;
+  print `ps -orss $$`; my @x = &lt;F&gt;; print `ps -orss $$`'
+  RSS
+ 7408
+  RSS
+23604
+
+real    0m0.042s
+user    0m0.024s
+sys     0m0.012s
+$ time perl -MTie::File -e 'tie my @a, "Tie::File", "/tmp/test.txt";
+  print `ps -orss $$`; $a=$_ for @a; print `ps -orss $$`'
+  RSS
+ 7612
+  RSS
+55024
+
+real    0m1.001s
+user    0m0.908s
+sys     0m0.088s
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1203885</root_node>
+<parent_node field_name="parent_node">1204193</parent_node>
+<thread id="1203885">
+<node id="1203889"/>
+<node id="1203890"/>
+<node id="1203892"/>
+<node id="1203893"/>
+<node id="1203939"/>
+<node id="1203985"><node id="1203993"><node id="1204087"><node id="1204115"><node id="1204124"><node id="1204125"><node id="1204127"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1204007"/>
+<node id="1204044"><node id="1204128"><node id="1204130"><node id="1204137"><node id="1204223"><node id="1204228"/>
+</node>
+</node>
+</node>
+<node id="1204162"><node id="1204193"><node id="1204201"><node id="1204262"/>
+</node>
+<node id="1204204"><node id="1204210"><node id="1204246"><node id="1204272"><node id="1204273"/>
+</node>
+</node>
+</node>
+<node id="1204224"/>
+<node id="1204263"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1204180"/>
+</thread></node>

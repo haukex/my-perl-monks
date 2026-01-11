@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11133647" title="Re: Hash Manipulation" created="2021-06-08 03:20:18" updated="2021-06-08 03:20:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The main issue with the code you've shown is that in the three places you're doing something like &lt;c&gt;$HashCount{$Screenkey} = {$i =&gt; "..."}&lt;/c&gt;, you're replacing what's stored in &lt;c&gt;$HashCount{$Screenkey}&lt;/c&gt; with a new reference to a new anonymous hash, instead of adding something to the existing hash. You can delete the line &lt;c&gt;$HashCount{$Screenkey} = $Screenkey;&lt;/c&gt; since that value is going to get replaced anyway. Then, you can replace the three aforementioned hash accesses with &lt;c&gt;$HashCount{$Screenkey}{0}&lt;/c&gt; and &lt;c&gt;$HashCount{$Screenkey}{$i}&lt;/c&gt; respectively - what this does is take advantage of a Perl feature called &lt;i&gt;autovivification&lt;/i&gt;, which means that simply accessing &lt;c&gt;$HashCount{$Screenkey}&lt;/c&gt; as if it were a reference to a hash causes a new anonymous hash to be created for you.&lt;/p&gt;
+&lt;p&gt;I think you've also got a logic issue with &lt;c&gt;$i&lt;/c&gt; - in the case that &lt;tt&gt;$Screenkey &lt;u&gt;ne&lt;/u&gt; $ScreenkeyOld&lt;/tt&gt;, I am guessing that you probably want to start the numbering over - but you're only resetting &lt;c&gt;$i=1&lt;/c&gt; after already having used its previous value. The same goes for &lt;c&gt;$i++&lt;/c&gt;. If I fix this, the next issue is that I think you've got a mistake in your sample data: since you're iterating over the &lt;c&gt;sort&lt;/c&gt;ed &lt;c&gt;keys&lt;/c&gt; of &lt;c&gt;%hash&lt;/c&gt;, &lt;c&gt;Alarms&lt;/c&gt; will come first, but in your sample data you seem to expect the order to be &lt;c&gt;Trend to USB&lt;/c&gt;, &lt;c&gt;Alarms&lt;/c&gt;, and &lt;c&gt;Flow Diagram&lt;/c&gt;. I haven't fixed this issue in the code below.&lt;/p&gt;
+&lt;p&gt;In general, note that you have two unused variables, &lt;c&gt;@List&lt;/c&gt; and the outer &lt;c&gt;$Screenkey&lt;/c&gt;, since you're only using the second &lt;c&gt;$Screenkey&lt;/c&gt; defined inside the loop. Also, your code would benefit from better indentation - [mod://perltidy] can help with that. And you can do away with &lt;c&gt;%ScreenNameCount&lt;/c&gt;, since you can do that operation directly in &lt;c&gt;%HashCount&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Putting all of that together (as mentioned above the test will fail since I haven't changed the order of the expected output you showed in your question):&lt;/p&gt;
+&lt;readmore title="Code"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my %hash = (
+	'Alarms.Alarm Acknowledge' =&gt; {
+		'ScreenName'  =&gt; 'Alarms',
+		'Description' =&gt; 'Alarm Acknowledge',
+		'Type'        =&gt; 'On/Off',
+	},
+	'Flow Diagram.Sequence Hold' =&gt; {
+		'ScreenName'  =&gt; 'Flow Diagram',
+		'Description' =&gt; 'Sequence Hold',
+		'Type'        =&gt; 'Momentary',
+	},
+	'Flow Diagram.Sequence Advance' =&gt; {
+		'ScreenName'  =&gt; 'Flow Diagram',
+		'Description' =&gt; 'Sequence Advance',
+		'Type'        =&gt; 'Momentary',
+	},
+	'Flow Diagram.Sanitize Enable/Disable' =&gt; {
+		'ScreenName'  =&gt; 'Flow Diagram',
+		'Description' =&gt; 'Sanitize Enable/Disable',
+		'Type'        =&gt; 'On/Off',
+	},
+	'Trend to USB.Start/Stop Trend Toggle' =&gt; {
+		'ScreenName'  =&gt; 'Trend to USB',
+		'Description' =&gt; 'Start/Stop Trend Toggle',
+		'Type'        =&gt; 'On/Off',
+	},
+	'Alarms.Alarm Reset' =&gt; {
+		'ScreenName'  =&gt; 'Alarms',
+		'Description' =&gt; 'Alarm Reset',
+		'Type'        =&gt; 'On/Off',
+	},
+	'Alarms.Alarm Trigger' =&gt; {
+		'ScreenName'  =&gt; 'Alarms',
+		'Description' =&gt; 'Alarm Trigger',
+		'Type'        =&gt; 'Momentary',
+	},
+);
+
+my %HashCount;
+$HashCount{ $hash{$_}{ScreenName} }{0}++ foreach keys %hash;
+my $ScreenkeyOld = 'Old';
+my $i = 1;
+foreach my $key ( sort keys %hash ) {
+	my $Screenkey   = $hash{$key}{ScreenName};
+	my $Description = $hash{$key}{Description};
+	my $Type        = $hash{$key}{Type};
+	if ( $Screenkey eq $ScreenkeyOld ) {
+		$i++;
+		#print "$Screenkey &lt;$i&gt;\n"; #Debug
+		$HashCount{$Screenkey}{$i} = "\\t \\t \\t \\t\&amp; \\mytabhead{$Description} \\t\&amp; $Type \\t\\\\ \\hline \\n $i - $Screenkey - $ScreenkeyOld";
+	}
+	else {
+		$i = 1;
+		#print "$ScreenkeyOld -&gt; $Screenkey &lt;$i&gt;\n"; #Debug
+		$HashCount{$Screenkey}{$i} = "\\mytabhead{$Screenkey} \\t\&amp; \\mytabhead{$Description} \\t\&amp; $Type \\t\\\\ \\hline \\n $i - $Screenkey - $ScreenkeyOld";
+	}
+	$ScreenkeyOld = $Screenkey;
+}
+
+use Test::More tests=&gt;1;
+is_deeply \%HashCount, {
+	'Alarms' =&gt; {
+		'0' =&gt; 3,
+		'1' =&gt; '\\mytabhead{Alarms}  \\t&amp; \\mytabhead{Alarm Trigger} \\t&amp; Momentary \\t\\\\ \\hline \\n 1 - Alarms - Trend to USB',
+		'2' =&gt; '\\t \\t \\t \\t&amp; \\mytabhead{Alarm Acknowledge} \\t&amp; On/Off \\t\\\\ \\hline \\n 2 - Alarms - Alarms',
+		'3' =&gt; '\\t \\t \\t \\t&amp; \\mytabhead{Alarm Reset} \\t&amp; On/Off \\t\\\\ \\hline \\n 3 - Alarms - Alarms',
+	},
+	'Flow Diagram' =&gt; {
+		'0' =&gt; 3,
+		'1' =&gt; '\\mytabhead{Flow Diagram}  \\t&amp; \\mytabhead{Sequence Advance} \\t&amp; Momentary \\t\\\\ \\hline \\n 1 - Flow Diagram - Alarms',
+		'2' =&gt; '\\t \\t \\t \\t&amp; \\mytabhead{Sequence Hold} \\t&amp; Momentary \\t\\\\ \\hline \\n 2 - Flow Diagram - Flow Diagram',
+		'3' =&gt; '\\t \\t \\t \\t&amp; \\mytabhead{Sanitize Enable/Disable} \\t&amp; On/Off \\t\\\\ \\hline \\n 3 - Flow Diagram - Flow Diagram',
+	},
+	'Trend to USB' =&gt; {
+		'0' =&gt; 1,
+		'1' =&gt; '\\mytabhead{Trend to USB} \\t&amp; \\mytabhead{Start/Stop Trend Toggle} \\t&amp; On/Off \\t\\\\ \\hline \\n 1 - Trend to USB - Old',
+	},
+} or diag explain \%HashCount;
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">11133631</root_node>
+<parent_node field_name="parent_node">11133631</parent_node>
+<thread id="11133631">
+<node id="11133635"><node id="11133661"/>
+</node>
+<node id="11133647"><node id="11133660"><node id="11133664"/>
+</node>
+</node>
+</thread></node>

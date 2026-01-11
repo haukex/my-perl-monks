@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1204757" title="Re^2: Is there an advantage to storing references to objects in an attribute instead of the object itself?" created="2017-12-02 14:03:21" updated="2017-12-02 14:03:21" _doctext_mode="lenient"><type id="11">note</type>
+<author id="66801">nysus</author>
+<doctext field_name="doctext">&lt;p&gt;OK, I ran your code. Very interesting. Thanks for illustrating this problem for me so clearly. Circular references are one of those concepts I blew off and didn't worry about. It's probably time I started worrying.&lt;/p&gt;
+
+&lt;p&gt;So what's the best solution to my problem? Here's my self-contained code that illustrates what I'm doing:&lt;/p&gt;
+
+&lt;code&gt;
+#! /usr/bin/env perl
+
+use warnings;
+use strict;
+
+package BigObjs;
+use Moose;
+has 'little_objs' =&gt; ( is =&gt; 'rw', isa =&gt; 'HashRef', default =&gt; sub { {} } );
+
+# our reader method
+sub get_little_obj {
+  my ($s, $id) = @_;
+
+  return $s-&gt;little_objs-&gt;{$id};
+}
+
+# add new little objects to our collection
+sub add_little_obj {
+  my ($s, $little_obj) = @_;
+
+  # create code ref to reader method in big object
+  $little_obj-&gt;get_obj_by_id(sub{$s-&gt;get_little_obj(@_)});
+
+  $s-&gt;little_objs-&gt;{$little_obj-&gt;id} = $little_obj;
+}
+
+package LittleObjs;
+use Moose;
+
+has 'id' =&gt; (is =&gt; 'rw');
+has 'data' =&gt; (is =&gt; 'rw');
+has 'get_obj_by_id' =&gt; (is =&gt; 'rw');
+
+sub alter_another_little_object {
+  my ($s, $id) = @_;
+  my $other_little_object = $s-&gt;get_obj_by_id-&gt;($id);
+  $other_little_object-&gt;do_stuff;
+}
+
+sub do_stuff {
+  my $s = shift;
+  print "I'm doing stuff to: " . $s-&gt;id . "\n";
+}
+
+no Moose;
+
+my $big = BigObjs-&gt;new();
+my $little1 = LittleObjs-&gt;new(id =&gt; 'little1', data =&gt; 'foo');
+my $little2 = LittleObjs-&gt;new(id =&gt; 'little2', data =&gt; 'bar');
+
+$big-&gt;add_little_obj($little1);
+$big-&gt;add_little_obj($little2);
+
+$little1-&gt;alter_another_little_object('little2');
+&lt;/code&gt;
+
+
+&lt;p&gt;So you are saying I need to use &lt;code&gt;sub{$s-&gt;get_little_obj(@_)}&lt;/code&gt; as an argument to a &lt;code&gt;weaken&lt;/code&gt; function?
+
+
+
+
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-66801"&gt;
+&lt;font size=2&gt;&lt;p&gt;
+$PM = "Perl Monk's";&lt;br&gt;
+$MCF = "Most Clueless &lt;strike&gt;Friar&lt;/strike&gt; &lt;strike&gt;Abbot&lt;/strike&gt; &lt;strike&gt;Bishop&lt;/strike&gt; &lt;strike&gt;Pontiff&lt;/strike&gt; &lt;strike&gt;Deacon&lt;/strike&gt; &lt;strike&gt;Curate&lt;/strike&gt; Priest";&lt;br&gt;
+$nysus = $PM . ' ' . $MCF;&lt;br&gt;
+&lt;a href="http://perlmonks.org/index.pl?node=Offering%20Plate"&gt;Click here if you love Perl Monks&lt;/a&gt;&lt;br&gt;&lt;/font&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1204699</root_node>
+<parent_node field_name="parent_node">1204716</parent_node>
+<thread id="1204699">
+<node id="1204701"/>
+<node id="1204702"/>
+<node id="1204705"/>
+<node id="1204716"><node id="1204757"><node id="1204758"/>
+<node id="1204771"/>
+<node id="1204791"/>
+<node id="1204821"/>
+</node>
+</node>
+<node id="1204744"/>
+</thread></node>

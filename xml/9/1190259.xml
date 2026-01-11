@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1190259" title="Re^2: [RFC] Building Regex Alternations Dynamically" created="2017-05-14 07:56:30" updated="2017-05-14 07:56:30" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;So a standard &lt;c&gt;reverse sort&lt;/c&gt; expression serves in all cases.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;As I /msg'ed you at the time you posted this, I had a doubt about this - and now I've finally found the time to confirm that I wasn't being entirely paranoid ;-) Under [doc://locale], it's possible for longer strings to be [doc://sort]ed before shorter ones. Here are the instructions to reproduce (on a Debian-based system):&lt;/p&gt;
+&lt;c&gt;
+$ mkdir -v /tmp/localetest; cd /tmp/localetest
+# copy "en_US" and the files it refers to via its "copy" statements
+$ cp -v /usr/share/i18n/locales/{en_US,en_GB,i18n,iso14651_t1,iso14651_t1_common} .
+$ mv -v en_US en_TESTING
+&lt;/c&gt;
+&lt;p&gt;Now edit the file &lt;c&gt;en_TESTING&lt;/c&gt; and insert the following into the &lt;c&gt;LC_COLLATE&lt;/c&gt; section after the &lt;c&gt;copy "iso14651_t1"&lt;/c&gt; statement:&lt;/p&gt;
+&lt;c&gt;
+collating-element &lt;bc&gt; from "&lt;U0062&gt;&lt;U0063&gt;"
+script &lt;TESTING&gt;
+order_start &lt;TESTING&gt;;forward;forward;forward;forward,position
+&lt;bc&gt; "&lt;a&gt;&lt;c&gt;";"&lt;BAS&gt;&lt;BAS&gt;";"&lt;MIN&gt;&lt;MIN&gt;";IGNORE
+order_end
+&lt;/c&gt;
+&lt;p&gt;Now compile and test the locale:&lt;/p&gt;
+&lt;c&gt;
+$ localedef -i en_TESTING -f UTF-8 -c ./en_TESTING.UTF-8
+$ LOCPATH=/tmp/localetest LC_ALL=en_TESTING.UTF-8 perl -Mlocale -le 'print for sort qw/ab a b bc/'
+a
+ab
+bc
+b
+$ LOCPATH=/tmp/localetest LC_ALL=en_TESTING.UTF-8 perl -wMstrict -lMlocale
+print "1 $_" for "abcabbc"=~/${\join "|", reverse sort qw(b bc) }/g;
+print "2 $_" for "abcabbc"=~/${\join "|", sort {length$b&lt;=&gt;length$a} qw(b bc) }/g;
+__END__
+1 b
+1 b
+1 b
+2 bc
+2 b
+2 bc
+&lt;/c&gt;
+&lt;p&gt;Now of course the real locale definitions are long and I don't plan on reading all of them, and so it's entirely possible that currently no locales exist that define this kind of sorting order. But I'll just be a bit paranoid and stick with sorting by length explicitly :-)&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; I did incorporate your suggestion about highlighting the fact that strings are matched literally, thank you!&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1179840</root_node>
+<parent_node field_name="parent_node">1179929</parent_node>
+<thread id="1179840">
+<node id="1179850"><node id="1179851"><node id="1179853"/>
+</node>
+<node id="1180085"><node id="1180087"/>
+</node>
+</node>
+<node id="1179864"><node id="1179870"/>
+</node>
+<node id="1179898"/>
+<node id="1179901"><node id="1179921"><node id="1179940"/>
+</node>
+</node>
+<node id="1179929"><node id="1190259"><node id="1190349"/>
+</node>
+</node>
+<node id="11116849"><node id="11116850"/>
+</node>
+<node id="11118145"/>
+</thread></node>

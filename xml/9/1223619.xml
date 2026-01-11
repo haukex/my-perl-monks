@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1223619" title="Re^2: Run Perl 5 in the Browser!" created="2018-10-06 06:33:24" updated="2018-10-06 06:33:24" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Are you exposing an API or you have a DSL?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In Perl scripts running inside WebPerl, I expose all of JavaScript to Perl, in two ways:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;[http://webperl.zero-g.net/using.html#js|The &lt;c&gt;js()&lt;/c&gt; function] from the &lt;c&gt;WebPerl&lt;/c&gt; module, which takes an arbitrary string of JavaScript code to execute, and&lt;/li&gt;
+&lt;li&gt;the return values of the the &lt;c&gt;js()&lt;/c&gt; function:
+  &lt;ul&gt;
+  &lt;li&gt;strings, numbers, and booleans are copied from JS to Perl, but&lt;/li&gt;
+  &lt;li&gt;when the JavaScript code returns an object, array, or function, then as [LanX] [id://1223588|said], WebPerl will return a proxy object of the class &lt;c&gt;WebPerl::JSObject&lt;/c&gt;, which overloads array, hash, and code dereferencing, as well as does method autoloading. So when you do any of those operations on those Perl objects, WebPerl will internally build a string of JavaScript code that accesses the original JavaScript object and run that via &lt;c&gt;js()&lt;/c&gt;. When it does this, WebPerl copies any assigned values and arguments to functions or methods from Perl to JavaScript, and also wraps &lt;c&gt;sub&lt;/c&gt;s inside JS &lt;c&gt;function&lt;/c&gt;s that, when called, call back into Perl to run the &lt;c&gt;sub&lt;/c&gt; (including arguments).&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;So this way, you can do everything in Perl, and use normal Perl operations to manipulate Perl objects, which actually runs JavaScript in the background.&lt;/p&gt;
+&lt;p&gt;The interface is documented [http://webperl.zero-g.net/using.html#webperlpm|here]. The gory guts can be found in [http://github.com/haukex/emperl5/blob/emperl_v5.28.0/ext/WebPerl/WebPerl.pm|WebPerl.pm] and [http://github.com/haukex/emperl5/blob/emperl_v5.28.0/ext/WebPerl/WebPerl.xs|WebPerl.xs] (with some supporting code, such as &lt;c&gt;Perl.glue()&lt;/c&gt; and &lt;c&gt;Perl.dispatch()&lt;/c&gt;, in [http://github.com/haukex/webperl/blob/master/web/webperl.js|webperl.js]). (You'll see that currently, a lot is done with copying strings back and forth between JS and Perl, and with both JS's and Perl's &lt;c&gt;eval&lt;/c&gt;, which in some places could probably be optimized in a future version.)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;How can you a access the Dom with Perl?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Since you can use all of JavaScript, you can use native JS (like the example [LanX] [id://1223588|showed]), or any JavaScript library of your choice, such as jQuery. I show examples of both in the source [http://github.com/haukex/webperl/blob/master/web/webperl_demo.html|webperl_demo.html] (don't mind the currently screwy syntax highlighting on GitHub that's highlighting stuff in dark red). Let me know if you have any further questions!&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor edits to add a few small details.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1220426</root_node>
+<parent_node field_name="parent_node">1223586</parent_node>
+<thread id="1220426">
+<node id="1220428"/>
+<node id="1220439"><node id="1220615"><node id="1220621"><node id="1220871"><node id="1220873"><node id="1220874"><node id="1220875"><node id="1220876"><node id="1220878"/>
+</node>
+</node>
+</node>
+<node id="1220884"><node id="1220885"/>
+<node id="1220889"><node id="1220893"><node id="1220955"><node id="1221026"/>
+</node>
+</node>
+<node id="1220940"><node id="1220956"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1221030"/>
+</node>
+</node>
+<node id="1220707"/>
+</node>
+<node id="1220479"><node id="1220480"><node id="1220481"/>
+</node>
+<node id="1220617"/>
+</node>
+<node id="1220482"><node id="1220616"/>
+</node>
+<node id="1220703"><node id="1220704"><node id="1220708"><node id="1220872"><node id="1223776"><node id="1223777"/>
+<node id="1223787"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1220887"/>
+<node id="1223586"><node id="1223588"/>
+<node id="1223619"/>
+</node>
+</thread></node>

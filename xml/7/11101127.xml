@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101127" title="Re^2: call subroutine if scalar is changed" created="2019-06-08 09:26:32" updated="2019-06-08 09:26:32" _doctext_mode="lenient"><type id="11">note</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;What I am doing wrong combining the two scripts?&lt;/p&gt;
+&lt;code&gt;
+
+use Tk;
+my $mw = MainWindow-&gt;new();
+
+{
+	package Tie::Scalar::Callbacks;
+	sub TIESCALAR {
+		my $class = shift;
+		my %self;
+		@self{qw/ val store_cb fetch_cb /} = @_;
+		return bless \%self, $class;
+	}
+	sub FETCH {
+		my $self = shift;
+		$self-&gt;{fetch_cb}-&gt;($self-&gt;{val}) if $self-&gt;{fetch_cb};
+		return $self-&gt;{val};
+	}
+	sub STORE {
+		my $self = shift;
+		my $val = shift;
+		$self-&gt;{store_cb}-&gt;($self-&gt;{val}, $val) if $self-&gt;{store_cb};
+		$self-&gt;{val} = $val;
+	};
+	sub DESTROY { %{shift()}=() }
+}
+
+
+tie my $name, 'Tie::Scalar::Callbacks', "foo",
+	sub { print "Entry value has changed!\n" };
+
+my $label = $mw-&gt;Label(
+    -text =&gt; 'Enter:',
+)-&gt;grid(
+    -row =&gt; 0,
+    -column =&gt; 0,
+);
+my $entry = $mw-&gt;Entry(
+    -textvariable =&gt; \$name
+)-&gt;grid(
+    -row =&gt; 0,
+    -column =&gt; 1,
+);
+
+print "name is $name\n";
+$name = "bar";
+print "name is $name\n";
+MainLoop;
+&lt;/code&gt;
+&lt;p&gt;(Note that I took away the button as I only a simulation of the third party component changing the scalar value)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11101123</root_node>
+<parent_node field_name="parent_node">11101126</parent_node>
+<reputation field_name="reputation">9</reputation>
+<thread id="11101123">
+<node id="11101124"/>
+<node id="11101125"/>
+<node id="11101126"><node id="11101127"><node id="11101132"/>
+<node id="11101140"/>
+</node>
+</node>
+<node id="11101148"><node id="11101149"/>
+<node id="11103489"><node id="11103546"/>
+</node>
+</node>
+</thread></node>

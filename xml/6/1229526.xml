@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229526" title="Re: Deleting certein elements from an array" created="2019-02-07 04:42:31" updated="2019-02-07 04:42:31" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I think a good first step would be to clean up your logic a bit. You've got two &lt;c&gt;while ($all_the_numbers&lt;20)&lt;/c&gt; loops, but &lt;c&gt;$all_the_numbers&lt;/c&gt; is initialized as a [doc://rand]om number from 0 to 18 and never changed - so those are essentially infinite loops. You exit them via &lt;c&gt;last&lt;/c&gt; and the loop counters &lt;c&gt;$i&lt;/c&gt; and &lt;c&gt;$h&lt;/c&gt;, so really, those two loops can be replaced by [doc://perlsyn#For-Loops|&lt;c&gt;for&lt;/c&gt; loops]. More specifically, in the following I've used the more Perlish [doc://perlsyn#Foreach-Loops|&lt;c&gt;foreach&lt;/c&gt; loop] with a [doc://perlop#Range-Operators|range operator], and since you only use the variables &lt;c&gt;$i&lt;/c&gt; and &lt;c&gt;$h&lt;/c&gt; to ensure the loop runs &lt;c&gt;$all_the_numbers&lt;/c&gt; times, I've removed those variable names entirely. The new loops have an added benefit: in your original code, if &lt;c&gt;$all_the_numbers&lt;/c&gt; was zero, your code would drop into an infinite loop - maybe you can see why? (Hint: Add a &lt;c&gt;say $i;&lt;/c&gt; right before the comparison to &lt;c&gt;$all_the_numbers&lt;/c&gt;.)&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use feature qw/say/;
+
+my $all_the_numbers=int(rand(19));
+say "$all_the_numbers";
+
+my @rand=();
+for (1..$all_the_numbers) {
+	push @rand, 20-int(rand(30));
+}
+say "@rand";
+
+for (1..$all_the_numbers) {
+	for (@rand) {
+		if ( $rand[0]&lt;0 ) { next; }  # skip the negative ones
+		shift @rand;
+	}
+}
+say "@rand";
+&lt;/c&gt;
+&lt;p&gt;Now, I hope that's easier to read. As for your logic: Note that [doc://shift] removes the first item off the list, not the current one. If you wanted to do that, you'd need to do something like [doc://splice], &lt;i&gt;however&lt;/i&gt;, that's tricky because it edits the array you're currently looping over, changing the indices. You said &lt;i&gt;"this resoults in deleting only the positive numbers"&lt;/i&gt; - notice that your logic currently says: "Loop over the elements of &lt;c&gt;@rand&lt;/c&gt;, each time checking if the first element of &lt;c&gt;@rand&lt;/c&gt; is less than zero, and if it is, skip the rest of the loop (i.e. the &lt;c&gt;shift&lt;/c&gt;)". Skipping the rest of the loop can also be expressed as follows*: "Loop over the elements of &lt;c&gt;@rand&lt;/c&gt;, each time testing the first element of &lt;c&gt;@rand&lt;/c&gt;, if that element is greater than or equal to zero, remove it from the array." I hope this explanation helps make it clear what is going wrong?&lt;/p&gt;
+&lt;p&gt;Now, as for how to fix it, I think I have to suggest re-thinking your overall logic. This is one of those cases where working out the issue on paper would be beneficial, especially if you are required to operate on the array in-place. For each iteration of the loop, keep track (on paper) of the loop counter, the contents of the array, which item you want to remove, and so on. If you are not required to operate on the array in-place, then Perl provides a handy function to make the task of keeping only certain items of an array very easy - have a look at [doc://grep].&lt;/p&gt;
+&lt;p&gt;* &lt;i&gt;Update:&lt;/i&gt; Breaking that down:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+for (@rand) {
+	if ( $rand[0]&lt;0 ) { next; }
+	shift @rand;
+}
+&lt;/c&gt;
+&lt;p&gt;Can be written as:&lt;/p&gt;
+&lt;c&gt;
+for (@rand) {
+	if ( $rand[0]&lt;0 ) { next; }
+	else { shift @rand; }
+}
+&lt;/c&gt;
+&lt;p&gt;Which can be written as:&lt;/p&gt;
+&lt;c&gt;
+for (@rand) {
+	if ( $rand[0]&gt;=0 ) { shift @rand; }
+	else { next; }
+}
+&lt;/c&gt;
+&lt;p&gt;And the &lt;c&gt;else { next; }&lt;/c&gt; can be removed.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update 2:&lt;/i&gt; Added more links to text, and minor changes to wording.&lt;/small&gt;&lt;/p&gt;
+&lt;/readmore&gt;
+</doctext>
+<root_node field_name="root_node">1229524</root_node>
+<parent_node field_name="parent_node">1229524</parent_node>
+<thread id="1229524">
+<node id="1229525"/>
+<node id="1229526"/>
+<node id="1229536"><node id="1229544"><node id="1229549"/>
+</node>
+</node>
+<node id="1229550"/>
+<node id="1229571"/>
+</thread></node>

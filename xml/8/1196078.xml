@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1196078" title="How to Check Hashes for Missing Items when Keys can be Values and vice versa" created="2017-07-26 02:45:32" updated="2017-07-26 02:45:32" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="346494">ozboomer</author>
+<doctext field_name="doctext">&lt;P&gt;Hi again, all... and apologies straight-up for the weirdo tiitle(!)
+&lt;/p&gt;
+
+&lt;p&gt;I'm now working on a project where I want to do some two-way checking for 'missing values' and I think the start of the process involves building some hashes.
+&lt;/p&gt;
+
+&lt;p&gt;I think the code below is a start...  and is easier to deal with when compared to trying to see if an element I want to add to an anonymous hash already exists in that anonymous hash, even though there's a couple of lots of processing involved.
+&lt;/p&gt;
+
+&lt;p&gt;The code works Ok... but there are a couple of things still to be worked out:-
+&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;1.&lt;/b&gt; The code allows me to see the sites used within each "dsk" item... but I also want to see the "dsk" items used at each site.  Can I do that with a single hash... or (as I expect) I'll need to maintain at least a couple of hashes?
+&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;2.&lt;/b&gt; Is there a "better"(?) way to do this sort of thing?  I have an inkling there might be something with 'map' that could help.
+&lt;/p&gt;
+
+&lt;p&gt;So... to the code:-
+&lt;/p&gt;
+&lt;code&gt;
+use Data::Dumper;
+
+%data_hash   = ();
+%output_hash = ();
+   
+   
+while( &lt;DATA&gt; ) {                          # Build list of unique (site:dsk) items
+   ($site, $buf) = split(/,/, $_);
+
+   @input_item = split(/:/, $buf);
+   foreach $input_field (@input_item) {    # EX: "VAR8=36!206!207!"
+      @dsk_list = ($input_field =~ /([0-9]+)!([0-9]+)!$/);  # Get last 2 of 3 items
+      
+      foreach $dsk (@dsk_list) {           # Each dsk item in the input...
+         next if ($dsk == 0);              # Skip '0' dsk items
+         $key = $site . ":" . $dsk;        # Build composite key
+         $data_hash{$key}++;               # ...and save it
+      }
+   }
+}
+
+foreach $key ( sort keys %data_hash ) {    # Build list of dsk -&gt; (multi sites)
+   ($site, $dsk) = split(/:/, $key);
+   push( @{$output_hash{$dsk} }, $site );
+}
+
+foreach $dsk (sort {$a &lt;=&gt; $b} keys %output_hash) {  # Show list of sites for each dsk
+   printf("Dsk: %d:\n", $dsk);
+   foreach $site (sort {$a &lt;=&gt; $b} @{$output_hash{$dsk}}) {
+      printf("  %d\n", $site);
+   }
+   printf("\n");
+}
+
+__DATA__
+1108,VAR6=36!204!205!:VAR8=36!206!207!:VAR13=36!70!0!:VAR14=36!70!71!:VAR15=36!71!0!
+377,VAR12=36!97!96!
+512,VAR6=36!90!91!:VAR8=36!92!93!:VAR11=36!0!70!:VAR12=36!189!190!
+587,VAR2=36!550!0!:VAR4=36!554!0!:VAR6=36!551!0!
+&lt;/code&gt;
+&lt;p&gt;...and some example output:-
+&lt;/p&gt;
+&lt;code&gt;
+Dsk: 70:
+  512
+  1108
+
+Dsk: 71:
+  1108
+
+Dsk: 90:
+  512
+
+Dsk: 91:
+  512
+
+Dsk: 92:
+  512
+
+Dsk: 93:
+  512
+
+Dsk: 96:
+  377
+
+Dsk: 97:
+  377
+
+Dsk: 189:
+  512
+
+Dsk: 190:
+  512
+
+Dsk: 204:
+  1108
+
+Dsk: 205:
+  1108
+
+Dsk: 206:
+  1108
+
+Dsk: 207:
+  1108
+
+Dsk: 550:
+  587
+
+Dsk: 551:
+  587
+
+Dsk: 554:
+  587
+&lt;/code&gt;
+&lt;p&gt;Ultimately, I expect to use &lt;i&gt;defined()&lt;/i&gt; to see if an element exists or not, which will let me display the 'missing items' I mentioned at the start... or I could use some sort of 'union/intersection' construct on the arrays of keys...
+&lt;/p&gt;
+&lt;p&gt;Would appreciate any clues on how to approach this...&lt;/p&gt;
+&lt;p&gt;Thanks...&lt;/p&gt;
+</doctext>
+<thread id="1196078">
+<node id="1196084"/>
+<node id="1196085"/>
+<node id="1196093"/>
+<node id="1196096"><node id="1196097"/>
+<node id="1196099"/>
+<node id="1196102"/>
+</node>
+<node id="1196103"/>
+<node id="1196322"/>
+</thread></node>

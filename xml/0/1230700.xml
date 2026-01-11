@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230700" title="Re^3: rectangularizing input to become array" created="2019-02-28 18:08:13" updated="2019-02-28 18:08:13" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;So there's the base directory of the script. I wouldn't want output there. ... would you rather put such a thing on our one and only subdirectory or split input and output into deparate directories?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Here's an idea for how to handle a script with a library&lt;c&gt;.pm&lt;/c&gt; file or two that goes with it:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Say &lt;c&gt;/home/user&lt;/c&gt; is the base directory.&lt;/li&gt;
+&lt;li&gt;I put my script in e.g. &lt;c&gt;/home/user/myscript&lt;/c&gt;.
+&lt;ul&gt;
+&lt;li&gt;Libraries (&lt;c&gt;.pm&lt;/c&gt;s) could go in the same directory, or in &lt;c&gt;/home/user/myscript/lib&lt;/c&gt;, that doesn't really make a difference for small scripts - if you've got a lot of &lt;c&gt;.pm&lt;/c&gt; files then a &lt;c&gt;lib&lt;/c&gt; dir is a good idea.&lt;/li&gt;
+&lt;li&gt;Ideally, &lt;c&gt;/home/user/myscript&lt;/c&gt; is also a &lt;c&gt;git&lt;/c&gt; working copy - in which case input and output data doesn't really belong in that directory anyway, as otherwise it'd have to be added to &lt;c&gt;.gitignore&lt;/c&gt;.&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;The script can be made to not worry about which directory it is located in using code like this:
+&lt;c&gt;
+use FindBin;
+use lib $FindBin::Bin;
+&lt;/c&gt;
+Or, if there's a &lt;c&gt;lib&lt;/c&gt; subdirectory, using the following (platform-independent) code:
+&lt;c&gt;
+use FindBin;
+use File::Spec::Functions qw/catdir/;
+use lib catdir($FindBin::Bin, 'lib');
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;You can put your input data in e.g. &lt;c&gt;/home/user/mydata&lt;/c&gt;, &lt;c&gt;cd&lt;/c&gt; to that directory, and run your script with e.g. &lt;c&gt;perl ../myscript/script.pl input.txt&lt;/c&gt;, and it should generate its output in the current directory.&lt;/li&gt;
+&lt;li&gt;If it's a script you use a lot, and you don't want to type out its path all the time, you could add it to your &lt;c&gt;PATH&lt;/c&gt;. For example, on a couple of my boxes, I have lines like this in my &lt;c&gt;~/.profile&lt;/c&gt;: &lt;c&gt;test -d "$HOME/myscript" &amp;&amp; PATH="$HOME/myscript:$PATH"&lt;/c&gt; (the script needs to be &lt;c&gt;chmod u+x&lt;/c&gt; for this to work).&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;blockquote&gt;&lt;i&gt;Should I go update that on the original post?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I think in this case you don't need to, it's just for future reference, thanks.&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;
+&lt;blockquote&gt;in your code tags you've included the command-line invocations that I'd have to trim&lt;/blockquote&gt;
+I tend to think that it provides context ... Might pre tags work here?
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes you're right - I didn't mean to make it sound like it's not a good idea, context can certainly be useful in some cases - the main point was not to put it in the same &lt;c&gt;&lt;code&gt;&lt;/c&gt; tag as the code, to make downloading easier. &lt;c&gt;&lt;pre&gt;&lt;/c&gt; tags have the issue that HTML and PerlMonks special characters have to be escaped (as you can see your &lt;c&gt;&lt;pre&gt;&lt;/c&gt; tag has been rendered with links in it), so two separate sets of &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags work. Or, here's how I might have written that post (note you can use &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags in paragraphs as well):&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Here is the script &lt;c&gt;3.rm.pl&lt;/c&gt;, which I run via &lt;c&gt;./3.rm.pl&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl -w
+use 5.011;
+...
+&lt;/c&gt;
+&lt;p&gt;And here is the output:&lt;/p&gt;
+&lt;c&gt;
+["abcdef", "abcdefg", "abcde", " bcdefgh", " bcd "]
+["abcdef", "abcdef", "abcde ", " bcdef"]
+...
+&lt;/c&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Also, command lines like &lt;c&gt;cat&lt;/c&gt; or &lt;c&gt;perl script.pl&lt;/c&gt; are simple enough that we usually don't need to see them, it only becomes important when there are additional arguments involved. (And for some questions, it can be relevant whether a script was invoked as &lt;c&gt;./script.pl&lt;/c&gt; or &lt;c&gt;perl script.pl&lt;/c&gt;, but that's not too often.)&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;What I seek to do is pass the first test...then others....&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sometimes it can be very useful to write the tests first, as it forces one to think about the API and what the output should ideally look like.&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;Can't use string ("abcdef") as an ARRAY ref while "strict refs" in use at ./3.rm.pl line 59.&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;&lt;c&gt;getsubset&lt;/c&gt; expects an array of arrays, but &lt;c&gt;$out&lt;/c&gt; is just an array of strings. Assuming you want each character to be a "column", you could do &lt;c&gt;$out = [ map { [split //] } @$out ];&lt;/c&gt; after &lt;c&gt;$out = make_rectangular(...&lt;/c&gt;, or you integrate it directly in the &lt;c&gt;push&lt;/c&gt; in your &lt;c&gt;make_rectangular&lt;/c&gt; like so: &lt;c&gt;push @out, [ split //, sprintf "%-*s", $maxlength, $trimmed ];&lt;/c&gt; - either of those changes make your test pass. (Note you should call &lt;c&gt;done_testing;&lt;/c&gt; after your tests.)&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1230600</root_node>
+<parent_node field_name="parent_node">1230699</parent_node>
+<thread id="1230600">
+<node id="1230601"><node id="1230699"><node id="1230700"><node id="1230703"/>
+<node id="1230769"><node id="1230781"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1230602"><node id="1230684"/>
+</node>
+<node id="1230610"><node id="1230701"><node id="1230707"/>
+<node id="1230710"/>
+</node>
+</node>
+</thread></node>

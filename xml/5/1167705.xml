@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1167705" title="use y" created="2016-07-13 12:29:59" updated="2016-07-13 12:29:59" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="510280">shmem</author>
+<doctext field_name="doctext">&lt;p&gt;No, I don't mean to use &lt;b&gt;y&lt;/b&gt; instead of &lt;b&gt;x&lt;/b&gt;, having an [XY Problem]. This is about a silly module - but a rather handy one.&lt;/p&gt;
+
+&lt;p&gt;I'm presenting just the POD of it. I'm not posting the entire module because... see the COPYRIGHT AND LICENSE block. &lt;b&gt;WARNING:&lt;/b&gt; insane code ahead.
+&lt;/p&gt;
+
+&lt;b&gt;&lt;p&gt;NAME&lt;/p&gt;&lt;/b&gt;
+&lt;blockquote&gt;
+    y - your own toolbox
+
+&lt;/blockquote&gt;
+&lt;b&gt;&lt;p&gt;SYNOPSIS&lt;/p&gt;&lt;/b&gt;
+&lt;blockquote&gt;
+
+&lt;c&gt;
+    $ export PERL5LIB=$HOME/priv/lib
+    $ perl -My=mail,A,:date,frob -le '...'
+    Unimplemented at -e line 1.
+&lt;/c&gt;
+
+&lt;/blockquote&gt;
+&lt;readmore&gt;
+&lt;b&gt;&lt;p&gt;DESCRIPTION&lt;/p&gt;&lt;/b&gt;
+&lt;blockquote&gt;
+
+&lt;p&gt;The namespace 'y' doesn't exist on CPAN, and it is very unlikely that it will ever show up there. Likewise, it is very improbable that a pragma 'y.pm' will be included into the perl core. This means - unless something very insane happens sometime in the future - that this namespace 'y' is YOUR VERY OWN NAMESPACE, and you can set it up in any way you want it to be. Whatever appears in it, even functions/things that should never happen, is up to you.&lt;/p&gt;
+
+&lt;p&gt;This module doesn't exist. You have to write it. Fortunately, all of it (98%) has already been written, according to Salomon (bible) - see CPAN.&lt;/p&gt;
+
+&lt;p&gt;The perl inclusion methods apply, you must write your own y.pm and either point to it via the PERL5LIB environment variable (best) or lump it into the standard perl module installation paths (worst), or something else (depends). &lt;/p&gt;
+
+&lt;p&gt;This module is meant to be a container of your own inventions, idiomatic expressions and code snippets you use on a daily basis, which don't merit - or don't fit into - a separate Module.&lt;/p&gt;
+
+&lt;/blockquote&gt;
+&lt;b&gt;&lt;p&gt;RATIONALE&lt;/p&gt;&lt;/b&gt;
+&lt;blockquote&gt;
+
+&lt;p&gt;Up to this day, not only sysadmin's work comprises a lot of random hackery, file parsing and data munging, quick makeshifts and saving coworkers from a fix, e.g. defeating the [id://820672|Agile Imposition].
+Lots of those oneliners are one-shots. Others, even quite complex ones, are typed over and over again. Modern shells have a history and means to query that, but even the history has limits. This module can be used to save those snippets in a well defined place.&lt;/p&gt;
+
+&lt;p&gt;You could use this module for aliases to trivial perl tasks that require a lot of typing. Consider:&lt;/p&gt;
+
+&lt;c&gt;
+    perl -le 'print scalar localtime pop' 1468404921
+    perl -My -le 'plt pop' 1468404921
+&lt;/c&gt;
+
+&lt;p&gt;So your y.pm could have a &lt;c&gt;plt&lt;/c&gt; function, and perhaps a &lt;c&gt;slt&lt;/c&gt; one to be used e.g. inside regular expressions.&lt;/p&gt;
+
+&lt;p&gt;Tired of invoking perl (these four letters are so much bound together - can't remember how many times I've corrected myself after typing "as perl invoice" and such) with other switches than those matching &lt;c&gt;/[lane]+/&lt;/c&gt;, namely including modules on the command line with several &lt;c&gt;-MModule&lt;/c&gt; statements, I decided to claim the &lt;b&gt;y&lt;/b&gt; namespace for my very own, just for being male. Ladies might want to name it &lt;b&gt;x&lt;/b&gt;. Transgender people might name it &lt;b&gt;_&lt;/b&gt; (&lt;b&gt;*&lt;/b&gt; would be nice, but that's illegal as a module name)(thanks, [tinita]). Blackhats would prefer naming it &lt;b&gt;I6&lt;/b&gt; prolly.&lt;/p&gt;
+
+&lt;/blockquote&gt;
+&lt;b&gt;&lt;p&gt;EXPORTS&lt;/p&gt;&lt;/b&gt;
+&lt;blockquote&gt;
+
+&lt;p&gt;You may export anything you want. Perhaps you want to use export tags, too.&lt;/p&gt;
+&lt;p&gt;A handy way to load other modules into the caller's namespace:
+&lt;c&gt;
+package y;
+use strict;
+use warnings;
+
+my $callpack = caller;
+eval &lt;&lt;"EOH";
+package $callpack;
+use Data::Dumper;
+use B::Deparse;
+use Devel::Peek;
+# other modules...
+EOH
+&lt;/c&gt;
+&lt;p&gt;This could be wrapped into a BEGIN block.&lt;/p&gt;
+
+&lt;/blockquote&gt;
+&lt;b&gt;&lt;p&gt;METHODS AND FUNCTIONS&lt;/p&gt;&lt;/b&gt;
+&lt;blockquote&gt;
+XXX TODO: document this.
+&lt;/blockquote&gt;
+&lt;b&gt;&lt;p&gt;MAINTAINANCE&lt;/p&gt;&lt;/b&gt;
+&lt;blockquote&gt;
+
+&lt;p&gt;Of course, maintainance is up to you. To add code snippets to it, my version of &lt;c&gt;y.pm&lt;/c&gt; sports the following &lt;c&gt;CHECK&lt;/c&gt;  and &lt;c&gt;import&lt;/c&gt; routines:&lt;/p&gt;
+
+&lt;c&gt;
+{
+    my $append = 0;
+    my (@lines,$line,$saveout);
+
+    CHECK {
+        if ($append) {
+            print STDOUT"}\n\n",@lines;
+            open STDOUT, '&gt;&amp;', $saveout or die "Can't restore STDOUT: $!\n";
+            exec "vi +$line ". __FILE__;
+        }
+    }
+    sub import{
+        shift;
+        if (@_ &amp;&amp; $_[0] eq 'append'){
+            $append = shift; 
+            my $func = shift || die "need function name to append.\n";
+            open $saveout, '&gt;&amp;', STDOUT or die "Can't dup STDOUT: $!\n";
+            open STDOUT, '+&lt;', __FILE__;
+            seek DATA,0,0;
+            while(&lt;DATA&gt;) { last if /^"foo";$/}
+            $line = $.;
+            my $pos = tell(DATA) -7;
+            @lines = ($_,&lt;DATA&gt;);
+            seek STDOUT, $pos, 0;
+            print "sub $func {\n";
+            require O;
+            O-&gt;import('Deparse');
+        }else{
+            no strict 'refs';
+            my $caller = caller;
+            for(@_?@_: keys %y::){
+                next if /__ANON__/;
+                *{$caller."::$_"}=\&amp;$_;
+            }
+        }
+    }
+}
+&lt;/c&gt;
+
+&lt;p&gt;This lets me say&lt;/p&gt;
+&lt;c&gt;
+    perl -My=append,stime -e 'my$t=localtime(shift||time);$t'
+&lt;/c&gt;
+
+&lt;p&gt;and have this snippet inserted as sub stime just before the line containing &lt;c&gt;"foo";&lt;/c&gt; which is my y's way to say &lt;c&gt;1;&lt;/c&gt;, and have vi opened at the beginning of the sub (which has been milled through [mod://B::Deparse]) to do any tidings and completions (localizing variables, handling &lt;c&gt;@_&lt;/c&gt;, return values etc):&lt;p&gt;
+&lt;c&gt;
+sub stime {
+my $t = localtime(shift @ARGV || time);
+$t;
+}
+&lt;/c&gt;
+&lt;p&gt;My &lt;c&gt;y.pm&lt;/c&gt; of course contains a &lt;c&gt;__DATA__&lt;/c&gt; token; the import &lt;c&gt;if&lt;/c&gt; block would not work without it. The rest (in the &lt;c&gt;else&lt;/c&gt; block) is just exporting without [mod://Exporter].&lt;/p&gt;
+
+&lt;p&gt;For the curious: the CHECK block is necessary since B::Deparse doesn't emit it's output before the &lt;c&gt;import&lt;/c&gt; completes, and it does not run the script. It does, however, run CHECK blocks, which is used here to complete the file update.&lt;/p&gt;
+
+&lt;p&gt;This is perhaps insane and brittle, but TIMTOWTDI. Of course you are free to mess around otherwise. For instance, you could set up a module directory proper, complete with &lt;c&gt;Makefile.PL lib CHANGES&lt;/c&gt; etc and have the import routine add test files to &lt;c&gt;t/&lt;/c&gt; for the sub added, patch &lt;c&gt;lib/y.pm&lt;/c&gt;, run &lt;c&gt;make test &amp;&amp; make install&lt;/c&gt; and whatnot. Or else.&lt;/p&gt;
+
+&lt;/blockquote&gt;
+&lt;/readmore&gt;
+&lt;b&gt;&lt;p&gt;SEE ALSO&lt;/p&gt;&lt;/b&gt;
+&lt;blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;x
+&lt;li&gt;eow
+&lt;li&gt;umble
+&lt;li&gt;imimi
+&lt;li&gt;...
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;b&gt;&lt;p&gt;I18N&lt;/p&gt;&lt;/b&gt;
+&lt;blockquote&gt;
+&lt;p&gt;The german version of this module is named &lt;c&gt;eins.pm&lt;/c&gt;. The spanish and italian versions are &lt;c&gt;io.pm&lt;/c&gt; proper.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;b&gt;&lt;p&gt;AUTHOR&lt;/p&gt;&lt;/b&gt;
+&lt;blockquote&gt;
+
+&lt;p&gt;You.&lt;/p&gt;
+
+&lt;/blockquote&gt;
+&lt;b&gt;&lt;p&gt;COPYRIGHT AND LICENSE&lt;/p&gt;&lt;/b&gt;
+&lt;blockquote&gt;
+
+&lt;p&gt;Copyright (C) by you.&lt;/p&gt;
+
+&lt;p&gt;This library is concealed software; you should not redistribute it and/or coerce
+it on your coworkers under the same terms as Perl itself, neither Perl version 5.18.2 nor,
+at your option, any later version of Perl 5 you may have available.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;=cut&lt;/p&gt;
+
+&lt;p&gt;Is that copyright ok for you? Did I miss any important wrongdoing? Nonwithstanding the distribution of the whole module being discouraged, it is ok to post snippets that fit nicely into &lt;c&gt;y.pm&lt;/c&gt;, e.g.&lt;/p&gt;
+&lt;c&gt;
+my($m,$z);
+$m=pack"B32",pop=~'/'x$';
+printf"$` network %vd broadcast %vd netmask %vd\n",($z=eval$`)&amp;$m,$z|~$m,$m
+&lt;/c&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-510280"&gt;
+&lt;small&gt;perl -le'print map{pack c,($-++?1:13)+ord}split//,ESEL'&lt;/small&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1167705">
+<node id="1167737"><node id="1167741"><node id="1167743"/>
+</node>
+<node id="1167764"/>
+</node>
+<node id="1167812"><node id="1167813"/>
+<node id="1167814"/>
+</node>
+</thread></node>

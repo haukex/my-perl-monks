@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116797" title="How to sub class-es" created="2020-05-14 22:54:25" updated="2020-05-14 22:54:25" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="930100">exilepanda</author>
+<doctext field_name="doctext">For example, I have &lt;code&gt;Robo&lt;/code&gt; class, which subclass from &lt;code&gt;Robo::Arm Robo::Head Robo::Feet&lt;/code&gt; at once ( and each has it's own &lt;code&gt;new()&lt;/code&gt; constructor ). 
+&lt;p&gt;
+After lot of readings, I learned I can &lt;code&gt;use Exporter&lt;/code&gt; and then &lt;code&gt;push @ISA&lt;/code&gt;, or &lt;code&gt;use base&lt;/code&gt;, or &lt;code&gt;parent&lt;/code&gt; to obtain methods from other class(modules). 
+&lt;p&gt;
+However, if a method is not solely depends on themselves, I mean, the being called method require attributes defined in the class's own constructor to work properly, the tricks of above will not work. The result is that I can access the method, but the method won't work properly.
+&lt;p&gt;
+Is that any trick that you can kick on the constructor ahead, and then calling those parent methods with correct object reference?
+Thank you very much for any clue. 
+&lt;p&gt;----------------------------------&lt;p&gt;
+Update: Thank you everyone that point out and I am agree that it is not an is-a scenario, but has-a, which is very likely what I am asking, but I have to point out that I do not have enough time to learn &lt;code&gt;Moose&lt;/code&gt; at this moment.
+&lt;p&gt;
+Though, here's some code I can demonstrate.
+&lt;p&gt;
+&lt;code&gt;
+
+package Robo::Arm;
+sub new { bless {  } , shift } 
+sub pick { print "I am grabbing " . $_[1] } 
+1;
+
+package Robo::Feet;
+sub new { bless { Position =&gt; [11,0] } , shift } 
+sub walk { 
+	my $c = shift;  
+	my ( $x, $y ) = @{$c-&gt;{Position}} ;
+	if ( $x &gt; 10 || $y &gt; 10  ) {
+		print "Out of boundary. I stop walk"
+	} else {
+		 print "I start walk from pos $x $y " 
+	}
+}	
+1;
+
+package Robo;
+use parent -norequire , 'Robo::Arm', 'Robo::Feet';
+
+sub new {
+	bless {
+		Arm =&gt; new Robo::Arm(),
+		Feet =&gt; new Robo::Feet(),
+	}, shift	
+}
+1;
+ 
+package main;
+ 
+ my $robo = new Robo;
+ $robo -&gt; pick ( "Apple" ) ;
+ $robo -&gt; walk ;
+&lt;/code&gt;
+
+Now, look at the &lt;code&gt;walk&lt;/code&gt; from &lt;code&gt;Feet&lt;/code&gt;, that's what I mean, I can access the method, but the method won't run as expected. I expect it won't walk if the init value was considered. 
+
+So, I have a very clumsy work around &lt;p&gt;
+&lt;code&gt;
+package Robo::Arm;
+sub new { bless {  } , shift } 
+sub pick { print "I am grabbing " . $_[1] } 
+1;
+
+package Robo::Feet;
+sub new { bless { Position =&gt; [11,0] } , shift } 
+sub walk { 
+	my $c = shift;  
+	my ( $x, $y ) = @{$c-&gt;{Position}} ;
+	if ( $x &gt; 10 || $y &gt; 10  ) {
+		print "Out of boundary. I stop walk"
+	} else {
+		 print "I start walk at pos $x $y " 
+	}
+}	
+1;
+
+package Robo;
+
+sub AUTOLOAD {
+	our $AUTOLOAD ; 
+	$AUTOLOAD =~ /([\w]+)$/;
+	my $meth = $1;
+	
+	my $c = shift;
+	my $can = undef;
+	
+	foreach ( keys %$c ) { 
+		if ( $c-&gt;{$_}-&gt;can ( $meth ) ) {
+		eval "\$c-&gt;{\$_}-&gt;${meth} (\@_) " ;
+		$can++
+		}		
+	}
+	die "There's no $meth method anywhere" unless $can;
+}
+
+sub new {
+	bless {
+		Arm =&gt; new Robo::Arm(),
+		Feet =&gt; new Robo::Feet(),
+	}, shift	
+}
+
+
+1;
+ 
+package main;
+ 
+ my $robo = new Robo;
+ $robo -&gt; walk ;
+ $robo -&gt; pick ( "Apple" ) ; 
+ 
+&lt;/code&gt;
+
+&lt;p&gt;
+And that's what I am trying to ask a better way to do
+
+
+
+</doctext>
+<thread id="11116797">
+<node id="11116798"><node id="11116812"/>
+</node>
+<node id="11116800"/>
+<node id="11116804"/>
+<node id="11116806"><node id="11116810"><node id="11116815"/>
+</node>
+</node>
+<node id="11116811"/>
+<node id="11116816"/>
+<node id="11116841"><node id="11116879"/>
+</node>
+<node id="11116931"><node id="11117025"/>
+</node>
+<node id="11117029"/>
+</thread></node>

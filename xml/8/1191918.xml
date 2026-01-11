@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1191918" title="Test::More file not found on unix" created="2017-06-02 03:11:22" updated="2017-06-02 03:11:22" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1091361">frazap</author>
+<doctext field_name="doctext">My tests in my_module/t/001_load.t says
+&lt;code&gt;
+use Test::More tests =&gt; 5;
+use lib "../lib";
+BEGIN { use_ok( 'Pod::Simple::Select' ); }
+
+my $p = Pod::Simple::Select-&gt;new ();
+isa_ok ($p, 'Pod::Simple::Select');
+
+$p-&gt;select(["head1", ["NAME", "VERSION"]]);
+$p-&gt;output_hash();
+my %h = $p-&gt;parse_file("../lib/Pod/Simple/Select.pm");
+&lt;/code&gt;
+And this fails on Linux/Unix with file not found.
+On my windows box rundisttest path without problems.
+Pod::Simple::Select is a child class of Pod::Simple
+and parse_file begins with
+&lt;code&gt;
+sub parse_file {
+    my ( $self, $file ) = @_;
+    tie my @array, 'Tie::File', $file, mode =&gt; O_RDONLY;
+   ...
+    $token       = $self-&gt;{doc}-&gt;next;
+    $self-&gt;SUPER::parse_file($file);
+    ...
+&lt;/code&gt;
+Any clue ?
+
+Thanks
+frazap</doctext>
+<thread id="1191918">
+<node id="1191920"><node id="1192368"/>
+</node>
+<node id="1191937"/>
+<node id="1191964"/>
+</thread></node>

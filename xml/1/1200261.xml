@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200261" title="Re^2: Semantic diff for Perl code" created="2017-09-28 06:22:59" updated="2017-09-28 06:22:59" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The &lt;c&gt;-&gt;remove&lt;/c&gt; technique I showed in reply to [id://1199996|your other post] can be applied here too:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use PPI;
+use Data::Dump;
+
+my $code = &lt;&lt;'ENDCODE';
+print "Hello, ";
+sub Fee {
+	return &lt;&lt;__Fee__;
+World
+__Fee__
+}
+sub Blah {
+	return &lt;&lt;'FOO';
+	Hello
+FOO
+}
+print Fee;
+ENDCODE
+
+my $doc = PPI::Document-&gt;new(\$code);
+
+for my $sub (@{ $doc-&gt;find('PPI::Statement::Sub') }) {
+	# insert the stub (BUT doesn't preserve prototype, attributes, etc.)
+	$sub-&gt;insert_after(
+		PPI::Document::Fragment-&gt;new(\("sub ".$sub-&gt;name." {...}"))
+			-&gt;find_first('PPI::Statement::Sub')-&gt;remove );
+	my $subdoc = PPI::Document::Fragment-&gt;new;
+	$subdoc-&gt;add_element($sub-&gt;remove);
+	print "SUB&lt;&lt;", $subdoc-&gt;serialize, "&gt;&gt;\n";
+}
+
+print "DOC&lt;&lt;", $doc-&gt;serialize, "&gt;&gt;\n";
+
+__END__
+
+SUB&lt;&lt;sub Fee {
+	return &lt;&lt;__Fee__;
+World
+__Fee__
+}&gt;&gt;
+SUB&lt;&lt;sub Blah {
+	return &lt;&lt;'FOO';
+	Hello
+FOO
+}&gt;&gt;
+DOC&lt;&lt;print "Hello, ";
+sub Fee {...}
+sub Blah {...}
+print Fee;
+&gt;&gt;
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;In that thread, [holli] mentioned [mod://PPR], and I've been wanting to play more with that module, so I took this opportunity to do so. Here is something that will "stub/unstub" &lt;c&gt;sub&lt;/c&gt;s similarly to what your [mod://PPI] code does.&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use PPR;
+
+# Some complicated code
+my $code = &lt;&lt;'ENDCODE';
+sub MODIFY_CODE_ATTRIBUTES {
+	my ($class,$code,@attrs) = @_;
+	return grep { !/^Foo\(?/ } @attrs;
+}
+sub Bar ($);
+sub Baz : Foo(sub bar {"bar"}) { 'Baz' }
+print Foo('Bar');
+Bar(Baz);
+	sub Bar ($) { print "Quz $_[0]\n" }
+use experimental 'signatures';
+sub Foo ($x = sub { &lt;&lt;"sub xyz {"
+Hello!
+sub xyz {
+}) {
+	return ref $x ? $x-&gt;() : sub { &lt;&lt;"}";
+Foo $x
+}
+}-&gt;()
+}
+print Foo;
+sub x {"x"} sub y {"y"} { print "I'm just a block\n" }
+DESTROY { warn "Blam\n" }  
+ENDCODE
+
+# Debuggging stuff
+use Data::Dump qw/dd pp/;
+#print $code,"----- -----\n";
+# exec code to check for syntax errors
+eval "$code; 1" or die $@;
+print "-----\n";
+
+# Regexes based on and using PPR
+my $docre = qr{ # based on PPR's PerlDocument
+	(?&gt;(?&amp;PerlOWS)) (?&gt;(?&amp;PerlStatement)) (?&amp;PerlOWS) $PPR::GRAMMAR }msx;
+my $subre = qr{ \A (?&gt;(?&amp;PerlOWS)) # based on PPR's PerlSubroutineDeclaration
+	(?&gt; sub \b (?&gt;(?&amp;PerlOWS)) (?&lt;name&gt;(?&gt;(?&amp;PerlOldQualifiedIdentifier)))
+		| (?&lt;name&gt;AUTOLOAD) | (?&lt;name&gt;DESTROY) )
+	\b .* \K (?&gt; (?&lt;block&gt;(?&gt;(?&amp;PerlBlock))) (?= (?&amp;PerlOWS) \z ) )
+	$PPR::GRAMMAR }msx;
+
+# Convert sub blocks to stubs
+my ($stubcode,%subs);
+while ( $code=~/\G($docre)/gc ) {
+	my $stmt = $1;
+	if ( $stmt =~ s/$subre/{...}/ ) {
+		die "sub $+{name} found twice" if exists $subs{$+{name}};
+		$subs{$+{name}} = $+{block};
+	}
+	$stubcode .= $stmt;
+}
+pos($code)==length($code) or die "Failed to parse code";
+print $stubcode, "-----\n", pp(\%subs), "\n"; # Debug
+
+# Convert stubs back to blocks
+my $unstubcode;
+while ( $stubcode=~/\G($docre)/gc ) {
+	my $stmt = $1;
+	$stmt =~ s{$subre}{
+		die "sub $+{name} wasn't a stub" unless $+{block} eq '{...}';
+		$subs{$+{name}} or die "Don't have code for stub $+{name}"
+		}e;
+	$unstubcode .= $stmt;
+}
+pos($stubcode)==length($stubcode)
+	or die "Failed to parse stubcode";
+$unstubcode eq $code or die "MISMATCH: $unstubcode"; # Debug
+
+__END__
+
+Foo Bar
+Quz Baz
+Hello!
+I'm just a block
+-----
+sub MODIFY_CODE_ATTRIBUTES {...}
+sub Bar ($);
+sub Baz : Foo(sub bar {"bar"}) {...}
+print Foo('Bar');
+Bar(Baz);
+	sub Bar ($) {...}
+use experimental 'signatures';
+sub Foo ($x = sub { &lt;&lt;"sub xyz {"
+Hello!
+sub xyz {
+}) {...}
+print Foo;
+sub x {...} sub y {...} { print "I'm just a block\n" }
+DESTROY {...}  
+-----
+{
+  Bar =&gt; "{ print \"Quz \$_[0]\\n\" }",
+  Baz =&gt; "{ 'Baz' }",
+  DESTROY =&gt; "{ warn \"Blam\\n\" }",
+  Foo =&gt; "{\n\treturn ref \$x ? \$x-&gt;() : sub { &lt;&lt;\"}\";\nFoo \$x\n}\n}-&gt;()\n}",
+  MODIFY_CODE_ATTRIBUTES =&gt; "{\n\tmy (\$class,\$code,\@attrs) = \@_;\n\treturn grep { !/^Foo\\(?/ } \@attrs;\n}",
+  x =&gt; "{\"x\"}",
+  y =&gt; "{\"y\"}",
+}
+&lt;/c&gt;
+&lt;/readmore&gt;
+</doctext>
+<root_node field_name="root_node">1200210</root_node>
+<parent_node field_name="parent_node">1200210</parent_node>
+<thread id="1200210">
+<node id="1200211"><node id="1200220"><node id="1200221"><node id="1200222"/>
+</node>
+</node>
+</node>
+<node id="1200213"/>
+<node id="1200261"/>
+<node id="1200304"/>
+</thread></node>

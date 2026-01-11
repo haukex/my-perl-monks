@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109796" title="Re: Best practices for local libraries" created="2019-12-07 05:19:08" updated="2019-12-07 05:19:08" _doctext_mode="lenient"><type id="11">note</type>
+<author id="625601">misc</author>
+<doctext field_name="doctext">&gt;some of my files conflicted with system ones&lt;br&gt;
+&lt;br&gt;
+That's the reason I keep all my own modules within the namespace "Misc";&lt;br&gt;
+and the physical location is /home/micha/prog/perl/Misc,&lt;br&gt;
+having a symbolic link in /etc/perl/Misc.&lt;br&gt;
+&lt;br&gt;
+I don't know if there's a general preferred way.&lt;br&gt;
+But this did work out for me.&lt;br&gt;
+&lt;br&gt;
+Having a unmodified homebrew perl installation on osx darwin here, I just looked the include path up:&lt;br&gt;
+&lt;br&gt;
+&lt;c&gt;
+~$ perl -e 'print map { "$_\n" } @INC' 
+/usr/local/Cellar/perl/5.26.2/lib/perl5/site_perl/5.26.2/darwin-thread-multi-2level
+/usr/local/Cellar/perl/5.26.2/lib/perl5/site_perl/5.26.2
+/usr/local/Cellar/perl/5.26.2/lib/perl5/5.26.2/darwin-thread-multi-2level
+/usr/local/Cellar/perl/5.26.2/lib/perl5/5.26.2
+/usr/local/lib/perl5/site_perl/5.26.2
+&lt;/c&gt;
+So, I might prepend a BEGIN block and push the local path to @INC.&lt;br&gt;
+&lt;br&gt;
+..&lt;br&gt;
+I just looked it up, here's what I did in a script some time before:&lt;br&gt;
+&lt;br&gt;
+&lt;c&gt;
+BEGIN{
+		use File::Basename;
+		($name,$path,$suffix) = fileparse ($0);
+		print "path: $path";
+		push @INC, "$path/perl";
+}
+&lt;/c&gt;
+&lt;br&gt;
+I guess, there I followed the logic: Wherever this script lives, I'm going to store my modules within the same directory. &lt;br&gt;
+&lt;br&gt;
+In each case I'd recommend working with links to your (home) modules directory,&lt;br&gt;
+just to keep things more tidy.&lt;br&gt;
+&lt;br&gt;
+And I'm utilizing github for storing backups / revision control.&lt;br&gt;
+&lt;br&gt;
+Finally, into some scripts I copied every module needed, also cpan modules, getting a huge single script.&lt;br&gt;
+&lt;br&gt; These are scripts I can execute nearly everywhere, without any cpan installation.&lt;br&gt;
+&lt;br&gt;
+I even built a statically linked perl out of this reason.&lt;br&gt;
+hth, Michael
+
+</doctext>
+<root_node field_name="root_node">11109789</root_node>
+<parent_node field_name="parent_node">11109789</parent_node>
+<thread id="11109789">
+<node id="11109793"/>
+<node id="11109796"><node id="11109797"><node id="11109798"/>
+</node>
+</node>
+<node id="11109817"/>
+<node id="11109828"><node id="11109835"/>
+</node>
+<node id="11109836"/>
+<node id="11109893"/>
+</thread></node>

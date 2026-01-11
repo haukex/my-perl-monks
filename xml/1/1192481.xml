@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1192481" title="Re^3: How come @_ gets changed here?" created="2017-06-10 14:07:50" updated="2017-06-10 14:07:50" _doctext_mode="lenient"><type id="11">note</type>
+<author id="341121">dave_the_m</author>
+<doctext field_name="doctext">It's not particularly a regression. Perl suffers from a particular over-arching bug, which is hard to fix (which is why it hasn't been fixed yet): elements on perl's execution stack are not reference counted. This means that if you empty something like an array whose elements are on the stack (and will have been aliased to elements of @_ if this is a function call), and if nothing else holds a reference count to those elements,
+then they will be prematurely freed (and possibly re-allocated) while still accessible.
+&lt;p&gt;
+That commit merely causes that bug to show up where previously it happened to be masked.
+
+For example in 5.22.0 with this code:
+&lt;code&gt;
+my @a=(3,4);
+
+sub x {
+  @a = ();
+  print "[$_]" for @_;
+  print "\n";
+}
+
+x(@a);
+&lt;/code&gt;
+you get:
+&lt;code&gt;
+$ perl5220 -w ~/tmp/p
+Use of uninitialized value $_ in concatenation (.) or string at /home/davem/tmp/p line 9.
+Use of uninitialized value $_ in concatenation (.) or string at /home/davem/tmp/p line 9.
+[][]
+&lt;/code&gt;
+
+&lt;p&gt;
+Dave.</doctext>
+<root_node field_name="root_node">1192469</root_node>
+<parent_node field_name="parent_node">1192480</parent_node>
+<thread id="1192469">
+<node id="1192470"/>
+<node id="1192472"/>
+<node id="1192478"><node id="1192479"/>
+<node id="1192480"><node id="1192481"><node id="1192485"><node id="1192487"><node id="1192489"/>
+</node>
+<node id="1192488"/>
+</node>
+<node id="1192529"/>
+</node>
+</node>
+</node>
+<node id="1192484"><node id="1192486"><node id="1192490"><node id="1192513"><node id="1192528"/>
+</node>
+</node>
+<node id="1192491"/>
+</node>
+</node>
+<node id="1192494"><node id="1192495"/>
+</node>
+<node id="1192505"><node id="1192591"><node id="1192604"/>
+</node>
+</node>
+<node id="1192596"/>
+</thread></node>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227041" title="Re: File::Temp survival and scope created by &quot;do&quot;" created="2018-12-10 07:33:06" updated="2018-12-10 07:33:06" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1039428">Eily</author>
+<doctext field_name="doctext">&lt;p&gt;Somehow the lexical variable in the [doc://do] block gets attached to the upper scope. As shown with the test below:
+&lt;c&gt;use 5.014;
+use warnings;
+
+package Temp;
+use parent 'File::Temp';
+
+sub new { 
+    my $self = shift;
+    $self-&gt; SUPER::new( DIR =&gt; '.' )
+}
+
+sub DESTROY {
+    my $self = shift;
+    say "Destruction during ", ${^GLOBAL_PHASE};
+    $self-&gt; SUPER::DESTROY
+}
+
+package main;
+use File::Copy;
+
+sub foo { my $h = Temp-&gt; new }
+
+die unless -f 'x';      # this file must exist
+
+{
+  copy 'x', my $fn1 = Temp-&gt; new-&gt; filename                or die;
+  copy 'x', my $fn2 = do { Temp-&gt; new }-&gt; filename         or die;
+  copy 'x', my $fn3 = do { my $h = Temp-&gt; new }-&gt; filename or die;
+  copy 'x', my $fn4 = foo-&gt; filename                       or die;
+
+  say 1 if -f $fn1;
+  say 2 if -f $fn2;
+  say 3 if -f $fn3;
+  say 4 if -f $fn4;
+  
+  say "End of scope";
+
+}
+say "End of file";
+
+__END__
+
+Destruction during RUN
+Destruction during RUN
+Destruction during RUN
+3
+End of scope
+Destruction during RUN
+End of file&lt;/c&gt;
+
+This works however:
+&lt;c&gt;
+copy 'x', my $fn3 = do { { my $h = Temp-&gt; new } }-&gt; filename or die;
+&lt;/c&gt;because the extra block creates a lexical scope inside the [doc://do] block.&lt;/p&gt;
+&lt;p&gt;The documentation for [doc://do] states that it does not work as a loop, when all other blocks (even bare one, without the [doc://for] or [doc://while] keyword) do, (which means [doc://next] and [doc://last] and [doc://redo] don't work on do blocks). So somehow [doc://do] blocks aren't blocks either? What's weird is that there is a "[doc://local]" scope bound to [doc://do], so &lt;c&gt;$_ = "Hi"; 
+do { local $_ = "Hello" };
+print&lt;/c&gt; does print; "Hi" as expected...&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1227033</root_node>
+<parent_node field_name="parent_node">1227033</parent_node>
+<thread id="1227033">
+<node id="1227041"><node id="1227043"><node id="1227047"><node id="1227064"><node id="1227065"><node id="1227073"><node id="1227078"/>
+</node>
+</node>
+<node id="1227070"><node id="1227081"/>
+<node id="1227091"/>
+<node id="1227095"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

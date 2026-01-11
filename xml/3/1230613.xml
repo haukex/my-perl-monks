@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230613" title="Re^2: Logic for importing and strict vars?" created="2019-02-27 08:14:59" updated="2019-02-27 08:14:59" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1213470">Veltro</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;It has something to do with BEGIN&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I have found this information:&lt;/p&gt;
+&lt;p&gt;[https://perldoc.perl.org/perlmod.html#BEGIN%2c-UNITCHECK%2c-CHECK%2c-INIT-and-END|BEGIN]: &lt;i&gt;A BEGIN code block is executed as soon as possible, that is, the moment it is completely defined, even before the rest of the containing file (or string) is parsed&lt;/i&gt;&lt;/p&gt;
+&lt;p&gt;So I suspect that that means that in case the BEGIN is not there the parser will detect the variable $x before it is created. In case the BEGIN is there, it is guarantied to execute that block first, so before it sees $x (or in this case actually $main::x) and by that time it exists because the block has already been executed.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;edit&lt;/b&gt;: It even looks like that BEGIN turns off certain warnings for this reason:&lt;/p&gt;
+&lt;c&gt;
+perl -MO=Deparse -wMstrict -e "{ package bla { *::x=\$a } }"
+Name "main::x" used only once: possible typo at -e line 1.
+...
+&lt;/c&gt;
+&lt;c&gt;
+perl -MO=Deparse -wMstrict -e "BEGIN { package bla { *::x=\$a } }"
+# No problem
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1230603</root_node>
+<parent_node field_name="parent_node">1230612</parent_node>
+<thread id="1230603">
+<node id="1230604"><node id="1230609"><node id="1230616"/>
+</node>
+<node id="1230652"/>
+</node>
+<node id="1230608"><node id="1230653"><node id="1230661"/>
+</node>
+</node>
+<node id="1230612"><node id="1230613"><node id="1230655"/>
+</node>
+<node id="1230654"/>
+</node>
+<node id="1230614"><node id="1230656"/>
+</node>
+<node id="1230615"><node id="1230617"><node id="1230618"><node id="1230619"><node id="1230620"/>
+</node>
+</node>
+</node>
+<node id="1230657"><node id="1230662"><node id="1230698"/>
+</node>
+</node>
+</node>
+<node id="1230622"><node id="1230658"/>
+</node>
+</thread></node>

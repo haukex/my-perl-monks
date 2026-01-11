@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1168716" title="Re: Simple comparison of 2 files" created="2016-07-28 06:38:30" updated="2016-07-28 06:38:30" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [Q.and],&lt;/p&gt;
+&lt;p&gt;Here's another alternate implementation using [doc://Tie::File]. This core module lets you access a file with records (lines) via a normal Perl &lt;c&gt;@array&lt;/c&gt;, this is mostly transparent; internally it manages caching and writing to the file. It's relatively efficient and lets you process large files without worrying about those things. In this case it lets you write your loops fairly simply as two nested &lt;c&gt;for&lt;/c&gt; loops. If you wanted to keep one (or both) of the files cached in memory, you can increase the &lt;c&gt;memory&lt;/c&gt; option of [doc://Tie::File].&lt;/p&gt;
+&lt;p&gt;Your posting actually contains some Unicode characters (U+2003 EM SPACE), so I'm going to guess that your source file contains those too, and I've added handling for that to the following script (if you've got a modern version of Perl the regexps will handle Unicode fairly well too). If your input files are instead plain ASCII you can remove the UTF-8 handling from the script if you like. &lt;i&gt;(Update: My code assumes the files are encoded in UTF-8; there are of course other Unicode encodings possible.)&lt;/i&gt;&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use open qw/:std :utf8/; # STDIN/OUT/ERR in utf8
+
+use Tie::File;
+
+# normally "tie my @file1, 'Tie::File', '/tmp/file1' or die ...",
+# but we need utf8, note the following opens the files read-only
+open my $fh1, '&lt;:utf8', '/tmp/file1' or die $!;
+tie my @file1, 'Tie::File', $fh1 or die $!;
+open my $fh2, '&lt;:utf8', '/tmp/file2' or die $!;
+tie my @file2, 'Tie::File', $fh2 or die $!;
+
+for (@file1) {
+	my ($l1, $n1) = /^(\w+)\s+(\S+)\s*$/
+		or die "Bad file1 line: $_";
+	for (@file2) {
+		my ($l2, $n2) = /^(\w+)\s+(\S+)\s*$/
+			or die "Bad file2 line: $_";
+		print "$l1 from FILE1 with number $n1 ",
+		  "and $l2 from FILE2 with number $n2 ";
+		if ($l1 eq $l2)
+			{ print "match\n" }
+		else
+			{ print "DO NOT match\n" }
+	}
+}
+
+untie @file1;  close $fh1;
+untie @file2;  close $fh2;
+&lt;/c&gt;
+&lt;p&gt;This approach makes sense if you really need to operate on every line of file1 combined with every line of file2. &lt;b&gt;However,&lt;/b&gt; later on in your post you say &lt;i&gt;"In the real script, I would like it to evaluate lines from the two files ONLY when $FILE1letter is equal to $FILE2letter"&lt;/i&gt;, which leads me to think that maybe there is a different way of approaching the problem that could be more efficient: maybe what you're trying to do is like a [wp://Join (SQL)|JOIN]? There are many different ways to approach that problem in Perl, for example using hashes, or even using a database approach (e.g. put your data in a database, even an in-memory one like [mod://DBD::SQLite]; or [mod://DBD::CSV]... although I'm not sure the latter one would be more efficient on large files). If you could tell us more about the problem you're trying to solve, and give sample input/code/output that is more representative of that problem, then perhaps we can suggest a better solution.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1168667</root_node>
+<parent_node field_name="parent_node">1168667</parent_node>
+<thread id="1168667">
+<node id="1168669"><node id="1168672"/>
+<node id="1168683"/>
+</node>
+<node id="1168670"><node id="1168671"><node id="1168673"><node id="1168674"><node id="1168676"><node id="1168677"><node id="1168680"><node id="1168684"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1168675"/>
+</node>
+<node id="1168678"/>
+</node>
+</node>
+<node id="1168681"/>
+<node id="1168688"/>
+<node id="1168716"/>
+</thread></node>

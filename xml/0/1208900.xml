@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1208900" title="Re: Passing a class method" created="2018-02-10 10:35:23" updated="2018-02-10 10:35:23" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Note that &lt;c&gt;my ($self,$x) = shift;&lt;/c&gt; is not correct, it should be &lt;c&gt;my ($self,$x) = @_;&lt;/c&gt; instead (several times in your code).&lt;/p&gt;
+&lt;p&gt;While it is possible to do what you want ([doc://perlobj#Method-Names-as-Strings]), it seems like it might not be a good idea, and instead be the beginning of a bad design pattern - if you could explain &lt;i&gt;why&lt;/i&gt; you think you need this and what you want to accomplish, perhaps we can suggest a better approach.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+{
+	package A;
+	sub new { bless {}, shift }
+	sub _exe {
+		my $self = shift;
+		my $meth = shift;
+		$self-&gt;$meth(@_);
+	}
+}
+{
+	package B;
+	use base 'A';
+	sub new { bless {}, shift }
+	sub _what {
+		my $self = shift;
+		$self-&gt;_exe('_print', @_);
+	}
+	sub _print {
+		my ($self, @args) = @_;
+		print @args, "\n";
+	}
+}
+my $b = B-&gt;new;
+$b-&gt;_what("foo","bar");  # prints "foobar"
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1208899</root_node>
+<parent_node field_name="parent_node">1208899</parent_node>
+<thread id="1208899">
+<node id="1208900"><node id="1208903"><node id="1208912"/>
+</node>
+</node>
+<node id="1208901"/>
+</thread></node>

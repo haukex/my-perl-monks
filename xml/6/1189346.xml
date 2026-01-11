@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1189346" title="Re: How to add more conditional statements in an efficient manner (updated x2)" created="2017-05-02 15:32:33" updated="2017-05-02 15:32:33" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;For string &lt;c&gt;eq&lt;/c&gt; and &lt;c&gt;ne&lt;/c&gt;, I like [huck]'s hash table idea. For the generic problem of testing something against multiple other things with the same condition, see threads like [id://1171208]. Just one of several Ways To Do It:&lt;/p&gt;
+&lt;c&gt;
+use Perl6::Junction qw/all/;
+
+my $sPhoneCapabilityCode = "00000490";
+my $s3905CapabilityCode ="00000290";
+chomp( my $sUnpackedCDPcap = &lt;STDIN&gt; );
+
+if ( $sUnpackedCDPcap ne all($sPhoneCapabilityCode,$s3905CapabilityCode) ) {
+	print "Bingo!\n";
+}
+&lt;/c&gt;
+&lt;p&gt;Note I haven't benchmarked it*, but my feeling is this would probably be slower than hash lookups. If it is speed you're after, you might try [doc://Benchmark]ing different approaches. My gut feeling is that raw &lt;c&gt;if ($x ne $y &amp;&amp; $x ne $z &amp;&amp; $x ne ... ) {&lt;/c&gt; and a regex (see e.g. [id://1179840|this]) might be fastest, along with hash lookups, followed by solutions using modules. But then again, don't get lost in premature optimizations either - one advantage of the example above is that the code reads very nicely :-)&lt;/p&gt;
+&lt;p&gt;* &lt;b&gt;Update:&lt;/b&gt; Interesting, hash lookup outperforms the others by a large margin (code is below):&lt;/p&gt;
+&lt;c&gt;
+        Rate junct regex   raw  hash
+junct  104/s    --  -79%  -87%  -95%
+regex  504/s  386%    --  -38%  -74%
+raw    806/s  678%   60%    --  -58%
+hash  1932/s 1763%  284%  140%    --
+&lt;/c&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Benchmark qw/cmpthese/;
+
+my @testdata =  map { sprintf "%08d", $_*97 } 0..9999;
+my @m = qw/ 00000490 00000290 00000100 00000123 00000970 /;
+
+use Perl6::Junction qw/all/;
+# prep for hash
+my %h = map {$_=&gt;1} @m;
+# prep for regex
+my ($re) = map {qr/\A(?:$_)\z/} join '|',
+	map {quotemeta} sort { length $b &lt;=&gt; length $a } @m;
+
+cmpthese(-1, {
+	raw =&gt; sub {
+		my $found;
+		for my $x (@testdata) {
+			if ($x ne $m[0] &amp;&amp; $x ne $m[1] &amp;&amp; $x ne $m[2]
+				&amp;&amp; $x ne $m[3] &amp;&amp; $x ne $m[4])
+					{ $found++ }
+		}
+		die "raw: $found" unless $found==9999;
+	},
+	hash =&gt; sub {
+		my $found;
+		for my $x (@testdata) {
+			if ( !exists $h{$x} ) { $found++ }
+		}
+		die "hash: $found" unless $found==9999;
+	},
+	regex =&gt; sub {
+		my $found;
+		for my $x (@testdata) {
+			if ( $x!~$re ) { $found++ }
+		}
+		die "regex: $found" unless $found==9999;
+	},
+	junct =&gt; sub {
+		my $found;
+		for my $x (@testdata) {
+			if ( $x ne all(@m) ) { $found++ }
+		}
+		die "junct: $found" unless $found==9999;
+	},
+} );
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; Inspired by [Marshall]'s post about &lt;c&gt;ne&lt;/c&gt; vs. &lt;c&gt;!=&lt;/c&gt;, if you add that test to the above benchmark, it turns out that hashes &lt;i&gt;still&lt;/i&gt; outperform it by a factor of roughly 2. Of course, numeric comparisons may not apply in your case!&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1189339</root_node>
+<parent_node field_name="parent_node">1189339</parent_node>
+<thread id="1189339">
+<node id="1189340"><node id="1189342"><node id="1189351"><node id="1189418"/>
+<node id="1189425"><node id="1189426"><node id="1189471"/>
+</node>
+</node>
+<node id="1189708"/>
+</node>
+<node id="1189363"><node id="1189709"/>
+</node>
+</node>
+</node>
+<node id="1189346"><node id="1189712"/>
+</node>
+<node id="1189377"><node id="1189415"/>
+<node id="1189713"/>
+</node>
+</thread></node>

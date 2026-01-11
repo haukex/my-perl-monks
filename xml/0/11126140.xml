@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11126140" title="Calling module function from within a blessed module" created="2021-01-02 10:31:58" updated="2021-01-02 10:31:58" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11123653">Bod</author>
+<doctext field_name="doctext">&lt;p&gt;I'm looking for the 'right' way to call a function from within the module when that module is usually blessed.  I've been putting an empty string as the first parameter passed to the function but I feel sure there is a nicer way to do this.&lt;/p&gt;
+
+&lt;code&gt;
+package Some::Module;
+
+use strict;
+
+sub new {
+	return bless {};
+}
+
+sub do_something {
+	my ($self, $param) = @_;
+	# ...do something...
+	return $param;
+}
+
+sub do_more {
+	my $self = shift;
+	return do_something('example');
+}
+&lt;/code&gt;
+
+&lt;p&gt;If we create an instance of this then call the function
+&lt;code&gt;my $instance = Some::Module-&gt;new;
+$instance-&gt;do_something('testing');
+&lt;/code&gt;
+a reference to &lt;code&gt;$instance&lt;/code&gt; is passed to &lt;code&gt;$self&lt;/code&gt; in the function (I think) and &lt;code&gt;'testing'&lt;/code&gt; is passed to &lt;code&gt;$param&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;But when the same function is called from within the module by &lt;code&gt;do_more();&lt;/code&gt;, there isn't a reference to anything to be passed to &lt;code&gt;do_something&lt;/code&gt; as the first argument so the argument list is out.  Do we just add a dummy argument to the call within &lt;code&gt;do_more&lt;/code&gt; like this
+&lt;code&gt;
+sub do_more {
+	my $self = shift;
+	return do_something('', 'example');
+}
+&lt;/code&gt;
+ or is there a more elegant solution?&lt;/p&gt;
+</doctext>
+<thread id="11126140">
+<node id="11126142"><node id="11126145"/>
+</node>
+<node id="11126143"><node id="11126144"/>
+</node>
+<node id="11126146"><node id="11126147"><node id="11126148"><node id="11126157"><node id="11126158"><node id="11126169"><node id="11126188"><node id="11126237"/>
+</node>
+</node>
+</node>
+<node id="11126159"/>
+<node id="11126249"/>
+</node>
+</node>
+<node id="11126149"/>
+</node>
+</node>
+<node id="11126150"><node id="11126151"/>
+</node>
+<node id="11126192"><node id="11126193"><node id="11126196"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1180578" title="Calling External Commands More Safely" created="2017-01-29 17:59:42" updated="2017-01-29 17:59:42" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [urbansumo],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Is using backticks and/or system() really that bad, ie is it ever appropriate to use backticks and what security issues does it pose if you do, or is it just considered sloppy (ie not purist) programming?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Questions about running external commands are asked often, and I've answered a few of them, but I'll take this opportunity to write on this topic more comprehensively.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;&lt;b&gt;Update 2017-01-31:&lt;/b&gt; I've added the section on "Streaming Output" at the bottom, and the TL;DR link. &lt;b&gt;Update 2017-02-12:&lt;/b&gt; Added discussion of piped [doc://open]s in appropriate places. The final [mod://IPC::Run] example previously did not check for successful execution, it does now. A few other minor fixups in the text. &lt;b&gt;2020-03-09:&lt;/b&gt; Changed title.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;TL;DR&lt;/b&gt;: There are working code examples beginning in the section [href://#the_better_alternatives|"The (Better) Alternatives"]. But you really should take the time to read about the potential security issues!&lt;/p&gt;
+&lt;h3&gt;The Problems with &lt;c&gt;system&lt;/c&gt;/&lt;c&gt;exec&lt;/c&gt;, Backticks (&lt;c&gt;`...`&lt;/c&gt;/&lt;c&gt;qx&lt;/c&gt;), and Piped &lt;c&gt;open&lt;/c&gt;&lt;/h3&gt;
+&lt;p&gt;[doc://system]/[doc://exec] with only one string argument, [doc://perlop#qx/_STRING_/|backticks] (&lt;c&gt;`...`&lt;/c&gt; / &lt;c&gt;qx/.../&lt;/c&gt;), and piped [doc://open]s with one string argument (e.g. &lt;c&gt;open my $fh, '-|', $cmd;&lt;/c&gt; and all its variants) all suffer from a security problem if you interpolate user input or anything derived from user input into them, because the command string is executed with &lt;c&gt;sh -c STRING&lt;/c&gt; or its equivalent. Consider this somewhat contrived/silly example, but stuff like this does happen in the wild:&lt;/p&gt;
+&lt;c&gt;
+# WARNING: THIS CODE HAS A SECURITY HOLE
+print "Which file to show? ";
+chomp( my $f = &lt;STDIN&gt; );
+die "bad filename" if $f=~/\.\./; # don't allow updirs
+system("cat /sharedfiles/$f")==0
+	or die "command failed, \$?=$?";
+&lt;/c&gt;
+&lt;p&gt;Now one might think that disallowing &lt;c&gt;..&lt;/c&gt; prevents someone from entering "&lt;c&gt;../etc/passwd&lt;/c&gt;". But what if the user enters "&lt;c&gt;; cat /etc/passwd&lt;/c&gt;", "&lt;c&gt;; rm somefile&lt;/c&gt;", or worse? The shell will happily execute those commands - that's the security hole, and it's possible because the string is run by the shell, so the full syntax and power of the shell is available. Aside from security holes like this, it can also in some cases be very tricky to get quoting and escaping of whitespace right.&lt;/p&gt;
+&lt;p&gt;Another disadvantage of both &lt;c&gt;system&lt;/c&gt; and backticks is that &lt;c&gt;system&lt;/c&gt; captures neither the command's &lt;c&gt;STDOUT&lt;/c&gt; nor &lt;c&gt;STDERR&lt;/c&gt;, and backticks don't capture the command's &lt;c&gt;STDERR&lt;/c&gt;. So if you run a command like e.g. [man://find] in backticks, it may issue warnings to &lt;c&gt;STDERR&lt;/c&gt; that your program never finds out about, and that will instead end up somewhere else - the user's terminal, possibly confusing them, a log file somewhere where you'll never see it if you don't check, or perhaps in the emails that [man://cron] sends, etc. Also, people tend to forget to check [doc://$?] for errors when using &lt;c&gt;system&lt;/c&gt; and backticks (Note: see the [doc://system] docs for an example of how to interpret [doc://$?]). So those are things I'd consider "sloppy".&lt;/p&gt;
+&lt;p&gt;Another way that running external commands could be considered "sloppy" is that many of the things that one sees people do with external commands could just as well be done in pure Perl, or with an appropriate module, and it's of course less efficient to call an external command, plus the programmer is left with parsing the command's output manually. Note this also applies in your case: even if it were necessary to call [man://curl], the [man://grep] could just as easily be done in Perl itself.&lt;/p&gt;
+&lt;h3&gt;Avoiding the Shell&lt;/h3&gt;
+&lt;p&gt;There are several ways to avoid going through the shell, meaning the program is invoked directly, and the arguments that you give to e.g. &lt;c&gt;system&lt;/c&gt; are passed through to the program's &lt;c&gt;argv&lt;/c&gt; directly, without any interpolation. On *NIX systems, it's possible to completely avoid the shell like this, as I'll describe below, and on Windows AFAIK it's [id://1199200|not quite as easy] to prevent shell interpolation, but there are still ways to avoid problems, which I'll also touch on below.&lt;/p&gt;
+&lt;p&gt;Backticks always suffer from the shell interpolation problem, but [doc://system] and the related function [doc://exec] allow you to avoid the shell, if you call &lt;c&gt;system(LIST)&lt;/c&gt; where &lt;c&gt;LIST&lt;/c&gt; &lt;i&gt;must&lt;/i&gt; have two or more elements, or if you call &lt;c&gt;system PROGRAM LIST&lt;/c&gt;. A similar thing is possible with piped [doc://open]s, see the section on them near the end of this article. It's also worth mentioning that code like &lt;c&gt;system(@array)&lt;/c&gt; can be dangerous unless you've made sure that &lt;c&gt;@array&lt;/c&gt; has more than one element (e.g. &lt;c&gt;die unless @array&gt;1&lt;/c&gt;). So, if we rewrite the code from above in one of the following two ways:&lt;/p&gt;
+&lt;c&gt;
+system("cat", "/sharedfiles/$f")==0
+	or die "command failed, \$?=$?";
+# OR
+system({"cat"} "cat", "/sharedfiles/$f")==0
+	or die "command failed, \$?=$?";
+&lt;/c&gt;
+&lt;p&gt;Then, if the user attempts to enter "&lt;c&gt;; cat /etc/passwd&lt;/c&gt;" or "&lt;c&gt;; rm somefile&lt;/c&gt;", the [man://cat] program will be called with those strings as its first command line argument without any interpolation by the shell, and it will attempt to open files named literally "&lt;c&gt;/sharedfiles/; cat /etc/passwd&lt;/c&gt;" or "&lt;c&gt;/sharedfiles/; rm somefile&lt;/c&gt;", which foils the attack.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update 2017-12-09:&lt;/i&gt;&lt;/small&gt; Fellow monk [afoken] wrote a very nice post that complements this one here: [id://1205217].&lt;/p&gt;
+&lt;h3&gt;When are &lt;c&gt;system&lt;/c&gt; and Backticks OK?&lt;/h3&gt;
+&lt;p&gt;As for when it's &lt;i&gt;appropriate&lt;/i&gt; to use backticks, I'd say anytime when you know that you have to use an external program because there isn't a Perl module available, and you know the command won't output anything on &lt;c&gt;STDERR&lt;/c&gt;, and most importantly, you don't interpolate any user input into the backticks! Even though it's possible to do some stringent checks on the user input, like &lt;c&gt;$input=~tr/A-Za-z0-9_//cd;&lt;/c&gt; or &lt;c&gt;die unless $input=~/\A[A-Za-z0-9_]+\z/;&lt;/c&gt;, it's easy to make a mistake in such a regex and/or miss a shell metacharacter, so I would still recommend one of the modules below that avoid the shell.&lt;/p&gt;
+&lt;p&gt;I'd say &lt;c&gt;system&lt;/c&gt; is appropriate when you use &lt;c&gt;system LIST&lt;/c&gt; with two or more items in &lt;c&gt;LIST&lt;/c&gt; &lt;i&gt;(!)&lt;/i&gt; or &lt;c&gt;system PROGRAM LIST&lt;/c&gt;, and you either know for sure that the command won't output anything, or you don't mind its output being passed through - for example, your Perl script is outputting stuff to &lt;c&gt;STDOUT&lt;/c&gt; and you specifically want the external command's &lt;c&gt;STDOUT&lt;/c&gt; and &lt;c&gt;STDERR&lt;/c&gt; to become part of your output.&lt;/p&gt;
+&lt;p&gt;Sometimes, there are scripts that aren't meant for production, the programmer just wants to write a one-off script off the top of their head as quickly as they can, there is no user input involved, etc. In these cases it may be acceptable to do something like, for example, &lt;c&gt;my @files=`find ...`;&lt;/c&gt; instead of mucking around with [doc://File::Find] or installing a module that makes listing files easier (e.g. [mod://File::Find::Rule]). But the point here is that one should make an informed choice, instead of taking the easiest path and remaining ignorant to the issues :-)&lt;/p&gt;
+&lt;h3&gt;&lt;a name="the_better_alternatives"&gt;&lt;/a&gt;The (Better) Alternatives&lt;/h3&gt;
+&lt;p&gt;There are lots of modules that allow you to run external commands (see for example the "See Also" section of [mod://Capture::Tiny]), and a few years ago, in the course of writing my module [mod://IPC::Run3::Shell], I did some research on all of them and came up with a few favorites. Note that the shell interpolation issue I described above can still show up even when using a module, so make sure to read the module's documentation on how to avoid it.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;[mod://IPC::Run3]: My personal favorite, it runs on *NIX and Windows, has excellent [http://matrix.cpantesters.org/?dist=IPC-Run3|test scores], very few dependencies, it allows redirection of &lt;c&gt;STDIN&lt;/c&gt;, &lt;c&gt;STDOUT&lt;/c&gt;, and &lt;c&gt;STDERR&lt;/c&gt;, and it allows you to avoid the shell (one must give it an arrayref as the command!) - on Linux, it can avoid the shell completely, and on Windows, it automatically uses [mod://Win32::ShellQuote] (as of version 0.047). Two things it can't do is timeouts and interactive communication with the subprocess, but I've rarely needed those. Also, it doesn't do much error handling and leaves the inspection of [doc://$?] up to you. One more thing that some people see as a disadvantage is that it generally uses temporary files for its redirections, but I personally don't usually mind this since I usually try to limit how often I call external commands and how much data I exchange with them.&lt;/p&gt;
+&lt;c&gt;
+use IPC::Run3 0.047 'run3';
+my $cmd = ['cat','-nE'];
+my $stdin = "Hello,\nWorld!\n";
+run3 $cmd, \$stdin, \my $stdout, \my $stderr
+	or die "run3 failed";
+die "run3 failed, \$?=$?" unless $?==0;
+print "# STDOUT:\n$stdout";
+print "# STDERR:\n$stderr";
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;[mod://Capture::Tiny]: This module captures everything written to &lt;c&gt;STDOUT&lt;/c&gt; and/or &lt;c&gt;STDERR&lt;/c&gt;, including stuff from the Perl process itself. It itself does not run external commands for you, so if that's the main goal, then one of the other modules listed here is probably better. I've still used this module often to capture output from Perl. You can also put a &lt;c&gt;system&lt;/c&gt; call into its code block, and then it will capture the output of the external command (see its doc for details).&lt;/p&gt;
+&lt;c&gt;
+use Capture::Tiny 'capture';
+my ($stdout, $stderr, $exit) = capture {
+		print "I am Perl!\n";
+		system "echo", "Hello,", "World!";
+	};
+die "system failed, \$?=$exit" unless $exit==0;
+print "# STDOUT:\n$stdout";
+print "# STDERR:\n$stderr";
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;[mod://IPC::System::Simple]: Provides replacements for &lt;c&gt;system&lt;/c&gt; and backticks with excellent error reporting (it's what [doc://autodie] uses when you say &lt;c&gt;use autodie qw/system/;&lt;/c&gt;), and it offers functions that always avoid the shell, &lt;c&gt;systemx&lt;/c&gt; and &lt;c&gt;capturex&lt;/c&gt;. Its disadvantages are what I discussed earlier: its &lt;c&gt;system&lt;/c&gt; replacement doesn't capture &lt;c&gt;STDOUT&lt;/c&gt; or &lt;c&gt;STDERR&lt;/c&gt;, and its backtick replacement doesn't capture &lt;c&gt;STDERR&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+use IPC::System::Simple qw/systemx capturex/;
+print "# systemx:\n";
+systemx 'echo', 'Hello,', 'World!';
+my $stdout = capturex 'echo', 'Hello,', 'World!';
+print "# capturex: $stdout";
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;[mod://IPC::Run]: Even though I've used this module rarely, it's the only one of these modules that has advanced features like communicating with subprocesses interactively (similar to [mod://Expect]), or timeouts. Unfortunately, it has somewhat spotty test results on Windows, but I'd still recommend it as an alternative to [mod://IPC::Run3] if the advanced features it supports are needed.&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Addendum: Streaming Output&lt;/h3&gt;
+&lt;p&gt;Sometimes, reading the output of an external command in one big chunk,
+like most of the solutions above do, is not acceptable because either it's
+being streamed by the external program with pauses in between lines/records,
+or it's outputting a large amount of line/record-based data and you want to
+operate on the data one line/record at a time without slurping everything into memory. In such cases, there are
+several solutions that also avoid some of the problems I described above.&lt;/p&gt;
+&lt;h4&gt;1. Stream Output to Perl&lt;/h4&gt;
+&lt;p&gt;Instead of having your Perl script open an external command and read from
+it, have your Perl script read from its standard input, and stream the output
+to the Perl process using the shell. This has the advantage that you can use
+the same Perl script to also read from one or more files by specifying them
+on the command line.&lt;/p&gt;
+&lt;p&gt;Disadvantages are that since in this case we're using the shell to run
+the external command, if you want to do something with that command's exit
+code or &lt;c&gt;STDERR&lt;/c&gt; stream, you will have to use the shell instead of Perl to
+accomplish this.&lt;/p&gt;
+&lt;c&gt;
+$ cat lengthsum.pl 
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use 5.022; # for double-diamond operator
+
+my $sum = 0;
+while (&lt;&lt;&gt;&gt;) {
+	chomp;
+	$sum+=length;
+}
+print "$sum\n";
+
+$ cat /usr/share/dict/words | ./lengthsum.pl 
+839677
+&lt;/c&gt;
+&lt;p&gt;The code above uses the double-diamond operator &lt;c&gt;&lt;&lt;&gt;&gt;&lt;/c&gt;, which was
+[doc://perl5220delta#New-double-diamond-operator|added in Perl v5.22].
+This operator uses the three-argument form of [doc://open], so that command
+line arguments such as &lt;c&gt;"|foo"&lt;/c&gt; won't be treated as a piped [doc://open].
+If you don't have Perl v5.22 yet, then in the above script it's possible
+to change &lt;c&gt;&lt;&lt;&gt;&gt;&lt;/c&gt; to &lt;c&gt;&lt;&gt;&lt;/c&gt; and remove the &lt;c&gt;use 5.022;&lt;/c&gt;,
+however, you should be aware of the aforementioned potential problem.&lt;/p&gt;
+&lt;h4&gt;2. Use a Piped &lt;c&gt;open&lt;/c&gt;&lt;/h4&gt;
+&lt;p&gt;As of Perl v5.8*, it is possible to use piped [doc://open]s that
+avoid the shell, by giving &lt;c&gt;open&lt;/c&gt; a list of arguments, and similar to
+&lt;c&gt;system LIST&lt;/c&gt;, that list &lt;i&gt;must&lt;/i&gt; have more than one item. One
+limitation of this approach is that the external command's &lt;c&gt;STDERR&lt;/c&gt;
+is not captured. (See also [doc://perlipc#Safe-Pipe-Opens].) Also, note
+how in the following we check the return value of [doc://close], which
+is necessary to see if the command exited successfully.&lt;/p&gt;
+&lt;c&gt;
+use 5.008;
+my @cmd = ('cat', '/usr/share/dict/words');
+die '@cmd must have more than one element' unless @cmd&gt;1;
+open my $fh, '-|', @cmd or die $!;
+my $sum = 0;
+while (&lt;$fh&gt;) {
+	chomp;
+	$sum+=length;
+}
+close $fh or die $! ? $! : $?;
+print "$sum\n";
+&lt;/c&gt;
+&lt;p&gt;* &lt;small&gt;&lt;i&gt;Update 2018-08-27:&lt;/i&gt;&lt;/small&gt; On Windows, you'll need Perl 5.22 and up for this &lt;c&gt;LIST&lt;/c&gt; form of &lt;c&gt;open&lt;/c&gt;. The same caveats and limitations as for [doc://system] on Windows apply.&lt;/p&gt;
+&lt;h4&gt;3. Use &lt;c&gt;IPC::Run&lt;/c&gt;&lt;/h4&gt;
+&lt;p&gt;[mod://IPC::Run] is an advanced module that can, among other things, read
+the external command's output in chunks and communicate with subprocesses
+interactively. Because it's such an extensive module, it's hard to provide
+a summary and you should refer to its [mod://IPC::Run|documentation].&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Unfortunately,&lt;/i&gt; the [mod://IPC::Run] documentation does not explicitly state
+that giving an array reference as the command will always avoid the shell.
+As far as I have been able to tell from the source so far, it does seem that
+it does attempt to avoid the shell (e.g. it uses &lt;c&gt;exec { $cmd[0] } @cmd;&lt;/c&gt;), so I will give a quick example here.&lt;/p&gt;
+&lt;p&gt;The following is one way to read records (in this case, lines) from an
+external command. Note that the external process's &lt;c&gt;STDERR&lt;/c&gt; is not
+captured in this example, although it is possible to do so with this module.&lt;/p&gt;
+&lt;c&gt;
+use IPC::Run qw/ run new_chunker /;
+
+my @cmd = ('cat', '/usr/share/dict/words');
+my $sum = 0;
+run \@cmd, '&gt;', new_chunker("\n"), sub {
+		my $line = shift;
+		chomp($line);
+		$sum+=length $line;
+	} or die $?;
+print "$sum\n";
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1180561</root_node>
+<parent_node field_name="parent_node">1180561</parent_node>
+<thread id="1180561">
+<node id="1180562"/>
+<node id="1180565"><node id="1180664"/>
+</node>
+<node id="1180578"><node id="1180661"/>
+<node id="1180662"/>
+</node>
+</thread></node>

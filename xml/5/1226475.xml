@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1226475" title="Re: splice and indexes" created="2018-11-28 19:11:40" updated="2018-11-28 19:11:40" _doctext_mode="lenient"><type id="11">note</type>
+<author id="401112">johngg</author>
+<doctext field_name="doctext">&lt;p&gt;As suggested by Anonymonk, [doc://warnings] show that using your &lt;c&gt;@indexes&lt;/c&gt; unaltered means you are trying to access a element off the end of &lt;c&gt;@arr&lt;/c&gt;.&lt;/p&gt;
+&lt;code&gt;
+johngg@shiraz:~/perl/Monks$ perl -Mstrict -Mwarnings -E '
+my @arr = qw{ zero one two three four };
+my @idx = ( 0 .. $#arr );
+my $one = splice @arr, 1, 1;
+say $one;
+say join q{ }, @arr;
+say join q{ }, @idx;
+say join q{ }, @arr[ @idx ];
+pop @idx;
+say join q{ }, @idx;
+say join q{ }, @arr[ @idx ];'
+one
+zero two three four
+0 1 2 3 4
+Use of uninitialized value in join or string at -e line 8.
+zero two three four 
+0 1 2 3
+zero two three four
+&lt;/code&gt;
+&lt;p&gt;I hope this is helpful.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update: &lt;/b&gt;Expanded example with more descriptive output.&lt;/p&gt;
+&lt;code&gt;
+johngg@shiraz:~/perl/Monks$ perl -Mstrict -Mwarnings -E '
+my @arr = qw{ zero one two three four };
+say qq{\@arr before splice : @arr};
+my @idx = ( 0 .. $#arr );
+say qq{Original \@idx      : @idx};
+my $one = splice @arr, 1, 1;
+say qq{\$one from splice   : $one};
+say qq{\@arr after splice  : @arr};
+say qq{\@arr bad slice     : @arr[ @idx ]};
+my @newidx = ( 0 .. $#arr );
+say qq{New \@newidx        : @newidx};
+say qq{\@arr good slice    : @arr[ @newidx ]};'
+@arr before splice : zero one two three four
+Original @idx      : 0 1 2 3 4
+$one from splice   : one
+@arr after splice  : zero two three four
+Use of uninitialized value in join or string at -e line 9.
+@arr bad slice     : zero two three four 
+New @newidx        : 0 1 2 3
+@arr good slice    : zero two three four
+&lt;/code&gt;
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-401112"&gt;
+&lt;p&gt;Cheers,&lt;/p&gt;&lt;p&gt;JohnGG&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1226470</root_node>
+<parent_node field_name="parent_node">1226470</parent_node>
+<thread id="1226470">
+<node id="1226472"/>
+<node id="1226475"/>
+<node id="1226523"/>
+</thread></node>

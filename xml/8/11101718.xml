@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101718" title="Re^3: Unescaped left brace in regex" created="2019-06-22 09:56:53" updated="2019-06-22 09:56:53" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1034744">*alexandre*</author>
+<doctext field_name="doctext">Within the Following code it's work better 
+
+&lt;code&gt;
+#!"C:\xampp\perl\bin\perl.exe"
+use strict;
+use warnings;
+use CGI;
+use Time::HiRes qw(gettimeofday);
+use Article;
+#use LoadProperties;
+use DBI;
+use MyDB;
+#use TableArticle;
+#use SharedVariable;
+use vars qw (%ENV $session_dir $can_do_gzip $cookie $page $dir $dirLang $dirError $imgdir $action $t0 $session_id $ycan_do_gzip $current_ip $lang $LANG %ARTICLE %SESSION %SERVER %USER $CGISESSID %LABEL %ERROR %VALUE $COMMANDID %COMMAND %DATE %PAYPALL $INDEX %LINK  $query $session $host $t0  $client);
+
+$query = CGI-&gt;new ;
+$cookie = "";
+$current_ip = $ENV{'REMOTE_ADDR'};
+$client = $ENV{'HTTP_USER_AGENT'};
+$t0 = gettimeofday();
+$host = "http://127.0.0.1";
+%ERROR = ();%LABEL = ();$LANG = "";%LINK = ();%ARTICLE = ();%SESSION = ();
+my %SERVER = (); 
+$action = $query-&gt;param('action');
+$page = $query-&gt;param("page");
+$session_id  =  $query-&gt;param('session');
+$can_do_gzip = ($ENV{'HTTP_ACCEPT_ENCODING'} =~ /gzip/i) ? 1 : 0;
+$dir = "C:/Users/41786/Documents/recordz1/";
+$dirLang = "C:/Users/41786/Documents/recordz1/lang";
+$dirError = "C:/Users/41786/Documents/recordz1/lang";
+$imgdir=  "C:/Users/41786/Documents/recordz1/upload";
+$session_dir = "C:/Users/41786/Documents/recordz1/sessions";
+$action = $query-&gt;param('action');
+$session_id = $query-&gt;param('session');
+
+my $dsn = "DBI:mysql:recordz";
+my $username = "root";
+my $password = '';
+my $mydb = MyDB-&gt;new;
+my $query = CGI-&gt;new ;
+#my $tableArticle = TableArticle-&gt;new;
+#my $articleClass = Article-&gt;new;
+my $lang;
+#my $lp = LoadProperties-&gt;create();
+
+loadLanguage();
+loadError();
+loadMainPage ();
+
+sub loadError {
+    if (defined $query) { 
+		$lang = lc ($query-&gt;param('lang'));
+		open (FILE, "&lt;$dirError/$lang.error.conf") or die "cannot open file $dirError/$lang.error.conf";    
+		while (&lt;FILE&gt;) {
+			(my  $label, my  $value) = split(/=/);
+			$SERVER{$label} = $value;	
+		}
+		close (FILE);
+		}
+}
+
+sub loadLanguage {
+	if (defined $query) { 
+		$lang = $query-&gt;param("lang");
+		$lang = uc ($lang);
+		open (FILE, "&lt;$dirLang/$lang.conf") or die "cannot open file $dirLang/$lang.conf";    
+		
+		while (&lt;FILE&gt;) {
+		(my  $label, my  $value) = split(/=/);
+		$SERVER{$label} = $value;
+		}
+		close (FILE);
+	}
+}
+
+sub loadCategories {
+    my $string;
+    my  %OPTIONS = ();
+    my  ($c)= $mydb-&gt;sqlSelectMany("libelle.libelle","categorie_libelle_langue,libelle, langue","categorie_libelle_langue.ref_libelle = libelle.id_libelle AND categorie_libelle_langue.ref_langue = langue.id_langue AND langue.key = '$lang'");	
+    while(($OPTIONS{'category'})=$c-&gt;fetchrow()) {	
+         $string .= "&lt;option value=\"$OPTIONS{'category'}\"&gt;$OPTIONS{'category'}&lt;/option&gt;";
+    }
+
+    return $string;
+}
+
+sub loadMenu {
+	my $string = "";
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=art_design\" class=\"menulink\" &gt;$SERVER{'art'}&lt;/a&gt;&lt;/li&gt;";
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=parfum\" class=\"menulink\" &gt;$SERVER{'parfum_cosmetik'}&lt;/a&gt;&lt;/li&gt;";
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=wear_news\" class=\"menulink\" &gt;$SERVER{'fashion'}&lt;/a&gt;&lt;/li&gt;";
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=lingerie\" class=\"menulink\" &gt;$SERVER{'lingerie'}&lt;/a&gt;&lt;/li&gt;";
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=baby\" class=\"menulink\" &gt;$SERVER{'baby'}&lt;/a&gt;&lt;/li&gt;";
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=animal\" class=\"menulink\" &gt;$SERVER{'animal'}&lt;/a&gt;&lt;/li&gt;";
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=watch\" class=\"menulink\" &gt;$SERVER{'watch_jewels'}&lt;/a&gt;&lt;/li&gt;";
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=jardin\" class=\"menulink\" &gt;$SERVER{'Habitat_et_jardin'}&lt;/a&gt;&lt;/li&gt;";	
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=auto\" class=\"menulink\" &gt;$SERVER{'car'}&lt;/a&gt;&lt;/li&gt;";
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=moto\" class=\"menulink\" &gt;$SERVER{'moto'}&lt;/a&gt;&lt;/li&gt;";	
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=immo\" class=\"menulink\" &gt;$SERVER{'real_estate'}&lt;/a&gt;&lt;/li&gt;";
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=cd_vinyl_mixtap\" class=\"menulink\" &gt;$SERVER{'cd_music'}&lt;/a&gt;&lt;/li&gt;";
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=intruments\" class=\"menulink\" &gt;$SERVER{'music_instrument'}&lt;/a&gt;&lt;/li&gt;";	
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=collection\" class=\"menulink\" &gt;$SERVER{'collections'}&lt;/a&gt;&lt;/li&gt;";
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=wine\" class=\"menulink\" &gt;$SERVER{'wine'}&lt;/a&gt;&lt;/li&gt;";
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=boat\" class=\"menulink\" &gt;$SERVER{'boat'}&lt;/a&gt;&lt;/li&gt;";		
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=tv_video\" class=\"menulink\" &gt;$SERVER{'tv_video_camera'}&lt;/a&gt;&lt;/li&gt;";	
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=games\" class=\"menulink\" &gt;$SERVER{'games'}&lt;/a&gt;&lt;/li&gt;";
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=book\" class=\"menulink\" &gt;$SERVER{'book'}&lt;/a&gt;&lt;/li&gt;";	
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=dvd\" class=\"menulink\" &gt;$SERVER{'dvd_k7'}&lt;/a&gt;&lt;/li&gt;";	
+	$string .=  "&lt;li&gt;&lt;a href=\"/cgi-bin/recordz.cgi?lang=$lang&amp;amp;page=sport\" class=\"menulink\" &gt;$SERVER{'sport'}&lt;/a&gt;&lt;/li&gt;";
+	return $string;
+}
+
+sub loadMainPage {
+    open (FILE, "&lt;$dir/main.html") or die "cannot open file $dir/main.html";    	
+	my $categories = loadCategories();
+	my $menu = loadMenu();
+	my $content;
+
+	while (&lt;FILE&gt;) {	
+	    s/\$LABEL'\{'([\w]+)'}/ exists $SERVER{$1} ? $SERVER{$1} : $1 /eg; 
+	    s/\$LANG/$lang/g;
+	    s/\$OPTIONS{'categories'}/$categories/g;
+	    s/\$ARTICLE{'main_menu'}/$menu/g;
+	    $content .= $_;	
+        }
+
+	$content = Compress::Zlib::memGzip($content)  if $can_do_gzip; ;
+	print "Content-Length: ", length($content) , "\n";
+	print "Content-Encoding: gzip\n" ;
+	print "Content-Type: text/html\n\n"; 
+	print $content;
+    close (FILE);
+}
+
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">11101705</root_node>
+<parent_node field_name="parent_node">11101715</parent_node>
+<thread id="11101705">
+<node id="11101706"/>
+<node id="11101707"><node id="11101715"><node id="11101718"><node id="11101719"/>
+</node>
+</node>
+</node>
+</thread></node>

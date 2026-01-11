@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228758" title="Error: Attempt to reload module.. while testing failing require" created="2019-01-20 13:53:10" updated="2019-01-20 13:53:10" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="174111">Discipulus</author>
+<doctext field_name="doctext">Hello monks,&lt;P&gt;
+
+Ok, at the end I've manged to resolve on my own (deleting from &lt;C&gt;%INC&lt;/C&gt; ), but I still have doubts.&lt;P&gt;
+
+I'm trying to test a different executable path to be used in a module and specified by setting an &lt;C&gt;%ENV&lt;/C&gt; variable.&lt;P&gt;
+
+I supposed to use [DOC://die|&lt;tt&gt;die&lt;/tt&gt;] inside a &lt;C&gt;BEGIN&lt;/C&gt; block in the module if the specified executable is incorrect:&lt;P&gt;
+
+&lt;c&gt;
+# Win32::Backup::Robocopy code
+
+BEGIN{
+	if( $ENV{PERL_ROBOCOPY_EXE} ){
+		my $robo = File::Spec-&gt;rel2abs( $ENV{PERL_ROBOCOPY_EXE} );
+		die "$robo does not exists!" unless -e $robo;
+		die "$robo is not executable!" unless -x $robo;
+		
+	}
+}
+
+&lt;/c&gt;&lt;P&gt;
+
+It seemed ok to me on quick test: the module dies if rubbish is passed (probably the check must be improved.. suggestions?)&lt;P&gt;
+
+
+But when testing this feauture I discovered the module is present anyway in &lt;C&gt;%INC&lt;/C&gt; even if died (the &lt;C&gt;require&lt;/C&gt; returns true? how can I return 0 from the &lt;C&gt;BEGIN&lt;/C&gt; block?).&lt;P&gt;
+
+So with this version of test ( &lt;B&gt;update&lt;/B&gt; the same errors appears even without all BEGIN blocks):
+&lt;c&gt;
+#!perl
+use 5.010;
+use strict;
+use warnings;
+use Test::More;
+use Test::Exception;
+
+
+BEGIN   # 1) this file should not exists
+{
+	my $try = 'c:\robocopy.exe';
+	note("try using $try");
+	$ENV{PERL_ROBOCOPY_EXE} = $try;
+	dies_ok { require Win32::Backup::Robocopy } 
+		'expected to die with not existent executable';
+
+#delete $INC{'Win32/Backup/Robocopy.pm'};
+print "---&gt;$_ \n" for grep{/Robocopy/} keys %INC;			
+
+}
+
+BEGIN # 2) the HOSTS file exists in every win version, but is not executable
+{
+	my $try = -e 'C:\Windows\System32\drivers\etc\HOSTS' ?
+		     'C:\Windows\System32\drivers\etc\HOSTS' :
+		     # systenative used if a 32bit perl. See
+		     # filesystem redirection oddities
+		    'C:\Windows\Sysnative\drivers\etc\HOSTS';
+
+	note("try using $try");
+	$ENV{PERL_ROBOCOPY_EXE} = $try;
+	dies_ok { require Win32::Backup::Robocopy } 
+		'expected to die with not executable file';
+
+  #delete $INC{'Win32/Backup/Robocopy.pm'};
+  print "---&gt;$_\n" for grep{/Robocopy/} keys %INC;		
+}
+
+BEGIN # 3) this has to be the standard one
+{
+	my $try = -e 'C:\Windows\System32\robocopy.exe' ? 
+			'C:\Windows\System32\robocopy.exe' :
+			'C:\Windows\Sysnative\robocopy.exe';
+
+	note("try using $try");
+	$ENV{PERL_ROBOCOPY_EXE} = $try;
+ #delete $INC{'Win32::Backup::Robocopy'};
+	ok (require Win32::Backup::Robocopy, 'default executable path');
+}
+
+done_testing();
+
+&lt;/c&gt;&lt;P&gt;
+
+I got &lt;C&gt;Attempt to reload Win32/Backup/Robocopy.pm aborted.&lt;/C&gt; &lt;P&gt;
+
+&lt;c&gt;
+# try using c:\robocopy.exe
+ok 1 - expected to die with not existent executable
+---&gt;Win32/Backup/Robocopy.pm
+# try using C:\Windows\System32\drivers\etc\HOSTS
+ok 2 - expected to die with not executable file
+---&gt;Win32/Backup/Robocopy.pm
+# try using C:\Windows\System32\robocopy.exe
+Attempt to reload Win32/Backup/Robocopy.pm aborted.
+Compilation failed in require at .\t\01-ENV.t line 45.
+BEGIN failed--compilation aborted at .\t\01-ENV.t line 46.
+&lt;/c&gt;&lt;P&gt;
+
+Uncommenting the &lt;C&gt;delete&lt;/C&gt; the test runs OK, but why is the module in &lt;C&gt;%INC&lt;/C&gt; if the &lt;C&gt;require&lt;/C&gt; died?
+There are better ways to do this?&lt;P&gt;
+
+
+
+L*&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-174111"&gt;
+There are no rules, there are no thumbs..&lt;BR&gt;
+Reinvent the wheel, then learn The Wheel; may be one day you reinvent one of THE WHEELS.
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.142} --&gt;</doctext>
+<thread id="1228758">
+<node id="1228760"><node id="1228764"><node id="1228768"/>
+</node>
+<node id="1228765"/>
+</node>
+</thread></node>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1162660" title="Re: natural sort on array of arrays" created="2016-05-10 16:00:41" updated="2016-05-10 16:00:41" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [shamat],&lt;/p&gt;
+&lt;p&gt;Wow, this question brings me back to what was - as far as I can remember - probably the first time I visited PerlMonks :-) Specifically, it was [id://68394], that snippet was very helpful to me over the years. So I revived it and applied it to your code:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my @matrix = (
+	["A12a1", "img5", "x456", "y456"],
+	["A1a2",  "img2", "x123", "y456"],
+	["A1a1",  "img1", "x123", "y123"],
+	["A10a1", "img4", "x456", "y123"],
+	["A1a12", "img3", "x456", "y789"],
+);
+
+my @sorted = sort natsort @matrix;
+use Data::Dump 'pp';
+print pp \@sorted;
+
+sub natsort {
+	# sort by first column (note the dereferencing)
+	my @a = split /(\d+)/, $a-&gt;[0];
+	my @b = split /(\d+)/, $b-&gt;[0];
+	my ($A,$B);
+	while (defined($A = shift @a) and defined($B = shift @b)) {
+		my $res = ($A =~ /\d/) ? $A &lt;=&gt; $B : $A cmp $B;
+		return $res if $res;
+	}
+	return defined $A ? -1 : 1;
+}
+
+__END__
+
+[
+  ["A1a1", "img1", "x123", "y123"],
+  ["A1a2", "img2", "x123", "y456"],
+  ["A1a12", "img3", "x456", "y789"],
+  ["A10a1", "img4", "x456", "y123"],
+  ["A12a1", "img5", "x456", "y456"],
+]
+&lt;/c&gt;
+&lt;p&gt;The way this works is by breaking each string up into its digits and non-digits, for example &lt;c&gt;"A12a1"&lt;/c&gt; becomes &lt;c&gt;("A", 12, "a", 1)&lt;/c&gt;, and then each element is compared individually. This does assume that the two strings being compared follow the same digit/non-digit pattern. Also, it's not a particularly efficient sort method, as it does a lot of work for each comparison. But it was just a walk down memory lane anyway :-)&lt;/p&gt;
+&lt;p&gt;Of course, there are also modules to do the hard work, just one example is [mod://Sort::Key::Natural].&lt;/p&gt;
+&lt;p&gt;By the way, I think you've got a mistake in your test data, you overwrite &lt;c&gt;$matrix[1]&lt;/c&gt;, that's why I've initialized the data as I showed.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1162642</root_node>
+<parent_node field_name="parent_node">1162642</parent_node>
+<thread id="1162642">
+<node id="1162645"><node id="1162657"/>
+</node>
+<node id="1162646"><node id="1162649"/>
+</node>
+<node id="1162647"><node id="1162654"/>
+</node>
+<node id="1162659"/>
+<node id="1162660"/>
+<node id="1162698"><node id="1162771"/>
+</node>
+</thread></node>

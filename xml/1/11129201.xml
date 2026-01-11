@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129201" title="Re: Sorting perl hash" created="2021-03-06 12:52:55" updated="2021-03-06 12:52:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hashes are always unordered (unless you use special modules), and so the two hashes you have posted above are identical. The most common desire is to &lt;i&gt;output&lt;/i&gt; hashes in a sorted manner, or, in your case, you seem to want to store the keys in a sorted order in an array. However, note that the way you have posted the data above is not runnable code, and it makes it unclear what the actual hash format is - see [id://174051] and [id://1177642]. I have made a guess about the hash's format below.&lt;/p&gt;
+&lt;p&gt;As far as I can tell, you only need to loop over the keys of the outer hash, and then sort the keys of the inner hash based on their value. That would look like this:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dumper;
+
+my %rankBased = (
+	190 =&gt; {
+		test1 =&gt; { score =&gt; '13.28'  },
+		test2 =&gt; { score =&gt; '-47.56' },
+		test3 =&gt; { score =&gt; '18.50'  },
+		test4 =&gt; { score =&gt; '14.88'  },
+	},
+	191 =&gt; {
+		test1 =&gt; { score =&gt; '9.18'  },
+		test2 =&gt; { score =&gt; '2.84'  },
+		test3 =&gt; { score =&gt; '15.62' },
+		test4 =&gt; { score =&gt; '11.84' },
+	},
+);
+
+for my $key1 (keys %rankBased) {
+	my @sort_by_rank = sort {
+		$rankBased{$key1}{$b}{score} &lt;=&gt; $rankBased{$key1}{$a}{score}
+			} keys %{$rankBased{$key1}};
+	print Dumper(\@sort_by_rank);
+}
+
+__END__
+
+$VAR1 = [
+          'test3',
+          'test4',
+          'test1',
+          'test2'
+        ];
+$VAR1 = [
+          'test3',
+          'test4',
+          'test1',
+          'test2'
+        ];
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; See also [doc://perlfaq4#How-do-I-sort-a-hash-(optionally-by-value-instead-of-key)?|"How do I sort a hash (optionally by value instead of key)?" in perlfaq4] and [doc://perldsc#Access-and-Printing-of-a-HASH-OF-HASHES|"Access and Printing of a Hash of Hashes" in perldsc].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11129199</root_node>
+<parent_node field_name="parent_node">11129199</parent_node>
+<thread id="11129199">
+<node id="11129200"/>
+<node id="11129201"><node id="11129202"><node id="11129203"/>
+<node id="11129204"/>
+</node>
+</node>
+<node id="11129206"/>
+</thread></node>

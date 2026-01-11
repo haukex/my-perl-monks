@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1184918" title="Re^4: How best to validate the keys of hashref arguments? (updated)" created="2017-03-16 15:15:07" updated="2017-03-16 15:15:07" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;
+&lt;c&gt;
+for my $k (keys %$init_hash) { $new_cmd-&gt;{$k} = $init_hash-&gt;{$k}; }
+&lt;/c&gt;
+&lt;i&gt;Is there a more idiomatic way to say that?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Several, but it seems to me you're just copying over every value from &lt;c&gt;%$init_hash&lt;/c&gt; into &lt;c&gt;%$new_cmd&lt;/c&gt;, so it seems easiest to write:&lt;/p&gt;
+&lt;c&gt;
+my %new_cmd = %$init_hash;
+&lt;/c&gt;
+&lt;p&gt;This creates the same shallow copy of the hash that your current code is creating. You can &lt;c&gt;lock_keys&lt;/c&gt; afterwards and incorrect keys will still cause corresponding errors. In the interest of TIMTOWTDI, here's a couple other solutions, most of which would be better applicable if you only wanted to copy over a subset of the keys. Note that the latter three clobber the entire contents of the hash, which should be fine in your case:&lt;/p&gt;
+&lt;c&gt;
+sub ops_new_cmd {
+	my ($init_hash) = @_;
+	
+	my %new_cmd;
+	# -OR-
+	#my %new_cmd = %$init_hash;
+	
+	lock_keys(%new_cmd, qw/name user host command/);
+	my @keyset = keys %$init_hash;
+	
+	#for my $k (@keyset) { $new_cmd{$k} = $init_hash-&gt;{$k}; }
+	# -OR-
+	#$new_cmd{$_} = $init_hash-&gt;{$_} for @keyset;
+	# -OR-
+	%new_cmd = map { $_=&gt;$init_hash-&gt;{$_} } @keyset;
+	# -OR-
+	#use 5.020; # For Key/Value Slices
+	#%new_cmd = %$init_hash{ @keyset };
+	# -OR-
+	#use experimental 'postderef'; # For Postfix Deref + Key/Value Slices
+	#%new_cmd = $init_hash-&gt;%{ @keyset };
+	
+	return \%new_cmd
+}
+&lt;/c&gt;
+&lt;p&gt;As for locked hashes, there was some [http://www.nntp.perl.org/group/perl.perl5.porters/2017/01/msg242664.html|discussion] on P5P recently about them, but even if something were to happen to this feature, [doc://tie]d hashes would be an easy replacement. For example, a quick search on CPAN shows [mod://Tie::Hash::FixedKeys]. On the other hand, if you start taking locked hashes that seriously, it's probably better to start moving to OO.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update&lt;/b&gt; in response to your reply, since I should have included it here in the first place: Personally what I currently use locked hashes for is mostly typo prevention, which is helpful during development, but could also be removed later without really affecting the code.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1184769</root_node>
+<parent_node field_name="parent_node">1184910</parent_node>
+<thread id="1184769">
+<node id="1184776"><node id="1184791"><node id="1184885"/>
+</node>
+</node>
+<node id="1184790"><node id="1184913"><node id="1184915"><node id="1184980"/>
+</node>
+</node>
+</node>
+<node id="1184792"/>
+<node id="1184851"><node id="1184901"><node id="1184910"><node id="1184916"><node id="1184920"/>
+</node>
+<node id="1184918"><node id="1184921"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

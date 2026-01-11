@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11141252" title="Re^2: Getting an SSL Certificate Expiration Date" created="2022-02-08 17:55:56" updated="2022-02-08 17:55:56" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Good idea, some quick googling found [https://www.mail-archive.com/libwww@perl.org/msg07014.html|this] post by Graham Knop from which I adapted the code:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use LWP::UserAgent;
+
+my $ua = LWP::UserAgent-&gt;new(
+	ssl_opts =&gt; {
+		SSL_verify_callback =&gt; sub {
+			my ($ok, $ctx_store) = @_;
+			my $cert = Net::SSLeay::X509_STORE_CTX_get_current_cert($ctx_store);
+			print Net::SSLeay::P_ASN1_TIME_get_isotime(
+				Net::SSLeay::X509_get_notAfter($cert) ), "\n";
+			return $ok;
+		},
+	},
+);
+$ua-&gt;get('https://www.perlmonks.org/');
+
+__END__
+
+2038-01-18T23:59:59Z
+2029-08-21T23:59:59Z
+2022-09-02T23:59:59Z
+&lt;/c&gt;
+&lt;p&gt;Note the documentation also says "The callback will be called for each element in the certificate chain."&lt;/p&gt;
+&lt;p&gt;Another post in the above thread points to [mod://Net::SSL::ExpireDate].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11141247</root_node>
+<parent_node field_name="parent_node">11141250</parent_node>
+<thread id="11141247">
+<node id="11141250"><node id="11141252"/>
+</node>
+<node id="11141251"><node id="11141267"/>
+</node>
+<node id="11141289"/>
+</thread></node>

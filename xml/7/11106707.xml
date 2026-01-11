@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11106707" title="Re: Sorting a hash by a well buried key" created="2019-09-25 18:26:28" updated="2019-09-25 18:26:28" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;This works in that the final "foreach" returns the fields in the order of the "Position" value&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If you run this code multiple times, it should show that the ordering changes (because hash ordering is random), so you'll see it is actually not working - you probably just saw them in order by chance, or because you're on an older version of Perl where hash ordering was less random. If you turn on [doc://warnings], you'll see several "&lt;c&gt;Use of uninitialized value in numeric comparison (&lt;=&gt;)&lt;/c&gt;" warnings, hinting that something is wrong (always [id://111088]!). And if you use [doc://Data::Dumper] to look at the data structure after the [doc://sort], you'll see a new &lt;c&gt;'Position' =&gt; {}&lt;/c&gt; element in the data structure, which explains why the code did not crash: Perl autovivified a hash reference for you when you tried to access the nonexistent hash.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;How does the hash of hashes find the "Position" value when the "fieldname" level has been skipped?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note you're not actually skipping them - &lt;c&gt;keys %{$fields{$table}}&lt;/c&gt; returns the keys such as &lt;c&gt;("Field_2", "Field_1", "Field_3")&lt;/c&gt;. This means that in your [doc://sort], that's what &lt;c&gt;$a&lt;/c&gt; and &lt;c&gt;$b&lt;/c&gt; will be. And now, if you look at your sort function and compare it to the data structure, perhaps you can see what's wrong: Change &lt;c&gt;$fields{$table}{'Position'}{$a}&lt;/c&gt; to &lt;c&gt;$fields{$table}{$a}{'Position'}&lt;/c&gt; (and the same for &lt;c&gt;$b&lt;/c&gt;) and your code works fine :-) [swl]'s [id://11106703|tips] for shortening the code a bit are useful, too. (See also the [id://745674].)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11106701</root_node>
+<parent_node field_name="parent_node">11106701</parent_node>
+<thread id="11106701">
+<node id="11106703"/>
+<node id="11106707"><node id="11106757"/>
+</node>
+</thread></node>

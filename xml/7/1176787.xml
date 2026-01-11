@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1176787" title="Re: Regular Expression: search two times for the same number of any signs" created="2016-11-29 05:45:32" updated="2016-11-29 05:45:32" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi,&lt;/p&gt;
+&lt;p&gt;What's unclear is whether this string is allowed to be embedded inside a longer string, although your example regexes seem to suggest that it's ok. Second, it would be good to know if multiple of these &lt;c&gt;x.x.x&lt;/c&gt; sequences are allowed to be present in the source string? Should &lt;c&gt;"ax1x2xbx34x56xc"&lt;/c&gt; return two strings, &lt;c&gt;"x1x2x"&lt;/c&gt; and &lt;c&gt;"x34x56x"&lt;/c&gt;, or the single string &lt;c&gt;"x1x2xbx34x56x"&lt;/c&gt;?&lt;/p&gt;
+&lt;p&gt;Here's my TIMTOWTDI solution:&lt;/p&gt;
+&lt;c&gt;
+print "$_ =&gt; ", extract($_)//'invalid', "\n"
+	for qw/ xxx x.x.x x12x..x x123x...x x1x2x...x
+	x123x.x.x x12x1x ax1x2xbx34x56xc /;
+
+sub extract {
+	my ($x) = shift=~/(x.*x.*x)/;
+	return unless length($x)%2
+		&amp;&amp; substr($x,(length($x)-1)/2,1) eq 'x';
+	return $x;
+}
+
+__END__
+
+xxx =&gt; xxx
+x.x.x =&gt; x.x.x
+x12x..x =&gt; x12x..x
+x123x...x =&gt; x123x...x
+x1x2x...x =&gt; x1x2x...x
+x123x.x.x =&gt; x123x.x.x
+x12x1x =&gt; invalid
+ax1x2xbx34x56xc =&gt; x1x2xbx34x56x
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1176775</root_node>
+<parent_node field_name="parent_node">1176775</parent_node>
+<thread id="1176775">
+<node id="1176776"><node id="1176780"><node id="1176783"/>
+</node>
+<node id="1176781"/>
+</node>
+<node id="1176779"/>
+<node id="1176782"><node id="1176786"><node id="1176795"/>
+</node>
+</node>
+<node id="1176787"><node id="1176790"/>
+<node id="1176793"><node id="1176794"/>
+</node>
+</node>
+<node id="1176791"><node id="1176796"/>
+<node id="1176799"><node id="1176803"><node id="1176822"/>
+</node>
+</node>
+</node>
+<node id="1176792"/>
+<node id="1176827"/>
+<node id="1176838"/>
+</thread></node>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11126426" title="efficient way to read a file in reverse" created="2021-01-06 08:29:21" updated="2021-01-06 08:29:21" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11126419">cmcl</author>
+<doctext field_name="doctext">Hi,
+
+I need to work out a way to read log files from latest entry to earliest (so in reverse) quickly and with minimum overhead (so reading line by line rather than loading the whole file into memory). When I've benchmarked this, reading a file line by line is vastly quicker than reading the log file into memory (some of these log files are very large). I also have to use what is installed on these machines (of which there are thousands of them I need to run it on), so that rules out using File::ReadBackwards. So I opted to use a system command 'tac' to read the file and output it to a filehandle:
+
+&lt;code&gt;    
+    my @loglist = nsort(@oldmsglogs);
+    push(@loglist, "$basemsglog");
+    my @sortedlogs = (reverse @loglist);
+    for $msglogfile (@sortedlogs) {
+      if ($done eq 0) {
+        $logfile = join('/', $baselogdir, $msglogfile);
+        open(RDMESG, "-|", "tac", $logfile);
+        while ( &lt;RDMESG&gt; ) {
+          my $line = $_;
+          if ($line =~ m/(^[A-Z][a-z][a-z]\s+\d{1,2}\s+\d{1,2}\:\d{1,2}\:\d{1,2})(.*)/) {
+            my $logtime = $1;
+            my $msg = $2;
+            my $logutime = str2time("$logtime");
+            if ($logutime ge $unixstarttime) {
+              if ($msg =~ m/kernel\:\s+CPU\d{1,3}\:\s+Package\s+temperature\s+above\s+threshold\,\s+cpu\s+clock\s+throttled/) {
+                $ctcnt++;
+              }
+            } else {
+              $done = 1;
+              last;
+            }
+          }
+        }
+        close RDMESG;
+      } else {
+        if ($ctcnt &gt; $threshold) {
+          $ret = sprintf("$warnmsg %d", $ctcnt);
+          return $ret;
+        } else {
+          return $ret;
+        }
+      }
+    }
+    if ($ctcnt &gt; $threshold) {
+      $ret = sprintf("$warnmsg %d", $ctcnt);
+      return $ret;
+    }
+&lt;/code&gt;
+
+However, I then have an issue with a broken pipe ('tac: write error: broken pipe'), since I close the filehandle while 'tac' is still writing to it with 'last', and this I do so that I stop reading the file once it falls out of the date range I'm interested in. If I take out 'last', then the error goes away, but it ends up reading the file to the end (or actually start of the file, since it is in reverse), which slows it down enormously, making it not viable. Is there a better way to do this, given the constraints I've mentioned? Perhaps a different way to invoke tac or an elegant way to terminate tac when I want to close the filehandle? Or some other way of doing this entirely?
+
+Any help appreciated!
+
+Cam</doctext>
+<thread id="11126426">
+<node id="11126429"><node id="11126432"/>
+<node id="11126452"><node id="11126454"/>
+</node>
+</node>
+<node id="11126430"/>
+<node id="11126536"><node id="11126543"><node id="11126553"/>
+</node>
+<node id="11161873"/>
+</node>
+</thread></node>

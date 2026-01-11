@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1190364" title="Re: MySQL AES Encryption with CBC mode" created="2017-05-16 04:35:31" updated="2017-05-16 04:35:31" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;It all leads to an error being generated.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;What error is that exactly? I unfortunately don't have a MySQL instance handy here, but I do see that in &lt;c&gt;DBRun("SET SESSION block_encryption_mode='aes-128-cbc'; SELECT ID, ...&lt;/c&gt; you are trying to run two SQL statements at once, which isn't supported by default, you should try splitting that into two DB calls.&lt;/p&gt;
+&lt;p&gt;In general, your code structure could be cleaned up a bit. For example, you use the older style calling of functions &lt;c&gt;&amp;DBCredentials&lt;/c&gt;, instead &lt;c&gt;DBCredentials()&lt;/c&gt; is recommended nowadays. Declaring all your variables at the top of the script doesn't help much in achieving proper scoping - e.g. instead of having &lt;c&gt;sub DBConnect&lt;/c&gt; set the &lt;c&gt;$dbh&lt;/c&gt; variable that is outside its scope, you could have it [doc://return] the new handle instead. Also, you unconditionally call &lt;c&gt;&amp;DBConnect;&lt;/c&gt; at the beginning of &lt;c&gt;sub DBRun&lt;/c&gt; and &lt;c&gt;DBDo&lt;/c&gt;, when it would make more sense to connect only once at the beginning of the script. Lastly but probably most importantly, instead of interpolation (&lt;c&gt;"...(Password,'$Set{AESKey}', ..."&lt;/c&gt;) you should use [https://metacpan.org/pod/DBI#Placeholders-and-Bind-Values|placeholders] - see [http://bobby-tables.com/|Bobby Tables].&lt;/p&gt;
+&lt;p&gt;I don't know what your reasons are for storing passwords encrypted - why are you not hashing them instead?&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1190356</root_node>
+<parent_node field_name="parent_node">1190356</parent_node>
+<thread id="1190356">
+<node id="1190364"><node id="1190407"><node id="1190435"/>
+</node>
+</node>
+<node id="1190373"><node id="1190406"/>
+</node>
+</thread></node>

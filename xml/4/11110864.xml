@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110864" title="Re: Mixing asynchronous data feed with synchronous program flow control" created="2020-01-02 03:29:30" updated="2020-01-02 03:29:30" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;If the client is as simple as shown, I think the code is ok - there are a couple of chances for race conditions in regards to &lt;c&gt;$TX&lt;/c&gt; not being in the correct state when the timer fires, but for a command-line script that may be acceptable (I'd just add some &lt;c&gt;$SIG{INT}&lt;/c&gt; handlers to server and client). If this is part of a larger app, here's how I would have coded it:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Tie the lifetime of the timer to the lifetime of the WebSocket client&lt;/li&gt;
+&lt;li&gt;Don't &lt;c&gt;exit&lt;/c&gt; from inside the handler, allow for graceful shutdown&lt;/li&gt;
+&lt;/ul&gt;
+&lt;c&gt;
+my $ua = Mojo::UserAgent-&gt;new;
+my $conn = $ua-&gt;websocket("ws://localhost:8080/" =&gt; sub {
+	my ($ua, $tx) = @_;
+	say "WebSocket handshake failed!"
+		and return unless $tx-&gt;is_websocket;
+	my $id = Mojo::IOLoop-&gt;recurring(5 =&gt; sub {
+		my @command = qw/ RUN STOP /;
+		my $command = $command[rand @command];
+		say "Client &gt; $command";
+		$tx-&gt;send($command);
+	});
+	$tx-&gt;on(finish =&gt; sub {
+		my ($tx, $code, $reason) = @_;
+		say "WebSocket closed with status $code.";
+		Mojo::IOLoop-&gt;remove($id);
+		Mojo::IOLoop-&gt;stop_gracefully;
+	});
+	$tx-&gt;on(text =&gt; sub {
+		my ($tx, $bytes) = @_;
+		say "Server &gt; ", $bytes;
+	});
+});
+Mojo::IOLoop-&gt;start unless Mojo::IOLoop-&gt;is_running;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11110853</root_node>
+<parent_node field_name="parent_node">11110853</parent_node>
+<thread id="11110853">
+<node id="11110859"><node id="11110867"/>
+</node>
+<node id="11110864"><node id="11110885"><node id="11110886"><node id="11110887"><node id="11110895"><node id="11110919"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11110871"/>
+<node id="11110913"><node id="11110915"><node id="11110920"><node id="11110924"/>
+</node>
+</node>
+</node>
+</thread></node>

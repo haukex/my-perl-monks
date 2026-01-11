@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11127192" title="Re^4: Question regarding Time::Piece and timezones" created="2021-01-21 01:39:33" updated="2021-01-21 01:39:33" _doctext_mode="lenient"><type id="11">note</type>
+<author id="58196">Fletch</author>
+<doctext field_name="doctext">&lt;p&gt;
+It's too late to be poking at things but I think the problem is that the argument validation is trying to coerce &lt;c&gt;"CST"&lt;/c&gt; into a &lt;c&gt;DateTime::TimeZone&lt;/c&gt; before it's done anything to do looking at your mapping.  I think what that argument is for is providing a mapping for zones if they're named in the date which is being parsed.  Tweaking your code slightly:
+&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use 5.010;
+use DateTime;
+use DateTime::Format::Strptime;
+$|=1;
+
+my $str = 'Wed, 13 Jan 2021 17:22:23 CST';
+my $pattern = '%a, %d %b %Y %T %Z';
+my $strp = DateTime::Format::Strptime-&gt;new(
+       pattern  =&gt; $pattern,
+       zone_map =&gt; { CST =&gt; '-0700', EST =&gt; '-0600' }
+       );
+say "I got this far (not!)";
+my $dt = $strp-&gt;parse_datetime( $str );
+say "String:   $str";
+say "DateTime: $dt";
+say "zone: ", $dt-&gt;time_zone-&gt;name;
+say '';
+
+__END__
+$ perl tz_thing.plx
+I got this far (not!)
+String:   Wed, 13 Jan 2021 17:22:23 CST
+DateTime: 2021-01-13T17:22:23
+zone: -0700
+&lt;/c&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-58196"&gt;
+&lt;p&gt;
+The cake is a lie.&lt;br /&gt;
+The cake is a lie.&lt;br /&gt;
+The cake is a lie.&lt;br /&gt;
+&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11126886</root_node>
+<parent_node field_name="parent_node">11127189</parent_node>
+<thread id="11126886">
+<node id="11126887"/>
+<node id="11126890"><node id="11126891"><node id="11126903"><node id="11126906"/>
+<node id="11126933"/>
+<node id="11126934"/>
+<node id="11126967"><node id="11127485"><node id="11127671"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11126895"><node id="11126952"><node id="11127189"><node id="11127192"><node id="11127277"/>
+<node id="11127321"/>
+</node>
+<node id="11127280"><node id="11127283"><node id="11127290"/>
+</node>
+<node id="11127324"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11126899"><node id="11126935"/>
+<node id="11127322"><node id="11127328"/>
+<node id="11127345"/>
+</node>
+</node>
+</thread></node>

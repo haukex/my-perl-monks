@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1207003" title="bullet proof SLURP file" created="2018-01-09 14:01:47" updated="2018-01-09 14:01:47" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1164259">leszekdubiel</author>
+<doctext field_name="doctext">It's easy to read whole file to a variable -- open it, check if errors on opening, undef $/, read &lt;&gt;.
+
+&lt;code&gt; 
+#!/usr/bin/perl -CSDA
+
+use utf8;
+use strict;
+use warnings;
+use Carp;
+
+my $whole_file = do {
+        open my $f, "&lt;", "mydata.txt" or croak "can't open mydata.txt: $!";
+        local $/;
+        &lt;$f&gt;; 
+};      
+
+print "data from file is: $whole_file\n"; 
+
+&lt;/code&gt;
+
+But it checks errors on opening only. What happens if error is during file reading? How to check if all reading operation suceeded?
+We have to be careful on reading and also on closing file. 
+
+What is the best way to read file and fail on any erorrs? Would you do it like this: 
+
+&lt;code&gt; 
+#!/usr/bin/perl -CSDA
+
+use utf8;
+use strict;
+use warnings;
+use Carp;
+
+my $whole_file = do {
+        open my $f, "&lt;", "mydata.txt" or croak "can't open mydata.txt: $!";
+        local $/;
+        my $x = &lt;$f&gt;; 
+        $! and croak "can't read mydata.txt: $!";
+        close $f or croak "can't close mydata.txt: $!";
+        $x;
+};      
+
+print "data from file is: $whole_file\n"; 
+
+&lt;/code&gt;
+
+</doctext>
+<thread id="1207003">
+<node id="1207009"><node id="1207014"><node id="1207017"/>
+<node id="1207024"/>
+</node>
+</node>
+<node id="1207013"><node id="1207018"/>
+</node>
+<node id="1207016"><node id="1207019"><node id="1207048"/>
+</node>
+</node>
+<node id="1207038"><node id="1207089"/>
+</node>
+</thread></node>

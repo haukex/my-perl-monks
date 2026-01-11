@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200172" title="Re^2: The behavior when assigning an array to scalar?" created="2017-09-27 04:10:38" updated="2017-09-27 04:10:38" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt; You'll get the same value assigned to "$s" whether you use parentheses or not.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sorry, but that's not correct, as [choroba] showed in his update shortly after posting. The reason is that assignment has slightly higher precedence than the comma.&lt;/p&gt;
+&lt;c&gt;
+$ perl -le 'my $s = ("111","bbb"); print $s'
+bbb
+$ perl -le 'my $s =  "111","bbb" ; print $s'
+111
+$ perl -MO=Deparse,-p -e 'my $s = ("111","bbb")'
+(my $s = ('???', 'bbb'));
+$ perl -MO=Deparse,-p -e 'my $s =  "111","bbb" '
+((my $s = '111'), '???');
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;it will also warn you that the first 3 items are ignored&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You get those warnings with commas as well - but it's a good point, since it hints that the OP may not be using [doc://warnings]. [fgg1991]: Always [id://111088]!&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -e 'my $s = ("111","222","aaa","bbb")'
+Useless use of a constant ("111") in void context at -e line 1.
+Useless use of a constant ("222") in void context at -e line 1.
+Useless use of a constant ("aaa") in void context at -e line 1.
+$ perl -wMstrict -e 'my $s =  "111","222","aaa","bbb" '
+Useless use of a constant ("222") in void context at -e line 1.
+Useless use of a constant ("aaa") in void context at -e line 1.
+Useless use of a constant ("bbb") in void context at -e line 1.
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1200100</root_node>
+<parent_node field_name="parent_node">1200170</parent_node>
+<thread id="1200100">
+<node id="1200101"/>
+<node id="1200102"/>
+<node id="1200170"><node id="1200172"><node id="1200203"><node id="1200230"/>
+</node>
+</node>
+</node>
+</thread></node>

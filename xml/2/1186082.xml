@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1186082" title="Re^3: DateTime::Format::Flexible; for Log Parse with multiple formatted lines" created="2017-03-27 10:54:54" updated="2017-03-27 10:54:54" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Two problems I see with that code are: First, just like in the original code, &lt;c&gt;while ($str =~ /.../g)&lt;/c&gt; &lt;i&gt;without&lt;/i&gt; a &lt;c&gt;\G&lt;/c&gt; regex anchor (&lt;c&gt;$str =~ /\G.../g&lt;/c&gt;) will skip over stuff in &lt;c&gt;$str&lt;/c&gt; that doesn't match the regex, possibly resulting in missed data. Second, as [1nickt] already said, &lt;c&gt;$0&lt;/c&gt; is not a regex capture (see [doc://$0]), and the regex only has three capture groups, so &lt;c&gt;$4&lt;/c&gt; and above will never be populated by that regex.&lt;/p&gt;
+&lt;p&gt;Based on your regex, it looks like you're trying to break up the string based on whitespace, in which case a simple &lt;c&gt;my @parts = split ' ', $rest;&lt;/c&gt; might be easiest.&lt;/p&gt;
+&lt;p&gt;However, I see that your log entries have quoted strings, so that might not be appropriate either. Your first couple of example log entries could possibly be broken apart like this: &lt;c&gt;my @parts = split /\s*[\[\]]\s*/, $rest, 5;&lt;/c&gt;, or, you'll have to write regexes that actually match the log entries, e.g. &lt;c&gt;/^ \s* (\d+) \s* \[(\d+)\] \s+ (\S+) \s+ \[(.+?)\] \s* (\w+): \s* (.*?) \s* $/x&lt;/c&gt;, for example.&lt;/p&gt;
+&lt;p&gt;To match quoted strings, you could use [mod://Regexp::Common::delimited] or the core module [doc://Text::Balanced]. Good resources on regexes in general are [doc://perlretut], [doc://perlrequick], and [doc://perlre].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1185654</root_node>
+<parent_node field_name="parent_node">1186075</parent_node>
+<thread id="1185654">
+<node id="1185665"><node id="1185672"><node id="1185683"/>
+<node id="1185690"/>
+</node>
+</node>
+<node id="1185669"><node id="1186075"><node id="1186082"><node id="1186096"><node id="1186102"/>
+<node id="1186112"/>
+<node id="1186147"/>
+</node>
+</node>
+</node>
+<node id="1186994"><node id="1186995"/>
+<node id="1186996"/>
+</node>
+</node>
+</thread></node>

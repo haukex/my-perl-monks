@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198996" title="Re: Using hashref values in constant declarations." created="2017-09-08 22:37:52" updated="2017-09-08 22:37:52" _doctext_mode="lenient"><type id="11">note</type>
+<author id="861371">kcott</author>
+<doctext field_name="doctext">&lt;p&gt;G'day [id://1198982|nameofmyuser],&lt;/p&gt;
+&lt;p&gt;Welcome to the Monastery.&lt;/p&gt;
+
+&lt;p&gt;
+Perl provides a number of special blocks which are executed at various points during the lifetime of the program:
+"[http://perldoc.perl.org/perlmod.html#BEGIN%2c-UNITCHECK%2c-CHECK%2c-INIT-and-END|BEGIN, UNITCHECK, CHECK, INIT and END]".
+You can use these to check your assumptions about what's happening at these various points.
+&lt;/p&gt;
+
+&lt;p&gt;&lt;small&gt;&lt;em&gt;&amp;#91;&lt;strong&gt;Warning:&lt;/strong&gt;
+Do read the linked documentation, especially the &lt;c&gt;begincheck&lt;/c&gt; example.
+Some of those blocks are executed in FIFO order; and some in LIFO order.
+It's not intuitively obvious which is which.&amp;#93;&lt;/em&gt;&lt;/small&gt;&lt;/p&gt;
+
+&lt;p&gt;
+Your assumptions appear to be correct; 
+although, the phrase &lt;em&gt;"&lt;c&gt;@test&lt;/c&gt; array is allocated at compile time"&lt;/em&gt; could be misinterpreted.
+To be clear, in both of these:
+&lt;/p&gt;
+&lt;code&gt;
+my $var1;
+my $var2 = 'val2';
+&lt;/code&gt;
+&lt;p&gt;
+The variables are declared at compile time; but no assignment occurs at this time.
+The "&lt;c&gt;$var2 = 'val2'&lt;/c&gt;" part of that second statement occurs at runtime.
+&lt;/p&gt;
+
+&lt;p&gt;
+Here's an example using some of those special blocks.
+It's just a start: modify and extend as necessary.
+&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/env perl -l
+
+use strict;
+use warnings;
+
+my $hashref = { a =&gt; 1, b =&gt; 2 };
+my @array = qw{c d e};
+
+use constant {
+    HR_ARRAY =&gt; [ sort values %$hashref ],
+    AREF =&gt; \@array,
+};
+
+BEGIN { print join ' ', 'B1:', sort(keys %$hashref), @array }
+BEGIN { print join ' ', 'B2:', @{+HR_ARRAY}, @{+AREF} }
+
+INIT { @array = qw{f g h} }
+INIT { print join ' ', 'I1:', sort(keys %$hashref), @array }
+INIT { @array = qw{i j k} }
+INIT { print join ' ', 'I2:', @{+HR_ARRAY}, @{+AREF} }
+
+print join ' ', 'R1:', sort(keys %$hashref), @array;
+print join ' ', 'R2:', @{+HR_ARRAY}, @{+AREF};
+&lt;/code&gt;
+
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;code&gt;
+B1:
+B2:
+I1: f g h
+I2: i j k
+R1: a b c d e
+R2: c d e
+&lt;/code&gt;
+
+&lt;p&gt;
+Using [http://perldoc.perl.org/constant.html|constant] for references is generally a bad choice.
+It makes the token that points to the reference a constant;
+but, &lt;strong&gt;it does not make the values of the reference constants&lt;/strong&gt;.
+Consider these:
+&lt;/p&gt;
+
+&lt;code&gt;
+$ perl -E 'use constant AREF =&gt; [1..4]; say "@{+AREF}";'
+1 2 3 4
+
+$ perl -E 'use constant AREF =&gt; [1..4]; say "@{+AREF}"; AREF = []'
+Can't modify constant item in scalar assignment at -e line 1, at EOF
+Execution of -e aborted due to compilation errors.
+
+$ perl -E 'use constant AREF =&gt; [1..4]; say "@{+AREF}"; AREF-&gt;[2] = 99; say "@{+AREF}"'
+1 2 3 4
+1 2 99 4
+&lt;/code&gt;
+
+&lt;p&gt;
+In terms of workarounds: one of the [id://961|Anonymous Monk]s [id://1198987|showed] a &lt;c&gt;BEGIN&lt;/c&gt; block;
+you could potentionally use an &lt;c&gt;INIT&lt;/c&gt; block with a variation of what my code showed for &lt;c&gt;AREF&lt;/c&gt;;
+you could also just use two &lt;c&gt;constant&lt;/c&gt;s, something like this:
+&lt;/p&gt;
+&lt;code&gt;
+use constant { ONE =&gt; 1, ..., FOUR =&gt; 4 };
+use constant NUM_AREF =&gt; [ ONE .. FOUR ];
+&lt;/code&gt;
+
+&lt;p&gt;&lt;small&gt;&lt;em&gt;&amp;#91;&lt;strong&gt;Note:&lt;/strong&gt;
+I've used &lt;c&gt;NUM_AREF&lt;/c&gt; which could probably be improved upon; however,
+&lt;c&gt;HASHREFCONST&lt;/c&gt; is a poor, and highly misleading, choice for an &lt;strong&gt;arrayref&lt;/strong&gt; constant:
+it will make subsequent code difficult to understand, 
+and runs a high risk of being the source of coding errors.&amp;#93;&lt;/em&gt;&lt;/small&gt;&lt;/p&gt;
+
+&lt;p&gt;
+If you tell us how this code is intended to be used,
+we can probably offer more concrete suggestions.
+&lt;/p&gt;
+
+&lt;p&gt;
+See also: [http://search.cpan.org/perldoc?enum|enum] &amp;mdash; a CPAN module which you might find useful.
+&lt;/p&gt;
+
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-861371"&gt;
+&lt;p&gt;&amp;mdash; Ken&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1198986</root_node>
+<parent_node field_name="parent_node">1198986</parent_node>
+<thread id="1198986">
+<node id="1198987"/>
+<node id="1198988"/>
+<node id="1198996"><node id="1199001"/>
+<node id="1199012"><node id="1199025"/>
+<node id="1199062"/>
+</node>
+</node>
+<node id="1199002"/>
+<node id="1199026"/>
+<node id="1199029"/>
+<node id="1199057"/>
+<node id="1199060"/>
+</thread></node>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11102215" title="Side effect of using undefined variable in regex" created="2019-07-01 03:40:09" updated="2019-07-01 03:40:09" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;I have an installation script which behaviour differs undesired depending of prior execution of unrelated regex.&lt;/p&gt;
+
+&lt;p&gt;The script restarts services after completing the installation, but when &lt;/p&gt;&lt;code&gt;$supported =~ /\Q4.1.2/&lt;/code&gt;&lt;p&gt; is not executed not all services are started.&lt;/p&gt;
+
+&lt;p&gt;I have absolutely no clue as to why not executing an otherwise unrelated regex changes the behaviour of regexs inside a function called later.&lt;/p&gt;
+
+&lt;p&gt;Is this behaviour caused by using an undefined variable in a regex?&lt;/p&gt;
+
+&lt;p&gt;It looks mighty strange and I have worked around the issue by not using an undefined variable in a regex&lt;/p&gt;
+
+&lt;p&gt;I have reduced the installation script to&lt;/p&gt;
+
+&lt;code&gt;
+use v5.30.0;
+
+my @stoppedGeneralServices = ( 'OP Mover', 'OP Monitor');
+my @stoppedStandardServices = ( 'OP OPC Client', 'OP Calculation Server', 'OP Data Server', 'OP Configuration Server', 'OP Log Server', 'OP Time Server', 'ONC RPC PortMapper');
+
+my $supported = '4.0.0,4.0.1,4.1.0,4.1.1,4.1.2';
+
+$supported =~ /\Q4.1.2/ if @ARGV;
+
+say "Start Basic Standard Services:";
+startStandardServices( 'Config');
+say "Start Remaining Standard Services:";
+startStandardServices();
+say "Start General Services:";
+startGeneralServices();
+
+say "Installation completed";
+
+sub startStandardServices {
+    my $last = shift;
+    my $name;
+    while (@stoppedStandardServices) {
+        $name = pop @stoppedStandardServices;
+        say '  Starting $name=\'', $name, '\' $last=', defined $last ? "'$last'" : 'undef', ' ($name=~/$last/i)=', ($name =~ /$last/i) ? 1 : 0;
+        last if $name =~ /$last/i;
+    }
+}
+
+sub startGeneralServices {
+    my $last = shift;
+    my $name;
+    while (@stoppedGeneralServices) {
+        $name = pop @stoppedGeneralServices;
+        say '  Starting $name=\'', $name, '\' $last=', defined $last ? "'$last'" : 'undef', ' ($name=~/$last/i)=', ($name =~ /$last/i) ? 1 : 0;
+        last if $name =~ /$last/i;
+    }
+}
+&lt;/code&gt;
+
+&lt;p&gt;When executed without arguments the output is:&lt;/p&gt;
+&lt;code&gt;
+D:\&gt;surprise.pl
+Start Basic Standard Services:
+  Starting $name='ONC RPC PortMapper' $last='Config' ($name=~/$last/i)=0
+  Starting $name='OP Time Server' $last='Config' ($name=~/$last/i)=0
+  Starting $name='OP Log Server' $last='Config' ($name=~/$last/i)=0
+  Starting $name='OP Configuration Server' $last='Config' ($name=~/$last/i)=1
+Start Remaining Standard Services:
+  Starting $name='OP Data Server' $last=undef ($name=~/$last/i)=1
+Start General Services:
+  Starting $name='OP Monitor' $last=undef ($name=~/$last/i)=1
+Installation completed
+&lt;/code&gt;
+
+&lt;p&gt;When executed with an argument the output is:&lt;/p&gt;
+&lt;code&gt;
+D:\&gt;surprise.pl all
+Start Basic Standard Services:
+  Starting $name='ONC RPC PortMapper' $last='Config' ($name=~/$last/i)=0
+  Starting $name='OP Time Server' $last='Config' ($name=~/$last/i)=0
+  Starting $name='OP Log Server' $last='Config' ($name=~/$last/i)=0
+  Starting $name='OP Configuration Server' $last='Config' ($name=~/$last/i)=1
+Start Remaining Standard Services:
+  Starting $name='OP Data Server' $last=undef ($name=~/$last/i)=0
+  Starting $name='OP Calculation Server' $last=undef ($name=~/$last/i)=0
+  Starting $name='OP OPC Client' $last=undef ($name=~/$last/i)=0
+Start General Services:
+  Starting $name='OP Monitor' $last=undef ($name=~/$last/i)=0
+  Starting $name='OP Mover' $last=undef ($name=~/$last/i)=0
+Installation completed
+&lt;/code&gt;</doctext>
+<reputation field_name="reputation">12</reputation>
+<thread id="11102215">
+<node id="11102216"><node id="11102217"><node id="11102237"><node id="11102239"><node id="11102241"><node id="11102244"><node id="11102251"/>
+</node>
+</node>
+</node>
+<node id="11102250"><node id="11102253"/>
+</node>
+</node>
+</node>
+<node id="11102223"/>
+</node>
+<node id="11102231"/>
+<node id="11102285"/>
+</thread></node>

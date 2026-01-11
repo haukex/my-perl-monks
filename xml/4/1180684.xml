@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1180684" title="Re^5: Loop problem: jumps one record" created="2017-01-31 08:13:24" updated="2017-01-31 08:13:24" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [math&amp;ing001],&lt;/p&gt;
+&lt;p&gt;When I run your code against your sample input, it does not match the output you gave; also you didn't say what output you expect - the more precise you are in your questions, the better we are able to help :-)&lt;/p&gt;
+&lt;p&gt;What I see happening is that I get stuff like "&lt;c&gt;(total:&lt;/c&gt;" in the output, the reason is that the regex &lt;c&gt;/(\d+)\s+(\S+)/&lt;/c&gt; also matches the string &lt;c&gt;"blocked using dummy3 (total: 5)"&lt;/c&gt;. One way to avoid this would be to be more specific in your regexes. One simple fix would be to write your regexes as &lt;c&gt;/^\s*(\d+)\s+(\S+)\s*$/&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Anyway, the first thing I would suggest is that you don't use &lt;c&gt;do { } until ()&lt;/c&gt; loops, and instead use &lt;c&gt;while&lt;/c&gt; loops, and then use the [doc://last] command to break out of the loop under certain conditions, this will give you more precise control. For example, the first of your inner loops could be written like this:&lt;/p&gt;
+&lt;c&gt;
+	if (/blocked.using/) {
+		while (&lt;&gt;) {
+			/^\s*(\d+)\s+(\S+)\s*$/ or last;
+			$ip = $2;
+			print "$ip\n";
+		}
+	}
+&lt;/c&gt;
+&lt;p&gt;As for the state machine approach:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use constant {
+		IDLE =&gt; 0,
+		RELAY =&gt; 1,
+		BLOCKED =&gt; 2,
+	};
+
+my $state = IDLE;
+while (&lt;&gt;) {
+	chomp;
+	if (/Relay.access.denied/) {
+		$state = RELAY;
+	}
+	elsif (/blocked.using/) {
+		$state = BLOCKED;
+	}
+	elsif (/^\s*(\d+)\s+(\S+)\s*$/) {
+		if ($state == RELAY) {
+			print "Relay Access Denied: $2\n"
+		}
+		elsif ($state == BLOCKED) {
+			print "Blocked: $2\n"
+		}
+	}
+	else {
+		$state = IDLE;
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1180665</root_node>
+<parent_node field_name="parent_node">1180681</parent_node>
+<thread id="1180665">
+<node id="1180668"><node id="1180677"><node id="1180687"/>
+</node>
+</node>
+<node id="1180669"/>
+<node id="1180670"><node id="1180707"/>
+<node id="1180708"/>
+</node>
+<node id="1180671"><node id="1180676"><node id="1180678"><node id="1180681"><node id="1180682"><node id="1180683"><node id="1180685"/>
+</node>
+</node>
+<node id="1180684"/>
+<node id="1180701"/>
+</node>
+</node>
+<node id="1180679"/>
+</node>
+</node>
+<node id="1180680"/>
+<node id="1180686"/>
+</thread></node>

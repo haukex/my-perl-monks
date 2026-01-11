@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11163990" title="Re: Recursively substitute against multidimensional hash" created="2025-02-14 02:50:29" updated="2025-02-14 02:50:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Something like this? No &lt;c&gt;eval&lt;/c&gt; necessary.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+sub dive {
+        my ($r, @p) = @_;
+        return unless @p;
+        unshift @p, 'default' if @p==1;
+        $r = ref $r eq 'HASH' &amp;&amp; exists $$r{$_} ? $$r{$_} : return for @p;
+        return $r
+}
+
+my %var = (
+        default =&gt; { foo =&gt; 'Default-Foo' },
+        foo =&gt; { bar =&gt; 'Foo-Bar' },
+        a =&gt; { deeply =&gt; { nested =&gt; { value =&gt; 'A-Deeply-Nested-Value' } } },
+);
+
+my $work = &lt;&lt;'EOF';
+Hello, %foo
+Blah, %foo.bar
+Deep: %a.deeply.nested.value
+EOF
+
+print $work =~ s{ % ( \w+ (?:\.\w+)* ) }{ dive \%var, split /\./, $1 }xegr;
+
+__END__
+
+Hello, Default-Foo
+Blah, Foo-Bar
+Deep: A-Deeply-Nested-Value
+&lt;/c&gt;
+&lt;p&gt;This is based on my node [id://11115752|here]. I also have similar code linked from [id://830550|my scratchpad] in the bullet point "Data::Diver type code".&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11163989</root_node>
+<parent_node field_name="parent_node">11163989</parent_node>
+<thread id="11163989">
+<node id="11163990"><node id="11163991"><node id="11163995"><node id="11164001"/>
+</node>
+</node>
+</node>
+<node id="11163992"><node id="11163996"/>
+</node>
+</thread></node>

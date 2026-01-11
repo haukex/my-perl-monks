@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11105920" title="wget not working from perl" created="2019-09-09 21:57:12" updated="2019-09-09 21:57:12" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1166559">harangzsolt33</author>
+<doctext field_name="doctext">Dear fellow Monks, This is a little exercise which I thought was going to be super easy. But my script is not working!! :(
+
+&lt;P&gt;My perl script downloads a web page and saves it in a temporary file in a folder called "WGET" and then reads it and sends it to STDOUT. It seems to work fine when I enter the web address manually thru stdin, but it doesn't do anything if I pass the argument thru the URL online. Why is that???
+
+&lt;P&gt;&lt;A HREF="http://www.ildispaintings.com/wget.pl?http%3A//www.wzsn.net/robots.txt"&gt;Test Script online and see the results&lt;/A&gt;
+
+&lt;P&gt;To prove that WGET exists on my server, I also created a wget_test.pl script that simply prints the result of wget --help: &lt;A HREF="http://www.ildispaintings.com/wget_test.pl"&gt;See this script in action&lt;/A&gt;
+
+&lt;P&gt;Here is the script that works only when I run it from my computer:
+
+&lt;P&gt;&lt;CODE&gt;
+
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+
+#
+# This perl script downloads a web page using an application
+# called WGET and returns its contents as an encoded file.
+# It can be run from command line or from the web:
+#
+#  Usage (from the web): www.something.com/wget.pl?escaped_url
+#
+#  Usage (Command line): wget.pl &lt;URL&gt;
+#
+####################################################################
+
+my $ROOT   = ENV('DOCUMENT_ROOT');
+my $INPUT  = ENV('QUERY_STRING');
+my $UNIQUE = ENV('UNIQUE_ID');
+my $ONLINE = length($UNIQUE) ? 1 : 0;
+
+# Only the following characters are allowed in the URL,
+# anything else will be rejected:
+
+my $ALLOW  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:;/+!?&amp;#%=-._';
+
+##############################################################
+##############################################################
+
+if ($ONLINE)
+{
+  print "Content-type: text/javascript\n\n";
+  length($INPUT) or EXIT(2, 'No URL specified.');
+  $INPUT = substr($INPUT, 0, 1900);
+  _isFromCharSet($INPUT, $ALLOW) or EXIT(3, 'Illegal characters found in URL.');
+  $INPUT = unescape($INPUT);
+  Download($INPUT);
+  EXIT(0, 'SUCCESS. Argument was received from URL.');
+}
+
+$ROOT = GetPath($0);
+if (@ARGV)
+{
+  if (@ARGV == 1)
+  {
+    Download($ARGV[0]);
+    EXIT(0, 'SUCCESS. Argument was received from command line.');
+  }
+  else
+  {
+    PrintUsage();
+    EXIT(-1, 'Argument missing.');
+  }
+}
+else
+{
+  Download(GetArgs());
+  EXIT(0, 'SUCCESS. Argument was received from stdin.');
+}
+
+################################################################
+################################################################
+#
+# This function asks the user to enter the web address (URL)
+# of the web page to download and returns the URL string.
+#
+sub GetArgs
+{
+  print "\n\n  This Perl script downloads a web page from the internet\n  and prints its content to STDOUT.\n\n    Enter web address: ";
+  return scalar &lt;STDIN&gt;;
+}
+#################################################################
+sub Download
+{
+  my $URL = defined $_[0] ? $_[0] : '';
+  $URL = Trim($URL);
+  length($URL) or return;
+
+  my $P = index($URL, '://');
+  if ($P &lt; 0 || $P &gt; 10) { $URL = 'http://' . $URL; }
+
+  $URL = '"' . $URL . '"';
+  $ROOT = JoinPath(GetPath($0), 'WGET');
+  my $FILENAME = JoinPath($ROOT, RandomString(8).'.TXT');
+  my $COMMAND = "wget -q -O $FILENAME $URL";
+
+  print "Content-type: text/javascript\n\n";
+  print "// Script name: $0\n";
+  print "// URL: $URL\n";
+  print "// Root dir: $ROOT\n";
+  print "// File Name: $FILENAME\n";
+
+  print "// Creating directory: $ROOT\n";
+  mkdir $ROOT, 0777;
+  print "// Executing: $COMMAND\n";
+  print `$COMMAND`;
+
+  my $SIZE = -s $FILENAME;
+  print "// File Size: $SIZE bytes\n";
+
+  sysopen(FH, $FILENAME, 0) or EXIT(4, 'Cannot open file for reading.');
+  print "// File opened for reading - $FILENAME\n";
+  my @DATA = &lt;FH&gt;;
+  my $CONTENT = join('', @DATA);
+  print "// Read " . length($CONTENT) . " bytes\n";
+  print "\nReceiver(\"" . toJStr($CONTENT) . "\");\n\n";
+  close FH;
+  print "// File was closed.\n";
+
+  if (unlink($FILENAME) == 1)
+  {
+    print "// File was deleted - $FILENAME\n";
+  }
+  else
+  {
+    print "// File could not be deleted - $FILENAME\n";
+  }
+}
+#################################################################
+#
+# This function receives a binary string and converts it to a
+# JavaScript string that can be safely inserted between "..." marks.
+#
+# Usage: STRING = toJStr(STRING)
+#
+#
+sub toJStr
+{
+  @_ or return '';
+  my $S = shift;
+  defined $S or return '';
+  my $L = length($S);
+  $L or return '';
+
+  my $c;
+  my $J = '';
+  for (my $i = 0; $i &lt; $L; $i++)
+  {
+    $c = vec($S, $i, 8);
+    if ($c == 9) { $J .= '\t'; next; }
+    if ($c == 13) { $J .= '\r'; next; }
+    if ($c == 10) { $J .= '\n'; next; }
+    if ($c == 60) { $J .= '\x3C'; next; }
+    if ($c == 62) { $J .= '\x3E'; next; }
+    if ($c == 38) { $J .= '\x26'; next; }
+    if ($c == 34) { $J .= '\"'; next; }
+    if ($c == 92) { $J .= '\\'; next; }
+    if ($c &gt;= 0 &amp;&amp; $c &lt;= 7) { $J .= "\\$c"; next; }
+    if ($c &lt; 32 || $c &gt; 126) { $J .= '\x' . toHex($c); next; }
+    $J .= chr($c);
+  }
+  return $J;
+}
+
+##############################################################
+# This function sends an error code to the browser.
+# Usage: EXIT(INTEGER, MESSAGE)
+sub EXIT
+{
+  my $ERRCODE = @_ ? shift : 0;
+  my $MESSAGE = @_ ? shift : '';
+  print "\n";
+  if (length($MESSAGE)) { print "// $MESSAGE\n"; }
+  print "ERRCODE = $ERRCODE;\n";
+  exit;
+}
+##############################################################
+sub PrintUsage
+{
+  print "\n  This Perl script downloads a web page from the internet using a program\n  called 'WGET' and prints its content to STDOUT. This script can be called\n  from a browser or from command line. Either way it expects one argument,\n  the URL address. The URL string should be escaped when used online.\n\n           Online Usage: wget.pl?URL\n     Command-Line Usage: wget.pl &lt;URL&gt;\n\n";
+}
+
+###############################################################
+###############################################################
+
+# v2019.09.05   STRING = escape(STRING)
+# Converts a binary string to URL-safe string.
+sub escape{my$X=defined$_[0]?$_[0]:'';my$Z='';for(my$i=0;$i&lt;length($X);){my$C=vec($X,$i++,8);$Z.=$C==32?'+':$C==96?'%60':$C&gt;44&amp;&amp;$C&lt;58||$C&gt;94&amp;&amp;$C&lt;123||$C&gt;63&amp;&amp;$C&lt;91||$C==42?chr($C):'%'.sprintf('%.02X',$C);}$Z}
+
+# v2019.09.08   STRING = unescape(STRING)
+# Converts an URL string to regular binary string. It's the opposite of the escape() function. This function silently ignores errors.
+sub unescape{my$X=defined$_[0]?$_[0]:'';$X=~tr|+| |;my$i=index($X,'%')&gt;=0||return$X;my($H,$j,$C,$D)=('0123456789ABCDEF',$i);while($i&lt;length($X)){$C=vec($X,$i++,8);if($C==37){$C=substr($X,$i++,1);length($C)||last;$C=index($H,uc($C));if($C&lt;0){$i--;next;}$D=substr($X,$i++,1);if(length($D)){$D=index($H,uc($D));if($D&lt;0){$i--;}else{$C&lt;&lt;=4;$C+=$D;}}}vec($X,$j++,8)=$C;}substr($X,0,$j)}
+
+# v2019.09.08   INTEGER = Ceil(NUMBER)
+# Returns the smallest integer greater than or equal to a number.
+sub Ceil{my$N=defined$_[0]?$_[0]:0;my$I=int($N);$N&lt;0?$I:$N-$I==0?$I:$I+1;}
+
+# v2019.09.08   INTEGER = Floor(NUMBER)
+# Returns the largest integer less than or equal to a number.
+sub Floor{my$N=defined$_[0]?$_[0]:0;my$I=int($N);$N&gt;0?$I:$N-$I==0?$I:$I-1;}
+
+# v2019.08.25  STRING = Trim(STRING)
+# Removes whitespace from before and after string and returns a new string.
+sub Trim{my$X=defined$_[0]?$_[0]:'';my$L=length($X);my$P=0;while($P&lt;=$L&amp;&amp;vec($X,$P++,8)&lt;33){}for($P--;$P&lt;=$L&amp;&amp;vec($X,$L--,8)&lt;33;){}substr($X,$P,$L-$P+2)}
+
+# v2019.6.15  VALUE = ENV(NAME, [DEFAULT, [OVERRIDE]])
+# Returns the named environment variable. Returns "" or DEFAULT if the environment variable doesn't exist. If a third argument is provided, this function will return the value of the third argument ALWAYS without even checking the environment variable.
+sub ENV{my$N=defined$_[0]?shift:'';my$D=@_?shift:'';return @_?shift:length($N)&amp;&amp;exists($ENV{$N})?Trim($ENV{$N}):$D;}
+
+# v2019.09.08  STRING = RandomString(LENGTH)
+# Creates a random string of letters and numbers.
+sub RandomString{defined$_[0]||return'';my$S='';my$L=shift;my$A='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';while(length($S)&lt;$L){vec($S,length($S),8)=vec($A,int(rand(length($A))),8);}$S}
+
+# v2019.09.08  STRING = GetPath(FULL_NAME)
+# This function returns the path portion of a full file name without the trailing / or \ character. Example: GetPath($0) returns this perl script's path.
+sub GetPath{@_||return'';my$F=shift;$F=~tr#\\#/#;my$P=rindex($F,'/');return($P&gt;0)?substr($F,0,$P):'.';}
+
+# v2019.06.16  STRING = JoinPath(STRING, [STRING], [STRING])
+# This function joins two names into a single path by adding / in between the names. It also simplifies the resulting path by removing repeated \\ // characters, and tries to resolve the "." and ".." in a path name to literal names only.
+sub JoinPath { @_ or return ''; my $P = join('/', @_); defined $P or return ''; length($P) or return ''; $P = Trim($P); $P =~ tr#\\#/#; if (uc(substr($P, 0, 8)) eq 'FILE:///') { $P = substr($P, 8, length($P)); } $P =~ s|///|/|g; $P =~ s|//|/|g; my $DRIVE = (vec($P, 1, 8) == 58) ? vec($P, 0, 8) &amp; 223 : 0; if ($DRIVE) { $P = substr($P, 2, length($P)); } my $SLASH = (vec($P, 0, 8) == 47) ? 47 : 0; if ($SLASH) { $P = substr($P, 1, length($P)); } my @A = split('/', $P);  for (my $i = 0; $i &lt; @A; $i++) { if ($A[$i] eq '.') { splice(@A, $i--, 1); } if ($A[$i] eq '..') { if ($i &gt; 0) { splice(@A, --$i, 2); $i--; } else { splice(@A, $i, 1); $i--; } } } return ($DRIVE ? chr($DRIVE) . ':' : '') . ($SLASH ? '/' : '') . join('/', @A); }
+
+# v2019.08.28  STRING = toHex(INTEGER)
+# Converts a small integer to a two-digit hex string.
+sub toHex{my$N=defined$_[0]?$_[0]:0;$N&gt;0||return'00';$N&lt;255||return'FF';sprintf('%.02X',$N&amp;255)}
+
+# v2019.6.24  INTEGER = _isFromCharSet(STRING, KNOWN)
+# Returns 1 if string is strictly made up of characters listed in string KNOWN. Returns 0 if string contains any "unknown" characters.
+sub _isFromCharSet { @_ or return 1; my $S = shift; defined $S or return 1; my $L = length($S); $L or return 1; @_ or return 0; my $K = shift; defined $K or return 0; length($K) or return 0; while ($L--) { index($K, substr($S, $L, 1)) &gt;= 0 or return 0; } return 1; }
+
+&lt;/CODE&gt;</doctext>
+<thread id="11105920">
+<node id="11105924"><node id="11105927"/>
+</node>
+<node id="11105925"><node id="11105926"/>
+<node id="11105971"/>
+</node>
+<node id="11105929"/>
+<node id="11105949"/>
+<node id="11105976"/>
+<node id="11106166"/>
+</thread></node>

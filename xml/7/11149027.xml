@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11149027" title="Matching non-ASCII file contents with file name." created="2022-12-22 06:56:57" updated="2022-12-22 06:56:57" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1129327">mldvx4</author>
+<doctext field_name="doctext">&lt;p&gt;
+My goal is to use the substitution operator (&lt;code&gt;s///&lt;/code&gt;) to replace occurrences of a question mark (?) with an inverted question mark (&amp;iquest) om specific line in a large number of files.  I am having trouble with what is actually getting substituted inside the file in that it does not match what ends up in the file name in the file system.  I am grateful for any tips or guidance as to what to have that which is inside the files match various file names out in the file system.  Perhaps it is matter of encoding, again?
+&lt;/p&gt;
+
+&lt;p&gt;
+It is &lt;a href="https://unicode-table.com/en/00BF/"&gt;claimed that the inverted questionmark is \x00BF&lt;/a&gt;, which strangely is C2 BF in UTF-8 according to a "&lt;a href="https://unicode-table.com/en/"&gt;Unicode Character Table&lt;/a&gt; site. 
+&lt;/p&gt;
+&lt;p&gt;
+In the shell (Bash) on an EXT4, that seems to be the case and the Perl utility &lt;code&gt;rename&lt;/code&gt; seems to work that way, too.  
+&lt;/p&gt;
+
+&lt;code&gt;
+$ touch ¿
+$ ls ? &gt; zz
+$ xxd zz
+00000000: c2bf 0a
+
+$ echo '¿' &gt; yy
+$ xxd yy
+00000000: c2bf 0a  
+
+$ touch xx
+$ rename -v 's/xx/¿/;' xx
+xx not renamed: ¿ already exists
+$ rename --version
+/usr/bin/rename using File::Rename version 1.13, File::Rename::Options version 1.10
+&lt;/code&gt;
+
+&lt;p&gt;
+And those files show up in Apache2's access logs containing the escape sequence "%C2%BF" in the URL in place of the inverted question mark.  &lt;br /&gt;
+Yet, shouldn't that be \x00BF all the way through?   My own Perl scripts work differently:
+&lt;/p&gt;
+
+&lt;code&gt;
+$ perl -e 'use utf8; print "¿\n"' &gt; ww
+$ xxd ww
+00000000: bf0a
+
+$ perl -e 'use utf8; $c="¿\n"; utf8::upgrade($c); print $c' &gt; vv
+$ xxd vv
+00000000: bf0a
+&lt;/code&gt;
+
+&lt;p&gt;
+Though if I leave out the &lt;code&gt;use utf8&lt;/code&gt; part, then I kind of get the "right" result only according to &lt;code&gt;xxd&lt;/code&gt;, 
+&lt;/p&gt;
+
+&lt;code&gt;
+$ perl -e 'print "¿\n"' &gt; uu
+$ xxd uu
+00000000: c2bf 0a 
+
+$ curl --silent --head 'http://localhost/' | grep 'Content-Type'
+Content-Type: text/html; charset=utf-8
+&lt;/code&gt;
+
+&lt;p&gt;
+While keeping UTF-8, how can I get "&amp;iquest;" inside the files to match the "&amp;iquest;" out in the file name and still look right?
+&lt;/p&gt;
+
+</doctext>
+<thread id="11149027">
+<node id="11149028"><node id="11149041"><node id="11149042"><node id="11149044"/>
+</node>
+</node>
+</node>
+<node id="11149029"><node id="11149040"/>
+</node>
+</thread></node>

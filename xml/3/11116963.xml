@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116963" title="Trying to read print in a loop inside a subroutine" created="2020-05-20 03:09:38" updated="2020-05-20 03:09:38" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1108925">kaushik9918</author>
+<doctext field_name="doctext">&lt;p&gt;I am trying to open a file inside a subroutine to basically substitute some lines in the file. But since, it was not working, I tried a simpler way of printing a line instead of substitute, for debug purposes. Following is the subroutine code.&lt;/p&gt;
+
+&lt;code&gt;
+
+sub replace {
+		
+		while(&lt;INPUT_FILE&gt;){
+			
+				
+					my $cell=$_[0];
+					our $rpl;
+					
+					
+					if ($_=~ /^TASK\|VALUE = (.*)/ ){
+							
+									my $task=$1;
+									chomp $task;
+									$rpl= $cell.'_'.$task.'_bunch_rpl';
+									print "000: $rpl\n";
+									
+									}
+					
+					elsif ($_=~ /^(.*)\|VALUE = (.*)/ ){
+										
+										
+										my $line= $_;
+										chomp $line;
+										my $ip_var= $1;
+										my $ip_val=$2;
+										chomp $ip_var;
+										chomp $ip_val;
+										my $look= $ip_var."|VALUE";
+										open(REPLAY_FILE, "+&lt;$rpl")  || die "\ncannot open $rpl\n";
+										while (my $rpl_sub = &lt;REPLAY_FILE&gt;){
+															if ($rpl_sub =~ /^$line/)
+															{
+																print "\n 111: $ip_val";
+																}		
+														}
+														close REPLAY_FILE;
+											}
+					elsif ($_=~ /^\s*$/){
+								print "\n";
+								return ;
+								}
+		
+						
+			
+	}
+	
+	} 
+&lt;/code&gt;
+
+&lt;p&gt;The code prints the following as of now.&lt;/p&gt;
+
+&lt;code&gt;
+000: lfr_task62_bunch_rpl
+
+ 111: 2.0.9.0
+ 111: INLINE
+ 111: POWER 
+000: aaa_task14_bunch_rpl
+
+&lt;/code&gt;
+
+&lt;p&gt;Expected output is:&lt;/p&gt;
+
+&lt;code&gt;
+000: lfr_task62_bunch_rpl
+
+ 111: 2.0.9.0
+ 111: INLINE
+ 111: POWER 
+000: aaa_task14_bunch_rpl
+
+ 111: 0.45
+ 111: NO
+
+&lt;/code&gt;
+&lt;p&gt;The input sample is :&lt;/p&gt;
+
+&lt;code&gt;
+
+    TASK_CELL_NAME|VALUE = lfr
+    TASK|VALUE = task62
+    TASK_VERSION|VALUE = 2.0.9.0
+    CHIP_PKG_TYPE|VALUE = INLINE
+    JUNK_LINE = JUNK
+    JUNK_LINE = JUNK
+    FULL_ESD|VALUE = POWER 
+    
+    TASK_CELL_NAME|VALUE = aaa
+    TASK|VALUE = task14
+    CUSTOM_CELL_DENSITY|VALUE = 0.45
+    CUSTOM_CELL_SS|VALUE = NO
+
+&lt;/code&gt;
+
+
+&lt;p&gt;Can someone tell me the mistake I am doing here?&lt;/p&gt; </doctext>
+<thread id="11116963">
+<node id="11116975"><node id="11116977"/>
+</node>
+<node id="11116976"><node id="11116983"/>
+</node>
+<node id="11117006"><node id="11117010"/>
+</node>
+<node id="11117083"><node id="11117087"/>
+</node>
+</thread></node>

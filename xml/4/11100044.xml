@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100044" title="Re^5: Parsing Problems (updated)" created="2019-05-15 18:01:02" updated="2019-05-15 18:01:02" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Based on what you've posed here, you definitely don't need to use the &lt;c&gt;eval&lt;/c&gt; with &lt;c&gt;require BAREWORD;&lt;/c&gt;, [doc://require|&lt;c&gt;require "/path/to/filename.pm";&lt;/c&gt;] would be much easier in your case. Also, note that despite its [id://1206848|several caveats], a [doc://glob] might be easier than [doc://opendir] in this case. Here's an example, where &lt;c&gt;$stylespath&lt;/c&gt; is an absolute pathname (see [doc://do] for the rules on when &lt;c&gt;@INC&lt;/c&gt; will be searched and when it won't):&lt;/p&gt;
+&lt;c&gt;
+use File::Glob 'bsd_glob';
+
+my $style = $ARGV[1];
+die "bad style" unless $style=~/\A\w+\z/;
+require $_ for bsd_glob("$stylespath/$style/*.pm");
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;the subroutines are still undefined: &lt;c&gt;Undefined subroutine &amp;modes::three::flex&lt;/c&gt; I'm not sure why this is.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;What &lt;c&gt;package&lt;/c&gt; statement (if any) does &lt;c&gt;english/eight.pm&lt;/c&gt; start with? If it's e.g. &lt;c&gt;package eight;&lt;/c&gt;, then a &lt;c&gt;sub flex&lt;/c&gt; in that file declares a subroutine whose full name is &lt;c&gt;&amp;eight::flex&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Note that the AM post does not name one caveat of [doc://UNIVERSAL]'s &lt;c&gt;can&lt;/c&gt; method, which is that it also searches the package's ancestry via [doc://@ISA] for that method - if you don't set &lt;c&gt;@ISA&lt;/c&gt; in your packages, it's fine, but if you do, then you need to be aware of this. If you want to avoid that, then this is IMO one of those rare cases where symbolic refs can help: &lt;c&gt;my $package = 'eight'; my $subref = do { no strict 'refs'; \&amp;{$package.'::flex'} };&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; That you've traced it down to this issue also helps explain what you described in your root node, that you see a difference between 5.18 and 5.26: [doc://perl5260delta#Removal-of-the-current-directory-(".")-from-@INC] may explain your issue. But my suggestions above still stand!&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1233707</root_node>
+<parent_node field_name="parent_node">11100033</parent_node>
+<thread id="1233707">
+<node id="1233708"><node id="1233711"><node id="1233714"/>
+</node>
+</node>
+<node id="1233709"><node id="1233719"><node id="1233720"><node id="1233723"/>
+</node>
+<node id="1233721"/>
+<node id="1233764"><node id="11100033"><node id="11100044"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

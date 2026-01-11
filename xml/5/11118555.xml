@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118555" title="incorrect methods yield success" created="2020-06-26 05:27:58" updated="2020-06-26 05:27:58" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;code&gt;
+use strict;
+use warnings;
+
+my @json = jsonsolute('JSON::MaybeXS', 'encode', 'decode');
+print $json[0], "\n";
+print $json[1]-&gt;{key}, "\n";
+@json = jsonsolute();
+
+sub jsonsolute {
+  my ($jsonpackage, $jsonefunction, $jsondfunction) = @_;
+  $jsonpackage ||= 'JSON::MaybeXS';
+  $jsonefunction ||= 'encode_json';
+  $jsondfunction ||= 'decode_json';
+  eval "require $jsonpackage";
+  if ($@) {
+	print "package $jsonpackage missing\n";
+  } else {
+	my $json = $jsonpackage-&gt;new(pretty =&gt; 1, canonical =&gt; 1);
+	my $encoded = $json-&gt;$jsonefunction({key =&gt; 'value'});
+	my $decoded = $json-&gt;$jsondfunction('{"key":"value"}');
+	return $encoded, $decoded;
+  }
+}
+&lt;/code&gt;
+results in:
+&lt;code&gt;
+{
+   "key" : "value"
+}
+
+value
+encountered object 'Cpanel::JSON::XS=SCALAR(0x564228375740)', but neither allow_blessed, convert_blessed nor allow_tags settings are enabled (or TO_JSON/FREEZE method missing) at ...(my $encoded)
+&lt;/code&gt;
+</doctext>
+<reputation field_name="reputation">7</reputation>
+<thread id="11118555">
+<node id="11118556"><node id="11118558"><node id="11118559"/>
+</node>
+</node>
+<node id="11118597"/>
+<node id="11118607"/>
+</thread></node>

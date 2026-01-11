@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1215468" title="Re: Should I use carp/croak or warn/die" created="2018-05-30 11:08:15" updated="2018-05-30 11:08:15" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Note that [doc://Carp] doesn't automatically include a stack trace, that's only if you do &lt;c&gt;perl -MCarp=verbose script.pl&lt;/c&gt; or &lt;c&gt;$Carp::Verbose=1;&lt;/c&gt;, or you explicitly use &lt;c&gt;confess&lt;/c&gt;. I like to use [doc://Carp] in my modules because it reports the error as coming from the user's code, rather than the module itself, which makes more sense for many error cases (like incorrect parameters). When it's an internal error that I don't expect the user to see (at least not often), I'll sometimes use &lt;c&gt;confess&lt;/c&gt; to get the full stack trace.&lt;/p&gt;
+&lt;c&gt;
+$ cat Foo.pm 
+package Foo;
+use warnings;
+use strict;
+use Carp;
+sub one { die "Bad call to one"; }
+sub two { carp "Bad call to two"; }
+sub three { confess "Some error in three"; }
+1;
+
+$ perl -I. -MFoo -le 'Foo::one'
+Bad call to one at Foo.pm line 5.
+
+$ perl -I. -MFoo -le 'Foo::two'
+Bad call to two at -e line 1.
+
+$ perl -I. -MFoo -le 'Foo::three'
+Some error in three at Foo.pm line 7.
+	Foo::three() called at -e line 1
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1215465</root_node>
+<parent_node field_name="parent_node">1215465</parent_node>
+<thread id="1215465">
+<node id="1215467"/>
+<node id="1215468"><node id="1215474"/>
+</node>
+<node id="1215469"><node id="1215470"><node id="1215472"/>
+<node id="1215475"/>
+</node>
+</node>
+<node id="1215476"/>
+<node id="1215479"><node id="1215481"/>
+<node id="1215482"><node id="1215484"><node id="1215485"><node id="1215486"><node id="1215488"><node id="1215490"/>
+<node id="1215571"/>
+</node>
+</node>
+</node>
+<node id="1215487"><node id="1215511"/>
+<node id="1215515"/>
+</node>
+</node>
+<node id="1215512"/>
+</node>
+<node id="1215503"><node id="1215510"><node id="1215513"/>
+</node>
+<node id="1215514"><node id="1215516"/>
+</node>
+</node>
+<node id="1215566"><node id="1215568"/>
+</node>
+</node>
+<node id="1215538"/>
+</thread></node>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11106698" title="Re^6: How do I display only matches" created="2019-09-25 16:28:55" updated="2019-09-25 16:28:55" _doctext_mode="lenient"><type id="11">note</type>
+<author id="732669">Marshall</author>
+<doctext field_name="doctext">I ran your code on my Windows machine and got the same results. Hooray! This is &lt;b&gt;exactly as expected&lt;/b&gt;!!!&lt;p&gt;
+
+I copied the text for "$" verbatim from the Perl regex docs.  Normally that is good enough.  However in this case I see that some further "yeah but" explanation  is required!&lt;p&gt;
+
+&lt;u&gt;Problem 1:&lt;/u&gt;  What "\n" is can be both platform and sometimes context dependent!  If I write a "\n" on my Windows machine, that means 2 characters: &lt;CR&gt;&lt;LF&gt; (Carriage Return, Line Feed).  So when you write "foo\r\n", on Windows that means &lt;CR&gt;&lt;CR&gt;&lt;LF&gt;.  This extra &lt;CR&gt; means that the line doesn't end in "\n", &lt;CR&gt;&lt;LF&gt; (Carriage Return, Line Feed). There is indeed something else between the "o" and the line ending and your regex doesn't match - &lt;u&gt;this is correct behavior&lt;/u&gt;.&lt;p&gt;
+
+You may not know this (many folks don't), but no matter what the OS platform, when writing to a network socket, "\n" means &lt;CR&gt;&lt;LF&gt;. &lt;CR&gt;&lt;LF&gt; is the network standard for line endings. So, yes, even on Unix, a write to network socket will be &lt;CR&gt;&lt;LF&gt;, while a write to a disk file will be just &lt;LF&gt;. Windows uses the network standard for disk writes - so everywhere on Windows \n means the 2 characters &lt;CR&gt;&lt;LF&gt;.&lt;p&gt;
+
+&lt;u&gt;Problem 2:&lt;/u&gt;  Not every cross platform case and every platform direction is handled automatically by Perl.  If you are on a single platform, then "$" will work as the docs describe as will chomp().  I have one program that needs to work on: a) old Mac "\n" means &lt;CR&gt; in files, b)Windows "\n" means &lt;CR&gt;&lt;LF&gt; in files, c)Unix, "\n" means &lt;LF&gt; in files.  When I write code that has to work with all 3 platforms, I use regex instead of chomp to delete the line endings. &lt;c&gt;s/\s*$//;&lt;/c&gt; deletes all whitespace at the end of the line (including line endings like &lt;CR&gt;&lt;LF&gt; which are considered "whitespace".&lt;p&gt;
+
+Another thought:  I told the OP that there was no need to "chomp" if you are just going to add the line ending back in.  That is true as long as you are processing a file and writing a file for the same platform. There are some cases where you'd "chomp" and then print "$_\n" to change the line endings.&lt;p&gt;
+
+I hope this post adds more clarity to the issue. But it probably raises more "yeah, but what if..." questions than it answers. This is all more complex than our OP asked about.  I suggest starting a new thread if there is interest in discussing the "dirty details".  &lt;p&gt;
+
+Update: To allow for this &lt;CR&gt;&lt;CR&gt;&lt;LF&gt; situation:
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+for my $str ( "foo", "foo\n", "foo\r\n" ) {
+        dd $str, scalar $str=~/o\s*$/;
+}
+
+__END__
+
+("foo", 1)
+("foo\n", 1)
+("foo\r\n", 1)
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11106612</root_node>
+<parent_node field_name="parent_node">11106693</parent_node>
+<thread id="11106612">
+<node id="11106613"><node id="11106614"><node id="11106617"><node id="11106623"/>
+</node>
+</node>
+</node>
+<node id="11106615"><node id="11106616"><node id="11106620"><node id="11106624"><node id="11106693"><node id="11106698"><node id="11106700"><node id="11106705"><node id="11106706"><node id="11106708"><node id="11106719"><node id="11106805"><node id="11106813"><node id="11106815"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11106704"><node id="11106709"><node id="11106718"/>
+</node>
+<node id="11106716"><node id="11106717"><node id="11106809"><node id="11106811"/>
+</node>
+</node>
+<node id="11106773"><node id="11106803"><node id="11106810"><node id="11106814"><node id="11106823"><node id="11106826"><node id="11106858"/>
+<node id="11106934"><node id="11106939"><node id="11106981"><node id="11106993"><node id="11107025"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11106854"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11106655"><node id="11106702"><node id="11106754"><node id="11106806"><node id="11106812"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11106622"><node id="11106626"/>
+</node>
+</node>
+</node>
+<node id="11106619"/>
+</thread></node>

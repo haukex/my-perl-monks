@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230601" title="Re: rectangularizing input to become array" created="2019-02-27 01:58:16" updated="2019-02-27 01:58:16" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I'm attempting to present an SSCCE.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note that an [id://1177642|SSCCE] is all about making things clear and easy for the people trying to help: no extra editing of the inputs, no guessing which input produces which output, guessing whether commented-out code is relevant to the question, and so on. For me, an ideal question would contain three of PerlMonks' &lt;small&gt;&lt;u&gt;&lt;c&gt;[download]&lt;/c&gt;&lt;/u&gt;&lt;/small&gt; links that I can right-click and do "Save As" on: the input file, the output file, and the source code, such that I can just download them and run &lt;c&gt;perl script.pl input.txt | diff - output.txt&lt;/c&gt; and see what's going on. There are also a couple other options, such as embedding the input in the source in the form of a &lt;c&gt;__DATA__&lt;/c&gt; section or just a variable, and embedding the output in the source and using e.g. [doc://Test::More] to check if it matches.&lt;/p&gt;
+&lt;p&gt;In your question, you've included a link to GitHub, which might go down sometime in the future (plus it's a couple more clicks), and also, in your &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags you've included the command-line invocations that I'd have to trim, and that aren't really necessary here to show others how to run the script or what's going on. Also, since the question is about whitespace, the &lt;c&gt;dd&lt;/c&gt; invocation you commented out is actually more useful than a plain [doc://print] here.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I read somewhere that a good name for a default directory in perl development is 'lib'.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, but mostly for &lt;c&gt;.pm&lt;/c&gt; files - the &lt;c&gt;lib&lt;/c&gt; directory is usually what would get added to [doc://@INC] such that [doc://use] and [doc://require] (and in some cases [doc://do]) can find the files. Typically, the content of such directories is not what would get modified by a user or get modified during the run of a script.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;specified by $width and $length.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Personally, I find those variable names a little confusing: You've got an array of strings, and &lt;c&gt;$length&lt;/c&gt; sounds like it refers to the strings' [doc://length], but it seems like that's what &lt;c&gt;$width&lt;/c&gt; is for. I might suggest &lt;c&gt;$width&lt;/c&gt;/&lt;c&gt;$height&lt;/c&gt;, &lt;c&gt;$length&lt;/c&gt;/&lt;c&gt;$height&lt;/c&gt;, &lt;c&gt;$length&lt;/c&gt;/&lt;c&gt;$rows&lt;/c&gt;, or &lt;c&gt;$cols&lt;/c&gt;/&lt;c&gt;$rows&lt;/c&gt;.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;What I would like is for these inputs to get trimmed to an array of the size specified by $width and $length . Spaces added/substituted on right if necessary to pad each vector to the same size.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You could use [doc://substr] for the trimming and [doc://sprintf] for the output with padding.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+my $input = &lt;&lt;'(END INPUT)';
+abcdef
+abcdefg
+abcde
+ bcdefgh
+ bcd	
+(END INPUT)
+
+my @lines = split /\n/, $input;
+dd \@lines;
+my $out = make_rectangular( \@lines, 4, 6 );
+dd $out;
+
+sub make_rectangular {
+	my ( $lines, $maxrows, $maxlength ) = @_;
+	my @out;
+	my $rowcount=1;
+	for my $line (@$lines) {
+		my $trimmed = substr $line, 0, $maxlength;
+		push @out, sprintf "%-*s", $maxlength, $trimmed;
+		last if ++$rowcount&gt;$maxrows;
+	}
+	return \@out;
+}
+
+__END__
+
+["abcdef", "abcdefg", "abcde", " bcdefgh", " bcd\t"]
+["abcdef", "abcdef", "abcde ", " bcdef"]
+&lt;/c&gt;
+&lt;p&gt;(Note I've assumed you want to not modify the input array here.) Of course TIMTOWTDI, I could've mashed the code into a single &lt;c&gt;map&lt;/c&gt; statement, but I hope this is a little more clear.&lt;/p&gt;
+&lt;p&gt;BTW, I'm not sure what you want to do with the tab character in your input file? This code counts it as a single character.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Also, what character is it that renders an entire space dark?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Do you mean the block drawing character U+2588, "&amp;#x2588;"? That would be &lt;c&gt;"\N{U+2588}"&lt;/c&gt; or &lt;c&gt;"\N{FULL BLOCK}"&lt;/c&gt;. I might suggest U+2420, "&amp;#x2420;" (&lt;c&gt;"\N{U+2420}"&lt;/c&gt; or &lt;c&gt;"\N{SYMBOL FOR SPACE}"&lt;/c&gt;, [id://1227298|see also]). Note that for the &lt;c&gt;\N{CHARNAME}&lt;/c&gt; variant, you may have to add &lt;c&gt;use charnames ':full';&lt;/c&gt; to your script, depending on your Perl version (newer versions load it automatically).&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1230600</root_node>
+<parent_node field_name="parent_node">1230600</parent_node>
+<thread id="1230600">
+<node id="1230601"><node id="1230699"><node id="1230700"><node id="1230703"/>
+<node id="1230769"><node id="1230781"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1230602"><node id="1230684"/>
+</node>
+<node id="1230610"><node id="1230701"><node id="1230707"/>
+<node id="1230710"/>
+</node>
+</node>
+</thread></node>

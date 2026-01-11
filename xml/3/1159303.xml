@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1159303" title="Design pattern factory : use lib issue on lib directory" created="2016-04-01 12:25:51" updated="2016-04-01 12:25:51" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1159296">CraigWalker</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Monks&lt;/p&gt;
+&lt;p&gt;
+I'm doing some preliminary tests on factory design pattern with PERL and I've found the following issue.
+If I implement my factory like this, I have no problem. 
+&lt;/p&gt;
+&lt;code&gt;
+package GreetFactory;
+use strict; use warnings;
+use lib './Greet';
+
+sub instantiate {
+	my $class          = shift;
+	my $requested_type = shift;
+	my $location       = "Greet/$requested_type.pm";
+	$class          = "Greet::$requested_type";
+	require $location;
+	return $class-&gt;new(@_);
+}
+1;
+&lt;/code&gt;
+&lt;p&gt;
+But if I implement my factory like that, then a load error is displayed (Can't locate object method "new" via package "lib::Repeat" (perhaps you forgot to load "lib::Repeat"?) at GreetFactory.pm line 13).
+&lt;/p&gt;
+&lt;code&gt;
+package GreetFactory;
+use strict; use warnings;
+use lib './lib';
+
+sub instantiate {
+	my $class          = shift;
+	my $requested_type = shift;
+	my $location       = "lib/$requested_type.pm";
+	$class          = "lib::$requested_type";
+	require $location;
+	return $class-&gt;new(@_);
+}
+1;
+&lt;/code&gt;
+&lt;p&gt;
+Of course, with the 1st test, Repeat.pm is located into a 'Greet' subdirectory, and I rename it 'lib' before doing the 2nd test. Everything happens as if 'lib::' is badly interpreted because 'lib' may be a PERL reserved word ?
+&lt;/p&gt;</doctext>
+<thread id="1159303">
+<node id="1159305"><node id="1159310"/>
+</node>
+<node id="1159306"/>
+<node id="1159358"/>
+</thread></node>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1205260" title="Re: Strip specific html sequence" created="2017-12-10 11:57:54" updated="2017-12-10 11:57:54" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Please see [id://1201438] for why it is indeed not a good idea to do this without a proper parser, especially look at the "spoiler" for lots of cases of perfectly valid HTML that will not be fun to parse with a regex. Here's an example with [mod://Mojo::DOM]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Mojo::DOM;
+
+my $html = &lt;&lt;'ENDHTML';
+&lt;html&gt;&lt;head&gt;&lt;title&gt;Title&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+&lt;div&gt;&lt;div&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div class="blue"&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+ENDHTML
+
+my $dom = Mojo::DOM-&gt;new($html);
+$dom-&gt;find('div &gt; div.blue')
+	-&gt;each(sub{ $_-&gt;parent-&gt;remove });
+print $dom;
+
+__END__
+
+&lt;html&gt;&lt;head&gt;&lt;title&gt;Title&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+&lt;div&gt;&lt;div&gt;
+&lt;/div&gt;&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/c&gt;
+&lt;p&gt;I had a quick look at "[https://git-scm.com/download|Git for Windows]", and it happens to include [mod://HTML::Parser]. In the above thread, [tangent] showed an example with that module [id://1201544|here], and because it's a fairly old but good module you will find lots of examples with it online as well. That Git distribution also appears to contain [mod://cpan] as well, so you could try installing [mod://Mojo::DOM].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1205254</root_node>
+<parent_node field_name="parent_node">1205254</parent_node>
+<thread id="1205254">
+<node id="1205256"><node id="1205259"/>
+</node>
+<node id="1205257"><node id="1205261"><node id="1205264"/>
+<node id="1205265"/>
+</node>
+</node>
+<node id="1205260"><node id="1205263"/>
+</node>
+<node id="1205262"/>
+</thread></node>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109206" title="Re^3: remove files" created="2019-11-25 16:32:33" updated="2019-11-25 16:32:33" _doctext_mode="lenient"><type id="11">note</type>
+<author id="847566">Don Coyote</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;i&gt;You should validate the data to ensure you are getting only the number of files you expect.&lt;/i&gt;&lt;/p&gt;
+&lt;code&gt;
+   #!/Perl -T
+
+   $what_i_am_about_to_type_at_prompt = 'file to remove.gah';
+
+   print "Please enter the file to be removed: \n";
+   my @file_I_intend_to_remove =  &lt;STDIN&gt;;
+
+   @file_I_intend_to_remove == 1 or die 'incorrect number of files supplied';
+
+   my $file_i_am_about_to_unlink = shift @file_I_intend_to_remove;
+
+   unless( $file_i_am_about_to_unlink eq $what_i_am_about_to_type_at_prompt ){
+      printf "%s\n", $file_i_am_about_to_unlink;
+      die 'for the love of ice-cream, don't do an unlink operation just yet'; 
+   }
+
+   # even if it matches you still need to untaint it.
+   $file_i_am_about_to_unlink =~ m/\A(file\sto\sremove\.gah)\Z/
+    or die 'taint is a pain in the hyperbola, but I enjoy having a working operating system';
+   
+   $file_i_am_about_to_unlink = $1;
+
+   # now i can unlink the file as it is the one i am expecting to unlink;
+   printf "unlinking %s\n", $file_i_am_about_to_unlink;
+   # unlink $file_i_am_about_to_unlink;
+&lt;/code&gt;
+
+&lt;p&gt;The context you supply to the input operator, determines whether it returns the first field, or all fields. The input operator splits on &lt;c&gt;IFS&lt;/c&gt; the Input Field Separator, &lt;c&gt;$/&lt;/c&gt;. You do not need to call split on the input operator.&lt;/p&gt;
+&lt;p&gt;You do need to check what your input is once it is in the array, and before you pass that input to a function. This is data-validation, more commonly known as untainting. For why we do this see [doc://perlsec|perldoc perlsec]. To scrub the data, you need to substitute a pattern match back into your scalar.&lt;/p&gt;
+&lt;p&gt;perlsec is dense. keep it simple and only use straightforward file names while testing.&lt;/p&gt;
+&lt;code&gt;
+my $filename = 'filename.fxt';
+my $scrubbed = s/\A(filename\.fxt)\Z/$1/
+ or die 'need to read up on regex a bit more';
+&lt;/code&gt;
+&lt;p&gt;Common error is to forget to chomp the string, or to try and use filenames with non-printable characters in them, such as spaces. Review chapter 8 to cover what you will need for this.&lt;/p&gt;
+&lt;sub&gt;&lt;b&gt;edit&lt;/b&gt; removed &lt;i&gt;split,&lt;/i&gt; re [id://11109208]&lt;/sub&gt;</doctext>
+<root_node field_name="root_node">11108945</root_node>
+<parent_node field_name="parent_node">11109188</parent_node>
+<thread id="11108945">
+<node id="11108946"><node id="11108947"><node id="11108955"/>
+</node>
+</node>
+<node id="11109007"><node id="11109188"><node id="11109206"><node id="11109208"><node id="11109211"/>
+</node>
+</node>
+<node id="11109207"/>
+</node>
+</node>
+<node id="11109010"/>
+</thread></node>

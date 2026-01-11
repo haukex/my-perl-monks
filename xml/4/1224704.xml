@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224704" title="Re: GetOpt unknown args" created="2018-10-25 16:25:37" updated="2018-10-25 16:25:37" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Also, I found out that I can use '--' option. But it really feels to me as a workaround and I don't want to make the users use it.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I don't think it's a workaround, using &lt;c&gt;--&lt;/c&gt; to indicate "stop processing options here" is a really common thing - &lt;c&gt;perl&lt;/c&gt;, &lt;c&gt;git&lt;/c&gt;, [https://www.gnu.org/software/libc/manual/html_node/Getopt.html|GNU getopt], and many other tools do it, which is why [doc://Getopt::Long] supports it.&lt;/p&gt;
+&lt;p&gt;I also don't think messing with &lt;c&gt;@ARGV&lt;/c&gt; is a bad thing to do, especially since you'd just be looking for a fixed string.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use List::Util qw/first/;
+
+@ARGV = qw/create --folder empty --size 50
+	--additional hey how ---are --you 555/;
+
+my $i = first { $ARGV[$_] eq '--additional' } 0..$#ARGV;
+my (undef,@add) = defined $i ? splice @ARGV, $i, $#ARGV-$i+1 : ();
+
+use Data::Dump;
+dd \@ARGV, \@add;
+
+__END__
+
+(
+  ["create", "--folder", "empty", "--size", 50],
+  ["hey", "how", "---are", "--you", 555],
+)
+&lt;/c&gt;
+&lt;p&gt;Admittedly not the most beautiful code, but it works. If you want more elegance, I'd suggest either &lt;c&gt;--&lt;/c&gt; or [hippo]'s [id://1224675|suggestion]...&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1224671</root_node>
+<parent_node field_name="parent_node">1224671</parent_node>
+<thread id="1224671">
+<node id="1224675"/>
+<node id="1224676"/>
+<node id="1224704"/>
+</thread></node>

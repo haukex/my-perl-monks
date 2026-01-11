@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1083985" title="Prevent Strings From Being Interpreted As A File Handle" created="2014-04-27 05:36:17" updated="2014-04-27 05:36:17" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1056748">amon</author>
+<doctext field_name="doctext">&lt;p&gt;Perl has the feature that strings named &lt;i&gt;like&lt;/i&gt; a file handle are taken to &lt;i&gt;be&lt;/i&gt; a file handle, which for example means that “&lt;tt&gt;open DUP, '&gt;&amp;STDOUT'&lt;/tt&gt;”, but also “&lt;tt&gt;'STDOUT'-&gt;say("hello")&lt;/tt&gt;” works.&lt;/p&gt;
+
+&lt;p&gt;This leads to conflicts if we have a class and a bareword file handle of the same name:&lt;/p&gt;
+
+&lt;c&gt;
+use strict;
+use warnings;
+use feature 'say';
+
+say "This is perl $^V";
+
+package Input {
+    sub awesome {
+        say "yay, this works";
+    }
+}
+
+# this works
+'Input'-&gt;awesome;
+
+# the "open" is parsed, but not actually executed
+eval &lt;&lt;'END';
+    sub red_herring {
+        open Input, "&lt;&amp;", \*STDIN or die $!;
+    }
+END
+say "eval failed: $@" if $@;
+
+# this will die
+eval {
+    'Input'-&gt;awesome;
+};
+say "Caught: $@" if $@;
+&lt;/c&gt;
+
+&lt;p&gt;Example Output:&lt;/p&gt;
+
+&lt;c&gt;
+This is perl v5.16.2
+yay, this works
+Caught: Can't locate object method "awesome" via package "IO::File" at prog.pl line 27.
+&lt;/c&gt;
+
+&lt;p&gt;I am aware that this can be avoided with lexical filehandles, and that adhering to proper naming conventions makes this collision less likely. For example, the above code does not fail if the script is in “&lt;tt&gt;package Foo&lt;/tt&gt;” and the &lt;tt&gt;eval&lt;/tt&gt;'d code in “&lt;tt&gt;package main&lt;/tt&gt;”, but the problem occurs again when we do “&lt;tt&gt;'main::Input'-&gt;awesome&lt;/tt&gt;” which should in theory be absolutely equivalent to “&lt;tt&gt;'Input'-&gt;awesome&lt;/tt&gt;”.&lt;/p&gt;
+
+&lt;p&gt;However, &lt;b&gt;my question is:&lt;/b&gt; How can I disambiguate a method call on a string so that it is &lt;i&gt;always&lt;/i&gt; resolved as a class method call, and not as a call on an IO instance?&lt;/p&gt;
+
+&lt;p&gt;I &lt;i&gt;assume&lt;/i&gt; one would have to write a pragma to hook into method resolution, e.g. by replacing the &lt;tt&gt;pp_method_named&lt;/tt&gt; opcode, but I'd much rather hear the wisdom of more experienced monks on this.&lt;/p&gt;
+
+&lt;p&gt;Context: I'm hacking on the utility module [metamod://Util::Underscore] that misguidedly stuffs various utils into the “&lt;tt&gt;_&lt;/tt&gt;” namespace so that they can be used comfortably without having to import them. As I want to prevent the “&lt;tt&gt;_&lt;/tt&gt;” package from being &lt;tt&gt;use&lt;/tt&gt;d directly, I boobie-trapped the “&lt;tt&gt;_::import&lt;/tt&gt;” method to blow with a helpful error message whenever touched. My tests started failing when another module contained file tests on the magic “&lt;tt&gt;_&lt;/tt&gt;” file handle, like “&lt;tt&gt;-d $file &amp;&amp; -w _&lt;/tt&gt;”.&lt;/p&gt;
+
+&lt;p&gt;This question has [http://stackoverflow.com/q/23312167/1521179|previously been asked on Stack Overflow], but so far without the answer I'm seeking.&lt;/p&gt;</doctext>
+<thread id="1083985">
+<node id="1083987"><node id="1083991"><node id="1083993"/>
+</node>
+</node>
+<node id="1083988"><node id="1083989"><node id="1083997"/>
+<node id="1083998"/>
+</node>
+</node>
+<node id="1083995"/>
+<node id="1083996"/>
+</thread></node>

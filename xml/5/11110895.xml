@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110895" title="Re^5: Mixing asynchronous data feed with synchronous program flow control" created="2020-01-03 04:20:35" updated="2020-01-03 04:20:35" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I still maintain that race conditions cannot occur in a program with a single event loop because the program is implicitly serialized on the event loop itself.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I agree that of course one event handler cannot interrupt another. However, I'm not sure what definition of "race condition" you're using here, in my book this is indeed a race condition, see e.g. [wp://Race condition] - the definition is broad enough that it certainly applies here. (I'd even argue that event loops are a form of cooperative multitasking, so even the "shared resource accessed from more than one thread" definition applies.) But even if the quibble is about the terminology used, the bug still exists.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;... it is not a result of undefined timing. It is very well defined: an attempt is made to use $TX some time later, even if the I/O required to initialize &lt;c&gt;$TX&lt;/c&gt; is still pending.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sorry, I don't understand what you mean by &lt;i&gt;"undefined timing"&lt;/i&gt; compared to the sentence following it. (Replace the &lt;c&gt;sleep 5;&lt;/c&gt; with &lt;c&gt;sleep rand 10;&lt;/c&gt; and the bug still exists.)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I am most familiar with writing Tk callbacks where getting back to the event loop quickly is very important, but Tk ensures that all initialization is complete before the first user callback runs. The error you have found occurs when the event loop is started but some resource used in a callback has not yet been fully initialized.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I have to nitpick here that the error is independent of whether the event loop is running or not* - the error is that the timer is started too soon (or that it fires too soon, however you want to look at it). The model you describe of "set everything up before the event loop starts" doesn't work in network servers for example; resources like client connections, timers associated with those connections, etc. come and go, and in most cases &lt;i&gt;can't&lt;/i&gt; be initialized before the event loop starts, and instead have to be dynamically allocated and deallocated.&lt;/p&gt;
+&lt;p&gt;* &lt;i&gt;Update:&lt;/i&gt; To clarify: of course nothing can happen if the event loop isn't running; the rest of the paragraph above hopefully makes clear what I meant to say.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;If initializing a connection requires the event loop to run, things get more interesting and you must track the "initialization pending" state somewhere and either drop or requeue timer events until the connection is ready. So the "idle state" for the connection includes a "connected" flag that must remain clear until the connection is actually established. ... and so the pristine model starts to get hairy when put into practice ...&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That's one possible solution, but I guess I would also describe it as "hairy". Again, [id://11110864|I already showed] another that solves the issue, IMO cleanly.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11110853</root_node>
+<parent_node field_name="parent_node">11110887</parent_node>
+<thread id="11110853">
+<node id="11110859"><node id="11110867"/>
+</node>
+<node id="11110864"><node id="11110885"><node id="11110886"><node id="11110887"><node id="11110895"><node id="11110919"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11110871"/>
+<node id="11110913"><node id="11110915"><node id="11110920"><node id="11110924"/>
+</node>
+</node>
+</node>
+</thread></node>

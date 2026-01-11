@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1195831" title="Re: Understanding endianness of a number" created="2017-07-23 15:25:21" updated="2017-07-23 15:25:21" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;In many cases, endianness is transparent to the programmer, except when explicitly converting between numbers and bytes or when you need to look at the memory directly. In that way, it's kind of like a character encoding: in your program, you work mostly with strings and characters, usually not caring how they're stored internally, and only when converting to and from streams of bytes does it become important how those more abstract notions of characters are represented as bytes (e.g. UTF-8 vs. UTF-16 vs. many more). The same way, in a Perl program, you can say &lt;c&gt;my $x = 48879;&lt;/c&gt;, and you don't have to care how that number gets represented in memory, until you have to think about how to read or write it to a binary file or send/receive it over a data link as a series of bytes. In both cases, there are two levels of thinking here, the "more abstract" notion of numbers/characters, versus the machine-level bytes, and explicit conversion is needed between the two. The conceptual issues arise because this conversion is many times implicit instead of explicit, and so programmers don't often have to think about it.&lt;/p&gt;
+&lt;p&gt;(For the purpose of this explanation, assume byte addressable memory everywhere, and let's ignore that modern machines of course work with words of multiple bytes. Your question comes from I2C anyway, which works on the byte level.)&lt;/p&gt;
+&lt;p&gt;So assuming you want to store &lt;c&gt;my $x = 48879;&lt;/c&gt;, or &lt;c&gt;my $x = 0xBEEF;&lt;/c&gt; as a 16-bit unsigned integer in two bytes, there are two ways to do that: with the most significant byte &lt;c&gt;0xBE&lt;/c&gt; at the lower memory address, or at the higher one (or in the case of a protocol, &lt;c&gt;0xBE&lt;/c&gt; being transmitted first, or second).&lt;/p&gt;
+&lt;c&gt;
+48879 = 0xBEEF
+          ^  ^
+ 0xBE = MSB  LSB = 0xEF
+
+Memory Address:   0 |  1   |  2   | 3
+                    |      |      |
+Little Endian:  ... | LSB  | MSB  | ...
+                    | 0xEF | 0xBE |
+                    |      |      |
+Big Endian:     ... | MSB  | LSB  | ...
+                    | 0xBE | 0xEF |
+
+# little endian
+$ perl -MData::Dump -e 'dd pack "S&lt;", 0xBEEF'
+"\xEF\xBE"
+
+# big endian
+$ perl -MData::Dump -e 'dd pack "S&gt;", 0xBEEF'
+"\xBE\xEF"
+&lt;/c&gt;
+&lt;p&gt;What can sometimes be confusing is that some diagrams of memory addresses or transmission protocols place the least significant bit on the right side of the diagram (because bytes are typically written with their most significant bit first, as in &lt;c&gt;170 == 0b10101010&lt;/c&gt;), but at the same time put the &lt;strike&gt;least significant byte&lt;/strike&gt; lowest memory address on the left, and there are often other variations of this. In fact, if I recall correctly, sorting out this initial left-to-right/right-to-left confusion was probably one of the most important things to help make endianness "click" for me. Another thing to keep in mind is that when you write &lt;c&gt;0xBEEF&lt;/c&gt; in your source code, that's still a single 16-bit value, and not yet two bytes; you don't yet know how it'll be represented in memory.&lt;/p&gt;
+&lt;p&gt;To answer your two questions: Yes, you're correct. In &lt;c&gt;0x03FF&lt;/c&gt;, the MSB is &lt;c&gt;0x03&lt;/c&gt; (the "big end") and the LSB is &lt;c&gt;0xFF&lt;/c&gt; (the "little end"), so the first is big endian order since you print the big end first, and the second is little endian order because you print the little end first. But just to be clear, on the other hand, &lt;c&gt;$b1&lt;/c&gt; and &lt;c&gt;$b2&lt;/c&gt; are two unconnected variables - so what you've really got there is two separate bytes, not a two-byte value stored in a certain order. (&lt;i&gt;Update:&lt;/i&gt; I wouldn't have picked this nit if you had stored them in an array instead since the array indicies take the place of the memory addresses &lt;tt&gt;:-)&lt;/tt&gt;&amp;nbsp;)&lt;/p&gt;
+&lt;p&gt;I've for now ignored additional topics like bigger numbers stored as four or more bytes, where at least in theory there are more than two possible orderings, but I hope that if the principle and the 16-bit version makes sense, understanding the documentation for wider values will be easier.&lt;/p&gt;
+&lt;p&gt;(By the way, I like to shift first and then mask, i.e. &lt;c&gt;$b1 = ($num &gt;&gt; 8) &amp; 0xFF;&lt;/c&gt;, because I've been burned on a small microprocessor where the C compiler implemented the bit shift with a rotate instruction instead. I forget which processor and compiler it was though... plus I don't think Perl would run on such a uC, so it's really just a preference I've developed as a result.)&lt;/p&gt;
+&lt;p&gt;(As the AM post points out, endianness could also refer to the order in which bits of a byte are transmitted, but in my experience, I've pretty much always seen the term endianness referring only to byte order; most protocol descriptions I've read will instead explicitly state "the least/most significant bit is transmitted first/last".)&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor updates for clarity.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1195816</root_node>
+<parent_node field_name="parent_node">1195816</parent_node>
+<thread id="1195816">
+<node id="1195818"><node id="1195833"/>
+</node>
+<node id="1195831"><node id="1195832"><node id="1195834"><node id="1195835"/>
+</node>
+<node id="1195845"><node id="1195846"><node id="1195853"><node id="1196123"/>
+</node>
+<node id="1196176"><node id="1196177"><node id="1196184"><node id="1196186"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1195887"/>
+</thread></node>

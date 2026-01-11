@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1210032" title="RFC: system calls on Unicode filesystem" created="2018-02-27 07:37:20" updated="2018-02-27 07:37:20" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="626393">daxim</author>
+<doctext field_name="doctext">I'm about to email the pumpking for an intervention as a personal favour. Because I'm convinced that a half-arsed solution is better than no solution, it's due past time that the over 20 year old embarrassment gets fixed:
+
+&lt;pre&gt;
+› ver
+Microsoft Windows &amp;#91;Version 10.0.16299.125]
+
+› chcp 65001
+Aktive Codepage: 65001.
+
+› type &amp;#945;&amp;#969;.bat
+@echo hi&amp;#945;&amp;#969;
+
+› node -p "require('child_process').execSync('&amp;#945;&amp;#969;.bat').toString()"
+hi&amp;#945;&amp;#969;
+
+
+› perl6 -e "run '&amp;#945;&amp;#969;.bat'"
+hi&amp;#945;&amp;#969;
+
+› php -r "system('&amp;#945;&amp;#969;.bat');"
+hi&amp;#945;&amp;#969;
+
+› python -c "import subprocess; subprocess.call('&amp;#945;&amp;#969;.bat')"
+hi&amp;#945;&amp;#969;
+
+› ruby -e "system '&amp;#945;&amp;#969;.bat'"
+hi&amp;#945;&amp;#969;
+
+› perl -Mutf8 -e "system '&amp;#945;&amp;#969;.bat'"
+Der Befehl "a?.bat" ist entweder falsch geschrieben oder
+konnte nicht gefunden werden.
+
+› perl -Mutf8 -MWin32::Unicode::Process=systemW -e "systemW('&amp;#945;&amp;#969;.bat')"
+Der Befehl "a?.bat" ist entweder falsch geschrieben oder
+konnte nicht gefunden werden.
+&lt;/pre&gt;
+
+Plan of attack: use 5.028 enables use feature 'just-make-it-work-already-dammit', which checks $^O eq 'MSWin32' and then replaces all the broken chdir, mkdir, open, opendir, rename, rmdir, system, unlink, utime, -X stat etc. with the working equivalent code from Win32::Unicode and also somehow on -e, not just with code executed from files.
+
+&lt;p&gt;Now tell me why this is a stupid idea, but keep in mind that&lt;ul&gt;
+&lt;li&gt; if all the other languages can hack it, then so can we, no matter how shitty and insufficient you think the initial patch is
+&lt;li&gt; the better is the enemy of the good and a "better" solution did not turn up for decades
+&lt;li&gt; if I simply file a perlbug it just gets marked by p5p as a duplicate of a discussion whose proposed "better" solution did not turn up for decades
+&lt;/ul&gt;</doctext>
+<thread id="1210032">
+<node id="1210033"><node id="1210034"/>
+</node>
+<node id="1210053"><node id="1210068"><node id="1210101"/>
+</node>
+</node>
+<node id="1210063"><node id="1210069"><node id="1210073"><node id="1210087"/>
+</node>
+</node>
+</node>
+</thread></node>

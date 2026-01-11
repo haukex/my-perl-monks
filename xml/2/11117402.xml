@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117402" title="Getting start and end xml tags" created="2020-05-28 08:38:15" updated="2020-05-28 08:38:15" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1048544">corfuitl</author>
+<doctext field_name="doctext">&lt;p&gt;Hi &lt;/p&gt;
+
+
+&lt;p&gt;I am trying to implement a function to split a sentence with XML tags in 3 parts. To be more clear, I want to parse a sentence with XML tags so that I will not have the wrapping tags. Input sentences are:&lt;/p&gt;
+&lt;code&gt;
+&lt;d id="43"&gt;Text &lt;/d&gt; here &lt;a id="33"/&gt;
+&lt;b id="33"/&gt; Text &lt;d id="43"&gt;text&lt;/d&gt; here 
+&lt;d id="43"&gt;text here&lt;/d&gt;
+&lt;d id="43"&gt;text here&lt;/d&gt; &lt;d id="44"&gt;text here&lt;/d&gt;&lt;/code&gt;
+
+&lt;p&gt;Output should be&lt;/p&gt;&lt;code&gt;
+start: "", middle: "&lt;d id="43"&gt;Text &lt;/d&gt; here", end: " &lt;a id="33"/&gt;"
+start: "&lt;b id="33"/&gt; ", middle: "Text &lt;d id="43"&gt;text&lt;/d&gt; here", end: ""
+start: "&lt;d id="43"&gt;", middle: "text here", end: "&lt;/d&gt;"
+start: "", middle: "&lt;d id="43"&gt;text here&lt;/d&gt; &lt;d id="44"&gt;text here&lt;/d&gt;", end: ""&lt;/code&gt;
+
+&lt;p&gt;I started my code but I don't think it's efficient. Any suggestions? a, b and c tags are self tags while d is always paired.&lt;/p&gt;
+
+&lt;code&gt;
+ my $segment = $_;
+    my $start ="";
+    my $end ="";
+    my $middle ="";
+    
+    while ($segment =~ /^(&lt;[a|b|c] id=\".*?\"\/&gt;)/ || $segment =~ /^(\s+)/){
+        $start .= $1;
+        $segment =~ s/^\Q$1\E//;
+    }
+
+    while ($segment =~ /(\s+)$/ || $segment =~ /(&lt;[a|b|c] id=\".*?\"\/&gt;)$/){
+        $end = "$1$end";
+        $segment =~ s/\Q$1\E$//;
+    }
+        
+    while ($segment =~ /^(&lt;d id=\".*?\"&gt;).*?(&lt;\/d&gt;)/){
+	----
+    }
+
+    print "start: \"$start\", middle: \"$middle\", end: \"$end\"\n";
+&lt;/code&gt;
+
+
+
+</doctext>
+<thread id="11117402">
+<node id="11117403"><node id="11117406"><node id="11117407"/>
+<node id="11117413"><node id="11117414"><node id="11117416"><node id="11117435"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11117404"><node id="11117405"><node id="11117409"/>
+<node id="11117411"/>
+</node>
+</node>
+<node id="11117419"/>
+</thread></node>

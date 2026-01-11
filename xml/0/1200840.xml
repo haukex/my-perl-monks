@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200840" title="Re^3: Leaking Function Return" created="2017-10-06 12:30:10" updated="2017-10-06 12:30:10" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Just to explain one possibility of what &lt;i&gt;might&lt;/i&gt; be going wrong in your original code without [doc://strict], so that it doesn't remain a mysterious "leak", because this kind of thing can theoretically bite you even under [doc://strict] (although it's a lot less likely):&lt;/p&gt;
+&lt;p&gt;When you don't use [doc://strict], all the variables you use without a declaration are automatically "package variables", that is, they are global everywhere in their package, and since most scripts only have one package (the default, &lt;c&gt;main&lt;/c&gt;), they're effectively global throughout the entire script. So &lt;i&gt;anywhere&lt;/i&gt; you take a reference to an array that is a package variable (&lt;c&gt;\@newArray&lt;/c&gt;), that's always going to refer to the &lt;i&gt;same&lt;/i&gt; array (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; I'm simplifying a bit and leaving out some "advanced" stuff like [doc://local] for the sake of this explanation). So if you make modifications to that array anywhere in the script, they will be visible everywhere else. This may be what is biting you in your original code.&lt;/p&gt;
+&lt;p&gt;So when you do use [doc://strict], you're forced to declare all your variables e.g. with [doc://my] or [doc://our]. The latter actually declares package variables, so they'll have the same behavior as I just described. But variables declared with [doc://my] are "private" to the enclosing block, meaning that code outside the block can't normally see or access them. Every time you call a &lt;c&gt;sub&lt;/c&gt;routine that contains a &lt;c&gt;my @newArray&lt;/c&gt; declaration, that will create a &lt;i&gt;new&lt;/i&gt; memory location for you - this is the important part in this case. Every time you run that &lt;c&gt;sub&lt;/c&gt; and do &lt;c&gt;return \@newArray&lt;/c&gt;, that's a &lt;i&gt;new&lt;/i&gt; array. (More details in [doc://perlsub#Private-Variables-via-my()].)&lt;/p&gt;
+&lt;p&gt;Here's a demo, two functions that re-implement Perl's [doc://perlop#Multiplicative-Operators|&lt;c&gt;x&lt;/c&gt; operator] for lists, one correctly and one incorrectly:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+sub good {
+	my ($string,$times) = @_;
+	my @array; # lexical variable
+	push @array, $string for 1..$times;
+	return \@array;
+}
+
+sub bad {
+	my ($string,$times) = @_;
+	our @array; # package variable
+	# always the same "@array" here!
+	push @array, $string for 1..$times;
+	return \@array;
+}
+
+my $arr1 = good("foo",2);
+dd $arr1;  # prints ["foo", "foo"]
+my $arr2 = good("bar",2);
+dd $arr2;  # prints ["bar", "bar"]
+
+my $arr3 = bad("quz",2);
+dd $arr3;  # prints ["quz", "quz"]
+my $arr4 = bad("baz",2);
+dd $arr4;  # prints ["quz", "quz", "baz", "baz"]
+&lt;/c&gt;
+&lt;p&gt;Of course, it could also be something a bit simpler, like that you accidentally re-used variable names like &lt;c&gt;@newArray&lt;/c&gt; or &lt;c&gt;@arrayToBeManipulated&lt;/c&gt; in multiple places in your code.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1200833</root_node>
+<parent_node field_name="parent_node">1200839</parent_node>
+<thread id="1200833">
+<node id="1200834"/>
+<node id="1200835"/>
+<node id="1200836"><node id="1200839"><node id="1200840"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101208" title="Re^2: Perl form user input" created="2019-06-10 12:32:02" updated="2019-06-10 12:32:02" _doctext_mode="lenient"><type id="11">note</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">Could this sub be doing it? (i notice "remove any spaces")
+&lt;code&gt;
+############################# Subroutines ###########################
+### PARSE SUBROUTINE
+sub parse_formx {
+     local ($name, $value, $pair, $buffer, @pairs);
+
+     if ($ENV{'REQUEST_METHOD'} eq 'GET') {
+         # Split the name-value pairs
+         @pairs = split(/&amp;/, $ENV{'QUERY_STRING'});
+     }
+     elsif ($ENV{'REQUEST_METHOD'} eq 'POST') {
+ 
+            # Clear buffer and Get the input
+            $buffer = "";
+            read(STDIN, $buffer, $ENV{'CONTENT_LENGTH'});
+            # Split the name-value pairs
+            @pairs = split(/&amp;/, $buffer);
+
+     }else {
+
+            &amp;error("Bad request method, Use POST or GET");
+            exit;
+      }
+     #determine name and variable for each pair
+     foreach $pair (@pairs) {
+
+      # Split into name and value.  
+      ($name, $value) = split(/=/, $pair);
+
+      # Ignore The Submit Button
+      if($name =~ /submit/i) { next; }
+
+      $name =~ tr/+/ /;
+      $name =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+ 
+      $value =~ tr/+/ /;
+      $value =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;                                                                                                                                                       
+
+      # Remove Any Possible System Shell Commands Or SSI's Etc.
+      $name =~ s/~!/ ~!/g;
+      $name =~ s/&lt;!--(.|\n)*--&gt;//g;
+      $value =~ s/~!/ ~!/g;
+      $value =~ s/&lt;!--(.|\n)*--&gt;//g;
+
+      $value =~ s/^\s+//gms;           # remove any leading spaces
+      $value =~ s/\s+$//gms;           # remove any trailing spaces
+      $value =~ s/\s{2,}/ /gms;        # remove any 2 spaces and put only 1
+      $value =~ s/\|//g;               # removes any Intruder tampering
+      $value =~ s/~//g;
+      $value =~ s/\`//g;               # removes any server side includes
+      $value =~ s/\~//g;               # removes any server side includes
+      $value =~ s/\"//g;               # removes quotes 
+      $value =~ s/\;//g;               # removes html
+      $value =~ s/\&lt;//g;               # removes html
+      $value =~ s/\&gt;//g;               # removes html
+	  $value =~ s/\s+//g;			   # remove any spaces
+ 	  $value =~ s/^[\s]+|[\s]+$//gm;           # remove any spaces
+
+      $FORM{$name} = $value;
+
+      }
+
+      return %FORM;
+} # end of sub
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">11101179</root_node>
+<parent_node field_name="parent_node">11101191</parent_node>
+<reputation field_name="reputation">5</reputation>
+<thread id="11101179">
+<node id="11101180"><node id="11101183"><node id="11101184"><node id="11101185"><node id="11101187"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11101181"><node id="11101182"/>
+</node>
+<node id="11101191"><node id="11101208"><node id="11101210"/>
+<node id="11101211"><node id="11101212"/>
+</node>
+</node>
+</node>
+<node id="11101206"/>
+</thread></node>

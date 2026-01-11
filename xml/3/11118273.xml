@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118273" title="Efficient but elegant Cross-Product iterator ?" created="2020-06-20 11:47:20" updated="2020-06-20 11:47:20" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">Hi&lt;P&gt;
+
+I'm trying to create an iterator which takes a list of subs and creates the cross product of the returned lists:&lt;P&gt;
+
+the expected result is
+&lt;c&gt;
+for my $x ( $sub_x-&gt;() ) {
+    for my $y ( $sub_y-&gt;() ) {
+         return [ $x,$y ];
+    }
+}
+&lt;/c&gt;&lt;P&gt;
+
+Please note that an iterator can be interrupted and resumed, and that the numbers of subs (=nesting levels) should be free.&lt;P&gt;
+
+Since function calls are expensive in Perl I tried to implement it as a big while loop instead of recursive calls.&lt;P&gt;
+
+Now I'm wondering if there is a more elegant or faster way to code this:&lt;P&gt;
+
+&lt;c&gt;
+use 5.12.0;
+
+use strict;
+use warnings;
+use Data::Dump qw/pp dd/;
+
+
+my $DBG;
+
+;;; # skipped
+
+$DBG = 0;
+my $i_cross = cross(
+                    sub {"A".."B"},
+                    sub {1..2},
+                    sub {"a".."b"},
+                   );
+
+
+my $count = 4;
+
+while ( my ($v) = $i_cross-&gt;() ) {
+    warn  "*** First 5 RESULTs: ", pp $v;
+    last unless $count--;
+}
+
+warn "stopped";
+
+while ( my ($v) = $i_cross-&gt;() ) {
+    warn  "*** Remaining RESULT: ", pp $v;
+}
+
+
+sub cross {
+    my @stack  = @_;
+    my $level  = 0;
+    my @ranges = ();
+    my @res;
+
+    return sub {
+
+        while ( $level &gt;= 0 ) {
+
+            my $ra_range = \ $ranges[$level];
+
+            # ENTER LOOP
+            unless (defined $$ra_range ) {
+                $$ra_range = [ $stack[$level]-&gt;() ];
+                warn "ENTER level=$level left \@ranges=" ,pp \@ranges  if $DBG;
+            }
+
+            # LOOP OVER
+            if ( @$$ra_range  ) {
+                $res[$level] = shift @$$ra_range ;
+
+                # deepest level?
+                if ( $level == $#stack ) {
+                    return [@res];
+                }
+                # go deeper
+                else {
+                    $level++;
+                }
+
+            }
+
+            #EXIT LOOP:
+            else {
+                $level--;
+                $$ra_range = undef;
+            }
+
+        }
+        return;
+    }
+}
+
+&lt;/c&gt;&lt;P&gt;
+
+RESULT&lt;P&gt;
+
+&lt;c&gt;
+*** First 5 RESULTs: ["A", 1, "a"] at d:/exp/iter/cross.pl line 92.
+*** First 5 RESULTs: ["A", 1, "b"] at d:/exp/iter/cross.pl line 92.
+*** First 5 RESULTs: ["A", 2, "a"] at d:/exp/iter/cross.pl line 92.
+*** First 5 RESULTs: ["A", 2, "b"] at d:/exp/iter/cross.pl line 92.
+*** First 5 RESULTs: ["B", 1, "a"] at d:/exp/iter/cross.pl line 92.
+stopped at d:/exp/iter/cross.pl line 96.
+*** Remaining RESULT: ["B", 1, "b"] at d:/exp/iter/cross.pl line 99.
+*** Remaining RESULT: ["B", 2, "a"] at d:/exp/iter/cross.pl line 99.
+*** Remaining RESULT: ["B", 2, "b"] at d:/exp/iter/cross.pl line 99.
+&lt;/c&gt;&lt;P&gt;
+
+(it's part of a bigger file, so don't worry about the line numbers)
+ &lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;!--nowiki--&gt;&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;/sub&gt; 
+&lt;!--nowiki--&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.16} --&gt;</doctext>
+<thread id="11118273">
+<node id="11118274"><node id="11118276"><node id="11118307"><node id="11118316"><node id="11118323"><node id="11118327"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11118283"><node id="11118285"/>
+</node>
+<node id="11118286"><node id="11118287"><node id="11118288"><node id="11118289"><node id="11118290"><node id="11118292"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11118344"><node id="11143160"/>
+</node>
+</thread></node>

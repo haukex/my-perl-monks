@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11136826" title="why is $1 cleared at end of an inline sub?" created="2021-09-16 08:26:42" updated="2021-09-16 08:26:42" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="438862">perl-diddler</author>
+<doctext field_name="doctext">Have a quick question, the answer for which seems to be obvious, but just wanting to check and maybe hope I'm wrong.
+&lt;p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use strict; use warnings;
+use P; 
+
+my $intxt;
+$intxt = &lt;&lt; 'TXT' ;
+&lt;package type="rpm"&gt;
+  &lt;name&gt;7kaa-music&lt;/name&gt;
+  &lt;url&gt;http://7kfans.com/&lt;/url&gt;
+TXT
+;
+
+sub REindex($$;$) {   #like 'index', except substr is RE
+  my ($str,$ss)=(shift, shift);
+  my $p = @_ ? shift:0;
+  $str =~ m{^.{$p,$p}($ss+)} ? length $1 : -1;
+}
+
+my @lines=split "\n", $intxt;
+
+my $ln;
+my $lineno=0;
+
+sub getln() {
+  return $lineno&lt;@lines ? $lines[$lineno++] : undef;
+}
+
+my $ttag;
+
+  sub getnxt_tagln(); local * getnxt_tagln;
+  *getnxt_tagln = sub () {
+    do {
+      $_=getln();
+      defined $_ or return undef;
+    } until m{^\s*&lt;(/?\w+)};
+    $ttag=$1;
+  };
+
+  my $tag;
+ NXTPKG:
+  while (getnxt_tagln()) {      # why '$1' null?
+    $ln = $_; $tag = $1;
+    Pe "_=%s, ttag=%s, tag=%s", $_, $ttag, $tag;
+  }
+# vim: ts=2 sw=2 ai number
+&lt;/code&gt;
+
+My question concerns the comment after the NXTPKG line: why '$1' null (&amp;#8708;)?
+&lt;p&gt;
+When I run this:
+&lt;b&gt;&lt;pre&gt;
+_=&lt;package type="rpm"&gt;, ttag=package, tag=&amp;#8708;;
+_=  &lt;name&gt;7kaa-music&lt;/name&gt;, ttag=name, tag=&amp;#8708;;
+_=  &lt;url&gt;http://7kfans.com/&lt;/url&gt;, ttag=url, tag=&amp;#8708;;
+&lt;/pre&gt;&lt;/b&gt;
+&lt;br&gt;
+tag is null/undef when I get out of my inline-sub.  I can get around it by assigning $1 to $ttag, but I don't have any other Regex's that should be clearing '$1'.  Seems a bit weird to have the end of 
+a local sub clear '$1', yet that seems to be what is happening.  Why?  What was the logic of forcing/doing that?
+&lt;p&gt;
+tnx!
+</doctext>
+<thread id="11136826">
+<node id="11136828"><node id="11136849"><node id="11136850"/>
+<node id="11136852"/>
+<node id="11136853"/>
+<node id="11136854"/>
+</node>
+</node>
+<node id="11136829"/>
+<node id="11136851"/>
+</thread></node>

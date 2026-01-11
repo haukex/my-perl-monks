@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217408" title="Check your CPAN modules for use vars" created="2018-06-25 18:37:07" updated="2018-06-25 18:37:07" _doctext_mode="lenient"><type id="1042">CUFP</type>
+<author id="1216830">usemodperl</author>
+<doctext field_name="doctext">Edit: Since no one likes my joke about &lt;tt&gt;use vars&lt;/tt&gt; this node has been &lt;i&gt;amended&lt;/i&gt; to a more useful version of the program:
+&lt;br&gt;&lt;br&gt;
+&lt;code&gt;
+#!/usr/bin/perl ##################################
+# Check installed *CPAN* modules for COMMENTS!   #
+# Because CPAN modules have a lot of COMMENTS!   #
+# https://perlmonks.org/index.pl?node_id=1217408 #
+##################################################
+
+use strict;
+use warnings;
+
+use Config '%Config';
+use ExtUtils::Installed;
+
+for (split $Config{path_sep}, $ENV{PATH}) {
+   $|++ if -x "$_/grep"
+}
+die "you need grep" unless $|;
+
+my $time = time;
+my $perl = ExtUtils::Installed-&gt;new;
+my @cpan = $perl-&gt;modules();
+my @temp = ();
+
+for (@cpan) {
+    my @cpan = $perl-&gt;files($_);
+    push @temp, @cpan;
+}
+@cpan = grep /site.*\.pm$/, @temp;
+
+my $opt = 0;
+
+if (@ARGV) { $opt = 1 }
+else {
+print qq~Checking CPAN modules for COMMENTS in Perl versio~.
+qq~n $^V\n(Invoke with any arg to skip questions and gener~.
+qq~ate a list of modules.)\n\n~;
+
+print qq~The list may be big and printing progress makes i~.
+qq~t a bit slower.\nDefault: display progress, format outp~.
+qq~ut and print offending lines of code.\nPress return to ~.
+qq~start or n for no progress and list output. y/N~;
+
+chomp($opt = &lt;STDIN&gt;); $opt = 1 if $opt and lc $opt eq 'n';
+}
+my $INC = join '|', @INC;
+my $acme   = 0;
+my $grep   = 0;
+
+for my $cpan (@cpan) {
+   print "\rChecking: ","$acme\tFound: $grep\t" unless $opt;
+   if(@_ =`grep '^#' $cpan`) {
+      @_ = grep !/^#(pod|[\-=~\*]|[#]{5,}|\s*\n)/,@_; # FAKE
+      next unless scalar @_;
+      (my $name = $cpan) =~ s/($INC)//;
+      $name =~ s,^/,,;
+      $name =~ s,/,::,g;
+      $name =~ s/\.pm$//;
+      s/^\s+/  / for @_;
+      $_{$name} = join "\n ", @_;
+      $grep++
+   }
+   $acme++
+}
+if ($opt) {
+   print "$_\n" for sort keys %_
+}
+else {
+   $perl = scalar keys %_;
+   $time = time - $time;
+
+   print qq~$perl CPAN modules (out of $acme) found with COMMENTS!\n~;
+   print "$_:\n $_{$_}","-"x60,"\n" for sort keys %_;
+   print qq~$perl CPAN modules (out of $acme) found with COMMENTS!\n~;
+   print "That took $time secs (grep searched ",sprintf("%0d",$perl/$time),
+   " modules/sec).\n";
+}
+
+&lt;/code&gt;
+&lt;br&gt;&lt;br&gt;
+ORIGINAL:
+&lt;br&gt;&lt;br&gt;
+I heard [https://perlmonks.org/?node_id=1217341|the news today]:
+&lt;p&gt;
+[https://metacpan.org/pod/release/XSAWYERX/perl-5.28.0/pod/perldelta.pod#Removal-of-use-vars|Removal of use vars]
+&lt;br&gt;&lt;br&gt;
+The usage of use vars has been discouraged since the introduction of our in Perl 5.6.0. Where possible the usage of this pragma has now been removed from the Perl source code.
+&lt;/p&gt;&lt;p&gt;
+And had to find out how many modules are afflicted on my system (5.26.2):
+&lt;/p&gt;
+&lt;tt&gt;905 CPAN modules  (out of 4918) found with "use vars"!&lt;/tt&gt;
+&lt;br&gt;&lt;br&gt;
+&lt;b&gt;Code for &lt;i&gt;you:&lt;/i&gt;&lt;/b&gt;
+&lt;code&gt;
+#!/usr/bin/perl ######################################
+# Check installed CPAN modules for use of "use vars" #
+# Because Perl 5.28.0 removes discouraged "use vars" #
+# https://perlmonks.org/index.pl?node_id=1217408     #
+######################################################
+
+use strict;
+use warnings;
+
+use autodie;
+use Config '%Config';
+use ExtUtils::Installed;
+
+for (split $Config{path_sep}, $ENV{PATH}) {
+   $|++ if -x "$_/grep"
+}
+die "you need grep" unless $|;
+
+my $t    = time;
+my $m    = ExtUtils::Installed-&gt;new;
+my @temp = $m-&gt;modules();
+my @cpan = ();
+
+for (@temp) {
+    my @x = $m-&gt;files($_);
+    push @cpan, @x;
+}
+@cpan = grep /site.*\.pm$/, @cpan;
+my $opt = 0;
+
+if (@ARGV) { $opt = 1 }
+else {
+print qq~Checking CPAN modules for "use vars" in Perl version $^V ~.
+qq~(removed in Perl 5.28)\nhttps://metacpan.org/pod/release/XSAWYE~.
+qq~RX/perl-5.28.0/pod/perldelta.pod#Removal-of-use-vars  \n(Invoke~.
+qq~ with any arg to skip questions and generate a list of modules.) \n\n~;
+
+print qq~The list may be big and printing progress makes it a bit slower. 
+Default: display progress, format output and print offending lines of 
+code. Press return to start or n for no progress and list output. y/N~; 
+
+chomp($opt = &lt;STDIN&gt;); $opt = 1 if $opt and lc $opt eq 'n';
+}
+my $INC = join '|', @INC;
+my $n   = 0;
+my $g   = 0;
+
+for my $c (@cpan) {
+   print "\rChecking: ","$n\tFound: $g\t" unless $opt;
+   if (@_ = `grep 'use vars' $c`) {
+      (my $f = $c) =~ s/($INC)//;
+      $f =~ s,^/,,;
+      $f =~ s,/,::,g;
+      $f =~ s/\.pm$//;
+      s/^\s+/  / for @_;
+      $_{$f}=join"\n ",@_;
+      $g++
+   }
+   $n++
+}
+if ($opt) {
+   print "$_\n" for sort keys %_
+}
+else {
+   $m = scalar keys %_;
+   $t = time - $t;
+
+   print qq~$m CPAN modules  (out of $n) found with "use vars"!\n~;
+   print "$_:\n $_{$_}","-"x60,"\n" for sort keys %_;
+
+   print qq~$m CPAN modules  (out of $n) found with "use vars"!\n~;
+   print "That took $t secs (grep searched ",sprintf("%0d",$m/$t),
+   " modules/second).\n";
+}
+
+&lt;/code&gt;
+
+&lt;b&gt;Output:&lt;/b&gt;
+&lt;pre&gt;
+
+------------------------------------------------------------
+XML::Twig:
+ use vars qw($VERSION @ISA %valid_option);
+
+ use vars qw( $weakrefs);
+
+ use vars qw( %filter);
+------------------------------------------------------------
+XML::Twig::XPath:
+ use vars qw($VERSION);
+------------------------------------------------------------
+YAPE::Regex:
+ use vars '$VERSION';
+------------------------------------------------------------
+YAPE::Regex::Explain:
+ use vars '$VERSION';
+------------------------------------------------------------
+905 CPAN modules  (out of 4918) found with "use vars"!
+That took 31 secs (grep searched 29 modules/second).
+
+&lt;/pre&gt;
+
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1216830"&gt;
+&lt;sub&gt;&lt;b&gt;STOP REINVENTING WHEELS, START BUILDING SPACE ROCKETS!&lt;/b&gt;&amp;mdash;[https://www.cpan.org/|CPAN]&lt;/sub&gt;&amp;nbsp;&amp;#128042;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1217408">
+<node id="1217410"><node id="1217411"><node id="1217420"/>
+</node>
+</node>
+<node id="1217430"/>
+<node id="1217471"><node id="1217489"/>
+<node id="1217501"/>
+</node>
+</thread></node>

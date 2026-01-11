@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203072" title="Re: Is it possible to get all variable names which are declared? (updated)" created="2017-11-09 12:20:50" updated="2017-11-09 12:20:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The fact that you want to do this means that you are either writing a debugger, or you are looking at the problem from the wrong angle (e.g. [https://perl.plover.com/varvarname.html|"it's stupid to use a variable as a variable name"], and you should use a hash instead). If you could tell us &lt;i&gt;why&lt;/i&gt; you want to do this, we can almost certainly provide better solutions.&lt;/p&gt;
+&lt;p&gt;[mod://PadWalker] will provide you with enough rope to shoot yourself in the foot:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use PadWalker qw/peek_my/;
+use Data::Dump;
+
+my $A;
+my $B = 0;
+dd peek_my(0);
+for my $i ( $B .. 3 ){
+	my $C = 3;
+	dd peek_my(0);
+}
+
+__END__
+
+{ "\$A" =&gt; \undef, "\$B" =&gt; \0 }
+{ "\$A" =&gt; \undef, "\$B" =&gt; \0, "\$C" =&gt; \3, "\$i" =&gt; \0 }
+{ "\$A" =&gt; \undef, "\$B" =&gt; \0, "\$C" =&gt; \3, "\$i" =&gt; \1 }
+{ "\$A" =&gt; \undef, "\$B" =&gt; \0, "\$C" =&gt; \3, "\$i" =&gt; \2 }
+{ "\$A" =&gt; \undef, "\$B" =&gt; \0, "\$C" =&gt; \3, "\$i" =&gt; \3 }
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; That only dumps &lt;c&gt;my&lt;/c&gt; variables. See also the module's &lt;c&gt;peek_our&lt;/c&gt; function, or for inspecting the [doc://perlmod#Symbol-Tables] of packages, [mod://Devel::Symdump] or my simplistic replacement [https://github.com/haukex/Config-Perl/blob/d5b2b68052ce8ff8d77f392014c3ff6ef6f7f3ba/t/Config_Perl_Testlib.pm#L103|here] (only does scalars, arrays and hashes). When dumping symbol tables, note the caveat described in the [mod://Devel::Symdump] documentation: "scalar symbol table entries are a special case. If a symbol table entry exists at all, presence of a scalar is currently unknowable, due to a feature of Perl described in [doc://perlref#Making-References|"Making References" in perlref] point 7. For example, this package will mark a scalar value &lt;c&gt;$foo&lt;/c&gt; as present if any of &lt;c&gt;@foo&lt;/c&gt;, &lt;c&gt;%foo&lt;/c&gt;, &lt;c&gt;&amp;foo&lt;/c&gt; etc. have been declared or used."&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203070</root_node>
+<parent_node field_name="parent_node">1203070</parent_node>
+<thread id="1203070">
+<node id="1203072"/>
+<node id="1203075"><node id="1203077"/>
+</node>
+</thread></node>

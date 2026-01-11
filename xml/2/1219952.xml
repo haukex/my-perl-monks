@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1219952" title="Re^2: Return values of tags which have the same name, in an array" created="2018-08-06 10:13:14" updated="2018-08-06 10:13:14" _doctext_mode="lenient"><type id="11">note</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt; Thanks for your quick reply, sorry for lack of information. I have added the full code below. I am trying to get the values of author into an array. Unfortuantely &lt;code&gt; my @array = map{$_-&gt;textContent} $authors-&gt;findnodes('./authors/author'); &lt;/code&gt; does not do this. Hopefuly this makes more sense &lt;/p&gt;
+
+&lt;code&gt; use CGI qw(-utf-8 :all *table);
+use LWP::Simple qw(get);
+use URI;
+use XML::LibXML;
+use Data::Dumper;
+use utf8;
+binmode(STDOUT, ":encoding(utf-8)");
+
+my $parser = XML::LibXML-&gt;new();
+
+$author = param('query');
+$maxHits = param('maxHits');
+
+my $url = URI-&gt;new("http://www.dblp.org/search/api/?");
+my($q,$h,$c,$f,$format) = ($author,$maxHits,"4","0","xml");
+$url-&gt;query_form(
+'q' =&gt; $q,
+'h' =&gt; $h,
+'c' =&gt; $c,
+'f' =&gt; $f,
+'format' =&gt; $format,
+);
+
+
+
+
+print header(-charset=&gt;'utf-8'), "\n",
+	start_html({-title=&gt;'DBLP Search',
+		-author=&gt;'&lt;&gt;'}), "\n";
+
+
+if (param('submit')) {
+
+	my $xml= get($url);
+	my $doc = $parser-&gt;parse_string( $xml);
+	
+	print h1("Authors"), "\n";
+	
+	foreach my $authors ($doc-&gt;findnodes('/result/hits/hit/info'))
+	{
+		print $_-&gt;textContent, "\n" for $authors-&gt;findnodes('./authors/author');
+		my @array = map{$_-&gt;textContent} $authors-&gt;findnodes('./authors/author');
+	}
+}
+
+print h1("DBLP Query"), "\n";
+print start_form({-method=&gt;"POST"
+	-action=&gt;"http://cgi.csc.liv.ac.uk/cgi-bin/cgiwrap/u6ed/stat.pl"});
+print label("query: ");
+print textfield({-name=&gt;'query',
+		-size=&gt;200}), "\n";
+print label("maxHits: ");
+print textfield({-name=&gt;'maxHits',
+		-size=&gt;200}), "\n";
+print br(), "\n";
+print submit({-name=&gt;'submit',
+		-value=&gt;'Submit'}), "\n";
+print end_form, end_html
+&lt;/code&gt;
+
+&lt;p&gt; XML file: &lt;/p&gt;
+
+&lt;code&gt;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;result&gt;
+&lt;query id="192448"&gt;Aderghal*&lt;/query&gt;
+&lt;status code="200"&gt;OK&lt;/status&gt;
+&lt;time unit="msecs"&gt;1.15&lt;/time&gt;
+&lt;completions total="1" computed="1" sent="1"&gt;
+&lt;c sc="5" dc="5" oc="5" id="19115731"&gt;aderghal&lt;/c&gt;
+&lt;/completions&gt;
+&lt;hits total="5" computed="5" sent="5" first="0"&gt;
+&lt;hit score="1" id="80402"&gt;
+&lt;info&gt;&lt;authors&gt;&lt;author&gt;Karim Aderghal&lt;/author&gt;&lt;author&gt;Alexander Khvostikov&lt;/author&gt;&lt;author&gt;Andrei Krylov&lt;/author&gt;&lt;author&gt;Jenny Benois-Pineau&lt;/author&gt;&lt;author&gt;Karim Afdel&lt;/author&gt;&lt;author&gt;Gwenaelle Catheline&lt;/author&gt;&lt;/authors&gt;&lt;title&gt;Classification of Alzheimer Disease on Imaging Modalities with Deep CNNs Using Cross-Modal Transfer Learning.&lt;/title&gt;&lt;venue&gt;CBMS&lt;/venue&gt;&lt;pages&gt;345-350&lt;/pages&gt;&lt;year&gt;2018&lt;/year&gt;&lt;type&gt;Conference and Workshop Papers&lt;/type&gt;&lt;key&gt;conf/cbms/AderghalKKBAC18&lt;/key&gt;&lt;doi&gt;10.1109/CBMS.2018.00067&lt;/doi&gt;&lt;ee&gt;https://doi.org/10.1109/CBMS.2018.00067&lt;/ee&gt;&lt;url&gt;https://dblp.org/rec/conf/cbms/AderghalKKBAC18&lt;/url&gt;&lt;/info&gt;
+&lt;url&gt;URL#80402&lt;/url&gt;
+&lt;/hit&gt;
+&lt;/hits&gt;
+&lt;/result&gt;
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">1219950</root_node>
+<parent_node field_name="parent_node">1219951</parent_node>
+<reputation field_name="reputation">10</reputation>
+<thread id="1219950">
+<node id="1219951"><node id="1219952"><node id="1219954"/>
+<node id="1219956"/>
+</node>
+</node>
+</thread></node>

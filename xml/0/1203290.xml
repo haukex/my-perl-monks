@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203290" title="Auto-Expansion of Grep Function" created="2017-11-13 15:00:06" updated="2017-11-13 15:00:06" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1017499">mwb613</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Monks,&lt;/p&gt;
+&lt;p&gt;Thanks again in advance for looking. Sorry for the long post.&lt;/p&gt;
+&lt;p&gt;I spent the weekend needlessly speeding up some log file manipulations. I have a set of log files in CSV format that close every 5 minutes or so. I pull the files down, look for certain values and do some transforms, shipping, etc if they match. Up to this point I was doing it in a very non-performant way (I'll write it here for anyone in the future who is dumb enough to do it the way I did):&lt;/p&gt;
+ &lt;code&gt;while (&lt;$file_handle&gt;) {
+    my @line_array = split(/,/,$_);
+    push(@filtered_result,$_) if $line_array[70] =~ /192\.168\.200\.|10\.10\.200/; #THIS ISN'T EXACTLY WHAT I WAS DOING SINCE I USUALLY HAD MULTIPLE VALUES TO CHECK
+}&lt;/code&gt;
+&lt;p&gt;Of course, as you guys probably already know, just GREPing the raw line is significantly faster (15x in my tests) than &lt;b&gt;split&lt;/b&gt;ting each line and checking an individual array position. So, since it didn't really matter to me where the IP address I was filtering was located, (just that it was there) I changed it to the following:&lt;/p&gt;
+&lt;code&gt;
+my $grep_filters = [
+ 	{
+ 		'sub' =&gt; sub {
+ 				my ($line) = shift @_;
+ 				return $line if $line =~ /,SEVERE,/;
+ 			},
+ 	},
+	{
+		'sub' =&gt; sub {
+				my ($line) = shift @_;
+				return $line if $line =~ /192\.168\.200\.|10\.10\.200/;
+				return undef;
+			},
+	},
+];
+while(&lt;$FILE&gt;){
+    foreach my $my_filter_fn (@$filters){
+        my $return = $my_filter_fn-&gt;{'sub'}-&gt;($_);
+        push(@return_array,$return) unless not defined $return;
+    }
+}
+&lt;/code&gt;
+&lt;p&gt;This sped things up greatly. For a 400k line file with 15k matches &lt;b&gt;timethese&lt;/b&gt; (10 times) takes about 17 seconds vs almost 200 seconds using &lt;b&gt;split&lt;/b&gt;. Then, after some googling, I found the &lt;a href="http://perldoc.perl.org/functions/grep.html"&gt;&lt;b&gt;grep&lt;/b&gt;&lt;/a&gt; function and that you could run it right on a &lt;b&gt;file handle&lt;/b&gt;. I still wanted to have the option to run multiple GREPs which made things a little harder but I ended up with this:&lt;/p&gt;
+&lt;code&gt;
+my @filter_string_array = ('192\.168\.200\.|10\.10\.200',',SEVERE,');
+...
+my @local_filter_string_array = @filter_string_array;
+my $first_filter_string = shift @local_filter_string_array;
+my @output = grep {/$first_filter_string/} &lt;$FILE&gt;;
+foreach my $filter_string (@local_filter_string_array){
+	@output = grep {/$filter_string/} @output;
+}
+&lt;/code&gt;
+&lt;p&gt;This saved about 5 seconds on 10 iterations over the method above where we'd loop through the file and grep the line. I was hoping to find a solution, however, where the &lt;b&gt;grep&lt;/b&gt; function could be expanded (nested?) an arbitrary number of times based on the different match strings that we get. We can do it by creating a string and doing an &lt;b&gt;eval EXPR&lt;/b&gt; like this:&lt;/p&gt;
+&lt;code&gt;
+my $grep_source = '&lt;$FILE&gt;';
+my @filter_string_array = ('192\.168\.200\.|10\.10\.200',',SEVERE,');
+foreach my $filter_string (@filter_string_array){
+	$grep_string_expansion = 'grep {/' . $filter_string . '/} (' . $grep_source . ')';
+	$grep_source = $grep_string_expansion;
+} #string should look like this: grep {/,SEVERE,/} (grep {/192\.168\.200\.|10\.10\.200/} (&lt;$FILE&gt;));
+...
+my @output = eval $grep_string_expansion;
+&lt;/code&gt;
+&lt;p&gt;This actually shaves another second off of the &lt;b&gt;timethese&lt;/b&gt; result (told you it was needless optimization) but doing &lt;b&gt;eval EXPR&lt;/b&gt; doesn't usually strike me as the best way to do things. For one thing we have to hard code the name of the file handle (I guess we could use a place-holder and a replace) but in general I'm just wondering / hoping that there's some thing I've never heard of that can turn these filters &lt;b&gt;('192\.168\.200\.|10\.10\.200',',SEVERE,')&lt;/b&gt; into this form without &lt;b&gt;eval EXPR&lt;/b&gt;:&lt;/p&gt;
+&lt;code&gt;
+grep {/,SEVERE,/} (grep {/192\.168\.200\.|10\.10\.200/} (&lt;$FILE&gt;));
+&lt;/code&gt;
+&lt;p&gt;I'm pretty fuzzy on programming terminology but I think we're trying to "curry" the &lt;b&gt;grep&lt;/b&gt; function with multiple arguments against the array (which is initially &amp;lt$FILE&amp;gt). Anyways, the iterative example given above might be the cleanest but I wanted to see if anyone had any input. Thanks!&lt;/p&gt;</doctext>
+<thread id="1203290">
+<node id="1203291"/>
+<node id="1203294"/>
+<node id="1203311"/>
+</thread></node>

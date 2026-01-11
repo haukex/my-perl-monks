@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11124464" title="Re: Organizing data from a hash (updated)" created="2020-12-01 12:13:51" updated="2020-12-01 12:13:51" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;strike&gt;
+&lt;c&gt;
+my $string = join ",", sort map { $_-&gt;{cat_name} } values %$VAR1;
+&lt;/c&gt;
+&lt;p&gt;See also [doc://perldsc], [doc://perlreftut], and [doc://perlref].&lt;/p&gt;
+&lt;/strike&gt;
+&lt;p&gt;Sorry, I missed the part about the parent ID. Update forthcoming, please hold.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Ok, here's one of several ways to do it, using a [wp://topological sort], assuming this graph representation of your categories makes sense - you'd have to explain your data structure more otherwise.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Graph;
+
+my $data = {
+          '986172' =&gt; {
+                        'cat_parent_id' =&gt; '',
+                        'cat_name' =&gt; 'Category1'
+                      },
+          '986178' =&gt; {
+                        'cat_parent_id' =&gt; '986177',
+                        'cat_name' =&gt; 'Category4'
+                      },
+          '986177' =&gt; {
+                        'cat_parent_id' =&gt; '986176',
+                        'cat_name' =&gt; 'Category3'
+                      },
+          '986176' =&gt; {
+                        'cat_name' =&gt; 'Category2',
+                        'cat_parent_id' =&gt; '986172'
+                      }
+        };
+
+my $g = Graph-&gt;new(directed =&gt; 1);
+for my $k (keys %$data) {
+	next unless $data-&gt;{$k}{cat_parent_id};
+	die unless exists $data-&gt;{ $data-&gt;{$k}{cat_parent_id} };
+	$g-&gt;add_edge($data-&gt;{$k}{cat_parent_id}, $k);
+}
+my $string = join ",", map { $data-&gt;{$_}{cat_name} }
+	$g-&gt;topological_sort;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11124462</root_node>
+<parent_node field_name="parent_node">11124462</parent_node>
+<thread id="11124462">
+<node id="11124464"/>
+<node id="11124466"/>
+<node id="11124474"/>
+<node id="11124476"/>
+<node id="11124480"/>
+<node id="11124505"/>
+</thread></node>

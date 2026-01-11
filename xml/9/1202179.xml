@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1202179" title="Anagrams &amp; Letter Banks" created="2017-10-27 14:12:44" updated="2017-10-27 14:12:44" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1161583">dominick_t</author>
+<doctext field_name="doctext">Dear Monks—  Below is a quite long post with a number of small points regarding which I would appreciate your insight, if anyone is interested in wading through everything. But in terms of getting a working script for the particular task I have in mind, I'll first just ask this question:  Given a list whose elements are strings (containing only letters, as they are actually English-language words), how would one print that list only on the condition that &lt;I&gt;at least one&lt;/I&gt; of the strings in the list contains no repeated letters? Many thanks—  Dominick&lt;br&gt;&lt;br&gt;&lt;br&gt;
+
+
+LONG POST HERE: 
+&lt;readmore&gt;
+Dear Monks—  I hope to accomplish two goals with this post. One is to understand fully a piece of code that was posted at [id://135345], and the other is to modify this code in order to accomplish a similar but I believe more complicated task. The original poster of the node I just referenced uses a Perl script to find all anagrams within a word list. (Note this is not the same task as finding anagrams of a given word, but rather of finding all anagram sets within a given word list.) &lt;br&gt;&lt;br&gt;
+
+I spent a good deal of time studying the script provided by the original poster. I understand now how most of it is working. When I first ran this script, there appeared to be a flaw in that it was not eliminating duplicate elements in the original word list. I think I may know why this is happening, and I would very much like (as a bonus) to get to the bottom of that issue as well, but the truth is that I was able to use a script provided by a different person in response to the OP. So understanding the duplicate issue is less important to me than understanding the script provided in response, which seems generally more accessible to me. Here is that script:&lt;br&gt;&lt;br&gt;&lt;code&gt;
+while (&lt;DATA&gt;) {
+  chomp;
+  my $key = lc $_;
+  next if $seen{$key}++;
+  my $signature = join "", sort split //, $key;
+  push @{$words{$signature}}, $_;
+}
+for (sort keys %words) {
+  my @list = sort @{$words{$_}};
+  next unless @list &gt; 1;
+  print "@list\n";
+}&lt;/code&gt;&lt;br&gt;&lt;br&gt;
+If I am understanding this correctly, in the while loop, when a new word is encountered in the input list, the newline at end is removed, and $key becomes the lowercase version of the word. Now I believe a hash called %seen is initialized just to keep track of whether or not a word has already been encountered, in which case we skip it. (This sounds right to me in principle, but the actual mechanics are still a little opaque to me. I’m expecting to see some sort of truth statement after “if” and I don’t know how to interpret what I see as a statement at all, though I guess it has to do with the number value of the value of the hash? Also not quite clear on how the ++ is working.) &lt;br&gt;&lt;br&gt;Next, we introduce a new scalar $signature, which takes the current string in $key, turns its letters into a list of separate letters, sorts the letters, and then joins them back together into one string. Next I believe we initialize a new hash called words, but it’s a hash whose values are arrays. (How does Perl know this? Because “push” expects an array? Because the @ symbol lets Perl know?) &lt;br&gt;&lt;br&gt;Because the original word in the input list is still stored in $_, then the &lt;c&gt;push&lt;/c&gt; line adds the word to the array which is the value corresponding to the key of $signature in the %words hash. And then I believe it does this to the entire input list, so by the end of the while loop, our hash %words has values which are lists. In cases where an input word has no anagrams, that list is only one element long. In cases where an input word has at least one anagram, that list is two or more elements long. So the “for” iteration looks at each of these lists in turn, and prints it if it contains more than one element. (This part also confused me for a minute, only because I saw $_ in the “for” command, and I thought this would still be an input word from the list. But I suppose it takes on the various values of $signature as it moves through the hash?)&lt;br&gt; &lt;br&gt;So, aside from the few things I’ve mentioned in parentheses, which I’d very much appreciate responses to, I understand how this script does its thing, and I can use it to find anagrams within word lists that I provide it.
+
+I also understand the script just well enough to have attempted a modification of it to accomplish a different task, but one which I think can be tackled with a similar approach. I am interested in finding groups of words not that are all anagrams of each other, but rather which all share a common “letter bank,” which is a word (in the list) with no duplicate letters. For example, given the input&lt;br&gt;&lt;br&gt;
+
+&lt;code&gt;
+ab
+aabb
+aaabbb
+xxyy
+xxxyyy
+&lt;/code&gt;
+
+what I would like to print is&lt;br&gt;&lt;br&gt;
+
+&lt;c&gt;ab aabb aaabbb&lt;/c&gt;&lt;br&gt;&lt;br&gt;
+
+“aabb” and “aaabbb” use only the letters of “ab” so we say “aabb” and “aaabbb” bank to “ab”. Now, “xxyy” and “xxxyyy” do bank to the same string “xy”, but “xy” is not in the original list, so we wouldn’t say that they share the same bank. (To use a more English-language example, and supposing we are using as input a standard dictionary . . .  While “accomplice” and “polemical” use only the same set of letters (a, c, e, l, m, o, and p), they do not bank to an actual word, because those letters do not form a word without repeating at least one of the letters. The bank must have no duplicate letters and be in the list.)&lt;br&gt;&lt;br&gt; Now, I’ve written a modification of the anagram script (copied below) which is basically doing the job, except that it is printing&lt;br&gt;&lt;br&gt; 
+&lt;c&gt;
+ab aabb aaabbb
+xxyy xxxyyy&lt;/c&gt;&lt;br&gt;&lt;br&gt;
+
+All I’ve done is taken the anagram script, and instead of making the signatures only the sorted letters of the input word, I’ve gone a step further and removed any duplicates from it. So now each word has a signature which is simply the letters which are in it, sorted. So I get why it’s printing the xxyy and xxxyyy even though I don’t want it to. Now, I guess one could check that the signature is an anagram of a word in the list before accepting it as a key in the hash, but this seems hard. I believe I can accomplish what I want at the end, by deciding to print an array value on two conditions:  one is that it contains more than one element (just as with the anagrams script) and the other is that at least one element in that list contains no repeated letters. Seems like an easy enough condition to add. Thoughts on how to add it?&lt;br&gt;&lt;br&gt; 
+
+Here’s the modified script:&lt;br&gt;&lt;br&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+
+while (&lt;DATA&gt;) {
+  chomp;
+  my $key = lc $_;
+  next if $seen{$key}++;
+  
+  my @unique     = ();
+  my %seenletter = ();
+  my @alphawithdupes = sort split //, $key;
+  
+  foreach my $elem ( @alphawithdupes ) {
+    	next if $seenletter { $elem }++;
+    	push @unique, $elem;
+  }
+  
+  my $signature = join "", @unique;
+  push @{$words{$signature}}, $_;
+}
+for (sort keys %words) {
+  my @list = sort @{$words{$_}};
+  next unless @list &gt; 1;
+  print "@list\n";
+}
+__END__
+ab
+aabb
+aaabbb
+xxyy
+xxxyyy
+&lt;/code&gt;
+&lt;/readmore&gt;
+&lt;br&gt;&lt;br&gt;
+
+Many thanks and all best—
+Dominick
+</doctext>
+<thread id="1202179">
+<node id="1202182"><node id="1202188"><node id="1202204"/>
+</node>
+</node>
+<node id="1202190"><node id="1202195"><node id="1202202"/>
+</node>
+</node>
+<node id="1202193"><node id="1202196"><node id="1202197"><node id="1202198"><node id="1202199"><node id="1202205"><node id="1202206"><node id="1202210"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1202211"><node id="1202224"/>
+</node>
+<node id="1202223"/>
+<node id="1202225"/>
+<node id="1202229"/>
+<node id="1202234"/>
+</thread></node>

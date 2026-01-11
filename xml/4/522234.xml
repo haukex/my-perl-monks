@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="522234" title="Re: How does strict determine if something is legally declared? (import)" created="2006-01-10 11:52:09" updated="2006-01-10 06:52:09" _doctext_mode="lenient"><type id="11">note</type>
+<author id="22609">tye</author>
+<doctext field_name="doctext">&lt;p&gt;
+There's a bit that gets set when you 'import' a variable and this bit tells 'strict' that the variable has been 'declared'.  [use] [vars] simply 'imports' the variable.
+&lt;/p&gt;&lt;p&gt;
+The heuristic that perl uses to detect when a variable is being 'imported' is to detect when the variable slot of a glob gets assigned to by code compiled into another package.  Note that the importing has to be done before the code that uses the imported variable is compiled.
+&lt;/p&gt;&lt;c&gt;
+ &gt; perl -w
+use strict;
+BEGIN { *x= \$foo::y; }
+print $x;
+Variable "$x" is not imported at - line 3.
+__END__
+Global symbol "$x" requires explicit package name at - line 3.
+Execution of - aborted due to compilation errors.
+
+ &gt; perl -w
+use strict;
+BEGIN { package foo; *main::x= \$foo::y; }
+print $x;
+__END__
+Name "foo::y" used only once: possible typo at - line 2.
+Use of uninitialized value in print at - line 3.
+&lt;/c&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-22609"&gt;&lt;p align="right"&gt;
+- [tye]&lt;tt&gt; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;&lt;/tt&gt;
+&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">522079</root_node>
+<parent_node field_name="parent_node">522079</parent_node>
+<thread id="522079">
+<node id="522082"/>
+<node id="522083"/>
+<node id="522085"/>
+<node id="522234"><node id="1230468"><node id="1230491"/>
+<node id="1230596"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201629" title="Clearing a hash reference" created="2017-10-18 19:22:47" updated="2017-10-18 19:22:47" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1197356">jorba</author>
+<doctext field_name="doctext">so, creating a moose class to represent a single record from a db table.
+The class has a property "Fields" which is a hash which stores the name of each field along with the value of the field in the record being represented.
+&lt;p&gt;
+When the class loads the record, it needs to clear this hash reference, so it can load the "new" record.
+Being a "property" of the moose class, Fields is a hash ref, not a hash.
+Getting an error when I try to clear the hash reference before repopulating.
+&lt;p&gt;
+specific line with the problem is 
+&lt;p&gt;
+$self-&gt;Fields = 0;
+&lt;p&gt;
+in the select method.
+&lt;p&gt;
+
+&lt;code&gt;
+package AXRecord;
+
+# Our libraries
+use lib 'C:\Users\Jay\Desktop\SBS DEV\CODE\perl\Utilities';
+use AXControl;
+use AXSQL;
+use Moose;
+use DBI;
+
+# Attributes
+has 'Name' =&gt; (is =&gt; 'rw', isa =&gt; 'Str', required =&gt; 1);
+has 'Fields' =&gt; (is =&gt; 'rw', isa =&gt; 'HashRef');
+has 'FieldCount' =&gt; (is =&gt; 'rw', isa =&gt; 'Num');
+has 'Changed'  =&gt; (is=&gt;'rw', isa =&gt; 'Boolean');
+has 'Where' =&gt; (is =&gt; 'rw', isa =&gt; 'Str'); 
+has 'ControlObject' =&gt; (is =&gt; 'rw', isa =&gt; 'Object', required =&gt; 1);
+has 'Keys' =&gt; (is =&gt; 'rw', isa=&gt;'Array');
+has 'Populated' =&gt; (is =&gt; 'rw', isa =&gt; 'Boolean');
+
+# Contains a single record
+
+sub BUILD
+# Constructor
+{
+	my $self;	
+	$self = shift;
+		
+	if (defined $self-&gt;Where)
+		{
+		$self-&gt;Select();
+		}
+	else
+		{
+		$self-&gt;Populated = 0;
+		}
+}
+# Insert the record
+sub Insert
+{
+
+}
+#Delete using the keys in the record
+sub Delete 
+{
+
+
+}
+#Update using the keys and values in the record
+sub Update
+{
+
+
+
+}
+#Save the record
+sub Save
+{
+
+
+}
+
+sub Select
+	{
+	my ($SQLStr, $Cnt, $sql, @Values, $self, $Col, @Flds, $i);
+	
+	$self = shift;
+	
+	$SQLStr = "SELECT * FROM " . $self-&gt;Name . ' ' . $self-&gt;Where;
+	print "Record.pm \t $SQLStr\n";
+	$sql = AXSQL-&gt;new(ControlObject =&gt; $self-&gt;ControlObject, SQLString =&gt; $SQLStr);
+	
+	#construct a hash using the metadata and the data from the actual table
+	$self-&gt;Fields = 0;
+	@Values = $sql-&gt;Fetch();
+	if ($sql-&gt;Rowcount &gt;= 1)
+		{
+		$self-&gt;Populated = 1;
+		}
+	else
+		{
+		$self-&gt;Populated = 0;
+		}
+	#Get field Names
+	$sql = AXSQL-&gt;new(ControlObject =&gt; $self-&gt;ControlObject, SQLString =&gt; "show fields from '" . $self-&gt;Name . "'");
+	@Flds = $sql-&gt;fetch();
+	# Construct the hash
+	for ($i..$#Flds)
+		{
+		if ($self-&gt;Populate == 0)
+			{
+			$self-&gt;Fields-&gt;{$Flds[$i]} = $Values[$i];
+			}
+		Else
+			{
+			$self-&gt;Fields-&gt;{$Flds[$i]} = ' ';
+			}
+		}
+	
+	#Get the primary key fields		
+	$self-&gt;Keys = ();
+	$sql = AXSQL-&gt;new(ControlObject =&gt; $self-&gt;ControlObject, SQLString =&gt; "SELECT column_name FROM information_schema.`key_column_usage` WHERE table_name = '" . $self-&gt;name . "' order by ordinal_position");
+	while (($Col) = $sql.fetch())
+		{
+		push $self-&gt;Keys, $Col;
+		}
+	
+	$Cnt = $self-&gt;Fields;
+	$self-&gt;FieldCount = $Cnt;
+	$self-&gt;Changed = -1;
+	}
+1;
+&lt;/code&gt;
+
+Error message is 
+&lt;p&gt;
+
+C:\Users\Jay\Desktop\SBS DEV\CODE\perl&gt;perl -w CollectEmail.pl
+Record.pm        SELECT * FROM customer WHERE NAME = 'Testing'
+RowCount 1
+Can't modify non-lvalue subroutine call at C:\Users\Jay\Desktop\SBS DEV\CODE\per
+l\Utilities/AXRecord.pm line 73.
+
+C:\Users\Jay\Desktop\SBS DEV\CODE\perl&gt;</doctext>
+<thread id="1201629">
+<node id="1201631"/>
+<node id="1201632"/>
+</thread></node>

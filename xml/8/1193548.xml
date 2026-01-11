@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193548" title="Re^3: trying to read files in @ARGV but getting GLOB error! (updated)" created="2017-06-26 05:29:31" updated="2017-06-26 05:29:31" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I agree with [choroba], and just wanted to add that additionally I might consider it acceptable in a longer script to use &lt;c&gt;local @ARGV&lt;/c&gt; in a small scope (keeping in mind that this is dynamic scoping, so any function called from within that block will also see the [doc://local]ized values). One neat trick is to combine this with with [doc://$^I] to do inplace editing of files, like with the &lt;c&gt;-i&lt;/c&gt; [doc://perlrun|switch]:&lt;/p&gt;
+&lt;c&gt;
+$ perl -i -ple '$_.="\n" if $. % 4 == 0; close ARGV if eof' -- FILES
+&lt;/c&gt;
+&lt;p&gt;Becomes:&lt;/p&gt;
+&lt;c&gt;
+{ # new scope for local
+	local *ARGV; @ARGV = @files;
+	local $^I = ""; # -i command line switch
+	while (&lt;&gt;) {
+		print $_;
+		print "\n" if $. % 4 == 0;
+		close ARGV if eof;
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;(From [id://1182713|here].)&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Fixed [http://blogs.perl.org/users/book/2018/07/a-widespread-and-broken-perl-idiom.html|this potential issue] in the above example code.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1193521</root_node>
+<parent_node field_name="parent_node">1193545</parent_node>
+<thread id="1193521">
+<node id="1193524"><node id="1193545"><node id="1193546"/>
+<node id="1193548"/>
+<node id="1193549"><node id="1193552"/>
+<node id="1193774"/>
+</node>
+</node>
+<node id="1193551"><node id="1193556"><node id="1193557"><node id="1193558"/>
+<node id="1193563"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1193564"/>
+</thread></node>

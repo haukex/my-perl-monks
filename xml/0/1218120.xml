@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1218120" title="Re: Passing the value of a global variable inside a subroutine (updated)" created="2018-07-08 11:56:18" updated="2018-07-08 11:56:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The reason this doesn't work is because a [doc://perlsyn#Foreach-Loops|&lt;c&gt;foreach&lt;/c&gt; loop] localizes its variable to the loop, and you're using a lexical ([doc://my]) variable, so the localized value is not available outside of the loop:&lt;/p&gt;
+&lt;blockquote&gt;
+The &lt;c&gt;foreach&lt;/c&gt; loop iterates over a normal list value and sets the scalar variable VAR to be each element of the list in turn. If the variable is preceded with the keyword &lt;c&gt;my&lt;/c&gt;, then it is lexically scoped, and is therefore visible only within the loop. Otherwise, the variable is implicitly local to the loop and regains its former value upon exiting the loop. If the variable was previously declared with &lt;c&gt;my&lt;/c&gt;, it uses that variable instead of the global one, but it's still localized to the loop.
+&lt;/blockquote&gt;
+&lt;p&gt;It's not good practice to pass arguments to subroutines as global variables, and I strongly recommend using actual subroutine parameters instead. Also, by the way, you should check the return value of [doc://system] for errors; see its docs for details - I've just included the bare minimum below.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my @list = qw/ server1.net server2.net server3.net /;
+
+foreach my $server (@list) {
+	command1($server); 
+	command2($server);
+}
+
+sub command1 {
+	my $server = shift;
+	print "command1 on $server\n";
+	system("command1")==0 or die "command1 \$?=$?";
+}
+
+sub command2 {
+	my $server = shift;
+	print "command2 on $server\n";
+	system("command2")==0 or die "command2 \$?=$?";
+}
+&lt;/c&gt;
+&lt;spoiler&gt;
+&lt;p&gt;... and the quick and ugly fix is to change from a [doc://my] to an [doc://our] (package) variable. But please don't do this.&lt;/p&gt;
+&lt;/spoiler&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; I missed this initially:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;the problem is $server variable cannot be passed inside the subroutines&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Could you explain why not?&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1218119</root_node>
+<parent_node field_name="parent_node">1218119</parent_node>
+<thread id="1218119">
+<node id="1218120"/>
+<node id="1218122"/>
+</thread></node>

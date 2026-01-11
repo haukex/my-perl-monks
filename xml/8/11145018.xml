@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11145018" title="Re^3: Perlsecret - plus no-ops" created="2022-06-24 11:46:31" updated="2022-06-24 11:46:31" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;puts the left side in scalar context&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That's not quite right - the "operator" &lt;i&gt;requires&lt;/i&gt; scalar context &lt;del&gt;on&lt;/del&gt;&lt;ins&gt;from&lt;/ins&gt; its LHS* for it to work correctly. From [mod://perlsecret] (emphasis mine): It "provides a list context to its right side and returns the number of elements to its left side. Note that &lt;u&gt;the left side must provide a scalar context&lt;/u&gt;; obviously, a list context on the left side will receive the empty list in the middle."&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;is this example the same as saying @filled = grep {scalar @$_} @arrays; ?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If by "this example" you mean the one from [mod://perlsecret], then yes, the effect is the same. &lt;c&gt;()=@$_&lt;/c&gt; means to dereference the array reference that is stored in &lt;c&gt;$_&lt;/c&gt;, and assign it to the empty list. And [doc://perlop#Assignment-Operators] says: "a list assignment in scalar context returns the number of elements produced by the expression on the right hand side of the assignment." The [doc://grep] is what provides the scalar context to the &lt;c&gt;()=@$_&lt;/c&gt; expression (as opposed to [doc://map], which provides list context for its expression).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;So interpolated for the 3rd element of array this would mean grep {scalar 1,2} @array ?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, not quite. &lt;c&gt;scalar("a","b")&lt;/c&gt; causes the [doc://perlop#Comma-Operator] to be evaluated in scalar context, where "it evaluates its left argument, throws that value away, then evaluates its right argument and returns that value." So the aforementioned expression just returns &lt;c&gt;"b"&lt;/c&gt;. This is why it's important to &lt;i&gt;not&lt;/i&gt; use arrays of numbers when testing things like this, because &lt;c&gt;scalar(1,2)&lt;/c&gt; returns a misleading result of &lt;c&gt;2&lt;/c&gt; - &lt;c&gt;scalar(9,42)&lt;/c&gt; returns &lt;c&gt;42&lt;/c&gt;. An array in scalar context returns the number of elements it contains. So a more appropriate equivalence would be something like &lt;c&gt;scalar(@{["a","b"]})&lt;/c&gt; instead, which evaluates to 2.&lt;/p&gt;
+&lt;p&gt;* &lt;i&gt;Update &lt;small&gt;shortly after posting&lt;/small&gt;:&lt;/i&gt; Well, to be nitpicky, it's not really an operator and doesn't really have an LHS. Take the example &lt;c&gt;$n =()= "abababab" =~ /a/&lt;/c&gt;, run that through &lt;c&gt;perl -MO=Deparse,-p&lt;/c&gt;, and you'll see something like this, which I've edited slightly for clarity: &lt;c&gt;$n=( ()=( 'abababab'=~/a/ ) )&lt;/c&gt;. So as I explained above, what is happening is that the assignment &lt;c&gt;()=...&lt;/c&gt; is being evaluated in scalar context provided by the &lt;c&gt;$n=...&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;A few other very minor edits.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11144986</root_node>
+<parent_node field_name="parent_node">11145017</parent_node>
+<thread id="11144986">
+<node id="11144989"><node id="11144999"/>
+<node id="11145017"><node id="11145018"><node id="11145031"><node id="11145032"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

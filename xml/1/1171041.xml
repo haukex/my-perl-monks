@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1171041" title="No autovivification, for loop aliasing, lvalue vs rvalue in for loops" created="2016-09-02 06:48:42" updated="2016-09-02 06:48:42" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1164259">leszekdubiel</author>
+<doctext field_name="doctext">&lt;p&gt;I turned off autovivification in my code, but &lt;code&gt;for&lt;/code&gt; loops broke that and my hashes got populated with unwanted data.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;For&lt;/code&gt; loops do aliasing, and array is created to be aliased... But I really don't understand my code works despite reading documentation. Could anyone explain why &lt;code&gt;@{$$n{'x'}}&lt;/code&gt; throws exception outside loop, and is accepted inside loop (see code below),  and why square brackets make so much difference to autovivification?&lt;/p&gt; 
+
+&lt;code&gt;
+#!/usr/bin/perl -CSDA
+
+use utf8; 
+use strict; 
+use warnings; 
+no warnings qw{uninitialized numeric}; 
+no autovivification; #  qw{fetch exists delete store}; 
+use Data::Dumper; 
+
+print "\n\ninitialize data structures, no autovivification\n"; 
+my $n = { 
+	a =&gt; [1, 2 ], 
+	b =&gt; [3, 4], 
+}; 
+$$n{'x'}{'y'}{'z'} and die; 
+$$n{'x'}{'y'}[0] and die; 
+$$n{'x'}{'y'} and die; 
+$$n{'x'} and die; 
+print "so far, so good, no 'x' autovivified:\n"; 
+print Dumper $n; 
+
+# "Can't use an undefined value as an ARRAY reference": 
+# @{$$n{'x'}} and die;  
+
+print "\n\nnow the same but in loop:\n"; 
+for my $e (@{$$n{'x'}}) { 
+}
+print "why 'x' autovivified?\n"; 
+print Dumper $n; 
+
+print "\n\nnow the same but in loop:\n"; 
+for my $e (@{[ $$n{'y'} ]}) { 
+}
+print "why 'y' NOT autovivified?\n"; 
+print Dumper $n; 
+
+
+1; 
+&lt;/code&gt;
+
+&lt;p&gt;Here comes the output of this program:&lt;/p&gt;
+
+&lt;code&gt;
+
+
+initialize data structures, no autovivification
+so far, so good, no 'x' autovivified:
+$VAR1 = {
+          'a' =&gt; [
+                   1,
+                   2
+                 ],
+          'b' =&gt; [
+                   3,
+                   4
+                 ]
+        };
+
+
+now the same but in loop:
+why 'x' autovivified?
+$VAR1 = {
+          'x' =&gt; [],
+          'a' =&gt; [
+                   1,
+                   2
+                 ],
+          'b' =&gt; [
+                   3,
+                   4
+                 ]
+        };
+
+
+now the same but in loop:
+why 'y' NOT autovivified?
+$VAR1 = {
+          'x' =&gt; [],
+          'a' =&gt; [
+                   1,
+                   2
+                 ],
+          'b' =&gt; [
+                   3,
+                   4
+                 ]
+        };
+&lt;/code&gt;</doctext>
+<thread id="1171041">
+<node id="1171044"/>
+<node id="1171047"><node id="1171088"><node id="1171089"><node id="1171093"/>
+</node>
+</node>
+</node>
+<node id="1171056"/>
+<node id="1171096"/>
+<node id="1171130"/>
+</thread></node>

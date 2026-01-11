@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11106700" title="Re^7: How do I display only matches" created="2019-09-25 17:20:40" updated="2019-09-25 17:20:40" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;If I write a "\n" on my Windows machine, that means 2 characters: &amp;lt;CR&amp;gt;&amp;lt;LF&amp;gt; (Carriage Return, Line Feed). So when you write "foo\r\n", on Windows that means &amp;lt;CR&amp;gt;&amp;lt;CR&amp;gt;&amp;lt;LF&amp;gt;. This extra &amp;lt;CR&amp;gt; means that the line doesn't end in "\n", &amp;lt;CR&amp;gt;&amp;lt;LF&amp;gt; (Carriage Return, Line Feed). There is indeed something else between the "o" and the line ending and your regex doesn't match&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I've seen you say something along these lines a couple times before, and I'm sorry, but it's flat out wrong.&lt;/p&gt;
+&lt;c&gt;
+C:\&gt;perl -wMstrict -MDevel::Peek -e "my$x=qq{\n};Dump($x)"
+SV = PV(0x32aa98) at 0x577ef8
+  REFCNT = 1
+  FLAGS = (POK,IsCOW,pPOK)
+  PV = 0x556ba4 "\n"\0
+  CUR = 1
+  LEN = 10
+  COW_REFCNT = 1
+&lt;/c&gt;
+&lt;p&gt;Note &lt;c&gt;CUR = 1&lt;/c&gt; - there is only one character in that string, not two. I dimly remember that there might have been some builds of Perl for Windows back in the 90's that may have tried to handle it differently, and I remember being confused by this early on as well, but for a long time now, on both Windows and *NIX, &lt;c&gt;\n&lt;/c&gt; is LF, and that's what Perl uses internally. The difference is that on Windows the &lt;c&gt;:crlf&lt;/c&gt; layer translates that on input and output, but it doesn't change the internal representation, how regexes work, or the default [doc://$/] - even on Windows, it's &lt;c&gt;"\n"&lt;/c&gt;, one byte, &lt;c&gt;"\x0A"&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;I suggest you take the time to read [doc://perlport#Newlines|Newlines in perlport] and [doc://PerlIO].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I copied the text for "$" verbatim from the Perl regex docs.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Where in the Perl docs does it say &lt;c&gt;$&lt;/c&gt; matches before &lt;c&gt;\r&lt;/c&gt;?&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11106612</root_node>
+<parent_node field_name="parent_node">11106698</parent_node>
+<thread id="11106612">
+<node id="11106613"><node id="11106614"><node id="11106617"><node id="11106623"/>
+</node>
+</node>
+</node>
+<node id="11106615"><node id="11106616"><node id="11106620"><node id="11106624"><node id="11106693"><node id="11106698"><node id="11106700"><node id="11106705"><node id="11106706"><node id="11106708"><node id="11106719"><node id="11106805"><node id="11106813"><node id="11106815"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11106704"><node id="11106709"><node id="11106718"/>
+</node>
+<node id="11106716"><node id="11106717"><node id="11106809"><node id="11106811"/>
+</node>
+</node>
+<node id="11106773"><node id="11106803"><node id="11106810"><node id="11106814"><node id="11106823"><node id="11106826"><node id="11106858"/>
+<node id="11106934"><node id="11106939"><node id="11106981"><node id="11106993"><node id="11107025"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11106854"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11106655"><node id="11106702"><node id="11106754"><node id="11106806"><node id="11106812"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11106622"><node id="11106626"/>
+</node>
+</node>
+</node>
+<node id="11106619"/>
+</thread></node>

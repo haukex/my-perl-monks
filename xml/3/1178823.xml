@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1178823" title="Re^3: How to pass data as STDIN to Capture::Tiny" created="2017-01-03 01:22:05" updated="2017-01-03 01:22:05" _doctext_mode="lenient"><type id="11">note</type>
+<author id="861371">kcott</author>
+<doctext field_name="doctext">&lt;p&gt;G'day [id://830549|Hauke],&lt;/p&gt;
+
+&lt;p&gt;
+Thanks for the feedback.
+&lt;/p&gt;
+
+&lt;p&gt;
+In my original test code (unpublished), I did have
+&lt;/p&gt;
+&lt;code&gt;
+close $cmd_pipe;
+&lt;/code&gt;
+
+&lt;p&gt;
+and I started to add some error checking.
+However, realising that I had no idea what the OP's external command was 
+nor what error codes he might be looking for,
+I ripped that all out and just posted the part answering the original question.
+I probably should have left the &lt;c&gt;close&lt;/c&gt; statement.
+&lt;/p&gt;
+
+&lt;p&gt;
+I don't know what [http://perldoc.perl.org/autodie.html|autodie] is doing under the hood;
+however, given that
+&lt;/p&gt;
+&lt;code&gt;
+open my $cmd_pipe, '|-', $external_command;
+&lt;/code&gt;
+&lt;p&gt;
+performs a [http://perldoc.perl.org/functions/fork.html|fork],
+I suspect it's checking that (in its &lt;c&gt;:threads&lt;/c&gt; category)
+and not doing anything in the &lt;c&gt;:system&lt;/c&gt; category.
+&lt;/p&gt;
+
+&lt;p&gt;
+The only mention of [http://perldoc.perl.org/functions/pipe.html|pipe] that I can see in 
+[http://perldoc.perl.org/autodie.html|autodie] is that it's in the &lt;c&gt;:ipc&lt;/c&gt; category.
+There's also one instance in [http://search.cpan.org/perldoc?IPC%3A%3ASystem%3A%3ASimple|IPC::System::Simple]
+that I found somewhat humourous:
+&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;em&gt;"Implementing the &lt;c&gt;capture&lt;/c&gt; command involves dark and terrible magicks involving pipes, and one of them has sprung a leak."&lt;/em&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;small&gt;&lt;em&gt;&amp;#91;That's &lt;c&gt;&amp;IPC::System::Simple::capture&lt;/c&gt;, 
+not &lt;c&gt;&amp;Capture::Tiny::capture&lt;/c&gt;.&amp;#93;&lt;/em&gt;&lt;/small&gt;&lt;/p&gt;
+
+&lt;p&gt;
+"[http://perldoc.perl.org/perlipc.html#Using-open()-for-IPC|perlipc: Using open() for IPC]"
+has more information on error checking:
+&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;em&gt;"Be careful to check the return values from both open() and close(). If you're writing to a pipe, you should also trap SIGPIPE. ..."&lt;/em&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;
+See also: "[http://perldoc.perl.org/perlvar.html#Error-Variables|perlvar: Error Variables]".
+&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;em&gt;"However, nowadays I very much prefer to use more better-suited modules, ..."&lt;/em&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;
+Yes, [http://search.cpan.org/perldoc?Capture%3A%3ATiny|Capture::Tiny] wouldn't have been my first choice
+for this task; however, the OP mentions it four times in his single-paragraph post, so that's what I used.
+&lt;/p&gt;
+
+
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-861371"&gt;
+&lt;p&gt;&amp;mdash; Ken&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1178787</root_node>
+<parent_node field_name="parent_node">1178811</parent_node>
+<thread id="1178787">
+<node id="1178788"/>
+<node id="1178795"/>
+<node id="1178796"><node id="1178800"><node id="1178803"/>
+<node id="1178809"/>
+<node id="1178816"><node id="1178817"/>
+</node>
+</node>
+<node id="1178811"><node id="1178823"><node id="1178849"/>
+</node>
+</node>
+</node>
+<node id="1178900"><node id="1179040"/>
+</node>
+</thread></node>

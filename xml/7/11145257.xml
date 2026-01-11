@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11145257" title="Concurrency with IPC::Run3 ?" created="2022-07-03 18:10:00" updated="2022-07-03 18:10:00" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">Pardon my ignorance, but I have trouble understand the docs of [METAMOD://IPC::run3]&lt;P&gt;
+
+How do I implement the following, including catching stdout and stderr with run3?&lt;P&gt;
+
+the docs claim
+&lt;blockquote&gt;&lt;tt&gt;&lt;P&gt;
+
+compared to system(), qx'', open "...|", &lt;B&gt;open "|..."&lt;/B&gt;&lt;P&gt;
+
+... BUT ...&lt;P&gt;
+
+Note that this form of redirecting the child's I/O &lt;B&gt;doesn't imply any form of concurrency between parent and child&lt;/B&gt; - run3()'s method of operation is the same no matter which form of redirection you specify.
+&lt;/tt&gt;&lt;/blockquote&gt;&lt;P&gt;
+
+I'm confused, is it even possible to have a bidirectional communication between two simultaneously running processes with run3?&lt;P&gt;
+
+If not what's the appropriate solution?&lt;P&gt;
+
+&lt;H5&gt; client.pl&lt;/H5&gt;
+&lt;c&gt;
+use v5.12;
+use warnings;
+use IPC::Run3;
+
+
+my ($cmd, $in, $out, $err);
+
+$cmd = 'perl ./server.pl';
+
+
+open my $fh_in,"|-", $cmd;
+
+#my @in;
+#run3($cmd, \@in);
+
+sub out {
+    $fh_in-&gt;say(@_);
+}
+
+
+my $doit;
+
+for my $try (2,3,2) {
+    $doit = "$;" x $try;
+    out($doit);
+    out($_) for 1..$try;
+    out($doit);
+}
+
+out("EOF");
+&lt;/c&gt;&lt;P&gt;
+
+&lt;H5&gt; server.pl&lt;/H5&gt;
+&lt;c&gt;
+use v5.12;
+use warnings;
+
+STDOUT-&gt;autoflush;
+my $doit;
+my $input;
+
+while ( my $line = &lt;STDIN&gt; ) {
+    unless ( defined $doit ){
+        $doit = $line;
+        last if $doit eq "EOF";
+        next;
+    }
+
+    if ($line eq "$doit") {
+        doit();
+        undef $doit;
+    } else {
+        $input .= $line;
+    }
+}
+
+say "exit by $doit";
+exit;
+
+sub doit {
+    print "((( STDOUT ::: $doit";
+    print $input;
+    print "))) STDOUT ::: $doit";
+    #warn "STDERR:",$input," ";
+    $input ="";
+}
+&lt;/c&gt;&lt;P&gt;
+
+&lt;H5&gt; output&lt;/H5&gt;
+&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+((( STDOUT ::: ␜␜
+1
+2
+))) STDOUT ::: ␜␜
+((( STDOUT ::: ␜␜␜
+1
+2
+3
+))) STDOUT ::: ␜␜␜
+((( STDOUT ::: ␜␜
+1
+2
+))) STDOUT ::: ␜␜
+exit by EOF
+&lt;/c&gt;
+
+&lt;/i&gt;&lt;/blockquote&gt;&lt;P&gt;
+
+
+&lt;H5&gt; update&lt;/H5&gt;&lt;P&gt;
+
+found this&lt;P&gt;
+
+[doc://perlipc#Bidirectional-Communication-with-Another-Process]&lt;P&gt;
+
+doesn't seem to be overly portable and I doubt run3 is the solution...&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;!--nowiki--&gt;&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;/sub&gt; 
+&lt;!--nowiki--&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.161} --&gt;</doctext>
+<thread id="11145257">
+<node id="11145261"><node id="11145266"/>
+</node>
+</thread></node>

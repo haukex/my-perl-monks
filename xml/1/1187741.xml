@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1187741" title="Re: Generate Hash of hashes by reading a large Input file" created="2017-04-12 05:19:42" updated="2017-04-12 05:19:42" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;It's good that you are following some of the "best practices" like splitting your code into subroutines, using three-argument [doc://open]s with proper error messages, and using [doc://Data::Dumper]. There are still some other points that could be improved:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Your code &lt;i&gt;really&lt;/i&gt; needs to be indented properly. See [mod://perltidy] for a tool to help you with this.&lt;/li&gt;
+&lt;li&gt;You should define your variables in the scope where they are needed, putting them all at the top of the file only makes it a little better than globals. For example, &lt;c&gt;my ($mem, $memusage)&lt;/c&gt; can be moved into the innermost &lt;c&gt;elsif&lt;/c&gt; where they are used, the same goes for most of the other variables.&lt;/li&gt;
+&lt;li&gt;You use the older &lt;c&gt;&amp;foo()&lt;/c&gt; calling style for subroutines, nowadays it's recommended to call subroutines without the &lt;c&gt;&amp;&lt;/c&gt;, as in &lt;c&gt;my $clushashref = get_Kvm_Clusters_of_Zones($file);&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;You use [doc://chomp] a bit too often. Using it once, on the input line immediately after reading it, is enough, all your [doc://chomp]s afterwards will have no effect.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Although not the source of your problems, this bit of code jumped out at me: &lt;c&gt;$line =~ s/^\s+|\s+$//g; $line =~ s/^\s.*//g;&lt;/c&gt;. You're first removing the whitespace from the beginning and end of the line, then the second regex &lt;i&gt;would&lt;/i&gt; delete the entire contents of the line &lt;i&gt;if&lt;/i&gt; it begins with whitespace, which at this point it does not. In combination, this means the second regex will never do anything, but on its own, the second regex doesn't make much sense to me. If you want to skip lines that begin with whitespace, I think it's easier to just do &lt;c&gt;next if $line=~/^\s/;&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Anyway, on to the main issues. First of all, this looks like a software-generated report. Do you really need to parse the textual representation, or can this software also generate reports in a machine-readable format, like maybe JSON or XML?&lt;/p&gt;
+&lt;p&gt;Second, you parse the file in multiple passes, and then, on the final pass, you loop over both the zones and the clusters on &lt;i&gt;every&lt;/i&gt; line. For a short input file like this one, the speed impact is probably not noticeable, but as you add zones and clusters, you'll notice a huge performance degradation. This multiple looping is not necessary. Also, if you can be sure that the report is always in this order, a single pass should be all your need. Personally I'd use a "state machine" kind of approach, I talk about this and gave some examples in [id://1180671|this thread], also as I was typing this [choroba] [id://1187738|posted] an example.&lt;/p&gt;
+&lt;p&gt;Third, the source of your problem in your current code is that in the innermost loop in &lt;c&gt;get_HostInfo_of_Clusters&lt;/c&gt;, you always write all information into the &lt;c&gt;$clushashref&lt;/c&gt;, without skipping those clusters that aren't part of the current zone. You need a conditional statement there to only save the information when appropriate. A quick fix would be to modify the innermost &lt;c&gt;foreach my $cname&lt;/c&gt; loop in &lt;c&gt;get_HostInfo_of_Clusters&lt;/c&gt; like so:&lt;/p&gt;
+&lt;c&gt;
+foreach my $cname ( keys %{ $clushashref-&gt;{$zone} } ) {
+	next if $cname =~ /No HVM/;
+	if ( $line =~ /^($cname)/ )
+		{ $clusname = $1; next; }
+	next if !$clusname || !$clushashref-&gt;{$zone}-&gt;{$clusname};
+	if ( $line =~ /example\.com/ ) {
+		...
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;However,&lt;/i&gt; I strongly recommend rewriting the code into a single-pass state machine type approach instead of continuing to work with the current code, as I think you will only run into more problems (performance and maintenance) as you continue working with it.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1187717</root_node>
+<parent_node field_name="parent_node">1187717</parent_node>
+<thread id="1187717">
+<node id="1187738"><node id="1188476"/>
+</node>
+<node id="1187741"><node id="1187796"/>
+</node>
+</thread></node>

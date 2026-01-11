@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227043" title="Re^2: File::Temp survival and scope created by &quot;do&quot;" created="2018-12-10 10:43:20" updated="2018-12-10 10:43:20" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Interesting...&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;So somehow [doc://do] blocks aren't blocks either?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm pretty sure a [doc://do] BLOCK has its own lexical scope:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -le 'my $x="A"; do { print $x; my $x="B";
+  print $x }; print $x'
+A
+B
+A
+$ perl -wMstrict -le 'do { my $x="A" }; print $x'
+Global symbol "$x" requires explicit package name (did you forget to declare "my $x"?) at -e line 1.
+Execution of -e aborted due to compilation errors.
+&lt;/c&gt;
+&lt;p&gt;But it seems to me like this &lt;i&gt;might&lt;/i&gt; have something to do with a [doc://do] block being able to return a value:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -le 'sub Foo::DESTROY {print "BLAM"}; print "A";
+  do { my $x = bless {}, "Foo" }; print "B"'
+A
+B
+BLAM
+$ perl -wMstrict -le 'sub Foo::DESTROY {print "BLAM"}; print "A";
+  do { my $x = bless {}, "Foo"; 1 }; print "B"'
+A
+BLAM
+B
+&lt;/c&gt;
+&lt;p&gt;Although I don't know why &lt;c&gt;do { my $x = bless {}, "Foo" }&lt;/c&gt; vs. &lt;c&gt;do { bless {}, "Foo" }&lt;/c&gt; makes a difference either. Seems strange to me.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1227033</root_node>
+<parent_node field_name="parent_node">1227041</parent_node>
+<thread id="1227033">
+<node id="1227041"><node id="1227043"><node id="1227047"><node id="1227064"><node id="1227065"><node id="1227073"><node id="1227078"/>
+</node>
+</node>
+<node id="1227070"><node id="1227081"/>
+<node id="1227091"/>
+<node id="1227095"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118418" title="Re: substr on UTF-8 strings (updated)" created="2020-06-24 08:12:23" updated="2020-06-24 08:12:23" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;However, the string I get back is always flagged as "native/raw bytes".&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;&lt;strike&gt;Yes, I can confirm (code below), although only if the original string really is ASCII.&lt;/strike&gt; &lt;b&gt;Update:&lt;/b&gt; To be more clear: I can &lt;i&gt;only&lt;/i&gt; confirm this in the case the original string is ASCII; otherwise the UTF-8 flag remains enabled. In the case of an ASCII string, I don't see how it not being flagged as UTF-8 causes problems? &lt;b&gt;/Update&lt;/b&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;In any case, changing the UTF-8/native flag creates problems in my code later on the line.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Perhaps this is the issue we should look at - could you show an [id://1177642|SSCCE] of how a plain ASCII string without the UTF-8 flag is causing problems for you?&lt;/p&gt;
+&lt;readmore&gt;
+&lt;pre&gt;
+use warnings;
+use 5.026;
+use utf8;
+use open qw/:std :utf8/;
+
+while (&amp;lt;DATA&amp;gt;) {
+	chomp;
+	say &amp;quot;&amp;#39;$_&amp;#39;: &amp;quot;, utf8::is_utf8($_)||0;
+	my $y = substr $_, 2, 2;
+	say &amp;quot;&amp;#39;$y&amp;#39;: &amp;quot;, utf8::is_utf8($y)||0;
+}
+
+__DATA__
+abcd
+&amp;euro;bcd
+ab&amp;euro;d
+&lt;/pre&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;pre&gt;
+&amp;#39;abcd&amp;#39;: 1
+&amp;#39;cd&amp;#39;: 0
+&amp;#39;&amp;euro;bcd&amp;#39;: 1
+&amp;#39;cd&amp;#39;: 1
+&amp;#39;ab&amp;euro;d&amp;#39;: 1
+&amp;#39;&amp;euro;d&amp;#39;: 1
+&lt;/pre&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">11118415</root_node>
+<parent_node field_name="parent_node">11118415</parent_node>
+<thread id="11118415">
+<node id="11118417"/>
+<node id="11118418"><node id="11118419"><node id="11118421"><node id="11118427"><node id="11118428"/>
+<node id="11118585"/>
+</node>
+<node id="11118581"/>
+</node>
+<node id="11118580"/>
+<node id="11118584"/>
+</node>
+</node>
+<node id="11118432"/>
+<node id="11118578"><node id="11118583"/>
+</node>
+</thread></node>

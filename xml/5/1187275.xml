@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1187275" title="Re^3: global var" created="2017-04-06 09:27:03" updated="2017-04-06 09:27:03" _doctext_mode="lenient"><type id="11">note</type>
+<author id="732669">Marshall</author>
+<doctext field_name="doctext">To clarify (I hope) a few things about "use xxx;"
+&lt;strike&gt;
+&lt;c&gt;
+use xxx;    #imports all of the symbols in @EXPORT
+use xxx (); #imports none of the symbols in @EXPORT
+            #this empty list is the same as:  (updated)
+            #BEGIN { require Module }
+use xxx qw(OpenConnection $LoggedOn_user_id); # imports
+ # all of the symbols in @EXPORT AND subroutine OpenConnection
+ # AND the scalar $LoggedOn_user_id from @EXPORT_OK
+&lt;/c&gt;
+&lt;/strike&gt;
+
+Update: Another attempt at explaining "use".&lt;br&gt;
+Case 1: A plain &lt;c&gt;use xxx;&lt;/c&gt; #imports all of the symbols in @EXPORT.&lt;p&gt;
+Case2: &lt;c&gt;use xxx qw(OpenConnection $LoggedOn_user_id);&lt;/c&gt; #imports only
+the function OpenConnection and the scalar $LoggedOn_user_id. Once
+a list (the parens) after the "use" shows up, this has the effect
+of making @EXPORT the same as @EXPORT_OK. In other words, the
+symbols in @EXPORT are not imported by default and must be explicitly
+imported like the symbols in @EXPORT_OK. Any combination of symbols
+in @EXPORT or @EXPORT_OK can go in this list after the "use".&lt;p&gt;
+Case 3: (consequence of case 2), &lt;c&gt;use xxx ();&lt;/c&gt; There is an empty list of stuff to import and nothing is imported - the automatic importing of the @EXPORT list is
+"Overridden".&lt;p&gt;
+
+
+
+When you import a symbol, you can use the "short" name,
+e.g. &lt;c&gt;print $LoggedOn_user_id;&lt;/c&gt;.  If we "used" the 
+manageusers module, but did not import $LoggedOn_user_id,
+that variable can still be accessed with the fully qualified name,
+&lt;c&gt;print $manageusers::LoggedOn_user_id;&lt;/c&gt; So if you use
+the fully qualified name, the variable or sub name does not
+need to be exported (provided that you have used the module to
+get it loaded). Only "our" variables can be exported or accessed
+from another module. A "my" lexical variable cannot be. "our" puts
+the symbol into the package's symbol table - that means among other
+things that the fully qualified name is going to work. Such an operation
+makes no sense for a lexical scope "my" variable.&lt;p&gt;
+
+File: manageusers.pm
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+
+package manageusers;
+
+BEGIN {
+	use vars qw($VERSION @ISA @EXPORT);
+	use DBI;
+
+#    $ENV{DBI_TRACE}=1;
+#    $ENV{PERL_DBI_DEBUG}=1;
+
+	require Exporter;
+
+	@ISA = qw(Exporter);
+
+	# exported functions
+	our @EXPORT_OK = qw(
+
+           $attempts
+           $adminaccess
+           $LoggedOn_user_id  
+           Now
+	   CheckValidLoginChar
+	   CheckValidEmailChar
+	   print_md5_javascript);
+
+	$VERSION = '0.0.1';
+}
+
+our $LoggedOn_user_id=33;
+our $attempts = 99;
+1;
+&lt;/c&gt;
+File: testManageUsers.pl
+&lt;c&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+use manageusers qw($LoggedOn_user_id);
+
+print "$LoggedOn_user_id\n";  #prints 33
+
+print "$manageusers::attempts \n"; #prints 99
+
+#Note that $attempts is NOT &lt;strike&gt;exported&lt;/strike&gt; imported,
+but still #can be accessed by the fully qualified name!
+&lt;/c&gt;
+
+I hope this helps. Its really early in the morning here, but
+I think I did this right. Run my code and then pare further
+questions down to just the basics and variables involved.&lt;p&gt;
+
+Corrected "use xx ();" comment. A bit twitchy with the CTL-V this morning. Also changed commend about $attempts in the mail program. Thanks [shmem].</doctext>
+<root_node field_name="root_node">1187183</root_node>
+<parent_node field_name="parent_node">1187185</parent_node>
+<thread id="1187183">
+<node id="1187184"><node id="1187185"><node id="1187186"/>
+<node id="1187187"><node id="1187189"/>
+<node id="1187192"><node id="1187194"><node id="1187197"/>
+<node id="1187199"><node id="1187203"/>
+</node>
+</node>
+<node id="1187195"><node id="1187269"><node id="1187273"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1187275"><node id="1187293"><node id="1187349"><node id="1187356"/>
+<node id="1187357"/>
+</node>
+</node>
+<node id="1187297"><node id="1187300"/>
+<node id="1187306"/>
+</node>
+<node id="1187322"><node id="1187325"><node id="1187354"><node id="1187397"/>
+</node>
+<node id="1187361"><node id="1187362"><node id="1187436"><node id="1187441"><node id="1187448"><node id="1187452"><node id="1187457"><node id="1187483"><node id="1187484"/>
+<node id="1187489"><node id="1187652"><node id="1187658"><node id="1187677"><node id="1187680"><node id="1187688"><node id="1187706"><node id="1188253"/>
+<node id="1188496"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1187690"><node id="1187694"><node id="1187700"><node id="1187701"><node id="1187707"><node id="1187708"><node id="1188695"><node id="1188712"><node id="1188714"><node id="1188754"><node id="1188765"><node id="1188769"><node id="1188793"/>
+</node>
+</node>
+</node>
+<node id="1188787"><node id="1188792"><node id="1188796"><node id="1188838"><node id="1188856"/>
+<node id="1188874"><node id="1188876"><node id="1188926"/>
+</node>
+<node id="1188908"><node id="1188932"/>
+<node id="1188934"/>
+<node id="1188958"><node id="1189120"><node id="1189122"><node id="1189124"><node id="1189125"><node id="1189131"><node id="1189135"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1189157"><node id="1189163"/>
+</node>
+<node id="1189159"/>
+</node>
+<node id="1189123"/>
+</node>
+<node id="1188990"><node id="1189121"><node id="1189132"><node id="1189133"><node id="1189145"/>
+</node>
+<node id="1189134"><node id="1189136"><node id="1189137"><node id="1189138"><node id="1189140"><node id="1189141"/>
+<node id="1189143"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1189168"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1188888"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1187696"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1187464"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1187369"/>
+</node>
+</node>
+<node id="1187454"><node id="1187468"><node id="1187469"><node id="1187505"><node id="1187506"><node id="1187645"><node id="1187649"><node id="1187702"><node id="1188540"><node id="1188681"><node id="1188682"><node id="1188711"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

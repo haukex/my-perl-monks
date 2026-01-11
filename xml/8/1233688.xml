@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1233688" title="Re^3: processing file content as string vs array" created="2019-05-13 03:59:20" updated="2019-05-13 03:59:20" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Yes, it looks to me like a simple &lt;c&gt;while&lt;/c&gt; loop should be better. Here, I'm using the [doc://perlop#Range-Operators|flip-flop operator] to keep state:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my @userinfo;
+while (&lt;DATA&gt;) {
+	chomp;
+	if ( /\@user_info_start/ ... /\@user_info_end/ ) {
+		push @userinfo, $_;
+	}
+}
+
+use Data::Dumper;
+print Dumper(\@userinfo);
+
+__DATA__
+xxxxxxxxxxx
+xxxx*@user_info_start
+xxxx*@Title         : Mr
+xxxx*@Username   : xxxxx
+xxxx*@Filetype    : txt
+xxxx*@Version       : 0001
+xxxx*@Create_Date       : 20190407
+xxxx*@Product       : xxxx
+xxxx*@user_info_end
+xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+$VAR1 = [
+          'xxxx*@user_info_start',
+          'xxxx*@Title         : Mr',
+          'xxxx*@Username   : xxxxx',
+          'xxxx*@Filetype    : txt',
+          'xxxx*@Version       : 0001',
+          'xxxx*@Create_Date       : 20190407',
+          'xxxx*@Product       : xxxx',
+          'xxxx*@user_info_end'
+        ];
+&lt;/c&gt;
+&lt;p&gt;And if you want to exclude the section markers, you can inspect the return value of the operator, for example:&lt;/p&gt;
+&lt;c&gt;
+	if ( my $flag = /\@user_info_start/ ... /\@user_info_end/ ) {
+		push @userinfo, $_ unless $flag==1 || $flag=~/E0/;
+	}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1233681</root_node>
+<parent_node field_name="parent_node">1233687</parent_node>
+<thread id="1233681">
+<node id="1233684"><node id="1233687"><node id="1233688"/>
+<node id="1233689"/>
+<node id="1233732"/>
+</node>
+</node>
+<node id="1233692"><node id="1233694"><node id="1233695"><node id="1233698"/>
+</node>
+<node id="1233755"/>
+</node>
+</node>
+<node id="11100004"><node id="11100041"><node id="11100133"><node id="11100227"><node id="11100307"><node id="11100327"><node id="11100328"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

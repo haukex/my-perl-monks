@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1232245" title="Re: fix ODT files with line breaks looking poor" created="2019-04-07 11:40:27" updated="2019-04-07 11:40:27" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Using LibreOffice I whipped up the following minimal example, edited down to the minimum needed:&lt;/p&gt;
+&lt;c&gt;
+&lt;?xml version="1.0"?&gt;
+&lt;office:document-content office:version="1.2"
+	xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+	xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"&gt;
+&lt;office:body&gt;&lt;office:text&gt;
+&lt;text:p text:style-name="P1"&gt;
+	Fo&lt;text:span text:style-name="T1"&gt;o&lt;text:line-break/&gt;
+	B&lt;/text:span&gt;&lt;text:span text:style-name="T3"&gt;a&lt;/text:span&gt;
+	&lt;text:span text:style-name="T5"&gt;r&lt;text:line-break/&gt;&lt;/text:span&gt;
+&lt;/text:p&gt;
+&lt;/office:text&gt;&lt;/office:body&gt;
+&lt;/office:document-content&gt;
+&lt;/c&gt;
+&lt;p&gt;The transform needed of the XML document is something like this: &lt;c&gt;&lt;r&gt;&lt;p&gt;a&lt;x&gt;b&lt;s/&gt;c&lt;/x&gt;d&lt;/p&gt;&lt;/r&gt;&lt;/c&gt;&lt;/p&gt;
+&lt;c&gt;
+&lt;r&gt;
+   `-- &lt;p&gt;
+          `+- a
+           +- &lt;x&gt;
+           |     `+- b
+           |      +- &lt;s&gt;
+           |      `- c
+           `- d
+&lt;/c&gt;
+&lt;p&gt;To this: &lt;c&gt;&lt;r&gt;&lt;p&gt;a&lt;x&gt;b&lt;/x&gt;&lt;/p&gt;&lt;p&gt;&lt;x&gt;c&lt;/x&gt;d&lt;/p&gt;&lt;/r&gt;&lt;/c&gt;&lt;/p&gt;
+&lt;c&gt;
+&lt;r&gt;
+   `+- &lt;p&gt;
+    |     `+- a
+    |      `- &lt;x&gt;
+    |            `-- b
+    `- &lt;p&gt;
+          `+- &lt;x&gt;
+           |     `-- c
+            `- d
+&lt;/c&gt;
+&lt;p&gt;Where I think the elements surrounding &lt;c&gt;&lt;s/&gt;&lt;/c&gt;, represented here as &lt;c&gt;&lt;x&gt;&lt;/c&gt;, could even be nested more than one level, i.e. maybe &lt;c&gt;&lt;r&gt;&lt;p&gt;a&lt;x&gt;b&lt;y&gt;c&lt;x&gt;d&lt;s/&gt;e&lt;/x&gt;f&lt;/y&gt;g&lt;/x&gt;h&lt;/p&gt;&lt;/r&gt;&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;A very interesting problem, unfortunately I don't have enough time to invest at the moment. You definitely [id://1201438|shouldn't try] to do this with regexes. If the files aren't too big, I'd probably approach this with [mod://XML::LibXML]...&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update 2:&lt;/i&gt; On second thought, a stream-based parser might be easier in this case... hmmm...&lt;/p&gt;
+&lt;readmore&gt;
+&lt;p&gt;&lt;i&gt;Update 1:&lt;/i&gt; A skeleton...&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+
+my $dom = XML::LibXML-&gt;load_xml(string =&gt; &lt;&lt;'END_XML');
+&lt;?xml version="1.0"?&gt;
+&lt;office:document-content office:version="1.2"
+	xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+	xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"&gt;
+&lt;office:body&gt;&lt;office:text&gt;
+&lt;text:p text:style-name="P1"&gt;
+	Fo&lt;text:span text:style-name="T1"&gt;o&lt;text:line-break/&gt;
+	B&lt;/text:span&gt;&lt;text:span text:style-name="T3"&gt;a&lt;/text:span&gt;
+	&lt;text:span text:style-name="T5"&gt;r&lt;text:line-break/&gt;&lt;/text:span&gt;
+&lt;/text:p&gt;
+&lt;/office:text&gt;&lt;/office:body&gt;
+&lt;/office:document-content&gt;
+END_XML
+
+my $xpc = XML::LibXML::XPathContext-&gt;new($dom);
+$xpc-&gt;registerNs('office',
+	'urn:oasis:names:tc:opendocument:xmlns:office:1.0');
+$xpc-&gt;registerNs('text',
+	'urn:oasis:names:tc:opendocument:xmlns:text:1.0');
+
+while (1) {
+	my ($lb) = $xpc-&gt;findnodes('//text:p//text:line-break') or last;
+	die "can't handle &lt;text:line-break&gt; with children: $lb"
+		if $lb-&gt;hasChildNodes;
+	my ($p) = $xpc-&gt;findnodes('ancestor::text:p[1]',$lb)
+		or die "failed to find &lt;text:p&gt; ancestor of $lb";
+	print "$p\n"; #DB
+	# ... do something useful here ...
+	$lb-&gt;unbindNode; # so this loop terminates
+}
+
+print "#####\n";
+print $dom;
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1232242</root_node>
+<parent_node field_name="parent_node">1232242</parent_node>
+<thread id="1232242">
+<node id="1232243"><node id="1232244"/>
+</node>
+<node id="1232245"><node id="1232251"/>
+<node id="1232253"><node id="1232314"/>
+</node>
+</node>
+<node id="1232696"><node id="1232727"><node id="1232759"/>
+</node>
+</node>
+</thread></node>

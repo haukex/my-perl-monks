@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1089424" title="Bring back the smartmatch operator (but with sane semantics this time)!" created="2014-06-10 12:52:53" updated="2014-06-10 12:52:53" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="947624">smls</author>
+<doctext field_name="doctext">&lt;p&gt;No I'm not kidding, please hear me out... :)&lt;/p&gt;
+
+&lt;p&gt;&lt;/p&gt;
+
+&lt;h3&gt;History of smartmatch in Perl&lt;/h3&gt;
+
+&lt;p&gt;&lt;a href="http://perl6advent.wordpress.com/2010/12/12/day-12-%E2%80%93-smart-matching/"&gt;Smartmatching&lt;/a&gt; was invented for Perl 6 where it turned out to be a very useful and well-loved&lt;sup&gt;1&lt;/sup&gt; feature, but the attempt to &lt;a href="http://perldoc.perl.org/perlop.html#Smartmatch-Operator"&gt;backport it to Perl 5.10&lt;/a&gt; in 2009 did not turn out so great (and it was consequently &lt;a href="http://perldoc.perl.org/perl5180delta.html#The-smartmatch-family-of-features-are-now-experimental"&gt;deprecated again in Perl 5.18&lt;/a&gt;). Among the Perl 6 community the commonly accepted explanation for that is, from what I heard:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Perl lacks a strong &amp; fine-grained type system &lt;i&gt;(which in Perl 6, where it exists, adds much sanity to the concept of dynamic dispatch)&lt;/i&gt;&lt;/li&gt;
+&lt;li&gt;Perl lacks composable related features like &lt;a href="https://en.wikibooks.org/wiki/Perl_6_Programming/Junctions"&gt;Junctions&lt;/a&gt; &lt;i&gt;(which allow the Perl 6 smartmatching rules to be simpler and less arbitrary than the rules that would be needed to facilitate the same set of use-cases in Perl)&lt;/i&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;These limitations are hard to circumvent, but I don't think that means Perl should have no smartmatching at all, it just means it should have &lt;b&gt;less ambitious / more focused&lt;/b&gt; smartmatching.&lt;/p&gt;
+
+&lt;p&gt;I wasn't around at the time, but it looks to me as if the Perl 5.10+ smartmatching was designed with these goals:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Support all use-cases that the Perl 6 smartmatch operator supports&lt;/li&gt;
+&lt;li&gt;Use it as an opportunity to sneak in useful new comparison/searching operations into the core, without having to invent separate operator names for them, and without having to justify them individually&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;...and was thus doomed to failure.&lt;/p&gt;
+
+&lt;p&gt;Some later proposals for re-designing the smartmatch operator (like &lt;a href="http://blogs.perl.org/users/brian_d_foy/2011/07/rethinking-smart-matching.html"&gt;this 2011 post by brian d foy&lt;/a&gt;) tend to avoid mistake no. 1, but still fall into the second trap.&lt;/p&gt;
+
+&lt;p&gt;If there are comparison/searching operations that are deemed worthy of being added to Perl &lt;small&gt;(say, "deep comparison" of two arrays, or checking whether an array contains a given scalar)&lt;/small&gt;, then each of them should get &lt;b&gt;its own&lt;/b&gt; operator. That's the normal Perl way: One operator per type of operation (that's why we have both &lt;c&gt;==&lt;/c&gt; and &lt;c&gt;eq&lt;/c&gt; for example).&lt;/p&gt;
+
+
+&lt;h3&gt;How smartmatch &lt;i&gt;should&lt;/i&gt; be designed&lt;/h3&gt;
+
+&lt;p&gt;Smartmatching explicitly breaks with the conventional "one meaning per operator" rule by dynamically deciding what operation to perform based on its arguments. This means it should be carefully designed around use-cases where you actually &lt;b&gt;need&lt;/b&gt; to dynamically decide what operation to perform. Operations that you would likely never want to mix-and-match, have no business being part of the smartmatch operator, even if they would be useful to have in core by themselves.&lt;/p&gt;
+
+&lt;p&gt;So, what are those use-cases where you actually &lt;i&gt;need&lt;/i&gt; dynamic smartmatching? I can think of two major ones:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;&lt;b&gt;When you want to avoid writing out &amp;nbsp;&lt;c&gt;($_ &lt;operator&gt; ...)&lt;/c&gt;&amp;nbsp; in a &lt;c&gt;given&lt;/c&gt;/&lt;c&gt;when&lt;/c&gt; construct&lt;/b&gt;, for the purpose of brevity/elegance:&lt;/p&gt;
+&lt;code&gt;
+use v6;
+
+given $username {
+    when 'root'             { dostuff }
+    when /^guest\d*$/       { die "You're not allowed to do stuff." }
+    when any(&lt;http apache&gt;) { authenticate :web; dostuff } 
+    default                 { authenticate :local; dostuff }
+}
+&lt;/code&gt;
+&lt;p&gt;Of course it is only elegant when the meaning is self-evident without consulting a manual, so this use-case only makes sense for commonly used &amp; unambiguous comparison operations.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;b&gt;When you want your code to test things against a "filter/pattern/rule" that is passed in from the outside&lt;/b&gt;, and you don't want to restrict it to just one way of filtering (e.g. only by string comparison, or only by regex, or only by callback etc.)&lt;/p&gt;
+
+&lt;p&gt;For example, consider the Perl 6 built-in function &lt;a href="http://doc.perl6.org/routine/dir"&gt;&lt;c&gt;dir&lt;/c&gt;&lt;/a&gt;, which lists the contents of a directory in the filesystem. It takes an optional 'test' argument, against which it promises to smartmatch each filename and only return the matching ones. Since smartmatch is built into the language, Perl 6 programmers need no further documentation to understand that parameter; they know they can use anything that would be valid as the right-hand-side argument of &lt;c&gt;~~&lt;/c&gt; as the test, for example:&lt;/p&gt;
+
+&lt;code&gt;
+use v6;
+
+dir '/some/directory', test =&gt; /\.txt$/;           # a regex
+dir '/some/directory', test =&gt; none('.', '..');    # a junction²
+dir '/some/directory', test =&gt; &amp;validate_filename; # a coderef
+&lt;/code&gt;
+
+&lt;p&gt;The result is a very flexible but still elegant and predictable API that is easy to imitate in your own functions/modules that want to allow their users to "match" or filter stuff: Just use smartmatch as your filter implementation!&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;We can make new Perl 5 smartmatching rules useful for those use-cases, while still keeping them sane and predictable, by adhering to the these two principles:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Decide what operation to perform, based on the &lt;b&gt;type of the right-hand-side argument&lt;/b&gt; (and nothing else!)&lt;br&gt;
+&lt;small&gt;(Put another way, this means that &amp;nbsp;&lt;c&gt;LHS ~~ RHS&lt;/c&gt;&amp;nbsp; can always be expressed in words as the question "Does LHS fit the constraint/template defined by RHS?")&lt;/small&gt;&lt;br&gt;&lt;br&gt;&lt;/li&gt;
+&lt;li&gt;Blindly &lt;b&gt;coerce the left-hand-side argument&lt;/b&gt; to the type that the chosen operation requires, just as normal Perl operators like &lt;c&gt;eq&lt;/c&gt; also coerce their arguments.&lt;br&gt;
+&lt;small&gt;(So, for example, &lt;c&gt;@foo ~~ /foo/&lt;/c&gt; would be the same as &lt;c&gt;@foo =~ /foo/&lt;/c&gt;, even though that may not be useful, rather than doing anything special just because it's an array!)&lt;/small&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3&gt;Sensible smartmatch rules&lt;/h3&gt;
+
+&lt;p&gt;With that in mind, we can start to think about the kind of right-hand-side "things" that it should be possible to smartmatch against.&lt;/p&gt;
+
+&lt;p&gt;The following are no-brainers imo:&lt;/p&gt;
+
+&lt;table border=1&gt;
+&lt;tr&gt;&lt;th&gt;if RHS is an...&lt;/th&gt;                     &lt;th&gt;(example)&lt;/th&gt;                &lt;th&gt;then &amp;nbsp;&lt;c&gt;LHS ~~ RHS&lt;/c&gt;&amp;nbsp; should do...&lt;/th&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;undefined scalar&lt;/td&gt;                    &lt;td&gt;&lt;c&gt;$x ~~ undef&lt;/c&gt;&lt;/td&gt;       &lt;td&gt;&lt;c&gt;!defined(LHS)&lt;/c&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;simple scalar&lt;/td&gt;                       &lt;td&gt;&lt;c&gt;$x ~~ 'foo'&lt;/c&gt;&lt;/td&gt;       &lt;td&gt;&lt;c&gt;LHS eq RHS&lt;/c&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;regex (literal or reference)&lt;/td&gt;        &lt;td&gt;&lt;c&gt;$x ~~ /foo/&lt;/c&gt;&lt;/td&gt;       &lt;td&gt;&lt;c&gt;LHS =~ RHS&lt;/c&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;code reference&lt;/td&gt;                      &lt;td&gt;&lt;c&gt;$x ~~ sub { ... }&lt;/c&gt;&lt;/td&gt; &lt;td&gt;&lt;c&gt;RHS-&gt;(LHS)&lt;/c&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;an object that overloads &lt;c&gt;~~&lt;/c&gt;&lt;/td&gt;  &lt;td&gt;&lt;c&gt;$x ~~ $object&lt;/c&gt;&lt;/td&gt;     &lt;td&gt;call the overload method, with LHS as argument&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+
+&lt;p&gt;The 'simple scalar' case is not as elegant as one might wish it to be; Ideally it would be able to dynamically decide between string or numeric comparison like it does in Perl 6, but I don't think that is possible to do safely in Perl (its type system being what it is), so we need to take what we can get.&lt;/p&gt;
+
+&lt;p&gt;The following two rules also tend to be pretty useful in Perl 6, and it &lt;i&gt;might&lt;/i&gt; make sense to add them to our hypothetical new Perl smartmatch, but I'm unsure about them because range literals and typename barewords are not usually treated as first-class "things" in Perl, so it might feel strange:&lt;/p&gt;
+
+&lt;table border=1&gt;
+&lt;tr&gt;&lt;th&gt;if RHS is a...&lt;/th&gt; &lt;th&gt;(example)&lt;/th&gt;                         &lt;th&gt;then &amp;nbsp;&lt;c&gt;LHS ~~ RHS&lt;/c&gt;&amp;nbsp; should do...&lt;/th&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;bareword&lt;/td&gt;       &lt;td&gt;&lt;c&gt;$node ~~ XML::LibXML::Node&lt;/c&gt;&lt;/td&gt; &lt;td&gt;&lt;c&gt;ref(LHS) eq "RHS"&lt;/c&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;range literal&lt;/td&gt;  &lt;td&gt;&lt;c&gt;$age ~~ 0..17&lt;/c&gt;&lt;/td&gt;              &lt;td&gt;interpret LHS as a number, and check if is within the range&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Lastly, the lack of junctions in Perl could be partially remedied by interpreting an array/list on the right-hand-side like an &lt;c&gt;any()&lt;/c&gt; junction:&lt;/p&gt;
+
+&lt;table border=1&gt;
+&lt;tr&gt;&lt;th&gt;if RHS is an...&lt;/th&gt;  &lt;th&gt;(example)&lt;/th&gt;                            &lt;th&gt;then &amp;nbsp;&lt;c&gt;LHS ~~ RHS&lt;/c&gt;&amp;nbsp; should do...&lt;/th&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;array or list&lt;/td&gt;   &lt;td&gt;&lt;c&gt;$switch ~~ qw(yes true on 1)&lt;/c&gt;&lt;/td&gt;  &lt;td&gt;&lt;c&gt;(grep { LHS ~~ $_ } RHS) &gt;= 1&lt;/c&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Of course, a better solution would be to add junctions to Perl together with re-adding smartmatch... :)&lt;br&gt;
+&lt;i&gt;([metacpan://Perl6::Junctions] already exists on CPAN, but it relies on at least one awful hack due to the fact that it is non-core)&lt;/i&gt;.&lt;/p&gt;
+
+&lt;p&gt;Anyway, the above rules would be more or less a subset of both Perl 6 smartmatching and the deprecated Perl 5.10+ smartmatching, but without the craziness of the latter.&lt;/p&gt;
+
+&lt;p&gt;And that's it; All cases not handled by these rules should generate a runtime error.&lt;br&gt;
+I don't think any other special cases need to be added - in particular, all the arbitrary behaviors that Perl 5.10+ smartmatching added for when one or both arguments were arrays/hashes, only served to confuse people and made the operator "not safe to use" in practice. Let's not repeat that mistake.&lt;/p&gt;
+
+&lt;p&gt;&lt;i&gt;PS: In case you want to get a "feel" for what this kind of smart-matching is like in practice, check out Toby Inkster's [metacpan://match::simple] module which implements very similar rules to what is discussed here (but suffers from some unavoidable limitations due to the fact that it is not in core).&lt;/i&gt;&lt;/p&gt;
+
+&lt;p&gt;---&lt;/p&gt;
+&lt;sup&gt;1)&lt;/sup&gt; &lt;small&gt;Among the small but passionate fan base of Perl 6 :)&lt;/small&gt;&lt;br&gt;
+&lt;sup&gt;2)&lt;/sup&gt; &lt;small&gt;This particular junction is in fact used as the default when the 'test' argument is omitted.&lt;/small&gt;
+
+
+</doctext>
+<thread id="1089424">
+<node id="1089450"><node id="1089460"/>
+<node id="1089464"><node id="1089541"><node id="1089561"><node id="1089565"/>
+</node>
+<node id="1089939"><node id="1090069"/>
+</node>
+</node>
+</node>
+<node id="1089622"><node id="1089674"/>
+</node>
+</node>
+<node id="1089453"/>
+<node id="1089458"><node id="1089461"/>
+</node>
+<node id="1089579"><node id="1089584"/>
+</node>
+<node id="1089585"><node id="1089598"><node id="1089732"/>
+</node>
+</node>
+<node id="1089716"/>
+</thread></node>

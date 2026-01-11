@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1184579" title="Re: Text::CSV - parsing" created="2017-03-14 14:06:27" updated="2017-03-14 14:06:27" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1039428">Eily</author>
+<doctext field_name="doctext">&lt;p&gt;Actually [mod://Text::CSV] handles quoted fields pretty well, but the default quote character is ". See the quote_char section of the [mod://Text::CSV]. Note that the sep_char is a single character though, so spaces are not removed, which would make &lt;c&gt;101, '1997'&lt;/c&gt; invalid CSV, because the quote_char should be the next thing after the sep_char. To allow spaces, set allow_whitespace to 1:
+&lt;c&gt;use strict; use Text::CSV;
+use Data::Dumper; 
+my @lines=&lt;DATA&gt;;
+my $csv = Text::CSV-&gt;new ({sep_char  =&gt; ',' , quote_char =&gt; "'", allow_whitespace =&gt; 1});
+
+my @AoA;
+
+for (@lines) { if    (/^\((.+?)\).?/){my $con=$1; 
+  if ($csv-&gt;parse($con)) {
+ 
+      my @fields = $csv-&gt;fields();   push @AoA,[@fields];
+ 
+  } else {     warn "Line could not be parsed: $_\n";  }
+}
+}
+
+print Dumper \@AoA;
+
+
+__DATA__
+(101, '1997-02-25', 'S1', 31.00, NULL, 0.00, 'this becomes two fields, so no go', 5.11),
+(102, '1998-03-26', 'S1', 31.00, NULL, 0.00, 'this will remain one field', 6.11),
+&lt;/c&gt;
+&lt;c&gt;$VAR1 = [
+          [
+            '101',
+            '1997-02-25',
+            'S1',
+            '31.00',
+            'NULL',
+            '0.00',
+            'this becomes two fields, so no go',
+            '5.11'
+          ],
+          [
+            '102',
+            '1998-03-26',
+            'S1',
+            '31.00',
+            'NULL',
+            '0.00',
+            'this will remain one field',
+            '6.11'
+          ]
+        ];&lt;/c&gt;
+&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1184575</root_node>
+<parent_node field_name="parent_node">1184575</parent_node>
+<thread id="1184575">
+<node id="1184579"><node id="1184585"><node id="1184588"/>
+</node>
+</node>
+<node id="1184581"/>
+<node id="1184582"/>
+<node id="1184595"/>
+<node id="1184698"/>
+</thread></node>

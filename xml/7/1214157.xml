@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1214157" title="[SOLVED]: Trying to understand method calling in OOP" created="2018-05-07 11:37:20" updated="2018-05-07 11:37:20" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1078120">Perl300</author>
+<doctext field_name="doctext">&lt;p&gt;I am going through book "Intermediate Perl" and started with Object Oriented section. I have created a distribution Animal and inside it:&lt;/p&gt;
+&lt;p&gt;bin/pasture&lt;/p&gt;
+&lt;c&gt;
+use Animal;
+use Cow;
+use Horse;
+use Sheep;
+
+Cow-&gt;speak;
+Horse-&gt;speak;
+Sheep-&gt;speak;&lt;/c&gt;
+
+&lt;p&gt;lib/Animal.pm&lt;/p&gt;
+&lt;c&gt;
+package Animal;
+
+use 5.006;
+use strict;
+use warnings;
+
+sub speak
+{
+    my $class = shift;
+    print "a $class goes ", $class-&gt;sound, "!\n";
+}
+
+sub sound
+{
+    die "'You have to define sound() in a subclass' found";
+}
+&lt;/c&gt;
+
+
+&lt;p&gt;lib/Cow.pm&lt;/p&gt;
+&lt;c&gt;
+package Cow;
+
+use 5.006;
+use strict;
+use warnings;
+use Animal;
+our @ISA = qw(Animal);
+
+sub sound { "moooo" }
+&lt;/c&gt;
+
+
+&lt;p&gt;lib/Sheep.pm&lt;/p&gt;
+&lt;c&gt;
+package Sheep;
+
+use 5.006;
+use strict;
+use warnings;
+use Animal;
+our @ISA = qw(Animal);
+
+sub sound { "baaaah" }
+&lt;/c&gt;
+
+
+&lt;p&gt;lib/Horse.pm&lt;/p&gt;
+&lt;c&gt;
+package Horse;
+
+use 5.006;
+use strict;
+use warnings;
+use Animal;
+our @ISA = qw(Animal);
+
+sub sound { "neigh" }
+&lt;/c&gt;
+
+&lt;p&gt;When I run &lt;c&gt;~/localperl/bin/perl -Ilib bin/pasture&lt;/c&gt; I get following output:&lt;/p&gt;
+&lt;c&gt;
+a Cow goes moooo!
+a Horse goes neigh!
+a Sheep goes baaaah!
+&lt;/c&gt;
+
+&lt;p&gt;As per book, explanation of this behavior is: &lt;/p&gt;
+&lt;p&gt;What happens when we invoke Cow&amp;#8722;&gt;speak now?&lt;/p&gt;
+&lt;p&gt;First, Perl constructs the argument list. Here, it’s just Cow. Then Perl looks for Cow::speak. That’s not there, so Perl checks for the inheritance array @Cow::ISA. It finds @Cow::ISA contains the single name Animal.&lt;/p&gt;
+&lt;p&gt;Perl next looks for speak inside Animal instead, as in Animal::speak. That found, Perl invokes that method with the already frozen argument list, as if we had said:&lt;/p&gt;
+&lt;c&gt;Animal::speak('Cow'); #This is the part I am having trouble understanding. How did "Cow" become an argument when I didn't specify it anywhere?&lt;/c&gt;
+
+&lt;p&gt;As I mentioned in comment, I am unable to understand: How did "Cow" become an argument when I didn't specify it anywhere?&lt;/p&gt;
+&lt;p&gt;Can someone please help me understand this behavior? (Forgive me for the long post.)&lt;/p&gt;</doctext>
+<thread id="1214157">
+<node id="1214158"><node id="1214270"><node id="1214296"/>
+</node>
+</node>
+<node id="1214159"><node id="1214170"><node id="1214171"><node id="1214172"/>
+</node>
+<node id="1214192"><node id="1214436"/>
+</node>
+</node>
+</node>
+<node id="1214166"/>
+<node id="1214207"><node id="1214229"><node id="1214432"><node id="1214433"><node id="1214438"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

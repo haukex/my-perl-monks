@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11153448" title="script runs, but doesn't appear to call file" created="2023-07-17 12:33:59" updated="2023-07-17 12:33:59" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11153446">schwende</author>
+<doctext field_name="doctext">Perl beginner here. 
+I have an existing code, that was written some years ago. Basically, the code is used to peruse a database of names, and extract certain ones, based on their roles. That part works fine. Occasionally, I want to exclude certain names, so this script is supposed to reference an exclusion file. This is where it goes south. I get no errors, so it's like it can "see" the file, but doesn't actually read it. Obviously, it would be helpful to learn Perl, so I know what I am doing, and understand it; but for the short term I'd like to just fix the problem that is occurring.
+I shall attempt to paste my code. I have no idea what OS it was originally written on, but was used on rhel 6, and is now on a rhel 7 server. My guess as to why it no longer works, is because the current version of perl is newer, and so the code doesn't quite work the same. I currently have 5.16.3, which isn't exactly new, either. I've tried debugging, but I get no errors, at least nothing that stands out as an error. 
+
+&lt;code&gt;#!/usr/bin/perl -w
+
+use strict;
+use Net::LDAP;
+use Time::Piece;
+
+if ($#ARGV &lt; 0)
+{
+  print STDERR "Usage: ./everyone.pl pwd\n";
+  exit 1;
+}
+
+my $host = "ldap1.server.com:1000";
+my $bindcred = $ARGV[0];
+my $binddn = "cn=Directory Manager";
+my $basedn = "ou=People,dc=server,dc=com";
+my $dateout = Time::Piece-&gt;new-&gt;strftime('%Y%m%d');
+my $infile = "output/$dateout/everyone.list";
+
+open(OUTFILE, "&gt;", $infile) or die("Can't open $infile.clean for output");
+
+my $ldap = Net::LDAP-&gt;new($host, timeout=&gt;2) ||
+  SYSerror("New", "Couldn't connect to $host");
+my $mesg = $ldap-&gt;bind("$binddn", password=&gt;"$bindcred");
+if ($mesg-&gt;is_error) {LDAPerror("Bind", $mesg);}
+
+my $result = $ldap-&gt;search(base=&gt;"$basedn", scope=&gt;"sub",
+  filter=&gt;"(&amp;(|(servercomBannerRole=Student)(servercomBannerRole=Faculty)(&amp;(servercomBannerRole=Staff)(!(servercomBannerRole=Villagestaff)))))",
+  attrs=&gt;["mail","cn"]);
+if ($result-&gt;is_error) {LDAPerror("Search", $result);}
+
+my @entries = $result-&gt;entries;
+
+
+my $mExcludingFile = "excludes/everyone.txt";
+my $includingFile = "includes/everyone.txt";
+my @mArray = ();
+my $mLine;
+my $mCountAll = 0;
+my $mCountOrig = 0;
+my $mCountAdd = 0;
+my $mCountDel = 0;
+
+open(ROFILE, "&lt;", $mExcludingFile) or die("Can't open $mExcludingFile exception file!");
+while(&lt;ROFILE&gt;) {
+  push(@mArray, $_);
+}
+close(ROFILE);
+
+my $mArrayNow;
+my $entry;
+
+foreach $entry(@entries) {
+      my $name = $entry-&gt;get_value("cn");
+      my $email = $entry-&gt;get_value("mail");
+      my $mLineNow = "$email $name\n";
+      my $mOkay = 1;
+      $mCountOrig++;
+
+      foreach $mArrayNow (@mArray) {
+        if ($mLineNow eq $mArrayNow) {
+          $mOkay = 0;
+        }
+
+      }
+
+      if ($mOkay == 1) {
+print OUTFILE $mLineNow;
+      } else {
+                $mCountDel++;
+      }
+}
+
+
+flock(OUTFILE, 8);
+close(OUTFILE);
+open(OUTFILE, "&gt;&gt;", $infile);
+open(EXCEPTF, "&lt;", $includingFile) or die("Can't open $includingFile inclusion file!");
+while(&lt;EXCEPTF&gt;) {
+        print OUTFILE $_;
+        $mCountAdd++;
+}
+flock(OUTFILE, 8);
+close(OUTFILE);
+close(EXCEPTF);
+
+
+$mCountAll = $mCountOrig + $mCountAdd - $mCountDel;
+
+print "Ok.. Generated ".$mCountAll." (".$mCountOrig." + ".$mCountAdd. " - ".$mCountDel.")\n";
+
+sub LDAPerror
+{
+  my ($from, $mesg) = @_;
+  print "Error: " . $mesg-&gt;code . " (" . $mesg-&gt;error_name . ")\n";
+  print $mesg-&gt;error_text . "\n";
+}
+
+sub SYSerror
+{
+  my ($from, $mesg) = @_;
+  print "Error: $mesg\n";
+  print "Source: $from\n";
+  die "$@";
+}&lt;/code&gt;</doctext>
+<thread id="11153448">
+<node id="11153450"/>
+<node id="11153451"/>
+<node id="11153472"/>
+</thread></node>

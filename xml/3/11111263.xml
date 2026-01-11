@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111263" title="Re: Date::Manip ParseRecur help needed" created="2020-01-09 16:37:44" updated="2020-01-09 16:37:44" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Personally I find understanding [mod://Date::Manip::Recur] patterns a bit too complicated for my taste. I prefer [mod://DateTime::Set] - more verbose of course, but IMHO better understandable and therefore more maintainable and reusable:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime;
+use DateTime::Set;
+
+my $fridays = DateTime::Set-&gt;from_recurrence(
+	start  =&gt; DateTime-&gt;new( year=&gt;2020, month=&gt;1, day=&gt;1 ),
+	before =&gt; DateTime-&gt;new( year=&gt;2020, month=&gt;6, day=&gt;1 ),
+	recurrence =&gt; sub {
+		my $dt = shift;
+		return $dt if $dt-&gt;is_infinite;
+		   if ( $dt-&gt;dow&gt;5 ) { $dt-&gt;add(days=&gt;12-$dt-&gt;dow) }
+		elsif ( $dt-&gt;dow&lt;5 ) { $dt-&gt;add(days=&gt; 5-$dt-&gt;dow) }
+		else  { $dt-&gt;add(weeks=&gt;1) }
+		die $dt unless $dt-&gt;dow==5;  # double-check
+		return $dt;
+	} );
+
+my $iter = $fridays-&gt;iterator;
+while ( my $dt = $iter-&gt;next ) {
+	print $dt-&gt;strftime("%A, %B %e %Y"), "\n";
+}
+
+__END__
+
+Friday, January  3 2020
+Friday, January 10 2020
+Friday, January 17 2020
+Friday, January 24 2020
+Friday, January 31 2020
+Friday, February  7 2020
+Friday, February 14 2020
+Friday, February 21 2020
+Friday, February 28 2020
+Friday, March  6 2020
+Friday, March 13 2020
+Friday, March 20 2020
+Friday, March 27 2020
+Friday, April  3 2020
+Friday, April 10 2020
+Friday, April 17 2020
+Friday, April 24 2020
+Friday, May  1 2020
+Friday, May  8 2020
+Friday, May 15 2020
+Friday, May 22 2020
+Friday, May 29 2020
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11111259</root_node>
+<parent_node field_name="parent_node">11111259</parent_node>
+<thread id="11111259">
+<node id="11111262"><node id="11111333"><node id="11111334"/>
+</node>
+</node>
+<node id="11111263"/>
+<node id="11111290"/>
+</thread></node>

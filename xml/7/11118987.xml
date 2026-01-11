@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118987" title="Re^5: Is there a problem with using barewords as filehandles ?" created="2020-07-06 21:43:04" updated="2020-07-06 21:43:04" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1149436">jcb</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;bareword filehandles are not protected against typos&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;This is not entirely correct.  While a typo in a bareword filehandle will not produce a compile-time error, it &lt;b&gt;will&lt;/b&gt; produce a warning at run-time about using an unopened filehandle, and a unique typo will produce a &lt;b&gt;compile-time&lt;/b&gt; warning about a name "used only once: possible typo".&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;they clash with package and &lt;c&gt;sub&lt;/c&gt; names ... There is no remedy for this other than "being careful"&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;I strongly disagree with that statement; the standard conventions in Perl are to make bareword filehandles ALL UPPERCASE, while package names are MixedCase.  Bareword filehandles do not clash with &lt;c&gt;sub&lt;/c&gt; names at all:  they are distinguished by syntax in all reasonable cases and are separate &lt;c&gt;GV&lt;/c&gt; slots.  The same name is allowed to have both a &lt;tt&gt;CODE&lt;/tt&gt; value and an &lt;tt&gt;IO&lt;/tt&gt; value in Perl.&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;While not wrong, this is only true under certain circumstances: if there are multiple packages in the same file, and those packages are in the same lexical scope, and the user has similarly named lexicals and makes a typo that happens to reference a previously declared lexical.&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;That was not specific to filehandles, but applies to file-scope lexical variables in general.  A file-scope lexical is in-scope for the rest of the file.  If you define multiple packages in the same file after declaring a file-scope lexical, they will all invisibly share that value.  A bareword filehandle is in-scope for the rest of the containing package, possibly also the containing file, since the parser takes its use as a hint.  &lt;b&gt;These scopes have the same extent.&lt;/b&gt;  A lexical declared at file-scope &lt;b&gt;is indistinguishable&lt;/b&gt; from a global variable in good practice.  (Declaring multiple packages in the same file is not good practice unless the "inner" packages are very closely related to the "main" package in the file.)&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;i&gt;I find this insistence quite misleading&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;I find similar insistences that a lexical declared at file-scope is somehow not effectively a global variable merely because it is not in the symbol table similarly misleading.  File-scope cuts across all other structures in the same file defined after a declaration.  &lt;b&gt;All&lt;/b&gt; following &lt;c&gt;sub&lt;/c&gt;s close over file-scope lexicals.  Lexical variables declared at file scope have the same risks as global variables (&lt;c&gt;use strict&lt;/c&gt; / &lt;c&gt;use vars&lt;/c&gt;) and need to be recognized as such.  This is not limited to filehandles, but it is often touted as a problem with bareword filehandles.  At file-scope, lexicals have &lt;i&gt;the same problem&lt;/i&gt;.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11118753</root_node>
+<parent_node field_name="parent_node">11118956</parent_node>
+<thread id="11118753">
+<node id="11118754"><node id="11118757"><node id="11118759"/>
+<node id="11119517"><node id="11119519"><node id="11119529"/>
+</node>
+</node>
+</node>
+<node id="11118760"><node id="11118762"/>
+</node>
+<node id="11118804"/>
+</node>
+<node id="11118755"/>
+<node id="11118756"><node id="11118764"/>
+</node>
+<node id="11118758"><node id="11118785"/>
+</node>
+<node id="11118770"><node id="11118777"/>
+</node>
+<node id="11118779"><node id="11118942"><node id="11118947"><node id="11118956"><node id="11118987"><node id="11118995"><node id="11119016"><node id="11119017"><node id="11119018"><node id="11119029"><node id="11119030"><node id="11119033"><node id="11119072"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11119049"><node id="11119050"><node id="11119052"/>
+</node>
+</node>
+</node>
+<node id="11119019"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11118988"/>
+</node>
+</node>
+</node>
+<node id="11118801"/>
+<node id="11119477"><node id="11119480"><node id="11119506"><node id="11119513"/>
+</node>
+</node>
+<node id="11119507"/>
+</node>
+</thread></node>

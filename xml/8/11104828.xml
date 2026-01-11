@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11104828" title="Re^12: Text::CSV encoding parse()" created="2019-08-21 14:12:20" updated="2019-08-21 14:12:20" _doctext_mode="lenient"><type id="11">note</type>
+<author id="845976">slugger415</author>
+<doctext field_name="doctext">&lt;p&gt;Hi @haukex sorry I can't give you the whole script due to security and privacy concerns, but I can give you the salient parts of it.&lt;/p&gt;
+&lt;code&gt;
+#execute the query using Aginity Workbench; output saved to flat filfe
+my($res) = system($cmd);
+
+### read the output
+my(@urls);
+my($header);
+open my $fh, "&lt;:encoding(utf8)", "$resultsFile" || die("cannot open results file $resultsFile for reading.\n cmd: $cmd");
+my($c)=0;   # just here for counting
+my($d)=0;   # just here for counting
+while(&lt;$fh&gt;){
+ $c++;
+ if($c == 1) {	# get header row
+  $header = $_;
+ }
+ if ($_ =~ /\/search\//){
+  push(@urls, $_);
+ }
+ else{
+  $d++;
+ }
+}
+close($fh);
+
+# sort @urls based on the search string 
+# e.g. https://www.ibm.com/support/knowledgecenter/es/search/¿Cuales son las partes de una cadena de conexión??scope=SSGU8G_12.1.0|https://www.ibm.com/support/knowledgecenter/es/SSGU8G_12.1.0/com.ibm.jdbc_pg.doc/ids_jdbc_011.htm|0|1|1|0
+
+my @sorted_urls =
+  map  { $_-&gt;[0] }
+  sort { $a-&gt;[1] cmp $b-&gt;[1] }
+  map  { m|/search/\s*([^\?]+)\?|; [$_, $1] }
+  @urls;
+
+# parse and print
+print $q-&gt;header(-charset    =&gt; 'utf-8');
+print $q-&gt;start_html( -title      =&gt; 'SearchME',
+				-style=&gt;{'src'=&gt;$stylesheet});
+
+print $q-&gt;start_table();
+foreach my $row (@sorted_urls){
+# print TEMP $row;
+ $csv-&gt;parse($row);
+ print "&lt;tr&gt;";
+ $count++;
+
+
+ my @els = $csv-&gt;fields;
+
+ my(@splits) = split('\|',$row);
+
+ $els[0] =~ /\/search\/(.+)\?scope=/i;
+ my($term) = $1;
+
+ my($link) = $els[0];
+
+ print "&lt;td&gt;";
+ # print $link;
+ print $q-&gt;a({-href=&gt;$link,-target=&gt;'_blank'},$term);
+ print "&lt;/td&gt;";
+
+# print other @fields here inside &lt;td&gt;&lt;/td&gt;
+}
+print $q-&gt;end_table,
+$q-&gt;end_html;
+&lt;/code&gt;
+&lt;p&gt;oh and I reinstalled both modules.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11104403</root_node>
+<parent_node field_name="parent_node">11104759</parent_node>
+<thread id="11104403">
+<node id="11104405"><node id="11104407"><node id="11104415"><node id="11104468"><node id="11104476"><node id="11104482"/>
+</node>
+<node id="11104478"><node id="11104489"><node id="11104494"/>
+<node id="11104502"><node id="11104507"/>
+<node id="11104508"/>
+<node id="11104509"><node id="11104512"/>
+</node>
+<node id="11104578"><node id="11104604"><node id="11104749"><node id="11104759"><node id="11104828"><node id="11104832"><node id="11104835"><node id="11104847"><node id="11104867"><node id="11104896"><node id="11104911"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11104764"><node id="11104827"><node id="11104845"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11104428"><node id="11104470"><node id="11104493"/>
+<node id="11104496"><node id="11104527"><node id="11104537"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

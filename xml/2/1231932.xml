@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1231932" title="Re^4: backticks and system()" created="2019-03-31 18:26:43" updated="2019-03-31 18:26:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;One last question though. How do you know about all these rules and problems that they come up on all these commands?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Mostly it was a detailed reading of [doc://system], [doc://exec], [doc://open], [doc://perlop#qx/_STRING_/|&lt;c&gt;qx//&lt;/c&gt; in perlop], the relevant parts of [doc://perlipc], [man://execvp;3|execvp(3)], a few bits from [doc://perlport], as well as posts such as [afoken]'s &lt;i&gt;[id://1205217]&lt;/i&gt; and e.g. [id://1199200|this one] by [salva], plus some additional information that was linked to from those docs. I also recall testing things out with e.g. [man://strace] and looking at the various modules' code while writing [id://1180578|this node]. &lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Correct me if I am wrong, but qw explicitly converts the strings inside the parenthesis to a list of strings right? I am confused about this part. If I come across a similar case I should explicitly define the list of commands or I can use qw?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, basically &lt;c&gt;qw//&lt;/c&gt; splits on whitespace, so the two forms you showed in your node "&lt;c&gt;my @args = qw(Runbatch.exe -j dpsgl -r dpstst);&lt;/c&gt;" and "&lt;c&gt;my @args = ('Runbatch.exe', '-j', 'dpsgl', '-r', 'dpstst');&lt;/c&gt;" are identical and the "Not Recommended" / "Recommended" doesn't really apply.&lt;/p&gt;
+&lt;p&gt;Note that &lt;c&gt;qw//&lt;/c&gt; has nothing to do with &lt;c&gt;qx//&lt;/c&gt;, they are two completely different operators that just happen to have similar names. &lt;c&gt;qx//&lt;/c&gt; treats its argument as a single string, and you get the whitespace handling from the shell, so the same thing that happens at the command line when you type a command - this also means that whitespace can be quoted*, e.g. &lt;c&gt;qx/echo "foo bar"/&lt;/c&gt; is exactly like typing &lt;c&gt;echo "foo bar"&lt;/c&gt; at the command prompt and would pass a single string &lt;c&gt;"foo bar"&lt;/c&gt; to the command &lt;c&gt;echo&lt;/c&gt; (assuming a "normal" shell). &lt;c&gt;qw//&lt;/c&gt; just splits on whitespace, regardless of any quoting - &lt;c&gt;qw/echo "foo bar"/&lt;/c&gt; returns a list of three elements, &lt;c&gt;('echo', '"foo', 'bar"')&lt;/c&gt;. See also [doc://perlop#Quote-Like-Operators]. Therefore, in e.g. &lt;c&gt;system(qw/echo "foo bar"/)&lt;/c&gt;, the shell would be avoided because [doc://system] was passed more than one argument, and the &lt;c&gt;echo&lt;/c&gt; command would receive &lt;i&gt;two&lt;/i&gt; arguments instead of one.&lt;/p&gt;
+&lt;p&gt;* However, getting that quoting right can get very complicated if there are special characters in the strings, which is why modules like [mod://ShellQuote::Any] are a better approach, or, IMHO even better, just avoid the shell in the first place.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1231823</root_node>
+<parent_node field_name="parent_node">1231919</parent_node>
+<thread id="1231823">
+<node id="1231829"/>
+<node id="1231839"><node id="1231865"><node id="1231900"><node id="1231920"/>
+</node>
+<node id="1231919"><node id="1231932"><node id="1231935"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

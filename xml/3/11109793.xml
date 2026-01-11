@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109793" title="Re: Best practices for local libraries" created="2019-12-07 04:49:37" updated="2019-12-07 04:49:37" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;some of my files conflicted with system ones&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Of the various things you wrote, I'd identify this as a central issue. I would suggest putting all your modules in their own namespace, for example &lt;c&gt;MyProject::&lt;/c&gt; or &lt;c&gt;MyCompany::&lt;/c&gt; - see also [https://pause.perl.org/pause/query?ACTION=pause_namingmodules|On The Naming of Modules], in particular, if these are modules that are always going to remain local and that you're not going to put on CPAN, you might also consider &lt;c&gt;Local::&lt;/c&gt;.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;And is there a standard place (in my home directory) to put the directories containing the library files?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;There's More Than One Way To Do It... since you say it's just per-user, then really any place in your &lt;c&gt;$HOME&lt;/c&gt; works, and using &lt;c&gt;PERL5LIB&lt;/c&gt; set up in a &lt;c&gt;~/.bashrc&lt;/c&gt; or &lt;c&gt;~/.profile&lt;/c&gt; is fine (keeping in mind that you might want to append to the environment variables it if they're already set from elsewhere).&lt;/p&gt;
+&lt;p&gt;You might have a look at [mod://local::lib], which will add &lt;c&gt;~/perl5/lib/perl5&lt;/c&gt; to &lt;c&gt;PERL5LIB&lt;/c&gt; by default. However, personally, I consider &lt;c&gt;~/perl5/lib&lt;/c&gt; a directory I can just clobber anytime so I can re-install everything from CPAN - so in fact, you might want to consider setting up a really basic &lt;c&gt;Makefile.PL&lt;/c&gt; for your modules, such that you can make use of the default Perl installation mechanisms. See [doc://ExtUtils::MakeMaker] - for example, consider developing your modules in some directory like say &lt;c&gt;~/dev/MyModule&lt;/c&gt; (which you can add to a version control system), which could have a directory layout like:&lt;/p&gt;
+&lt;c&gt;
+~/dev/MyModule/Makefile.PL
+~/dev/MyModule/lib/Local/Math/EM.pm    # Local::Math::EM
+~/dev/MyModule/lib/Local/Math/Levy.pm  # Local::Math::Levy
+~/dev/MyModule/lib/Local/Math/Log2.pm  # Local::Math::Log2
+~/dev/MyModule/bin/script.pl
+~/dev/MyModule/t/*.t                   # (optional but recommended)
+&lt;/c&gt;
+&lt;p&gt;And a &lt;c&gt;Makefile.PL&lt;/c&gt; as simple as:&lt;/p&gt;
+&lt;c&gt;
+use ExtUtils::MakeMaker;
+WriteMakefile(
+	NAME      =&gt; 'Local::Math',
+	VERSION   =&gt; '0.01',
+	EXE_FILES =&gt; [ 'bin/script.pl' ],
+);
+&lt;/c&gt;
+&lt;p&gt;Then, in &lt;c&gt;~/dev/MyModule/&lt;/c&gt;, you can just do the usual &lt;c&gt;perl Makefile.PL&lt;/c&gt;, &lt;c&gt;make&lt;/c&gt;, &lt;c&gt;make test&lt;/c&gt;, &lt;c&gt;make install&lt;/c&gt;, and with [mod://local::lib] set up properly, it'll all just work; plus it makes it easy for you to expand your "distribution" with more tests, and it'll be easier to grow into a "more proper" distribution, like declaring dependencies and adding more tests. Also distributing to other machines will be as simple as:&lt;/p&gt;
+&lt;c&gt;
+make distclean    # if you've previously run "perl Makefile.PL"
+perl Makefile.PL
+make manifest
+make dist         # will create a Local-Math-0.01.tar.gz for you!
+&lt;/c&gt;
+&lt;p&gt;I think your idea of keeping your configuration files separately is a good one, since that's not something you'd want to keep in a "distribution" like the above. You could also have a look at the &lt;c&gt;Config::&lt;/c&gt; namespace on CPAN for plenty of pre-made solutions.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;A related question is where to put executable perl programs that are specific to my login. Is there a "bin" directory position within my home directory that's seen as standard or typical?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;&lt;c&gt;~/bin&lt;/c&gt; is added to &lt;c&gt;PATH&lt;/c&gt; as part of the default &lt;c&gt;~/.profile&lt;/c&gt; on Debian-based systems, that's usually what I use for site-local stuff (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; I probably should have said "user-local" stuff). Or, [mod://local::lib] sets up &lt;c&gt;~/perl5/bin&lt;/c&gt;, which with the above suggestion will also "just work".&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11109789</root_node>
+<parent_node field_name="parent_node">11109789</parent_node>
+<thread id="11109789">
+<node id="11109793"/>
+<node id="11109796"><node id="11109797"><node id="11109798"/>
+</node>
+</node>
+<node id="11109817"/>
+<node id="11109828"><node id="11109835"/>
+</node>
+<node id="11109836"/>
+<node id="11109893"/>
+</thread></node>

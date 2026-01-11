@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11127588" title="Re: replacing equal to operator" created="2021-01-28 13:46:51" updated="2021-01-28 13:46:51" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You don't need all those double quotes in the regexes. On the left-hand side, they're being taken literally, so just remove them, and on the right-hand side, you need them because of the &lt;c&gt;/e&lt;/c&gt; modifier, but since you're not actually making use of that, get rid of the &lt;c&gt;/e&lt;/c&gt; modifier and the double quotes on the right-hand side. In other words, &lt;c&gt;s/=/="/&lt;/c&gt; and &lt;c&gt;s/\n/"\n/&lt;/c&gt; (or &lt;c&gt;s/$/"/&lt;/c&gt; for the latter). No need for the &lt;c&gt;/gs&lt;/c&gt; modifiers either.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;However,&lt;/i&gt; the solution as you've currently written it seems brittle to me: In particular, it'll replace &lt;i&gt;any&lt;/i&gt; equals sign. Personally, I'd either see if there is an existing module to parse whatever file format this is, and if there isn't, I'd try to parse the values myself, maybe something like the following. Note how you can extend the regex to do more, like for example I've designed it so that it won't add double quotes if there are already double quotes around the string, and reject the input if those double-quotes are unbalanced.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More;
+
+my $string=qq{parameter=TO_DATE('1900-01-01','YYYY-MM-DD')\n};
+
+my $REGEX = qr{^ (\w+) = (?| "(.+)" | ( (?!").+(?&lt;!") ) ) (\n|\z) }x;
+if ( $string =~ $REGEX ) { $string = qq{$1="$2"$3} }
+else { die "failed to parse $string" }
+
+is $string, qq{parameter="TO_DATE('1900-01-01','YYYY-MM-DD')"\n};
+
+done_testing;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11127585</root_node>
+<parent_node field_name="parent_node">11127585</parent_node>
+<thread id="11127585">
+<node id="11127586"/>
+<node id="11127587"><node id="11127591"/>
+</node>
+<node id="11127588"><node id="11127593"/>
+</node>
+<node id="11127589"><node id="11127590"/>
+</node>
+<node id="11127592"><node id="11127595"/>
+<node id="11127602"><node id="11127642"><node id="11127660"/>
+</node>
+</node>
+</node>
+</thread></node>

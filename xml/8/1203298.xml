@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203298" title="Re: list two paths files into one array (updated)" created="2017-11-13 15:44:00" updated="2017-11-13 15:44:00" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The built-in [doc://glob] splits its arguments on whitespace, so one might think of this as a possibility, but especially since you seem to be on Windows, I wouldn't be surprised if the pathnames contain spaces. I would recommend &lt;c&gt;bsd_glob&lt;/c&gt; from [doc://File::Glob] instead, which does not split on whitespace:&lt;/p&gt;
+&lt;c&gt;
+use File::Glob 'bsd_glob';
+my @files = ( bsd_glob("$Dir1/*"), bsd_glob("$Dir2/*") );
+&lt;/c&gt;
+&lt;p&gt;You can also &lt;c&gt;use File::Glob ':bsd_glob';&lt;/c&gt; to override the builtin &lt;c&gt;glob&lt;/c&gt; (except on really old versions of Perl). Another possible caveat of [doc://glob] to be aware of is that it does not list files beginning with a dot by default.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Another possibility might be: &lt;c&gt;my @files = bsd_glob("{$Dir1,$Dir2}/*");&lt;/c&gt; &lt;small&gt;&lt;i&gt;Also a few edits to add a bit of info.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; An even bigger possible caveat that should be mentioned is that of course all this assumes that &lt;c&gt;$Dir1&lt;/c&gt; and &lt;c&gt;$Dir2&lt;/c&gt; don't contain any characters that have special meaning to [doc://glob]. If that is the case, I'd recommend other methods like [mod://Path::Class::Dir]'s &lt;c&gt;children&lt;/c&gt; method (this will include filenames beginning with a dot, use &lt;c&gt;-&gt;children(no_hidden =&gt; 1)&lt;/c&gt; to suppress them):&lt;/p&gt;
+&lt;c&gt;
+use Path::Class qw/dir/;
+my @files = ( dir($Dir1)-&gt;children, dir($Dir2)-&gt;children );
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1203297</root_node>
+<parent_node field_name="parent_node">1203297</parent_node>
+<thread id="1203297">
+<node id="1203298"><node id="1203307"/>
+</node>
+<node id="1203305"/>
+<node id="1203314"><node id="1203318"><node id="1203337"/>
+</node>
+</node>
+<node id="1203315"/>
+</thread></node>

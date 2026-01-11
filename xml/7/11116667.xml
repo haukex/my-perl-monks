@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116667" title="Re: Partitioning a set of strings by regular expressions" created="2020-05-11 08:46:48" updated="2020-05-11 08:46:48" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Although these modules don't solve the problem you're asking directly, maybe they are a starting point: [mod://Regexp::Trie], [mod://Regexp::Assemble], [mod://Regex::PreSuf]. Note that in your problem statement, using the &lt;c&gt;a&lt;/c&gt; strings as an example, you're saying that you're looking for either 1, 2, 5, or 7 consecutive &lt;c&gt;a&lt;/c&gt;'s, but &lt;c&gt;a+&lt;/c&gt; actually matches more than that. Note how these optimizers are taking the number of &lt;c&gt;a&lt;/c&gt;'s into account.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my @strs = qw/a b c aa bb ccc aaaaa bbb cccccc aaaaaaa bbbb ccccccc/;
+
+use Regexp::Trie;
+my $rt = Regexp::Trie-&gt;new;
+$rt-&gt;add($_) for @strs;
+print $rt-&gt;regexp, "\n";
+# (?^:(?:a(?:a(?:aaa(?:aa)?)?)?|b(?:b(?:bb?)?)?|c(?:cc(?:cccc?)?)?))
+
+use Regexp::Assemble;
+my $ra = Regexp::Assemble-&gt;new;
+$ra-&gt;add($_) for @strs;
+print $ra-&gt;re, "\n";
+# (?^:(?:a(?:a(?:(?:aa)?aaa)?)?|c(?:cc(?:c?ccc)?)?|b(?:b(?:b?b)?)?))
+
+use Regex::PreSuf;
+my $re = presuf(@strs);
+print $re, "\n";
+# (?:aa(?:aaa(?:aa)?)?|bb(?:bb|b)?|ccc(?:cccc?)?|[abc])
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11116666</root_node>
+<parent_node field_name="parent_node">11116666</parent_node>
+<thread id="11116666">
+<node id="11116667"><node id="11116668"/>
+</node>
+<node id="11116669"><node id="11116670"><node id="11116683"><node id="11116718"><node id="11116719"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11116675"><node id="11116717"><node id="11116722"/>
+</node>
+</node>
+<node id="11116690"/>
+<node id="11116720"/>
+</thread></node>

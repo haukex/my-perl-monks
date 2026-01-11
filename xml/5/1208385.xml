@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1208385" title="Re^3: Replace a Hex Value in Column" created="2018-02-03 04:12:33" updated="2018-02-03 04:12:33" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;But I am dealing with piped traffic so STDIN will be the input and lines should be written one by one&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;&lt;c&gt;STDIN&lt;/c&gt; and &lt;c&gt;STDOUT&lt;/c&gt; are filehandles, like &lt;c&gt;$ifh&lt;/c&gt; and &lt;c&gt;$ofh&lt;/c&gt; in my code. Here, I'm using [doc://select] to get &lt;c&gt;STDOUT&lt;/c&gt; and [doc://perlvar#ARGV] to get Perl's magic command-line argument filehandle, which reads from &lt;c&gt;STDIN&lt;/c&gt; when no files are specified on the command line. I've assumed you don't want some of the binary data from [id://1208380|here], but note that this still doesn't strip all of it out.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Text::CSV; # also install Text::CSV_XS for speed
+
+my $csv = Text::CSV-&gt;new({ binary=&gt;1, auto_diag=&gt;2, escape_char=&gt;'\\',
+	eol=&gt;$/, quote_char=&gt;'"', sep_char=&gt;";", always_quote=&gt;1 });
+while ( my $row = $csv-&gt;getline(*ARGV) ) {
+	$row-&gt;[5] = pack '(H2)*', split /:/, $row-&gt;[5];
+	$row-&gt;[5] =~ s/\A\x19\x68\x09\x24\x00+|\x00+\z//g;
+	$csv-&gt;print(select, $row);
+}
+$csv-&gt;eof or $csv-&gt;error_diag;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1208313</root_node>
+<parent_node field_name="parent_node">1208383</parent_node>
+<thread id="1208313">
+<node id="1208314"><node id="1208381"/>
+</node>
+<node id="1208317"><node id="1208380"/>
+</node>
+<node id="1208318"><node id="1208383"><node id="1208385"><node id="1208386"><node id="1208387"/>
+</node>
+<node id="1208389"/>
+<node id="1208391"/>
+</node>
+</node>
+</node>
+<node id="1208336"><node id="1208349"><node id="1208402"/>
+</node>
+<node id="1208382"/>
+</node>
+</thread></node>

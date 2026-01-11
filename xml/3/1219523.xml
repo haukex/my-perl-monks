@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1219523" title="redacting from config hash" created="2018-07-30 21:45:26" updated="2018-07-30 21:45:26" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Monks, as I continue my headlong assault at friarhood, I'm trying to write up a meditation about [Path::Tiny], which I'm re-writing my previous scripts with and writing new code with. The task before me is to bundle up my template and get in online, without publishing any sensitive data. I have no perfect divorce of content and data, but I have confined the stuff I don't want all over the net to one hash in config2.pm . The first thing I intend to do is to make a copy of config2.pm in a temporary directory without the values in the hash.
+&lt;/p&gt;
+
+&lt;p&gt;Can you "use" a lexical variable? What follow are the driver script, output and then utils2.pm, where redact() is to reside.&lt;/p&gt;
+
+&lt;readmore&gt;&lt;c&gt;
+
+#!/usr/bin/perl -w
+use strict;
+use 5.010;
+use lib "template_stuff";
+use utils1;
+use utils2;
+use utf8;
+use open qw/:std :utf8/;
+use Path::Tiny;
+
+my $current = Path::Tiny-&gt;cwd; 
+say "current is $current";
+
+my $return = redact("config2");
+
+__END__ 
+
+current is /home/bob/1.scripts/pages/1.qy
+temp dir is /tmp/backup_DEtSio
+scratch_file is /tmp/backup_DEtSio/batch_01/1.manifest.txt
+parent is /tmp/backup_DEtSio/batch_01
+/tmp/backup_DEtSio
+$VAR1 = {
+          'my_sftp' =&gt; {
+                         'username' =&gt; '',
+                         'password' =&gt; '',
+                         'domain' =&gt; ''
+                       },
+          'my_github' =&gt; {
+                           'password' =&gt; '',
+                           'email' =&gt; ''
+                         }
+        };
+&lt;/c&gt;&lt;/readmore&gt;
+&lt;c&gt;package utils2;
+require Exporter;
+
+use utils1;
+
+our @ISA = qw(Exporter);
+our @EXPORT = qw( redact);
+
+sub redact{
+use strict;
+use warnings;
+use 5.010;
+use Path::Tiny;
+
+my $file = shift;
+#use $file;  resulted in error
+use config2;
+
+
+my $sub_hash = "my_github";
+my $email = $config{$sub_hash}-&gt;{'email'};
+my $password = $config{$sub_hash}-&gt;{'password'};
+
+my $tempdir = Path::Tiny-&gt;tempdir('backup_XXXXXX');
+say "temp dir is $tempdir"; 
+
+my $scratch_file = $tempdir-&gt;child('batch_01', '1.manifest.txt')-&gt;touchpath;
+say "scratch_file is $scratch_file";
+my $parent = $scratch_file-&gt;parent;
+say "parent is $parent";
+ 
+
+chdir $tempdir unless $tempdir-&gt;subsumes(Path::Tiny-&gt;cwd);
+system("pwd");
+
+
+use Data::Dumper;
+print Dumper \%config;
+my $b = "dummy";
+return $b;
+}
+
+1;
+
+&lt;/c&gt;
+&lt;p&gt;Obviously, I edited out the values with the delete key, and I'd like them to simply show "redacted". There are some bad ideas chasing some good ones here. Eventually, I'd like to have an entire directory tree populated in the temp dir and then compressed by some means to a single file. If I'm going to port to windows, what is a good choice for compression software? Thanks for your comment.&lt;/p&gt;</doctext>
+<thread id="1219523">
+<node id="1219530"><node id="1219540"/>
+<node id="1219612"><node id="1219636"><node id="1219747"><node id="1219776"><node id="1219963"/>
+</node>
+<node id="1219777"><node id="1219962"/>
+</node>
+</node>
+</node>
+<node id="1219643"><node id="1219681"/>
+</node>
+</node>
+</node>
+</thread></node>

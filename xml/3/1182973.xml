@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1182973" title="Converting Uniprot File to a Fasta File in Perl" created="2017-02-27 11:09:32" updated="2017-02-27 11:09:32" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1182970">pearllearner315</author>
+<doctext field_name="doctext">Hello monks,
+
+I have an uniprot file that I need to run through and parse certain lines. Those certain lines have values that I need to construct a fasta format file. Here is an example uniprot file:
+
+&lt;code&gt;
+
+ID   ARF1_PLAFA              Reviewed;         181 AA.
+AC   Q94650; O02502; O02593;
+DT   15-JUL-1998, integrated into UniProtKB/Swiss-Prot.
+DT   23-JAN-2007, sequence version 3.
+DT   25-NOV-2008, entry version 52.
+DE   RecName: Full=ADP-ribosylation factor 1;
+GN   Name=ARF1; Synonyms=ARF, PLARF;
+OS   Plasmodium falciparum.
+OC   Eukaryota; Alveolata; Apicomplexa; Aconoidasida; Haemosporida;
+OC   Plasmodium; Plasmodium (Laverania).
+OX   NCBI_TaxID=5833;
+RN   [1]
+RP   NUCLEOTIDE SEQUENCE [GENOMIC DNA].
+RC   STRAIN=T9/96; TISSUE=Blood;
+RX   MEDLINE=97112480; PubMed=8954160;
+RX   DOI=10.1111/j.1432-1033.1996.0104r.x;
+RA   Stafford W.H., Stockley R.W., Ludbrook S.B., Holder A.A.;
+RT   "Isolation, expression and characterization of the gene for an AD
++P-
+RT   ribosylation factor from the human malaria parasite, Plasmodium
+RT   falciparum.";
+RL   Eur. J. Biochem. 242:104-113(1996).
+RN   [2]
+RP   NUCLEOTIDE SEQUENCE [MRNA].
+RX   MEDLINE=97237566; PubMed=9084044; DOI=10.1016/S0166-6851(96)02803
++-4;
+RA   Truong R.M., Francis S.E., Chakrabarti D., Goldberg D.E.;
+RT   "Cloning and characterization of Plasmodium falciparum ADP-
+RT   ribosylation factor and factor-like genes.";
+RL   Mol. Biochem. Parasitol. 84:247-253(1997).
+CC   -!- FUNCTION: GTP-binding protein that functions as an allosteric
+CC       activator of the cholera toxin catalytic subunit, an ADP-
+CC       ribosyltransferase. Involved in protein trafficking; may modu
++late
+CC       vesicle budding and uncoating within the Golgi apparatus (By
+CC       similarity).
+CC   -!- SUBCELLULAR LOCATION: Golgi apparatus (By similarity).
+CC   -!- SIMILARITY: Belongs to the small GTPase superfamily. Arf fami
++ly.
+CC   -----------------------------------------------------------------
++------
+CC   Copyrighted by the UniProt Consortium, see http://www.uniprot.org
++/terms
+CC   Distributed under the Creative Commons Attribution-NoDerivs Licen
++se
+CC   -----------------------------------------------------------------
++------
+DR   EMBL; Z80359; CAB02498.1; -; Genomic_DNA.
+DR   EMBL; U57370; AAB63304.1; -; mRNA.
+DR   HSSP; P32889; 1RRF.
+DR   SMR; Q94650; 6-179.
+DR   GO; GO:0005794; C:Golgi apparatus; IEA:UniProtKB-KW.
+DR   GO; GO:0005525; F:GTP binding; IEA:InterPro.
+DR   GO; GO:0015031; P:protein transport; IEA:UniProtKB-KW.
+DR   GO; GO:0007264; P:small GTPase mediated signal transduction; IEA:
++InterPro.
+DR   GO; GO:0016192; P:vesicle-mediated transport; IEA:UniProtKB-KW.
+DR   InterPro; IPR006688; ARF.
+DR   InterPro; IPR006689; ARF/SAR.
+DR   InterPro; IPR001806; Ras_trnsfrmng.
+DR   InterPro; IPR005225; Small_GTP_bd.
+DR   PANTHER; PTHR11711; ARF/SAR; 1.
+DR   Pfam; PF00025; Arf; 1.
+DR   PRINTS; PR00449; RASTRNSFRMNG.
+DR   PRINTS; PR00328; SAR1GTPBP.
+DR   SMART; SM00177; ARF; 1.
+DR   TIGRFAMs; TIGR00231; small_GTP; 1.
+DR   PROSITE; PS01019; ARF; 1.
+PE   2: Evidence at transcript level;
+KW   ER-Golgi transport; Golgi apparatus; GTP-binding; Lipoprotein;
+KW   Myristate; Nucleotide-binding; Protein transport; Transport.
+FT   INIT_MET      1      1       Removed (Potential).
+FT   CHAIN         2    181       ADP-ribosylation factor 1.
+FT                                /FTId=PRO_0000207447.
+FT   NP_BIND      24     31       GTP (By similarity).
+FT   NP_BIND      67     71       GTP (By similarity).
+FT   NP_BIND     126    129       GTP (By similarity).
+FT   LIPID         2      2       N-myristoyl glycine (Potential).
+SQ   SEQUENCE   181 AA;  20912 MW;  18013B069BEA2413 CRC64;
+ MGLYVSRLFN RLFQKKDVRI LMVGLDAAGK TTILYKVKLG EVVTTIPTIG FNVETVEFRN
+ ISFTVWDVGG QDKIRPLWRH YYSNTDGLIF VVDSNDRERI DDAREELHRM INEEELKDAI
+ ILVFANKQDL PNAMSAAEVT EKLHLNTIRE RNWFIQSTCA TRGDGLYEGF DWLTTHLNNA
+K &lt;/code&gt;
+
+I need to use regex and select the values of the "AC" line, "OS" line, "OX" line, "ID" line, "GN" line, "SQ" line and construct the fasta format which should look like this. The first line of the fasta format consists of the values from the line headings parsed from the uniprot file and are separated by "|". Here is an example of a fasta file:
+
+&lt;code&gt; 
+&gt;NM_012514 | Rattus norvegicus | breast cancer 1 (Brca1) | mRNA
+ CGCTGGTGCAACTCGAAGACCTATCTCCTTCCCGGGGGGGCTTCTCCGGCATTTAGGCCT
+ CGGCGTTTGGAAGTACGGAGGTTTTTCTCGGAAGAAAGTTCACTGGAAGTGGAAGAAATG
+ GATTTATCTGCTGTTCGAATTCAAGAAGTACAAAATGTCCTTCATGCTATGCAGAAAATC
+ TTGGAGTGTCCAATCTGTTTGGAACTGATCAAAGAACCGGTTTCCACACAGTGCGACCAC
+ ATATTTTGCAAATTTTGTATGCTGAAACTCCTTAACCAGAAGAAAGGACCTTCCCAGTGT
+ CCTTTGTGTAAGAATGAGATAACCAAAAGGAGCCTACAAGGAAGTGCAAGG &lt;/code&gt;
+
+some code I have so far:
+
+&lt;code&gt; 
+#!/usr/bin/perl
+use warnings;
+use strict;
+
+unless (open(UNIPROT, "&lt;", "uniprotfile")) {
+ die "Unable to open uniprot file", $!;
+}
+
+while (&lt;UNIPROT&gt;) {
+ my $lines = $_; 
+ if ($lines =~ /^AC\s+(.*)\;|^OS\s+(.*)|^OX\s+(.*)|^ID\s+(.*)|^GN\s+(.*)/)
+    print  $1, $2, $3, $4, $5, "\n"; 
+ }
+&lt;/code&gt;
+
+I just printed $1, $2, $3, $4, and $5 just to see if i was able to capture the values that the regex matched. However I keep getting this output when I try printing:
+
+&lt;code&gt;
+
+Use of uninitialized value $1 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 1.
+Use of uninitialized value $2 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 1.
+Use of uninitialized value $3 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 1.
+Use of uninitialized value $5 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 1.
+CERU_HUMAN     STANDARD;      PRT;  1065 AA.
+Use of uninitialized value $2 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 2.
+Use of uninitialized value $3 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 2.
+Use of uninitialized value $4 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 2.
+Use of uninitialized value $5 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 2.
+P00450; Q14063
+Use of uninitialized value $1 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 7.
+Use of uninitialized value $2 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 7.
+Use of uninitialized value $3 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 7.
+Use of uninitialized value $4 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 7.
+CP.
+Use of uninitialized value $1 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 8.
+Use of uninitialized value $3 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 8.
+Use of uninitialized value $4 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 8.
+Use of uninitialized value $5 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 8.
+Homo sapiens (Human).
+Use of uninitialized value $1 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 11.
+Use of uninitialized value $2 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 11.
+Use of uninitialized value $4 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 11.
+Use of uninitialized value $5 in print at ./file.pl line 11, &lt;UNIPROT&gt; line 11.
+NCBI_TaxID=9606; &lt;/code&gt;
+
+I'm not exactly sure where i'm making the mistake..does the "or |" part mess up the loop? Thank you for your help!</doctext>
+<thread id="1182973">
+<node id="1182975"/>
+<node id="1182976"><node id="1183000"><node id="1183001"><node id="1183038"/>
+<node id="1183040"><node id="1183048"/>
+<node id="1183067"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1183023"/>
+<node id="1183122"/>
+<node id="1183150"/>
+</thread></node>

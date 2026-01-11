@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111839" title="Re: Cheapest way for multiple external commands" created="2020-01-24 14:35:09" updated="2020-01-24 14:35:09" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Is there any way to prevent that "fork"?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;AFAIK, no. See [doc://exec], [doc://system], and [doc://perlop#Quote-Like-Operators|qx].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;i need to run many externals commands from my Perl script and capture both return-code and STDOUT. These commands must run under a shell...&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Be aware of [id://1205217]. I also wrote about running external commands [id://1180578|here]. In this case I'd suggest something like [mod://IPC::System::Simple] (note it doesn't capture &lt;c&gt;STDERR&lt;/c&gt;, for that I'd suggest a different module):&lt;/p&gt;
+&lt;c&gt;
+use IPC::System::Simple qw/capturex EXIT_ANY/;
+my $out = capturex '/bin/bash', '-c', 'echo foo';
+
+# or, if you don't want it to die on nonzero exit:
+my $out2 = capturex EXIT_ANY, '/bin/bash', '-c', 'echo bar &amp;&amp; false';
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;i am looking for the "cheapest way" in terms of CPU and Memory load...&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Without more information, this smells like premature optimization. What OS? What commands are you running; could they perhaps be replaced by Perl code? How many commands per second are you running? How fast do you need it to run, and have you written a prototype and measured its performance to see if it's good enough or not?&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11111835</root_node>
+<parent_node field_name="parent_node">11111835</parent_node>
+<thread id="11111835">
+<node id="11111839"><node id="11111923"><node id="11111944"><node id="11111951"/>
+</node>
+</node>
+</node>
+<node id="11111847"/>
+<node id="11111865"/>
+</thread></node>

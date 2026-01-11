@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1186667" title="Singleton method wrappers for config file properties: Bad idea?" created="2017-04-01 05:41:04" updated="2017-04-01 05:41:04" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="66801">nysus</author>
+<doctext field_name="doctext">&lt;p&gt;So I've got a config file, with something like this in it:&lt;/p&gt;
+&lt;code&gt;
+ip_address: 10.0.1.17
+user: me
+&lt;/code&gt;
+&lt;p&gt;Config file is used by a &lt;code&gt;Server&lt;/code&gt; object:&lt;/p&gt;
+&lt;code&gt;
+package Server;
+
+use Carp;
+use Moose;
+use Modern::Perl;
+use Config::Simple;
+
+has 'cfg' =&gt; (is =&gt; 'ro', isa =&gt; 'HashRef', required =&gt; 1, writer =&gt; '_set_cfg' );
+
+sub get {
+  validate_pos( @_, {isa =&gt; 'Server', optional =&gt; 0},{type =&gt; SCALAR, optional =&gt; 0} );
+  my $self = shift;
+  my $key = shift;
+  my $properties = $self-&gt;cfg;
+  return $properties-&gt;{$key};
+}
+
+around BUILDARGS =&gt; sub {
+  # Load cfg file and set cfg attribute here
+}
+&lt;/code&gt;
+&lt;p&gt;So I create a &lt;code&gt;Server&lt;/code&gt; object and access the cfg file values like so:&lt;/p&gt;
+&lt;code&gt;
+my $server = Server-&gt;new('config_file_name');
+$server-&gt;get('ip_address');
+&lt;/code&gt;
+&lt;p&gt;This all works, but I want to get some practice doing some more advanced stuff with Moose. So I added &lt;code&gt;use MooseX::SingletonMethod&lt;/code&gt; and the following &lt;code&gt;BUILD&lt;/code&gt; method:&lt;/p&gt;
+&lt;code&gt;
+sub BUILD {
+  my $self = shift;
+  my $properties = $self-&gt;cfg;
+  foreach my $prop (keys %$properties) {
+    # check that the property doesn't already exist as a method
+    croak "Server config file property '$prop' clashes with existing method. Aborting." 
+      if ($self-&gt;can($prop));
+    # create new method
+    $self-&gt;add_singleton_method( $prop =&gt; sub { $properties-&gt;{$prop}; } );
+  }
+}
+&lt;/code&gt;
+&lt;p&gt;Now I can get the ip address with &lt;code&gt;$server-&gt;ip_address&lt;/code&gt;. Cool. But I'm wondering if there might be some unintended consequences of something like this might be (aside from security concerns of loading data from a config file).&lt;/p&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-66801"&gt;
+&lt;font size=2&gt;&lt;p&gt;
+$PM = "Perl Monk's";&lt;br&gt;
+$MCF = "Most Clueless &lt;strike&gt;Friar&lt;/strike&gt; &lt;strike&gt;Abbot&lt;/strike&gt; &lt;strike&gt;Bishop&lt;/strike&gt; &lt;strike&gt;Pontiff&lt;/strike&gt; &lt;strike&gt;Deacon&lt;/strike&gt; Curate";&lt;br&gt;
+$nysus = $PM . ' ' . $MCF;&lt;br&gt;
+&lt;a href="http://perlmonks.org/index.pl?node=Offering%20Plate"&gt;Click here if you love Perl Monks&lt;/a&gt;&lt;br&gt;&lt;/font&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1186667">
+<node id="1186675"><node id="1186676"><node id="1186679"/>
+<node id="1186686"/>
+</node>
+</node>
+</thread></node>

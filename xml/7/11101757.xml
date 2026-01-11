@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101757" title="Timeouts in IO::Socket" created="2019-06-23 08:40:34" updated="2019-06-23 08:40:34" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="901358">Stamm</author>
+<doctext field_name="doctext">&lt;p&gt;Dear Monks,&lt;/p&gt;
+
+&lt;p&gt;I'm trying to play with timeouts in the module IO::Socket. Here's what I got so far.&lt;/p&gt;
+
+&lt;p&gt;server.pl:&lt;/p&gt;
+&lt;code&gt;use 5.010;
+use strict;
+use warnings;
+use IO::Socket;
+say 'Server listening...';
+my $server = IO::Socket::INET-&gt;new(Proto     =&gt; 'tcp',
+                                   LocalPort =&gt; 8000,
+                                   Listen    =&gt; 1,
+                                   ReuseAddr =&gt; 1,
+                                   Timeout   =&gt; 10) or die;
+my $client = $server-&gt;accept() or die;
+$server-&gt;close;
+say 'Connection from ' . $client-&gt;peerhost;&lt;/code&gt;
+
+
+&lt;p&gt;client.pl:&lt;/p&gt;
+&lt;code&gt;use 5.010;
+use strict;
+use warnings;
+use IO::Socket;
+my $socket = IO::Socket::INET-&gt;new(Proto    =&gt; 'tcp',
+                                   PeerAddr =&gt; 'localhost',
+                                   PeerPort =&gt; 8000,
+                                   Timeout  =&gt; 10) or die;
+say 'Client connected';&lt;/code&gt;
+
+
+&lt;p&gt;I launch server.pl, followed shortly by client.pl. I got on the server side:&lt;/p&gt;
+&lt;code&gt;Server listening...
+Connection from 127.0.0.1&lt;/code&gt;
+&lt;p&gt; And on the client side:&lt;/p&gt;
+&lt;code&gt;Client connected&lt;/code&gt;
+
+&lt;p&gt;Now, I launch only server.pl. I got 10 seconds later:&lt;/p&gt;
+&lt;code&gt;Server listening...
+accept: timeout ...propagated at server.pl line 16.&lt;/code&gt;
+
+&lt;p&gt;So far, so good. Now I launch only client.pl. And I instantly got:&lt;/p&gt;
+&lt;code&gt;IO::Socket::INET: connect: 10061        ...propagated at client.pl line 8.&lt;/code&gt;
+
+&lt;p&gt;I would have preferred that the client gave up after 10 seconds.&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;Is there a way to make the client wait a bit for the server to start up instead of giving up immediately?&lt;/b&gt; (I'm on Windows by the way)&lt;/p&gt;
+
+&lt;p&gt;Stamm&lt;/p&gt;</doctext>
+<thread id="11101757">
+<node id="11101760"><node id="11101765"/>
+</node>
+</thread></node>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11105015" title="Using the second word in a line to split a file into multiple files" created="2019-08-25 21:56:50" updated="2019-08-25 21:56:50" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11105012">az1962</author>
+<doctext field_name="doctext">&lt;p&gt; I am trying to split a file into multiple smaller files based on a regex and file naming convention
+I am searching for lines that begin with the word zone, and want to use the second word in the line to use as a file name. I then want to write all lines in the file into that filename  using the second word in the line, until I hit another line that starts with the same word and use the second word in that line as the next filename.  Based on the data file below, it should create a file named 1file.txt, and a file named 2fileb, with 6 lines of data each. &lt;/p&gt; 
+
+&lt;code&gt;#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+open(my $infh, '&lt;', 'testdat.dat') or die $!;
+
+my $outfh;
+my $filecount = 0;
+while ( my $line = &lt;$infh&gt; ) {
+    if ( $line =~ /^zone&gt;\s*(\w+\W+(\w+)\s*$)/ ) {
+        close($outfh) if $outfh;
+        $outfh = $2;
+        open($outfh, '&gt;', sprintf($outfh'.txt', ++$filecount)) or die $!;
+    }
+    print {$outfh} $line or die "Failed to write to file: $!";
+}
+
+close($outfh);
+close($infh);
+
+
+Datafile =
+
+zone 1filea  1ss
+record1a
+record1b
+record1c
+record	1d	2
+record	empty
+endoffile
+
+zone 2fileb  1ss
+record1a
+record1b
+record1c
+record	1d	2
+record	empty
+endoffile
+
+&lt;/code&gt;</doctext>
+<thread id="11105015">
+<node id="11105019"/>
+<node id="11105047"><node id="11105066"><node id="11105068"/>
+</node>
+</node>
+<node id="11105093"/>
+<node id="11105184"/>
+</thread></node>

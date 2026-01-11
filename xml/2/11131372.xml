@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11131372" title="(Windows) verbatim command line arguments inside Perl script" created="2021-04-16 08:37:34" updated="2021-04-16 08:37:34" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">Hi&lt;P&gt;
+
+I need to write a Perl script which is generating a .bat-file while passing it's command line arguments 1-to-1&lt;P&gt;
+
+Is there any way to access the "raw" command-line in order to catch quoting and escaping?&lt;P&gt;
+
+To highlight the problem:&lt;P&gt;
+
+&lt;c&gt;
+D:\&gt;perl -E"say qq(@ARGV)" "1 2" "3" 4
+1 2 3 4
+&lt;/c&gt;&lt;P&gt;
+
+As you can see are all quotes and escapes lost while calling Perl (for good reasons)&lt;P&gt;
+
+But my script has to generate another .bat which does&lt;P&gt;
+
+&lt;c&gt;
+...
+some_cmd "1 2" "3" 4
+...
+&lt;/c&gt;&lt;P&gt;
+
+Typical edge-case justifying this problem are win-paths with whitespace, but cmd.exe has also some arcane escaping rules.&lt;P&gt;
+
+I already have a workaround:&lt;P&gt;
+
+I discovered that .bat has &lt;C&gt;%*&lt;/C&gt; to hold the verbatim command line arguments, and came up with a workaround of a .bat calling my perl-script&lt;P&gt;
+
+&lt;c&gt;
+D:\tmp\exp&gt;type cmd_wrapper.bat
+@echo off
+
+echo %* |perl -wE"chomp(my $args = &lt;STDIN&gt;);say qq(some_cmd $args)"
+
+
+D:\tmp\exp&gt;cmd_wrapper.bat "1 2" "3" 4
+some_cmd "1 2" "3" 4
+D:\tmp\exp&gt;
+&lt;/c&gt;&lt;P&gt;
+
+Question: any better solution?&lt;P&gt;
+
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;!--nowiki--&gt;&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;/sub&gt; 
+&lt;!--nowiki--&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;P&gt;
+
+PS: I don't think this question is overly Win specific, when creating a bash script on Linux I'd face the same problem.&lt;!-- Wiki2Monks {"version":1.16} --&gt;</doctext>
+<thread id="11131372">
+<node id="11131381"><node id="11131383"><node id="11131387"/>
+</node>
+<node id="11131384"><node id="11131388"/>
+<node id="11131395"><node id="11131405"><node id="11131418"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11131482"/>
+<node id="11131385"><node id="11131391"/>
+<node id="11131483"/>
+</node>
+<node id="11131379"><node id="11131382"/>
+</node>
+<node id="11131386"><node id="11131389"/>
+</node>
+</thread></node>

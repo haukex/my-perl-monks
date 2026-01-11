@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1168493" title="Re: building sql statement" created="2016-07-25 15:02:06" updated="2016-07-25 15:02:06" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [mwill007],&lt;/p&gt;
+&lt;p&gt;Please use &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags so your code will display properly. See [id://174051]&lt;/p&gt;
+&lt;p&gt;In your problem description you say that when you print the string, you get the expected value, and it doesn't work - please tell us the exact error message. Second, you say that when you manually set the SQL to the same value, it works - this leads me to believe that the two strings are actually not the same. Please try using [doc://Data::Dumper] to output them both, and use the option &lt;c&gt;$Data::Dumper::Useqq=1;&lt;/c&gt; to make nonprintable characters easier to see. See the [id://745674].&lt;/p&gt;
+&lt;p&gt;Lastly, there are modules to help you to read CSV - [mod://Text::CSV] - and modules that help building SQL, like [mod://SQL::Abstract]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+# example data
+my @dbcolumn = qw/ site_id site_store_type project site_city site_state site_country project_begin /;
+my @splitarray = ('9999','SC OSR','Prebuild','Penfield','NY','US','8/8/2016 ');
+
+# make a hash out of two arrays of the same length
+my %data = map { $dbcolumn[$_] =&gt; $splitarray[$_] } 0..$#dbcolumn;
+
+# build the SQL statement
+use SQL::Abstract;
+my $sql = SQL::Abstract-&gt;new;
+my ($stmt, @bind) = $sql-&gt;insert('database.database', \%data);
+
+# debug: display the Perl variables holding the SQL
+use Data::Dumper;
+print Dumper($stmt, \@bind);
+
+__END__
+
+$VAR1 = 'INSERT INTO database.database ( project, project_begin, site_city, site_country, site_id, site_state, site_store_type) VALUES ( ?, ?, ?, ?, ?, ?, ? )';
+$VAR2 = [
+          'Prebuild',
+          '8/8/2016 ',
+          'Penfield',
+          'US',
+          '9999',
+          'NY',
+          'SC OSR'
+        ];
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update: Added link to [mod://SQL::Abstract], thanks to [Your Mother] for the inspiration :-)&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1168483</root_node>
+<parent_node field_name="parent_node">1168483</parent_node>
+<thread id="1168483">
+<node id="1168491"/>
+<node id="1168493"><node id="1168496"/>
+<node id="1168497"/>
+</node>
+<node id="1168494"/>
+</thread></node>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224619" title="Re: Comparing different timestamp formats" created="2018-10-24 16:55:09" updated="2018-10-24 16:55:09" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Normally, the best thing to do would be to work directly with [https://dev.mysql.com/doc/refman/8.0/en/date-and-time-functions.html|the database's date/time functions].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Perl's DateTime's "now" feature is in this format&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Not exactly, that's just the default stringification. Note that [mod://DateTime] objects can be compared directly, they overload the comparison operators.&lt;/p&gt;
+&lt;p&gt;If you're really stuck with parsing a string, my personal favorite module is [mod://DateTime::Format::Strptime]. Here's one way to go about it:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime;
+use DateTime::Format::Strptime;
+
+my $strp = DateTime::Format::Strptime-&gt;new(on_error=&gt;'croak',
+	pattern =&gt; '%a %b %d, %Y - %H:%M:%S', time_zone =&gt; 'UTC');
+
+my $dt = $strp-&gt;parse_datetime('Tue Oct 23, 2018 - 19:57:12');
+
+print $dt-&gt;strftime('%Y-%m-%d %H:%M:%S %z'), "\n";
+
+my $dt_one_day_ago = DateTime-&gt;now-&gt;subtract(days=&gt;1);
+
+print "$dt is ", $dt &lt; $dt_one_day_ago ? '&lt;' : '&gt;=',
+	" $dt_one_day_ago\n";
+&lt;/c&gt;
+&lt;p&gt;The above takes the time of day into account as well, if that's what you want. Also, make sure to set the time zones correctly!&lt;/p&gt;
+&lt;p&gt;(BTW, there is also [mod://DateTime::Format::MySQL] and [mod://DateTime::Format::DBI], although I haven't used these myself.)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1224615</root_node>
+<parent_node field_name="parent_node">1224615</parent_node>
+<thread id="1224615">
+<node id="1224619"/>
+<node id="1224621"/>
+<node id="1224624"/>
+</thread></node>

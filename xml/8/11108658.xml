@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108658" title="Correct Perl settings for sending zipfile to browser" created="2019-11-13 21:18:25" updated="2019-11-13 21:18:25" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;h3&gt;First the Facts:&lt;/h3&gt;
+&lt;ol&gt;&lt;li&gt;A perfect zipfile is being generated, which unzips perfectly on the server (linux).&lt;/li&gt;
+&lt;li&gt;The zipfile contains a tab-delimited text file of UTF-8 script (as utf8mb4 in MariaDB).&lt;/li&gt;
+&lt;li&gt;Following transfer to the client, via browser download, the zip cannot be opened.&lt;/li&gt;
+&lt;li&gt;The zipped file is about 2MB in size.&lt;/li&gt;
+&lt;li&gt;Several settings/variations have been tried, to no avail (see code and comments below).&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Because some clients are on Windows and some on MacOS, the file needs to be exported in the line-ending format required by the client.  MacOS (darwin), Linux, and UNIX all have the same "\n" endings, whereas Windows/DOS uses "\r\n".  Some code has been added to facilitate this variation.&lt;/p&gt;
+&lt;p&gt;However, once the file is downloaded (via the browser's "Save as..." popup window), it cannot be opened with the usual zip tools like UnArchiver, nor can it be opened from the terminal with the "unzip" command.  The latter gives the following error message:&lt;/p&gt;
+&lt;pre&gt;
+$ unzip DB_ExportFile_2019-11-12.txt.zip 
+Archive:  DB_ExportFile_2019-11-12.txt.zip
+  End-of-central-directory signature not found.  Either this file is not
+  a zipfile, or it constitutes one disk of a multi-part archive.  In the
+  latter case the central directory and zipfile comment will be found on
+  the last disk(s) of this archive.
+unzip:  cannot find zipfile directory in one of DB_ExportFile_2019-11-12.txt.zip or
+        DB_ExportFile_2019-11-12.txt.zip.zip, and cannot find DB_ExportFile_2019-11-12.txt.zip.ZIP, period.
+&lt;/pre&gt;
+&lt;p&gt;The following code shows the subroutine that provides this download.&lt;/p&gt;
+&lt;code&gt;
+sub exportdatabase { 
+
+fork: {
+
+my ($recnum,$revnum,$book,$chap,$verse,$text) = '';
+my @resp = ();
+my $timestamp = "$curdate_$curtime";
+$timestamp =~ s/[\/:.]/-/g;
+my $to_windows = '';
+my $CRLF = "\n";
+     if ($OS eq "Windows") { 
+     	$to_windows = '--to-crlf'; # SAME AS -l
+     	$CRLF = "\r\n";
+} 
+
+$statement = qq| SELECT a.RecordNum, a.RevisionNum, a.Book, a.Chapter, a.Verse, a.Text from $table a INNER JOIN (SELECT RecordNum, max(RevisionNum) RevisionNum FROM $table GROUP BY RecordNum) b USING (RecordNum,RevisionNum); |;
+
+&amp;connectdb('exportdatabase');
+
+push @resp, "RECORD#\tREVISION#\tBOOK#\tCHAP#\tVERSE#\tTEXT, AS EDITED BY: $curdate $curtime (Pacific Time)$CRLF"; 
+
+while (($recnum,$revnum,$book,$chap,$verse,$text) = $quest-&gt;fetchrow_array()) {
+			push @resp, "$recnum\t$revnum\t$book\t$chap\t$verse\t$text$CRLF"; 
+	}	
+
+chdir $exportdir or print "Cannot change directory to $exportdir\n";
+{
+
+open TARGET, "&gt;$db_export_file" or die "Cannot export the database to a file.  Please contact the system administrator.\n";
+print TARGET @resp;
+close TARGET;
+}
+
+my $zipfile = "$db_export_file.zip";
+
+#TO escape the 'taint' function on the $ENV{PATH} 
+$ENV{'PATH'} =~ /(.*)/; $ENV{'PATH'} = $1; 
+
+
+# -T test the file																		# -l flag will convert to CRLF  line endings (Windows)
+# -to_crlf convert to CRLF line endings (not for binary files)
+
+my $command = `/usr/bin/zip -T $to_windows $zipfile $db_export_file`;
+
+
+if ($zipfile eq '') {  
+   print "Content-type: text/html\n\n";
+   print "You must specify a file to download.\n&lt;p&gt;";  
+} else {
+
+	open FILE, "&lt;$zipfile" or die "Can't open $zipfile ... $!";
+#	open(FILE, "&lt;:raw:perlio", $zipfile);
+
+	binmode FILE;
+#	binmode FILE, ":encoding(UTF-8)";
+
+	print qq|Content-Type: application/x-download\n|;
+	#print "Content-Type: application/zip\n\n",
+		
+	print qq|Content-Length: | . (stat $zipfile)[7] . "\n";
+	print qq|Content-Disposition: attachment; filename="$zipfile";\n\n|;
+
+	while (&lt;FILE&gt;) { print };
+	close FILE; 
+	#print chr(0);
+
+unlink("$zipfile") || print $!;
+unlink("$db_export_file") || print $!;
+
+exit(0);
+}
+
+} #END fork
+} # END SUB exportdatabase
+&lt;/code&gt;
+&lt;p&gt;Note that I have attempted several variations on the file's "binmode" options, as well as specifying the Content-Type two different ways.  Guessing and checking, trying all the various possible combinations, is not working out.  I'm obviously missing something, and it's probably something very simple.&lt;/p&gt;
+&lt;p&gt;Thanks in advance to eagle-eyed coder who spots the flaw.&lt;/a&gt;
+</doctext>
+<reputation field_name="reputation">11</reputation>
+<thread id="11108658">
+<node id="11108660"/>
+<node id="11108663"><node id="11108712"><node id="11108713"><node id="11108715"/>
+</node>
+<node id="11108761"/>
+</node>
+</node>
+<node id="11108666"><node id="11108710"><node id="11108726"/>
+</node>
+</node>
+<node id="11108673"/>
+<node id="11108692"><node id="11108714"><node id="11108716"><node id="11108722"><node id="11108732"><node id="11108832"><node id="11108833"><node id="11108836"><node id="11108837"/>
+</node>
+</node>
+<node id="11108856"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

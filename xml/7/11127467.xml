@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11127467" title="Re^3: Ordering Template cards" created="2021-01-26 05:30:17" updated="2021-01-26 05:30:17" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I haven't completely got my head around why&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In &lt;c&gt;while (my ($card) = $cards-&gt;fetchrow_array)&lt;/c&gt;, the boolean condition being evaluated is the return value of the list assignment &lt;c&gt;()=...&lt;/c&gt;, and as per [doc://perlop#Assignment-Operators], "a list assignment in scalar context returns the number of elements produced by the expression on the right hand side of the assignment."&lt;/p&gt;
+&lt;p&gt;However, like [LanX], I can't reproduce this, and you'd have to show an [id://1177642|SSCCE] that does. Are you sure you didn't accidentally write &lt;tt&gt;fetchrow_array&lt;u&gt;ref&lt;/u&gt;&lt;/tt&gt; instead? That method returns &lt;c&gt;undef&lt;/c&gt; if no more rows remain - and as per the above, it's one value being assigned, so the return value of the list assignment is 1 (true). For &lt;c&gt;fetchrow_arrayref&lt;/c&gt;, the correct loop condition is &lt;c&gt;while (my $card = $cards-&gt;fetchrow_arrayref)&lt;/c&gt;, since that's a scalar assignment and it'll return &lt;c&gt;undef&lt;/c&gt; (false).&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dumper;
+use DBI;
+
+my $dbh = DBI-&gt;connect("dbi:SQLite:dbname=:memory:", undef, undef,
+	{ RaiseError=&gt;1, AutoCommit=&gt;1 } );
+
+$dbh-&gt;do(q{ CREATE TABLE foobar ( foo TEXT, bar TEXT ) });
+my $in = $dbh-&gt;prepare(q{INSERT INTO foobar (foo,bar) VALUES (?,?)});
+$in-&gt;execute('a','b');
+$in-&gt;execute('c','d');
+
+my $cards = $dbh-&gt;prepare('SELECT * FROM foobar');
+$cards-&gt;execute;
+while (my ($card) = $cards-&gt;fetchrow_array) {
+# OR
+#while (my $card = $cards-&gt;fetchrow_arrayref) {
+# BUT NOT 
+#while (my ($card) = $cards-&gt;fetchrow_arrayref) {
+	print Dumper($card);
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11127369</root_node>
+<parent_node field_name="parent_node">11127450</parent_node>
+<thread id="11127369">
+<node id="11127371"><node id="11127372"><node id="11127373"><node id="11127375"/>
+</node>
+<node id="11127374"><node id="11127376"/>
+</node>
+</node>
+</node>
+<node id="11127380"><node id="11127394"/>
+</node>
+<node id="11127403"><node id="11127405"/>
+</node>
+<node id="11127421"><node id="11127447"/>
+</node>
+<node id="11127449"><node id="11127450"><node id="11127453"><node id="11127468"><node id="11127560"><node id="11127564"><node id="11127670"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11127458"><node id="11127554"/>
+</node>
+<node id="11127467"><node id="11127474"><node id="11127476"><node id="11127477"/>
+</node>
+</node>
+<node id="11127553"/>
+</node>
+</node>
+</node>
+</thread></node>

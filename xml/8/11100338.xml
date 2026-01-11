@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100338" title="Re^3: Using a factory class to return objects of the same class" created="2019-05-21 14:28:44" updated="2019-05-21 14:28:44" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;the factory method and the constructor (which the factory would use) would both be methods of the same class&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In theory, it'd be possible for this "constructor" to return an object of a different class. But I don't see why the constructor would need to be a member of the factory class?&lt;/p&gt;
+&lt;p&gt;Anyway, here's my interpretation of your description. Note how &lt;c&gt;Object&lt;/c&gt; still has a formal &lt;c&gt;new&lt;/c&gt; constructor, but it could be documented that users should not call it directly, but use &lt;c&gt;Factory&lt;/c&gt; methods instead - it could even be named &lt;c&gt;_new&lt;/c&gt; to make that even more clear.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+package Factory {
+	sub new {
+		my ($class,%args) = @_;
+		my $self = {
+				config =&gt; _read_config( $args{config_file} ),
+			};
+		return bless $self, $class;
+	}
+	sub _read_config {
+		my $file = shift;
+		my %config;
+		# ...
+		return \%config;
+	}
+	sub make_object_from_data {
+		my ($self,$data) = @_;
+		my %args;
+		# complex code to build %args from $data using $self-&gt;{config}
+		return Object-&gt;new(%args);
+	}
+}
+
+package Object {
+	sub new {
+		my ($class,%args) = @_;
+		my $self = \%args;
+		return bless $self, $class;
+	}
+	# ...
+}
+
+my $factory = Factory-&gt;new( config_file =&gt; "file.xml" );
+my $obj1 = $factory-&gt;make_object_from_data( { foo=&gt;123 } );
+my $obj2 = $factory-&gt;make_object_from_data( { bar=&gt;456 } );
+&lt;/c&gt;
+&lt;p&gt;However, looking at this, here's how I might have structured this code. It has the advantage that "&lt;c&gt;Object-&gt;new&lt;/c&gt;" isn't hardcoded, making subclassing of that class easier. To me, it feels more in line with the requirements as far as you've described them.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+package Config {
+	sub new {
+		my ($class,%args) = @_;
+		my $self = {};
+		# code to read $args{config_file} into $self
+		return bless $self, $class;
+	}
+}
+
+package Object {
+	sub new {
+		my ($class,%args) = @_;
+		my $self = _parse_data_with_config($args{config},$args{data});
+		return bless $self, $class;
+	}
+	sub _parse_data_with_config {
+		my ($config, $data) = @_;
+		my $self = {};
+		# complex code to build $self from $data using $config
+		return $self;
+	}
+	# ...
+}
+
+my $config = Config-&gt;new( config_file =&gt; "file.xml" );
+my $obj1 = Object-&gt;new( config =&gt; $config, data =&gt; { foo=&gt;123 } );
+my $obj2 = Object-&gt;new( config =&gt; $config, data =&gt; { bar=&gt;456 } );
+&lt;/c&gt;
+&lt;p&gt;Of course it'd be possible to add a method to &lt;c&gt;Config&lt;/c&gt; like this:&lt;/p&gt;
+&lt;c&gt;
+	sub new_object {
+		my ($self,$data) = @_;
+		return Object-&gt;new( config=&gt;$self, data=&gt;$data );
+	}
+
+# ... call as:
+my $obj3 = $config-&gt;new_object( { quz=&gt;789 } );
+&lt;/c&gt;
+&lt;p&gt;... and you'd have something very similar to my first example.&lt;/p&gt;
+&lt;p&gt;As you can see, I've put the "complex code" into a &lt;c&gt;sub&lt;/c&gt; in each case, and as you can tell, except for the variable names, these &lt;c&gt;sub&lt;/c&gt;s could be pretty much identical in both examples. This means that the surrounding code could be refactored more easily if you decide that a different API makes more sense. Unless you've got more complex requirements you haven't told us about, I'd suggest just starting with one API - once you actually start &lt;i&gt;using&lt;/i&gt; your own API you will quickly notice whether it is good or a different API would be better. And if you've structured your code in a way that makes refactoring easier, you'll be less hesitant to do so.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11100317</root_node>
+<parent_node field_name="parent_node">11100330</parent_node>
+<thread id="11100317">
+<node id="11100325"><node id="11100330"><node id="11100334"/>
+<node id="11100338"/>
+</node>
+</node>
+<node id="11100326"><node id="11100333"><node id="11100341"/>
+</node>
+</node>
+</thread></node>

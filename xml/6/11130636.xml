@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11130636" title="Re^4: Getting all subpaths from a path" created="2021-03-31 12:13:47" updated="2021-03-31 12:13:47" _doctext_mode="lenient"><type id="11">note</type>
+<author id="832495">choroba</author>
+<doctext field_name="doctext">You cannot create the links before both the source and target directories exist. So, postpone their creation to the end. The directories are processed from the shortest to the longest, so we always know the parent path exists. 
+You should also add a check that a link doesn't point outside of the given directory tree.&lt;P&gt;
+
+I created the following Makefile to experiment with your data:
+&lt;readmore&gt;&lt;c&gt;
+SHELL := /bin/bash
+
+.PHONY: test
+test: clean prepare
+	echo $$'#!/bin/bash\ntarget=top2\nmkdir -p $$target/top' &gt; 1.sh
+	./1.pl top &gt;&gt; 1.sh
+	chmod u+x 1.sh
+	./1.sh
+	diff -r top top2/top
+
+.PHONY: prepare
+prepare:
+	mkdir -p top/usr
+	mkdir -p top/root/site/tools/gauv/python3/3.6.3/{lib,bin}
+	touch top/root/site/tools/gauv/python3/3.6.3/bin/python3.6
+	ln -s $(PWD)/top/root/site/tools/gauv top/usr/vsa
+	ln -s 3.6.3 top/root/site/tools/gauv/python3/3.6.3a
+
+.PHONY: clean
+clean:
+	rm -rf top top2 1.sh
+&lt;/c&gt;&lt;/readmore&gt;&lt;P&gt;
+
+And this was the script 1.pl:
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+use feature qw{ say };
+
+use Path::Tiny qw{ path };
+
+my $path = path(shift);
+my $paths = $path-&gt;visit(
+    sub { $_[1]-&gt;{$_} = (-f) ? 'file'
+                      : (-l) ? [readlink]
+                      : (-d) ? 'dir'
+                             : 'unknown' },
+    { recurse =&gt; 1 }
+);
+
+my @links;
+for my $found (sort { length $a &lt;=&gt; length $b } keys %$paths) {
+    if ('file' eq $paths-&gt;{$found}) {
+        say qq(cp '$found' "\$target/$found");
+
+    } elsif ('dir' eq $paths-&gt;{$found}) {
+        say qq(mkdir "\$target/$found");
+
+    } elsif (ref [] eq ref $paths-&gt;{$found}) {
+        my $to = path($paths-&gt;{$found}[0]);
+        $to = $to-&gt;relative(path($found)-&gt;absolute-&gt;parent)
+            if $to-&gt;is_absolute;
+        my $source = path('$target', $found);
+        push @links, qq(ln -s "$to" "$source");
+    }
+}
+say for @links;
+&lt;/c&gt;&lt;P&gt;
+
+It's just a toy. Use some of the ShellQuote modules to fix the filenames; but for the example given, it works.&lt;P&gt;
+
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-832495"&gt;
+&lt;c&gt;map{substr$_-&gt;[0],$_-&gt;[1]||0,1}[\*||{},3],[[]],[ref qr-1,-,-1],[{}],[sub{}^*ARGV,3]&lt;/c&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.16} --&gt;</doctext>
+<root_node field_name="root_node">11130527</root_node>
+<parent_node field_name="parent_node">11130632</parent_node>
+<thread id="11130527">
+<node id="11130528"/>
+<node id="11130533"><node id="11130546"><node id="11130632"><node id="11130634"><node id="11130635"/>
+</node>
+<node id="11130636"><node id="11130638"/>
+</node>
+<node id="11130637"><node id="11130639"/>
+</node>
+</node>
+<node id="11130714"><node id="11130725"><node id="11130730"><node id="11130731"><node id="11130760"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11130736"/>
+</thread></node>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11126640" title="Re: Factory classes in Perl (updated)" created="2021-01-08 18:35:21" updated="2021-01-08 18:35:21" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;However, in Perl we have CPAN from which we install our modules...this allows us to specify dependencies be be installed when we install our module.
+In this Perl Advent Calendar example, why would we create a ReindeerFactory instead of just forcing our module to install Robo-Reindeer if that's the one we prefer?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;IMHO, you're right to question this. Factory classes are often used in strongly typed languages like Java, I myself have for example written a Logger interface with different underlying implementations. The important thing to note is that the user of my library &lt;i&gt;specifically chooses&lt;/i&gt; which implementation they want, and the factory class is helpful because the language is compiled and strongly typed; it's not as simple as Perl's "a constructor can return &lt;i&gt;whatever&lt;/i&gt; it wants".&lt;/p&gt;
+&lt;p&gt;However, the conditional loading of modules depending on something outside of the user's control is something that I nowadays think should be &lt;i&gt;very&lt;/i&gt; sparingly used for exactly the reason you hint at: if I've written my code to depend on a certain module or functionality (RoboReindeer), then trying to adapt my code to environments where that module isn't available (BioReindeer-only) is often more work than either backporting RoboReindeer to that environment, or simply declaring that my code &lt;i&gt;requires&lt;/i&gt; RoboReindeer, with whatever limitations that brings.&lt;/p&gt;
+&lt;p&gt;For me, it comes down to the question of well-defined behavior. If I'm writing a library, I don't like telling the user of my code "you ask for a reindeer and maybe I'll give you a BioReindeer or maybe a RoboReindeer, why do you care?" because more often than not there &lt;i&gt;is&lt;/i&gt; a difference between the two that will have my user jumping through hoops to cope with that difference down the line (&lt;c&gt;if ( $reindeer-&gt;isa("RoboReindeer") ) { do_this() } elsif ( $reindeer-&gt;isa("BioReindeer") ) { do_that() } else { die "unknown species" }&lt;/c&gt;).&lt;/p&gt;
+&lt;p&gt;On the practical side, let's say I write a library that uses *Reindeer, and when the user installs my library they only have BioReindeer installed, so only that subset of my module's test suite gets run. If they install RoboReindeer later, my test suite may never get executed against the RoboReindeer they installed, which again may lead to problems.&lt;/p&gt;
+&lt;p&gt;So for these reasons nowadays I lean very strongly towards simply saying "the users of my library are getting RoboReindeers, period".&lt;/p&gt;
+&lt;p&gt;There are of course exceptions, an important one is the OS-dependent implementation of a platform-independent interface, as [choroba] [id://11126635|indicated] - one of the big ones in the Perl core is [doc://File::Spec], for example. Another one is the automatic loading of XS-based versions of otherwise pure-Perl modules when they are available (as long as the two really behave identically and the XS version is just an optimization). And a last reason that I can think of at the moment may be if you're trying to gradually transition your code away from one dependency onto the other.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;(It's late and I don't have the time to investigate further right now, but I'd be genuinely curious if there are other &lt;i&gt;useful&lt;/i&gt; uses for the "&lt;c&gt;recommends&lt;/c&gt;" and "&lt;c&gt;suggests&lt;/c&gt;" relationships of [mod://CPAN::Meta::Spec].)&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Thinking about this a bit more, I guess what I am saying is that my experience simply doesn't line up with the premise of the article, in particular the first word:&lt;/p&gt; 
+&lt;blockquote&gt;Often we find ourselves writing code that copes with optional dependencies; Code that will use a module to do amazing things if it's installed, but will muddle through with some lesser code path if that dependency is missing or unavailable on the system.&lt;/blockquote&gt;
+&lt;p&gt;Instead, I think that most of the time one &lt;i&gt;thinks&lt;/i&gt; one is in this situation, 
+there is a different and often more pragmatic solution possible.&lt;/p&gt; </doctext>
+<root_node field_name="root_node">11126634</root_node>
+<parent_node field_name="parent_node">11126634</parent_node>
+<thread id="11126634">
+<node id="11126635"><node id="11126767"/>
+</node>
+<node id="11126639"><node id="11126648"/>
+</node>
+<node id="11126640"><node id="11126649"><node id="11126656"><node id="11126691"/>
+</node>
+</node>
+<node id="11126768"><node id="11126771"><node id="11126794"><node id="11126795"><node id="11126917"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11126761"/>
+<node id="11126772"><node id="11126818"><node id="11126820"/>
+</node>
+</node>
+</thread></node>

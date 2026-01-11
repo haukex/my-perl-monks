@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203332" title="regex negativ lookahead" created="2017-11-14 02:19:52" updated="2017-11-14 02:19:52" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1203165">SwissGeorge</author>
+<doctext field_name="doctext">hi, i'm trying to get all strings not containing &lt;start|sidebar&gt;.
+the problem now? i can't change logic &lt;=~&gt; to &lt;!=&gt; which would work perfectly.
+reading perldoc and other sources negativ lookahead should solve this problem as well.
+this one works perfectly &lt;code&gt;
+use strict;
+use warnings;
+
+my @vars = ('quit','quirly cat', 'cat queue','granit');
+
+print ("any string 'qu' followed by 'it'\n");
+foreach (@vars) {
+    if ($_ =~ /qu(?=it)/) { print ("found &lt;$_&gt;\n"); }
+    else { print ("no match for &lt;$_&gt;\n"); }
+}
+
+print ("\nany string 'qu' not followed by 'it'\n");
+foreach (@vars) {
+    if ($_ =~ /qu(?!it)/) { print ("found &lt;$_&gt;\n"); }
+    else { print ("no match for &lt;$_&gt;\n"); }
+}
+&lt;/code&gt;
+&lt;p&gt;this one alreay show up some problems&lt;/p&gt;
+&lt;code&gt;
+use strict;
+use warnings;
+
+my @vars = ('and gugus for','gugus and', 'gurit for','granit');
+
+print ("any string 'gu' followed by 'gu'\n");
+foreach (@vars) {
+    if ($_ =~ /gu(?=gu)/) { print ("found &lt;$_&gt;\n"); }
+    else { print ("no match for &lt;$_&gt;\n"); }
+}
+
+print ("\nany string 'gu' not followed by 'gu'\n");
+foreach (@vars) {
+    if ($_ =~ /gu(?!gu)/) { print ("found &lt;$_&gt;\n"); }
+    else { print ("no match for &lt;$_&gt;\n"); }
+}
+&lt;/code&gt;
+&lt;p&gt;question: why does &lt;gugus&gt; show found, when &lt;gu&gt; followed by &lt;gu&gt; should be suppressed? what did i not understand correctly?
+&lt;/p&gt;
+&lt;p&gt;finally my real problem:&lt;/p&gt;
+&lt;code&gt;
+use strict;
+use warnings;
+
+my @test = ("ananas", "de:mindset:rule1", "en:mindset:rule1", "wiki:welcome", "
+de:sidebar", "sidebar", "en:sidebar", "start", "de:start", "en:start");
+my ($cnt, $result);
+
+print "start first loop &lt;var !=&gt; \n";
+$cnt=0;
+foreach (@test) {
+    if ($_ !~ /(start|sidebar)/) {
+        print "   &gt;$_&lt;\n";
+        $cnt++;
+    }
+}
+$result = ($cnt eq 4? "&gt;&gt; correct result" : "&gt;&gt; wrong result");
+print "end first loop &lt;$cnt&gt; is $result\n\nstart second loop &lt;negative lookahea
+d&gt;\n";
+$cnt=0;
+foreach (@test) {
+    if ($_ =~ /(?!start|sidebar)/) {
+        print "   &gt;$_&lt;\n";
+        $cnt++;
+    }
+}
+$result = ($cnt eq 4? "&gt;&gt; correct result" : "&gt;&gt; wrong result");
+print "end second loop &lt;$cnt&gt; is $result\n";
+print "&gt;&gt;pgm ended\n";
+&lt;/code&gt;
+&lt;p&gt;question: how is the correct notation for "find any string without start|sidebar" using negative lookahead?&lt;/p&gt;
+&lt;p&gt;thank you and 
+</doctext>
+<thread id="1203332">
+<node id="1203334"/>
+<node id="1203346"/>
+<node id="1203354"><node id="1203383"><node id="1203390"/>
+</node>
+</node>
+</thread></node>

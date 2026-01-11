@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1202901" title="Re^2: Detecting last line and blank line" created="2017-11-07 00:27:24" updated="2017-11-07 00:27:24" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;[Anonymous Monk]: [doc://eof] is indeed useful, and just to add two points to what [davido] wrote, there are two peculiarities when it is used in [doc://perlop#I/O-Operators|&lt;c&gt;while (&lt;&gt;)&lt;/c&gt;] loops, including the implicit ones from the [doc://perlrun|&lt;c&gt;-n&lt;/c&gt; and &lt;c&gt;-p&lt;/c&gt;] command line switches. First, &lt;c&gt;eof&lt;/c&gt; with and without empty parentheses is different - from its docs:&lt;/p&gt;
+&lt;blockquote&gt;
+In a &lt;c&gt;while (&lt;&gt;)&lt;/c&gt; loop, &lt;c&gt;eof&lt;/c&gt; or &lt;c&gt;eof(ARGV)&lt;/c&gt; can be used to detect the end of each file, whereas &lt;c&gt;eof()&lt;/c&gt; will detect the end of the very last file only.
+&lt;/blockquote&gt;
+&lt;p&gt;Second, [davido]'s code example uses the line counter [doc://$.], which does not get reset for each file in a &lt;c&gt;while (&lt;&gt;)&lt;/c&gt; loop. To do that, you need [doc://close] [doc://perlvar#ARGV] explicitly, that is:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;c&gt;
+while (&lt;&gt;) {
+    # your code here
+} continue {
+    close ARGV if eof;  # Not eof()!
+}
+&lt;/c&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;This is normally done in a [doc://continue] block because that way, it will still be executed even if you use [doc://next] inside the loop.&lt;/p&gt;
+&lt;p&gt;As for blank lines, I like to use &lt;c&gt;next unless /\S/;&lt;/c&gt; to skip lines that contain only whitespace. That doesn't exactly meet your "0 characters" requirement - as [LanX] [id://1202898|said], use &lt;c&gt;eq&lt;/c&gt; to compare the line to &lt;c&gt;""&lt;/c&gt; after [doc://chomp] (or to &lt;c&gt;"\n"&lt;/c&gt; before).&lt;/p&gt;
+&lt;p&gt;Although you don't say why you need to detect blank lines and the last line, note that setting [doc://$/|&lt;c&gt;$/="";&lt;/c&gt;] means files will be read in "paragraph mode", that is, records will be separated by one or more blank lines.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1202892</root_node>
+<parent_node field_name="parent_node">1202896</parent_node>
+<thread id="1202892">
+<node id="1202894"><node id="1202897"/>
+</node>
+<node id="1202896"><node id="1202901"/>
+</node>
+<node id="1202898"/>
+<node id="1202939"><node id="1202940"><node id="1203096"/>
+</node>
+</node>
+</thread></node>

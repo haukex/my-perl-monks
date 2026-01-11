@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1175821" title="Re: Passing the logger's object (updated)" created="2016-11-13 12:30:44" updated="2016-11-13 12:30:44" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [v_melnik],&lt;/p&gt;
+&lt;p&gt;Globals have a bad reputation because they are so commonly misused. But that doesn't make all globally accessible values bad: Will you ever have a need for more than one logger object in your entire application? And you can still use an OO approach and encapsulate the retrieval of the globally accessible value in a method, allowing for you to later change how loggers are retrieved (admittedly, if you make it a class method, that limits it a bit, but luckily in Perl class and instance methods are very similar). Here are just a few examples of the many possibilities:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use feature 'state';
+
+package Library;
+sub new { bless {}, shift }
+sub logger { # Just an example;
+	# could be class or instance method / property,
+	# could hand out different logger objects.
+	state $logger = Library::Logger-&gt;new;
+	return $logger;
+}
+
+package Library::Logger;
+sub new { bless {}, shift }
+sub log { shift; print "[".gmtime." UTC] @_\n" }
+
+package Library::Foo;
+sub new { bless {}, shift }
+sub foo { Library-&gt;logger-&gt;log("access via class method works") }
+
+package Library::Bar;
+use parent -norequire, 'Library';
+sub bar { shift-&gt;logger-&gt;log("inheritance works") }
+
+package Library::Quz;
+sub new { my $class = shift; bless {@_}, $class }
+sub library { shift-&gt;{library} }
+sub quz { shift-&gt;library-&gt;logger-&gt;log("access via property works") }
+
+package main;
+Library::Foo-&gt;new-&gt;foo;
+Library::Bar-&gt;new-&gt;bar;
+my $lib = Library-&gt;new;
+$lib-&gt;logger-&gt;log("access via instance method works");
+Library::Quz-&gt;new(library=&gt;$lib)-&gt;quz;
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;b&gt;Update:&lt;/b&gt; Added &lt;c&gt;Library::Quz&lt;/c&gt; class and updated example code accordingly; added some comments.&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1175816</root_node>
+<parent_node field_name="parent_node">1175816</parent_node>
+<thread id="1175816">
+<node id="1175817"><node id="1175839"><node id="1175841"/>
+</node>
+</node>
+<node id="1175821"><node id="1175838"><node id="1175842"/>
+<node id="1175868"/>
+</node>
+</node>
+<node id="1175843"/>
+</thread></node>

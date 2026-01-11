@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201958" title="Re: Regex: matching character which happens exactly once" created="2017-10-24 06:46:22" updated="2017-10-24 06:46:22" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Here you go, this passes all of my [id://1201924|test cases]:&lt;/p&gt;
+&lt;c&gt;
+/^(?(?=((?(3)(?(?!.*\3)(?(?!((?&lt;=(?!\3).(?=(?2)).
+|(?=\3)..)))(*F))))(?(?=.)(?=(.)(?1)))))(*F))/sx
+&lt;/c&gt;
+&lt;p&gt;Simple!*&lt;/p&gt;
+&lt;spoiler&gt;
+&lt;p&gt;[LanX|Rolf], I blame you for the sleep I lost over this!*&lt;/p&gt;
+&lt;c&gt;
+qr{
+	(?(DEFINE) (?&lt;loopfwd&gt;
+		(?{ print "pre:  $-[0]&lt;$&amp;&gt;$+[0] pos:".pos."\n" })
+		
+		(?(&lt;cur&gt;) # we have a current character to inspect
+			(?{ print "*CUR: &lt;$+{cur}&gt; / $-[0]&lt;$&amp;&gt;$+[0] pos:".pos."\n" })
+			(?(?! .* \g{cur} )
+				(?{ print " cur($+{cur}) doesn't repeat ahead, looking back\n" })
+				(?(?!(?&amp;loopback))
+					(?&lt;= (?&lt;single&gt; . ) )
+					(?{ print " cur($+{cur}) doesn't repeat behind either, "
+						."FOUND SINGLE: '$+{single}'!\n" })
+					(*FAIL)
+				|
+					(?{ print " cur($+{cur}) repeats behind\n" })
+				)
+			|
+				(?{ print " cur($+{cur}) cur repeats ahead\n" })
+			)
+		)
+		
+		(?(?=.) # there are more characters, continue looping
+			(?= (?&lt;cur&gt;.) (?&amp;loopfwd) )
+		)
+		
+		(?{ print "post: $-[0]&lt;$&amp;&gt;$+[0] pos:".pos."\n" })
+	) )
+	(?(DEFINE) (?&lt;loopback&gt;
+		(?&lt;=  # this lookbehind is fixed width!
+			(?&lt;prev&gt;  (?! \g{cur} ) . )
+			(?{ print "  prev: &lt;$+{prev}&gt; / $-[0]&lt;$&amp;&gt;$+[0] pos:".pos."\n" })
+			(?=(?&amp;loopback)) .
+		|
+			(?= \g{cur} ) . .
+		)
+	) )
+	\A (?(?=(?&amp;loopfwd))
+		(?{ print "loopfwd matched (no single found)\n" })
+		(*FAIL)
+	|
+		(?{ print "loopfwd didn't match (single found)\n" })
+	)
+}msx
+&lt;/c&gt;
+&lt;p&gt;It turns out the trick is to anchor the string at the beginning and use zero-width assertions everywhere in order to implement a "loop over every character in this string" algorithm, and you implement the loops as recursion. And you can "loop" backwards from the current character with a "fixed-width" lookbehind!&lt;/p&gt;
+&lt;p&gt;The one thing I haven't figured out yet is getting the &lt;c&gt;single&lt;/c&gt; value out of the regex. Another thing to note is that I had to invert the condition twice, since &lt;c&gt;(*FAIL)&lt;/c&gt; breaks out of recursion but &lt;c&gt;(*ACCEPT)&lt;/c&gt; does not. But I'll leave that for others, I'm &lt;u&gt;done&lt;/u&gt; for now :-P&lt;/p&gt;
+&lt;p&gt;* Just kidding ;-) I slept quite well, which probably helped :-)&lt;/p&gt;
+&lt;/spoiler&gt;</doctext>
+<root_node field_name="root_node">1201795</root_node>
+<parent_node field_name="parent_node">1201795</parent_node>
+<thread id="1201795">
+<node id="1201796"><node id="1201799"/>
+</node>
+<node id="1201806"><node id="1201807"><node id="1201924"><node id="1201940"/>
+</node>
+</node>
+</node>
+<node id="1201823"><node id="1201849"><node id="1201853"><node id="1201863"/>
+</node>
+</node>
+<node id="1201850"/>
+</node>
+<node id="1201894"/>
+<node id="1201896"><node id="1201899"><node id="1201900"><node id="1201903"><node id="1201911"><node id="1201921"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1201938"><node id="1201951"><node id="1201972"/>
+</node>
+</node>
+</node>
+<node id="1201912"><node id="1201920"><node id="1201950"/>
+</node>
+</node>
+<node id="1201958"><node id="1201959"/>
+<node id="1203237"/>
+</node>
+</thread></node>

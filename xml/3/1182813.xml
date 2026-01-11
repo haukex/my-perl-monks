@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1182813" title="What's going on with either constants folding or B::Deparse output in this case?" created="2017-02-25 06:35:12" updated="2017-02-25 06:35:12" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1020196">vr</author>
+<doctext field_name="doctext">&lt;p&gt;I'm puzzled with this little problem (a fragment is to reproduce it, never mind what it was doing originally):&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;c&gt;
+C:\&gt;perl -we "sub parse{${$_[0]}=~/\Gfoo/gc or die} parse \('foo') for 1..2"
+Died at -e line 1.
+
+C:\&gt;perl -we "sub parse{${$_[0]}=~/\Gfoo/gc or die} parse \(''.'foo') for 1..2"
+
+C:\&gt;perl -MO=Deparse -we "sub parse{${$_[0]}=~/\Gfoo/gc or die} parse \('foo') for 1..2"
+BEGIN { $^W = 1; }
+sub parse {
+    die unless ${$_[0];} =~ /\Gfoo/cg;
+}
+parse \'foo' foreach (1 .. 2);
+-e syntax OK
+
+C:\&gt;perl -MO=Deparse -we "sub parse{${$_[0]}=~/\Gfoo/gc or die} parse \(''.'foo') for 1..2"
+BEGIN { $^W = 1; }
+sub parse {
+    die unless ${$_[0];} =~ /\Gfoo/cg;
+}
+parse \'foo' foreach (1 .. 2);
+-e syntax OK
+&lt;/c&gt;
+&lt;p&gt;&lt;/p&gt;
+&lt;p&gt;I'd expect, because of constants folding, two fragments of code to behave the same. Also, see &lt;c&gt;B::Deparse&lt;/c&gt; output. Yet code runs differently.&lt;/p&gt;
+</doctext>
+<thread id="1182813">
+<node id="1182815"><node id="1182816"><node id="1182825"/>
+</node>
+</node>
+<node id="1182859"/>
+</thread></node>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1163300" title="Optionally / safely disabling a warning category for a complete package" created="2016-05-18 03:53:48" updated="2016-05-18 03:53:48" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="5348">Corion</author>
+<doctext field_name="doctext">&lt;p&gt;I've just released [mod://Future::HTTP] using [doc://perlsub#signatures|signatures]. Basically, this needs the following stanza to tell Perl that I know what I'm doing:&lt;/p&gt;
+&lt;c&gt;
+no warnings 'experimental::signatures';
+use feature 'signatures';
+&lt;/c&gt;
+&lt;p&gt;As I want to support versions of Perl older than 5.22 and also only use a restricted set of signature features, I also wrote [mod://Filter::signatures], which implements a very restricted version of signatures as a source filter.&lt;/p&gt;
+&lt;p&gt;The problem now arises when my code is run under (say) Perl 5.14. That version of Perl does not know about the &lt;c&gt;experimental::signatures&lt;/c&gt; warning category. But I don't care about [mod://warnings] not knowing about that category because if it doesn't know about a category, disabling that category can't make things worse. The following approaches don't work:&lt;/p&gt;
+&lt;c&gt;
+eval { no warnings 'experimental::signatures' }; 
+&lt;/c&gt;
+&lt;p&gt;This gives a compile time error as "no warnings" happens when the source code is parsed.&lt;/p&gt;
+&lt;c&gt;
+eval "no warnings 'experimental::signatures'";
+&lt;/c&gt;
+&lt;p&gt;This catches the error, but runs too late because the warnings get raised during compile time and then get disabled at runtime.
+&lt;/p&gt;
+&lt;c&gt;
+BEGIN {
+    eval "no warnings 'experimental::signatures'";
+}
+&lt;/c&gt;
+&lt;p&gt;This runs at the right time, but as the warnings are lexically scoped, the warnings only get disabled for the BEGIN block.
+&lt;/p&gt;
+&lt;p&gt;So far, I've settled on [mod://Filter::signatures] simply disabling the exact statement of &lt;c&gt;no warnings 'experimental::signatures';&lt;/c&gt; when
+it finds it. This is the same approach the module already takes to defang &lt;c&gt;use feature 'signatures';&lt;/c&gt; on versions of Perl that don't have signature support. But that path leads down the ugly and very slippery slope of rewriting more and more of Perl code and I'd prefer to keep the modifications of the source filter as small as possible.&lt;/p&gt;
+&lt;p&gt;I guess my question boils down to how to disable a warning category for a complete package without wrapping the whole package in a BEGIN scope, and ideally without using a source filter...&lt;/p&gt;</doctext>
+<thread id="1163300">
+<node id="1163305"/>
+<node id="1163318"/>
+<node id="1163344"><node id="1163370"/>
+<node id="1163371"><node id="1163376"/>
+</node>
+</node>
+<node id="1163518"/>
+</thread></node>

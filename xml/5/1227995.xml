@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227995" title="Re: [RFC] File::Replace" created="2019-01-03 14:20:11" updated="2019-01-03 14:20:11" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Well, I dove into the rabbit hole that is [doc://tie]ing &lt;c&gt;ARGV&lt;/c&gt; in order to overload Perl's magic &lt;c&gt;&lt;&gt;&lt;/c&gt; operator... quite an adventure, but at least I have something to show for it:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;[mod://Tie::Handle::Argv] - A base class for tying Perl's magic &lt;c&gt;ARGV&lt;/c&gt; handle&lt;/li&gt;
+&lt;li&gt;[mod://File::Replace::Inplace] - Emulation of Perl's &lt;c&gt;-i&lt;/c&gt; switch via [mod://File::Replace]&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The former is probably only interesting if you want to implement your own module that overloads &lt;c&gt;ARGV&lt;/c&gt;, while the latter is hopefully something interesting: It's a drop-in replacement for Perl's &lt;c&gt;-i&lt;/c&gt; switch:&lt;/p&gt;
+&lt;c&gt;
+$ echo -en "hello\nworld\n" &gt;foo.txt
+$ perl -i -ple '$_ = ucfirst' foo.txt
+$ cat foo.txt 
+Hello
+World
+
+$ echo -en "quz\nbaz\n" &gt;bar.txt
+$ perl -MFile::Replace=-i -ple '$_ = ucfirst' bar.txt
+$ cat bar.txt
+Quz
+Baz
+&lt;/c&gt;
+&lt;p&gt;So what's the advantage of this, especially given that &lt;c&gt;-i&lt;/c&gt;'s behavior was [https://perldoc.pl/perl5280delta#In-place-editing-with-perl-i-is-now-safer|recently updated] to operate in a fashion similar to [mod://File::Replace]? Well, the above works on older Perls too (on *NIX, I've tested all the way down to 5.8.1, although I recommend &amp;ge;5.16, and on Windows I do have a bit more trouble testing, but it should work down to at least 5.10). This should be an advantage since you get guaranteed behavior even if you're not sure whether the box you're currently on has 5.28+ installed. Also, [mod://File::Replace] is a lot more stringent in its checks, every step is checked for errors, which are generally fatal.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1199720</root_node>
+<parent_node field_name="parent_node">1199720</parent_node>
+<thread id="1199720">
+<node id="1199785"><node id="1199803"><node id="1200162"/>
+</node>
+</node>
+<node id="1199790"><node id="1199805"/>
+</node>
+<node id="1227995"/>
+</thread></node>

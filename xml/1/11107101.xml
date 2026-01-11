@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11107101" title="Re: Go to perl::critic (updated)" created="2019-10-06 13:26:04" updated="2019-10-06 13:26:04" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Is there such a policy? &lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Here's one &lt;c&gt;:-)&lt;/c&gt;&lt;/p&gt;
+&lt;c&gt;
+package Perl::Critic::Policy::ControlStructures::ProhibitGotoLabel;
+use warnings;
+use strict;
+use base 'Perl::Critic::Policy';
+use Perl::Critic::Utils qw/:severities/;
+
+# to locate the path where to place this file, do e.g.: 
+# $ perl -MFile::Basename=dirname -MPerl::Critic::Policy::ControlStructures::ProhibitUnreachableCode -le 'print dirname $INC{"Perl/Critic/Policy/ControlStructures/ProhibitUnreachableCode.pm"}'
+# or
+# $ dirname `perldoc -l Perl::Critic::Policy::ControlStructures::ProhibitUnreachableCode`
+
+our $VERSION = '0.001';
+sub supported_parameters { return }
+sub default_severity { return $SEVERITY_MEDIUM }
+sub default_themes { return qw/core bugs/ }
+sub applies_to { return 'PPI::Token::Word' }
+
+=head1 DESCRIPTION
+
+A C&lt;goto LABEL&gt; is considered a bad practice by a number of people,
+as it can lead to hard-to-understand and brittle spaghetti code.
+Instead of a C&lt;goto&gt;, use different control structures, or place a
+label on a block (such as a loop's block) and use C&lt;next LABEL&gt;,
+C&lt;last LABEL&gt;, or C&lt;redo LABEL&gt; instead.
+
+C&lt;goto &amp;NAME&gt; is very different from C&lt;goto LABEL&gt; and is not covered
+by this policy. C&lt;goto EXPR&gt; is ambiguous and this policy will report
+such cases when C&lt;EXPR&gt; does not begin with C&lt;&amp;&gt;. Whether this is a
+false positive or not cannot be determined by a static parse.
+
+=cut
+
+my $DESC = q{goto LABEL used};
+my $EXPL = q{Considered bad practice};
+
+sub violates {
+	my ($self, $elem) = @_;
+	return if $elem-&gt;content() ne 'goto';
+	my $target = $elem-&gt;snext_sibling();
+	return $self-&gt;violation('Nothing following "goto"?',
+		'It seems there is a lone "goto" in your code?',
+		$elem) if !$target;
+	return if $target-&gt;isa('PPI::Token::Symbol') &amp;&amp; $target-&gt;raw_type eq '&amp;'
+	       || $target-&gt;isa('PPI::Token::Cast')   &amp;&amp; $target-&gt;content  eq '&amp;'
+	       || $target-&gt;isa('PPI::Token::Word')   &amp;&amp; $target-&gt;content  eq '__SUB__';
+	return $self-&gt;violation($DESC,$EXPL,$elem);
+}
+
+1;
+&lt;/c&gt;
+&lt;readmore title="Test code"&gt;
+&lt;p&gt;Test code:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use feature 'current_sub'; # Perl 5.16, for __SUB__()
+
+# tests for Perl::Critic::Policy::ControlStructures::ProhibitGotoLabel
+# run me with e.g.: perl -c gototest.pl &amp;&amp; perlcritic -3 gototest.pl
+
+goto FOO;  # bad
+FOO:
+
+sub foo { }
+sub bar { goto &amp;foo }  # good
+
+my $i = 1;
+goto ("FOO", "BAR", "GLARCH")[$i];  # bad
+BAR:
+
+sub quz { goto __SUB__ }     # good
+sub quz2 { goto __SUB__() }  # good
+
+my $subref = \&amp;foo;
+sub ab { goto &amp;$subref; }  # good
+sub cd { goto $subref;  }  # good, but false positive
+
+my $label = "XYZ";
+goto $label;  # bad (but ambigious)
+XYZ:
+
+__END__
+
+gototest.pl syntax OK
+goto LABEL used at line 9, column 1.  Considered bad practice.  (Severity: 3)
+goto LABEL used at line 16, column 1.  Considered bad practice.  (Severity: 3)
+goto LABEL used at line 24, column 10.  Considered bad practice.  (Severity: 3)
+goto LABEL used at line 27, column 1.  Considered bad practice.  (Severity: 3)
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Added handling of &lt;c&gt;__SUB__&lt;/c&gt; keyword, thanks [rir]!&lt;/p&gt;
+&lt;/readmore&gt;
+</doctext>
+<root_node field_name="root_node">11107089</root_node>
+<parent_node field_name="parent_node">11107089</parent_node>
+<thread id="11107089">
+<node id="11107090"><node id="11107092"><node id="11107094"/>
+</node>
+<node id="11107097"/>
+</node>
+<node id="11107091"><node id="11107095"><node id="11107106"><node id="11107110"/>
+</node>
+</node>
+</node>
+<node id="11107101"><node id="11107103"><node id="11107104"><node id="11107115"><node id="11107126"><node id="11107134"/>
+</node>
+</node>
+</node>
+<node id="11107107"><node id="11107151"/>
+</node>
+</node>
+<node id="11107105"><node id="11107108"/>
+<node id="11107124"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11143067" title="Trouble with time zones and Sun rise/set" created="2022-04-18 21:42:18" updated="2022-04-18 21:42:18" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="461912">GrandFather</author>
+<doctext field_name="doctext">&lt;p&gt;I'm writing a script to generate a report of interesting astronomical events for a specified month. Mostly it's going very well, but I have struck a problem which I suspect is time zone related, but just can't make sense of. The script below is supposed to calculate Sun rise and set times as observed by a telescope in Wellington, New Zealand. Instead it seems to insist on generating UTC times even though the DateTime objects representing the rise and set times know that they are using 'Pacific/Auckland' time. Assuming the times are UTC, they are plausible.&lt;/p&gt;
+&lt;p&gt;Can anyone see what I'm doing wrong or have misunderstood? (Yes, even in New Zealand in the Southern Hemisphere the sun rises before it sets on the same day.)&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+use Astro::Coords::Planet;
+use Astro::Telescope;
+use DateTime;
+
+my %params = (
+    year      =&gt; 2022,
+    month     =&gt; 4,
+    day       =&gt; 1,
+    hour      =&gt; 0,
+    minute    =&gt; 1,
+    second    =&gt; 0,
+    time_zone =&gt; 'Pacific/Auckland',
+    );
+my $obsDate = DateTime-&gt;new(%params);
+my $cSun = Astro::Coords-&gt;new(planet =&gt; 'sun');
+
+$cSun-&gt;telescope(Astro::Telescope-&gt;new('485'));
+$cSun-&gt;datetime($obsDate);
+$cSun-&gt;datetime()-&gt;set_time_zone('Pacific/Auckland');
+
+my $sRise = $cSun-&gt;rise_time();
+my $sSet = $cSun-&gt;set_time();
+my $tz = $sRise-&gt;time_zone()-&gt;name();
+
+print "Rise: $sRise   Set: $sSet ($tz)\n";
+&lt;/c&gt;
+&lt;p&gt;Prints:&lt;/p&gt;
+&lt;c&gt;
+Rise: 2022-04-01T18:34:16   Set: 2022-04-01T06:12:04 (Pacific/Auckland)
+&lt;/c&gt;
+&lt;p&gt;Expected:&lt;/p&gt;
+&lt;c&gt;
+Rise: 2022-04-01T06:12:04   Set: 2022-04-01T18:34:16 (Pacific/Auckland)&lt;/c&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-461912"&gt;
+Optimising for fewest key strokes only makes sense transmitting to Pluto or beyond
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="11143067">
+<node id="11143068"><node id="11143069"><node id="11143070"><node id="11143074"><node id="11143106"/>
+<node id="11143172"><node id="11143173"><node id="11143192"><node id="11143206"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11143082"/>
+</node>
+</node>
+</node>
+<node id="11143073"><node id="11143092"/>
+<node id="11143105"><node id="11143222"/>
+</node>
+<node id="11143187"/>
+</node>
+<node id="11143175"><node id="11143186"/>
+</node>
+</thread></node>

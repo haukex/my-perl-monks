@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11152013" title="Re: IO::Select woes" created="2023-05-06 06:15:51" updated="2023-05-06 06:15:51" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I assume this is a continuation of [id://11151958]? I am wondering why you are using [doc://IO::Select] at all - it seems to me like IPC may be overcomplicating things a lot. Reading the anonymous posts in that and this thread (it would be easier to follow if you were to [id://101|create an account]), I have to say: please take a moment to take a step back and explain the big picture to us - what are you trying to accomplish? Are you:&lt;/p&gt;
+&lt;ol&gt;
+	&lt;li&gt;Simply trying to get one script to consume the output of a second script? Then all you need is [doc://print] and [doc://perlop#I/O-Operators|&lt;c&gt;&lt;&gt;&lt;/c&gt;]:
+&lt;c&gt;
+$ cat producer.pl 
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+print "Pretend this is your table.\n";
+
+$ cat consumer.pl 
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+while ( my $line = &lt;&gt; ) {
+	chomp($line);
+	print "I received: &lt;&lt;$line&gt;&gt;\n";
+}
+
+$ ./producer.pl | ./consumer.pl 
+I received: &lt;&lt;Pretend this is your table.&gt;&gt;
+
+$ ./producer.pl &gt;table.txt
+$ ./consumer.pl table.txt
+I received: &lt;&lt;Pretend this is your table.&gt;&gt;
+&lt;/c&gt;
+		In addition, you really shouldn't be using ASCII-formatted tables as your data exchange format; use something like [doc://JSON::PP|JSON] to pass data between processes and then only format the table when actually displaying it to the user.
+	&lt;/li&gt;
+	&lt;li&gt;Do you have a long-running script that is once in a while calling another script to produce data (like your table)?
+		&lt;ol type="a"&gt;
+			&lt;li&gt;If both are Perl scripts that you have control over, then turn the data-producing script into a Perl module that the main script can [doc://use].&lt;/li&gt;
+			&lt;li&gt;Otherwise, if you must call an exernal program, see my node [id://1180578], if you scroll down it has a bunch of example code.&lt;/li&gt;
+		&lt;/ol&gt;
+	&lt;/li&gt;
+	&lt;li&gt;Do you have two long-running scripts running side by side that need to talk to each other? Then I recommend sockets, and then [doc://IO::Select] may be appropriate (though I personally find it too low-level).&lt;/li&gt;
+&lt;/ol&gt;
+</doctext>
+<root_node field_name="root_node">11151991</root_node>
+<parent_node field_name="parent_node">11151991</parent_node>
+<thread id="11151991">
+<node id="11151992"><node id="11151993"/>
+</node>
+<node id="11151994"><node id="11151996"/>
+</node>
+<node id="11151995"><node id="11151999"/>
+<node id="11152005"/>
+</node>
+<node id="11151998"/>
+<node id="11152001"><node id="11152002"><node id="11152004"/>
+</node>
+<node id="11152003"/>
+</node>
+<node id="11152009"/>
+<node id="11152011"><node id="11152012"><node id="11152059"/>
+</node>
+</node>
+<node id="11152013"/>
+<node id="11152184"><node id="11152197"/>
+</node>
+</thread></node>

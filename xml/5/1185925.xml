@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1185925" title="Re: Using an element in a Hash of Arrays to access the key (updated x2)" created="2017-03-25 13:20:08" updated="2017-03-25 13:20:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The "direct", although inefficient approach would be to inspect the arrays and look for the values, for example using [doc://grep]:&lt;/p&gt;
+&lt;c&gt;
+for my $key (keys %hash) {
+	print "$key\n"
+		if grep {$_ eq "banana"} @{ $hash{$key} };
+}
+&lt;/c&gt;
+&lt;p&gt;This is inefficient because it searches the entire hash of arrays structure. It would be more efficient if you either structure your data as a hash of hashes from the beginning, or convert it. Then, it's just a matter of hash lookups, which are much faster than [doc://grep]ping an array. Of course, building a second data structure will eat more memory, which could be a problem if the initial data structure is large, but especially for small data structures often the speed gain will outweigh the memory cost.&lt;/p&gt;
+&lt;c&gt;
+# convert
+my %hoh = map {
+		$_ =&gt; { map {$_=&gt;1} @{ $hash{$_} } }
+	} keys %hash;
+
+# debug: inspect the converted data
+use Data::Dumper;
+print Dumper(\%hoh);
+
+# lookup
+my $search = "banana";
+for my $key (keys %hoh) {
+	print "$key\n" if $hoh{$key}{$search};
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Taking this two steps further, you can build an inverse data structure, so that you don't need to do any searching, you just look up based on the string (&lt;c&gt;banana&lt;/c&gt;). This first example applies only (!) if you know that all the values across all of the arrays are unique:&lt;/p&gt;
+&lt;c&gt;
+# build inverse hash, if all values are unique
+my %inverse_hash;
+for my $key (keys %hash) {
+	for my $val (@{ $hash{$key} }) {
+		$inverse_hash{$val} = $key;
+	}
+}
+
+# debug: inspect the converted data
+print Dumper(\%inverse_hash);
+
+# lookup is simple!
+print $inverse_hash{banana}, "\n";
+&lt;/c&gt;
+&lt;p&gt;If there can be duplicate values across the arrays, then an "inverse" hash of arrays would be more appropriate:&lt;/p&gt;
+&lt;c&gt;
+# convert to "inverse" hash of arrays (in two steps)
+my %hoa;
+# first, build a hash of hashes
+# (this eliminates duplicates at both levels)
+for my $key (keys %hash) {
+	for my $val (@{ $hash{$key} }) {
+		$hoa{$val}{$key}++;
+	}
+}
+# then, convert the second level of hashes to arrays
+for my $vals (values %hoa) {
+	$vals = [sort keys %$vals];
+}
+
+# debug: inspect the converted data
+print Dumper(\%hoa);
+
+# lookup
+print join(', ', @{ $hoa{banana} } ), "\n"
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; In the last example, if you're looking up keys that may not exist, you could use the &lt;c&gt;//[]&lt;/c&gt; trick that [tybalt89] [id://1185931|showed], as in &lt;c&gt;@{ $hoa{banana} // [] }&lt;/c&gt;, or you could first check for the existence of the key (e.g. &lt;c&gt;if (exists $hoa{banana})&lt;/c&gt;). &lt;small&gt;(Also, in the text above I added a bit of clarification/explanation, e.g. because both the initial data structure and my final example are a hash of arrays.)&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1185923</root_node>
+<parent_node field_name="parent_node">1185923</parent_node>
+<thread id="1185923">
+<node id="1185924"><node id="1185926"><node id="1185928"/>
+</node>
+</node>
+<node id="1185925"><node id="1185930"><node id="1185938"/>
+</node>
+<node id="1185939"/>
+</node>
+<node id="1185931"><node id="1185936"><node id="1185937"/>
+</node>
+</node>
+<node id="1185934"/>
+<node id="1185959"/>
+</thread></node>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11135654" title="Perl code inside the Mojo::Template" created="2021-08-06 11:42:32" updated="2021-08-06 11:42:32" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">Hi Monks!&lt;br&gt;&lt;br&gt;
+
+How can I use a template value like "&lt;%= $number %&gt;" in the Perl code inside the Mojo::Template&lt;br&gt;
+I am getting this error:&lt;br&gt;&lt;br&gt;
+"Can't modify string eq in concatenation (.) or string at mytemplate.html.ep" 
+&lt;br&gt;&lt;br&gt;
+&lt;code&gt;
+% foreach my $n ( @{ $data-&gt;{ names } || [] } ){
+
+    % if($n-&gt;{'year'} eq &lt;%= $number %&gt; ) {
+       &lt;tr&gt;
+         &lt;td&gt;&lt;%= $n-&gt;{'name'} %&gt;&lt;/td&gt;
+         &lt;td&gt;&lt;%= $n-&gt;{'age'} %&gt;&lt;/td&gt;
+         &lt;td&gt;&lt;%= $n-&gt;{'code'} %&gt;&lt;/td&gt;
+       &lt;/tr&gt;
+     % last;
+  % }
+% }
+&lt;/code&gt;&lt;br&gt;
+ALso is it possible to use a sub routine from the Perl code inside the template?&lt;br&gt;
+
+&lt;br&gt;The mytemplate.html.ep
+&lt;br&gt;
+&lt;code&gt;
+
+% foreach my $n ( @{ $data-&gt;{ names } || [] } ){
+
+    % if($n-&gt;{'year'} eq &lt;%= $number %&gt; ) {
+       &lt;tr&gt;
+         &lt;td&gt; % name_val(&lt;%= $n-&gt;{'name'} %&gt;) % &lt;/td&gt;
+         &lt;td&gt;&lt;%= $n-&gt;{'age'} %&gt;&lt;/td&gt;
+         &lt;td&gt;&lt;%= $n-&gt;{'code'} %&gt;&lt;/td&gt;
+       &lt;/tr&gt;
+     % last;
+  % }
+% }
+&lt;/code&gt;&lt;br&gt;
+
+&lt;br&gt; The Sample code:&lt;br&gt;
+&lt;code&gt;
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use CGI;
+use Mojo::Template;
+
+my $q = CGI-&gt;new();
+
+my $mt = Mojo::Template-&gt;new( vars =&gt; 1, auto_escape =&gt; 1 );
+
+my $data; # Testing here;
+
+
+print $q-&gt;header( -charset =&gt; 'utf-8' ), $mt-&gt;render_file( mytemplate.html.ep,
+                  {
+					data =&gt; $data,
+                                        number =&gt; '1',
+				   }
+				 );
+
+sub name_val {
+
+  my $name = shift || '';
+
+  # testing
+  
+  if($name) { 
+    return $name;
+  }else( return "NO NAME"; )
+  
+ }
+
+ &lt;/code&gt;
+ &lt;br&gt;
+ Thanks a lot for looking!!</doctext>
+<reputation field_name="reputation">7</reputation>
+<thread id="11135654">
+<node id="11135656"><node id="11135661"/>
+</node>
+</thread></node>

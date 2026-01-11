@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1225451" title="Re^3: What is the proper way to suppress a warning in a test file?" created="2018-11-08 14:05:32" updated="2018-11-08 14:05:32" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;How do you check for the "specific warning that definitely should not happen?"&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I have a simple little function that I include in my test libraries, [https://github.com/haukex/Tie-Subset/blob/369487962e8ae7f5cb2e6dca9430fe499d0978ee/t/Tie_Subset_Testlib.pm#L45|for example]:&lt;/p&gt;
+&lt;c&gt;
+sub warns (&amp;) {
+	my $sub = shift;
+	my @warns;
+	{ local $SIG{__WARN__} = sub { push @warns, shift };
+		$sub-&gt;() }
+	return wantarray ? @warns : scalar @warns;
+}
+&lt;/c&gt;
+&lt;p&gt;Then I'll [https://github.com/haukex/Tie-Subset/blob/369487962e8ae7f5cb2e6dca9430fe499d0978ee/t/20_array.t#L69|use it] like this:&lt;/p&gt;
+&lt;c&gt;
+sub some_module_code {
+	my $arg = shift;
+	warn "Some custom warning about $arg";
+}
+
+my @w = warns {
+	some_module_code("foo");
+};
+is grep({/\bSome custom warning\b/i} @w), 1;
+is grep({/\bUse of uninitialized value\b/i} @w), 0;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1225437</root_node>
+<parent_node field_name="parent_node">1225448</parent_node>
+<thread id="1225437">
+<node id="1225441"/>
+<node id="1225442"><node id="1225448"><node id="1225451"/>
+</node>
+</node>
+</thread></node>

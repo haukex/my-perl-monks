@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201378" title="Re^6: modular file scoping" created="2017-10-14 13:58:59" updated="2017-10-14 13:58:59" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Personally, I think it's easiest to think about it in terms of references&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In fact, in the following you can see how Perl uses the same reference counting mechanism as for hard references. Hopefully this will now put your mind at ease :-)&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+# Debugging aids
+use Devel::Refcount 'refcount';
+use Sub::Delete 'delete_sub';
+{
+	# This will act like a normal hash except it will print
+	# "DESTROY" when it is destroyed (garbage collected).
+	package DebugHash;
+	BEGIN {
+		require Tie::Hash;
+		our @ISA = ('Tie::StdHash');
+	}
+	sub DESTROY { print "DESTROY\n" }
+}
+
+{ # Lexical scope for "my %hash".
+	
+	my %hash; # +1 reference to %hash (0+1=1)
+	BEGIN { tie %hash, 'DebugHash' } # tie to debugging aid
+	# Note: We'll use $hash{c} as a counter for debug output.
+	
+	# Apparently BEGIN{} blocks cause +1 reference to %hash (?)
+	# Note: refcount()-1 since the argument \%hash is +1 reference.
+	BEGIN { print ++$hash{c},": ",refcount(\%hash)-1,"\n" } # "1: 2"
+	
+	sub foo { # +1 reference to %hash (compile time)
+		$hash{x}++;
+		print ++$hash{c},": ",refcount(\%hash)-1,"\n";
+	}
+	BEGIN { print ++$hash{c},": ",refcount(\%hash)-1,"\n" } # "2: 3"
+	
+	sub bar { # +1 reference to %hash (compile time)
+		$hash{y}++;
+		my $hashref = \%hash; # +1 reference to %hash (runtime)
+		print ++$hash{c},": ",refcount(\%hash)-1,"\n";
+	}
+	BEGIN { print ++$hash{c},": ",refcount(\%hash)-1,"\n" } # "3: 4"
+	
+	# Remember "BEGIN" is compile time, the following is run time.
+	# The three references to %hash are the lexical "my %hash",
+	# as well as "sub foo" and "sub bar".
+	print ++$hash{c},": ",refcount(\%hash)-1,"\n";          # "4: 3"
+	
+} # Lexical scope of "my %hash" ends, -1 reference to %hash.
+
+# The following calls are in "eval" b/c otherwise the calls
+# would be another reference keeping &amp;main::foo/bar alive.
+eval "foo()";      # "5: 2"
+eval "bar()";      # "6: 3"
+delete_sub 'bar';  # -1 reference to %hash
+eval "foo()";      # "7: 1"
+delete_sub 'foo';  # -1 reference to %hash (1-1=0) =&gt; "DESTROY"
+
+print "Done.\n";
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1201062</root_node>
+<parent_node field_name="parent_node">1201367</parent_node>
+<thread id="1201062">
+<node id="1201066"><node id="1201112"/>
+<node id="1201286"><node id="1201299"><node id="1201358"><node id="1201367"><node id="1201378"><node id="1201416"/>
+</node>
+<node id="1201415"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1164948" title="instantiating an smtp object" created="2016-06-06 02:51:30" updated="2016-06-06 02:51:30" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Monks&lt;/p&gt;
+&lt;p&gt;I'm trying to follow the development in the alpaca book to create a Perl Daily Briefing, which informs the user on where he or she is going. Previous efforts have focused on making a physical list, which has some use. For getting places, we now are sometimes best directed by online resources. It is that capability I try to peck at in this thread.&lt;/p&gt;&lt;p&gt;In the idiom of the book, we have to pack things away, this time using references and libraries.  I've attempted with moderate success to take what I've had in main for creating an html page and herding it into a module.&lt;/p&gt;
+&lt;p&gt;I use a random text generator that I lifted from perlmonks to generate a file that no one can find without considerable trial and error. I don't think that's too taxing as keystrokes on a phone if need be, in particular with lack of upper case letters. Yet I much prefer to be sent the resulting link, which I attempt to, but so far without success. I think my "big problem" is that I don't understand which host to use when instantiating the smtp object. I peeked on my thunderbird account, and one of my tries was using the exact outgoing smtp for my server. To my (impeachable) knowledge, this does not require username/password identification with thunderbird. Anyways this is what I have:&lt;/p&gt;
+&lt;c&gt;#!/usr/bin/perl -w
+use strict;
+use 5.010;
+use lib "template_stuff";
+use html3;
+
+sub rndStr{ join'', @_[ map{ rand @_ } 1 .. shift ] }
+my $new_name = rndStr( 5, 'a'..'z', 1..9);
+my $ref_to_name = \$new_name;
+my $return_page = create_page($ref_to_name);
+say "page is $return_page";
+email_link($return_page);
+sub email_link{
+use strict;
+use 5.014;
+use Net::SMTP;
+use config2;
+
+my $link = shift;
+my $sub_hash = "my_ftp";
+my $host = $config{$sub_hash}-&gt;{'site'};
+say "host is $host";
+my $phone = $config{$sub_hash}-&gt;{'phone'};
+say "phone is $phone";
+my $smtp = Net::SMTP-&gt;new( Host  =&gt; $host,
+    Debug =&gt; 2);
+$smtp-&gt;mail($ENV{USER});
+$smtp-&gt;to($phone);
+$smtp-&gt;data;
+$smtp-&gt;datasend("Subject: This is your map link");
+$smtp-&gt;datasend("$link\n");
+$smtp-&gt;dataend;
+$smtp-&gt;quit;
+}
+__END__ 
+
+&lt;/c&gt;
+&lt;p&gt;output:&lt;/p&gt;
+&lt;c&gt;C:\cygwin64\home\Fred\pages2\plot\alpaca&gt;perl alpaca3.pl
+cipher is 2sq8b
+word is 2sq8b
+you are here /
+a is . .. pdb1.html images pdb2.html pdb3.html pdb4.html jjgg4w5q1.html 1ty83zib
+1.html hwr241.html i1f291.html wfi8z1.html r28zr1.html pn8ns1.html j69a91.html
+old num is 0
+line 70 says html filename is 2sq8b1.html
+in create html file your data is 2sq8b1.html
+remote_dir is 2sq8b1
+default is a.txt
+file down here is 2sq8b1.html
+new file is 2sq8b1.html
+page is 2sq8b1.html
+host is www.1and1.com
+phone is redacted@txt.att.net
+Can't call method "mail" on an undefined value at alpaca3.pl line 27.&lt;/c&gt;
+&lt;p&gt;I get the html page generated and put where I want it : [http://merrillpjensen.com/maps/2sq8b1.html], but I can't send the resulting link to my phone, which is where I need it. It "feels like" my smtp object isn't instantiating. I've used 3 different values for $host, all from config2.pm, which follows with redactions:&lt;/p&gt;&lt;c&gt;package config2;
+use Exporter	qw(import);
+our @EXPORT =	qw(%config);
+our %config = (
+     my_ftp =&gt;  {
+           domain   =&gt;  'www.merrillpjensen.com',
+           username =&gt;  '...',
+           password =&gt;  '...',
+		   smtp =&gt;  'smtp.1and1.com',
+		   phone =&gt;  '...@txt.att.net',
+		   site =&gt; 'www.1and1.com',
+          },
+     );
+1;
+&lt;/c&gt;
+&lt;p&gt;First I have the question on how to instantiate the smtp object. Beyond that I might ask whether there's an easier way to do all this. Thanks for your comment,&lt;/p&gt;</doctext>
+<thread id="1164948">
+<node id="1164951"/>
+<node id="1164958"><node id="1164961"><node id="1164962"><node id="1164967"><node id="1164983"><node id="1164986"><node id="1165049"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1165046"><node id="1165054"><node id="1165198"/>
+</node>
+</node>
+</node>
+</thread></node>

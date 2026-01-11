@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1222672" title="Re^3: Post query to Metacpan API" created="2018-09-19 15:52:48" updated="2018-09-19 15:52:48" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;That's cool but too complicated&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The original question was &lt;i&gt;"How does one query the metacpan api from perl?"&lt;/i&gt;, to which the IMO best answer is indeed [mod://MetaCPAN::Client]. Why reject it so quickly? I'd recommend having a look at the documentation. You'll see it's actually pretty easy to use.&lt;/p&gt;
+&lt;p&gt;Here's what fetching the version of a distro looks like without the module:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use HTTP::Tiny;
+use URI;
+use Cpanel::JSON::XS qw/decode_json/;
+
+my $http = HTTP::Tiny-&gt;new;
+
+my @modules = @ARGV ? @ARGV : ('MetaCPAN::Client');
+
+for my $mod (@modules) {
+        my $uri = URI-&gt;new('http://fastapi.metacpan.org/v1/module');
+        $uri-&gt;path_segments( $uri-&gt;path_segments, $mod );
+        my $resp = $http-&gt;get($uri);
+        die "$uri: $resp-&gt;{status} $resp-&gt;{reason}\n" unless $resp-&gt;{success};
+        my $api = decode_json($resp-&gt;{content});
+        print "$mod: $api-&gt;{version}\n";
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; In comparison, [stevieb] [id://1222674|showed] just how easy using the module makes it.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1222645</root_node>
+<parent_node field_name="parent_node">1222667</parent_node>
+<thread id="1222645">
+<node id="1222647"><node id="1222667"><node id="1222672"/>
+<node id="1222674"/>
+</node>
+</node>
+<node id="1222716"><node id="1222757"/>
+</node>
+<node id="1222914"/>
+</thread></node>

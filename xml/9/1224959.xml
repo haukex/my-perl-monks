@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224959" title="Re^4: Selecting Ranges of 2-Dimensional Data" created="2018-10-30 18:54:36" updated="2018-10-30 18:54:36" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;my @max = ( 0 + @$data, $cols ) x 2;&lt;/c&gt; I'm just looking for a reference to read up on that.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;See the &lt;c&gt;x&lt;/c&gt; operator under [doc://perlop#Multiplicative-Operators]. I'm just using it as a shorthand for &lt;c&gt;my @max = ( 0 + @$data, $cols, 0 + @$data, $cols );&lt;/c&gt;.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;The second thing I wanted to bring up was about the parameter array. Is it the case that @_ does not change over the life of the function? Does it have intrinsic aliasing?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;[doc://@_] is described in [doc://perlsub#DESCRIPTION|perlsub]: "The array &lt;c&gt;@_&lt;/c&gt; is a local array, but its elements are aliases for the actual scalar parameters. In particular, if an element &lt;c&gt;$_[0]&lt;/c&gt; is updated, the corresponding argument is updated ... Assigning to the whole array &lt;c&gt;@_&lt;/c&gt; removes that aliasing, and does not update any arguments." As to whether it doesn't change, that depends on what the &lt;c&gt;sub&lt;/c&gt; does - it is not read-only. For example, [doc://shift] and [doc://pop] can modify &lt;c&gt;@_&lt;/c&gt;, and in Perl versions 5.10 and older, [doc://split] could clobber &lt;c&gt;@_&lt;/c&gt;. And there are some other potentially tricky issues with &lt;c&gt;@_&lt;/c&gt;, for example, if a &lt;c&gt;sub&lt;/c&gt; is called with an &lt;c&gt;&amp;&lt;/c&gt; and no argument list, "no &lt;c&gt;@_&lt;/c&gt; array is set up for the subroutine: the &lt;c&gt;@_&lt;/c&gt; array at the time of the call is visible to subroutine instead" (also [doc://perlsub]).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;You use the range operator once. [LanX] (upthread for the curious) used it twice:&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, actually I used it twice, note how I set up the &lt;c&gt;@cis&lt;/c&gt; array. And yes, those two snippets of code from [LanX] and myself are basically equivalent. One difference is that I use 1-based indexing in the indices stored in the &lt;c&gt;@$range&lt;/c&gt; array.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I can't see how the sausage gets made here&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Ok, so here's my original code:&lt;/p&gt;
+&lt;c&gt;
+my @cis = $$range[1]-1 .. $$range[3]-1;
+return [ map { sub{\@_}-&gt;(@{$$data[$_]}[@cis]) }
+	$$range[0]-1 .. $$range[2]-1 ]
+&lt;/c&gt;
+&lt;p&gt;First, let's reformat that, and instead of &lt;c&gt;@$range&lt;/c&gt;, let me use four lexical variables corresponding to the elements of the array (&lt;c&gt;$row1&lt;/c&gt;, &lt;c&gt;$col1&lt;/c&gt;, &lt;c&gt;$rowN&lt;/c&gt;, &lt;c&gt;$colN&lt;/c&gt;), and make them 0-based instead of 1-based.&lt;/p&gt;
+&lt;c&gt;
+my @column_indices = $col1 .. $colN;
+return [
+	map {
+		sub{ \@_ }-&gt;( @{ $$data[$_] }[@column_indices] )
+	} $row1 .. $rowN
+]
+&lt;/c&gt;
+&lt;p&gt;Now, &lt;c&gt;map&lt;/c&gt; can be translated into a &lt;c&gt;for&lt;/c&gt; with &lt;c&gt;push&lt;/c&gt; (I hope that transformation is clear?). I've also pulled out various bits of expressions into lexical variables.&lt;/p&gt;
+&lt;c&gt;
+my @row_indices    = $row1 .. $rowN;
+my @column_indices = $col1 .. $colN;
+my @row_subset;
+for my $row_idx (@row_indices) {
+	my $row = $$data[$row_idx];     # deref $data and get row
+	my $column_subset_aliases =
+		sub{ \@_ }-&gt;(
+			@$row[@column_indices]  # deref $row and get array slice
+		);
+	push @row_subset, $column_subset_aliases;
+}
+return \@row_subset;
+&lt;/c&gt;
+&lt;p&gt;Now the last bit of trickery here is &lt;c&gt;sub{\@_}-&gt;(...)&lt;/c&gt;. &lt;c&gt;sub {...}&lt;/c&gt; constructs an anonymous subroutine, which is then immediately called (via &lt;c&gt;-&gt;(...)&lt;/c&gt;) and with the arguments &lt;c&gt;(...)&lt;/c&gt;. The body of the sub is just &lt;c&gt;\@_&lt;/c&gt;, which means "return a reference to &lt;c&gt;@_&lt;/c&gt;". Because the elements of [doc://@_] are aliases to the original arguments, what we get back from the whole expression is an arrayref whose elements are aliases to the arguments. In the above code, those arguments are the elements of the array referred to by &lt;c&gt;$row&lt;/c&gt;, which were selected by the array slice.&lt;/p&gt;
+&lt;p&gt;I hope it's at least a little bit more clear now?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1224734</root_node>
+<parent_node field_name="parent_node">1224943</parent_node>
+<thread id="1224734">
+<node id="1224735"><node id="1224737"/>
+</node>
+<node id="1224738"><node id="1224740"><node id="1224741"><node id="1224809"><node id="1224815"/>
+</node>
+</node>
+</node>
+<node id="1224808"/>
+</node>
+<node id="1224744"/>
+<node id="1224746"><node id="1224758"><node id="1224760"/>
+</node>
+</node>
+<node id="1224755"><node id="1224759"><node id="1224765"><node id="1224787"><node id="1224789"><node id="1224790"><node id="1224792"><node id="1224800"/>
+<node id="1224807"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1224943"><node id="1224959"><node id="1225075"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

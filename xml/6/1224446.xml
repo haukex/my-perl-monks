@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224446" title="Extracting a bald host name" created="2018-10-22 02:55:31" updated="2018-10-22 02:55:31" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="176576">eyepopslikeamosquito</author>
+<doctext field_name="doctext">&lt;P&gt;
+I want to strip trailing stuff from a host name.
+To clarify, running this test program &lt;C&gt;t1.pl&lt;/C&gt;:
+&lt;CODE&gt;
+use strict;
+use warnings;
+use Test::More;
+
+my @expected = (
+   [ 'abc',             'abc'  ],
+   [ 'abc.bill.com',    'abc'  ],
+   [ 'abc.bill.com.au', 'abc'  ],
+   [ 'xy42.com',        'xy42' ],
+   [ 'x_y.com',         'x_y'  ],
+   [ 'x-y.com',         'x-y'  ],
+   [ '',                ''     ],
+   [ '.',               ''     ],
+   [ 'a.',              'a'    ],
+   [ '-.',              '-'    ],
+   [ '_.',              '_'    ],
+   [ '.a',              ''     ],
+   [ 'f',               'f'    ],
+   [ 'f.1',             'f'    ],
+   [ 'f.1.2',           'f'    ],
+   [ 'f.1.2.3',         'f'    ],
+   [ 'f.1.2.3.4',       'f'    ],
+   [ 'f.1.2.3.4.5',     'f'    ],
+   [ 'f.1.2.3.4.5.67',  'f'    ],
+   [ 'ABC.123.456',     'ABC'  ],
+);
+
+plan tests =&gt; scalar(@expected);
+
+for my $e (@expected) {
+   my ( $got, $exp ) = @{$e};
+   $got =~ s/\..*$//;
+   is( $got, $exp, "'$e-&gt;[0]'" . ' -&gt; ' . "'$got'" );
+}
+&lt;/CODE&gt;
+&lt;/P&gt;
+
+&lt;P&gt;
+produces:
+&lt;CODE&gt;
+1..20
+ok 1 - 'abc' -&gt; 'abc'
+ok 2 - 'abc.bill.com' -&gt; 'abc'
+ok 3 - 'abc.bill.com.au' -&gt; 'abc'
+ok 4 - 'xy42.com' -&gt; 'xy42'
+ok 5 - 'x_y.com' -&gt; 'x_y'
+ok 6 - 'x-y.com' -&gt; 'x-y'
+ok 7 - '' -&gt; ''
+ok 8 - '.' -&gt; ''
+ok 9 - 'a.' -&gt; 'a'
+ok 10 - '-.' -&gt; '-'
+ok 11 - '_.' -&gt; '_'
+ok 12 - '.a' -&gt; ''
+ok 13 - 'f' -&gt; 'f'
+ok 14 - 'f.1' -&gt; 'f'
+ok 15 - 'f.1.2' -&gt; 'f'
+ok 16 - 'f.1.2.3' -&gt; 'f'
+ok 17 - 'f.1.2.3.4' -&gt; 'f'
+ok 18 - 'f.1.2.3.4.5' -&gt; 'f'
+ok 19 - 'f.1.2.3.4.5.67' -&gt; 'f'
+ok 20 - 'ABC.123.456' -&gt; 'ABC'
+&lt;/CODE&gt;
+&lt;/P&gt;
+
+&lt;P&gt;
+I'm pretty sure I can assume my input is just an alphanumeric host name,
+for example &lt;C&gt;fred42&lt;/C&gt; or &lt;C&gt;fred.com&lt;/C&gt; but not &lt;C&gt;192.0.2.16&lt;/C&gt; say.
+I further doubt I need to deal with ports &lt;C&gt;:80&lt;/C&gt; or &lt;C&gt;?query&lt;/C&gt; or other guff.
+Though the above crude hack will probably be adequate for my needs,
+I'm interested to learn how other folks might tackle this sort of problem.
+&lt;/P&gt;
+</doctext>
+<thread id="1224446">
+<node id="1224451"/>
+<node id="1224454"/>
+<node id="1224456"/>
+</thread></node>

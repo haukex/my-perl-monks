@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201080" title="Re: Perl question about manipulation of LDIF file" created="2017-10-10 04:34:30" updated="2017-10-10 04:34:30" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;It's probably best to use an appropriate module for this. [mod://Net::LDAP::LDIF] appears to normalize the entries. I haven't used [dist://perl-ldap] much myself but as far as I know it's a very good module for LDAP.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Net::LDAP::LDIF;
+
+my $ldif = Net::LDAP::LDIF-&gt;new("test.ldif", "r", onerror=&gt;'die');
+while ( not $ldif-&gt;eof ) {
+	my $entry = $ldif-&gt;read_entry;
+	print $entry-&gt;ldif;
+}
+$ldif-&gt;done;
+&lt;/c&gt;
+&lt;p&gt;Given the following input, the last three lines before the dash are transformed into one line &lt;c&gt;"foo: BarTest123Blah"&lt;/c&gt;, which I guess is what you want?&lt;/p&gt;
+&lt;c&gt;
+dn: cn=Test,ou=Foo,o=Bar,c=US
+changetype: modify
+replace: foo
+foo: Bar
+ Test123
+ Blah
+-
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1201076</root_node>
+<parent_node field_name="parent_node">1201076</parent_node>
+<thread id="1201076">
+<node id="1201078"/>
+<node id="1201080"/>
+<node id="1201082"/>
+<node id="1201105"><node id="1201146"/>
+</node>
+</thread></node>

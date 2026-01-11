@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224063" title="how to get Config values into a hash" created="2018-10-15 16:51:06" updated="2018-10-15 16:51:06" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext"> &lt;p&gt;Hello monks,&lt;/p&gt;
+ &lt;p&gt;I frequently replicate others' posts so as to help if I can, learn more of a gigantic language, and have new scripts that will improve my own capabilities. So it is that [chungley2000] rolled in with a question that morphed into about how to get values from [Config]. I've been playing with the values for a couple days now, and I wrote a script to see what output resulted from the 4 &lt;strike&gt;method&lt;/strike&gt; function calls that this module exports. I've commented out failed attempts to herd these values into lexical variables.&lt;/p&gt;
+
+&lt;code&gt;#!/usr/bin/perl -w
+use 5.011;
+use Config qw(myconfig config_sh config_vars config_re);
+use Data::Dumper;
+
+say myconfig();
+say "---------------";
+say config_sh();
+say "---------------";
+say config_vars();
+say "---------------";
+
+my $ref_Env = \%ENV;
+say Dumper $ref_Env;
+my $version = config_re("version");
+say "version is $version";
+
+# my $archname = $Config{'archname'}; #produces error: %Config unknown
+say "---------------";
+#my $ref_Config = \%CONFIG;
+#say Dumper $ref_Config;
+&lt;/code&gt;
+ &lt;p&gt;Abridged output, where I've commented on values with a double hashmark: &lt;/p&gt;
+
+&lt;code&gt; Summary of my perl5 (revision 5 version 26 subversion 1) configuration:
+   
+  Platform:
+    osname=linux
+    osvers=4.9.0
+    archname=x86_64-linux-gnu-thread-multi
+    
+---------------
+Author=''
+CONFIG='true'
+  ## big snip from say myconfig();
+zcat=''
+zip='zip'
+
+---------------
+   ##nothing for say config_sh();
+---------------
+$VAR1 = {
+          'TEXTDOMAIN' =&gt; 'im-config',
+          'SSH_AUTH_SOCK' =&gt; '/run/user/1000/keyring/ssh',
+          'IM_CONFIG_PHASE' =&gt; '2',
+          'PERL5LIB' =&gt; '/home/bob/perl5/lib/perl5',
+   ## snip in ENV data
+          'LESSCLOSE' =&gt; '/usr/bin/lesspipe %s %s'
+        };
+
+version is 1  ##config_re("version");
+---------------&lt;/code&gt;
+ &lt;p&gt;My experience with the large family of [Config] modules has been with [Config::Tiny], where I have imported such values from an .ini file. Now I would like to import the values from the myconfig() method into a hash.&lt;/p&gt;
+ &lt;p&gt;If I had to get values quick and dirty, I would create a temp file with [Path::Tiny], then read it with [Config::Tiny]. But when you have the darn thing in memory already, it seems like a significant work-around, in particular, when you are only going to delete the file for being a security risk. I don't want these data to be persistent beyond the first few lines of a perl script. Other modules from the [Config] namespace seem promising, but, for example [CONFIG::Hash] seems like it might be the thing I'm looking for, but not quite. There are at least 12 screens of matches for Config in cpan.&lt;/p&gt;
+ &lt;p&gt;I could also use bash to pipe these values, but do I really need a shell? It seems like there could be a perl-only solution to this, which is more portable. My question then is how to to herd the = joined and newline separated values from&lt;/p&gt;
+&lt;code&gt;config_vars()&lt;/code&gt;
+
+ &lt;p&gt;into a hash.&lt;/p&gt;
+
+ &lt;p&gt;Thank you for your comment,&lt;/p&gt;</doctext>
+<thread id="1224063">
+<node id="1224067"><node id="1224132"><node id="1224204"><node id="1224211"/>
+</node>
+<node id="1224332"><node id="1224644"/>
+</node>
+</node>
+</node>
+</thread></node>

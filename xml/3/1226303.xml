@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1226303" title="Re: shift split grep question (updated)" created="2018-11-25 14:23:02" updated="2018-11-25 14:23:02" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Your code is doing the following:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Find all the elements of &lt;c&gt;@lines&lt;/c&gt; that begin with &lt;c&gt;AUID&lt;/c&gt; (plus some optional whitespace) and store them in &lt;c&gt;@headings&lt;/c&gt;,&lt;/li&gt;
+&lt;li&gt;take the first found element and do a [doc://split] on &lt;c&gt;' '&lt;/c&gt; (which has a special meaning as explained in its docs) and overwrite the contents of &lt;c&gt;@headings&lt;/c&gt; with the result, and&lt;/li&gt;
+&lt;li&gt;[doc://shift] the first element off &lt;c&gt;@headings&lt;/c&gt; and discard it.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;There are two problems with the oneliner you showed:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;[doc://grep] in scalar context (as it is in the code you showed) will return the number of matches, not one of the matches, and&lt;/li&gt;
+&lt;li&gt;[doc://shift] removes the first element from an array and returns &lt;i&gt;the element it removed&lt;/i&gt;, not the list minus the first element.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;b&gt;&lt;c&gt;&lt;update2&gt;&lt;/c&gt;&lt;/b&gt; [Eily]'s [id://1226305|suggestion] is nicest IMO:&lt;/p&gt;
+&lt;c&gt;
+my (undef, @headings) = split ' ', first {/^\s*AUID/} @lines;
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;&lt;c&gt;&lt;/update2&gt;&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;You can pack it in a single line, here is one way, but it's kind of ugly. This uses &lt;c&gt;(...)[0]&lt;/c&gt; to return the first return value of [doc://grep] and [doc://splice] to return the list without its first element:&lt;/p&gt;
+&lt;c&gt;
+my @headings = splice @{[
+	split ' ', (grep /^\s*AUID/, @lines)[0] ]}, 1;
+&lt;/c&gt;
+&lt;p&gt;Although I might recommend using &lt;c&gt;first&lt;/c&gt; from [doc://List::Util] to avoid the wasteful &lt;c&gt;grep&lt;/c&gt;ping of the entire array:&lt;/p&gt;
+&lt;c&gt;
+my @headings = splice @{[ split ' ', first {/^\s*AUID/} @lines ]}, 1;
+&lt;/c&gt;
+&lt;p&gt;I still don't think this is very pretty because of the &lt;c&gt;@{[]}&lt;/c&gt; trick I have to use to get [doc://splice] to be happy. This one, using [doc://map] and a regex, I like better:&lt;/p&gt;
+&lt;c&gt;
+my @headings = map {/(?!^\s*AUID)\s(\S+)/g} first {/^\s*AUID/} @lines;
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; [doc://map] isn't really needed:&lt;/p&gt;
+&lt;c&gt;
+my @headings = (first {/^\s*AUID/} @lines)=~/(?!^\s*AUID)\s(\S+)/g;
+&lt;/c&gt;
+&lt;readmore title="full test code"&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More tests=&gt;6;
+use List::Util qw/first/;
+
+my @lines = ("AUID \cIRA \cIDec \cILabel \cIV \cIB-V \cIComments",
+	'hello','world');
+my @expect = ('RA', 'Dec', 'Label', 'V', 'B-V', 'Comments');
+{
+	my @headings = grep /^\s*AUID/, @lines;
+	@headings = split ' ', $headings[0];
+	shift @headings;
+	is_deeply \@headings, \@expect or diag explain \@headings;
+}
+{
+	my @headings = splice @{[
+		split ' ', (grep /^\s*AUID/, @lines)[0] ]}, 1;
+	is_deeply \@headings, \@expect or diag explain \@headings;
+}
+{
+	my @headings = splice @{[
+		split ' ', first {/^\s*AUID/} @lines ]}, 1;
+	is_deeply \@headings, \@expect or diag explain \@headings;
+}
+{
+	my @headings = map {/(?!^\s*AUID)\s(\S+)/g}
+		first {/^\s*AUID/} @lines;
+	is_deeply \@headings, \@expect or diag explain \@headings;
+}
+{
+	my @headings = (first {/^\s*AUID/} @lines)=~/(?!^\s*AUID)\s(\S+)/g;
+	is_deeply \@headings, \@expect or diag explain \@headings;
+}
+{
+	my (undef, @headings) = split ' ', first {/^\s*AUID/} @lines;
+	is_deeply \@headings, \@expect or diag explain \@headings;
+}
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1226300</root_node>
+<parent_node field_name="parent_node">1226300</parent_node>
+<thread id="1226300">
+<node id="1226301"/>
+<node id="1226302"><node id="1226304"/>
+</node>
+<node id="1226303"><node id="1226305"><node id="1226307"/>
+</node>
+<node id="1226311"/>
+</node>
+<node id="1226308"/>
+<node id="1226309"/>
+</thread></node>

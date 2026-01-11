@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11148373" title="Re: getting rid of UTF-8" created="2022-11-25 02:14:40" updated="2022-11-25 02:14:40" _doctext_mode="lenient"><type id="11">note</type>
+<author id="861371">kcott</author>
+<doctext field_name="doctext">&lt;p&gt;G'day [id://648867|BernieC],&lt;/p&gt;
+
+&lt;p&gt;Regex issues:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+Your first regex, &lt;c&gt;s/^\xef\xbb\xbf//g&lt;/c&gt;, anchors to the start of the string:
+later &lt;c&gt;ef bb bf&lt;/c&gt; sequences will not be removed.
+&lt;/li&gt;
+&lt;li&gt;
+Your [id://11148369|second regex], &lt;c&gt;s/\xef\xbb\xbf//&lt;/c&gt;, has no &lt;c&gt;/g&lt;/c&gt; modifier:
+only the first &lt;c&gt;ef bb bf&lt;/c&gt; sequence will be removed.
+&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;
+What you need is &lt;c&gt;s/\xef\xbb\xbf//g&lt;/c&gt;:
+&lt;/p&gt;
+&lt;code&gt;
+$ perl -Mstrict -Mwarnings -E '
+    my $x = "\x{ef}\x{bb}\x{bf}123,,,\x{ef}\x{bb}\x{bf}456";
+    say "Full string:";
+    system "echo $x | hexdump -Cv";
+
+    $x =~ s/\xef\xbb\xbf//g;
+    say "All BOM sequences removed:";
+    system "echo $x | hexdump -Cv";
+'
+Full string:
+00000000  ef bb bf 31 32 33 2c 2c  2c ef bb bf 34 35 36 0a  |...123,,,...456.|
+00000010
+All BOM sequences removed:
+00000000  31 32 33 2c 2c 2c 34 35  36 0a                    |123,,,456.|
+0000000a
+&lt;/code&gt;
+
+&lt;p&gt;To remove other characters:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+Non ISO-8859-1: &lt;c&gt;y/\x00-\xff//cd&lt;/c&gt;
+&lt;/li&gt;
+&lt;li&gt;
+Non 7-bit ASCII: &lt;c&gt;y/\x00-\x7f//cd&lt;/c&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;/p&gt;
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-861371"&gt;
+&lt;p&gt;&amp;mdash; Ken&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11148358</root_node>
+<parent_node field_name="parent_node">11148358</parent_node>
+<thread id="11148358">
+<node id="11148361"><node id="11148363"><node id="11148364"><node id="11148368"><node id="11148369"><node id="11148376"><node id="11148386"><node id="11148391"><node id="11148393"/>
+</node>
+<node id="11148392"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11148373"/>
+<node id="11148382"/>
+<node id="11148383"><node id="11148394"><node id="11148407"/>
+</node>
+</node>
+</thread></node>

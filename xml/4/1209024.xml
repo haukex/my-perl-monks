@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1209024" title="Re: How to add quotes to comma separated values in a String (updated)" created="2018-02-12 17:06:50" updated="2018-02-12 17:06:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;because I'll be passing it to a sql statement as part of an "IN" clause&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;My first suggestion is to not re-invent the wheel, have a look at [mod://SQL::Abstract] ([id://1168493|example]).&lt;/p&gt;
+&lt;p&gt;[mod://DBI] provides &lt;c&gt;quote&lt;/c&gt;* and &lt;c&gt;quote_identifier&lt;/c&gt;, this is the very &lt;b&gt;least&lt;/b&gt; you should do - &lt;i&gt;don't&lt;/i&gt; go and try to quote the strings yourself.&lt;/p&gt;
+&lt;p&gt;Also, as an aside, you should &lt;i&gt;always&lt;/i&gt; use [http://metacpan.org/pod/DBI#Placeholders-and-Bind-Values|placeholders] wherever possible - see [http://bobby-tables.com/|Bobby Tables].&lt;/p&gt;
+&lt;p&gt;* &lt;b&gt;Update:&lt;/b&gt;&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DBI;
+
+# just using an SQLite in-memory DB as an example here
+my $dbh = DBI-&gt;connect("dbi:SQLite:dbname=:memory:", '', '',
+	{ RaiseError=&gt;1, AutoCommit=&gt;0 } );
+
+my @values = qw/ CAT DOG BIRD COW bl'ah /;
+my $str = join ',', map { $dbh-&gt;quote($_,'VARCHAR') } @values;
+print $str, "\n";
+
+__END__
+
+'CAT','DOG','BIRD','COW','bl''ah'
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1209021</root_node>
+<parent_node field_name="parent_node">1209021</parent_node>
+<thread id="1209021">
+<node id="1209024"><node id="1209027"/>
+<node id="1209032"><node id="1209033"><node id="1209075"><node id="1209079"/>
+<node id="1209087"><node id="1209096"><node id="1209302"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

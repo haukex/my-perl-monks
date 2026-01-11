@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193170" title="How to tie a lexical filehandle." created="2017-06-20 15:28:25" updated="2017-06-20 15:28:25" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="607703">clueless newbie</author>
+<doctext field_name="doctext">&lt;p&gt;Ave,&lt;/p&gt;
+
+&lt;p&gt;I can do a tie on a file as long as I use bareword filehandles. ie&lt;/p&gt;
+
+&lt;code&gt;
+package MyTie;
+
+use Carp;                # So we can croak our error
+use Data::Dumper;
+use strict;
+use warnings;
+
+sub TIEHANDLE { #Carp::cluck "\nTIEHANDLE: ",Data::Dumper-&gt;Dump([\@_],[qw(*_)]),' ';
+no warnings;
+    my $class=shift;
+    my $form=shift;
+    open (my $self,$form,@_)
+    #    or Carp::cluck "can't open $form@_: $!"
+        ;
+    return bless $self,$class;    # $self is a glob ref
+    }
+
+sub CLOSE { #Carp::cluck "\nCLOSE: ",Data::Dumper-&gt;Dump([\@_],[qw(*_)]),' ';
+    my $self=shift;
+    return close $self;
+    }
+
+sub DESTROY { #Carp::cluck "\nDESTROY: ",Data::Dumper-&gt;Dump([\@_],[qw(*_)]),' ';
+    my $self=shift;
+    $self-&gt;CLOSE;
+    }
+
+sub EOF { #Carp::cluck "\nEOF: ",Data::Dumper-&gt;Dump([\@_],[qw(*_)]),' ';
+    my $self = shift;
+    return eof $self;
+    }
+
+sub FILENO { #Carp::cluck "\nFILENO: ",Data::Dumper-&gt;Dump([\@_],[qw(*_)]),' ';
+    my $self=shift;
+    return fileno $self;
+    }
+
+sub OPEN { #Carp::cluck "\nOPEN: ",Data::Dumper-&gt;Dump([\@_],[qw(*_)]),' ';
+    my $self=shift;
+    my $form=shift;
+    $self-&gt;CLOSE;
+    open($self,$form,@_)
+        or croak "can't reopen '$form@_': $!";
+    return 1;
+    }
+
+sub READLINE { #Carp::cluck "\nREADLINE: ",Data::Dumper-&gt;Dump([\@_],[qw(*_)]),' ';
+    my $self=shift;
+    return undef
+        if $self-&gt;EOF;
+    #warn Data::Dumper-&gt;Dump([\(my $t=wantarray())],[qw(*wantarray)]),' ';
+    if (wantarray()) { 
+        my @a=&lt;$self&gt;;
+        main::mySub(@a);
+        return @a;
+        }
+    else {
+        my $s=&lt;$self&gt;;
+        main::mySub($s);
+        return $s;
+        };
+    }
+
+package main;
+use strict;
+use warnings;
+
+my $name='mydata';
+
+tie *FOO,"MyTie";
+open(FOO,'&lt;',$name)
+    or die "Can't open '$name' for reading. $!";
+my $line=&lt;FOO&gt;;
+print "Scalar: $line";
+$line=&lt;FOO&gt;;
+print "Scalar: $line";
+my @array=&lt;FOO&gt;;
+print "Array: ",@array;
+while (&lt;FOO&gt;) {
+    print "In while: $_";
+    }
+close(FOO);
+
+exit;
+
+    sub mySub {
+        warn "\nmain::mySub: ",Data::Dumper-&gt;Dump([\@_],[qw(*_)]),' ';
+        return;
+        };
+__DATA__
+&lt;/code&gt;
+&lt;p&gt;works just fine to record what is read from *FOO.&lt;/p&gt;
+
+&lt;p&gt;But I need to tie a lexical filehandle so I can write&lt;/p&gt;
+&lt;code&gt;
+package main;
+use strict;
+use warnings;
+
+my $name='mydata';
+
+my $FOO;
+tie $FOO,"MyTie";
+open($FOO,'&lt;',$name)
+    or die "Can't open '$name' for reading. $!";
+my $line=&lt;$FOO&gt;;
+print "Scalar: $line";
+$line=&lt;$FOO&gt;;
+print "Scalar: $line";
+my @array=&lt;$FOO&gt;;
+print "Array: ",@array;
+while (&lt;$FOO&gt;) {
+    print "In while: $_";
+    }
+close($FOO);
+
+exit;
+&lt;/code&gt;.
+&lt;p&gt;But this throws 'Can't locate object method "TIESCALAR" via package "MyTie" at ...' - where the tie is attempted. Any ideas on how to tie a lexical filehandle?&lt;/p&gt;
+
+&lt;p&gt;"This is perl 5, version 20, subversion 2 (v5.20.2) built for MSWin32-x86-multi-thread-64int"&lt;/p&gt;
+
+</doctext>
+<thread id="1193170">
+<node id="1193172"><node id="1193185"/>
+</node>
+<node id="1200430"/>
+</thread></node>

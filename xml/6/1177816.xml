@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1177816" title="Running Perl in an Expect loop" created="2016-12-14 20:08:48" updated="2016-12-14 20:08:48" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1177813">StoneLeopard</author>
+<doctext field_name="doctext">&lt;p&gt;Hello PerlMonks,&lt;/p&gt;
+
+&lt;p&gt;I'm trying to spawn a Perl process via an Expect loop. The idea is that the main program would be sending Perl code to the slave, and have it return stuff on STDOUT, which would be received, parsed and acted upon by the main program. I tried to implement this via Expect, but it seems to be deadlocking. Can someone point out what I'm doing wrong?&lt;/p&gt;
+
+&lt;p&gt;I'm using Perl v5.14.1 if that makes a difference.&lt;/p&gt;
+
+&lt;p&gt;Thanks much. Pankaj&lt;/p&gt;
+
+&lt;code&gt;
+use Expect;
+
+# create a pipe to slave Perl process
+my $exp = new Expect;
+$exp-&gt;raw_pty(1);
+$exp-&gt;exp_internal(1);
+$exp-&gt;spawn("/usr/bin/perl") or die "Couldn't start Perl: $!\n";
+$exp-&gt;log_user(0);
+$exp-&gt;log_stdout(0);
+
+# attempting to unbuffer the slave Perl's stdout
+test_ipc ("select STDOUT; \$| = 1;\n");
+test_ipc ("print \"Got this\\n\";\n");
+
+# close the pipe
+$exp-&gt;hard_close();
+
+sub test_ipc
+{
+    my $line = shift @_;
+
+    # send command to Perl
+    $exp-&gt;send ($line);
+
+    # may receive any number of lines in return (or none)
+    my $done = 1;
+    while ($done) {
+        $exp-&gt;expect (1,
+            [qr"\r\n" =&gt; sub { print STDOUT $exp-&gt;before(). "\n"; exp_continue; }] ,
+            [timeout  =&gt; sub { $done = 0; print STDOUT "TIMED OUT\n"; }] ,
+            [eof      =&gt; sub { $done = 0; print STDOUT "DONE\n"; }] 
+        );
+    }
+}
+&lt;/code&gt;</doctext>
+<thread id="1177816">
+<node id="1177824"><node id="1177839"><node id="1177840"><node id="1177858"><node id="1177887"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1177825"/>
+<node id="1177826"/>
+<node id="1177862"/>
+<node id="1177899"/>
+</thread></node>

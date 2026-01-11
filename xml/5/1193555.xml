@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193555" title="Escaping double quotes in complete document" created="2017-06-26 08:03:24" updated="2017-06-26 08:03:24" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1193553">MeinName</author>
+<doctext field_name="doctext">&lt;p&gt;
+Namaste, dear Perl Monks and Nuns!
+&lt;/p&gt;
+&lt;p&gt;
+I have a little site to administrate that depends on Perl scripts printing HTML and JavaScript.
+The site stores data in and loads data from a database using SOAP::Lite and up until last week everything ran very smoothly.
+Unfortunately our servers got an update that raised Perl from version 5.10.1 to 5.16.3 and there the problems started.
+Firstly all special characters, like ä, ö, ü, ß and € got mangled by the encoding. This error was resolved by using
+&lt;/p&gt;
+&lt;code&gt;
+use open qw(:std :utf8);
+use Encode;
+use utf8;
+&lt;/code&gt;
+&lt;p&gt;to load the data, by writing&lt;/p&gt;
+&lt;code&gt;
+print header(-type=&gt;'text/html',-charset=&gt;'utf-8');
+print start_html(-title =&gt; "FooBar");
+&lt;/code&gt;
+&lt;p&gt;to start the web page and by using&lt;/p&gt;
+&lt;code&gt;
+my $text=decode("utf8", $query-&gt;param("textbox"));
+&lt;/code&gt;
+&lt;p&gt;to get the data back from the page and store it in the DB.&lt;/p&gt;
+&lt;p&gt;Today I had to realize that it's also no longer possible to load strings from the database that contain double quotes, because the HTML textboxes see the double quote as an end marker for the textbox value. (EDIT: Saving content with double quotes is possible. I verified this directly on database level.)&lt;/p&gt;
+&lt;p&gt;There are probably even a few more characters that cause issues that I haven't stumbled upon yet.&lt;/p&gt;
+&lt;p&gt;I found that I can resolve the issue by using HTML::Entities and calling encode_entities() on the variable I want to see in my textbox, but I am loading hundreds of variables and several arrays of strings in one page visit and there is no way I can revisit every single script in my application to see which variables I maybe need to encode.&lt;/p&gt;
+&lt;p&gt;Is there any way I can encode the whole HTML part of my script or a way to circumvent this mess?&lt;/p&gt;
+&lt;p&gt;Thanks alot in advance&lt;/p&gt;</doctext>
+<thread id="1193555">
+<node id="1193559"><node id="1193562"><node id="1193565"><node id="1193658"/>
+</node>
+</node>
+</node>
+<node id="1193609"><node id="1193659"/>
+</node>
+<node id="1193612"><node id="1193657"><node id="1193662"/>
+<node id="1193663"/>
+<node id="1193676"><node id="1193694"/>
+</node>
+</node>
+</node>
+<node id="1193698"><node id="1193699"><node id="1193702"/>
+</node>
+</node>
+<node id="1193806"><node id="1193808"/>
+</node>
+</thread></node>

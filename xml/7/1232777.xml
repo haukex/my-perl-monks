@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1232777" title="Re^2: Getting for() to accept a tied array in one statement" created="2019-04-18 16:11:00" updated="2019-04-18 16:11:00" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Is there any -&amp;gt;DESTROY of the tied class being called? &lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It depends where the &lt;c&gt;@ary&lt;/c&gt; is defined. In the solution [id://1232647|suggested] by [hdb], there is a &lt;c&gt;DESTROY&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+print "--- Begin loop ---\n";
+for ( @{ tie my @ary, 'MyArray', qw/ x y z /; \@ary } ) {
+	print "&lt;$_&gt;\n";
+	last if /y/;
+}
+print "--- End loop ---\n";
+
+BEGIN {
+	package MyArray;
+	sub TIEARRAY  { my $c = shift; bless { arr=&gt;[@_] }, $c }
+	# largely borrowed from Tie::StdArray
+	sub FETCH     { $_[0]{arr}[$_[1]] }
+	sub STORE     { $_[0]{arr}[$_[1]] = $_[2] }
+	sub FETCHSIZE { scalar @{$_[0]{arr}} }
+	sub STORESIZE { $#{$_[0]{arr}} = $_[1]-1 }
+	sub EXTEND    { $#{$_[0]{arr}} = $_[1]-1 }
+	sub CLEAR     { @{$_[0]{arr}} = () }
+	sub POP       { pop @{$_[0]{arr}} }
+	sub SHIFT     { shift @{$_[0]{arr}} }
+	sub PUSH      { my $o=shift; push @{$$o{arr}}, @_ }
+	sub UNSHIFT   { my $o=shift; unshift @{$$o{arr}}, @_ }
+	sub EXISTS    { exists $_[0]{arr}[$_[1]] }
+	sub DELETE    { delete $_[0]{arr}[$_[1]] }
+	sub UNTIE     { %{$_[0]}=(); return }
+	sub DESTROY   { %{$_[0]}=(); return }
+	sub SPLICE {
+		my $ob  = shift;
+		my $sz  = $ob-&gt;FETCHSIZE;
+		my $off = @_ ? shift : 0;
+		$off   += $sz if $off &lt; 0;
+		my $len = @_ ? shift : $sz-$off;
+		return splice(@{$$ob{arr}}, $off, $len, @_);
+	}
+	# debug stuff:
+	use Class::Method::Modifiers qw/around/;
+	use Data::Dump qw/pp/;
+	my @m = qw/ CLEAR DELETE DESTROY EXISTS EXTEND FETCH FETCHSIZE POP
+		PUSH SHIFT SPLICE STORE STORESIZE TIEARRAY UNSHIFT UNTIE /;
+	for my $m (@m) {
+		around $m =&gt; sub {
+			my $orig = shift;
+			my $self = shift;
+			my @args = @_;
+			if (wantarray) {
+				my @rv = $orig-&gt;($self, @_);
+				print STDERR $m," ",pp(@args)," =&gt; ",pp(@rv),"\n";
+				return @rv;
+			} # else
+			my $rv = $orig-&gt;($self, @_);
+			print STDERR $m," ",pp(@args)," =&gt; ",pp($rv),"\n";
+			return $rv;
+		};
+	}
+}
+
+__END__
+
+--- Begin loop ---
+TIEARRAY ("x", "y", "z") =&gt; bless({ arr =&gt; ["x", "y", "z"] }, "MyArray")
+FETCHSIZE () =&gt; 3
+FETCH 0 =&gt; "x"
+&lt;x&gt;
+FETCHSIZE () =&gt; 3
+FETCH 1 =&gt; "y"
+&lt;y&gt;
+DESTROY () =&gt; undef
+--- End loop ---
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1232642</root_node>
+<parent_node field_name="parent_node">1232760</parent_node>
+<thread id="1232642">
+<node id="1232644"><node id="1232649"><node id="1232651"><node id="1232656"/>
+<node id="1232796"/>
+</node>
+<node id="1232653"><node id="1232654"><node id="1232657"><node id="1232660"><node id="1232666"><node id="1232667"><node id="1232669"/>
+</node>
+<node id="1232778"><node id="1232795"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1232675"><node id="1232695"><node id="1232706"><node id="1232708"><node id="1232712"/>
+<node id="1232753"><node id="1232757"><node id="1232758"><node id="1232767"><node id="1232768"><node id="1232773"/>
+</node>
+<node id="1232801"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1232647"><node id="1232648"><node id="1232652"><node id="1232658"><node id="1232663"><node id="1232665"><node id="1232797"><node id="1232800"><node id="1232816"><node id="1232830"><node id="1232832"/>
+</node>
+</node>
+</node>
+<node id="1232861"><node id="1232883"><node id="1232890"><node id="1232949"><node id="1232969"><node id="1232997"/>
+</node>
+<node id="1233007"><node id="1233085"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1232655"><node id="1232664"><node id="1232671"/>
+</node>
+</node>
+<node id="1232709"/>
+<node id="1232760"><node id="1232777"><node id="1232831"/>
+</node>
+<node id="1232860"><node id="1232864"/>
+</node>
+</node>
+</thread></node>

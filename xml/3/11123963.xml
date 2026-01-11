@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11123963" title="Re: Fastest way to &quot;pick without replacement&quot;" created="2020-11-21 06:41:05" updated="2020-11-21 06:41:05" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Thank you for the replies everyone! I've put all the solutions together here - I've kept the behavior of deleting only a single value, but the comparison with deleting multiple indicies by [choroba] [id://11123952|here] is very interesting too! I've included [Eily]'s [id://11123905|solution] that leaves the array out of its original order too.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Benchmark qw/cmpthese/;
+
+my @numbers = ( 'a'..'t' );
+my $index = 3;
+my $expect = 'abcefghijklmnopqrst';
+use constant TEST =&gt; 0;
+
+cmpthese(-2, {
+	splice =&gt; sub {
+		my @output = @numbers;
+		splice @output, $index, 1;
+		join("", @output) eq $expect or die if TEST;
+	},
+	grep =&gt; sub { # choroba
+		my @output = @numbers[ grep $_ != $index, 0 .. $#numbers ];
+		join("", @output) eq $expect or die if TEST;
+	},
+	slice =&gt; sub { # hippo
+		my @output = @numbers[ 0..$index-1, $index+1..$#numbers ];
+		join("", @output) eq $expect or die if TEST;
+	},
+	hash =&gt; sub { # bliako
+		my %ha; @ha{0..$#numbers} = @numbers;
+		delete $ha{$index};
+		my @output = map { $ha{$_} } sort {$a &lt;=&gt; $b} keys %ha;
+		join("", @output) eq $expect or die if TEST;
+	},
+	hash_slice =&gt; sub { # swl
+		my %ha; @ha{0..$#numbers} = @numbers;
+		delete $ha{$index};
+		my @output = @ha{ sort {$a &lt;=&gt; $b} keys %ha };
+		join("", @output) eq $expect or die if TEST;
+	},
+	swap =&gt; sub { # Eily
+		my @output = @numbers;
+		$output[$index] = pop @output;
+		join("", sort @output) eq $expect or die if TEST;
+	},
+	pop_sort =&gt; sub { # Eily's + sort
+		my @output = @numbers;
+		$output[$index] = pop @output;
+		@output = sort @output;
+		join("", @output) eq $expect or die if TEST;
+	},
+});
+
+__END__
+
+               Rate     hash hash_slice    grep pop_sort   slice    swap  splice
+hash       113253/s       --       -10%    -78%     -82%    -84%    -87%    -87%
+hash_slice 126029/s      11%         --    -76%     -80%    -83%    -85%    -86%
+grep       518838/s     358%       312%      --     -17%    -28%    -39%    -41%
+pop_sort   627138/s     454%       398%     21%       --    -14%    -26%    -28%
+slice      725216/s     540%       475%     40%      16%      --    -14%    -17%
+swap       846179/s     647%       571%     63%      35%     17%      --     -3%
+splice     873809/s     672%       593%     68%      39%     20%      3%      --
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11123879</root_node>
+<parent_node field_name="parent_node">11123879</parent_node>
+<thread id="11123879">
+<node id="11123881"/>
+<node id="11123884"><node id="11123941"><node id="11123949"/>
+<node id="11123958"/>
+</node>
+<node id="11123952"/>
+</node>
+<node id="11123885"><node id="11123927"><node id="11123986"/>
+</node>
+</node>
+<node id="11123905"/>
+<node id="11123963"><node id="11123965"><node id="11123973"><node id="11124019"><node id="11124034"/>
+</node>
+</node>
+<node id="11124041"/>
+</node>
+</node>
+</thread></node>

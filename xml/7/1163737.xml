@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1163737" title="Re^2: Is validation of all subroutine arguments overkill?" created="2016-05-21 10:14:30" updated="2016-05-21 10:14:30" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [stevieb],&lt;/p&gt;
+&lt;p&gt;Testing for warnings is a good idea, and ++ for the rest of your post, I just wanted to point out that I got burned by code similar to what you posted: You can't know how many warnings a piece of code will produce, especially over various Perl versions. Example: [http://www.cpantesters.org/cpan/report/fcf17bc0-03a4-11e5-83fe-dd35e14af301|this CPAN Testers] failure is caused by my test code expecting an exact number of warnings, but Perl 5.6 produced an extra warning in this case. Here's the code I currently use (in addition to [mod://Test::Fatal]):&lt;/p&gt;
+&lt;c&gt;
+sub warns (&amp;) {
+    my $sub = shift;
+    my @warns;
+    { local $SIG{__WARN__} = sub { push @warns, shift };
+        $sub-&gt;() }
+    return @warns;
+}
+
+# example usage
+use Test::More tests=&gt;2;
+my @w = warns {
+   is some_func(), "bar";
+};
+is grep({/\bfoo\b/} @w), 1;
+
+sub some_func {
+    # could be any number of other warnings here
+    warn "foo";
+    return "bar";
+}
+&lt;/c&gt;
+&lt;p&gt;Regards,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1163720</root_node>
+<parent_node field_name="parent_node">1163735</parent_node>
+<thread id="1163720">
+<node id="1163721"/>
+<node id="1163724"/>
+<node id="1163726"/>
+<node id="1163727"/>
+<node id="1163729"/>
+<node id="1163735"><node id="1163737"><node id="1163740"/>
+</node>
+<node id="1163907"/>
+</node>
+</thread></node>

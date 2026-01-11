@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11114488" title="Logging Serial Ports with Mojolicious" created="2020-03-19 16:37:32" updated="2020-03-19 16:37:32" _doctext_mode="strict"><type id="1042">CUFP</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I gave a talk recently at the German Perl Workshop in Erlangen (video [https://www.video.uni-erlangen.de/clip/id/12892|here], in German). In that talk, among other things, I spoke about how I built a data logger for a sensor, and was doing everything with [https://mojolicious.org/|Mojolicious] - reading the serial port, logging the data, and providing a user interface. Since it may be a little bit until I can publish the design of the data logger, I've put together a stripped-down example in case it's useful to someone. The key pieces here are:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;[mod://IO::Termios], which I wrote about in [id://1183290],&lt;/li&gt;
+&lt;li&gt;[mod://Mojo::IOLoop::Stream::Role::LineBuffer], which allows me to read [mod://Mojo::IOLoop::Stream]s non-blocking line-by-line,&lt;/li&gt;
+&lt;li&gt;the JavaScript [https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events|EventSource API],&lt;/li&gt;
+&lt;li&gt;[mod://Mojo::SQLite], which provides a nice Mojo-like API for an SQLite database (see also [mod://Mojo::Pg]),&lt;/li&gt;
+&lt;li&gt;and the rest is pretty much [dist://Mojolicious].&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;It's a relatively long piece of code, but it's entirely self-contained. If you have any questions or suggestions, please feel free to let me know!&lt;/p&gt;
+&lt;readmore title="The App"&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use 5.028;
+use Mojolicious::Lite -signatures;
+use Mojo::IOLoop::Stream::Role::LineBuffer;
+use Mojo::SQLite;
+use Mojo::JSON qw/encode_json/;
+use Mojo::Util qw/dumper/;
+use Fcntl qw/:DEFAULT/;
+use IO::Termios ();
+
+# NOTICE: This script is designed to work in a single-threaded,
+# single-process server only! (morbo or Mojolicious::Command::daemon)
+
+# disable template cache in development mode (e.g. under morbo):
+app-&gt;renderer-&gt;cache-&gt;max_keys(0) if app-&gt;mode eq 'development';
+
+helper sql =&gt; sub { state $sql = Mojo::SQLite-&gt;new(':memory:') };
+app-&gt;sql-&gt;migrations-&gt;from_string(&lt;&lt;'END_MIGRATIONS')-&gt;migrate;
+-- 1 up
+CREATE TABLE DataLog (
+	Timestamp DATETIME, Source TEXT, ValueA TEXT, ValueB TEXT );
+-- 1 down
+DROP TABLE IF EXISTS DataLog;
+END_MIGRATIONS
+
+my %serports = ( # this is essentially the configuration for the ports
+	'/tmp/fakepty1' =&gt; sub {
+		sysopen my $fh, '/tmp/fakepty1', O_RDONLY
+			or die "sysopen /tmp/fakepty1: $!";
+		my $hnd = IO::Termios-&gt;new($fh) or die "IO::Termios-&gt;new: $!";
+		$hnd-&gt;set_mode('19200,8,n,1');
+		#use IO::Stty;  # if needed
+		#IO::Stty::stty($hnd, qw/ cs8 -parenb raw -echo /);
+		return $hnd;
+	},
+	'/tmp/fakepty2' =&gt; sub {
+		sysopen my $fh, '/tmp/fakepty2', O_RDONLY
+			or die "sysopen /tmp/fakepty2: $!";
+		my $hnd = IO::Termios-&gt;new($fh) or die "IO::Termios-&gt;new: $!";
+		$hnd-&gt;set_mode('19200,8,n,1');
+		return $hnd;
+	},
+);
+my $retry_interval_s = 10;
+my $parse_re = qr{ ^ (?&lt;Source&gt; \w+ ) , (?&lt;ValueA&gt; \d+ )
+	, (?&lt;ValueB&gt; \d+ ) $ }msx;
+
+my $serial = Mojo::EventEmitter-&gt;new;  # serial event dispatcher
+sub setup_streams {
+	state %streams;
+	for my $k (sort keys %serports) {
+		next if $streams{$k};
+		my $handle = eval { $serports{$k}-&gt;() };
+		if (!$handle) {
+			$serial-&gt;emit(error =&gt; "Stream $k Open: $@");
+			Mojo::IOLoop-&gt;timer($retry_interval_s =&gt; \&amp;setup_streams);
+			next;
+		}
+		$streams{$k} = Mojo::IOLoop::Stream-&gt;new($handle)
+			-&gt;with_roles('+LineBuffer')-&gt;watch_lines;
+		$streams{$k}-&gt;on(read_line =&gt; sub ($strm, $line, $sep) {
+			if ( $line =~ $parse_re ) {
+				my %rec = ( %+, Timestamp =&gt; time );
+				app-&gt;sql-&gt;db-&gt;insert('DataLog', \%rec);
+				$serial-&gt;emit(data =&gt; \%rec);
+			}
+			else { $serial-&gt;emit(error =&gt;
+				"Stream $k: failed to parse ".dumper($line)) }
+		});
+		$streams{$k}-&gt;on(close =&gt; sub ($strm) {
+			$serial-&gt;emit(error =&gt; "Stream $k Closed");
+			$streams{$k}-&gt;stop;
+			delete $streams{$k};
+			Mojo::IOLoop-&gt;timer($retry_interval_s =&gt; \&amp;setup_streams);
+		});
+		$streams{$k}-&gt;on(error =&gt; sub ($strm, $err) {
+			$serial-&gt;emit(error =&gt; "Stream $k Error: $err");
+		});
+		$streams{$k}-&gt;on(timeout =&gt; sub ($strm) {
+			$serial-&gt;emit(error =&gt; "Stream $k Timeout");
+			# could possibly close &amp; re-open stream here
+		});
+		$streams{$k}-&gt;start;
+	}
+}
+Mojo::IOLoop-&gt;next_tick(\&amp;setup_streams);
+
+get '/'  =&gt; sub ($c) { $c-&gt;render(template =&gt; 'index') } =&gt; 'index';
+get '/q' =&gt; sub ($c) { $c-&gt;render(template =&gt; 'query') } =&gt; 'query';
+
+get '/events' =&gt; sub ($c) {
+	$c-&gt;inactivity_timeout(300);
+	$c-&gt;res-&gt;headers-&gt;content_type('text/event-stream');
+	$c-&gt;write;
+	my $cb_data = $serial-&gt;on(data =&gt; sub ($ser,$data) {
+		my $json = encode_json($data) =~ s/\n//gr;
+		$c-&gt;write("event: ser_data\ndata: $json\n\n");
+	} );
+	my $cb_err = $serial-&gt;on(error =&gt; sub ($ser,$err) {
+		$err =~ s/\n//g;
+		$c-&gt;write("event: ser_err\ndata: $err\n\n");
+	} );
+	$c-&gt;on(finish =&gt; sub ($c) {
+		$serial-&gt;unsubscribe(data =&gt; $cb_data);
+		$serial-&gt;unsubscribe(error =&gt; $cb_err);
+	});
+} =&gt; 'events';
+
+app-&gt;start;
+
+__DATA__
+
+@@ index.html.ep
+% layout 'main', title =&gt; 'Hello, World!';
+&lt;nav&gt;[ &lt;b&gt;Live&lt;/b&gt; | &lt;%= link_to Query =&gt; 'query' %&gt; ]&lt;/nav&gt;
+&lt;main&gt;
+&lt;div&gt;&lt;table border="1"&gt;
+&lt;tr&gt;
+	&lt;th&gt;Source&lt;/th&gt; &lt;th&gt;Timestamp&lt;/th&gt; &lt;th&gt;ValueA&lt;/th&gt; &lt;th&gt;ValueB&lt;/th&gt;
+&lt;/tr&gt;
+&lt;tr&gt; &lt;th&gt;Foo&lt;/th&gt; &lt;td id="Foo_time"&gt;-&lt;/td&gt; &lt;td id="Foo_vala"&gt;-&lt;/td&gt;
+	&lt;td id="Foo_valb"&gt;-&lt;/td&gt; &lt;/tr&gt;
+&lt;tr&gt; &lt;th&gt;Bar&lt;/th&gt; &lt;td id="Bar_time"&gt;-&lt;/td&gt; &lt;td id="Bar_vala"&gt;-&lt;/td&gt;
+	&lt;td id="Bar_valb"&gt;-&lt;/td&gt; &lt;/tr&gt;
+&lt;/table&gt;&lt;/div&gt;
+&lt;/main&gt;
+&lt;script src="https://code.jquery.com/jquery-3.4.1.min.js"
+	integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+	crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script&gt;
+"use strict";
+var events = new EventSource('&lt;%= url_for 'events' %&gt;');
+events.addEventListener('ser_data', function (event) {
+	var data = JSON.parse(event.data);
+	$('#'+data.Source+'_time').text(data.Timestamp);
+	$('#'+data.Source+'_vala').text(data.ValueA);
+	$('#'+data.Source+'_valb').text(data.ValueB);
+}, false);
+events.addEventListener('ser_err', function (event) {
+	alert(event.data);
+}, false);
+&lt;/script&gt;
+
+@@ query.html.ep
+% layout 'main', title =&gt; 'Query';
+&lt;nav&gt;[ &lt;%= link_to Live =&gt; 'index' %&gt;
+	| &lt;b&gt;&lt;%= link_to Reload =&gt; 'query' %&gt;&lt;/b&gt; ]&lt;/nav&gt;
+&lt;main&gt;&lt;table border="1"&gt;
+% my @fields = qw/ Timestamp Source ValueA ValueB /;
+&lt;tr&gt;
+% for my $f (@fields) {
+	&lt;th&gt;&lt;%= $f %&gt;&lt;/th&gt;
+% }
+&lt;/tr&gt;
+%# NOTE: This database code doesn't normally belong in the view
+% my $results = sql-&gt;db-&gt;select('DataLog',
+% 		\@fields, undef, ['Timestamp','Source']);
+% while ( my $row = $results-&gt;hash ) {
+	&lt;tr&gt;
+	% for my $f (@fields) {
+		&lt;td&gt;&lt;%= $row-&gt;{$f} %&gt;&lt;/td&gt;
+	% }
+	&lt;/tr&gt;
+% }
+&lt;/table&gt;&lt;/main&gt;
+
+@@ layouts/main.html.ep
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+%= content
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;readmore title="Fake serial port code"&gt;
+&lt;p&gt;This is the script to provide the fake serial ports using [man://socat]:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Data::Dump;
+use IPC::Run qw/ start /;
+
+print STDERR "Starting...\n";
+my @procs = (
+	{ n=&gt;'Foo', c=&gt;['socat','pty,rawer,link=/tmp/fakepty1','-'],
+		v=&gt;sub { "Foo,".(time-$^T).",".int(rand(100))."\n" } },
+	{ n=&gt;'Bar', c=&gt;['socat','pty,rawer,link=/tmp/fakepty2','-'],
+		v=&gt;sub { "Bar,".(time-$^T).",".int(rand(100))."\n" } },
+);
+for my $p (@procs) {
+	$p-&gt;{i} = \(my $i='');
+	$p-&gt;{o} = \(my $o='');
+	$p-&gt;{p} = start $p-&gt;{c}, $p-&gt;{i}, $p-&gt;{o};
+}
+print STDERR "Running...\n";
+
+my $run = 1;
+local $SIG{INT} = sub { print STDERR "Caught SIGINT\n"; $run = 0 };
+while ($run) {
+	for my $p (@procs) {
+		sleep 1;
+		${$p-&gt;{i}} .= $p-&gt;{v}-&gt;();
+		$p-&gt;{p}-&gt;pump;
+		if ( length ${$p-&gt;{o}} ) {
+			dd $p-&gt;{n}, ${$p-&gt;{o}};
+			${$p-&gt;{o}} = '';
+		}
+	}
+}
+$_-&gt;{p}-&gt;signal('INT') for @procs;
+$_-&gt;{p}-&gt;finish for @procs;
+print STDERR "Done.\n";
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;To run this code, first start the second script (e.g. &lt;c&gt;perl fakeports.pl&lt;/c&gt;), and then the first, e.g. via &lt;c&gt;morbo serlogger.pl&lt;/c&gt;, and then visit the URL shown in the console. (Note this won't work on Windows.)&lt;/p&gt;</doctext>
+<thread id="11114488">
+</thread></node>

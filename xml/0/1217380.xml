@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217380" title="Re: Multiple Packages in a Module? (manipulate %INC)" created="2018-06-25 14:45:59" updated="2018-06-25 14:45:59" _doctext_mode="lenient"><type id="11">note</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">&lt;I&gt;&amp;gt; I want to have a set of files &lt;C&gt;test_v1.pm&lt;/C&gt; .. &lt;C&gt;test_vN.pm&lt;/C&gt; that each have definitions of &lt;C&gt;package Foo&lt;/C&gt; and &lt;C&gt;package Foo::Bar&lt;/C&gt;&lt;/I&gt;&lt;P&gt;
+
+After [doc://use]ing &lt;C&gt;test_v*.pm&lt;/C&gt; you have to make Perl believe that  &lt;C&gt;package Foo&lt;/C&gt; and &lt;C&gt;package Foo::Bar&lt;/C&gt; have already been loaded ...&lt;P&gt;
+
+i.e. you have to flag it in [DOC://%INC|&lt;tt&gt;%INC&lt;/tt&gt;]: °&lt;P&gt;
+
+&lt;UL&gt;
+&lt;LI&gt; &lt;I&gt;%INC&lt;/I&gt;
+&lt;/UL&gt;&lt;P&gt;
+
+&lt;I&gt;The hash %INC contains entries for each filename included via the do, require, or use operators. The key is the filename you specified (with module names converted to pathnames), and the value is the location of the file found. The require operator uses this hash to determine whether a particular file has already been included.&lt;/I&gt;&lt;P&gt;
+
+I had a similar discussion some time ago, I'll dig it up and update it here.&lt;P&gt;
+
+&lt;H5&gt; EDIT&lt;/H5&gt;&lt;P&gt;
+
+Couldn't find it, here a little demo:&lt;P&gt;
+
+&lt;c&gt;
+use strict;
+use warnings;
+use Data::Dump qw/pp dd/;
+
+
+
+
+package Foo::Bar;
+
+sub import { warn __PACKAGE__." was imported!" }
+
+BEGIN {
+    $INC{'Foo/Bar.pm'}=1;  # actually a path needed, but 1 is true enough² ;-)
+}
+
+
+package main;
+
+use Foo::Bar;
+
+warn pp \%INC;
+&lt;/c&gt;
+&lt;c&gt;
+Foo::Bar was imported! at d:/Users/lanx/pm/inc.pl line 10.
+{
+  "C:/Perl_64/site/lib/sitecustomize.pl" =&gt; "C:/Perl_64/site/lib/sitecustomize.pl",
+  "Data/Dump.pm"                         =&gt; "C:/Perl_64/lib/Data/Dump.pm",
+  "Exporter.pm"                          =&gt; "C:/Perl_64/lib/Exporter.pm",
+  "Foo/Bar.pm"                           =&gt; 1,
+  "overload.pm"                          =&gt; "C:/Perl_64/lib/overload.pm",
+  "overloading.pm"                       =&gt; "C:/Perl_64/lib/overloading.pm",
+  "strict.pm"                            =&gt; "C:/Perl_64/lib/strict.pm",
+  "subs.pm"                              =&gt; "C:/Perl_64/lib/subs.pm",
+  "vars.pm"                              =&gt; "C:/Perl_64/lib/vars.pm",
+  "warnings.pm"                          =&gt; "C:/Perl_64/lib/warnings.pm",
+  "warnings/register.pm"                 =&gt; "C:/Perl_64/lib/warnings/register.pm",
+} at d:/Users/lanx/pm/inc.pl line 21.
+&lt;/c&gt;&lt;P&gt;
+
+HTH! :)&lt;P&gt;
+
+&lt;H5&gt; update&lt;/H5&gt;&lt;P&gt;
+
+added dump of \%INC for illustration&lt;P&gt;
+
+&lt;H5&gt; update&lt;/H5&gt;&lt;P&gt;
+
+²) using &lt;C&gt;__FILE__&lt;/C&gt; instead of 1 is even better, because the origin of the code will become obvious when debugging.&lt;P&gt;
+
+&lt;c&gt;
+BEGIN {
+    $INC{'Foo/Bar.pm'}=__FILE__;
+}
+&lt;/c&gt;&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;/sub&gt; &lt;P&gt;
+
+&lt;/div&gt;&lt;/div&gt;&lt;P&gt;
+
+°) %INC the hash not @INC the array!&lt;!-- Wiki2Monks {"version":1.142} --&gt;</doctext>
+<root_node field_name="root_node">1217365</root_node>
+<parent_node field_name="parent_node">1217365</parent_node>
+<thread id="1217365">
+<node id="1217371"><node id="1217391"><node id="1217392"><node id="1217400"><node id="1217402"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1217373"><node id="1217374"/>
+<node id="1217387"><node id="1217390"/>
+</node>
+</node>
+<node id="1217378"><node id="1217395"/>
+<node id="1217401"/>
+</node>
+<node id="1217380"><node id="1217396"><node id="1217399"><node id="1217405"><node id="1217406"/>
+</node>
+<node id="1217409"/>
+</node>
+</node>
+<node id="1217404"/>
+</node>
+<node id="1217485"><node id="1217498"/>
+</node>
+<node id="1217497"/>
+</thread></node>

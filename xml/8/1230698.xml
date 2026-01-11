@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230698" title="Re^4: Logic for importing and strict vars?" created="2019-02-28 17:24:25" updated="2019-02-28 17:24:25" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;think it is likely that the first form is not a valid trigger to 'declare' $x and the latter form is valid&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note that what [doc://B::Deparse] is doing is taking the compiled optree and turning that back into Perl code. It's not perfect, there are sometimes ambiguities about which Perl code produced which op, so it's not always a reliable 1:1 representation of the optree or the original code. It seems to me that this might be one of those cases where it might not be the best tool.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;But I am still confused though 'what' declared means. Is it turned into a lexical scoped package variable, or is it similar to 'use vars'?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It's too late here for me to go reference hunting in the docs, but as far as I remember right now package variables aren't really declared* - they just have symbol table entries, and what [doc://vars] does it set up the symbol table entry during compile time (and from another package, as we've learned that's important), such that &lt;c&gt;strict vars&lt;/c&gt; considers it "declared". In other words, when compiling &lt;c&gt;package X { *::x=\$a }; $x++;&lt;/c&gt;, the assignment to the glob &lt;c&gt;*::x&lt;/c&gt; hasn't happened yet by the time &lt;c&gt;$x++;&lt;/c&gt; is compiled, so it's an error, but in &lt;c&gt;package X { BEGIN { *::x=\$a } }; $x++;&lt;/c&gt;, the assignment to the glob &lt;c&gt;*::x&lt;/c&gt; &lt;i&gt;has&lt;/i&gt; happened by the time the compiler sees &lt;c&gt;$x++;&lt;/c&gt;, and that's considered ok. And yes, there isn't really a formal declaration like with [doc://my].&lt;/p&gt;
+&lt;p&gt;* I'm not counting [doc://our] because it "makes a lexical alias to a package variable of the same name".&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;This line in 'use' documentation is not clear to me:"...which are effective through the end of the file..."&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;AFAICT the "which are effective through the end of the file" refers only to the immediately preceding "the current package" - the effect of a &lt;c&gt;use vars&lt;/c&gt; applies to &lt;i&gt;that package&lt;/i&gt;, regardless of whether that package spans multiple files.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1230603</root_node>
+<parent_node field_name="parent_node">1230662</parent_node>
+<thread id="1230603">
+<node id="1230604"><node id="1230609"><node id="1230616"/>
+</node>
+<node id="1230652"/>
+</node>
+<node id="1230608"><node id="1230653"><node id="1230661"/>
+</node>
+</node>
+<node id="1230612"><node id="1230613"><node id="1230655"/>
+</node>
+<node id="1230654"/>
+</node>
+<node id="1230614"><node id="1230656"/>
+</node>
+<node id="1230615"><node id="1230617"><node id="1230618"><node id="1230619"><node id="1230620"/>
+</node>
+</node>
+</node>
+<node id="1230657"><node id="1230662"><node id="1230698"/>
+</node>
+</node>
+</node>
+<node id="1230622"><node id="1230658"/>
+</node>
+</thread></node>

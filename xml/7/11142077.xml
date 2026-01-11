@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11142077" title="Re^2: CPAN 2.29 stuck with Net::SSLeay" created="2022-03-13 20:36:16" updated="2022-03-13 20:36:16" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;i&gt;
+On Raspberry Pis, I personally like to use the system Perl and the system package manager to install Perl modules. This may not always give you the latest versions, but things install much faster because nothing needs to be compiled and tested. (Update: In other words, try sudo apt-get install libnet-ssleay-perl.)
+&lt;/i&gt;
+&lt;p&gt;Thanks for your response, [haukex]. I'm not quite sure what you mean with reference to the "system package manager." I find no GUI equivalent of Ubuntu's "synaptic package manager." I prefer to get things done on the command line with *nix. (My windows preference is the opposite, but I prefer not to use Windows.) I wonder if you mean something like &lt;c&gt;dpkg&lt;/c&gt;. As it is, I used &lt;/p&gt;
+&lt;c&gt;sudo apt-get install libnet-ssleay-perl&lt;/c&gt;
+&lt;p&gt;, and then I was unstuck. Would this be an instance of using the "system package manager," as you mean it?&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; After fighting with the same install on my droplet, I realize there were other headers that needed to be installed by the system:&lt;/p&gt;
+&lt;c&gt; 
+sudo apt install zlib1g zlib1g-dev
+&lt;/c&gt;
+&lt;p&gt;The droplet had the former but not the latter, and it seems to make a difference.&lt;/p&gt;
+&lt;i&gt;
+It's also usually not recommended to use sudo cpan to install modules to the system Perl - use the system's package manager to install packages to the system Perl, or build your own copy of Perl (e.g. perlbrew) to install modules using a CPAN client there. Or, if using the system Perl, use something like local::lib to install modules to your home directory, so the system Perl's libraries are not affected.
+
+On Raspberry Pis, one of the first things I do is sudo apt-get install build-essential cpanminus liblocal-lib-perl perl-doc and perl -Mlocal::lib &gt;&gt;~/.profile - see my notes on setting up RPis. (Update: I use local::lib on RPis for those few modules that aren't available in the package repositories or where the version in the system repositories is too old.)
+&lt;/i&gt;
+&lt;p&gt;I think that's really solid advise for an rpi. I proceeded as you outline, forsaking &lt;c&gt;sudo cpan&lt;/c&gt;, and  with the addition of this command:&lt;/p&gt;
+&lt;c&gt;cpanm --local-lib=~/perl5 local::lib &amp;&amp; eval $(perl -I ~/perl5/lib/perl5/ -Mlocal::lib)&lt;/c&gt;
+&lt;p&gt;cpanm has generally worked very well for my needs. I do have a sticky wicket, where I can't get cpanm to find dependencies:&lt;/p&gt;
+&lt;c&gt;$ ls
+requires1.pm
+$ cpanm --verbose --installdeps .
+cpanm (App::cpanminus) 1.7044 on perl 5.028001 built for arm-linux-gnueabihf-thread-multi-64int
+...
+--&gt; Working on .
+Entering /home/pi/Documents/curate/req
+Configuring /home/pi/Documents/curate/req ... N/A
+! Configuring . failed. See /home/pi/.cpanm/work/1647208802.16932/build.log for details.
+Expiring 16 work directories.
+$ cat requires1.pm 
+package requires1.pm;
+
+requires 'AnyEvent::AIO' =&gt; '1.1';
+requires 'Async::Interrupt' =&gt; '1.24';
+requires 'Cookie::Baker::XS' =&gt; '0.09';
+requires 'Device::Firmata' =&gt; '0.65';
+requires 'Device::SerialPort' =&gt; '1.04';
+requires 'Device::WebIO' =&gt; '0.022';
+requires 'Device::WebIO::Dancer' =&gt; '0.004';
+requires 'Device::WebIO::Firmata' =&gt; '0.002';
+requires 'Device::WebIO::RaspberryPi' =&gt; '0.900';
+requires 'DBD::SQLite' =&gt; '1.58';
+requires 'DBI' =&gt; '1.641';
+requires 'Guard' =&gt; '1.023';
+requires 'GPS::NMEA' =&gt; '0.17';
+requires 'Math::Round' =&gt; '0.07';
+requires 'RPi::WiringPi' =&gt; '2.3628';
+requires 'RPi::Pin' =&gt; '2.3606';
+requires 'Plack::Handler::Twiggy' =&gt; '0.1025';
+requires 'Starman' =&gt; '0.4014';
+requires 'Time::HiRes' =&gt; '1.9758';
+requires 'WWW::Form::UrlEncoded::XS' =&gt; '0.25';
+1;
+$ 
+&lt;/c&gt;
+&lt;p&gt;I couldn't get cpanm to find modules in typical perl .pl scripts, so I herded the requires into a barebones module in its own directory. I don't know how to serve it up any better than that.(?)&lt;/p&gt;
+&lt;i&gt;On Raspberry Pis, one of the first things I do is sudo apt-get install build-essential cpanminus liblocal-lib-perl perl-doc and perl -Mlocal::lib &gt;&gt;~/.profile - see my notes on setting up RPis. (Update: I use local::lib on RPis for those few modules that aren't available in the package repositories or where the version in the system repositories is too old.)&lt;/i&gt;
+
+&lt;p&gt;Your link for [https://bitbucket.org/haukex/hgpstools/src/master/INSTALL-RPi-2020.md|setting up rpi's] has proved very useful indeed, giving me much more on my plate to come up to speed on. I'm happy to report that I think I have my first fail2ban implementation:&lt;/p&gt;
+&lt;c&gt;$ sudo fail2ban-client status sshd
+Status for the jail: sshd
+|- Filter
+|  |- Currently failed:	0
+|  |- Total failed:	0
+|  `- File list:	/var/log/auth.log
+`- Actions
+   |- Currently banned:	0
+   |- Total banned:	0
+   `- Banned IP list:	
+$ 
+&lt;/c&gt;
+&lt;p&gt;Regarding section 5,&lt;/p&gt;
+&lt;c&gt;
+Crontab to broadcast RPi's address and name
+&lt;/c&gt;
+&lt;p&gt;What is the purpose of doing this? Would this cause you to be indexed by search engines, or is it all within 50 yards (meters for [bliako])? &lt;/p&gt;
+&lt;c&gt;crontab -e
+
+@reboot hostname | socat -s - UDP-DATAGRAM:255.255.255.255:12340,broadcast 2&gt;/dev/null * * * hostname | socat -s - UDP-DATAGRAM:255.255.255.255:12340,broadcast 2&gt;/dev/null&lt;/c&gt;
+&lt;p&gt;Can you break this up into parts? I've used crontab once, so that syntax with all the asterisks is familiar. I read that &lt;/p&gt;
+&lt;c&gt;socat -s&lt;/c&gt;
+&lt;p&gt;runs it in sloppy mode, and I understand the syntax for sending stderr to the bitbucket.&lt;/p&gt;
+&lt;c&gt;2&gt;/dev/null&lt;/c&gt;
+&lt;p&gt;I haven't cottoned onto it yet, even fiddling with 
+&lt;c&gt; udplisten.pl&lt;/c&gt; &lt;/p&gt;
+&lt;p&gt;I have run:&lt;/p&gt;
+&lt;c&gt;$ sudo  ufw allow in 12340/udp
+Rule added
+Rule added (v6)
+$ 
+&lt;/c&gt;
+&lt;p&gt;, and was astonished to get somewhere in the debugger with it:&lt;/p&gt;
+&lt;c&gt;$ pwd
+/home/pi/Documents/curate/req
+$ ls
+1.udplisten.pl  requires1.pm
+$ perl -d 1.udplisten.pl -e '/HELLO xyZ129/'
+
+Loading DB routines from perl5db.pl version 1.53
+Editor support available.
+
+Enter h or 'h h' for help, or 'man perldebug' for more help.
+
+main::(1.udplisten.pl:77):	$Getopt::Std::STANDARD_HELP_VERSION = 1;
+  DB&lt;1&gt; b 86                                                                    
+  DB&lt;2&gt; c                                                                       
+main::(1.udplisten.pl:86):	my $RXSZ = $opts{b}//1024;
+  DB&lt;2&gt; p $EXPR                                                                 
+/HELLO xyZ129/
+  DB&lt;3&gt; c                                                                       
+
+192.168.red.acted
+Debugged program terminated.  Use q to quit or R to restart,
+use o inhibit_exit to avoid stopping after program termination,
+h q, h R or h o to get additional info.
+  DB&lt;3&gt;                                                                         
+
+  DB&lt;3&gt; save 1.udp.txt                                                          
+commands saved in 1.udp.txt
+  DB&lt;4&gt; q                                                                       
+$ &lt;/c&gt;
+
+&lt;p&gt;, with another terminal, doing: &lt;/p&gt;
+&lt;c&gt;
+echo "HELLO xyZ129" | socat - UDP-DATAGRAM:255.255.255.255:12340,broadcast
+&lt;/c&gt;
+
+
+&lt;i&gt;If you still want to try installing Net::SSLeay yourself, you can also use the apt command to get most programs' build dependencies; in this case, try sudo apt-get build-dep libnet-ssleay-perl.&lt;/i&gt;
+
+&lt;c&gt;
+sudo apt-get build-dep libnet-ssleay-perl
+&lt;/c&gt;
+
+&lt;p&gt;I used this with my droplet in the cloud.&lt;/p&gt;
+&lt;i&gt;
+In general, I would recommend cpanm over the default CPAN client. Its --verbose option will show you the whole build process, giving you the exact error messages when stuff fails.
+&lt;/i&gt;
+
+
+
+&lt;p&gt;I sure like cpanm too when I finally get the thing kickstarted.&lt;/p&gt;
+
+
+&lt;c&gt;cpanm Term::ReadKey&lt;/c&gt;
+&lt;p&gt;I always need to do this, too.&lt;/p&gt;
+
+
+
+
+&lt;p&gt;Again, thanks for your comments. Gruss aus Amiland,&lt;/p&gt;
+
+
+
+</doctext>
+<root_node field_name="root_node">11141815</root_node>
+<parent_node field_name="parent_node">11141822</parent_node>
+<thread id="11141815">
+<node id="11141822"><node id="11142077"><node id="11142081"><node id="11142644"><node id="11142645"><node id="11142649"/>
+</node>
+<node id="11142646"><node id="11143147"/>
+</node>
+</node>
+<node id="11143148"><node id="11143164"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

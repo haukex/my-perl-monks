@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201062" title="modular file scoping" created="2017-10-09 22:38:01" updated="2017-10-09 22:38:01" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="497098">Pstack</author>
+<doctext field_name="doctext">&lt;code&gt;
+#..................."~/test/DataBank.pm"
+package DataBank;                							           
+our @EXPORT_OK = qw( set_webpath get_scanpath get_findpath);
+my %webpaths = (
+	mypath =&gt; "",
+	scanpath =&gt; "~/WebTabs/auto/htmlscan.0",
+	findpath =&gt; "~/WebTabs/auto/htmlfilter.0"	
+);
+sub get_scanpath {return ($webpaths{"mypath"} || $webpaths{"scanpath"});}
+sub get_findpath {return ($webpaths{"mypath"} || $webpaths{"findpath"});}
+sub set_webpath {
+	my $pathme = shift;
+	unless (-f $pathme){$pathme = "";}
+	$pathme ||= get_scanpath();	
+	$webpaths{"mypath"} = $pathme;
+}                                           
+
+#..................."~/test/Scanner.pm"
+package Scanner; ;
+our @EXPORT_OK = qw( postscan);	
+use Importer 'SpecsGet' =&gt; qw( pathout );
+sub webget {.........}  				  # download heaps
+sub postscan {
+	my $pathx = pathout();
+	print "\n$pathx\n\n";
+}                                                
+
+#..................."~/test/SpecsGet.pm"
+package SpecsGet;
+our @EXPORT_OK = qw( pathout);    							           
+use Importer 'DataBank' =&gt; qw( get_scanpath get_findpath );
+sub pathout {return get_scanpath();}
+
+#..................."~/test/testme.pl"
+use Importer 'DataBank' =&gt; qw (set_webpath);		
+use Importer 'Scanner' =&gt;qw (postscan);
+use Cwd qw(getcwd cwd);						
+set_webpath (getcwd()."/xxx");
+#........................................# hours later
+postscan();
+&lt;/code&gt;
+
+&lt;p&gt;Given the 4 files above suitably 'stricted' etc &amp; closed off properly:&lt;/p&gt;
+&lt;code&gt;#&gt; perl testme.pl          ==&gt;  "~/xxx"   ... (as expected)&lt;/code&gt;
+
+&lt;p&gt;Seems to function perfectly well, deploying DataBank.pm as a central store for 'modularised' semi-static specifications whose values may occasionally get changed by yet other modules. The problem I am having is not understanding exactly why it works so I can rely on it? &lt;/p&gt;
+
+&lt;p&gt;There are myriad net explanations of the seldom used "local", "our", &amp; "package" scopings but very little on this "file" scoping that I (and maybe others) use extensively. If the "file"-scoped lexicals of DataBank.pm are forced to stay in scope throughout, what is doing the forcing with respect to scoping rules?&lt;/p&gt;
+    </doctext>
+<thread id="1201062">
+<node id="1201066"><node id="1201112"/>
+<node id="1201286"><node id="1201299"><node id="1201358"><node id="1201367"><node id="1201378"><node id="1201416"/>
+</node>
+<node id="1201415"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

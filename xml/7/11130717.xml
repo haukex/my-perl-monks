@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11130717" title="Re^5: Blessing with unknown classnames" created="2021-04-02 05:32:29" updated="2021-04-02 05:32:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I mean this: &lt;c&gt;if (defined $err)&lt;/c&gt; can become &lt;c&gt;if (defined($err) &amp;&amp; ($err eq 'YouveGotError'))&lt;/c&gt;, so that it errors only on'YouveGotError' blessed refs and nothing else, because the sub may normally return other blessed things.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm not sure if this is a question, but just in case, note that I fully agree with [kcott] that [doc://Scalar::Util]'s &lt;c&gt;blessed&lt;/c&gt; (a core module) is the "correct" answer to the question of how to tell if a [doc://ref]erence is [doc://bless]ed or not. But if the &lt;c&gt;sub&lt;/c&gt; also can return other blessed refs, and you want to differentiate them, then one possible solution is what you said in your root node: creating an "error" class is one way. But since Perl's OO system is so nice and simple, inheritance can be incredibly simple, as I show in the following example. Of course, there are existing solutions on CPAN, e.g. [mod://Throwable] and [mod://Exception::Class].&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Scalar::Util qw/blessed/;
+
+@Error::ISA = qw//; # "base class" for errors
+@BadInput::ISA = qw/Error/;
+sub doit {
+	my $in = shift;
+	if ( $in =~ /foo/ ) {
+		return bless [123,456], 'RealReturnValue';
+	}
+	else {
+		return bless ['abc','def'], 'BadInput';
+	}
+}
+
+for my $val ("foobar", "quzbaz") {
+	my $ret = doit($val);
+	if ( my $err = blessed $ret and $ret-&gt;isa('Error') ) {
+		print "$val -&gt; Error: $err\n";
+	}
+	else {
+		print "$val -&gt; OK\n";
+	}
+}
+
+__END__
+
+foobar -&gt; OK
+quzbaz -&gt; Error: BadInput
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11130675</root_node>
+<parent_node field_name="parent_node">11130687</parent_node>
+<thread id="11130675">
+<node id="11130678"><node id="11130695"><node id="11130696"/>
+<node id="11130709"><node id="11130715"/>
+<node id="11130752"/>
+</node>
+<node id="11130755"/>
+</node>
+</node>
+<node id="11130681"><node id="11130683"><node id="11130684"><node id="11130687"><node id="11130717"><node id="11130720"><node id="11130721"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11130700"/>
+</thread></node>

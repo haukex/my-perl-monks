@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1232523" title="Re: some efficiency, please (updated)" created="2019-04-12 19:44:18" updated="2019-04-12 19:44:18" _doctext_mode="lenient"><type id="11">note</type>
+<author id="634253">AnomalousMonk</author>
+<doctext field_name="doctext">&lt;p&gt;
+Here's another way to approach the problem. It is, frankly, over-engineered, but I want to try to illustrate some general ideas I have found useful. Among them are:
+&lt;ul&gt;
+&lt;li&gt;
+The &lt;c&gt; MAIN &lt;/C&gt; block isolates all lexical variables; there are no global variables in the script.
+&lt;/LI&gt;
+
+&lt;li&gt;
+Factoring regular expressions (to a rather extreme degree in this case!).
+&lt;/LI&gt;
+
+&lt;li&gt;
+Dynamically building a regex from substrings extracted from the data; see [haukex]'s article [id://1179840].
+&lt;/LI&gt;
+&lt;/UL&gt;
+&lt;/P&gt;
+
+&lt;p&gt;
+This script runs correctly against the example input/output files posted [id://1232496|here] (and fixed [id://1232498|here]!) &lt;small&gt;(&lt;b&gt;update:&lt;/B&gt; but see Update below about use of &lt;c&gt; /o &lt;/C&gt; modifier in the &lt;c&gt; s/// &lt;/C&gt; substitution)&lt;/SMALL&gt;. &lt;br&gt;
+File &lt;c&gt;scrub_ref_1.pl&lt;/C&gt;:
+&lt;readmore&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use autodie;
+
+use Data::Dump qw(dd);
+
+use constant TRIGGER =&gt; qr{ \b bar \b }xms;  # arms a reference number
+
+MAIN: {  # all lexical variables within this scope are isolated
+
+die "usage: $0 &lt;input filename&gt;" unless @ARGV == 1;
+
+# slurp entire file to memory.
+
+my $filename = $ARGV[0];
+
+my $allfile = do {
+    local $/;
+    open my $fh_in, '&lt;', $filename;
+    &lt;$fh_in&gt;;
+    };
+
+# capture list of ref object numbers to delete.
+
+my @object_numbers = do {
+
+    # all these substrings appear alone on a line.
+    my $rx_blk_start = qr{ ^ begin $ }xms;  # block start
+    my $rx_ref_n     = qr{ ^ \d+   $ }xms;  # ref number
+    my $rx_blk_end   = qr{ ^ end   $ }xms;  # block end
+
+    # this matches any stuff before end of block.
+    my $rx_not_blk_end = qr{ (?! $rx_blk_end) . }xms;
+
+    # return list of captures.
+    $allfile =~ m{
+        $rx_blk_start \n
+        ($rx_ref_n)   \n  # capture valid ref number for deletion
+        $rx_not_blk_end*  # any stuff before block end
+        ${ \TRIGGER }     # must appear at least once in block
+        $rx_not_blk_end*  # any stuff before block end
+        $rx_blk_end
+        }xmsg;
+
+    };
+# dd 'object_numbers', \@object_numbers;  # FOR DEBUG
+
+# build regex of ref object numbers to delete.
+
+my ($rx_del_ref_n) =
+    map qr{ \b (?: $_) \b }xms,
+    join '|',
+    reverse sort
+    @object_numbers
+    ;
+# print 'delete ref n regex', $rx_del_ref_n, "\n";  # FOR DEBUG
+
+# delete all ref n objects from text.
+
+$allfile =~ s{ ^ (?: [ ]* foo)? [ ]+ ref [ ] $rx_del_ref_n \n }
+             {}xmsgo;
+# print "edited allfile [[$allfile]] \n";  # FOR DEBUG
+
+# save processed file to new file.
+
+my $out_filename = "$filename.removed";
+
+open my $fh_out, '&gt;', $out_filename;
+print $fh_out $allfile;
+close $fh_out;
+
+exit;
+
+}  # end MAIN block
+
+die "unexpected exit from MAIN";
+&lt;/C&gt;
+Output:
+&lt;c&gt;
+c:\@Work\Perl\monks\Anonymous Monk\1232492&gt;perl scrub_ref_1.pl text.in
+
+c:\@Work\Perl\monks\Anonymous Monk\1232492&gt;fc /b text.in.removed text.in.removed.au
+Comparing files text.in.removed and TEXT.IN.REMOVED.AU
+FC: no differences encountered
+&lt;/C&gt;
+&lt;/READMORE&gt;
+&lt;/P&gt;
+&lt;p&gt;
+&lt;b&gt;Update:&lt;/B&gt; For some inexplicable reason, I used the &lt;c&gt; /o &lt;/C&gt; modifier with the &lt;c&gt; s/// &lt;/C&gt; substitution in the code above. This modifier (see [doc://perlop#Regexp-Quote-Like-Operators|Regexp Quote-Like Operators] in [doc://perlop]) forces the regex to be compiled once and only once during execution of the script. The substitution should "properly" be &lt;br&gt;
+&lt;c&gt;    $allfile =~ s{ ^ (?: [ ]* foo)? [ ]+ ref [ ] $rx_del_ref_n \n }&lt;/c&gt; &lt;br&gt; 
+&lt;c&gt;                 {}xmsg;&lt;/c&gt; &lt;br&gt; 
+&lt;/P&gt;
+
+&lt;p&gt;
+As the script stands, processing only one file per invocation, the &lt;c&gt; /o &lt;/C&gt; modifier does no harm, but confers no benefit; the &lt;c&gt; s/// &lt;/C&gt; match regex is compiled and executed only once in any case. A problem arises if this code, which appears to work perfectly well, is recycled into another script that processes &lt;i&gt;multiple&lt;/I&gt; files per invocation, a natural extension. In this case, the &lt;c&gt; $rx_del_ref_n &lt;/C&gt; dynamic regex compiled for the &lt;i&gt;first&lt;/I&gt; file processed will be used for &lt;i&gt;all&lt;/I&gt; subsequent files because the &lt;c&gt; s/// &lt;/C&gt; into which it is interpolated will never be re-compiled. Depending on the data being processed, this bug may be very difficult to spot!
+&lt;/P&gt;
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-634253"&gt;
+&lt;hr&gt;&lt;p&gt;Give a man a fish&lt;b&gt;:&lt;/B&gt; &lt;c&gt; &lt;%-{-{-{-&lt;&lt;/C&gt;&lt;/P&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1232492</root_node>
+<parent_node field_name="parent_node">1232492</parent_node>
+<thread id="1232492">
+<node id="1232494"><node id="1232496"><node id="1232498"><node id="1232502"/>
+</node>
+<node id="1232500"/>
+</node>
+<node id="1232497"><node id="1232501"/>
+</node>
+</node>
+<node id="1232503"><node id="1232527"><node id="1232547"/>
+</node>
+<node id="1232531"><node id="1232532"/>
+</node>
+</node>
+<node id="1232523"/>
+</thread></node>

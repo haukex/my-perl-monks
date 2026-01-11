@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224345" title="Re: I would have expected a syntax error here" created="2018-10-19 12:11:13" updated="2018-10-19 12:11:13" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;[doc://B::Deparse] can help:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -MO=Deparse
+sub find_symbol {
+    got to here today
+}
+__END__
+BEGIN { $^W = 1; }
+use strict;
+sub find_symbol {
+    'to'-&gt;got('today'-&gt;here);
+}
+- syntax OK
+
+$ perl -wMstrict -MO=Deparse
+sub find_symbol {
+    I got to here today
+}
+__END__
+Bareword "today" not allowed while "strict subs" in use at - line 2.
+- had compilation errors.
+BEGIN { $^W = 1; }
+use strict;
+sub find_symbol {
+    'got'-&gt;I('here'-&gt;to('today'));
+}
+&lt;/c&gt;
+&lt;p&gt;So the first one is just the [doc://perlobj#Indirect-Object-Syntax], twice, while the second one assumes an extra parameter, and when that's a number it's fine; when it's a bareword it's not (under [doc://strict], at least). It just depends on whether the number of barewords is even or odd :-)&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -MO=Deparse -e 'sub x { foo bar }'
+BEGIN { $^W = 1; }
+use strict;
+sub x {
+    'bar'-&gt;foo;
+}
+-e syntax OK
+
+$ perl -wMstrict -MO=Deparse -e 'sub x { foo bar quz }'
+Bareword "quz" not allowed while "strict subs" in use at -e line 1.
+-e had compilation errors.
+BEGIN { $^W = 1; }
+use strict;
+sub x {
+    'bar'-&gt;foo('quz');
+}
+
+$ perl -wMstrict -MO=Deparse -e 'sub x { foo bar quz baz }'
+BEGIN { $^W = 1; }
+use strict;
+sub x {
+    'bar'-&gt;foo('baz'-&gt;quz);
+}
+-e syntax OK
+
+$ perl -wMstrict -MO=Deparse -e 'sub x { foo bar quz baz bleep }'
+Bareword "bleep" not allowed while "strict subs" in use at -e line 1.
+-e had compilation errors.
+BEGIN { $^W = 1; }
+use strict;
+sub x {
+    'bar'-&gt;foo('baz'-&gt;quz('bleep'));
+}
+&lt;/c&gt;
+&lt;p&gt;None of the code actually runs, of course &lt;c&gt;:-)&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;BTW, maybe you want to use the [doc://perlsyn#The-Ellipsis-Statement|"Yada Yada operator" (&lt;c&gt;...&lt;/c&gt;)] for unfinished code? (Perl v5.12 and up)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1224342</root_node>
+<parent_node field_name="parent_node">1224342</parent_node>
+<thread id="1224342">
+<node id="1224343"><node id="1224347"><node id="1224349"><node id="1224351"/>
+<node id="1224355"><node id="1224356"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1224344"/>
+<node id="1224345"><node id="1224348"/>
+</node>
+<node id="1224346"/>
+<node id="1224350"><node id="1224354"><node id="1224506"/>
+</node>
+</node>
+<node id="1224370"><node id="1224385"/>
+</node>
+</thread></node>

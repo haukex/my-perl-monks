@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1223913" title="Re^2: Skript help needed - RegEx &amp; Hashes" created="2018-10-12 07:20:01" updated="2018-10-12 07:20:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Here's how I might have written that script, with the following changes to your version:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Formatting: I've used my personal formatting style; a matter of taste of course (and sometimes I even vary my own style, if I think it looks better another way). For example, I added a bunch of whitespace and removed a couple of parens where it's not strictly necessary (but you are free to add parens if you like). I wrapped a few long lines so they would display nicely here, but usually I write my &lt;c&gt;open ... or die ...&lt;/c&gt; on one line if it fits reasonably.&lt;/li&gt;
+&lt;li&gt;Don't need both &lt;c&gt;#!/usr/bin/perl -w&lt;/c&gt; and &lt;c&gt;use warnings;&lt;/c&gt; ([http://perldoc.perl.org/warnings.html#What's-wrong-with-*-w*-and-$^W|What's wrong with &lt;b&gt;-w&lt;/b&gt; and &lt;c&gt;$^W&lt;/c&gt;])&lt;/li&gt;
+&lt;li&gt;I used the [doc://glob] suggestion from [jwkrahn], and also made sure that it would only return directories with the [doc://-X|-d] filetest operator. Note that [doc://glob] [id://1206848|has quite a few caveats], but with fixed strings it's ok.&lt;/li&gt;
+&lt;li&gt;I applied most of the changes [id://1223882|suggested] by [poj] and others.&lt;/li&gt;
+&lt;li&gt;Just to shorten the code a bit, I used an intermediate hash reference &lt;c&gt;$h&lt;/c&gt; for &lt;c&gt;$hash{$tRNAname}&lt;/c&gt;, in order for this to work I had to make sure to initialize &lt;c&gt;$hash{$tRNAname}&lt;/c&gt; with an empty anonymous hash: &lt;c&gt;my $h = ( $hash{$tRNAname} //= {} )&lt;/c&gt; means "assign &lt;c&gt;{}&lt;/c&gt; (an empty anonymous hash) to &lt;c&gt;$hash{$tRNAname}&lt;/c&gt; if the latter is not yet [doc://defined], then assign the value of &lt;c&gt;$hash{$tRNAname}&lt;/c&gt; to &lt;c&gt;$h&lt;/c&gt;". (See also [doc://perlreftut] and [doc://perlref].) &lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; And see [hippo]'s [id://1223917|reply] for one way to shorten it even more.&lt;/li&gt;
+&lt;li&gt;You were closing the directory handle too early, and I had to change the scoping of a couple of variables like &lt;c&gt;$tRNAname&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;I switched to using [doc://Data::Dumper] to output the variables, which I configured in a way that I like the output better (although normally I'd use [mod://Data::Dump]; [doc://Date::Dumper] is a core module). BTW, I'm not sure why you were prefixing the &lt;c&gt;\n&lt;/c&gt; in your &lt;c&gt;print&lt;/c&gt;s, but normally one would do things like &lt;c&gt;print "$tocount\n";&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;You said &lt;c&gt;open my $merge,"&gt;&gt;","$folder/$merge"&lt;/c&gt;, but the latter variable doesn't yet exist at that point (&lt;c&gt;my $merge&lt;/c&gt; doesn't take effect until &lt;i&gt;after&lt;/i&gt; the &lt;c&gt;open&lt;/c&gt; statement), and in your original script you said &lt;c&gt;open(MERGE,"&gt;merge")&lt;/c&gt;, so I'm not sure if you want a &lt;c&gt;merge&lt;/c&gt; file per folder, or a single &lt;c&gt;merge&lt;/c&gt; file in the current working directory? If it's the former, the probably [hippo]'s [id://1223793|suggestion] of opening the file once at the top of the script is better, also then you don't have to use append mode.&lt;/li&gt;
+&lt;li&gt;I'm not sure about &lt;c&gt;if ( $tocount =~ /[0-9]/ )&lt;/c&gt;: If you want to make sure that it contains &lt;i&gt;only&lt;/i&gt; digits, you should anchor your regex, as in &lt;strike&gt;&lt;c&gt;/^[0-9]$/&lt;/c&gt;&lt;/strike&gt; &lt;c&gt;/^[0-9]+$/&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;Plus I made a few other tweaks and used idioms in a few places, such as &lt;c&gt;( $tRNAname = $line[0] ) =~ s/-ENS.+$//&lt;/c&gt;, which means "copy &lt;c&gt;$line[0]&lt;/c&gt; to &lt;c&gt;$tRNAname&lt;/c&gt; and then apply the regex to &lt;c&gt;$tRNAname&lt;/c&gt;".&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;{$a cmp $b}&lt;/c&gt; is the default [doc://sort] order and isn't really needed, unless you really want to be explicit (it doesn't hurt).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Please have a look, and if you have any questions, please let us know.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Data::Dumper;
+$Data::Dumper::Useqq = 1;
+$Data::Dumper::Quotekeys = 0;
+$Data::Dumper::Sortkeys = 1;
+
+for my $folder ( grep {-d} glob('UNITAS_*') ) {
+	print Data::Dumper-&gt;Dump([$folder], [qw/folder/]);
+	opendir my $dh, $folder or die "$folder: $!";
+	while ( my $file = readdir($dh) ) {
+		next if $file !~ /\.mapped_sequences$/;
+		print Data::Dumper-&gt;Dump([$file], [qw/file/]);
+		
+		my $reads = 0;
+		open my $fileone, '&lt;', "$folder/$file"
+			or die "$folder/$file: $!";
+		while ( my $tocount = &lt;$fileone&gt; ) {
+			chomp $tocount;
+			$tocount =~ s/&gt;//g;
+			next if $tocount =~ /[A-Za-z]/;
+			if ( $tocount =~ /[0-9]/ ) {
+				print Data::Dumper-&gt;Dump([$tocount], [qw/tocount/]);
+				$reads += $tocount;
+			}
+		}
+		close $fileone;
+		print Data::Dumper-&gt;Dump([$reads], [qw/reads/]);
+		
+		my %hash;
+		my $trftable = 'unitas.tRF-table.txt';
+		open my $trf, '&lt;', "$folder/$trftable"
+			or die "$folder/$trftable: $!";
+		&lt;$trf&gt; for 1 .. 4;
+		while ( my $line = &lt;$trf&gt; ) {
+			chomp $line;
+			my @line = split /\t/, $line;
+			#print Data::Dumper-&gt;Dump([\@line], [qw/*line/]);
+			my $tRNAname;
+			if ( $line[0] =~ s/tRNA-[^-]+-...// )
+				{ $tRNAname = $&amp; }
+			else
+				{ ( $tRNAname = $line[0] ) =~ s/-ENS.+$// }
+			print Data::Dumper-&gt;Dump([$tRNAname], [qw/tRNAname/]);
+			my $h = ( $hash{$tRNAname} //= {} );
+			$h-&gt;{"5p-tR-halves"} += $line[ 1] / $reads * 1000000;
+			$h-&gt;{"5p-tRFs"}      += $line[ 3] / $reads * 1000000;
+			$h-&gt;{"3p-tR-halves"} += $line[ 5] / $reads * 1000000;
+			$h-&gt;{"3p-CCA-tRFs"}  += $line[ 7] / $reads * 1000000;
+			$h-&gt;{"3p-tRFs"}      += $line[ 9] / $reads * 1000000;
+			$h-&gt;{"tRF-1"}        += $line[11] / $reads * 1000000;
+			$h-&gt;{"tRNA-leader"}  += $line[13] / $reads * 1000000;
+			$h-&gt;{"misc-tRFs"}    += $line[15] / $reads * 1000000;
+		}
+		close $trf;
+		print Data::Dumper-&gt;Dump([\%hash], [qw/*hash/]);
+		
+		open my $merge, '&gt;&gt;', "$folder/merge"
+			or die "$folder/merge: $!";
+		my @tRF_types = ("5p-tR-halves", "5p-tRFs", "3p-tR-halves",
+			"3p-CCA-tRFs", "3p-tRFs", "tRF-1", "tRNA-leader",
+			"misc-tRFs");
+		for my $tRNAname ( sort keys %hash ) {
+			print $merge $tRNAname;
+			for my $tRF_type (@tRF_types) {
+				print $merge "\t$hash{$tRNAname}{$tRF_type}";
+			}
+			print $merge "\n";
+		}
+		close $merge;
+	}
+	close $dh;
+}
+&lt;/c&gt;
+&lt;p&gt;For the sample data from [id://1223798|this] post, the output file &lt;c&gt;merge&lt;/c&gt; I get is the following. Note that if you re-run the script, because of the append mode on the &lt;c&gt;merge&lt;/c&gt; file, the same lines get added to that file again.&lt;/p&gt;
+&lt;c&gt;
+MT-TM	6500000	4500000	0	0	0	0	0	20416666.6666666
+MT-TN	0	500000	0	0	0	750000	1000000	12625000
+MT-TP	0	0	0	0	0	1000000	0	0
+tRNA-Ala-AGC	0	3863095.23809524	0	0	136363.636363636	0	0	23353306.8783069
+tRNA-Ala-CGC	0	8708333.33333333	0	0	0	14500000	500000	8980291.00529101
+tRNA-Ala-TGC	0	11833333.3333333	0	0	90909.0909090909	0	0	84521296.2962963
+tRNA-Arg-ACG	0	100000	0	71428.5714285715	0	6500000	0	4916666.66666667
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update: Minor edits and a few additions to the explanations.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1223791</root_node>
+<parent_node field_name="parent_node">1223879</parent_node>
+<thread id="1223791">
+<node id="1223793"/>
+<node id="1223794"><node id="1223795"><node id="1223796"/>
+</node>
+</node>
+<node id="1223798"/>
+<node id="1223816"><node id="1223839"/>
+</node>
+<node id="1223825"/>
+<node id="1223879"><node id="1223882"><node id="1223889"/>
+</node>
+<node id="1223883"/>
+<node id="1223913"><node id="1223917"><node id="1223919"/>
+</node>
+</node>
+</node>
+<node id="1224047"><node id="1224060"/>
+<node id="1224086"><node id="1224087"><node id="1224090"/>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1210610" title="Re: CGI: newlines, write exactly &quot;\r\n&quot; to end the headers, then turn off binmode" created="2018-03-10 06:40:39" updated="2018-03-10 06:40:39" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;First, I agree with the others that the best way to go is [mod://CGI].pm's &lt;c&gt;header&lt;/c&gt; function.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I can do that with &lt;c&gt;binmode(STDOUT)&lt;/c&gt;, but then how do I turn off binmode() for STDOUT, so that I can then print regular text in the response body?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I don't think this part of the question has been answered, so yes, you can call [doc://binmode] on a handle as often as you like. See the following example, in which I've shown how I would do it if I wanted to be sure Perl was sending CR+LF to &lt;c&gt;STDOUT&lt;/c&gt; (or in this case, the currently [doc://select]ed handle, normally &lt;c&gt;STDOUT&lt;/c&gt;).&lt;/p&gt;
+&lt;c&gt;
+$ cat test.pl 
+binmode select, ':crlf';
+print "\x{FC}\n";
+binmode select, ':raw';
+print "\x0D\x0A";
+binmode select, ':encoding(UTF-8)';
+print "\x{FC}\n";
+$ perl -wMstrict test.pl | hexdump -C
+00000000  fc 0d 0a 0d 0a c3 bc 0a                           |........|
+00000008
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1210553</root_node>
+<parent_node field_name="parent_node">1210553</parent_node>
+<thread id="1210553">
+<node id="1210554"><node id="1210559"><node id="1210565"><node id="1210567"><node id="1210601"><node id="1210611"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1210555"/>
+<node id="1210557"/>
+<node id="1210561"><node id="1210564"><node id="1210571"/>
+<node id="1210573"><node id="1210600"><node id="1210612"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1210583"><node id="1210592"><node id="1210604"><node id="1210609"/>
+</node>
+<node id="1210606"/>
+<node id="1210751"/>
+</node>
+</node>
+<node id="1210610"/>
+</thread></node>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1223420" title="RT::Client turns occasional binary characters in to wide characters" created="2018-10-02 14:49:22" updated="2018-10-02 14:49:22" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="621968">wardmw</author>
+<doctext field_name="doctext">&lt;p&gt;I am writing a Perl script to retrieve attachments from an RT instance and write them  out to individual files. I did this three years ago, with a previous incarnation of the Client::RT libraries, and with assistance from your clergy got it working.  I have since upgraded to a newer revision of Perl (5.16.3) and a newer version of the RT Perl libraries (0.52). I am having to rewrite this old code and have come up with a new, different problem instead.
+&lt;/p&gt;&lt;p&gt;
+All I want to do is take the attachments from the tickets and write them out to a file, these files need to be written in whatever format they were stored in (png, xlsx, txt, whatever). You'd think this was a simple task  but I can't make it happen.
+&lt;/p&gt;&lt;p&gt;
+If I save a file using the RT web interface and hex dump the first few chunks it looks like this:
+&lt;/p&gt;
+&lt;code&gt;
+0000000 50 4b 03 04 14 00 09 00 08 00 67 8d 25 46 00 00
+0000010 00 00 00 00 00 00 00 00 00 00 1c 00 00 00 73 63
+0000020 72 65 65 6e 73 68 6f 74 2d 31 37 32 20 32 31 20
+0000030 32 34 32 20 36 34 2e 7a 69 70 32 9e 8a fc b5 15
+&lt;/code&gt;&lt;p&gt;
+Yet if I read the attachment in to a string using the RT API and hex dump that string see:
+&lt;/p&gt;&lt;code&gt;
+00000000  50 4B 03 04 14 00 09 00 - 08 00 67 FFFD 25 46 00 00  PK........g.%F..
+00000010  00 00 00 00 00 00 00 00 - 00 00 1C 00 00 00 73 63  ..............sc
+00000020  72 65 65 6E 73 68 6F 74 - 2D 31 37 32 20 32 31 20  reenshot-172 21
+00000030  32 34 32 20 36 34 2E 7A - 69 70 32 FFFD FFFD FFFD FFFD 15  242 64.zip2.....
+&lt;/code&gt;&lt;p&gt;
+Note the four-digit hex chars on lines 1 and 4.
+The code I used to generate the above is as follows:
+&lt;code&gt;
+#!/usr/bin/env perl
+#
+# wctest.pl - A test to see where the wide characters come from.
+
+use strict;
+use warnings;
+use RT::Client::REST;
+use RT::Client::REST::Ticket;
+use Data::HexDump;
+
+my $user='user';
+my $pass='pass';
+
+my $rt = RT::Client::REST-&gt;new(
+    server  =&gt; ('https://rt.local'),
+	basic_auth_cb =&gt; ( sub { return ($user, $pass); } )
+
+);
+
+$rt-&gt;login( username=&gt; $user, password=&gt; $pass,);
+my $ticket_ptr = RT::Client::REST::Ticket-&gt;new(rt =&gt; $rt);
+
+my $results = $ticket_ptr-&gt;search( limits =&gt; [ { attribute =&gt; 'id', operator =&gt; '=', value =&gt; '51447' }, ],);
+
+my $iterator = $results-&gt;get_iterator;
+my ($ticket, $attachments);
+while ($ticket = &amp;$iterator) {
+	$attachments = $ticket-&gt;attachments;
+
+	# Store attachments
+	my $atch_ater = $attachments-&gt;get_iterator;
+	while (my $att = &amp;$atch_ater) {
+		next if ($att-&gt;file_name eq '');
+		print HexDump substr($att-&gt;content, 0, 64);
+	}
+}
+&lt;/code&gt;
+
+I've tried adding 
+&lt;code&gt;
+use Encode;
+&lt;/code&gt;
+and 
+&lt;code&gt;
+use utf8;
+&lt;/code&gt;&lt;p&gt;
+both together and alone but no difference was made, the hex dump still shows multibyte characters.
+&lt;/p&gt;&lt;p&gt;
+I have even tried just writing the data out to files, in case the problem was with the HexDump module, but it still failed to create the files in their native format, usually almost doubling the number of characters in the file than are in the stringed attachment.
+&lt;/p&gt;&lt;p&gt;
+I would appreciate any help or guidance you might be able to provide, I', banging my head against the wall here.
+&lt;/p&gt;&lt;p&gt;
+|\/|artin</doctext>
+<thread id="1223420">
+<node id="1223431"><node id="1223442"/>
+</node>
+<node id="1223432"><node id="1223451"/>
+</node>
+<node id="1223444"/>
+<node id="1223454"><node id="1223471"><node id="1223497"/>
+</node>
+<node id="1223496"><node id="1223684"><node id="1223686"/>
+</node>
+</node>
+</node>
+<node id="1223510"><node id="1223513"><node id="1223724"/>
+</node>
+</node>
+</thread></node>

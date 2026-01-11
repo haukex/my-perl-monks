@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100228" title="Re^3: most terse regex match count" created="2019-05-18 15:13:18" updated="2019-05-18 15:13:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Quick thought to reduce capturing: &lt;c&gt;m|()A|gs&lt;/c&gt;?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Unfortunately it seems the extra capture group actually slows things down - no matter how much I fiddle with the parameters at the top, &lt;c&gt;nocapt&lt;/c&gt; is always about 2x as fast:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Benchmark qw/cmpthese/;
+
+my $count = 1000;
+my $match = 'ABC'x20;
+my $space = 'xAz'x100;
+
+my $str = ( $space.$match x $count ) . $space;
+cmpthese(-3, {
+	nocapt =&gt; sub {
+			die unless $count == ( () = $str =~ m|\Q$match|gs );
+		},
+	withcapt =&gt; sub {
+			die unless $count == ( () = $str =~ m|()\Q$match|gs );
+		},
+});
+
+__END__
+
+           Rate withcapt   nocapt
+withcapt 4264/s       --     -50%
+nocapt   8596/s     102%       --
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11100099</root_node>
+<parent_node field_name="parent_node">11100177</parent_node>
+<thread id="11100099">
+<node id="11100101"><node id="11100177"><node id="11100228"/>
+</node>
+</node>
+<node id="11100102"/>
+<node id="11100107"><node id="11100108"><node id="11100109"/>
+</node>
+</node>
+<node id="11100119"/>
+<node id="11100141"><node id="11100158"/>
+<node id="11100162"/>
+</node>
+<node id="11100157"><node id="11100160"/>
+</node>
+</thread></node>

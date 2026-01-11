@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11130389" title="Creating a bash script &quot;on the fly&quot;" created="2021-03-26 12:33:19" updated="2021-03-26 12:33:19" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1210662">ovedpo15</author>
+<doctext field_name="doctext">Hello Monks!&lt;br&gt;&lt;br&gt;
+
+I'm trying to create a perl script that creates bash script "on the fly" (bare with me!) that will mimic the system in another environment (inside a container).&lt;br&gt;
+I have an array of paths. Those paths could be their hard paths or links. The link does not have to be the ending file/directory in the path - it could be some part on the way.&lt;br&gt;
+For example if I have path /a/b/c and the there is a link /a/b -&gt; /d/e.&lt;br&gt;
+Also those paths does not have to be realpaths (they could contain .. and . and other combinations).&lt;br&gt;
+Based on those paths, I want to mimic the system I have. The input of my perl script is an a file of paths (that I read into an array) and the output is a bash script that will mimic the system.&lt;br&gt;
+By mimic I mean that it will do the following things:&lt;br&gt;
+1. Create the same directory hierarchy.&lt;br&gt;
+2. Copy the files. &lt;br&gt;
+3. Create the same links.&lt;br&gt;
+For that I can do:&lt;br&gt;
+1. I can use mkdir -p to create the full hierarchy based on the path.&lt;br&gt;
+2. I can use scp/rsync for copying (as it's inside container).&lt;br&gt;
+3. I can use ln -s to create the links.&lt;br&gt;
+Note that I want to create directories before copying the files. I don't want to copy the directories because those directories could have files or other directories that are not located inside the array of paths.&lt;br&gt;
+But my question is not about this part. My question is what is the best way to parse the array of paths, find out which one of them are paths, files and links and then use it for each one of those three stages. I thought of having a hash structure and each time load a path into that structure. Sort of "mapping" the system paths into a hash structure. For each path I will have another field which will say the type of it - file, link, directory. For link I will have to keep the source and destination. Then I could iterate over the hash and create three arrays - one for mkdir, one for ln, and one for copy. After that, I can iterate over the mkdir array and print into the bash script file:&lt;br&gt;
+&lt;code&gt;
+mkdir -p &lt;path-to-dir&gt;
+&lt;/code&gt;
+Iterate over the files array and print into the bash script file:&lt;br&gt;
+&lt;code&gt;
+scp user@machine:&lt;path-to-file&gt; &lt;path-to-file&gt;
+&lt;/code&gt;
+Iterate over the links array and print into the bash script file:&lt;br&gt;
+&lt;code&gt;
+ln -s &lt;target&gt; &lt;link-name&gt;
+&lt;/code&gt;
+Between reading the paths file and creating the bash script itself I have a black box in my mind which I'm trying to implement and the question is about that black box. If there was a module which you could just "load" the paths into it and then query for what you need (like give me all of the directories...) it could be awesome, but I could not find one. What would be the best strategy here?
+&lt;br&gt;
+Hope my question makes sense. If you want me to explain some part, I will glad to.</doctext>
+<thread id="11130389">
+<node id="11130396"><node id="11130397"><node id="11130400"/>
+</node>
+<node id="11130443"><node id="11130444"><node id="11130451"><node id="11130453"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11130402"/>
+<node id="11130499"/>
+</thread></node>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229381" title="Parsing command-line arguments in a sophisticated way." created="2019-02-05 03:24:40" updated="2019-02-05 03:24:40" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1210662">ovedpo15</author>
+<doctext field_name="doctext">Consider the following array of arguments:&lt;br&gt;
+
+&lt;code&gt;
+	--file f1 --dir d1 --job some-job -fw "hello"
+&lt;/code&gt;
+
+We allow to use every possible string and argument after `--job`. The way I parsed it until now:&lt;br&gt;
+
+&lt;code&gt;
+    my $flag = 0;
+    foreach my $i (0..$#arr) {
+        $hash{"job"} .= $arr[$i]." " if($flag);
+        $flag = 1 if($arr[$i] =~ /job/);
+        undef $arr[$i] if($flag);
+    }
+&lt;/code&gt;
+
+I would like that `%hash` will contain a key `job` and the value will be the actual job.&lt;br&gt;
+My code works if user didn't use "name" in the command-line before. For example, the following arguments will fail:&lt;br&gt;
+
+&lt;code&gt;
+	--file job15 --dir d1 --job some-job -fw "hello"
+&lt;/code&gt;
+
+job will always will be used at the end of line so I though of using the `reverse` keyword on the array and then parse it until I get to the first job.&lt;br&gt;
+But it won't work either because I want to give the option to use "job" after the `--job` flag.&lt;br&gt;
+What would be a good solution to solve it?&lt;br&gt;
+
+I do use GetOpt module, but the problem is we want to give the user the possibility to use whatever he want after the job option even if its another script with a flag.
+So something like:&lt;br&gt;
+
+&lt;code&gt;
+	--file job15 --dir d1 --job some-job -fw "hello -search"
+&lt;/code&gt;
+
+
+Will fail because of "-fw" and "-search".&lt;br&gt;</doctext>
+<thread id="1229381">
+<node id="1229386"/>
+<node id="1229387"/>
+<node id="1229390"><node id="1229392"><node id="1229394"><node id="1229395"><node id="1229397"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1229401"/>
+</thread></node>

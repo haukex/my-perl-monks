@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201948" title="Re^4: porting C code to Perl -- use integer bench" created="2017-10-24 03:12:17" updated="2017-10-24 03:12:17" _doctext_mode="lenient"><type id="11">note</type>
+<author id="174111">Discipulus</author>
+<doctext field_name="doctext">Hello again,&lt;P&gt;
+
+you guessed rigth! &lt;C&gt;use integer;&lt;/C&gt; boosts performance (if I have build my benchmarks correctly..)&lt;P&gt;
+
+&lt;readmore&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+use Benchmark qw(cmpthese timethese);
+################################################################################
+my $results = timethese($ARGV[0]//-5, {
+	'no_integer_module  ' =&gt;\&amp;no_integer,
+	'with_integer_module' =&gt;\&amp;with_integer,
+    });
+cmpthese( $results );
+################################################################################
+sub no_integer{
+  my $n=1002;
+
+  my $len = 1 + 10 * $n / 3;
+
+  my $pi;
+  my @a= (2) x $len;
+  my $nines = 0;
+
+  my $predigit = 0;
+
+  for (my $j =1; $j &lt; $n + 1; ++$j){
+    my $q = 0;
+    for my $i (reverse 0..$len - 1) {
+        my $x = 10 * $a[$i] + $q * ($i + 1);
+        my $divisor = 2 * $i + 1;
+        $a[$i] = $x % $divisor;
+        $q = $x / $divisor;
+    }
+    $a[0]=$q%10;
+    $q=$q/10;
+    if (9 == $q){ ++$nines;   }
+    elsif(10 == $q){
+          $pi.=$predigit + 1;
+          for (my $k = 0; $k &lt; $nines; $k++){$pi.=0} # print 0
+          $predigit = $nines = 0;
+    }
+    else{
+         $pi.= $predigit;
+         $predigit = $q;
+         if(0 != $nines){
+              for (my $k = 0; $k &lt; $nines; $k++) {
+                  $pi.=9;
+              }
+              $nines = 0;
+        }
+    }
+  }
+}
+################################################################################
+sub with_integer{
+  use integer;
+  my $n=1002;
+
+  my $len = 1 + 10 * $n / 3;
+
+  my $pi;
+  my @a= (2) x $len;
+  my $nines = 0;
+
+  my $predigit = 0;
+
+  for (my $j =1; $j &lt; $n + 1; ++$j){
+    my $q = 0;
+    for my $i (reverse 0..$len - 1) {
+        my $x = 10 * $a[$i] + $q * ($i + 1);
+        my $divisor = 2 * $i + 1;
+        $a[$i] = $x % $divisor;
+        $q = $x / $divisor;
+    }
+    $a[0]=$q%10;
+    $q=$q/10;
+    if (9 == $q){ ++$nines;   }
+    elsif(10 == $q){
+          $pi.=$predigit + 1;
+          for (my $k = 0; $k &lt; $nines; $k++){$pi.=0} # print 0
+          $predigit = $nines = 0;
+    }
+    else{
+         $pi.= $predigit;
+         $predigit = $q;
+         if(0 != $nines){
+              for (my $k = 0; $k &lt; $nines; $k++) {
+                  $pi.=9;
+              }
+              $nines = 0;
+        }
+    }
+  }
+}
+&lt;/c&gt;
+&lt;/readmore&gt;&lt;P&gt;
+
+&lt;c&gt;
+Benchmark: running no_integer_module  , with_integer_module for at least 20 CPU seconds...
+
+no_integer_module  : 21 wallclock secs (20.64 usr +  0.00 sys = 20.64 CPU) @  0.92/s (n=19)
+with_integer_module: 21 wallclock secs (20.50 usr +  0.00 sys = 20.50 CPU) @  1.37/s (n=28)
+
+                    s/iter no_integer_module   with_integer_module
+no_integer_module     1.09                  --                -33%
+with_integer_module  0.732                 48%                  --
+&lt;/c&gt;&lt;P&gt;
+
+I read in the docs of the integer module:&lt;P&gt;
+
+&lt;I&gt;&amp;gt; On many machines, this doesn't matter a great deal for most computations, but on those without floating point hardware, it can make a big difference in performance.&lt;/I&gt;&lt;P&gt;
+
+The above results show that my machine has not floating point hardware?&lt;P&gt;
+
+Thanks also for the link to the spigot explication; I must admit that yesterday night I've understood almost nothing.. I'll try under sun beans.&lt;P&gt;
+
+L*&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-174111"&gt;
+There are no rules, there are no thumbs..&lt;BR&gt;
+Reinvent the wheel, then learn The Wheel; may be one day you reinvent one of THE WHEELS.
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.1416} --&gt;</doctext>
+<root_node field_name="root_node">1201848</root_node>
+<parent_node field_name="parent_node">1201925</parent_node>
+<thread id="1201848">
+<node id="1201854"><node id="1201908"><node id="1201919"><node id="1201928"/>
+</node>
+<node id="1201925"><node id="1201948"><node id="1201979"/>
+</node>
+</node>
+<node id="1201942"/>
+<node id="1201952"/>
+</node>
+</node>
+<node id="1201876"><node id="1201906"><node id="1202311"><node id="1202793"/>
+<node id="1202895"><node id="1202913"/>
+</node>
+<node id="1207735"/>
+</node>
+</node>
+</node>
+<node id="1201909"><node id="1201939"><node id="1201960"><node id="1201963"><node id="1201964"><node id="1201965"/>
+<node id="1201977"/>
+<node id="1202036"/>
+</node>
+<node id="1202039"/>
+</node>
+<node id="1201978"><node id="1201999"><node id="1202004"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201910"><node id="1201927"><node id="1201929"/>
+<node id="1201931"/>
+</node>
+</node>
+<node id="1201987"><node id="1201998"><node id="1202008"/>
+</node>
+<node id="1202002"><node id="1202042"><node id="1202055"/>
+<node id="1202921"/>
+</node>
+<node id="1202295"/>
+</node>
+</node>
+</thread></node>

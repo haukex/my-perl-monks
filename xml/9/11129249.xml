@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129249" title="Re: Is there a better way to use the line number in a quoted string than __LINE__?" created="2021-03-07 03:43:30" updated="2021-03-07 03:43:30" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Line 4 is still a lot of fanning-about, but it doesn't even compile&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;&lt;c&gt;"@{[__LINE__}]"&lt;/c&gt; is a syntax error because you've swapped the &lt;c&gt;}&lt;/c&gt; and &lt;c&gt;]&lt;/c&gt; - &lt;c&gt;"@{[__LINE__]}"&lt;/c&gt; works fine.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;some convenient token such as $LINE (or $__LINE__ or whatever I can just embed in double-quotes)&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Nope, at least not built in, sorry. &lt;c&gt;__LINE__&lt;/c&gt; is like a function call, [doc://perl5160delta#__FILE__()-Syntax|as of Perl 5.16] you can even write it as &lt;c&gt;__LINE__()&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Personally, I'd suggest living with the &lt;i&gt;"fanning-about"&lt;/i&gt; or writing a helper function to output debug info (e.g. using [doc://caller]). (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; TIMTOWTDI - [AnomalousMonk]'s [doc://printf] [id://11129250|suggestion] is nice too. Personally, if it was a case where I didn't feel like it's worth it to write a helper, I'd probably write &lt;c&gt;print "Line ",__LINE__,"\n";&lt;/c&gt;)&lt;/p&gt;
+&lt;p&gt;But since this is Perl, of course there's also a way to hack it:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+{
+	package LineNumber;
+	sub TIESCALAR { bless {}, shift }
+	sub FETCH { (caller)[2] }
+}
+
+tie my $LINE, 'LineNumber';
+print "Line $LINE\n";
+print "Line $LINE\n";
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11129248</root_node>
+<parent_node field_name="parent_node">11129248</parent_node>
+<thread id="11129248">
+<node id="11129249"/>
+<node id="11129250"/>
+<node id="11129251"/>
+<node id="11129289"><node id="11129297"/>
+</node>
+<node id="11129311"/>
+</thread></node>

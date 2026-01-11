@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11122495" title="Re: Counting fields from database (updated)" created="2020-10-02 17:49:31" updated="2020-10-02 17:49:31" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I need to know the total number of threadIDs&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It's a little unclear to me from your description whether you &lt;i&gt;just&lt;/i&gt; need to know this information, in which case you can ask the database to provide it with a &lt;c&gt;GROUP BY&lt;/c&gt; clause, or whether you're looping through all messages &lt;i&gt;anyway&lt;/i&gt;, and you just want to count thread IDs*. In the latter case, since I assume the thread IDs are a unique identifier per thread, you can do this with a hash. Here are examples of both:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+use DBI;
+
+# set up a dummy database
+my $dbh = DBI-&gt;connect("dbi:SQLite::memory:", undef, undef,
+	{ RaiseError=&gt;1 });
+$dbh-&gt;do(&lt;&lt;'END');
+CREATE TABLE messages (
+	msgID INTEGER,
+	threadID INTEGER
+)
+END
+my $sth_i = $dbh-&gt;prepare(
+	'INSERT INTO messages (msgID, threadID) VALUES (?,?)');
+$sth_i-&gt;execute($_,$_&gt;&gt;4) for 0..127;
+
+# ask the DB to give us per-thread information
+dd $dbh-&gt;selectall_arrayref(
+	'SELECT threadID, COUNT(*) FROM messages GROUP BY threadID');
+# =&gt; [ [0, 16], [1, 16], [2, 16], [3, 16],
+#      [4, 16], [5, 16], [6, 16], [7, 16], ]
+
+# loop through rows and count threads ourselves
+my $sth_s = $dbh-&gt;prepare(
+	'SELECT msgID, threadID from messages');
+$sth_s-&gt;execute;
+my %threadIDs;
+while ( my $row = $sth_s-&gt;fetchrow_hashref ) {
+	$threadIDs{ $row-&gt;{threadID} }++;
+}
+dd \%threadIDs;
+# =&gt; { "0" =&gt; 16, "1" =&gt; 16, "2" =&gt; 16, "3" =&gt; 16,
+#      "4" =&gt; 16, "5" =&gt; 16, "6" =&gt; 16, "7" =&gt; 16 }
+&lt;/c&gt;
+&lt;p&gt;* &lt;i&gt;Update:&lt;/i&gt; Upon rereading, it's probably the latter. By the way, &lt;c&gt;$current_count_all &lt;= $stopcount_all&lt;/c&gt; sounds like you want to limit the number of records returned, which you can also do in the database, e.g. in MySQL with a &lt;c&gt;LIMIT&lt;/c&gt; clause.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; For completeness, there are two issues with the approach you showed in the OP. First, you need to be certain that &lt;c&gt;$threadID&lt;/c&gt; doesn't ever contain the separator character (&lt;c&gt;","&lt;/c&gt; in this case), and your regex is too simple in that it will also match partial IDs (e.g. &lt;c&gt;/234/&lt;/c&gt; will match in &lt;c&gt;"1234,5678"&lt;/c&gt;), which you'd need to prevent by anchoring the regex appropriately - for example, if the IDs are integers, you could say &lt;c&gt;/\b\Q$threadID\E\b/)&lt;/c&gt; (note I've used &lt;c&gt;\Q...\E&lt;/c&gt; to escape any special characters in &lt;c&gt;$threadID&lt;/c&gt; &lt;i&gt;even though&lt;/i&gt; I just said they're integers; it's just to play it extra safe). But the method of searching the string for the &lt;c&gt;$threadID&lt;/c&gt; will be way less efficient than a hash, so I would always recommend that instead. &lt;small&gt;&lt;i&gt;Also modified the first example to supply the threadID in addition to the count.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11122494</root_node>
+<parent_node field_name="parent_node">11122494</parent_node>
+<thread id="11122494">
+<node id="11122495"><node id="11122500"/>
+<node id="11122502"><node id="11122508"><node id="11122522"/>
+</node>
+</node>
+</node>
+<node id="11122498"><node id="11122501"><node id="11122514"/>
+</node>
+</node>
+<node id="11122513"><node id="11122550"/>
+</node>
+</thread></node>

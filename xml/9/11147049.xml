@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11147049" title="Re: Recursive subroutines and closures" created="2022-09-21 02:28:04" updated="2022-09-21 02:28:04" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Note because &lt;c&gt;_preserve_previous_backup&lt;/c&gt; doesn't actually use ("close over") any of the variables from &lt;c&gt;make_backup&lt;/c&gt;, you haven't really created a closure - instead, this actually has the potential for &lt;i&gt;accidentally&lt;/i&gt; using variables from the outer sub, which can lead to issues like the ones [GrandFather] [id://11147044|showed]. To add to what [jwkrahn] [id://11147045|noted], in this case you can just as well place &lt;c&gt;_preserve_previous_backup&lt;/c&gt; in the main body of your code, the leading underscore already indicates that this is not a part of the public API and one should only call it when one knows what one is doing. And while the lexical subroutines [id://11147048|noted] by [AnomalousMonk] are indeed a thing (as of Perl 5.18), personally I actually use anonymous subs for this kind of thing. Just for example, consider this pseudocode:&lt;/p&gt;
+&lt;c&gt;
+sub process_files ($ext, @files) {
+	# let's say we split @files in two sets
+	my @foo_files = ...;
+	my @bar_files = ...;
+	# but part of the processing is the same
+	my $new_name = sub ($name, $some_param) {
+		... # some longer/complex code to munge the filename
+		# note how this uses at least one var from the outer scope
+		return $new_filename . $ext;
+	};
+	# different processing for the two sets
+	for my $file (@foo_files) {
+		my $fn = $new_name-&gt;($file, "foo");
+		...
+	}
+	for my $file (@bar_files) {
+		my $fn = $new_name-&gt;($file, "bar");
+		...
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;If an anonymous sub needs to call itself recursively, one backwards-compatible way to define it is &lt;c&gt;my $code; $code = sub { ... $code-&gt;() ... };&lt;/c&gt;, or, as of Perl 5.16, there is the [https://perldoc.perl.org/functions/__SUB__|__SUB__] function. Anonymous subs can also be used in a module if one really wants to hide the code from access outside the module; like other lexical variables, &lt;c&gt;my $private_func = sub { ... };&lt;/c&gt; in a module won't be accessible from the outside, though my personal opinion is that this is a bit overkill, and prefixing the &lt;c&gt;sub&lt;/c&gt; name with an underscore should be enough - part of the Perl philosophy of "It would prefer that you stayed out of its living room because you weren't invited, not because it has a shotgun."&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11147042</root_node>
+<parent_node field_name="parent_node">11147042</parent_node>
+<thread id="11147042">
+<node id="11147044"><node id="11147060"/>
+</node>
+<node id="11147045"/>
+<node id="11147048"><node id="11147059"/>
+</node>
+<node id="11147049"/>
+<node id="11147054"/>
+</thread></node>

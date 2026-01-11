@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1220614" title="Re: Remove all duplicates after regex capture" created="2018-08-19 06:58:49" updated="2018-08-19 06:58:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Here's a solution that doesn't depend on the order of the lines. It finds all the &lt;c&gt;title&lt;/c&gt;s using a regex and counts them using a hash, and then selects the one that appears exactly once, &lt;c&gt;warn&lt;/c&gt;ing or &lt;c&gt;die&lt;/c&gt;ing if there isn't exactly one. You haven't specified a few things about the &lt;c&gt;title:&lt;/c&gt; line, like whether there can be &lt;c&gt;#&lt;/c&gt;'s in the titles, and what kind of text might appear after the closing &lt;c&gt;#&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my %mycorpus = (
+    a =&gt; "&lt;blah blah blah 
+blah
+title:#this is text I want 1#
+blah blah blah",
+
+    b =&gt; "blah
+title:#this is text I do not want#
+title:#this is text I want 2#
+blah
+title:#this is text I do not want#
+blah",
+
+    c =&gt; "blah blah
+title:#this is text I do not want#
+title:#this is text I want 3#
+title:#this is text I do not want#
+title:#this is text I do not want#
+blah",
+);
+
+for my $filename (sort keys %mycorpus) {
+	my %titles;
+	$titles{$1}++
+		while $mycorpus{$filename} =~ m{ ^ title:\# (.*) \# }xmg;
+	my @once = grep { $titles{$_}==1 } sort keys %titles;
+	die "No title found in $filename" unless @once;
+	warn "More than one title found in $filename" if @once&gt;1;
+	my $title = $once[0];
+	print "$title\n";
+}
+
+__END__
+
+this is text I want 1
+this is text I want 2
+this is text I want 3
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1220606</root_node>
+<parent_node field_name="parent_node">1220606</parent_node>
+<thread id="1220606">
+<node id="1220607"><node id="1220609"><node id="1220612"><node id="1220655"/>
+</node>
+</node>
+</node>
+<node id="1220614"><node id="1220675"/>
+</node>
+<node id="1220645"><node id="1220674"/>
+</node>
+<node id="1220666"><node id="1220677"/>
+</node>
+</thread></node>

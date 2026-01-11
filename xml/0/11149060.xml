@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11149060" title="Number too big to fit in integer" created="2022-12-24 15:03:54" updated="2022-12-24 15:03:54" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="185157">jpl</author>
+<doctext field_name="doctext">&lt;p&gt;I want to generate a bunch of uniformly distributed non-negative integers in a specified range.
+The guts of my program look like this:&lt;/p&gt;
+
+&lt;code&gt;
+sub main {
+    if (@ARGV &lt; 3) {
+USAGE:
+        print STDERR ("Usage: $0 low high samples [seed]\n");
+        exit 1;
+    }
+    my ($lo, $hi, $samples, $seed) = @ARGV;
+    goto USAGE if ($lo &gt; $hi || $samples &lt;= 0);
+    $seed = srand() unless (defined($seed));
+    srand($seed);
+
+    my $range = $hi - $lo + 1;
+    while ($samples-- &gt; 0) {
+        printf("%d\n", $lo + int(rand($range)));
+    }
+}
+main();
+
+&lt;/code&gt;
+
+&lt;p&gt;And the code works just fine for run-of-the-mill arguments.
+But I am a bit of a nut about avoiding unwanted surprises.
+If somebody supplies a &lt;i&gt;high&lt;/i&gt; that is too large to fit
+in an integer, the program may not do what they intend.
+Here are some snippets from a debugging session on my PC.
+&lt;/p&gt;
+
+&lt;code&gt;
+  DB&lt;151&gt; say ~0
+18446744073709551615
+
+  DB&lt;152&gt; say "of course" if (~0 &gt; 18446744073709551614)
+of course
+
+  DB&lt;153&gt; say "of course" if (18446744073709551616 &gt; ~0)
+
+  DB&lt;154&gt; say 18446744073709551616
+1.84467440737096e+19
+
+&lt;/code&gt;
+
+&lt;p&gt;I'd like to &lt;b&gt;catch&lt;/b&gt; any case where the arguments are too big
+to fit in an integer. I can, and probably will, do this using
+&lt;c&gt;Math::BigInt&lt;/c&gt;, but this seems like using a pile driver
+to crack a peanut. I could, in fact, use &lt;c&gt;Math::BigInt&lt;/c&gt;
+throughout, but far downstream, I want to &lt;b&gt;pack&lt;/b&gt; the integers
+into compact BigEndian numbers, so it's better for me to enforce
+acceptable values as early as possible.&lt;/p&gt;
+
+&lt;p&gt; Is there a simpler way to ensure arguments fit in integers?
+&lt;/p&gt;</doctext>
+<thread id="11149060">
+<node id="11149061"><node id="11149067"><node id="11149072"/>
+</node>
+<node id="11149075"><node id="11149083"><node id="11149094"/>
+</node>
+</node>
+<node id="11149220"><node id="11149240"><node id="11149243"><node id="11149247"><node id="11149256"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11149062"><node id="11149066"><node id="11149068"/>
+</node>
+</node>
+<node id="11149069"><node id="11149070"><node id="11149071"/>
+</node>
+<node id="11149080"><node id="11149085"/>
+</node>
+<node id="11149090"/>
+</node>
+<node id="11149074"><node id="11149082"/>
+</node>
+<node id="11149086"><node id="11149087"><node id="11149127"><node id="11149130"/>
+</node>
+</node>
+</node>
+<node id="11149091"/>
+</thread></node>

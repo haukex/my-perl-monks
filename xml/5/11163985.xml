@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11163985" title="Socket read timeout on Windows" created="2025-02-11 05:47:07" updated="2025-02-11 05:47:07" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1232234">bonzi</author>
+<doctext field_name="doctext">I am working with some laboratory instruments that communicate either through bouilt-in HTTP server or low-level TCP. Both occasionally "freeze".
+
+I create the socket thusly:
+
+&lt;code&gt;
+my $sock_Zona = IO::Socket::INET-&gt;new(
+    PeerAddr =&gt; $par{addr_Zona},
+    PeerPort =&gt; $par{port_Zona},
+    Proto =&gt; "tcp",
+    Type =&gt; SOCK_STREAM,
+    Timeout =&gt; $par{conn_tmo}
+);
+&lt;/code&gt;
+
+Here timeout works - an attempt to connect to something that is not listening will fail after the timeout expires.
+
+However, setting the read timeout like this:
+&lt;code&gt;
+unless (defined $sock_Zona) {
+    $abort++;
+    $sock_Zona = -1;
+    ABORT("Zona se ne javlja: $!");
+} else {
+    IO::Socket::Timeout-&gt;enable_timeouts_on($sock_Zona);
+    $sock_Zona-&gt;read_timeout($par{read_tmo_Zona});    
+}
+&lt;/code&gt;
+seems to have no effect. If the instrument for some reason neglects to answer (as they are wont to do), I &lt;I&gt;usually&lt;/i&gt; get an empty reply, but sometimes the read from the socket just hangs.
+
+I would like to avoid running all reads in separate threads (there are lots of them), if at all possible. Any perl of wisdom greatly appreciated.</doctext>
+<thread id="11163985">
+<node id="11163988"><node id="11163999"><node id="11164003"/>
+</node>
+<node id="11164011"/>
+</node>
+<node id="11164000"/>
+</thread></node>

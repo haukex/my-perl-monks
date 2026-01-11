@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1162297" title="pipe issue (linux)" created="2016-05-05 15:49:24" updated="2016-05-05 15:49:24" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1144092">leostereo</author>
+<doctext field_name="doctext">Hi guys,&lt;br&gt;
+I was trying to pipe two perl scripts&lt;br&gt;
+I have a data provider and a data process scritp.&lt;br&gt;
+First the data provider is&lt;br&gt;
+dhcp_line_dispacher.pl&lt;br&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl -w
+use strict;
+use File::Tail;
+
+my $file = File::Tail-&gt;new(
+		name =&gt;'/var/log/messages', 
+		interval =&gt; 1, 
+		maxinterval =&gt; 1, 
+#		resetafter=&gt; 5, 
+		);
+
+while (defined(my $line=$file-&gt;read)) {
+ 
+	print $line;
+
+}
+&lt;/code&gt;
+
+and , line_process.pl is:&lt;br&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl -w
+use strict;
+use Net::Ping;
+my $result;
+
+while (&lt;&gt;){
+
+                my $p = Net::Ping-&gt;new('icmp',3);
+
+                if ($_ =~ /^(.*) dns02cor dhcpd: DHCPACK on ([0-9\.]+) to ([[:xdigit:]:]+).* ([0-9\.]+)/) {
+
+                                for (my $i = 0; $i &lt; 3; $i++){
+                                        print "attempt $i for $2 \n";
+                                        $result = $p-&gt;ping($2);
+                                                if ($result){
+                                                print "############## $2 is alive at attempt $i\n";
+                                                last;
+                                                }
+                                $p-&gt;close();
+                                }
+                                unless ($result){
+                                         print "*****$2 is dead*****\n";
+                                }
+                }
+
+}
+&lt;/code&gt;
+
+When I run them individually they work ok, but when I try to pipe them doing:&lt;br&gt;
+./dhcp_line_dispacher.pl | ./line_process.pl&lt;br&gt;
+Nothing happens.&lt;br&gt;
+So I test the ./dhcp_line_dispacher.pl and realized than I can`t  grab the output.&lt;br&gt;
+For example from cli, I do:&lt;br&gt;
+
+./dhcp_line_dispacher.pl | grep ACK
+And can not get the output in real time.&lt;br&gt;
+What should I do to get the output and then process it in other script?&lt;br&gt;
+regards,&lt;br&gt;
+Leo.&lt;br&gt;
+</doctext>
+<thread id="1162297">
+<node id="1162301"><node id="1162303"/>
+</node>
+<node id="1162302"/>
+<node id="1162305"/>
+<node id="1162382"/>
+</thread></node>

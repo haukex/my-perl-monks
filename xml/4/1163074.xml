@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1163074" title="Re: Create n-grams from tokenized text file" created="2016-05-15 08:21:22" updated="2016-05-15 08:21:22" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Anonymous,&lt;/p&gt;
+&lt;p&gt;You're reading your entire file into memory, which isn't necessary because it looks like all you want is a sliding window over a certain number of lines from the file. This can be done by [doc://push]ing each element onto the end of an array and then [doc://shift]ing elements off the beginning. This can even be done in a one-liner - see perl's &lt;c&gt;-n&lt;/c&gt; and &lt;c&gt;-l&lt;/c&gt; switches in [doc://perlrun]:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wnle 'push @x, $_; if(@x&gt;=2) {print "@x"; shift @x}' input.txt
+Hello I
+I am
+am happy
+$ perl -wnle 'push @x, $_; if(@x&gt;=3) {print "@x"; shift @x}' input.txt
+Hello I am
+I am happy
+&lt;/c&gt;
+&lt;p&gt;Another solution might be the core module [doc://Tie::File]. Note I haven't tested this for efficiency, but since the module doesn't read the entire file into memory this solution should still be better than doing that. The module does have to scan the file once to get the number of records contained within:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Tie::File;
+use Fcntl 'O_RDONLY';
+
+die "Usage: $0 INPUTFILE WINSIZE\n"
+	unless @ARGV==2;
+my ($INPUTFILE,$WINSIZE) = @ARGV;
+
+tie my @array, 'Tie::File', $INPUTFILE, mode =&gt; O_RDONLY;
+$, = " "; $\ = "\n"; # output field/record separators
+for my $i (0..@array-$WINSIZE) {
+	print @array[$i..$i+$WINSIZE-1];
+}
+&lt;/c&gt;
+&lt;p&gt;Example usage:&lt;/p&gt;
+&lt;c&gt;
+$ perl window.pl input.txt 2
+Hello I
+I am
+am happy
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; My first solution is basically a one-liner version of [Marshall] and [LanX]'s solutions, and my second solution is quite similar to [BrowserUk]'s solution. Also switched from using &lt;c&gt;print "@...\n"&lt;/c&gt; to setting [doc://$,] and [doc://$\].&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1163068</root_node>
+<parent_node field_name="parent_node">1163068</parent_node>
+<thread id="1163068">
+<node id="1163069"/>
+<node id="1163072"/>
+<node id="1163073"/>
+<node id="1163074"/>
+<node id="1163075"/>
+<node id="1163077"/>
+<node id="1163084"/>
+</thread></node>

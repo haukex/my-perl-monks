@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1195222" title="How can I use printf FORMAT strings for (Win32) shell globs?" created="2017-07-16 21:10:41" updated="2017-07-16 21:10:41" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="346494">ozboomer</author>
+<doctext field_name="doctext">&lt;p&gt;Hi, again, folks...
+&lt;/p&gt;
+
+&lt;p&gt;I'm trying to work-out a simple/reliable regex to deal with printf 'format' strings with shell globs.
+&lt;/p&gt;
+
+&lt;p&gt;I've experimented a lot and had a look on-line... I've gone though the O'Reilly books (Perl &amp; Regular Expression books, cookbooks, etc) and although they mention &lt;b&gt;glob2pat&lt;/b&gt; sub (Perl Cookbook, Sect 6.9), that converts the wrong way (but see [id://708493])... and I can't work out an 'elegant' regex to do the job I need to do.
+&lt;/p&gt;
+
+&lt;p&gt;Although... the following works Ok... but it appears pretty long-winded and ugly to me... and I'm guessing there must be a cleaner way to do it...
+&lt;/p&gt;
+
+&lt;code&gt;
+use Data::Dumper;
+
+($match) = (@ARGV);                        # Get the 'printf format' string to match
+printf("   \$match: &gt;%s&lt;\n\n", $match);    # Input as `Img%04d.png` (backprime quoted)
+
+$match =~ /([\w]+)(%[0-9]+d)\.([\w]+)/i;   # EX: Img%04d.png
+$prefix = $1; $format = $2; $ext = $3;
+printf("  \$prefix: &gt;%s&lt;\n", $prefix);
+printf("  \$format: &gt;%s&lt;\n", $format);
+printf("     \$ext: &gt;%s&lt;\n\n", $ext);
+
+$format =~ /%([0-9]+)d/;                   # Note the '%04d' portion
+$count = $1;
+
+$glob_str = sprintf("%s%s\.%s",            # ...and build the DOS/glob match strings
+                    $prefix, "\*", $ext);
+$grep_str = sprintf("%s[0-9]{%d}\.%s", 
+                    $prefix, $count, $ext);
+printf("\$glob_str: &gt;%s&lt;\n", $glob_str);  
+printf("\$grep_str: &gt;%s&lt;\n\n", $grep_str);  
+
+@tmpfiles = glob($glob_str);               # Get all the glob-matched files
+printf("\@tmpfiles:\n");                   # ...EX: Img*.png
+print Dumper(@tmpfiles);
+printf("\n");
+
+@files = grep(/$grep_str/i, @tmpfiles);    # Filter to match the 'printf format'
+printf("\@files:\n");
+print Dumper(@files);
+printf("\n");
+&lt;/code&gt;
+
+&lt;p&gt;In this case, I'm looking at running ActiveState Perl 5.16.3 under Win32, although I'll probably also need it to work under a similar Perl version on Linux as well.
+&lt;/p&gt;
+
+&lt;p&gt;I'd greatly appreciate any guidance, please.
+&lt;/p&gt;
+
+&lt;p&gt;Thanks a heap.
+&lt;/p&gt;
+</doctext>
+<thread id="1195222">
+<node id="1195223"><node id="1195225"/>
+</node>
+<node id="1195228"/>
+<node id="1195233"/>
+<node id="1195241"/>
+<node id="1195257"><node id="1195264"/>
+</node>
+<node id="1195280"/>
+<node id="1195286"><node id="1195310"><node id="1195394"/>
+</node>
+<node id="1195408"/>
+<node id="1195653"/>
+</node>
+</thread></node>

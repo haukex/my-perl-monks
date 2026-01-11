@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108406" title="Re: Batch file renaming - on identical name, keep only most recent file, based on dates" created="2019-11-06 18:02:46" updated="2019-11-06 18:02:46" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1139979">shadowsong</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Anon&lt;/p&gt;
+&lt;p&gt;Here's another approach&lt;/p&gt;
+&lt;code&gt;
+#!perl -sl
+use strict;
+use warnings FATAL =&gt; 'all';
+
+my $PATH = "c:/code/test";
+my $processed_hash_ref;
+
+chdir $PATH;              # filetests using relative path
+opendir DH, "." or die "Couldn't open directory $PATH: $!";
+
+while ($_ = readdir (DH)) {
+    next unless -f $_ 
+        &amp;&amp; m/^\d_\d{4}_\d\d?_\d\d?_\d\d?_\d\d?_\d\d?_table/i;
+    my $fname = join ('_', (split /_/)[ 7..11 ]);
+    
+    # already seen a more recent file with the name we're
+    # planning to use? skip current file
+    next if defined $processed_hash_ref-&gt;{$fname} &amp;&amp; 
+        $processed_hash_ref-&gt;{$fname}-&gt;{AGE} &lt; -M _;
+
+    # file safe to be renamed... for now
+    $processed_hash_ref-&gt;{$fname}-&gt;{OLDNAME} = $_;
+    $processed_hash_ref-&gt;{$fname}-&gt;{AGE}     = -M _;
+}
+closedir DH;
+
+# now proceed to rename items
+map { 
+    print "[!] rename $processed_hash_ref-&gt;{$_}-&gt;{OLDNAME} to $_";
+    rename $processed_hash_ref-&gt;{$_}-&gt;{OLDNAME}, $_;
+} keys %$processed_hash_ref;
+&lt;/code&gt; 
+&lt;p&gt;Cheers&lt;br/&gt;Shadow&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11108322</root_node>
+<parent_node field_name="parent_node">11108322</parent_node>
+<thread id="11108322">
+<node id="11108323"/>
+<node id="11108326"><node id="11108327"/>
+</node>
+<node id="11108328"/>
+<node id="11108332"/>
+<node id="11108345"/>
+<node id="11108347"><node id="11108357"><node id="11108382"><node id="11108383"><node id="11108385"><node id="11108392"><node id="11108395"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11108406"><node id="11108430"><node id="11108453"/>
+</node>
+</node>
+<node id="11110370"/>
+</thread></node>

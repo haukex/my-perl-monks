@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217592" title="Re: newlines truncated from sqlplus output in perl" created="2018-06-29 04:21:23" updated="2018-06-29 04:21:23" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;$cmd = "echo 'exec javasplat.create_test_list(\'tests.txt\', \'$startStr\', \'$endStr\');' | $sqlplusconnect" ; system($cmd);&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You haven't shown us the contents of those variables, so it's very hard to say what's going on. Please show a more representative code sample - see [id://1177642].&lt;/p&gt;
+&lt;p&gt;In general: You're interpolating strings into the command to be executed, which is a potential security risk, also you have to be sure you're getting the quoting right. You're also using the shell to feed input into the command's &lt;c&gt;STDIN&lt;/c&gt;. Both of these issues can be solved by using a module and avoiding the shell in the first place - I wrote about this topic at length [id://1180578|here]. Here's an example using [mod://IPC::Run3], which has the advantage of also being able to capture &lt;c&gt;STDOUT&lt;/c&gt; and &lt;c&gt;STDERR&lt;/c&gt;, if you like. Note that you still need to make sure that &lt;c&gt;$startStr&lt;/c&gt; and &lt;c&gt;$endStr&lt;/c&gt; are quoted properly, but you don't need to worry about escaping shell metacharacters anymore.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use IPC::Run3;
+
+my $stdin = q{exec javasplat.create_test_list('tests.txt',}
+	.qq{ '$startStr', '$endStr');};
+run3 ['sqlplus','-s','username/password@host'], \$stdin
+	or die "run3 failed";
+$? and die "external command failed, \$?=$?";
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;it is somehow truncating the trailing newlines from everyline, effectively writing the output to a single large line&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;How did you determine this? I would recommend looking at the file with a command like [man://hexdump|&lt;tt&gt;hexdump -C &lt;i&gt;filename&lt;/i&gt;&lt;/tt&gt;]; maybe it's just a CR/LF problem.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I am doing the above thing in bash environment&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note that [doc://system] calls the default shell at &lt;c&gt;/bin/sh&lt;/c&gt;, which is not necessarily bash - see [id://1205217].&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1217591</root_node>
+<parent_node field_name="parent_node">1217591</parent_node>
+<thread id="1217591">
+<node id="1217592"/>
+<node id="1217598"/>
+</thread></node>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11120212" title="Re: Net Websocket Server" created="2020-08-01 17:24:45" updated="2020-08-01 17:24:45" _doctext_mode="lenient"><type id="11">note</type>
+<author id="533863">roboticus</author>
+<doctext field_name="doctext">&lt;p&gt;[alvise]:&lt;/p&gt;
+&lt;p&gt;Normally, when I have a question like that, I'll take a look at the test suite for the module.  If you look at the t/01_server.t file in the [cpan://Net::WebSocket::Server] distribution, you'll see that it sets up a server in lines 49 through 106 (for version 0.003004-0) and then tests the utf8 callback in lines 150-157 and the binary callback on lines 159-166:&lt;/p&gt;
+&lt;c&gt;
+subtest "echo utf8" =&gt; sub {
+  foreach my $msg ("simple", "", ("a" x 32768), "unicode \u2603 snowman", "hiragana \u3072\u3089\u304c\u306a null \x00 ctrls \cA \cF \n \e del \x7f end") {
+    print $sock Protocol::WebSocket::Frame-&gt;new(type=&gt;'text', buffer=&gt;$msg)-&gt;to_bytes;
+    my $bytes = _recv($sock =&gt; $parser);
+    ok($parser-&gt;is_text, "expected text message");
+    is($bytes, "utf8(" . length($msg) . ") = $msg");
+  }
+};
+
+subtest "echo binary" =&gt; sub {
+  foreach my $msg ("simple", "", ("a" x 32768), "unicode \u2603 snowman", "hiragana \u3072\u3089\u304c\u306a null \x00 ctrls \cA \cF \n \e del \x7f end", join("", map{chr($_)} 0..255)) {
+    print $sock Protocol::WebSocket::Frame-&gt;new(type=&gt;'binary', buffer=&gt;$msg)-&gt;to_bytes;
+    my $bytes = _recv($sock =&gt; $parser);
+    ok($parser-&gt;is_binary, "expected binary message");
+    is($bytes, "binary(" . length($msg) . ") = $msg");
+  }
+};
+&lt;/c&gt;
+&lt;p&gt;As you can see, the difference is just what type the client requests.  If the client requests &lt;c&gt;type=&gt;'text'&lt;/c&gt; it looks like it hits the utf8 endpoint, and you get the binary endpoint when requesting &lt;c&gt;type=&gt;'binary'&lt;/c&gt;.  I didn't dig into it any further, so I don't know what happens if you don't provide a handler for the type the client requests.  I'd expect that it would either complain about an illegal request (e.g., "I don't know how to handle type 'foo'") or let it default to binary and let the binary code either figure it out or complain about an illegal binary request.&lt;/p&gt;
+&lt;p&gt;Looking at the source code of the module can be helpful, but I frequently find that to be more confusing than looking at the tests:  Inside the module, there's a bunch of implementation detail mixed in with the interface, and that can be a bit much to sort through.  Looking at the test code, on the other hand, helps you see how to interface with the module without having to trip over the internal implementation details so much.  Generally I'll look at the module implementation only if I still have questions after reviewing the test code, and having reviewed the test code, I'll normally have a bit better of an idea of where to look and what to look at.&lt;/p&gt;
+&lt;p&gt;If you're getting the same callback when you specify 'binary' in the JavaScript socket declaration, I'd expect that your JavaScript code may be specifying the type='binary' in different location than what the [cpan://Net::WebSocket::Server] code expects, so it doesn't see the type attribute setting.&lt;/p&gt;
+&lt;p&gt;I hope this helps!&lt;/p&gt;
+
+&lt;p&gt;...[roboticus]&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;When your only tool is a hammer, all problems look like your thumb.&lt;/i&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11120211</root_node>
+<parent_node field_name="parent_node">11120211</parent_node>
+<thread id="11120211">
+<node id="11120212"/>
+<node id="11120230"><node id="11120269"/>
+</node>
+</thread></node>

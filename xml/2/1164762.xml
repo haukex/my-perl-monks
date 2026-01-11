@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1164762" title="How might one determine empty XML payload?" created="2016-06-02 09:23:55" updated="2016-06-02 09:23:55" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1151486">vlturner</author>
+<doctext field_name="doctext">&lt;p&gt;
+I have to ask for 200K+ XML records 100 records at a time.
+But when I get to the end it still keeps going. I need know that there is a payload returned in the XML request. Here is what the empty payload looks like.
+&lt;/p&gt;
+&lt;code&gt;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;response&gt;&lt;/response&gt;
+&lt;/code&gt;
+&lt;p&gt;
+Here is my code.
+&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use 5.014;
+use MIME::Base64;
+use Data::Dumper;
+use utf8;
+use Text::Unidecode;
+use XML::Twig;
+use XML::LibXML;
+use REST::Client;
+use Data::Validate::Domain qw(is_hostname);
+use Socket;
+use Net::DNS;
+use Net::MAC;
+# Just in case we want to request JSON instead of XML from CMDB
+#use JSON; Just in case we want to request JSON instead of XML from CMDB
+
+
+my $scriptversion = "1.01 (Vance Turner, Staples Inc., 1/20/2016)";
+ 
+our $header_count = 0;
+our $fqdn_pos = 0;
+our $ip_address_pos = 0;
+our $dns_domain_pos = 0;
+our $name_pos = 0;
+our $mac_address_pos = 0;
+
+# declare our command line options variables.
+our $host = 'https://staplessb.service-now.com';
+our $wanthelp = 0;
+our $record_limit = 1;
+our $class = '';
+our $user = '';
+our $pwd = '';
+our $offset = 0;
+our $outputfile = 'XMLDUMP.xml';
+
+sub usage
+{
+    my $err = shift and select STDERR;
+    print &lt;&lt;EOU;
+usage: perl $0 [ -t URL ] [-r &lt;max_records&gt;] [-c &lt;class&gt;] [-u username ] [-p password] [-o &lt;outputfilename&gt;]
+
+    -t &lt;host_url&gt;         use &lt;host_url&gt; for the CMDB connection to open. (https://staplessb.service-now.com)
+    -r &lt;record_limit&gt;     use &lt;record_limit&gt; as the maximum nomber of CMDB records to retrieve, default = '100'
+    -c &lt;class&gt;            use &lt;class&gt; as the CMDB class records you want to retrieve.
+    -u &lt;username&gt;         CMDB username to use
+    -p &lt;password&gt;         CMDB password to use
+    -o &lt;outputfilename&gt;   write output to file named &lt;outputfilename&gt;, defaults
+                          to stdout if no outputfile is specified 
+
+Examples:
+   perl $0 -u user -p password -r max_records -o outputfile.xml   (creates outputfile.xml)
+
+EOU
+    exit $err;
+} # usage
+
+sub Get_CMDB_CI
+{ 
+my $client = REST::Client-&gt;new(host =&gt; $host);
+my $encoded_auth = encode_base64("$user:$pwd", '');
+$client-&gt;GET("/api/now/table/cmdb_ci?sysparm_limit=$record_limit&amp;sysparm_offset=$offset",
+                {'Authorization' =&gt; "Basic $encoded_auth",
+                 'Accept' =&gt; 'application/xml'});
+my $CI_RECS = $client-&gt;responseContent();
+return ($CI_RECS);
+}
+
+
+use Getopt::Long qw(:config bundling nopermute passthrough);
+
+GetOptions (
+    "help|h|?"	=&gt; \$wanthelp ,
+    "t=s"	=&gt; \$host,
+    "r=i"	=&gt; \$record_limit,
+    "c=s"	=&gt; \$class,
+    "u=s"	=&gt; \$user,
+    "p=s"	=&gt; \$pwd,
+    "o=s"	=&gt; \$outputfile,
+    );
+
+if ($wanthelp) {
+  usage(1);
+}
+
+if (-s $outputfile) {
+    print STDERR "File '$outputfile' already exists. Overwrite? [y/N] &gt; N\b";
+    scalar &lt;STDIN&gt; =~ m/^[yj](es|a)?$/i or exit;
+    }
+ 
+
+my $input_xml;
+
+open my $fh, '&gt;&gt;:encoding(utf8)', $outputfile or die "Cannot open: $outputfile: $!";
+
+do {
+	say $fh $input_xml;
+	$offset = $offset + $record_limit +50000 ;
+	print "Offset=$offset\n";
+} while ($input_xml = Get_CMDB_CI());
+close($fh) || warn "close failed: $!";
+&lt;/code&gt;</doctext>
+<thread id="1164762">
+<node id="1164763"><node id="1164765"><node id="1164766"><node id="1164770"><node id="1164775"><node id="1164791"><node id="1164800"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1164774"/>
+</thread></node>

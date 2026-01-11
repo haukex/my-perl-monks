@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228096" title="Re^4: locating ultima thule" created="2019-01-06 04:16:02" updated="2019-01-06 04:16:02" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;i&gt;show the output here&lt;/i&gt;
+&lt;p&gt;I did figure out what is going wrong, but I don't know how to fix it. Let me start by showing the tail end of the page creation process, where this thing is going off the rails:&lt;/p&gt;
+&lt;c&gt;first value is /home/bob/2.scripts/pages/3.cw/template_stuff/aimages 
+Use of uninitialized value in concatenation (.) or string at template_stuff/html7.pm line 127, &lt;STDIN&gt; line 2.
+array part is 
+undefined!...initializing:
+a is /home/bob/2.scripts/pages/3.cw/template_stuff/aimages/quux
+b is quux
+AoA put failed 
+first value is /home/bob/2.scripts/pages/3.cw/template_stuff/aimages 
+Use of uninitialized value in concatenation (.) or string at template_stuff/html7.pm line 127, &lt;STDIN&gt; line 2.
+array part is 
+undefined!...initializing:
+a is /home/bob/2.scripts/pages/3.cw/template_stuff/aimages/quux
+b is quux
+AoA put failed 
+return is 3.cw15.html
+$ 
+&lt;/c&gt;
+&lt;p&gt;The offenders are create_page and put_page, who until recently, were part of main. Relegating them to be subroutines was great for legibility in main, but I seem to have developed issues. First of all, even though it tells me it fails every time, it  gets a page on the net. The resulting page is weirdly-populated. [http://merrillpjensen.com/perlmonks/3.cw15.html|ugly page]&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;sub create_page {
+
+  use 5.011;
+  use trans1;
+  use Net::SFTP::Foreign;
+
+  use Encode;
+  use open OUT =&gt; ':encoding(UTF-8)', ':std';
+
+  #create html page
+  my $rvars = shift;
+  my %vars  = %$rvars;
+
+  my $sftp = get_tiny();
+  say "object created, back with caller";
+  my $html_file = get_html_filename( $sftp, $rvars );
+  $vars{html_file} = $html_file;
+  print "Make rus captions(y/n)?: ";
+  my $prompt1 = &lt;STDIN&gt;;
+  chomp $prompt1;
+  if ( $prompt1 eq ( "y" | "Y" ) ) {
+    my $ref_cap = make_russian_captions($rvars);
+  }
+  my $fh         = create_html_file($html_file);
+  my $remote_dir = $html_file;
+  $remote_dir =~ s/\.html$//;
+  say "remote_dir is $remote_dir";
+  $vars{remote_dir} = $remote_dir;
+  $rvars = \%vars;  ## why so necessary?
+
+  # create header
+  my $rhdr = write_header($rvars);
+  print $fh $$rhdr;
+  $vars{refc} = get_content($rvars);
+  $rvars = \%vars;  ## will same trick work?
+
+  my $body = write_body( $rvars, $vars{refc} );
+  print $fh $$body;
+  my $rftr = write_footer($rvars);
+  print $fh $$rftr;
+  if ( $vars{"print_script"} ) {
+    my $script = write_script($rvars);
+    print $fh $$script;
+  }
+  if ( $vars{"print_module"} ) {
+    my $module = write_module($rvars);
+    print $fh $$module;
+  }
+  my $rhbt = write_bottom($rvars);
+  print $fh $$rhbt;
+  close $fh;
+
+  print "Put file to server(y/n)?: ";
+  my $prompt2 = &lt;STDIN&gt;;
+  chomp $prompt2;
+  if ( $prompt2 eq ( "y" | "Y" ) ) {
+    put_page( $sftp, $rvars );
+  }
+  return $html_file;
+}
+
+sub put_page {
+
+  use 5.011;
+  #use html6;
+  #use nibley1;
+  use utils1;
+  use Net::SFTP::Foreign;
+  use Encode;
+  use open OUT =&gt; ':encoding(UTF-8)', ':std';
+  use Data::Dumper;
+
+  my ( $sftp, $rvars ) = (@_);
+  my %vars = %$rvars;
+
+  #load html file to server
+  my $server_dir = $vars{"server_dir"};
+  say "server dir is $server_dir";
+  $sftp-&gt;mkdir("/$server_dir")   or warn "mkdir1 failed $!\n";
+  $sftp-&gt;setcwd("/$server_dir")  or warn "setcwd1 failed $!\n";
+  $sftp-&gt;put( $vars{html_file} ) or die "html put failed $!\n";
+
+  #load css file to server
+  $sftp-&gt;setcwd("/css") or warn "setcwd2 failed $@\n";
+  my $path3 = path( $vars{css_path}, $vars{"css_file"} );
+  say "path3 is $path3";
+  my $remote_css = $vars{"css_file"};
+  $sftp-&gt;put( "$path3", $remote_css ) or warn "css put failed $@\n";
+
+  # upload images
+  my $image_dir = $vars{"image_dir"};
+  $sftp-&gt;mkdir("/$image_dir")        or warn "mkdir2 failed $!\n";
+  $sftp-&gt;setcwd("/$image_dir")       or warn "setcwd2 failed $!\n";
+  $sftp-&gt;mkdir( $vars{remote_dir} )  or warn "mkdir3 failed $!\n";
+  $sftp-&gt;setcwd( $vars{remote_dir} ) or warn "setcwd3 failed $!\n";
+  print $sftp-&gt;cwd(), "\n";
+
+  #print Dumper $rvars;
+  my $ref_content = $vars{refc};
+  my @AoA         = @$ref_content;
+  say "content----------";
+  print Dumper $ref_content;
+  for my $i ( 0 .. $#AoA ) {
+    say "first value is $vars{to_images} ";
+    say "array part is $AoA[$i][0]";
+    if (!defined $AoA[$i][0]) {
+    say "undefined!...initializing:";
+    $AoA[$i][0] = 'quux';
+}
+    my $a = path( $vars{to_images}, $AoA[$i][0] );
+    say "a is $a";
+    my $b = $a-&gt;basename;
+    say "b is $b";
+    $sftp-&gt;put( $a, $b ) or warn "AoA put failed $@\n";
+  }
+  undef $sftp;
+
+  return "nothing";
+
+}&lt;/c&gt;&lt;/readmore&gt;
+&lt;p&gt;My main data struture is a hash that I pass into all my subroutines:&lt;/p&gt;
+
+&lt;c&gt;  my $rvars = shift;
+  my %vars  = %$rvars;
+&lt;/c&gt;
+&lt;p&gt;But then I want to create something with persistence, like:&lt;/p&gt;
+
+&lt;c&gt;  $vars{refc} = get_content($rvars);
+  $rvars = \%vars;  ## will same trick work?&lt;/c&gt;
+&lt;p&gt;and then&lt;/p&gt;
+&lt;c&gt;  print "Put file to server(y/n)?: ";
+  my $prompt2 = &lt;STDIN&gt;;
+  chomp $prompt2;
+  if ( $prompt2 eq ( "y" | "Y" ) ) {
+    put_page( $sftp, $rvars );
+  }&lt;/c&gt;
+
+&lt;p&gt;$ref_content's value is NULL, so this is not an effective pass.&lt;/p&gt;
+&lt;c&gt;  my $ref_content = $vars{refc};
+  my @AoA         = @$ref_content;
+  say "content----------";
+  print Dumper $ref_content;
+  for my $i ( 0 .. $#AoA ) {
+    say "first value is $vars{to_images} ";
+    say "array part is $AoA[$i][0]";
+    if (!defined $AoA[$i][0]) {
+    say "undefined!...initializing:";
+    $AoA[$i][0] = 'quux';
+}
+    my $a = path( $vars{to_images}, $AoA[$i][0] );
+    say "a is $a";
+    my $b = $a-&gt;basename;
+    say "b is $b";
+    $sftp-&gt;put( $a, $b ) or warn "AoA put failed $@\n";
+  }&lt;/c&gt;
+
+&lt;p&gt;It didn't always used to be this broken, so I'm happy to entertain suggestions....&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1227959</root_node>
+<parent_node field_name="parent_node">1228075</parent_node>
+<thread id="1227959">
+<node id="1227985"><node id="1228014"><node id="1228021"/>
+</node>
+</node>
+<node id="1227993"><node id="1228034"><node id="1228042"/>
+</node>
+</node>
+<node id="1228007"><node id="1228066"><node id="1228075"><node id="1228096"><node id="1228098"><node id="1228182"><node id="1228183"/>
+<node id="1228185"><node id="1228243"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

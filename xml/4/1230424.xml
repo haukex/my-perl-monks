@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230424" title="Re^3: Export and use different package in module" created="2019-02-22 15:38:50" updated="2019-02-22 15:38:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;First, note that &lt;c&gt;Library2.pm&lt;/c&gt; is missing the &lt;c&gt;use Exporter qw(import);&lt;/c&gt;, so nothing is actually exported when you do &lt;c&gt;use Library2;&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;I suspect you added the &lt;c&gt;package Library2;&lt;/c&gt; to &lt;c&gt;Library.pm&lt;/c&gt; to work around that? However, the effect of doing so is that &lt;c&gt;our %hash&lt;/c&gt; is declared in the current package, which is now &lt;c&gt;Library2&lt;/c&gt;, so you're assigning a value to &lt;c&gt;%Library2::hash&lt;/c&gt;, while what &lt;c&gt;Library.pm&lt;/c&gt; is exporting is &lt;c&gt;%Library::hash&lt;/c&gt;. Although you &lt;i&gt;could&lt;/i&gt; change &lt;c&gt;our %hash = ...&lt;/c&gt; into &lt;c&gt;%Library::hash = ...&lt;/c&gt;, that's just fixing a workaround with a workaround, and the IMO &lt;i&gt;much&lt;/i&gt; cleaner solution is to add the &lt;c&gt;use Exporter qw(import);&lt;/c&gt; statement I mentioned above to &lt;c&gt;Library2.pm&lt;/c&gt;, and just remove the &lt;c&gt;package Library2;&lt;/c&gt; from &lt;c&gt;Library.pm&lt;/c&gt;, which is then no longer needed, because now &lt;c&gt;sub return_string&lt;/c&gt; will be exported from &lt;c&gt;Library2&lt;/c&gt; into &lt;c&gt;Library&lt;/c&gt; and be callable there.&lt;/p&gt;
+&lt;p&gt;BTW, this:&lt;/p&gt;
+&lt;c&gt;
+use File::Basename qw(dirname);
+use Cwd qw(abs_path);
+use lib dirname(dirname abs_path $0);
+&lt;/c&gt;
+&lt;p&gt;Can be replaced by the more reliable:&lt;/p&gt;
+&lt;c&gt;
+use FindBin;
+use lib $FindBin::Bin;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1230405</root_node>
+<parent_node field_name="parent_node">1230422</parent_node>
+<thread id="1230405">
+<node id="1230408"><node id="1230422"><node id="1230424"><node id="1230425"><node id="1230427"><node id="1230431"><node id="1230437"><node id="1230450"><node id="1230456"><node id="1230467"><node id="1230470"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

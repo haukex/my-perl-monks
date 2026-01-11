@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217469" title="Re: Threaded 5.10.0 + ?PATTERN? = Modification of a read-only value attempted" created="2018-06-26 18:05:42" updated="2018-06-26 18:05:42" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Apparently, the patch you need to apply to fix this is [https://perl5.git.perl.org/perl.git/commitdiff/9cddf794fc52f08a145668164b1e3c15c91a713f|9cddf794fc5] (included in 5.10.1). (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; Not really an answer to your "why" question, though, sorry.)&lt;/p&gt;
+&lt;c&gt;
+$ git checkout -f v5.10.0
+$ git clean -dxf
+$ patchperl
+$ git show 9cddf794fc5 | git apply
+$ sh Configure -des -Dusethreads
+$ make
+# etc.
+&lt;/c&gt;
+&lt;readmore&gt;
+&lt;p&gt;I'm not an expert on the internals, so don't ask me why :-/&lt;/p&gt;
+&lt;c&gt;
+$ Porting/bisect.pl -Dusethreads --target=miniperl --expect-fail \
+	--start=v5.10.0 --end=v5.26.0 -e 'eval q("x"=~?x?)'
+...
+9cddf794fc52f08a145668164b1e3c15c91a713f is the first bad commit
+commit 9cddf794fc52f08a145668164b1e3c15c91a713f
+Author: Nicholas Clark &lt;nick@ccl4.org&gt;
+Date:   Sun Jan 6 13:35:38 2008 +0000
+
+    Clarify the intent of the code in Perl_op_clear. Under ithreads, avoid
+    calling sv_ivset twice. As a side effect, eliminate PM_GETRE_SAFE
+    and PM_SETRE_SAFE, as we're doing "safe" explicitly in Perl_op_clear().
+    
+    p4raw-id: //depot/perl@32867
+
+:100644 100644 c07a1a790672e577a6fdbabb140ef2a93dd27038 569a15910691ee2da5a6e75e70bad3e73c274cd6 M	op.c
+:100644 100644 14b8e6ef246b958dae153c034d93ca1319af415f 264dd52ab8ebf0184c1d5a13743aaf2d2e9ab62e M	op.h
+bisect run success
+
+$ git bisect reset
+$ cpanm Devel::PatchPerl
+
+$ git checkout -f v5.10.0
+$ git clean -dxf
+$ patchperl
+$ sh Configure -des -Dusethreads
+$ make miniperl
+$ ./miniperl -e 'eval q( "x" =~ ?x? ) and print "OK!\n"'
+Modification of a read-only value attempted at -e line 1.
+$ git show 9cddf794fc5 | git apply
+$ make miniperl
+$ ./miniperl -e 'eval q( "x" =~ ?x? ) and print "OK!\n"'
+OK!
+
+$ git tag --contains 9cddf794fc5
+...
+perl-5.10.1
+...
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;A few minor updates.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;/readmore&gt;
+</doctext>
+<root_node field_name="root_node">1217467</root_node>
+<parent_node field_name="parent_node">1217467</parent_node>
+<thread id="1217467">
+<node id="1217469"/>
+</thread></node>

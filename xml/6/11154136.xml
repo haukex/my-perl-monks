@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11154136" title="Re: LWP::Daemon barf on bad DNS (updated)" created="2023-08-30 03:04:53" updated="2023-08-30 03:04:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Can I just put a 'try' around it?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Without knowing what your code looks like ([id://1177642|SSCCE]!), I'd say yes, &lt;c&gt;try&lt;/c&gt; (e.g. from [mod://Try::Tiny] or [id://11154007|a modern Perl]) is a standard way to catch errors like this and to have your code continue after handling the error. It also depends a bit on how your script is being run and how often this happens, if it doesn't happen all too often and you're running your script as a daemon, note there are process managers that will automatically restart crashed daemons.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Since your last question was about RPi, is this on an RPi? Because there, since Raspbian already runs &lt;c&gt;systemd&lt;/c&gt;, I just use that to manage my daemons. For example, here's a &lt;c&gt;.service&lt;/c&gt; file I used on a project that used a [mod://Mojolicious] webserver on an RPi:&lt;/p&gt;
+&lt;c&gt;
+# Docs: https://wiki.debian.org/systemd/Services
+# Set me up via:
+# $ sudo ln -s /home/pi/project/my_web.service /etc/systemd/system/
+# $ sudo systemctl daemon-reload
+# $ sudo systemctl enable my_web
+# $ sudo systemctl start my_web
+
+[Unit]
+Description=My Web Service
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+Environment="PERL5LIB=/home/pi/perl5/lib/perl5"
+User=pi
+Group=pi
+ExecStart=/home/pi/project/web_app.pl daemon -m production -l http://*:8080
+
+[Install]
+WantedBy=multi-user.target
+&lt;/c&gt;
+&lt;p&gt;You can customize how the service gets managed, e.g. with things like &lt;c&gt;KillSignal=SIGINT&lt;/c&gt; or &lt;c&gt;RestartSec=30&lt;/c&gt;.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11154132</root_node>
+<parent_node field_name="parent_node">11154132</parent_node>
+<thread id="11154132">
+<node id="11154136"/>
+</thread></node>

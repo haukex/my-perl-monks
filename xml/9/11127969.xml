@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11127969" title="Re: when to capitalize package variables" created="2021-02-06 03:48:12" updated="2021-02-06 03:48:12" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Just to throw another opinion into the mix: Sometimes one sees such variables strictly titlecased, since they're package variables but not constants, like for example the options in [doc://Data::Dumper] (e.g. &lt;c&gt;$Data::Dumper::Sparseseen&lt;/c&gt; or &lt;c&gt;$Data::Dumper::Maxdepth&lt;/c&gt;). So for example &lt;c&gt;$Data::GUID::Any::Uc&lt;/c&gt; may not seem to make as much sense as &lt;c&gt;uc&lt;/c&gt; or &lt;c&gt;UC&lt;/c&gt;, but it indicates it's a package variable since it's titlecased, but not a constant since it's not all uppercase. &lt;small&gt;(I see [kcott] posted the same point as I was writing this)&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;The casing of variable names is just a convention and not a strict rule. Anyway, if you want my opinion on the following:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I need to provide a package variable in a module I'm working on to let the user turn on or off a feature. It's a simple non object oriented module. I've used Data::GUID::Any before and remembered there is a package variable called UC that is used exactly like what I want to do.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I would suggest not using a package variable at all. Despite the longer names, they're not really different from other globals like [doc://$/], and come with all the same potential issues: One has to remember to use [doc://local], and even then, dynamic scope might bite you lower down in the call stack. If you don't want an OO interface, then give your functional interface parameters to configure options.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+{ package Foo;
+	our $DEFAULT_BAR = 1;
+	sub foo {
+		my %opts = @_;
+		$opts{bar} //= $DEFAULT_BAR;
+		print "bar=$opts{bar}\n";
+	}
+}
+
+Foo::foo();          # prints "bar=1"
+Foo::foo(bar=&gt;2);    # prints "bar=2"
+&lt;/c&gt;
+&lt;p&gt;I usually set up package variables like &lt;c&gt;$DEFAULT_BAR&lt;/c&gt; such that I can easily change the defaults, this can also be useful for testing, but I also usually leave them undocumented since I don't want to encourage the use of these globals. Also the above code could of course do some validation on &lt;c&gt;foo&lt;/c&gt;'s &lt;c&gt;@_&lt;/c&gt;, but I omitted that for brevity.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11127962</root_node>
+<parent_node field_name="parent_node">11127962</parent_node>
+<thread id="11127962">
+<node id="11127963"/>
+<node id="11127964"/>
+<node id="11127965"/>
+<node id="11127968"><node id="11127984"/>
+</node>
+<node id="11127969"><node id="11127972"/>
+</node>
+</thread></node>

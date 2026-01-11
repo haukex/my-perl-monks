@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224204" title="Re^3: how to get Config values into a hash" created="2018-10-18 01:47:37" updated="2018-10-18 01:47:37" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;i&gt;My question here is how does perl decide which Config.pm it uses?&lt;/i&gt;
+
+&lt;p&gt;I think I solved my own question here. When perl looks for Config.pm it starts at the top of @INC and keeps on going until it finds a match. I conjecture that it's guaranteed that there is one at the ultimate path with perl-base:&lt;/p&gt;
+&lt;code&gt;$ ./2.cf.pl 
+&lt;/usr/lib/x86_64-linux-gnu/perl/5.26&gt;
+---------------
+/home/bob/perl5/lib/perl5/x86_64-linux-gnu-thread-multi /home/bob/perl5/lib/perl5 /etc/perl /usr/local/lib/x86_64-linux-gnu/perl/5.26.1 /usr/local/share/perl/5.26.1 /usr/lib/x86_64-linux-gnu/perl5/5.26 /usr/share/perl5 /usr/lib/x86_64-linux-gnu/perl/5.26 /usr/share/perl/5.26 /usr/local/lib/site_perl /usr/lib/x86_64-linux-gnu/perl-base
+path is /usr/lib/x86_64-linux-gnu/perl/5.26/Config.pm
+stat is File::stat=ARRAY(0x55f122748b70)
+$VAR1 = bless( [
+                 2054,
+                 6591373,
+                 33188,
+                 1,
+                 0,
+                 0,
+                 0,
+                 3372,
+                 1539824438,
+                 1531923663,
+                 1532749911,
+                 4096,
+                 8
+               ], 'File::stat' );
+
+path is /usr/lib/x86_64-linux-gnu/perl-base/Config.pm
+stat is File::stat=ARRAY(0x55f122ad48c0)
+$VAR1 = bless( [
+                 2054,
+                 6591655,
+                 33188,
+                 1,
+                 0,
+                 0,
+                 0,
+                 3373,
+                 1539712704,
+                 1531923663,
+                 1532749916,
+                 4096,
+                 8
+               ], 'File::stat' );
+
+$ cat 2.cf.pl
+#!/usr/bin/perl -w
+use 5.011;
+use utf8;
+use Config qw/%Config config_vars/;
+use Path::Tiny;
+use Data::Dumper;
+my $insarchname = $Config{'installarchlib'};
+print "&lt;$insarchname&gt;\n";
+say "---------------";
+say "@INC";
+
+foreach (@INC) {
+  my $path1 = path( $_, "Config.pm" );
+  if ( -f $path1 ) {
+    my $stat = $path1-&gt;stat;
+    say "path is $path1";
+    say "stat is $stat";
+    say Dumper $stat;
+  }
+
+}
+$ 
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">1224063</root_node>
+<parent_node field_name="parent_node">1224132</parent_node>
+<thread id="1224063">
+<node id="1224067"><node id="1224132"><node id="1224204"><node id="1224211"/>
+</node>
+<node id="1224332"><node id="1224644"/>
+</node>
+</node>
+</node>
+</thread></node>

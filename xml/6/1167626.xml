@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1167626" title="Creating a xml file in chunks" created="2016-07-12 11:07:56" updated="2016-07-12 11:07:56" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="917684">vagabonding electron</author>
+<doctext field_name="doctext">&lt;p&gt;Dear All,&lt;/p&gt;
+&lt;p&gt;I am parsing a large number of data files and need to save the output in an xml file. A minimal running example is below – contrived and simplified of course, since it is about gigabytes. My problem is that if I assemble the complete xml output document in memory it grows too large so that &lt;c&gt;$doc-&gt;setDocumentElement($root); print $doc-&gt;toString() &lt;/c&gt; would not be good. So I try to print the output in chunks as I would normally do with csv output. The code below does print chunks (single composed nodes – in a real life it would be one composed node per data file). What I did not figure out is how to print out the root element nicely. Currently I just hardcoded the opening tag output at the beginning and the closing tag at the end. Is there a nicer way to do this (or probably a nicer way to create xml in the first place)? &lt;/p&gt;
+&lt;p&gt;Thanks in advance!&lt;/p&gt;
+&lt;code&gt;
+#!/perl
+use strict;
+use warnings FATAL =&gt; qw(all);
+
+use Text::CSV_XS;
+use XML::LibXML;
+
+my $csv_par =  { binary =&gt; 1, auto_diag =&gt; 1, 
+     allow_whitespace =&gt; 1, sep_char =&gt; ';', 
+     eol =&gt; $/, quote_char =&gt; undef, };
+
+
+
+
+my $csv = Text::CSV_XS-&gt;new($csv_par);
+my @header = @{$csv-&gt;getline(*DATA)};
+
+my %rec;
+$csv-&gt;bind_columns(\@rec{@header});
+
+my $doc = XML::LibXML::Document-&gt;new('1.0', 'utf-8');
+my $root = $doc-&gt;createElement("ROOT"); 
+print join("\n",
+     '&lt;?xml version="1.0" encoding="UTF-8"?&gt;', 
+     '&lt;ROOT&gt;'),$/;
+
+while ( $csv-&gt;getline(*DATA) )
+{
+     my $line_tag = $doc-&gt;createElement("alpha");
+     $line_tag-&gt;setAttribute('name'=&gt; $rec{"alpha"});
+     # $root-&gt;appendChild($line_tag); # intentional.
+     for my $other ( qw(beta gamma) )
+     {
+          my $other_tag = $doc-&gt;createElement($other);
+          $other_tag-&gt;setAttribute(name =&gt; $rec{$other});
+          $line_tag-&gt;appendChild($other_tag);
+     }
+     print $line_tag-&gt;toString(1),$/; 
+}
+print '&lt;/ROOT&gt;',$/;
+
+=output
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;ROOT&gt;
+&lt;alpha name="q"&gt;
+  &lt;beta name="2"/&gt;
+  &lt;gamma name="3"/&gt;
+&lt;/alpha&gt;
+&lt;alpha name="w"&gt;
+  &lt;beta name="9"/&gt;
+  &lt;gamma name="8"/&gt;
+&lt;/alpha&gt;
+&lt;alpha name="e"&gt;
+  &lt;beta name="1"/&gt;
+  &lt;gamma name="2"/&gt;
+&lt;/alpha&gt;
+&lt;alpha name="r"&gt;
+  &lt;beta name="6"/&gt;
+  &lt;gamma name="7"/&gt;
+&lt;/alpha&gt;
+&lt;alpha name="t"&gt;
+  &lt;beta name="5"/&gt;
+  &lt;gamma name="9"/&gt;
+&lt;/alpha&gt;
+&lt;alpha name="y"&gt;
+  &lt;beta name="3"/&gt;
+  &lt;gamma name="1"/&gt;
+&lt;/alpha&gt;
+&lt;/ROOT&gt;
+=cut
+
+
+__DATA__
+alpha;beta;gamma
+q;2;3
+w;9;8
+e;1;2
+r;6;7
+t;5;9
+y;3;1
+&lt;/code&gt;
+</doctext>
+<thread id="1167626">
+<node id="1167630"><node id="1167642"><node id="1167646"/>
+</node>
+</node>
+<node id="1167644"><node id="1167712"/>
+</node>
+</thread></node>

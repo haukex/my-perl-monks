@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11122630" title="How do I make a tcp socket heartbeat?" created="2020-10-09 10:14:01" updated="2020-10-09 10:14:01" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11122324">pudda</author>
+<doctext field_name="doctext">&lt;p&gt;Hello guys,&lt;/p&gt;
+
+&lt;p&gt;I'm trying to do a tcp socket server which will send a message to all clients connected every 10s, like a heartbeat.&lt;/p&gt;
+
+&lt;p&gt;I managed to do it using IO::Socket::INET only, but the code only handle a single connection, so when the client dies, the server dies too.&lt;/p&gt;
+&lt;p&gt;Searching, I found a way to do it with IO::Select, but I can't make it work too.&lt;/p&gt;
+&lt;p&gt;It doesn't send the 'HeartBeat' and still when I stop the a client the server stops too. Can you guys help me to find what I'm doing wrong?&lt;/p&gt;
+
+&lt;p&gt;Here the codes:&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;server.pl&lt;/b&gt;&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl -w
+use strict;
+use warnings;
+use IO::Socket;
+use IO::Select;
+
+# auto-flush on socket
+$| = 1;
+
+my $server_ip;
+my $server_port;
+
+($server_ip,$server_port)=('127.0.0.1', 5000);
+
+# creating a listening socket
+my $tcp_socket = new IO::Socket::INET(
+	LocalHost =&gt; $server_ip,
+	LocalPort =&gt; $server_port,
+	Proto =&gt; 'tcp',
+	Listen =&gt; 5,
+	Reuse =&gt; 1
+);
+die "cannot create socket $!\n" unless $tcp_socket;
+print "server waiting for client connection on port $server_port\n";
+
+
+my $read_select = IO::Select-&gt;new();
+
+$read_select-&gt;add($tcp_socket);
+
+my $hello ="Hello &lt;VERSION&gt;\n";
+
+while(1){
+	my $new_readable;
+	my $nick;
+
+	($new_readable)=IO::Select-&gt;select($read_select,undef,undef,0);
+	foreach my $read(@$new_readable){
+		if($read==$tcp_socket){
+			my $new_connection = $read-&gt;accept();
+			$new_connection-&gt;send($hello);
+			$read_select-&gt;add($new_connection);
+		}else{
+			my $buf;
+			my $msg;
+			$buf='HeartBeat';
+			if($buf){
+				my @sockets = $read_select-&gt;can_write();
+				foreach my $sck(@sockets){
+					$sck-&gt;send("$buf\n");
+				}
+			}else{
+				$read_select-&gt;remove($read);
+			}
+
+		}
+
+	}
+}
+
+
+$tcp_socket-&gt;close();
+&lt;/code&gt;
+
+&lt;p&gt;&lt;b&gt;client.pl&lt;/b&gt;&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+#tcpclient.pl
+
+use IO::Socket::INET;
+
+use CGI;
+use CGI::Carp qw(fatalsToBrowser warningsToBrowser);
+
+$| = 1;
+
+my ($socket,$client_socket);
+
+$socket = new IO::Socket::INET (
+    PeerAddr =&gt; '127.0.0.1',
+    PeerPort =&gt; '5000',
+    Proto =&gt; 'tcp'
+) or die "ERROR in Socket Creation : $! $@\n";
+
+print "TCP Connection Success.\n";
+
+while(1){
+    $socket-&gt;recv($data,1024);
+    print "Received from Server : $data\n";
+
+}
+$socket-&gt;close();
+&lt;/code&gt;</doctext>
+<thread id="11122630">
+<node id="11122632"><node id="11122634"><node id="11122636"/>
+</node>
+<node id="11122642"><node id="11122643"/>
+</node>
+</node>
+<node id="11122633"><node id="11122635"/>
+</node>
+<node id="11122644"><node id="11122769"/>
+</node>
+<node id="11122646"/>
+<node id="11122649"/>
+</thread></node>

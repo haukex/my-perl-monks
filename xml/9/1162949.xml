@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1162949" title="Re: Elegantly dereferencing multiple references" created="2016-05-13 08:20:57" updated="2016-05-13 08:20:57" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Anonymous,&lt;/p&gt;
+&lt;p&gt;Others have already pointed out you can just edit the hashes through the references directly, and that seems like the way to go in your case. Just to explain why your second two examples don't work: Arrays or hashes on the left hand side of a &lt;c&gt;my (...) = ...&lt;/c&gt; assignment only make sense as the last item being assigned to, because they slurp up all the remaining values from the right hand side.&lt;/p&gt;
+&lt;p&gt;That means when you write &lt;c&gt;my (%x, %y, %z) = ...&lt;/c&gt;, then the hash &lt;c&gt;%x&lt;/c&gt; will slurp up all the values assigned to it:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -MData::Dumper -le 'my (%x,%y) = (1,2,3,4); print Dumper(\%x,\%y)'
+$VAR1 = {
+          '1' =&gt; 2,
+          '3' =&gt; 4
+        };
+$VAR2 = {};
+&lt;/c&gt;
+&lt;p&gt;Also, be aware that &lt;c&gt;my %copy = %hash;&lt;/c&gt; only makes a shallow copy, so if &lt;c&gt;%hash&lt;/c&gt; contains values which are references to other data, then those will reference the &lt;i&gt;same&lt;/i&gt; data structures - which may not be what you want. If you want deep copies, [doc://Storable]'s &lt;c&gt;dclone&lt;/c&gt; or [mod://Clone] may be able to help you there.&lt;/p&gt;
+&lt;p&gt;And just for completeness, here's one ("elegant"?) way to make the shallow copies:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump 'pp';
+
+my %x = ("a"  =&gt; "red");
+my %y = ("b"  =&gt; "green");
+my %z = ("c"  =&gt; "black");
+
+pp \%x, \%y, \%z;
+my ($r1, $r2, $r3) = modfifyHash(\%x, \%y, \%z);
+pp $r1, $r2, $r3;
+pp \%x, \%y, \%z; # these remain unmodified
+
+sub modfifyHash {
+	#my ($x, $y, $z) = @_; # this would modify the original hashes
+    my ($x, $y, $z) = map { { %{ $_ } } } @_;
+    #                       ^ ^  ^
+    #                       | |  for each argument
+    #                       | dereference as hash
+    #                       make new hash reference (shallow copy!)
+    $x-&gt;{a} = "circle";
+    $y-&gt;{b} = "square";
+    $z-&gt;{c} = "rectangle";
+    return $x, $y, $z;
+}
+
+__END__
+
+({ a =&gt; "red" }, { b =&gt; "green" }, { c =&gt; "black" })
+({ a =&gt; "circle" }, { b =&gt; "square" }, { c =&gt; "rectangle" })
+({ a =&gt; "red" }, { b =&gt; "green" }, { c =&gt; "black" })
+&lt;/c&gt;
+&lt;p&gt;Although I would second [Eily]'s [id://1162945|suggestion] that it might be a good idea to combine the hashes into one.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1162942</root_node>
+<parent_node field_name="parent_node">1162942</parent_node>
+<thread id="1162942">
+<node id="1162944"/>
+<node id="1162945"/>
+<node id="1162948"><node id="1162951"><node id="1162953"/>
+</node>
+<node id="1162956"/>
+</node>
+<node id="1162949"/>
+<node id="1162966"/>
+<node id="1163485"/>
+</thread></node>

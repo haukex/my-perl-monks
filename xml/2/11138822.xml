@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11138822" title="Avoiding escaped child elements with HTML::TreeBuilder::XPath or HTML::Element" created="2021-11-15 04:11:22" updated="2021-11-15 04:11:22" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1129327">mldvx4</author>
+<doctext field_name="doctext">&lt;p&gt;
+Thanks for the previous.
+&lt;/p&gt;
+&lt;p&gt;
+I have a question about either HTML::TreeBuilder::XPath or HTML::Element, and the interaction between them.  I would like to manipulate the content of an element while leaving all its children in place.  I'm not able to find a way around that because it appears that &lt;code&gt;replace_with()&lt;/code&gt;
+ also automatically and unavoidably escapes the &amp;lt; and &amp;gt; signs.  The example below uses &lt;code&gt;~literal&lt;/code&gt; but I've also tried creating a new element.  Either way, the child elements within the selected element get escaped despite my best efforts.  How would it be possible to do something like the following (using a different work flow if necessary) such that the tags for the child elements remain intact and unescaped?&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+
+use HTML::TreeBuilder::XPath;
+use HTML::Element;
+use warnings;
+use strict;
+
+my $xhtml = HTML::TreeBuilder::XPath-&gt;new;
+$xhtml-&gt;implicit_tags(1);
+$xhtml-&gt;no_space_compacting(1);
+
+$xhtml-&gt;parse_file(\*DATA)
+        or die("Could not parse file handle for 'DATA' : $!\n");
+
+for my $item ($xhtml-&gt;findnodes('//div/ul/li')) {
+    my $li = $item-&gt;as_XML;
+
+    $li =~ s/^\s+//;
+    # ... omitting rest of the stuff which happens to $li ...
+    
+    my $new = HTML::Element-&gt;new('~literal', 'text' =&gt; $li);
+    $item-&gt;replace_with($new);
+}
+
+print $xhtml-&gt;as_XML_indented;
+$xhtml-&gt;delete;
+
+exit(0);
+
+__DATA__
+
+&lt;html&gt;
+ &lt;head&gt;
+  &lt;title&gt;Foo Bar&lt;/title&gt;
+ &lt;/head&gt;
+ &lt;body&gt;
+
+  &lt;div&gt;&lt;a href=" http://foo.example.com/ "&gt;Foo Bar&lt;/a&gt;
+   &lt;ul&gt;
+    &lt;li&gt; foo foo foo
+ foo &lt;em&gt;bar&lt;/em&gt; foo
+foo foo foo foo
+&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;
+
+  &lt;div&gt;&lt;a href=" http://bar.example.com/ "&gt;Bar Foo&lt;/a&gt;
+   &lt;ul&gt;
+    &lt;li&gt; foo foo foo
+ foo &lt;em&gt;bar&lt;/em&gt; foo
+foo foo foo foo
+     &lt;ul&gt;
+      &lt;li&gt;alpha&lt;/li&gt;
+      &lt;li&gt;b&lt;em&gt;et&lt;/em&gt;a&lt;/li&gt;
+      &lt;li&gt;gamma&lt;/li&gt;
+     &lt;/ul&gt;
+    &lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;
+
+ &lt;/body&gt;
+&lt;/html&gt;
+
+&lt;/code&gt;
+
+&lt;p&gt;
+The output I get is as follows:
+&lt;/p&gt;
+
+&lt;code&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;Foo Bar&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;div&gt;&lt;a href=" http://foo.example.com/ "&gt;Foo Bar&lt;/a&gt;
+      &lt;ul&gt;&amp;lt;li&amp;gt; foo foo foo
+ foo &amp;lt;em&amp;gt;bar&amp;lt;/em&amp;gt; foo
+foo foo foo foo
+&amp;lt;/li&amp;gt;
+
+      &lt;/ul&gt;
+    &lt;/div&gt;
+    &lt;div&gt;&lt;a href=" http://bar.example.com/ "&gt;Bar Foo&lt;/a&gt;
+      &lt;ul&gt;&amp;lt;li&amp;gt; foo foo foo
+ foo &amp;lt;em&amp;gt;bar&amp;lt;/em&amp;gt; foo
+foo foo foo foo
+     &amp;lt;ul&amp;gt;&amp;lt;li&amp;gt;alpha&amp;lt;/li&amp;gt;&amp;lt;li&amp;gt;b&amp;lt;em&amp;gt;et&amp;lt;/em&amp;gt;a&amp;lt;/li&amp;gt;&amp;lt;li&amp;gt;gamma&amp;lt;/li&amp;gt;&amp;lt;/ul&amp;gt;&amp;lt;/li&amp;gt;
+
+      &lt;/ul&gt;
+    &lt;/div&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+&lt;/code&gt;
+
+&lt;p&gt;
+The output I would like to get instead would look like this:
+&lt;/p&gt;
+
+&lt;code&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;Foo Bar&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;div&gt;&lt;a href=" http://foo.example.com/ "&gt;Foo Bar&lt;/a&gt;
+      &lt;ul&gt;&lt;li&gt;foo foo foo
+ foo &lt;em&gt;bar&lt;/em&gt; foo
+foo foo foo foo
+&lt;/li&gt;
+
+      &lt;/ul&gt;HTML::TreeBuilder::XPath
+    &lt;/div&gt;
+    &lt;div&gt;&lt;a href=" http://bar.example.com/ "&gt;Bar Foo&lt;/a&gt;
+      &lt;ul&gt;&lt;li&gt;foo foo foo
+ foo &lt;em&gt;bar&lt;/em&gt; foo
+foo foo foo foo
+     &lt;ul&gt;&lt;li&gt;alpha&lt;/li&gt;&lt;li&gt;b&lt;em&gt;et&lt;/em&gt;a&lt;/li&gt;&lt;li&gt;gamma&lt;/li&gt;&lt;/ul&gt;&lt;/li&gt;
+
+      &lt;/ul&gt;
+    &lt;/div&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+&lt;/code&gt;
+
+&lt;p&gt;
+I'm not sure if HTML::TreeBuilder::XPath can be made to work like that.  If it can, what has to change?
+&lt;/p&gt;</doctext>
+<thread id="11138822">
+<node id="11138827"/>
+<node id="11138828"><node id="11138831"><node id="11138833"/>
+</node>
+</node>
+<node id="11138832"/>
+<node id="11138834"/>
+</thread></node>

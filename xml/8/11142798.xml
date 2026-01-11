@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11142798" title="Re: Can I have a Perl script, initiated from a browser, fork itself, and not wait for the child to end?" created="2022-04-07 09:59:18" updated="2022-04-07 09:59:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Although the following is probably overkill - plus it won't run as-is as a CGI script - I've wanted to test out code like this for a while now so I took this oppertunity to write this example up using [mod://Mojolicious]. And in the process, hopefully show some of the advantages of modern web technologies and frameworks over [mod://CGI].pm &lt;c&gt;:-)&lt;/c&gt; This can be run as a standalone server in development mode via &lt;c&gt;morbo script.pl&lt;/c&gt;, and as a simple server via &lt;c&gt;perl test.pl daemon&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use 5.028;
+use Mojolicious::Lite -signatures;
+use Mojo::JSON qw/encode_json/;
+use Mojo::Util qw/sha1_sum/;
+
+# NOTICE: This script is designed to work in a single-threaded,
+# single-process server only! (morbo or Mojolicious::Command::daemon)
+
+get '/' =&gt; sub ($c) { $c-&gt;render(template =&gt; 'index') } =&gt; 'index';
+
+my %runningprocs;
+
+post '/submit' =&gt; sub ($c) {
+	# form variables
+	my $foo = $c-&gt;param('foo');
+	my $bar = $c-&gt;param('bar');
+	# set up the event dispatcher
+	my $ee = Mojo::EventEmitter-&gt;new;
+	# hash collisions theoretically possible but very unlikely (could check `exists $runningprocs{$id}`)
+	my $id = sha1_sum( time."\0".rand."\0".(0+$ee) );
+	$runningprocs{$id} = $ee;
+	$c-&gt;render(json =&gt; { eventurl=&gt;$c-&gt;url_for('status', id=&gt;$id) });
+	# set up and run the subprocess
+	my $subproc = Mojo::IOLoop-&gt;subprocess;
+	$subproc-&gt;on(spawn =&gt; sub ($sp) {
+			$ee-&gt;emit(status =&gt; { progress=&gt;"Subprocess spawned in PID ".$sp-&gt;pid }) });
+	$subproc-&gt;on(progress =&gt; sub ($sp, @data) {
+			$ee-&gt;emit(status =&gt; { progress=&gt;\@data }) });
+	# give client a second to connect to event source
+	Mojo::IOLoop-&gt;timer(1 =&gt; sub {
+		$subproc-&gt;run(
+			sub ($sp) { return long_running_subprocess($sp, $foo, $bar) },
+			sub ($sp, $err, @results) {
+				if ($err) { $ee-&gt;emit(status =&gt; { error=&gt;"$err", done=&gt;"Error: $err" }) }
+				else { $ee-&gt;emit(status =&gt; { done=&gt;\@results }) }
+				# don't clobber the event listener immediately (in case client took longer to re/connect)
+				Mojo::IOLoop-&gt;timer(10 =&gt; sub { delete $runningprocs{$id} });
+			});
+	});
+} =&gt; 'formsubmit';
+
+get '/status/:id' =&gt; sub ($c) {
+	my $id = $c-&gt;stash('id');
+	my $ee = $runningprocs{$id} or return $c-&gt;reply-&gt;not_found;
+	$c-&gt;inactivity_timeout(300);
+	$c-&gt;res-&gt;headers-&gt;content_type('text/event-stream');
+	$c-&gt;write;
+	my $timerid = Mojo::IOLoop-&gt;recurring(10 =&gt; sub {
+		$c-&gt;write(":\n\n") }); # comment as keepalive
+	my $cb = $ee-&gt;on(status =&gt; sub ($ev, $data) {
+		my $json = encode_json($data) =~ s/\n//gr;
+		$c-&gt;write("event: status\ndata: $json\n\n");
+	});
+	$c-&gt;on(finish =&gt; sub ($c) {
+		$ee-&gt;unsubscribe(status =&gt; $cb);
+		Mojo::IOLoop-&gt;remove($timerid);
+	});
+} =&gt; 'status';
+
+sub long_running_subprocess {
+	my ($subproc, $foo, $bar) = @_;
+	# this code is now running in the subprocess!
+	$subproc-&gt;progress("Beginning work on Foo='$foo'");
+	sleep 5; # ...foo...
+	$subproc-&gt;progress("Finished work on Foo");
+	if ( length $bar ) {
+		$subproc-&gt;progress("Beginning work on Bar='$bar'");
+		sleep 5; # ...bar...
+		$subproc-&gt;progress("Finished work on Bar");
+	}
+	return "All done!";
+}
+
+app-&gt;start;
+
+__DATA__
+
+@@ index.html.ep
+% layout 'main', title =&gt; 'Hello, World!';
+&lt;div&gt;
+%= form_for formsubmit =&gt; ( method=&gt;'post', id=&gt;'myform' ) =&gt; begin
+&lt;div&gt;
+%= label_for foo =&gt; 'Foo'
+%= text_field foo =&gt; ( placeholder=&gt;"Foo", required=&gt;'required' )
+&lt;/div&gt;&lt;div&gt;
+%= label_for bar =&gt; 'Bar'
+%= text_field bar =&gt; ( placeholder=&gt;"Bar" )
+&lt;/div&gt;&lt;div&gt;
+%= submit_button 'Process'
+&lt;/div&gt;
+%= end
+&lt;/div&gt;
+&lt;pre id="myoutput" style="padding:3px 5px;border:1px solid black;"&gt;
+Output will display here.
+&lt;/pre&gt;
+&lt;script&gt;
+"use strict";
+function addmsg(txt) {
+	$(document.createTextNode(txt)).appendTo($('#myoutput'));
+}
+function getevents(url) {
+	addmsg("Listening on "+JSON.stringify(url)+"\n");
+	var events = new EventSource(url);
+	events.onerror = function(err) {
+		// the event apparently doesn't contain any details
+		var errmsg = "Error connecting to EventSource";
+		addmsg(errmsg);
+		alert(errmsg);
+		$("#myform :input").prop("disabled", false);
+	};
+	events.addEventListener('status', function (event) {
+		var data = JSON.parse(event.data);
+		if ( 'progress' in data ) {
+			addmsg("Progress: "+JSON.stringify(data.progress)+"\n");
+		}
+		if ( 'error' in data ) {
+			addmsg("Error: "+JSON.stringify(data.error)+"\n");
+			alert(data.error);
+		}
+		if ( 'done' in data ) {
+			addmsg("Done: "+JSON.stringify(data.done)+"\n");
+			events.close();
+			$("#myform :input").prop("disabled", false);
+		}
+	}, false);
+}
+$(function () {
+	$('#myform').on('submit', function (e) {
+		e.preventDefault();
+		$("#myoutput").text("Submitting form\n");
+		var thedata = $('#myform').serialize(); // before disabling!
+		$("#myform :input").prop("disabled", true);
+		$.ajax({ type: 'post', url: '&lt;%= url_for 'formsubmit' %&gt;',
+			data: thedata })
+			.done( function( data ) {
+				getevents(data.eventurl);
+			})
+			.fail( function( jqXHR, textStatus, errorThrown ) {
+				var errmsg = "Form submission error: "+textStatus
+					+" / "+jqXHR.status+" "+errorThrown;
+				addmsg(errmsg);
+				alert(errmsg);
+				$("#myform :input").prop("disabled", false);
+			})
+	});
+});
+&lt;/script&gt;
+
+@@ layouts/main.html.ep
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+	&lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;
+	&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+	&lt;link rel="stylesheet"
+		href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
+		integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w=="
+		crossorigin="anonymous" referrerpolicy="no-referrer" /&gt;
+	&lt;script src="https://code.jquery.com/jquery-3.6.0.min.js"
+		integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+		crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+%= content
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/c&gt;
+&lt;p&gt;If this needed to run in a threaded/multiprocess HTTP server, it would even be possible to replace the communication via EventEmitter objects with a system like Redis - it's pretty simple to spin up a server via Docker and connect to it using e.g. [mod://Mojo::Redis::PubSub].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11142767</root_node>
+<parent_node field_name="parent_node">11142767</parent_node>
+<thread id="11142767">
+<node id="11142768"><node id="11142772"><node id="11142776"/>
+<node id="11142784"/>
+</node>
+</node>
+<node id="11142787"/>
+<node id="11142788"/>
+<node id="11142794"><node id="11142813"/>
+</node>
+<node id="11142798"><node id="11142899"><node id="11142909"/>
+</node>
+</node>
+<node id="11142802"/>
+<node id="11143006"/>
+</thread></node>

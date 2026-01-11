@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11102443" title="RFC: Basic Testing Tutorial" created="2019-07-05 04:24:41" updated="2019-07-05 04:24:41" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="885521">hippo</author>
+<doctext field_name="doctext">&lt;p&gt;Fellow monks, I humbly submit this basic testing tutorial for review. All comments are welcomed - feel free to send a personal message instead of posting a reply if you so wish.&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;Rationale:&lt;/b&gt; There are only a couple of [https://www.perlmonks.org/?node=Tutorials#Testing-Tutorials|tutorials about testing] here in the Monastery and both of them concern mocking. What is missing IMHO is a nice, gentle introduction to testing with some example code to help take out that first massive leap on the learning curve. I was late to the testing game in Perl and it's a regret that I did not get into it sooner. Hopefully this will be useful to those in a similar situation.&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;Updates:&lt;/b&gt; Add examples of &lt;c&gt;is&lt;/c&gt;, &lt;c&gt;like&lt;/c&gt; and &lt;c&gt;skip&lt;/c&gt; as suggested by [haukex] and [stevieb]. Add mention of the &lt;c&gt;t/&lt;/c&gt; directory with prove as suggested by [haukex]. Add mention of &lt;c&gt;done_testing()&lt;/c&gt; as suggested by many respondents.&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;Now published&lt;/b&gt; in the [Tutorials] section as [id://11106010].&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1&gt;Basic Testing Tutorial&lt;/h1&gt;
+
+&lt;p&gt;One of the widely-acknowledged strengths of Perl is its use of
+testing as a cornerstone. Almost every module on CPAN comes with
+its own test suite and there are many modules available to help with
+testing and to make it as painless as possible. For those looking to
+add testing to an existing code base or looking to get started with
+[wp://Test-driven_development|TDD] here is a guide to the basics.&lt;/p&gt;
+
+&lt;h2&gt;Test scripts and TAP&lt;/h2&gt;
+
+&lt;p&gt;Tests in perl are, at their heart, simple scripts which evaluate a
+series of boolean expressions and output the results. No doubt you could
+write such a script in a few minutes and the output would tell you how
+your test criteria have fared. However, there is a standard form to the
+output of the test scripts which is best adhered to. This is the
+[wp://Test Anything Protocol] or TAP for short. By having your script
+output the results in this format, they can be analysed by a wealth of
+other programs called TAP Harnesses to provide summary data,
+highlight failures, etc.&lt;/p&gt;
+
+&lt;p&gt;TAP is an open protocol but was written for Perl originally. It is
+very simple at its heart. The first line of output is a range of test
+numbers starting at 1 and each subsequent line consists of three fields:
+a pass/fail flag which is either "ok" or "not ok", the number of the
+current test and an optional description of that test. Thus a script
+containing a single, passing test might output this when run:&lt;/p&gt;
+
+&lt;code&gt;
+1..1
+ok 1 The expected file "foo" is present
+&lt;/code&gt;
+
+&lt;h2&gt;A first test script&lt;/h2&gt;
+
+&lt;p&gt;So, let's write a simple test script which will output TAP. Suppose
+we want to check that nobody is running our code far in the past. Here
+would be a trivial test.&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+use Time::Piece;
+
+print "1..1\n";
+print localtime(time)-&gt;year &gt; 1999 ? 'ok' : 'not ok';
+print " 1 Not in a previous century\n";
+&lt;/code&gt;
+
+&lt;p&gt;When we run this without time-travelling we see this output:&lt;/p&gt;
+
+&lt;code&gt;
+1..1
+ok 1 Not in a previous century
+&lt;/code&gt;
+
+&lt;p&gt;and we see that our test has passed.&lt;/p&gt;
+
+&lt;h2&gt;Test modules&lt;/h2&gt;
+
+&lt;p&gt;Of course there are modules on CPAN to help with testing. The
+simplest of these is, appropriately enough, [metamod://Test::Simple]
+which is a core module. 
+It is little more than a wrapper with 2 handy functions to ensure that
+your TAP output is in the correct format. We can rewrite our simple
+century test with this module:&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+use Time::Piece;
+use Test::Simple tests =&gt; 1;
+
+ok localtime(time)-&gt;year &gt; 1999, 'Not in a previous century';
+&lt;/code&gt;
+
+&lt;p&gt;Now there are no [doc://print] statements because the module takes
+care of all the output. The &lt;c&gt;tests =&gt; 1&lt;/c&gt; on line 4 sets the number
+of tests we expect to run, so we no longer need to print "1..1\n"
+ourselves. Similarly, the &lt;c&gt;ok&lt;/c&gt; function evaluates the first
+argument as a boolean expresssion and outputs the correct TAP line as a
+result. The second argument is the optional description.&lt;/p&gt;
+
+&lt;p&gt;Technically it is optional but I would encourage you very strongly to
+include a description for any test. If you have a script with say 50
+tests in it and test 37 fails but has no description, how will you know
+what is wrong? Make life easy for yourself (and your collaborators and even
+the users) by describing each test in the TAP output.&lt;/p&gt;
+
+&lt;h3&gt;Other testing functions&lt;/h3&gt;
+
+&lt;p&gt;While the &lt;c&gt;ok&lt;/c&gt; function is useful, the output is a simple
+pass/fail - it doesn't say how it failed. If our century test fails we
+don't know what year it thinks it is. For that we would need to write
+more code or use code someone else has written. Fortunately there is
+a plethora of other testing modules to choose from, the most common of
+which is [metamod://Test::More] (also in core). This gives us a heap
+of other functions so that we can easily perform different types of
+evaluations and receive better feedback when they fail.&lt;/p&gt;
+
+&lt;p&gt;Let's use Test::More and its handy &lt;c&gt;cmp_ok&lt;/c&gt; function in our
+script.&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+use Time::Piece;
+use Test::More tests =&gt; 1;
+
+cmp_ok localtime(time)-&gt;_year, '&gt;', 1999, 'Not in a previous century';
+&lt;/code&gt;
+
+&lt;p&gt;Note that I've introduced a bug here (using &lt;c&gt;_year&lt;/c&gt; instead of
+&lt;c&gt;year&lt;/c&gt;) so that the test will likely fail. Now our test output
+looks like this:&lt;/p&gt;
+
+&lt;code&gt;
+1..1
+not ok 1 - Not in a previous century
+#   Failed test 'Not in a previous century'
+#   at /tmp/bar.t line 6.
+#     '119'
+#         &gt;
+#     '1999'
+# Looks like you failed 1 test of 1.
+&lt;/code&gt;
+
+&lt;p&gt;We can see at a glance what is being tested and that the year we
+actually have (119) is clearly wrong so we need to fix the bug. All
+lines in TAP which start with a hash (#) are comments for the reader:
+Test::More and friends use this to give us verbose reports about
+how things have gone wrong.&lt;/p&gt;
+
+&lt;p&gt;There are a number of other useful comparator functions in Test::More
+such as &lt;c&gt;is&lt;/c&gt; for simple equality, &lt;c&gt;like&lt;/c&gt; for regex and so on.
+These are fully explained in the [metamod://Test::More|Test::More
+documentation], but their usage is quite straightforward. Let's add a
+couple of other tests to see how they are used.&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+use Time::Piece;
+use Test::More tests =&gt; 3;
+
+my $now = localtime (time);
+cmp_ok $now-&gt;_year, '&gt;', 1999, 'Not in a previous century';
+is $now-&gt;time, $now-&gt;hms, 'The time() and hms() methods give the same result';
+like $now-&gt;fullday, qr/day$/, 'The dayname ends in "day"';
+&lt;/code&gt;
+
+&lt;p&gt;There are also control flow structures such as &lt;c&gt;skip&lt;/c&gt; to avoid
+running tests in certain circumstances such as an invalid underlying O/S
+or absence of a particular module. We could use this here to skip the
+test of the dayname if a non-English locale applies.&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+use Time::Piece 1.31_02;
+use Test::More tests =&gt; 3;
+
+Time::Piece-&gt;use_locale;
+my $now = localtime (time);
+
+cmp_ok $now-&gt;_year, '&gt;', 1999, 'Not in a previous century';
+is $now-&gt;time, $now-&gt;hms, 'The time() and hms() methods give the same result';
+
+SKIP: {
+    skip 'Non-English locale', 1 unless substr ($ENV{LANG} // 'en', 0, 2) eq 'en';
+    like $now-&gt;fullday, qr/day$/, 'The dayname ends in "day"';
+}
+&lt;/code&gt;
+
+&lt;p&gt;Further still there are other modules
+in the [https://www.cpan.org/modules/by-module/Test/|Test::* namespace]
+to help with all manner of scenarios.&lt;/p&gt;
+
+&lt;h3&gt;Working to a plan&lt;/h3&gt;
+
+&lt;p&gt;It may be the case that the precise number of tests in the script is not
+known or may change frequently. In those situations, specifying
+the number of tests like &lt;c&gt;use Test::More tests =&gt; 3;&lt;/c&gt; can become
+unwieldy or problematic. Instead we can just &lt;c&gt;use Test::More;&lt;/c&gt; and
+then specify the plan later.&lt;/p&gt;
+
+&lt;p&gt;One method of doing this is to call &lt;c&gt;plan ()&lt;/c&gt; as a stand-alone
+statement. If the number of tests is dependent on an array which is only
+computed at run time we could write&lt;/p&gt;
+
+&lt;code&gt;
+plan tests =&gt; scalar @array;
+&lt;/code&gt;
+
+&lt;p&gt;once the array has been populated.&lt;/p&gt;
+
+&lt;p&gt;Another approach is to use &lt;c&gt;done_testing (scalar @array);&lt;/c&gt; but
+as its name suggests this must only be called after the final test has
+been run. The number of tests can even be omitted entirely here but that
+removes the check that all the tests expected have indeed run, of course.&lt;/p&gt;
+
+&lt;code&gt;
+done_testing ();
+exit;
+&lt;/code&gt;
+
+&lt;h2&gt;Using a harness&lt;/h2&gt;
+
+&lt;p&gt;If you have installed a module from CPAN you will probably have
+noticed the test phase running. You can use the same harness on your own
+test scripts by running the [metamod://prove] command. By default this
+condenses the results of tests and at the end provides a summary of
+which tests in which files have failed, how long the run took, etc. eg:&lt;/p&gt;
+
+&lt;code&gt;
+$ prove /tmp/bar.t
+/tmp/bar.t .. 1/3 
+#   Failed test 'Not in a previous century'
+#   at /tmp/bar.t line 8.
+#     '119'
+#         &gt;
+#     '1999'
+# Looks like you failed 1 test of 3.
+/tmp/bar.t .. Dubious, test returned 1 (wstat 256, 0x100)
+Failed 1/3 subtests 
+        (less 1 skipped subtest: 1 okay)
+
+Test Summary Report
+-------------------
+/tmp/bar.t (Wstat: 256 Tests: 3 Failed: 1)
+  Failed test:  1
+  Non-zero exit status: 1
+Files=1, Tests=3,  0 wallclock secs ( 0.03 usr  0.00 sys +  0.06 cusr  0.01 csys =  0.10 CPU)
+Result: FAIL
+&lt;/code&gt;
+
+&lt;p&gt;This is particularly useful for larger projects with many scripts/modules
+each of which has many tests. If &lt;c&gt;prove&lt;/c&gt; is run with no arguments it will look for
+files matching &lt;c&gt;t/*.t&lt;/c&gt; and run all of those in sequence.&lt;/p&gt;
+
+&lt;h2&gt;Test Driven Development&lt;/h2&gt;
+
+&lt;p&gt;Now that you can test your code you can consider [wp://Test Driven Development|TDD] as a
+methodology. By writing the tests before the code you are setting out
+what you expect the code to do - it's a formal representation of the
+specification. Doing so is a skill in itself and many people make a
+career out of being a tester.&lt;/p&gt;
+
+&lt;h2&gt;See Also&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Modern Perl: [http://www.modernperlbooks.com/books/modern_perl_2016/09-managing-real-programs.html#VGVzdGluZw|Testing]&lt;/li&gt;
+&lt;li&gt;[https://testanything.org/]&lt;/li&gt;
+&lt;li&gt;[id://1154672]&lt;/li&gt;
+&lt;li&gt;[metamod://Test::Tutorial] for another viewpoint&lt;/li&gt;
+&lt;li&gt;[id://1227454] for incorporating testing into development processes&lt;/li&gt;
+&lt;li&gt;[id://536384]&lt;/li&gt;
+&lt;/ul&gt;
+</doctext>
+<thread id="11102443">
+<node id="11102494"><node id="11102671"><node id="11102686"/>
+<node id="11102703"><node id="11104263"/>
+</node>
+</node>
+</node>
+<node id="11102506"><node id="11102672"><node id="11102682"/>
+</node>
+</node>
+<node id="11102705"><node id="11104264"/>
+</node>
+</thread></node>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198097" title="Re: How do I know if a package is on my server?" created="2017-08-27 06:35:24" updated="2017-08-27 06:35:24" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I'm a bit late to the TIMTOWTDI party, but here's my contribution: [doc://Module::Load::Conditional]'s &lt;c&gt;check_install&lt;/c&gt; with [doc://Data::Dumper] (both are core modules):&lt;/p&gt;
+&lt;c&gt;
+use Module::Load::Conditional qw/check_install/;
+use Data::Dumper;
+print Dumper( check_install( module =&gt; 'Some::Module' ) );
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;So how do these things work? Does every server have every Perl package ever written residing on it?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, but: Perl comes with a set of "core" modules, as the other Monks have mentioned. Some OS distributions actually strip out some of these core modules, but in my experience on web servers, that's rare - so you can almost always rely on these core modules being available. In addition, many distributions of *NIX OSes will include a bunch more Perl modules, those required by the other packages installed on the machine. (Or, in the case of Windows, pre-packaged Perl distributions like Strawberry Perl will include a bunch of modules often needed by users - [http://strawberryperl.com/release-notes/5.24.2.1-64bit.html|example].)&lt;/p&gt;
+&lt;p&gt;In the case of *NIX OSes, this initial set of modules will usually be installed via the system's package manager, like &lt;c&gt;apt&lt;/c&gt; or &lt;c&gt;yum&lt;/c&gt;. System administrators then have the option of installing additional modules either via the package manager or via tools like [mod://cpan] or [mod://cpanm] (although using those to install modules into the system Perl is not something I'd recommend, but that's a topic for another post). System admins also have the option of installing whole different versions of Perl, in case their users need them. For example, Pair, which hosts this site, provides at least 5.10.1, 5.12.2, 5.14.1, 5.16.2, and 5.22.1 and a ton of pre-installed modules, most likely based on popular demand by users (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; I should also mention that typically each Perl installation will get its own independent set of directories into which it installs its modules). Installing modules into those custom-built Perls is then usually done via the aforementioned &lt;c&gt;cpan&lt;/c&gt;/&lt;c&gt;cpanm&lt;/c&gt; tools.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Or if the unusual::unique module is not on the server, how would anyone request it to be so?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In the case of web servers, you can probably try submitting a support ticket, and often ISPs will consider installing additional modules system-wide if they are requested by enough users. Otherwise, if they won't do it for you, it depends a bit on what kind of access you have to the web server. If you have shell (ssh) access, there are ways to install modules into your home directory either by hand or using a tool like [mod://local::lib], so that they are available only to your user and your website. If you don't have shell access (FTP-only or whatever), things are a little more tricky - but for Perl modules that are pure-Perl, i.e. they have no C/XS components that need to be compiled on the server, often it is still possible to get them onto the server, but that's also a topic for another post.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1198056</root_node>
+<parent_node field_name="parent_node">1198056</parent_node>
+<thread id="1198056">
+<node id="1198057"/>
+<node id="1198058"/>
+<node id="1198059"/>
+<node id="1198060"/>
+<node id="1198062"><node id="1198127"/>
+</node>
+<node id="1198067"/>
+<node id="1198070"/>
+<node id="1198073"/>
+<node id="1198076"/>
+<node id="1198082"/>
+<node id="1198097"/>
+</thread></node>

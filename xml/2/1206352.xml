@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1206352" title="Re: Read file text and find fibonacci series" created="2017-12-28 14:12:50" updated="2017-12-28 14:12:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;This appears to have been posted to [Meditations], but I'm not sure if you meant it to be a question? Anyway, you're describing scanning a string looking for a pattern, which is exactly what regular expressions are good at. Ignoring the duplicate 1's, there are only 29 Fibonacci numbers with 1 to 6 digits, a regex can handle that just fine (and it would have no problem handling [id://1180085|much more]). See [id://1179840].&lt;/p&gt;
+&lt;spoiler&gt;
+&lt;p&gt;This code can handle huge numbers too, try changing &lt;c&gt;$DIGITS&lt;/c&gt; to e.g.
+ &lt;c&gt;60&lt;/c&gt;. And note that you can use the same regex to find sequences of numbers, e.g. &lt;c&gt;(?:$re){3,}&lt;/c&gt; (although that doesn't check if they are consecutive in the sequence).&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+my $DIGITS = 6;
+
+my %fib;
+{ use bigint;
+for ( my ($f,$t)=(1,1); length($f)&lt;=$DIGITS; ($f,$t)=($t,$f+$t) ) {
+	my $s = "$f";
+	$fib{$s} = [$s];
+	while (length $s &gt; 1) {
+		chop $s;
+		push @{$fib{$f}}, $s if exists $fib{$s};
+	}
+} }
+#use Data::Dump; dd \%fib;
+print "There are ",0+keys(%fib)," fibs with up to $DIGITS digits\n";
+
+my ($re) = map {qr/$_/} join '|', map {quotemeta}
+	sort { length $b &lt;=&gt; length $a or $b cmp $a } keys %fib;
+print "$re\n";
+
+while (&lt;DATA&gt;) {
+	chomp;
+	print "Searching '$_'\n";
+	while (/(?=($re))./g) {
+		print "Found ",join(', ',@{$fib{$1}})," at ",$-[0],"\n";
+	}
+}
+
+__DATA__
+496934634523123433886451447233402467622113
+690168906931029935139391829792095612517948949963798093315456
+&lt;/c&gt;
+&lt;/spoiler&gt;
+&lt;p&gt;&lt;strike&gt;&lt;i&gt;Update:&lt;/i&gt; You appear to have edited your node to remove its content, please see [id://17557] for why you shouldn't do that.&lt;/strike&gt; Content restored, thanks [Athanasius]. &lt;small&gt;&lt;i&gt;Also made very minor fixups.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1206326</root_node>
+<parent_node field_name="parent_node">1206326</parent_node>
+<thread id="1206326">
+<node id="1206352"><node id="1206569"><node id="1206585"/>
+</node>
+</node>
+<node id="1206544"/>
+<node id="1206550"/>
+</thread></node>

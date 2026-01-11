@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1212715" title="Re: What am I doing wrong here?" created="2018-04-12 02:55:43" updated="2018-04-12 02:55:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The main thing is probably the URL "&lt;c&gt;http://~zach3327/public_html/chapter12/c12case1b.html&lt;/c&gt;": &lt;c&gt;~zach3327&lt;/c&gt; is probably not the hostname. Try removing the &lt;c&gt;http://&lt;/c&gt; and starting the URL with just &lt;c&gt;/~zach3327/...&lt;/c&gt; instead (you could also get the script's location in different formats via [mod://CGI].pm's &lt;c&gt;url&lt;/c&gt; function, and if you need further URL manipulation, see [mod://URI] - &lt;i&gt;Update:&lt;/i&gt; [id://1212732|see my other post]). It also seems that you've embedded hard newlines in the string as &lt;c&gt;"Location:\n\t    ..."&lt;/c&gt; - I'd recommend not doing that, i.e. "&lt;c&gt;print "Location: /~zach3327/...&lt;/c&gt;".&lt;/p&gt;
+&lt;p&gt;I also see a few other issues:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Note the casing: &lt;c&gt;&lt;input type="text" name="name"&lt;/c&gt; vs. &lt;c&gt;param('Name')&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;You're not using [doc://warnings], which would help you catch other potential problems if they arise.&lt;/li&gt;
+&lt;li&gt;Your style of HTML is fairly old, and contain at least one typo that I see right off the bat (&lt;c&gt;...&lt;/HEAD\n"&lt;/c&gt;). If you are going from a tutorial of some kind, I think it's a pretty old one. That'd also explain the use of [mod://CGI].pm, which isn't really modern anymore. See also [id://1182902], [id://1177808], and [mod://CGI::Alternatives].&lt;/li&gt;
+&lt;li&gt;By printing out &lt;c&gt;$name&lt;/c&gt; as part of the &lt;del&gt;URL&lt;/del&gt;&lt;ins&gt;HTML&lt;/ins&gt; without escaping it, you are exposing yourself to a [http://en.wikipedia.org/wiki/Special:Search?search=Cross-site%20scripting|Cross-site scripting] (XSS) attack ([https://excess-xss.com/|tutorial]). You should at least use &lt;c&gt;escapeHTML&lt;/c&gt; from [mod://CGI::HTML::Functions].&lt;/li&gt;
+&lt;li&gt;You are printing some things yourself that you could be using [mod://CGI].pm's functionality for: see its &lt;c&gt;header&lt;/c&gt; and &lt;c&gt;redirect&lt;/c&gt; functions.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Edit: Fixed thinko.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1212712</root_node>
+<parent_node field_name="parent_node">1212712</parent_node>
+<thread id="1212712">
+<node id="1212715"/>
+<node id="1212726"><node id="1212732"/>
+</node>
+</thread></node>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1185748" title="Re: Joining multiple lines together while parsing" created="2017-03-24 06:22:31" updated="2017-03-24 06:22:31" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If you could show some more sample input and especially the expected output (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; root node has been edited to include that&lt;/small&gt;), that would be helpful, for example I'm not sure if you want "Warning bad news here" to appear in the output.&lt;/p&gt;
+&lt;p&gt;Based on what you've provided, here's one way, using a [doc://perlre#Lookaround-Assertions|negative lookahead] to prevent the "keywords" from being interpreted as continuations.&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+use Data::Dumper;
+
+local $/ = "\n\n\n";
+while (&lt;DATA&gt;) {
+	next unless m/Dumpdata example/;
+	my %row = m/ ^ \s* (\w+:)
+		\s+ ( (?: (?!^\s*\w+:) . )+ ) /xmsg;
+	print Dumper(\%row);
+}
+
+__DATA__
+
+Dumpdata example
+-----------------
+
+Warning bad news here 
+    Detail:              Some really nice infos these are 
+    Info:              This is a problem
+                       but there is a solution
+
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+$VAR1 = {
+          'Detail:' =&gt; 'Some really nice infos these are 
+',
+          'Info:' =&gt; 'This is a problem
+                       but there is a solution
+
+'
+        };
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1185742</root_node>
+<parent_node field_name="parent_node">1185742</parent_node>
+<thread id="1185742">
+<node id="1185745"><node id="1185747"/>
+</node>
+<node id="1185748"><node id="1185752"><node id="1185754"><node id="1185757"><node id="1185761"/>
+</node>
+<node id="1185763"><node id="1185764"/>
+<node id="1185765"/>
+</node>
+<node id="1185766"/>
+</node>
+</node>
+</node>
+<node id="1185750"/>
+<node id="1185807"/>
+<node id="1185843"/>
+</thread></node>

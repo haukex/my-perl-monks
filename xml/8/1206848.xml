@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1206848" title="To glob or not to glob" created="2018-01-07 07:54:23" updated="2018-01-07 07:54:23" _doctext_mode="strict"><type id="120">perlmeditation</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I am often torn when it comes to recommending Perl's [doc://glob|&lt;c&gt;glob&lt;/c&gt;] (aka the [doc://perlop#I/O-Operators|&lt;c&gt;&lt;...&gt;&lt;/c&gt; operator], [id://1205509|when it isn't] [doc://readline]). On the one hand, it's built in and often shortens code, on the other, it has several caveats one should be aware of.&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;&lt;c&gt;glob&lt;/c&gt; does not list filenames beginning with a dot by default. For someone coming from a unixish shell, this might make perfect sense, but for someone coming from, for example, a [doc://readdir] implementation, this might be surprising, and so it should at least be mentioned.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;Probably the biggest problem I see with &lt;c&gt;glob&lt;/c&gt; is variables interpolated into the pattern. The default &lt;c&gt;glob&lt;/c&gt; splits its argument on whitespace, which means that, for example, &lt;c&gt;glob("$dir/*.log")&lt;/c&gt; is a problem when &lt;c&gt;$dir&lt;/c&gt; is &lt;c&gt;'c:/program files/foo'&lt;/c&gt;. This can be avoided by doing [doc://File::Glob|&lt;c&gt;use File::Glob ':bsd_glob';&lt;/c&gt;] (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; except on Perls before v5.16, please see [Tux]'s [id://1207102|reply] and below for alternatives), but that doesn't help with the next problem:&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;If a variable interpolated into the pattern contains &lt;c&gt;glob&lt;/c&gt; metacharacters (&lt;c&gt;\[]{}*?~&lt;/c&gt;), this will cause unexpected results for anyone not aware of this list and expecting the characters to be taken literally.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;del&gt;Lastly,&lt;/del&gt; [doc://File::Glob] can override &lt;c&gt;glob&lt;/c&gt; globally. If, for example, you use it in a module, and someone else overrides the default &lt;c&gt;glob&lt;/c&gt;, then suddenly your code might not behave the way you expected.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;small&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/small&gt; &lt;c&gt;glob&lt;/c&gt; in scalar context with a variable pattern also suffers from surprising behavior, as [choroba] pointed out in his [id://1206895|reply] - thank you! ([id://1187675|additional info]) &lt;small&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/small&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;That's why I think advising the use of &lt;c&gt;glob&lt;/c&gt; &lt;i&gt;without&lt;/i&gt; mentioning the caveats is potentially problematic. Perhaps one wants to create a backup of a folder and don't want to miss any files, say for example, &lt;c&gt;.htaccess&lt;/c&gt;? And I also often see things like &lt;c&gt;glob("$dir/*")&lt;/c&gt; going without comment.&lt;/p&gt;
+
+&lt;p&gt;Personally I find [doc://readdir], in combination with some of the functions from [doc://File::Spec], to be a decent, if slightly complicated, tool ([id://1206786|one example]). One better alternative among several is &lt;c&gt;children&lt;/c&gt; from [mod://Path::Class::Dir], or methods from one of the other modules like [mod://Path::Tiny]. (Modules like [mod://File::Find::Rule] often get mentioned as alternatives, except that those of course recurse into subdirectories by default.)&lt;/p&gt;
+&lt;c&gt;
+use Path::Class qw/dir/;
+my @files = dir('foo', 'bar quz', 'baz')-&gt;children;
+# @files includes .dot files, but not . and ..
+# and its elements are Path::Class objects
+print "&lt;$_&gt;\n" for @files;
+&lt;/c&gt;
+
+&lt;p&gt;Now, of course this isn't to say [doc://glob|&lt;c&gt;glob&lt;/c&gt;] is all bad, I've certainly used and recommended it plenty of times. If one has read all of its documentation, including [doc://File::Glob], and is aware of all the caveats, and especially if one is using fixed strings for the patterns, it can be perfectly fine. But I still think it should not be blindly used or recommended.&lt;/p&gt;
+</doctext>
+<thread id="1206848">
+<node id="1206860"/>
+<node id="1206865"/>
+<node id="1206895"/>
+<node id="1206899"/>
+<node id="1206905"/>
+<node id="1207015"/>
+<node id="1207102"><node id="1207115"/>
+</node>
+</thread></node>

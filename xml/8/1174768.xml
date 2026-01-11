@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1174768" title="Re^2: If line matches, print column, else print file name" created="2016-10-26 07:33:45" updated="2016-10-26 07:33:45" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1174658">Yakup</author>
+<doctext field_name="doctext">&lt;p&gt; 
+Laurent_R, GotToBTru thanks a lot to both of you for pointing out mistakes in my code. I don't know how could I not notice them before. I have followed your advices to edit the code and also edited few other things and now it works as expected. &lt;/p&gt; 
+
+&lt;code&gt;
+
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use File::Basename;
+my $lab_root = dirname $0;
+
+opendir( DH, $lab_root) or die "Cannot open $lab_root: $!\n";
+my @kickstarts = grep ( /\.ks$/, readdir(DH));
+
+my @bsname ;
+my @predefined;
+my $hostname;
+for my $kickstart (@kickstarts) {
+    open my $fh, $kickstart or die "Cannot open $kickstart: $!";
+
+    while (&lt;$fh&gt;) {
+        chomp;
+        if ( /(?s)^((?!#).)*--hostname=/ ) {
+            my @fields = split /[=\s]/;
+            $hostname = $fields[1];
+            push @bsname , $hostname;
+            push @predefined , $kickstart;
+        }
+    }
+    close $fh;
+    next if $kickstart ~~ @predefined;
+
+    $hostname = (split /\./, $kickstart )[0];
+    push @bsname, $hostname;
+}&lt;/code&gt;</doctext>
+<root_node field_name="root_node">1174719</root_node>
+<parent_node field_name="parent_node">1174723</parent_node>
+<thread id="1174719">
+<node id="1174720"/>
+<node id="1174723"><node id="1174768"><node id="1174775"><node id="1174786"/>
+</node>
+</node>
+</node>
+</thread></node>

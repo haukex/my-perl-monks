@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="628059" title="Re: Fixed Position Column Records" created="2007-07-21 22:12:47" updated="2007-07-21 18:12:47" _doctext_mode="lenient"><type id="11">note</type>
+<author id="171588">BrowserUk</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm assuming that you don't know the lengths of each field in advance. Ie. That you are hoping to use the same code to process similar files containing fixed length records where the lengths of the fields can vary from one file to the next?
+
+&lt;p&gt;To that end, I've come up with an (imperfect) mechanism to allow the program to determine the offsets by inspection. It requires two passes of the file. 
+
+&lt;ol&gt;&lt;li&gt;During the first pass, each record is string-OR'd with a mask string that starts out containing all spaces.
+
+&lt;p&gt;By the end of that pass, the mask will only contain spaces in positions where &lt;i&gt;every&lt;/i&gt; record also contained a space in that position.
+&lt;p&gt;We then scan the mask and use the positions of the remaining spaces to build an [unpack] template.
+&lt;/li&gt;&lt;li&gt;That template is used during the second pass of the file to break up the records into fields.
+&lt;/li&gt;&lt;/ol&gt;
+
+
+&lt;code&gt;
+#! perl -slw
+use strict;
+
+my @lines = &lt;DATA&gt;;
+
+## Pass 1. OR the records with a mask of spaces
+my $mask = chr(32) x length $lines[ 0 ];
+$mask |= $_ for @lines;
+
+## Detect the spaces that remain and build the template
+my $templ = '';
+$templ .= 'a' . length( $1 ) . 'x' . length( $2 ) . ' ' 
+    while $mask =~ m[(\S+)(\s+|$)]g;
+
+$templ =~ s[x\d+\s+$][]; ## Strip redundant last 'xN'
+print $templ;
+
+## Split the records and output delimited by '|'
+print join '|', unpack $templ, $_ for @lines;
+
+__DATA__
+The First One Here Is Longer. Collie SN      262287630  77312    93871  MVP
+A  Second (PART) here         First In 20 MT 169287655  506666   61066  RTD
+3rd Person "Something"        X&amp;Y No SH      564287705  45423    52443  RTE
+The Fourth Person 20          MLP 4000       360505504  3530     72201  VRE
+The Fifth Name OR Something   Twin 200 SH    469505179  3530     72201  VRE
+The Sixth Person OR Item      MLP            260505174  3,530   72,201  VRE
+70 The Seventh Record         MLP            764205122  3530     72201  VRE
+The Eighth Person MLP         MLP            160545154  3530      7220  VRE
+&lt;/code&gt;
+
+&lt;p&gt;The output&lt;code&gt;
+a29x1 a11x1 a2x1 a9x2 a6x2 a6x2 a4
+The First One Here Is Longer.|Collie SN  |  |262287630|77312 | 93871|MVP
+A  Second (PART) here        |First In 20|MT|169287655|506666| 61066|RTD
+3rd Person "Something"       |X&amp;Y No SH  |  |564287705|45423 | 52443|RTE
+The Fourth Person 20         |MLP 4000   |  |360505504|3530  | 72201|VRE
+The Fifth Name OR Something  |Twin 200 SH|  |469505179|3530  | 72201|VRE
+The Sixth Person OR Item     |MLP        |  |260505174|3,530 |72,201|VRE
+70 The Seventh Record        |MLP        |  |764205122|3530  | 72201|VRE
+The Eighth Person MLP        |MLP        |  |160545154|3530  |  7220|VRE
+&lt;/code&gt;
+
+&lt;p&gt;The above shows why it is imperfect. It 'found' an extra column at the end of the second column. 
+
+&lt;p&gt;However, the more lines in the file, statistically, the less likelyhood of word breaks 'lining up' throughout the file. It shouldn't happen too often on files of any great length. (Famous last words:)
+
+&lt;p&gt;Whether that's a flaw you can live with is your decision. I tried to think of a heuristic to determine when a column should be combined with a neihbour, but it will depend entirely on the file and the data.
+
+&lt;p&gt;I've used the 'a' template which pads fields with spaces because it makes for ease of alignment for printing, but use 'A' if you want the trailing spaces stripped.
+
+&lt;p&gt;Update: I thought of a heuristic that would probably work, but it would require at least a third pass.
+
+&lt;p&gt;Left or right justified, one end or the other of every field should contain a non-space char in every record. 
+
+&lt;P&gt;Another pass that inspected the first and last chars of each field could detect 'false' columns. You'd then need to decide whether that column should be combined with the preceding or the following field. Another heuristic is called for, but whatever you come up with, it is possible to dream up scenarios in which it would fail.
+
+&lt;p&gt;In the case above, the fact that the field that follows the false field has a non-space in the first char in every record in the file is a strong indication that the false field should be combined with its precedant. But had the following field been a right-justified field, then things would be less clear cut.
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-171588"&gt;
+&lt;hr /&gt;
+&lt;font size=1 &gt;
+&lt;div&gt;Examine what is said, not who speaks -- Silence betokens consent -- Love the truth but pardon error.&lt;/div&gt;
+&lt;div&gt;"Science is about questioning the status quo. Questioning authority". &lt;/div&gt;
+&lt;div&gt;In the absence of evidence, opinion is indistinguishable from prejudice.&lt;/div&gt;
+&lt;div&gt;[http://news.bbc.co.uk/1/hi/education/6202877.stm|"Too many &amp;#91;&amp;#93; have been sedated by an oppressive environment of political correctness and risk aversion."]&lt;/div&gt;
+&lt;/font&gt;
+
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">628055</root_node>
+<parent_node field_name="parent_node">628055</parent_node>
+<thread id="628055">
+<node id="628057"/>
+<node id="628059"><node id="628061"/>
+<node id="684848"><node id="684894"/>
+</node>
+<node id="684868"/>
+</node>
+<node id="628064"><node id="628075"/>
+</node>
+<node id="628139"><node id="628331"/>
+</node>
+<node id="687260"/>
+</thread></node>

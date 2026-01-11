@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1220209" title="Running commands with Net::SSH2" created="2018-08-10 11:52:11" updated="2018-08-10 11:52:11" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="648867">BernieC</author>
+<doctext field_name="doctext">I'm not sure where the right place here on perlmonks is to share coding examples.  But.. after much flailing
+about
+i've managed to tame ssh2 {and auth and all of that} and  I have a working sub that does exactly what I want and I thought I'd share. My approach to using the SSH2 connection is to send commands, poring over the output of each to decide what to do next until I"m done. &lt;code&gt;# NB: you can only do one command on a channel so we get the channel
+##  do the command give back the output then close the channel   Note that the command
+##  must be a fully "shell punctuated and escaped" 
+sub docmd
+{   my $chan = $ssh2-&gt;channel() or $ssh2-&gt;die_with_error ;
+    $chan-&gt;exec("($_[0]) 2&gt;&amp;1") ;   # 
+    my $out = "";
+    while (!$chan-&gt;eof)
+    {   my $buffer = "";
+        my $bytes = $chan-&gt;read($buffer, 100) ;
+        $ssh2-&gt;die_with_error if $bytes &lt; 0 ;
+        $out .= $buffer ;
+    }
+    return $out ;
+}
+&lt;/code&gt;
+and I tested it with:&lt;code&gt;print docmd("cd tmp; ls") ;
+print docmd("cd bin; ls") ;
+$ssh2-&gt;disconnect() ;&lt;/code&gt;
+&lt;p&gt; and I confess that I was amazed that it worked.</doctext>
+<thread id="1220209">
+<node id="1220214"/>
+</thread></node>

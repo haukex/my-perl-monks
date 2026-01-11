@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11107748" title="Re: [OT] SQL &quot;on duplicate key&quot; custom action" created="2019-10-21 03:36:03" updated="2019-10-21 03:36:03" _doctext_mode="lenient"><type id="11">note</type>
+<author id="5348">Corion</author>
+<doctext field_name="doctext">&lt;p&gt;I think the "best" approach (if that is supported by your DBMS) are &lt;c&gt;ON UPDATE&lt;/c&gt; [https://www.postgresql.org/docs/12/sql-createtrigger.html|triggers], or if that import is a one time thing only, creating a unique key across all columns:&lt;/p&gt;
+&lt;c&gt;
+create or replace function skip_insert() returns trigger language plpgsql as $$
+begin
+
+  return null;
+
+end $$;
+
+create or replace function raise_exception() returns trigger language plpgsql as $$
+begin
+
+  RAISE EXCEPTION 'UPDATE changing row values not allowed';
+
+end $$;
+
+CREATE TRIGGER mytrigger ON records INSTEAD OF UPDATE
+    WHEN old.PriKey = new.PriKey and old.Foo=new.Foo and old.Bar=new.Bar
+    FOR EACH ROW
+    EXECUTE PROCEDURE skip_insert()
+CREATE TRIGGER mytrigger ON records INSTEAD OF UPDATE
+    WHEN old.PriKey = new.PriKey and (old.Foo!=new.Foo or old.Bar!=new.Bar)
+    FOR EACH ROW
+    EXECUTE PROCEDURE raise_exception()
+&lt;/c&gt;
+&lt;p&gt;... but this approach does not handle NULL values.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11107746</root_node>
+<parent_node field_name="parent_node">11107746</parent_node>
+<thread id="11107746">
+<node id="11107748"><node id="11107765"><node id="11107768"><node id="11107774"/>
+</node>
+</node>
+<node id="11107769"><node id="11107770"/>
+</node>
+<node id="11111976"><node id="11113365"/>
+<node id="11137400"/>
+</node>
+</node>
+<node id="11107752"><node id="11107776"/>
+</node>
+<node id="11107753"><node id="11107775"><node id="11107838"/>
+</node>
+<node id="11111977"/>
+</node>
+<node id="11107767"><node id="11107778"><node id="11107831"/>
+<node id="11137456"/>
+<node id="11137477"/>
+</node>
+</node>
+<node id="11137458"><node id="11137472"/>
+</node>
+</thread></node>

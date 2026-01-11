@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201067" title="Re: Problems Getting the Template Correct when Using unpack()" created="2017-10-10 02:38:26" updated="2017-10-10 02:38:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;When un[doc://pack]ing data that contains a length record followed by data of that length, the &lt;c&gt;/&lt;/c&gt; template character helps, although in this case it makes it a two-stage process:&lt;/p&gt;
+&lt;c&gt;
+my ($data,$taillen) = unpack 'C/aC', $inbuf;
+my @recs = (length($data), unpack('C7a6A*',$data), $taillen);
+&lt;/c&gt;
+&lt;p&gt;where as far as I can tell &lt;c&gt;@recs&lt;/c&gt; is the same as your &lt;c&gt;($event_len, $year, ..., $tail_len)&lt;/c&gt;. Also, TIMTOWTDI, the following return the same &lt;c&gt;@recs&lt;/c&gt;, although I think these are a bit more ugly than the above:&lt;/p&gt;
+&lt;c&gt;
+# "X" means "back up one byte"
+my @recs = unpack 'C8a6A*XC', $inbuf;
+chop $recs[-2]; # remove final "tail_len" C from the string
+
+# - or -
+
+my @recs = $inbuf=~m{\A (.) (.)(.)(.)(.)(.)(.)(.)
+	(.{6}) (.*) (\1) \z}msxaa or die "didn't match";
+$_=ord for @recs[0..7,10];
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1201064</root_node>
+<parent_node field_name="parent_node">1201064</parent_node>
+<thread id="1201064">
+<node id="1201065"><node id="1201092"><node id="1201095"><node id="1201121"/>
+</node>
+</node>
+</node>
+<node id="1201067"/>
+<node id="1201122"><node id="1201124"><node id="1201145"/>
+</node>
+</node>
+<node id="1201125"><node id="1201160"/>
+</node>
+<node id="1201187"/>
+</thread></node>

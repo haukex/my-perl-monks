@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1177553" title="find module name from the module archive" created="2016-12-09 13:42:06" updated="2016-12-09 13:42:06" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="922586">Lotus1</author>
+<doctext field_name="doctext">&lt;p&gt;Here is something I hacked quickly to find the module name from the tar-gzip file. I poked around in the makefile and readme files of the archives but didn't see anything consistent I could parse to find the name. Is there a better way? This seems likely to break in future use.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+
+my $module_file = 'Authen-SASL-Perl-NTLM-0.003.tar.gz';
+my $module = $module_file;
+
+$module =~ s/(.*)-.*/$1/;
+print "$module_file =&gt; $module\n";
+$module =~ s/-/::/g;
+print "$module_file =&gt; $module\n";
+
+print "$module ", try_load($module) ? "is":"is not", " installed.\n";
+
+sub try_load {
+  my $mod = shift;
+
+  eval("use $mod");
+
+  if ($@) {
+    return(0);
+  } else {
+    return(1);
+  }
+}
+__DATA__
+
+Authen-SASL-Perl-NTLM-0.003.tar.gz =&gt; Authen-SASL-Perl-NTLM
+Authen-SASL-Perl-NTLM-0.003.tar.gz =&gt; Authen::SASL::Perl::NTLM
+Authen::SASL::Perl::NTLM is not installed.
+
+&lt;/c&gt;</doctext>
+<thread id="1177553">
+<node id="1177556"><node id="1177620"/>
+</node>
+<node id="1177558"/>
+<node id="1177559"/>
+<node id="1177562"/>
+<node id="1177563"/>
+<node id="1177583"/>
+<node id="1177592"><node id="1177594"/>
+</node>
+<node id="1177593"><node id="1177624"><node id="1178322"/>
+</node>
+</node>
+<node id="1177600"/>
+</thread></node>

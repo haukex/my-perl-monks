@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101367" title="chunking up texts correctly for online translation" created="2019-06-14 17:47:39" updated="2019-06-14 17:47:39" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;p&gt;Hello Monks,&lt;/p&gt;
+&lt;p&gt;I've been developing a primitive package that translates along the lines of _Intermediate Perl_, specifically using module-starter and customizing an appropriate Makefile.PL . I may have put files in loopy places due to inexperience, but I am getting preliminary results. Of my 3 test files, 2 of 3 are translated faithfully. I have output and source to show, to motivate a couple questions:&lt;/p&gt;
+
+&lt;readmore&gt;
+
+&lt;p&gt;Here are the driver script and the package:&lt;/p&gt;
+&lt;c&gt;#!/usr/bin/perl -w
+use 5.011;
+
+use WWW::Google::Translate;
+use Data::Dumper;
+use open OUT =&gt; ':utf8';
+use Path::Tiny;
+use lib ".";
+use translate;
+binmode STDOUT, 'utf8';
+use POSIX qw(strftime);
+
+### values to initialize  (customize these to suit)
+
+my $ini_path = qw( /home/bob/Documents/html_template_data/3.values.ini );
+my $sub_hash = "google";
+my ( $from, $to ) = ( 'en', 'ru' );    #put defaults here
+my $input_directory =
+  qw( /home/bob/Documents/meditations/castaways/translate/data
+);
+my $output_appendage = "output";
+
+## get values for google from an .ini file
+my $key = get_config( $ini_path, $sub_hash );
+
+say "Would you like to see the possibilities?";
+my $prompt1 = &lt;STDIN&gt;;
+chomp $prompt1;
+if ( $prompt1 eq ( "y" | "Y" ) ) {
+  show_lang_codes();
+}
+
+say "Would you like to change the from language?";
+$prompt1 = &lt;STDIN&gt;;
+chomp $prompt1;
+if ( $prompt1 eq ( "y" | "Y" ) ) {
+  $from = get_lang($from);
+}
+
+say "Would you like to change the to language?";
+$prompt1 = &lt;STDIN&gt;;
+chomp $prompt1;
+if ( $prompt1 eq ( "y" | "Y" ) ) {
+  $to = get_lang($to);
+}
+
+# create output directory
+say "Creating output directory as nephew of input";
+say "using localtime for uniqueness";
+my $munge = strftime( "%d-%m-%Y-%H-%M-%S\.txt", localtime );
+
+my $parent = path($input_directory)-&gt;parent;
+my $out_dir = path( $parent, $output_appendage, $munge );
+
+my $wgt = WWW::Google::Translate-&gt;new(
+  {
+    key            =&gt; $key,
+    default_source =&gt; $from,
+    default_target =&gt; $to,
+  }
+);
+
+my @texts = path("$input_directory")-&gt;children(qr/\.txt$/);
+say "texts are @texts";
+for my $file (@texts) {
+
+  local $/ = "";
+  open my $fh, '&lt;', $file;
+  my $base_name = path("$file")-&gt;basename;
+  my $out_file = path( $out_dir, $base_name )-&gt;touchpath;
+  say "out_file is $out_file";
+  while (&lt;$fh&gt;) {
+
+    print "New Paragraph: $_";
+    my $r = get_trans( $wgt, $_ );
+    for my $trans_rh ( @{ $r-&gt;{data}-&gt;{translations} } ) {
+      #print $trans_rh-&gt;{translatedText}, "\n";
+      my $result = $trans_rh-&gt;{translatedText};
+      say "result is $result ";
+      my @lines = split /\n/, $result;
+      push @lines, "\n";
+      path("$out_file")-&gt;append_utf8(@lines);
+    }
+
+  }
+
+  close $fh;
+
+}
+&lt;/c&gt;
+&lt;c&gt;package translate;
+
+use 5.006;
+use strict;
+use warnings;
+
+require Exporter;
+
+our @ISA    = qw(Exporter);
+our @EXPORT = qw(  get_config get_trans get_lang show_lang_codes reverse_trans);
+our $VERSION = '0.01';
+
+=head1 SYNOPSIS
+
+
+
+  use translate;
+
+  my $key = get_config('path-to-ini-file', $sub_hash);
+  my $from = get_lang($from_default);
+  my $to = get_lang($to_default);
+  my $trans_output_file = get_trans($input_file, $from, $to, $key);
+  my $reverse = reverse_trans($trans_output_file, $to, $from, $key);
+
+
+
+=cut
+
+sub get_config {
+
+  use Config::Tiny;
+  use Data::Dumper;
+  use open OUT =&gt; ':encoding(UTF-8)';
+  use Path::Tiny;
+  use 5.011;
+
+  my ( $ini_path, $sub_hash ) = @_;
+  say "ini path is $ini_path";
+  say "sub_hash is $sub_hash";
+  my $Config = Config::Tiny-&gt;new;
+  $Config = Config::Tiny-&gt;read( $ini_path, 'utf8' );
+  say Dumper $Config;
+  my $key = $Config-&gt;{$sub_hash}{'api_key_1'};
+  return $key;
+}
+
+sub get_lang {
+
+  use Path::Tiny;
+  use 5.011;
+
+  my $lang = shift;
+
+  say "Would you like to change languages?";
+  my $prompt1 = &lt;STDIN&gt;;
+  chomp $prompt1;
+  if ( $prompt1 eq ( "y" | "Y" ) ) {
+    say "enter new lang: ";
+    $prompt1 = &lt;STDIN&gt;;
+    chomp $prompt1;
+
+    $lang = $prompt1;
+
+  }
+
+  return $lang;
+
+}
+
+sub show_lang_codes {
+
+  use Path::Tiny;
+  use 5.011;
+
+  my $path_to_langs = path( "my_data", "lang_data", "1.langlist.txt" );
+  my $data = $path_to_langs-&gt;slurp_utf8;
+  say "$data";
+
+}
+
+sub get_trans {
+
+  use Path::Tiny;
+  use 5.011;
+  use WWW::Google::Translate;
+
+  my ( $wgt, $paragraph ) = @_;
+
+  my $r = $wgt-&gt;translate( { q =&gt; $paragraph } );
+  return $r;
+
+}
+
+1;    # End of translate&lt;/c&gt;
+
+
+&lt;p&gt;This is typical output for my first two input files:&lt;/p&gt;
+
+&lt;pre&gt;New Paragraph:         Did the last version also pass all tests? Were the changes required? Were new tests added to cover the changes?
+
+result is         &amp;#1055;&amp;#1086;&amp;#1089;&amp;#1083;&amp;#1077;&amp;#1076;&amp;#1085;&amp;#1103;&amp;#1103; &amp;#1074;&amp;#1077;&amp;#1088;&amp;#1089;&amp;#1080;&amp;#1103; &amp;#1090;&amp;#1072;&amp;#1082;&amp;#1078;&amp;#1077; &amp;#1087;&amp;#1088;&amp;#1086;&amp;#1096;&amp;#1083;&amp;#1072; &amp;#1074;&amp;#1089;&amp;#1077; &amp;#1090;&amp;#1077;&amp;#1089;&amp;#1090;&amp;#1099;? &amp;#1041;&amp;#1099;&amp;#1083;&amp;#1080; &amp;#1083;&amp;#1080; &amp;#1085;&amp;#1077;&amp;#1086;&amp;#1073;&amp;#1093;&amp;#1086;&amp;#1076;&amp;#1080;&amp;#1084;&amp;#1099; &amp;#1080;&amp;#1079;&amp;#1084;&amp;#1077;&amp;#1085;&amp;#1077;&amp;#1085;&amp;#1080;&amp;#1103;? &amp;#1041;&amp;#1099;&amp;#1083;&amp;#1080; &amp;#1083;&amp;#1080; &amp;#1076;&amp;#1086;&amp;#1073;&amp;#1072;&amp;#1074;&amp;#1083;&amp;#1077;&amp;#1085;&amp;#1099; &amp;#1085;&amp;#1086;&amp;#1074;&amp;#1099;&amp;#1077; &amp;#1090;&amp;#1077;&amp;#1089;&amp;#1090;&amp;#1099; &amp;#1076;&amp;#1083;&amp;#1103; &amp;#1087;&amp;#1086;&amp;#1082;&amp;#1088;&amp;#1099;&amp;#1090;&amp;#1080;&amp;#1103; &amp;#1080;&amp;#1079;&amp;#1084;&amp;#1077;&amp;#1085;&amp;#1077;&amp;#1085;&amp;#1080;&amp;#1081;?
+&lt;/pre&gt;
+&lt;p&gt;It chunks up nicely and formats well in the output file too.&lt;/p&gt;
+&lt;p&gt;My final input file did not. It is Shelley's Frankenstein from Gutenberg texts online. With my input record separator as it is, it seems to slurp in the entire book at once:&lt;/p&gt;
+
+&lt;c&gt;
+,
+source =&gt; en,
+format =&gt; text
+unsuccessful translate POST for 450783 bytes: Request payload size exceeds the limit: 204800 bytes.
+check that BOB-THINKPAD-SL510 has API Access for this API key
+at https://console.developers.google.com/cloud-resource-manager
+$ 
+&lt;/c&gt;
+&lt;p&gt;I took a look at it in the hex editor, and the Shelley text has&lt;/p&gt;
+
+&lt;c&gt;0D 0A &lt;/c&gt;
+&lt;p&gt;as line feeds, while the first two have 0A . Is this not the Unix versus windows line feed problem? If so, it must be a well-worn path.&lt;/p&gt;
+&lt;p&gt;Q1: How do I rewrite my script so that I get paragraph-sized chunks getting sent to google regardless of line feed encoding?&lt;/p&gt;
+
+
+&lt;c&gt;    my $r = get_trans( $wgt, $_ );
+    for my $trans_rh ( @{ $r-&gt;{data}-&gt;{translations} } ) {
+      #print $trans_rh-&gt;{translatedText}, "\n";
+      my $result = $trans_rh-&gt;{translatedText};
+      say "result is $result ";
+      my @lines = split /\n/, $result;
+      push @lines, "\n";
+      path("$out_file")-&gt;append_utf8(@lines);
+    }&lt;/c&gt;
+&lt;/readmore&gt;
+
+&lt;p&gt;Q2: Do I really need all of this to extract one paragraph of translation?&lt;/p&gt;
+&lt;p&gt;Thanks for your comment,&lt;/p&gt;
+
+
+</doctext>
+<thread id="11101367">
+<node id="11101368"><node id="11101498"><node id="11101559"><node id="11102038"><node id="11102042"/>
+<node id="11102150"/>
+</node>
+</node>
+<node id="11102491"/>
+</node>
+</node>
+<node id="11101369"><node id="11102317"><node id="11102321"/>
+</node>
+</node>
+<node id="11101375"><node id="11101387"><node id="11102200"><node id="11102222"><node id="11102279"><node id="11102281"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

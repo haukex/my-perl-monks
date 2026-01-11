@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1175136" title="Re: NMAP Parser very slow (updated)" created="2016-11-02 09:36:01" updated="2016-11-02 09:36:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [Noosrep],&lt;/p&gt;
+&lt;p&gt;I'd say the first step would be to narrow down more closely where the slowdown is happening. Insert some [doc://print] statements to figure it out, and then narrow down the code to the minimum needed to reproduce the problem. See also [http://www.sscce.org/|Short, Self Contained, Correct Example].&lt;/p&gt;
+&lt;p&gt;I had a quick look at [mod://Nmap::Parser], and as far as I can tell it's just fetching information out of its internal data structures, which I'm guessing are just the result of parsing the XML file, and I haven't yet seen anything that would explain the slowdown. Looking at your code, the only thing that jumps out at me is the call to &lt;c&gt;nslookup&lt;/c&gt;, since I'm guessing that's a network operation, which can cause delays.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Looked at the [mod://Nmap::Parser] source again, and it indeed looks like it's just looking stuff up in its data structures and not performing network operations. So aside from my &lt;c&gt;nslookup&lt;/c&gt; theory above, it really would be best if you could identify the slow part of your code. Also, look at your loop logic:&lt;/p&gt;
+&lt;c&gt;
+foreach my $ip (@IPsinrange) {
+  for my $host_obj ($np-&gt;all_hosts()) {
+    if ($host_obj-&gt;ipv4_addr() eq $ip) {
+      foreach my $port (@ports) {
+&lt;/c&gt;
+&lt;p&gt;So if your scan contains a lot of hosts, that could be a lot of looping. I'm guessing not enough to cause your script to run for 20 minutes, but I'd still suggest this logic as being a little more optimal:&lt;/p&gt;
+&lt;c&gt;
+my %IPsinrange = map {$_=&gt;1} @IPsinrange;
+for my $host_obj ($np-&gt;all_hosts()) {
+  next unless $IPsinrange{$host_obj-&gt;ipv4_addr()};
+  for my $port (@ports) {
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1175129</root_node>
+<parent_node field_name="parent_node">1175129</parent_node>
+<thread id="1175129">
+<node id="1175133"/>
+<node id="1175134"><node id="1175150"/>
+<node id="1175166"/>
+</node>
+<node id="1175136"><node id="1175152"/>
+</node>
+</thread></node>

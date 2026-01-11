@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1176910" title="Re^2: split problem" created="2016-11-30 04:16:31" updated="2016-11-30 04:16:31" _doctext_mode="lenient"><type id="11">note</type>
+<author id="341121">dave_the_m</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;a git bisect shows the first bad commit is 4ecee209 (the first release that contains this commit appears to be v5.21.5)
+&lt;/i&gt;&lt;/blockquote&gt;
+The bisect is misleading; the issue is with split when it is optimised to split directly to an array (rather than just returning a list which later gets assigned to something). When exactly this optimisation is enabled has changed between releases, and that commit is one of those changes.
+&lt;p&gt;
+The real issue was introduced in perl 5.19.4, and I've just fixed in it in blead with this commit:
+&lt;code&gt;
+commit 71ca73e5fa9639ac33e9f2e74cd0c32288a5040d
+Author:     David Mitchell &lt;davem@iabyn.com&gt;
+AuthorDate: Wed Nov 30 08:59:01 2016 +0000
+Commit:     David Mitchell &lt;davem@iabyn.com&gt;
+CommitDate: Wed Nov 30 09:11:25 2016 +0000
+
+    split was leaving PL_sv_undef in unused ary slots
+    
+    This:
+    
+        @a = split(/-/,"-");
+        $a[1] = undef;
+        $a[0] = 0;
+    
+    was giving
+    
+        Modification of a read-only value attempted at foo line 3.
+    
+    This is because:
+    
+    1) unused slots in AvARRAY between AvFILL and AvMAX should always be
+    null; av_clear(), av_extend() etc do this; while av_store(), if storing
+    to a slot N somewhere between AvFILL and AvMAX, doesn't bother to clear
+    between (AvFILL+1)..(N-1) on the assumption that everyone else plays
+    nicely.
+    
+    2) pp_split() when splitting directly to an array, sometimes over-splits
+    and has to null out the excess elements;
+    
+    3) Since perl 5.19.4, unused AV slots are now marked with NULL rather than
+    &amp;PL_sv_undef;
+    
+    4) pp_split was still using &amp;PL_sv_undef;
+    
+    The fault was with (4), and is easily fixed.
+
+&lt;/code&gt;
+&lt;p&gt;
+Dave.</doctext>
+<root_node field_name="root_node">1176863</root_node>
+<parent_node field_name="parent_node">1176900</parent_node>
+<thread id="1176863">
+<node id="1176866"/>
+<node id="1176867"><node id="1176869"/>
+<node id="1176870"/>
+</node>
+<node id="1176868"><node id="1176874"><node id="1176877"><node id="1176886"/>
+</node>
+</node>
+</node>
+<node id="1176871"><node id="1176872"><node id="1176880"/>
+<node id="1176887"/>
+</node>
+<node id="1176875"><node id="1176885"><node id="1176888"/>
+</node>
+</node>
+<node id="1176876"><node id="1176879"/>
+<node id="1176883"/>
+</node>
+</node>
+<node id="1176873"><node id="1176878"/>
+</node>
+<node id="1176900"><node id="1176910"><node id="1176962"/>
+<node id="1177047"/>
+</node>
+</node>
+</thread></node>

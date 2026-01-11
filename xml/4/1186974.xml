@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1186974" title="Please help with the issue in XML::LibXSLT module" created="2017-04-04 05:56:04" updated="2017-04-04 05:56:04" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="527247">denzil_cactus</author>
+<doctext field_name="doctext">Hi Monks &lt;br&gt;&lt;br&gt;
+
+Please help me to resolve the issue here as I am trying to convert one XML file in one to another format via XML::LibXSLT module. &lt;br&gt;&lt;br&gt;
+
+
+
+
+&lt;b&gt;Input file for XSLT conversion :&lt;/b&gt;
+
+&lt;code&gt;
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+
+&lt;File xmlns ="http://www.w3.org/2001/XMLSchema"&gt;
+
+&lt;DataDescrip&gt;
+
+&lt;ID&gt;C01362023&lt;/ID&gt;
+
+&lt;Reference&gt;702154&lt;/Reference&gt;
+
+&lt;/DataDescrip&gt;
+
+&lt;/File&gt;
+
+&lt;/code&gt;
+
+&lt;b&gt;Output After XSLT Conversion:&lt;/b&gt;
+
+&lt;p&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+&lt;?xml version="1.0"?&gt;
+
+C01362023
+
+702154
+
+&lt;b&gt;.xsl file used for Conversion&lt;/b&gt;
+
+&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"&gt;
+
+&lt;xsl:output method="xml" indent="yes"/&gt;
+
+&lt;xsl:template match="File"&gt;
+
+&lt;Data xmlns:xsd="http://www.w3.org/2001/XMLSchema"&gt;
+
+&lt;xsl:for-each select="DataDescrip"&gt;
+
+&lt;xsl:element name="Details"&gt;
+
+&lt;xsl:element name="ReferenceID"&gt;&lt;xsl:value-of select="Reference"/&gt;&lt;/xsl:element&gt;
+
+&lt;/xsl:element&gt;
+
+&lt;/xsl:for-each&gt;
+
+&lt;/Data&gt;
+
+&lt;/xsl:template&gt;
+
+&lt;/xsl:stylesheet&gt;
+
+&lt;/code&gt;
+&lt;/readmore&gt;
+&lt;/p&gt;
+
+&lt;b&gt;Snip of perl script for XSLT Conversion:&lt;/b&gt;
+
+&lt;p&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+
+foreach my $file (@files)
+
+{
+
+eval('use XML::LibXML');
+
+eval('use XML::LibXSLT');
+
+my $oXslt = XML::LibXSLT-&gt;new();
+
+my $oSource = XML::LibXML-&gt;load_xml(location =&gt; $file);
+
+my $oStylesheetDoc = XML::LibXML-&gt;load_xml(location =&gt; $cPath, no_cdata=&gt;1);
+
+my $hXSLTDoc = $oXslt-&gt;parse_stylesheet($oStylesheetDoc);
+
+my $hOutput = $hXSLTDoc-&gt;transform($oSource);
+
+my $cFilecontent = $hXSLTDoc-&gt;output_as_bytes($hOutput);
+
+my $cConvertedFile = $file."_Converted.XML";
+
+open(FH,"&gt;$cConvertedFile") or die "cannot open $cConvertedFile : $!\n";
+
+print FH $cFilecontent;
+
+close(FH);
+
+}
+&lt;/code&gt;
+&lt;/readmore&gt;
+&lt;/p&gt;</doctext>
+<thread id="1186974">
+<node id="1186981"/>
+<node id="1186982"><node id="1186984"/>
+</node>
+<node id="1186986"/>
+<node id="1186990"/>
+<node id="1186992"/>
+</thread></node>

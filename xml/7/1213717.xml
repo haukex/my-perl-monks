@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1213717" title="Re: How to make a reference to a hash cell" created="2018-04-28 04:18:00" updated="2018-04-28 04:18:00" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I agree with [hippo] that the keys of the &lt;c&gt;%catalog&lt;/c&gt; hash make a decent reference, and that's probably how I would have done it, although those "references" are only like symbolic references. If you want to use "hard" references and have everything stored in one data structure, that's possible too, although there is a caveat: If you store the values of &lt;c&gt;%catalog&lt;/c&gt; as elements of the &lt;c&gt;$student{$student_id}&lt;/c&gt; array, you lose the key (the course number). One common solution is to additionally store the key as part of the value (often a hash reference). In the following, I'm using the property of [doc://perlsyn#Foreach-Loops] that the loop iterator variable is an alias, so that I can overwrite elements of the array by assigning to the iterator variable.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+my %expensive_lookup = (
+		math01 =&gt; { instructor=&gt;'alice' },
+		sci99  =&gt; { instructor=&gt;'bob'   },
+		gym55  =&gt; { instructor=&gt;'carol' },
+		cs101  =&gt; { instructor=&gt;'larry' },
+	);
+
+my %students = (
+	sid01  =&gt; [qw/ math01 gym55 /],
+	sid007 =&gt; [qw/ gym55 sci99  /],
+	sid42  =&gt; [qw/ cs101 math01 /],
+);
+
+my %catalog = ();
+
+for my $student_id (keys %students) {
+	for my $course_number ( @{ $students{$student_id} } ) {
+		if ( not exists $catalog{$course_number} ) {
+			$catalog{$course_number} =
+				$expensive_lookup{$course_number};
+			$catalog{$course_number}{course_number} = $course_number;
+		}
+		$course_number = $catalog{$course_number};
+	}
+}
+
+dd \%catalog, \%students;
+
+__END__
+
+do {
+  my $a = {
+    cs101  =&gt; { course_number =&gt; "cs101", instructor =&gt; "larry" },
+    gym55  =&gt; { course_number =&gt; "gym55", instructor =&gt; "carol" },
+    math01 =&gt; { course_number =&gt; "math01", instructor =&gt; "alice" },
+    sci99  =&gt; { course_number =&gt; "sci99", instructor =&gt; "bob" },
+  };
+  (
+    $a,
+    {
+      sid007 =&gt; [$a-&gt;{gym55}, $a-&gt;{sci99}],
+      sid01  =&gt; [$a-&gt;{math01}, $a-&gt;{gym55}],
+      sid42  =&gt; [$a-&gt;{cs101}, $a-&gt;{math01}],
+    },
+  );
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1213711</root_node>
+<parent_node field_name="parent_node">1213711</parent_node>
+<thread id="1213711">
+<node id="1213712"/>
+<node id="1213716"><node id="1213847"/>
+</node>
+<node id="1213717"><node id="1213849"/>
+</node>
+<node id="1213728"/>
+<node id="1213745"/>
+</thread></node>

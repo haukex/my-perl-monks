@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11102271" title="write to .jpg error problem" created="2019-07-01 16:49:27" updated="2019-07-01 16:49:27" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1211447">traincity</author>
+<doctext field_name="doctext">I am getting this error message which seems to be preventing most of a particular page to be written:&lt;p&gt;
+
+[Mon Jul 01 16:26:46.898774 2019] [cgi:error] [pid 6060:tid 1144] [client ::1:58540] AH01215: Can't write to 'localhost/choo/tcimages/176801_1.JPG-14660': No such file or directory at C:/Strawberry/perl/vendor/lib/LWP/Protocol.pm line 114. at C:/Strawberry/perl/vendor/lib/LWP/UserAgent.pm line 982.\r: C:/Apache24/htdocs/choo/cgi-bin/ua/main.pl&lt;p&gt;
+
+I found protocol.pm but have no idea how to deal with this.  As far as I can tell line 114 is the die statement:&lt;br&gt;
+&lt;code&gt; This can't be moved to Try::Tiny due to the closures within causing
+    # leaks on any version of Perl prior to 5.18.
+    # https://perl5.git.perl.org/perl.git/commitdiff/a0d2bbd5c
+    my $error = do { #catch
+        local $@;
+        local $\; # protect the print below from surprises
+        eval { # try
+            if (!defined($arg) || !$response-&gt;is_success) {
+                $response-&gt;{default_add_content} = 1;
+            }
+            elsif (!ref($arg) &amp;&amp; length($arg)) {
+                open(my $fh, "&gt;", $arg) or die "Can't write to '$arg': $!";
+                binmode($fh);
+                push(@{$response-&gt;{handlers}{response_data}}, {
+                    callback =&gt; sub {
+                        print $fh $_[3] or die "Can't write to '$arg': $!";
+                        1;&lt;/code&gt;&lt;p&gt;
+
+I have no idea what to do here.  I hope I presented this so it makes some sense to someone.&lt;p&gt;
+
+Thanks for any help.
+
+</doctext>
+<thread id="11102271">
+<node id="11102275"><node id="11102315"><node id="11102318"><node id="11102322"><node id="11102332"><node id="11102423"/>
+</node>
+</node>
+<node id="11102329"><node id="11102330"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11102277"/>
+<node id="11102282"/>
+</thread></node>

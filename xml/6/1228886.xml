@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228886" title="Re^5: Windows single sign-on / NTLM question" created="2019-01-23 14:48:44" updated="2019-01-23 14:48:44" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Thanks for the update! Sometimes calling the native tools turns out to be the "easiest" way to go, in cases like that I usually make sure the interface is as clean as possible.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I've not actually integrated into my scripts, but as a proof of concept, it works.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;A quick test shows me that something like this seems to work:&lt;/p&gt;
+&lt;c&gt;
+use IPC::Run3 'run3';
+run3 ['powershell', '-Command', 'Invoke-WebRequest', '-Uri', $uri,
+	'-OutFile', $filename, '-UseDefaultCredentials'];
+$? and die "run3 failed with \$?=$?";
+&lt;/c&gt;
+&lt;p&gt;(I'm using [mod://IPC::Run3] because newer versions use [mod://Win32::ShellQuote] under the hood, and it allows redirection of &lt;c&gt;STDIN/OUT/ERR&lt;/c&gt; if desired. For really complicated cases, I guess PowerShell's &lt;c&gt;-EncodedCommand&lt;/c&gt; is probably the way to go.)&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Wrapped up in a function:&lt;/p&gt;
+&lt;c&gt;
+use File::Temp qw/tempfile/;
+use IPC::Run3 'run3';
+sub invoke_webrequest {
+	my $uri = shift;
+	my ($tfh,$tfn) = tempfile(UNLINK=&gt;1);
+	close $tfh;
+	run3 ['powershell', '-Command', 'Invoke-WebRequest', '-Uri', $uri,
+		'-OutFile', $tfn, '-UseDefaultCredentials'];
+	$? and die "run3 failed with \$?=$?";
+	open my $fh, '&lt;', $tfn or die "$tfn: $!";
+	my $data = do { local $/; &lt;$fh&gt; };
+	close $fh;
+	unlink $tfn;
+	return $data;
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1227921</root_node>
+<parent_node field_name="parent_node">1228865</parent_node>
+<thread id="1227921">
+<node id="1227926"><node id="1227933"><node id="1227943"><node id="1228865"><node id="1228886"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1227934"/>
+</thread></node>

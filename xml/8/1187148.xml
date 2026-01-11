@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1187148" title="Re: Syntax for casting map to a hash or an array" created="2017-04-05 11:50:25" updated="2017-04-05 11:50:25" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Is there a reference dereference happening?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes - the curlies directly around the [doc://map] create a hash reference from the list that [doc://map] returns (see number 3 in [doc://perlref#Making-References]), and then the outer &lt;c&gt;%{ }&lt;/c&gt; dereferences that hash reference (see number 2 in [doc://perlref#Using-References]).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;So the inner pair is a code block.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Nope, it's a hashref constructor, but since it can also look like a block, Perl sometimes has to "guess" which one it is, and AFAIK that's where the warning is coming from.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;If I need to return an array, as opposed to a list or a hash, what would that syntax be?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The same kind of reference-dereference operation, just in this case create an arrayref with &lt;c&gt;[...]&lt;/c&gt; and dereference it with &lt;c&gt;@{...}&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+print Dumper @{ [ map {"&lt;$_&gt;"} qw/a b c/ ] };
+__END__
+$VAR1 = '&lt;a&gt;';
+$VAR2 = '&lt;b&gt;';
+$VAR3 = '&lt;c&gt;';
+&lt;/c&gt;
+&lt;p&gt;Although I think this is needed less often than the &lt;c&gt;%{{...}}&lt;/c&gt; trick when it comes to passing stuff to functions, since most functions impose list context on their arguments anyway. However, it is sometimes used as a trick to interpolate things into strings that don't normally interpolate, so for example:&lt;/p&gt;
+&lt;c&gt;
+sub foo { return "World!" }
+print "Hello, ", foo(), "\n";   # prints "Hello, World!"
+print "Hello, foo()!\n";        # prints "Hello, foo()!"
+print "Hello, @{[ foo() ]}\n";  # prints "Hello, World!"
+&lt;/c&gt;
+&lt;p&gt;While in this example the first [doc://print] looks cleaner than the last, the trick can sometimes be useful when interpolating things into long [doc://perlop#&lt;&lt;_EOF_|heredocs], for example.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1187140</root_node>
+<parent_node field_name="parent_node">1187140</parent_node>
+<thread id="1187140">
+<node id="1187141"><node id="1187144"><node id="1187147"><node id="1187153"><node id="1187173"><node id="1187174"><node id="1187175"><node id="1187176"><node id="1187177"><node id="1187178"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1187151"><node id="1187159"/>
+</node>
+<node id="1187152"/>
+</node>
+</node>
+<node id="1187148"><node id="1187181"/>
+</node>
+</thread></node>

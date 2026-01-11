@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108832" title="Re^6: Correct Perl settings for sending zipfile to browser" created="2019-11-17 16:03:44" updated="2019-11-17 16:03:44" _doctext_mode="lenient"><type id="11">note</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;Beautiful!  The following code is now in place and, having tested it with both Windows and Mac, it is working exactly as desired.  Thank you so much for taking time to help with this.  I have learned a few things.&lt;/p&gt;
+&lt;p&gt;None of the fields should ever contain tabs, so that should be no issue. I always use strict, but only use warnings while troubleshooting.  It's presently commented out to save space in the log files (when working with UTF8, wide character warnings seem to appear for no reason at times, when everything is working properly, and sometimes I get the uninitialized errors that are also extraneous--and the logs simply aren't monitored often enough to make filling them with such errors useful).  For what it's worth, when the script with this subroutine is run, the script is adding a "wide character" error to the error log even with warnings turned off, despite the fact that everything is working beautifully, and the zip file that is created contains perfect text in an Asian language.  The error comes from having Asian text in one of the HTML headings for the page, even though the "use utf8;" pragma is in place.  To avoid it I'd probably need to convert that text to HTML-entities which makes it totally unreadable in my code, and ugly.  I'd rather get useless warnings.&lt;/p&gt;
+&lt;code&gt;
+sub exportdatabase { 
+#INCOMING GLOBAL VARS: $statement, $db_export_file,
+# $cur_date, $cur_time, $OS, $table, $quest
+
+fork: {
+
+my ($recnum,$revnum,$book,$chap,$verse,$text) = '';
+my @resp 	= ();
+my $encoding 	= "UTF-8";
+my $zipdata 	= '';
+my $CRLF 	= "\n";
+my $zipfile 	= "$db_export_file.zip";
+my $q = CGI::Simple-&gt;new();
+my $z = IO::Compress::Zip-&gt;new(\$zipdata,
+	Name =&gt; "$db_export_file" )
+	or die "zip failed: $ZipError\n";
+
+	if ($OS eq "Windows") { 
+		$CRLF = "\r\n";
+	} 
+
+	$statement = qq| SELECT a.RecordNum, a.RevisionNum, a.Book, a.Chapter, a.Verse, a.Text from $table a INNER JOIN (SELECT RecordNum, max(RevisionNum) RevisionNum FROM $table GROUP BY RecordNum) b USING (RecordNum,RevisionNum); |;
+
+	&amp;connectdb('exportdatabase');
+
+	$z-&gt;print( encode( $encoding, "RECORD#\tREVISION#\tBOOK#\tCHAP#\tVERSE#\tTEXT, AS EDITED BY: $curdate $curtime (Pacific Time), EXPORTED IN $OS FORMAT$CRLF", Encode::FB_CROAK|Encode::LEAVE_SRC ) );
+	while ( ( $recnum, $revnum, $book, $chap, $verse, $text ) = $quest-&gt;fetchrow_array() ) {
+		$z-&gt;print( encode( $encoding, "$recnum\t$revnum\t$book\t$chap\t$verse\t$text$CRLF", Encode::FB_CROAK|Encode::LEAVE_SRC ) );
+	}
+	$z-&gt;close();
+
+	print $q-&gt;header( -type =&gt; 'application/zip',
+    -Content_Disposition =&gt; qq{attachment; filename="$zipfile"},
+    -Content_Length =&gt; length($zipdata) );
+
+	binmode STDOUT;  # just to play it safe
+	print $zipdata;
+
+} # END fork
+} # END SUB exportdatabase
+&lt;/code&gt;
+</doctext>
+<root_node field_name="root_node">11108658</root_node>
+<parent_node field_name="parent_node">11108732</parent_node>
+<reputation field_name="reputation">3</reputation>
+<thread id="11108658">
+<node id="11108660"/>
+<node id="11108663"><node id="11108712"><node id="11108713"><node id="11108715"/>
+</node>
+<node id="11108761"/>
+</node>
+</node>
+<node id="11108666"><node id="11108710"><node id="11108726"/>
+</node>
+</node>
+<node id="11108673"/>
+<node id="11108692"><node id="11108714"><node id="11108716"><node id="11108722"><node id="11108732"><node id="11108832"><node id="11108833"><node id="11108836"><node id="11108837"/>
+</node>
+</node>
+<node id="11108856"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

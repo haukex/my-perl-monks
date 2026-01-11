@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101494" title="What does your old Perl code look like?" created="2019-06-17 16:47:16" updated="2019-06-17 16:47:16" _doctext_mode="strict"><type id="120">perlmeditation</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;To celebrate leveling up today, I dug through my code archives and picked one of the oldest full scripts I could find. Although I wrote my first Perl scripts in about 1995, unfortunately those appear to be lost on an old MacBook that won't boot up anymore. Maybe I'll get around to recovering it someday, but for now, here's a script with a modification date of October 1998.&lt;/p&gt;
+&lt;p&gt;I guess we all have to start somewhere &lt;c&gt;;-)&lt;/c&gt; Can you spot all the bad practices? What does your old Perl code look like?&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+#!perl
+
+# Vars
+$date = localtime(time);
+
+# Website Directory (absolute path, no trailing \)
+$webdir="F:\\Data\\MyWebsite";
+
+print "*** AutoFooter @ $date ON $webdir\n";
+
+# Start Log
+open(LOG,"&gt;C:\\autofoot.log") || die "Couldn't open logfile: $!\n";
+print LOG "*** AutoFooter @ $date ON $webdir\n";
+
+# Get Root
+$slashes=1;
+while($webdir=~/\\/g) {$slashes++;}
+
+# Get Files
+print "*** Getting File list...\n";
+chdir($webdir);
+$dirl=`DIR *.html /S/B`;
+@files=split(/\n/,$dirl);
+
+# Foot Files
+print "*** Running Footer...\n";
+foreach $file (@files) {
+  print LOG "File: $file - ";
+  open(FILE,"$file") || die "Couldn't open $file for input: $!\n";
+  @lines=&lt;FILE&gt;;
+  close(FILE);
+  $foot=0;
+  foreach $_ (@lines) {$foot=1 if /AUTOFOOTER/;}
+  if($foot) {
+    &amp;getpath;
+    print LOG "Applying \"$path\"\n";
+    open(FILE,"&gt;$file") || die "Couldn't open $file for output: $!\n";
+    foreach $_ (@lines) {
+      if(/AUTOFOOTER/) {
+        &amp;dofoot;
+        last;
+      }
+      elsif(/^\&lt;LINK REL\=stylesheet.+\&gt;$/) {
+        print FILE "&lt;LINK REL=stylesheet TYPE=\"text/css\" HREF=\"$path\style.css\"&gt;\n";
+      }
+      elsif(/^\&lt;BODY.+\&gt;$/) {
+        print FILE "&lt;BODY BGCOLOR=\"#FFFFFF\"&gt;\n";
+      }
+      else {
+        print FILE $_;
+      }
+    }
+    close(FILE);
+  }
+  else {
+    print LOG "Skipped\n";
+  }
+}
+print LOG "*** Done\n";
+close(LOG);
+print "*** Done\n";
+
+# ----- GETPATH -----
+sub getpath {
+  $cnt=-$slashes;
+  while($file=~/\\/g) {$cnt++;}
+  $path = '../' x $cnt;
+}
+
+# ----- DOFOOT ------
+sub dofoot {
+$f1=$path."pics/totop.gif";
+$f2=$path."pics/logo.gif";
+$f3=$path."email.html";
+$f4=$path."search.html";
+print FILE &lt;&lt;"(END FOOT)";
+&lt;!-- AUTOFOOTER --&gt;
+&lt;CENTER&gt;&lt;A HREF="#Top"&gt;&lt;IMG SRC="$f1" WIDTH="22" HEIGHT="22" ALT="^^ To Top ^^" BORDER=0&gt;&lt;/A&gt;&lt;/CENTER&gt;
+&lt;HR&gt;
+&lt;TABLE WIDTH="100%" BORDER=0&gt;&lt;TR&gt;
+  &lt;TD ALIGN=LEFT VALIGN=TOP&gt;
+    &lt;IMG SRC="$f2" WIDTH=40 HEIGHT=20 ALT="Logo" ALIGN="MIDDLE"&gt;
+    &lt;FONT FACE="Arial" SIZE="-1" ID="foottext"&gt;&lt;I&gt;
+    Copyright &amp;copy; 1998 Hauke Daempfling&lt;BR&gt;
+    Last Updated 
+    &lt;SCRIPT LANGUAGE="JavaScript"&gt;&lt;!--
+    document.write(document.lastModified);
+    // --&gt;
+    &lt;/SCRIPT&gt;
+    &lt;/I&gt;&lt;/FONT&gt;
+  &lt;/TD&gt;&lt;TD ALIGN=RIGHT VALIGN=TOP&gt;
+    &lt;FONT SIZE="-2" FACE="Arial" ID="lnkfont"&gt;
+    &lt;NOBR&gt;[ &lt;A HREF="$f4" TARGET="_self" ID="ln"&gt;Site Search&lt;/A&gt; ]&lt;/NOBR&gt;
+    &lt;NOBR&gt;[ &lt;A HREF="http://www.zero-g.net/cgi-bin/struct/index.cgi" TARGET="_self" ID="ln"&gt;Site Map&lt;/A&gt; ]&lt;/NOBR&gt;
+    &lt;NOBR&gt;[ &lt;A HREF="$f3" TARGET="_self" ID="ln"&gt;EMail&lt;/A&gt; ]&lt;/NOBR&gt;
+    &lt;/FONT&gt;
+  &lt;/TD&gt;
+&lt;/TR&gt;&lt;/TABLE&gt;
+&lt;/BODY&gt;
+&lt;/HTML&gt;
+(END FOOT)
+}
+&lt;/c&gt;
+&lt;/readmore&gt;
+</doctext>
+<thread id="11101494">
+<node id="11101495"/>
+<node id="11101497"/>
+<node id="11101500"/>
+<node id="11101508"/>
+<node id="11101511"/>
+<node id="11101512"/>
+<node id="11101513"/>
+<node id="11101516"/>
+<node id="11101528"><node id="11101533"/>
+</node>
+<node id="11101539"/>
+<node id="11101562"/>
+<node id="11102041"/>
+<node id="11107966"/>
+<node id="11107991"/>
+<node id="11107993"/>
+<node id="11107996"/>
+</thread></node>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110886" title="Re^3: Mixing asynchronous data feed with synchronous program flow control" created="2020-01-02 19:05:13" updated="2020-01-02 19:05:13" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;In a program using a single event loop, that cannot happen — timers only produce a delay until some time, but do not interrupt other event handlers and timer events are not processed until other callbacks return. There are no races provided that all callbacks return all resources to "safe states" before returning.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Ummm what? Sorry, but no. Take the code exactly as posted in the root node, but in the server code, insert a "&lt;c&gt;sleep 5;&lt;/c&gt;" as the first line in &lt;c&gt;on_connect&lt;/c&gt; to simulate bad network delay, and then the client will, on many runs, throw the error "&lt;c&gt;Mojo::Reactor::EV: Timer failed: Can't call method "send" on an undefined value&lt;/c&gt;", because &lt;c&gt;$TX&lt;/c&gt; is still &lt;c&gt;undef&lt;/c&gt; at that point. That demonstrates exactly the issue that I was talking about. The [id://11110864|code I posted] doesn't suffer from that particular issue, because it doesn't start the timer until the connection object is actually available.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; I admit my wording "there are &lt;i&gt;a couple of&lt;/i&gt; chances for race conditions" may have been a stretch, I initially thought I saw more than the one I described above, but I'm not so sure anymore. However, your claim &lt;i&gt;"that cannot happen"&lt;/i&gt; is still incorrect.&lt;/p&gt; </doctext>
+<root_node field_name="root_node">11110853</root_node>
+<parent_node field_name="parent_node">11110885</parent_node>
+<thread id="11110853">
+<node id="11110859"><node id="11110867"/>
+</node>
+<node id="11110864"><node id="11110885"><node id="11110886"><node id="11110887"><node id="11110895"><node id="11110919"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11110871"/>
+<node id="11110913"><node id="11110915"><node id="11110920"><node id="11110924"/>
+</node>
+</node>
+</node>
+</thread></node>

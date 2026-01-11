@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1199717" title="Re^3: copyCurrentNode in XML::LibXML::Reader will add xmlns attribute ( setNamespaceDeclURI )" created="2017-09-20 05:21:25" updated="2017-09-20 05:21:25" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Thanks, despite being marked "experimental" it does appear to work in the OP's case:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML::Reader;
+
+my $xml = &lt;&lt;'ENDXML';
+&lt;foo xmlns="http://www.example.com"&gt;&lt;bar/&gt;&lt;/foo&gt;
+ENDXML
+
+my $reader = XML::LibXML::Reader-&gt;new(string =&gt; $xml);
+while ($reader-&gt;read) {
+	my $node = $reader-&gt;copyCurrentNode;
+	$node-&gt;setNamespaceDeclURI(undef, undef)
+		if $node-&gt;nodeName eq 'bar';
+	print "$node";
+}
+
+__END__
+
+&lt;foo xmlns="http://www.example.com"/&gt;&lt;bar/&gt;&lt;foo xmlns="http://www.example.com"/&gt;
+&lt;/c&gt;
+&lt;p&gt;Unfortunately I might still be missing something, because applied to [choroba]'s code [id://1193600|here] it doesn't seem to change the namespace of the nodes.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1199434</root_node>
+<parent_node field_name="parent_node">1199577</parent_node>
+<thread id="1199434">
+<node id="1199437"/>
+<node id="1199438"/>
+<node id="1199440"><node id="1199577"><node id="1199717"><node id="1199726"><node id="1199773"><node id="1200420"/>
+<node id="1200486"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1199460"/>
+<node id="1199578"><node id="1199579"/>
+</node>
+</thread></node>

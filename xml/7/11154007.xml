@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11154007" title="New built-in perl5.38 try/catch syntax" created="2023-08-23 06:16:06" updated="2023-08-23 06:16:06" _doctext_mode="lenient"><type id="120">perlmeditation</type>
+<author id="176576">eyepopslikeamosquito</author>
+<doctext field_name="doctext">&lt;P&gt;
+After recently installing &lt;C&gt;perl v5.38&lt;/C&gt;,
+I stumbled upon some cool improvements to Perl's built-in &lt;C&gt;try/catch&lt;/C&gt; syntax while watching the excellent
+&lt;a href="https://www.youtube.com/watch?v=nkKuA0UMdEw"&gt;What's new in Perl v5.38&lt;/a&gt;
+youtube talk, delivered by Paul &lt;I&gt;"LeoNerd"&lt;/I&gt; Evans at [id://11150708|TPRC 2023 Toronto].
+&lt;/P&gt;
+
+&lt;P&gt;&lt;B&gt;New perl 5.38 use feature 'try'&lt;/B&gt;&lt;/P&gt;
+
+&lt;P&gt;
+ &lt;ul&gt;
+  &lt;li&gt; perl &lt;C&gt;v5.34&lt;/C&gt; added try/catch syntax based on CPAN module [mod://Syntax::Keyword::Try]
+  &lt;li&gt; perl &lt;C&gt;v5.36&lt;/C&gt; added "finally" blocks to try/catch, also inspired by [mod://Syntax::Keyword::Try]
+  &lt;li&gt; perl &lt;C&gt;v5.36&lt;/C&gt; added &lt;C&gt;use feature 'defer'&lt;/C&gt;, allowing you to create &lt;C&gt;defer&lt;/C&gt; blocks that run at the time that execution leaves the block it's declared inside (which seems to be inspired by the classic [wp://Resource acquisition is initialization|RAII] programming idiom)
+  &lt;li&gt; &lt;C&gt;use v5.38&lt;/C&gt; implies &lt;C&gt;use feature 'try'&lt;/C&gt;
+ &lt;/ul&gt;
+&lt;/P&gt;
+
+&lt;P&gt;
+Update: note that &lt;a href="https://metacpan.org/release/HAARG/perl-5.40.0/changes#try/catch-feature-is-no-longer-experimental"&gt;try-catch feature is no longer experimental with &lt;C&gt;perl v5.40&lt;/C&gt;&lt;/a&gt; - its use without &lt;C&gt;finally&lt;/C&gt; blocks no longer prints a warning but it still must be enabled with the 'try' feature.
+&lt;/P&gt;
+
+&lt;P&gt;&lt;B&gt;Some perldoc References&lt;/B&gt;&lt;/P&gt;
+
+&lt;P&gt;
+ &lt;ul&gt;
+  &lt;li&gt; [doc://die] - is how you throw exceptions in Perl
+  &lt;li&gt; &lt;a href="https://perldoc.perl.org/functions/eval#eval"&gt;eval&lt;/a&gt; - used to execute a little Perl program, trapping any errors encountered so they don't crash the calling program
+  &lt;li&gt; [doc://Carp] - alternative warn and die for modules
+  &lt;li&gt; [doc://autodie] - Replace functions with ones that succeed or die with lexical scope
+  &lt;li&gt; [doc://Fatal] - Replace functions with equivalents which succeed or die
+ &lt;/ul&gt;
+&lt;/P&gt;
+
+&lt;P&gt;
+ &lt;ul&gt;
+  &lt;li&gt; &lt;a href="https://perldoc.perl.org/perlsyn#Try-Catch-Exception-Handling"&gt;Try Catch Exception Handling&lt;/a&gt;
+  &lt;li&gt; &lt;a href="https://perldoc.perl.org/perlsyn#defer-blocks"&gt;defer blocks&lt;/a&gt;
+  &lt;li&gt; [doc://experimental] - Experimental features made easy
+  &lt;li&gt; [doc://feature] - Perl pragma to enable new features
+ &lt;/ul&gt;
+&lt;/P&gt;
+
+&lt;P&gt;
+To get a feel for how all this works in practice, I created a simple example,
+consisting of two files in a scratch directory, &lt;C&gt;TestTry.pm&lt;/C&gt; and &lt;C&gt;trytest.pl&lt;/C&gt;, shown below.
+&lt;/P&gt;
+
+&lt;P&gt;&lt;B&gt;TestTry.pm&lt;/B&gt;&lt;/P&gt;
+
+&lt;P&gt;
+&lt;CODE&gt;
+package TestTry;
+use strict;
+use warnings;
+
+print "TestTry: module load\n";
+
+sub life {
+   my $n = shift;
+   defined($n) or die "error: no argument provided";
+   print "TestTry::life n='$n'\n";
+   $n =~ /^\d+$/ or die "input error: '$n' must consist of digits only";
+   $n == 42      or die "Sadly there is no meaning in your life (n=$n)";
+   print "TestTry: congrats, your life has meaning!\n";
+   print "TestTry::life end\n";
+}
+
+1;
+&lt;/CODE&gt;
+&lt;/P&gt;
+
+&lt;P&gt;&lt;B&gt;trytest.pl&lt;/B&gt;&lt;/P&gt;
+
+&lt;P&gt;
+&lt;CODE&gt;
+# trytest.pl - a simple test of new perl 5.38 try syntax:
+# Put TestTry.pm in same dir as trytest.pl and run with:
+#   perl -I . trytest.pl
+
+# Note: use v5.38 implies use strict and warnings
+use v5.38;
+
+# use feature 'try';    # throws 'try/catch is experimental' warnings (update: works with perl v5.40.0 if you are not using finally blocks)
+use experimental 'try';
+
+use TestTry;
+
+sub do_one {
+   my $number = shift;
+   try {
+      TestTry::life($number);
+   }
+   catch ($e) {
+      chomp $e;
+      print "trytest: caught '$e'\n";
+   }
+   finally {
+      print "trytest: in finally block\n";
+   }
+}
+
+print "trytest: start\n";
+do_one("invalid");
+do_one(13);
+do_one(42);
+print "trytest: end\n";
+&lt;/CODE&gt;
+&lt;/P&gt;
+
+&lt;P&gt;&lt;B&gt;Example run&lt;/B&gt;&lt;/P&gt;
+
+&lt;P&gt;
+With that done, assuming you have perl 5.38 installed, you can run:
+&lt;/P&gt;
+
+&lt;P&gt;
+&lt;CODE&gt;
+$ perl -I . trytest.pl
+TestTry: module load
+trytest: start
+TestTry::life n='invalid'
+trytest: caught 'input error: 'invalid' must consist of digits only at TestTry.pm line 11.'
+trytest: in finally block
+TestTry::life n='13'
+trytest: caught 'Sadly there is no meaning in your life (n=13) at TestTry.pm line 12.'
+trytest: in finally block
+TestTry::life n='42'
+TestTry: congrats, your life has meaning!
+TestTry::life end
+trytest: in finally block
+trytest: end
+&lt;/CODE&gt;
+&lt;/P&gt;
+
+&lt;P&gt;&lt;B&gt;Summary&lt;/B&gt;&lt;/P&gt;
+
+&lt;P&gt;
+I really like this new try/catch syntax and am looking forward to Perl
+providing built-in exception handling without having to install CPAN modules,
+such as [mod://Try::Tiny] and [mod://TryCatch].
+&lt;/P&gt;
+
+&lt;P&gt;
+Remembering the [id://11136404|smartmatch/Switch debacle], I'm also a fan of this new gentler way
+of introducing experimental new features into the Perl core.
+&lt;/P&gt;
+
+&lt;P&gt;&lt;B&gt;Reference&lt;/B&gt;&lt;/P&gt;
+
+&lt;P&gt;
+ &lt;ul&gt;
+  &lt;li&gt; &lt;a href="https://www.youtube.com/watch?v=nkKuA0UMdEw"&gt;What's new in Perl v5.38&lt;/a&gt; (youtube: &lt;C&gt;try/catch&lt;/C&gt; starts around 0:28)
+ &lt;/ul&gt;
+&lt;/P&gt;
+
+&lt;P&gt;&lt;B&gt;Exceptions and Error Handling References&lt;/B&gt;&lt;/P&gt;
+
+&lt;P&gt;
+ &lt;ul&gt;
+  &lt;li&gt; [id://11153301]
+  &lt;li&gt; [id://11153345]
+ &lt;/ul&gt;
+&lt;/P&gt;
+
+&lt;P&gt;
+ &lt;ul&gt;
+  &lt;li&gt; [id://863236]
+  &lt;li&gt; &lt;a href="https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization"&gt;RAII&lt;/a&gt; (Resource Acquisition is Initialization) - helps ensure cleanup is automatically performed when an exception is thrown
+ &lt;/ul&gt;
+&lt;/P&gt;
+
+&lt;P&gt;
+ &lt;ul&gt;
+  &lt;li&gt; [id://11160181] by [Superfox il Volpone] (Jun 2024)
+ &lt;/ul&gt;
+&lt;/P&gt;
+
+&lt;P&gt;&lt;B&gt;See Also&lt;/B&gt;&lt;/P&gt;
+
+&lt;P&gt;
+ &lt;ul&gt;
+  &lt;li&gt; [id://11159891]
+  &lt;li&gt; [id://11153549]
+ &lt;/ul&gt;
+&lt;/P&gt;
+
+&lt;P&gt;
+&lt;small&gt;
+Updated: Added &lt;I&gt;"See Also"&lt;/I&gt; section. Tested with perl &lt;C&gt;v5.40.0&lt;/C&gt;; added comment re 'try/catch is experimental' warnings.
+&lt;/small&gt;
+&lt;/P&gt;
+</doctext>
+<thread id="11154007">
+<node id="11161211"><node id="11161216"><node id="11161234"/>
+</node>
+<node id="11161219"/>
+</node>
+</thread></node>

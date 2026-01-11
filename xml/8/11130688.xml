@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11130688" title="Re: help declaring variables within perl one-liner" created="2021-04-01 15:48:29" updated="2021-04-01 15:48:29" _doctext_mode="lenient"><type id="11">note</type>
+<author id="381608">ikegami</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;c&gt;`...`&lt;/c&gt; is equilvalent to &lt;c&gt;readpipe(qq`...`)&lt;/c&gt; (basically &lt;c&gt;readpipe("...")&lt;/c&gt;), which is to say it interpolates. As such, you wanted the following:
+
+&lt;c&gt;
+my $num_subs = `perl -w -0777 -pi -e 'my \$c=s/foo/bar/g;print STDOUT "\$c\\n"' ./foo_test`;
+die("Can't execute child: $!\n" if $? == -1'
+die("Child killed by signal ".( $? &amp; 0x7F )."\n") if $? &amp; 0x7F;
+die("Child exited with error ".( $? &gt;&gt; 8 )."\n") if $? &gt;&gt; 8;
+
+chomp($num_subs);
+&lt;/c&gt;
+
+The program can be simplified.
+
+&lt;c&gt;
+my $num_subs = `perl -i -0777wpe'print STDOUT s/foo/bar/g' foo_test`;
+die("Can't execute child: $!\n" if $? == -1'
+die("Child killed by signal ".( $? &amp; 0x7F )."\n") if $? &amp; 0x7F;
+die("Child exited with error ".( $? &gt;&gt; 8 )."\n") if $? &gt;&gt; 8;
+&lt;/c&gt;
+
+&lt;p&gt;An approach that would make it easier to escape (if we still needed to do so):
+
+&lt;c&gt;
+use String::ShellQuote qw( shell_quote );
+
+my $cmd = shell_quote("perl", "-i", "-0777wpe", 'print STDOUT s/foo/bar/g', 'foo_test');
+my $num_subs = `$cmd`;
+die("Can't execute child: $!\n" if $? == -1'
+die("Child killed by signal ".( $? &amp; 0x7F )."\n") if $? &amp; 0x7F;
+die("Child exited with error ".( $? &gt;&gt; 8 )."\n") if $? &gt;&gt; 8;
+&lt;/c&gt;
+
+&lt;p&gt;Why are we even invoking a shell?
+
+&lt;c&gt;
+use IPC::System::Simple qw( capturex );   # Core module
+
+my @cmd = ( 'perl', '-i', '-0777wpe', 'print STDOUT s/foo/bar/g', 'foo_test' );
+my $num_subs = capturex(@cmd);
+die("Child exited with error ".( $? &gt;&gt; 8 )."\n") if $? &gt;&gt; 8;
+&lt;/c&gt;
+
+&lt;p&gt;&lt;del&gt;Now, one would also quite reasonably argue that one shouldn't execute &lt;c&gt;perl&lt;/c&gt; either. However, &lt;c&gt;-i&lt;/c&gt; is quite good at avoiding data loss in the event of an error&lt;sup&gt;&amp;#91;1]&lt;/sup&gt;, and recreating this wouldn't be trivial.&lt;/del&gt;
+
+&lt;p&gt;Finally, why execute a new &lt;c&gt;perl&lt;/c&gt; at all?
+
+&lt;c&gt;
+my $num_subs = 0;
+{
+   local @ARGV = "foo_test";
+   local $^I = "";
+   local $/;
+   $num_subs += s/foo/bar/g while &lt;&gt;;
+}
+&lt;/c&gt;
+
+&lt;p&gt;As an added bonus, this last version handles the file not being found better. It also handles multiple files in &lt;c&gt;@ARGV&lt;/c&gt;.
+
+&lt;hr&gt;
+
+&lt;ol&gt;
+&lt;li&gt;This is a recent improvement.
+&lt;/ol&gt;
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-381608"&gt;
+&lt;p&gt;&lt;small&gt;Seeking work! You can reach me at ikegami@adaelis.com&lt;/small&gt;&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11130676</root_node>
+<parent_node field_name="parent_node">11130676</parent_node>
+<thread id="11130676">
+<node id="11130677"/>
+<node id="11130688"><node id="11130689"><node id="11130690"/>
+</node>
+</node>
+<node id="11130691"><node id="11130701"><node id="11130716"/>
+</node>
+</node>
+</thread></node>

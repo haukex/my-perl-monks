@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1210310" title="Re: By the shine on my bald pate, I dislike this encoding stuff" created="2018-03-04 06:52:27" updated="2018-03-04 06:52:27" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;In addition to the issue [poj] [id://1210305|pointed out] with reading from
+&lt;c&gt;&lt;ORDERFILE&gt;&lt;/c&gt; twice (&lt;c&gt;my(@LINES) = &lt;ORDERFILE&gt;&lt;/c&gt; reads all lines from
+the file, so &lt;c&gt;$filedata&lt;/c&gt; would normally be empty), I just wanted to point
+out that the pattern &lt;c&gt;eval {...}; if ($@) {...}&lt;/c&gt; [id://1153468|has issues]
+and that the pattern &lt;c&gt;eval {...; 1} or do {...}&lt;/c&gt; or a module like
+[mod://Try::Tiny] is better. Also, nowadays lexical filehandles (&lt;c&gt;open my $fh, ...&lt;/c&gt;)
+are generally preferred over bareword filehandles (&lt;c&gt;open ORDERFILE, ...&lt;/c&gt;).
+(&lt;i&gt;Update:&lt;/i&gt; The AM also made a good point that you appear to be decoding the data twice.)
+&lt;/p&gt;
+&lt;p&gt;Really, the best way to go is to know in advance what encoding your files
+are in, and then opening them with the appropriate encoding in
+&lt;c&gt;open my $fh, '&lt;:encoding(...)', $filename or die $!;&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;You may want to have a look at [https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/|The Absolute Minimum Every Software Developer Absolutely, Positively Must Know About Unicode and Character Sets (No Excuses!)]&lt;/p&gt;
+&lt;readmore title="some code"&gt;
+&lt;p&gt;If you are &lt;i&gt;sure&lt;/i&gt; that your files can only ever be UTF-8 or "ANSI"
+(by which I'm going to assume you mean [wp://Windows-1252], but [id://1198128|see also]),
+then you could use the following to &lt;i&gt;guess&lt;/i&gt; which of the two the file is
+encoded in, but be aware this may still get things &lt;b&gt;wrong&lt;/b&gt;, e.g. if you also have
+files encoded in, say, Latin-1 or Latin-9 ([id://1198298|see also]) this
+may &lt;b&gt;not&lt;/b&gt; throw an error because the those encodings are so similar to CP1252!&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Encode qw/decode/;
+
+sub guess_utf8_cp1252 { # WARNING: Does NOT work for other encodings
+	my ($fn) = @_;
+	open my $fh, '&lt;:raw', $fn or die "$fn: $!";
+	my $raw = do { local $/; &lt;$fh&gt; }; # slurp
+	close $fh;
+	my $decoded;
+	   eval { $decoded = decode('UTF-8',  $raw, Encode::FB_CROAK ); 1}
+	or eval { $decoded = decode('CP1252', $raw, Encode::FB_CROAK ); 1}
+	or die "$fn: Could not decode";
+	return $decoded;
+}
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1210301</root_node>
+<parent_node field_name="parent_node">1210301</parent_node>
+<thread id="1210301">
+<node id="1210303"><node id="1210304"><node id="1210305"><node id="1210308"><node id="1210314"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1210310"/>
+<node id="1210313"><node id="1210334"/>
+</node>
+<node id="1210397"/>
+</thread></node>

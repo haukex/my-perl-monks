@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112811" title="regex for nested &quot;&lt;&quot;/&quot;&gt;'" created="2020-02-11 15:41:17" updated="2020-02-11 15:41:17" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="607703">clueless newbie</author>
+<doctext field_name="doctext">&lt;p&gt;I've taken this from Conway's "Everything You Know About Regexes Is Wrong", but I can't get it to behave.&lt;/p&gt;
+
+&lt;code&gt;#!/usr/bin/env perl
+
+use 5.01800;
+use warnings;
+my @cases=(
+        "&lt;1&gt;"
+        ,"&lt;1,2&gt;"
+        ,"&lt;1,2,&lt;3,4&gt;,5,6&gt;"
+        );
+my $re=qr{(?x) (?&amp;LIST)
+        (?(DEFINE)
+            (?&lt;LIST&gt; &lt; (?&amp;ITEM)  (?: , (?&amp;ITEM))*+ &gt; )
+            (?&lt;ITEM&gt; \d*+ | (?&amp;LIST) )
+        )
+        };
+
+for my $case (@cases) {
+    say qq{$case\n},
+        $case =~ qr{$re} ? "matches: '$&amp;'" : "doesn't match";
+    };
+__END__
+&lt;/code&gt;
+&lt;p&gt;which yields&lt;/p&gt;
+&lt;code&gt;
+perl Conway_01.pl
+&lt;1&gt;
+matches! &lt;1&gt;
+&lt;1,2&gt;
+matches! &lt;1,2&gt;
+&lt;1,2,&lt;3,4&gt;,5,6&gt;
+matches! &lt;3,4&gt;      !!!! shouldn't this be &lt;1,2,&lt;3,4&gt;,5,6&gt;
+&lt;/code&gt;
+
+&lt;p&gt;What have I got wrong?&lt;/p&gt;
+</doctext>
+<thread id="11112811">
+<node id="11112813"/>
+<node id="11112818"/>
+<node id="11112852"><node id="11112896"/>
+</node>
+<node id="11112865"/>
+<node id="11112868"><node id="11112889"><node id="11112895"/>
+</node>
+<node id="11112926"/>
+</node>
+</thread></node>

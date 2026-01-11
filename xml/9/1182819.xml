@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1182819" title="Re^4: Switch.pm Failure" created="2017-02-25 10:08:28" updated="2017-02-25 10:08:28" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1182686">tultalk</author>
+<doctext field_name="doctext">&lt;code&gt;
+use strict;
+use diagnostics -verbose;
+#use CGI::Carp qw/fatalsToBrowser/;
+use CGI::Carp qw(fatalsToBrowser warningsToBrowser);
+use CGI;
+use CGI::Session;
+use CGI::Switch;
+use Time::HiRes qw(usleep);
+&lt;/code&gt;
+
+
+
+
+Here is the whole switch tree again. Didn't post yesterday. Was probably not logged in.
+
+&lt;code&gt;
+
+#  CGI Switch Tree
+#--------------------------------------------------------
+Main();
+
+sub Main {
+      my $action = $query-&gt;param('action');
+Switch {
+      warn("manage_users.cgi line 54: '$action'");
+      #Request from User for Login Form
+      ($action eq "GetLoginForm")  &amp;&amp; do {
+        manageusers::OpenConnection();
+        #process login request - create session
+        my ($result,$message0,$message1,$message2) = ProcessLoginRequest($query);
+        if(!$result){
+           #Tell client that login failed
+           manageusers::CloseConnection();
+           LoginUserFailedForm("The Login Request failed. Please try again or contact the office.");
+           return; #exit;
+        }
+        elsif ($result == 1) {
+          #Client already logged in so tell them
+          manageusers::CloseConnection();
+          CreateAlreadyLoggedinForm($message0);
+          return;
+        }
+
+        elsif ($result == 2){
+          #Not logged in so send client login form
+          manageusers::CloseConnection();
+          CreateLoginForm($message0, $message1, $message2);
+          return; #exit;
+        }
+        };
+
+#-------------------------------------------------------------------------------
+      #Request from User for Update Existing Info Form
+      ($action eq "GetUpdateForm")  &amp;&amp; do {
+        #Get temp session id and unique temp Id
+        my ($sid) = GetUserSessionCookie();
+        if($sid eq 0) {
+            CreateUserFeedbackForm("Authentication failed. You need to log in first to update your member data.");
+            return; #exit;
+          }
+        else{
+           manageusers::OpenConnection();
+           if(!CheckForAuthorizedUser($sid)) {
+              manageusers::CloseConnection();
+              CreateUserFeedbackForm("Authentication failed. Your authorization cookie has expired or been tampered with. For access to change parameters, please log in again.");
+            return; #exit;
+           }
+           usleep(100);
+           manageusers::CloseConnection();
+           CreateUpdateInfoForm();
+           return; #exit;
+          }
+       };
+
+#-------------------------------------------------------------------------------
+      #Request from User for Missing Information Form
+      ($action eq "GetMissingForm")  &amp;&amp; do {
+        #Get temp session id and unique temp Id
+       my ($tsid, $tsession_id) = ProcessLostDataRequest();
+       usleep(100);
+       manageusers::CloseConnection();
+       CreateMissingInfoForm($tsid, $tsession_id);
+       return; #exit;
+      };
+
+#-------------------------------------------------------------------------------
+      #Login User
+      ($action eq "LoginUser") &amp;&amp; do {
+                #Attempt the login
+        manageusers::OpenConnection();
+        warn("The Login Usr Query: $query");
+        my ($result, $login_timeout) = LoginUser($query);
+        if ($result == 0){
+           manageusers::CloseConnection();
+           CreateLoginUserFailedForm("The Login User Name or Password is invalid. Please try again or contact the office.");
+           return; #exit;
+        }
+
+        elsif ($result == 1){
+           #Client already logged in so tell them
+           manageusers::CloseConnection();
+           CreateAlreadyLoggedinForm("You are already logged in.");
+           return; #exit;
+        }
+
+        elsif ($result == 2){
+          manageusers::CloseConnection();
+          CreateLoginUserFailedForm("Your Membership Has Expired. To renew membership, use the form on this site or contact the office.");
+          return; #exit;
+        }
+
+        elsif ($result == 3) {
+          manageusers::CloseConnection();
+          CreateUserLoginSucceededForm("Login succeeded.");
+          return; #exit;
+        }
+
+        elsif ($result == 4){
+          manageusers::CloseConnection();
+          CreateLoginUserMaxAttemptsFailedForm("Maximum allowed number of login attempts exceeded for session. Please contact the office.");
+          return; #exit;
+        }
+
+        elsif ($result == 5){
+          manageusers::CloseConnection();
+          CreateLoginUserFailedForm("The '$login_timeout' second Login window has expired. Please try again or contact the office");
+          return; #exit;
+        }
+
+        else {
+          manageusers::CloseConnection();
+          CreateLoginUserFailedForm("Login failed for unknown reasons. Please contact the office.");
+          return; #exit;
+                }
+      return; #exit;
+     };
+
+#-------------------------------------------------------------------------------
+        #Update logged in user data
+    ($action eq "UpdateUserData") &amp;&amp; do {
+            #Extract the query data from CGI parameters
+                my $password = $query-&gt;param("password");
+                my $email = $query-&gt;param("email");
+                my $secret = $query-&gt;param("secret");
+
+                #Check for illegal characters in the input fields
+                if (!CheckValidLoginChar($password)){
+                        CreateUpdateUserInvalidCharForm("The new Password you entered contained invalid characters and did not succeed.");
+                        return; #exit;
+                   }
+        if ($email ne ""){
+                     if (!CheckValidEmailChar($email)){
+                          CreateUpdateUserInvalidCharForm("The new e-Mail Address you entered contained invalid characters and did not succeed.");
+                          return; #exit;
+                    }
+          }
+                if (!CheckValidLoginChar($secret)){
+                        CreateUpdateUserInvalidCharForm("The new secret you entered contained invalid characters and did not succeed.");
+                        return; #exit;
+                  }
+
+                #Try to get the cookie from the user for authentication for updating user data
+                my ($sid) = GetUserSessionCookie();
+                if(!$sid) {
+                     CreateUserFeedbackForm("Authentication failed. You must be logged in under your old username and password to perform this update.");
+                        return; #exit;
+                }
+                manageusers::OpenConnection();
+                if (!UpdateUserData($sid,$password,$email,$secret)) {
+                   manageusers::CloseConnection();
+                   CreateUserFeedbackForm("Update of Member information failed. Please contact the office.");
+                     return; #exit;
+                        }
+                else {
+                   manageusers::CloseConnection();
+                   CreateUserFeedbackForm("Update of Member information succeeded.");
+                   return; #exit;
+                   }
+           return; #exit;
+          };
+
+#-------------------------------------------------------------------------------
+        #Verify that the user has access rights to controlled areas
+        ($action eq "CheckUserAuth") &amp;&amp; do {
+    #Try to get the cookies from the user
+        my ($sid) = GetUserSessionCookie();
+        warn("Check User Authorization  SID returned from GetUserSessionCookie  SID: $sid");
+        if($sid eq 0) {
+          CreateUserFeedbackForm("Authentication failed. You need to log in to access secured areas.");
+          return; #exit;
+        }
+        else {
+          manageusers::OpenConnection();
+          if(!CheckForAuthorizedUser($sid)) {
+             manageusers::CloseConnection();
+             CreateUserFeedbackForm("Authentication failed. Your authorization cookie has expired or been tampered with. Please log in again.");
+          return; #exit;
+         }
+         manageusers::CloseConnection();
+         CreateUserFeedbackForm("Authentication succeded."); #not necessary
+         return; #exit;
+        }
+        return; #exit;
+      };
+
+#-------------------------------------------------------------------------------
+        #Logout the user
+    ($action eq "LogoutUser")  &amp;&amp; do {
+    warn("Logout User Enter Function Line 238");
+    #Try to get the cookies from the user
+        my ($sid) = GetUserSessionCookie();
+        warn("Logout User SID returned from GetUserSessionCookie SID: $sid");
+        if($sid eq 0) {
+          CreateUserFeedbackForm("You are not logged in, your authorization cookie has expired or been tampered with. For access, please log in again if you wish.");
+           return; #exit;
+        }
+        else {
+           manageusers::OpenConnection();
+           warn("action Logout User Line 216 SID: $sid");
+           my $result = LogoutUser($sid);
+           if ($result == 0){
+             manageusers::CloseConnection();
+             CreateUserFeedbackForm("The logout failed. Perhaps the cookie was corrupted or tampered with. Please log in again to clear this problem.");
+             return; #exit;
+           }
+           elsif ($result == 1) {
+             manageusers::CloseConnection();
+             CreateUserFeedbackForm("You are already logged out.");
+             return; #exit;
+           }
+           elsif ($result == 2) {
+             manageusers::CloseConnection();
+             CreateUserFeedbackForm("Logout succeded.");
+             return; #exit;
+           }
+        }
+    return; #exit;
+  };
+
+#-------------------------------------------------------------------------------
+        #Lost User Data equest
+    ($action eq "LostUserData") &amp;&amp; do {
+
+            #Extract the query data from CGI parameters
+                my $username = $query-&gt;param("username");
+                my $secret = $query-&gt;param("secret");
+
+                #Check for illegal characters in the input fields
+                if (!CheckValidLoginChar($username)){
+                        CreateLoginUserInvalidCharForm("The login User Name you submitted contained invalid characters and did not succeed.");
+                        return; #exit;
+                }
+                if (!CheckValidLoginChar($secret)){
+                   CreateLoginUserInvalidCharForm("The My Secret name you submitted contained invalid characters and did not succeed.");
+                        return; #exit;
+                }
+
+                #Attempt the login
+                manageusers::OpenConnection();
+                my $result = GetUserLostData($username,$secret,$fbacronym);
+                if ($result == 0){
+                  manageusers::CloseConnection();
+                  CreateUserFeedbackForm("We could not locate your records based on the information supplied. Please try again or contact the office");
+                  return; #exit;
+                }
+                if ($result == 1){
+                  manageusers::CloseConnection();
+                  CreateUserFeedbackForm("Your missing information has been sent.");
+                  return; #exit;
+                }
+              return; #exit;
+          };
+   }
+}
+
+&lt;/code&gt;
+</doctext>
+<root_node field_name="root_node">1182691</root_node>
+<parent_node field_name="parent_node">1182699</parent_node>
+<thread id="1182691">
+<node id="1182693"><node id="1182697"><node id="1182699"><node id="1182819"><node id="1182824"/>
+<node id="1182827"><node id="1182831"><node id="1182846"/>
+</node>
+</node>
+<node id="1182833"/>
+</node>
+</node>
+</node>
+<node id="1182818"/>
+</node>
+<node id="1182695"><node id="1182834"><node id="1182836"/>
+<node id="1182837"><node id="1182850"><node id="1182864"><node id="1182866"/>
+</node>
+<node id="1182939"><node id="1188877"/>
+</node>
+</node>
+<node id="1182858"/>
+</node>
+</node>
+</node>
+<node id="1182706"/>
+</thread></node>

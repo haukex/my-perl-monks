@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11131880" title="Re: /ee -&gt; Use of uninitialized value in substitution iterator (without back references)" created="2021-04-29 11:14:39" updated="2021-04-29 11:14:39" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;As per [doc://perlop#Regexp-Quote-Like-Operators], &lt;c&gt;/ee&lt;/c&gt; means "Evaluate the right side as a string then eval the result." and "A &lt;c&gt;/e&lt;/c&gt; will cause the replacement portion to be treated as a full-fledged Perl expression and evaluated right then and there. It is, however, syntax checked at compile-time. A second &lt;c&gt;e&lt;/c&gt; modifier will cause the replacement portion to be &lt;c&gt;eval&lt;/c&gt;ed before being run as a Perl expression."&lt;/p&gt;
+&lt;p&gt;So basically, &lt;c&gt;"$rhs"&lt;/c&gt; becomes &lt;c&gt;qqq&lt;/c&gt;, which when [doc://eval]ed causes an error: Try adding &lt;c&gt;print $@&lt;/c&gt; to your code and you'll see &lt;c&gt;Bareword "qqq" not allowed while "strict subs" in use at (eval 1) line 1.&lt;/c&gt;, so [doc://eval] is returning &lt;c&gt;undef&lt;/c&gt; which is causing the &lt;c&gt;Use of uninitialized value in substitution iterator&lt;/c&gt;.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Running perl -e 'print eval("qqq");' prints qqq.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That's because that's not using [doc://strict] - &lt;c&gt;perl -wMstrict -e 'print eval("qqq"); print $@;'&lt;/c&gt; prints &lt;c&gt;Bareword "qqq" not allowed while "strict subs" in use at (eval 1) line 1.&lt;/c&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;And of course there's no warning with just /e instead of /ee; in the real program, I need /ee.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Perhaps your example is a little too abstracted from the original program? Needing &lt;c&gt;/ee&lt;/c&gt; is somewhat rare in my experience. Could you show a more representative example of why you (think you) need it, perhaps we can come up with a better solution?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11131877</root_node>
+<parent_node field_name="parent_node">11131877</parent_node>
+<thread id="11131877">
+<node id="11131880"><node id="11131886"><node id="11131888"/>
+</node>
+</node>
+<node id="11131879"/>
+</thread></node>

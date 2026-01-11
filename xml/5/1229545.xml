@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229545" title="Array of Hashes" created="2019-02-07 08:05:10" updated="2019-02-07 08:05:10" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1229487">Ken_M</author>
+<doctext field_name="doctext">&lt;p&gt;I'm trying to write what should be a fairly straightforward sub to read 0 to n rows from a database table and return the data as an array of hashes (sub getAllRows below).  The problem is, it doesn't return any data, so I tested using sub getOneRow, which works as expected, proving the dereferencing is correct. The next test was sub getTwoRows, which returns the same row twice.  What am I doing wrong?&lt;/p&gt;
+&lt;p&gt;Note – I’m not worried about a fix for sub getTwoRows, as it’s only a test routine to see what happens.&lt;/p&gt;
+
+&lt;code&gt;
+# $dbh already connected using DBI
+
+@data = &amp;getOneRow($find);
+%row = $data[0];
+$field1 = $row-&gt;{field1}; $field2 = $row-&gt;{field2}; $field3 = $row-&gt;{field3};
+print "Row id is $field1, field 2 is $field2, field 3 is $field3\n";
+# Prints valid, correct values for the first matching row
+
+@data = &amp;getTwoRows($find);
+%row = $data[0];
+$field1 = $row-&gt;{field1}; $field2 = $row-&gt;{field2}; $field3 = $row-&gt;{field3};
+print "Row id is $field1, field 2 is $field2, field 3 is $field3\n";
+%row = $data[1];
+$field1 = $row-&gt;{field1}; $field2 = $row-&gt;{field2}; $field3 = $row-&gt;{field3};
+print "Row id is $field1, field 2 is $field2, field 3 is $field3\n";
+# Prints valid, correct values for the first row, but the second print line gives the first row repeated
+
+@data = &amp;getOneRow($find);
+foreach %row (@data) {
+	$field1 = $row-&gt;{field1}; $field2 = $row-&gt;{field2}; $field3 = $row-&gt;{field3};
+	print "Row id is $field1, field 2 is $field2, field 3 is $field3\n";
+}
+# Prints no values for any of the rows ("Row id is , field 2 is , field 3 is ")
+
+sub getOneRow
+{	my $find = shift;
+	my ($sql, $sth);
+	$sql = "SELECT field1, field2, field3 FROM mytable WHERE number = $find ORDER BY field1";
+	$sth = $dbh-&gt;prepare($sql) or die "Couldn't prepare: " . $dbh-&gt;errstr();
+	$sth-&gt;execute() or die "Cannot execute: " . $sth-&gt;errstr();
+	my @data = ();
+	$rowref =  $sth-&gt;fetchrow_hashref();
+	push @data, %{$rowref};
+	return @data;
+}
+
+sub getTwoRows
+{	my $find = shift;
+	my ($sql, $sth);
+	$sql = "SELECT field1, field2, field3 FROM mytable WHERE number = $find ORDER BY field1";
+	$sth = $dbh-&gt;prepare($sql) or die "Couldn't prepare: " . $dbh-&gt;errstr();
+	$sth-&gt;execute() or die "Cannot execute: " . $sth-&gt;errstr();
+	my @data = ();
+	$rowref =  $sth-&gt;fetchrow_hashref();
+	push @data, %{$rowref};
+	$rowref =  $sth-&gt;fetchrow_hashref();
+	push @data, %{$rowref};
+	return @data;
+}
+
+sub getAllRows
+{	my $find = shift;
+	my ($sql, $sth);
+	$sql = "SELECT field1, field2, field3 FROM mytable WHERE number = $find ORDER BY field1";
+	$sth = $dbh-&gt;prepare($sql) or die "Couldn't prepare: " . $dbh-&gt;errstr();
+	$sth-&gt;execute() or die "Cannot execute: " . $sth-&gt;errstr();
+	my @data = ();
+	while ( $rowref =  $sth-&gt;fetchrow_hashref() ) {push @data, %{$rowref};}
+	return @data;
+}
+&lt;/code&gt;</doctext>
+<thread id="1229545">
+<node id="1229546"><node id="1229551"/>
+</node>
+<node id="1229547"><node id="1229552"><node id="1229553"/>
+</node>
+</node>
+<node id="1229554"><node id="1229562"><node id="1229587"/>
+</node>
+</node>
+</thread></node>

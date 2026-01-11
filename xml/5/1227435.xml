@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227435" title="Solved: Uncompress streaming gzip on the fly in LWP::UserAgent/WWW::Mechanize" created="2018-12-18 17:15:33" updated="2018-12-18 17:15:33" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="248054">Your Mother</author>
+<doctext field_name="doctext">&lt;p&gt;Update: New and cleaned up code posted as a &lt;abbr title="cannibal under federal protection"&gt;CUFP&lt;/abbr&gt; in [id://1228041].&lt;/p&gt;
+
+&lt;p&gt;I include only the bare bones because I tried something like 20 different things without success and I'm embarrassed. :( Non-streaming requests are working perfectly with approximately this code. The endpoint for this code is a streaming quote and trade ticker. The URL shown just asks for the info for AAPL. The compression—well, the ongoing, memory sane handling of it—is the only problem I have.&lt;/p&gt;
+
+&lt;p&gt; The &lt;c&gt;# $data&lt;/c&gt; is where the handling, or a core part of it, is missing.&lt;/p&gt;
+
+&lt;p&gt;The closest I get streaming to work is &lt;c&gt;gunzip&lt;/c&gt; from [metamod://IO::Uncompress::Gunzip]. It works fine but it's a standalone conversion which is goofy/impossible for an "infinite" stream of data; append, gunzip, append, gunzip… It must be uncompressed in toto. So a non-starter but I could see it works fine at least. Whatever the solution, I guess it will require IO handle truncation as it goes.&lt;/p&gt;
+
+&lt;p&gt;I played with opening a pipe to [man://gunzip(1)], I tried every variation of [metamod://Compress::Zlib] I could think but wasn't able to get any data out or apparently even write/uncompress the data properly. I tried everything I could figure out with [metamod://IO::Uncompress::Gunzip] too. A few PM and SO nodes looked promising but I didn't find anything that seemed to apply directly or fix it. I even tried [metamod://PerlIO::gzip]. I'm just stick stupid on this. Maybe one of the attempts was close but I have no idea which, and, again, I'm embarrassed to share any of the *many*.&lt;/p&gt;
+
+&lt;p&gt;The doc page [https://www.ally.com/api/invest/documentation/streaming/]. I tried to read the sample streaming code for other languages but there is no gzip handling surfaced in them. If they work, it's hidden in the libraries used.&lt;/p&gt;
+
+&lt;code&gt;#!/usr/bin/env perl
+use strictures;
+no warnings "uninitialized";
+use WWW::Mechanize;
+use WWW::OAuth;
+
+# You have to have a trading account to use the service-
+my $oauth = WWW::OAuth-&gt;new(
+    client_id =&gt; "...",
+    client_secret =&gt; "...",
+    token =&gt; "...",
+    token_secret =&gt; "..." );
+
+my $mech = WWW::Mechanize-&gt;new( autocheck =&gt; undef );
+$mech-&gt;add_handler( request_prepare =&gt; sub { $oauth-&gt;authenticate($_[0]) } );
+$mech-&gt;default_header( Accept =&gt; "application/json" );
+
+$mech-&gt;add_handler( response_data =&gt; sub {
+    my ( $response, $ua, $h, $data ) = @_;
+    # $data; # Handle the gzip data.
+    $response-&gt;content(undef);
+    1;
+});
+
+$mech-&gt;get("https://stream.tradeking.com/v1/market/quotes?symbols=AAPL");
+&lt;/code&gt;
+
+&lt;p&gt;On the plus side, the [metamod://WWW::OAuth] was trivial to mix in and works great for this.&lt;/p&gt;
+
+&lt;p&gt;Thanks for looking!&lt;/p&gt;
+
+
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; the solution from [pmqs] with full testing code from [haukex] works perfectly. Thank you so much to them and [bliako] and [kschwab] and [vr]. Always proud of the monks; today also grateful.&lt;/p&gt;
+
+&lt;p&gt;Caveat for anyone doing the same kind of thing, the &lt;c&gt;$mech&lt;/c&gt; response accumulates so you still have to clear it out with &lt;c&gt;$response-&gt;content(undef)&lt;/c&gt; or it slowly, perpetually grows…
+&lt;/p&gt;</doctext>
+<thread id="1227435">
+<node id="1227437"><node id="1227463"><node id="1227466"><node id="1227471"><node id="1227475"/>
+<node id="1227483"><node id="1227488"><node id="1227493"><node id="1227525"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1227490"><node id="1227496"><node id="1227531"/>
+</node>
+</node>
+</node>
+<node id="1227519"/>
+</thread></node>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1199814" title="Problem upgrading XML::Fast from 0.11 to 0.17" created="2017-09-21 05:33:21" updated="2017-09-21 05:33:21" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="492557">mje</author>
+<doctext field_name="doctext">&lt;p&gt;I've been using XML::Fast to process XML files for some time and successfully. However, the code was moved to a newer machine and has stopped working in some circumstances. A difference between the machines is XML::Fast version, 0.11 on original machine (working) and 0.17 on new machine (not working). When no other changes are made but to upgrade to 0.17 on the old machine it also stops working.&lt;/p&gt;
+
+&lt;p&gt;The error I'm getting is:&lt;/p&gt;
+
+&lt;code&gt;
+Failed to encode 2017-9-21T08-49-17.XML to JSON for indexing - malformed or illegal unicode character in string [&amp;#65533;ndby IF], cannot convert to JSON at xx.pm line 1827.
+&lt;/code&gt;
+
+&lt;p&gt;The XML file comes from a 3rd party and is ISO-8859-1 encoded.  The bit it is complaining about is &lt;Value&gt;Br&lt;F8&gt;ndby IF&lt;/Value&gt;. A cut down version of the XML which fails is:&lt;/p&gt;
+
+&lt;code&gt;
+&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;
+&lt;xx feedtype="delta"&gt;&lt;Timestamp CreatedTime="2017-09-21T06:49:17" TimeZone="GMT"/&gt;&lt;Value&gt;Brøndby IF&lt;/Value&gt;&lt;/xx&gt;
+&lt;/code&gt;
+
+&lt;p&gt;The code which is now failing is:&lt;/p&gt;
+
+&lt;code&gt;
+use Cpanel::JSON::XS;
+use XML::Fast;
+
+sub esIndexFile2 {
+    my ($self, $file) = @_;
+
+    my $xml = do {
+        local $/ = undef;
+        open (my $fh, "&lt;:encoding(ISO-8859-1)", $file) or die "Failed to open $file - $!";
+        &lt;$fh&gt;;
+    };
+    $xml =~ s/^(?:.*\n)//;      # remove first line - the encoding line
+
+    my $hash;
+    eval {
+        $hash = xml2hash $xml;
+    };
+    if (my $ev = $@) {
+        warn("Failed to parse file $file for indexing - $@ - SKIPPING");
+        return;
+    }
+
+    my $json = eval {
+        encode_json($hash);     # &lt;------------ fails here
+    };
+    if (my $ev = $@) {
+        $self-&gt;logwarn("Failed to encode $file to JSON for indexing - $@ - SKIPPING");
+        return;
+    }
+
+    return 1;
+}
+&lt;/code&gt;
+
+&lt;p&gt;The changes file for XML::Fast is not too helpful. I have discovered adding utf8decode =&gt; 1 to the xml2hash makes it work now but I don't really understand why. I am doing anything wrong here? What might have changed in XML::Fast to cause this to happen?&lt;p&gt;</doctext>
+<thread id="1199814">
+<node id="1199889"><node id="1199905"/>
+<node id="1199922"><node id="1199924"/>
+</node>
+</node>
+<node id="1199892"><node id="1199906"/>
+</node>
+<node id="1199923"><node id="1199930"><node id="1199947"><node id="1199953"/>
+</node>
+<node id="1200037"/>
+</node>
+<node id="1200036"/>
+</node>
+</thread></node>

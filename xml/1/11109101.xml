@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109101" title="Re^3: Converting to number doesn't always work..." created="2019-11-23 04:24:34" updated="2019-11-23 04:24:34" _doctext_mode="lenient"><type id="11">note</type>
+<author id="634253">AnomalousMonk</author>
+<doctext field_name="doctext">&lt;p&gt;
+Here's something to ponder:
+&lt;c&gt;
+c:\@Work\Perl\monks&gt;perl -wMstrict -e
+"my @TEST_VALUES = ('55a', 'a55');
+ foreach my $i (@TEST_VALUES)
+ {
+   print qq{Calling TEST('$i') / };
+   print qq{TEST return values = @{[ TEST($i) ]} \n\n};
+ }
+ ;;
+ sub TEST
+ {
+   my $N = shift;
+   local $SIG{__WARN__} = sub {
+     print qq{(warn: N=$N -&gt; };
+     $N = 77;
+     print qq{N=$N) / };
+     };
+   print qq{N=$N / N+0=}, $N + 0;
+   print qq{ / N.''=}, $N.'', qq{\n};
+   return $N, $N+0, $N.'';
+ }
+"
+Calling TEST('55a') / (warn: N=55a -&gt; N=77) / N=55a / N+0=55 / N.''=77
+TEST return values = 77 55 77
+
+Calling TEST('a55') / (warn: N=a55 -&gt; N=77) / N=a55 / N+0=0 / N.''=77
+TEST return values = 77 0 77
+&lt;/C&gt;
+Don't ask me what this means or if it's a bug (it's late and I need to think about this with a clear head), but I suspect it has something to do with the inherent dualvar nature of scalars (see [metamod://Scalar::Util]&lt;c&gt;::dualvar&lt;/C&gt;): a scalar caches a string or numeric representation of its value if it was ever used as a string or number, and both representations may be present in the scalar at the same time &lt;i&gt;and may represent entirely unrelated values!&lt;/I&gt; Runs the same under ActiveState 5.8.9 and Strawberry 5.14.4.1.
+&lt;/P&gt;
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-634253"&gt;
+&lt;hr&gt;&lt;p&gt;Give a man a fish&lt;b&gt;:&lt;/B&gt; &lt;c&gt; &lt;%-{-{-{-&lt;&lt;/C&gt;&lt;/P&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11109035</root_node>
+<parent_node field_name="parent_node">11109085</parent_node>
+<thread id="11109035">
+<node id="11109043"><node id="11109046"/>
+</node>
+<node id="11109044"/>
+<node id="11109047"><node id="11109052"><node id="11109054"><node id="11109061"><node id="11109063"><node id="11109065"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11109057"/>
+</node>
+<node id="11109070"/>
+<node id="11109080"><node id="11109085"><node id="11109101"><node id="11109105"/>
+<node id="11109115"><node id="11109192"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200473" title="Re^3: Pattern Identification" created="2017-10-01 11:47:19" updated="2017-10-01 11:47:19" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;In general, [doc://map] blocks can be rewritten like the following (I'm simplifying a little bit), although one would usually use a lexical loop variable like &lt;c&gt;for my $elem (@in) ...&lt;/c&gt; instead of &lt;c&gt;$_&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+my @out = map { ... } @in;
+# - becomes -
+my @out;
+for $_ (@in) {
+    my @result = ...;
+    push @out, @result;
+}
+&lt;/c&gt;
+&lt;p&gt;The regex &lt;c&gt;/^(\S+)\s++(.+)/&lt;/c&gt; is splitting the input string on the first whitespace (it is equivalent to &lt;c&gt;my ($left,$right) = split /\s+/, $str, 2;&lt;/c&gt;, see [doc://split]). Using the ternary [doc://perlop#Conditional-Operator|&lt;c&gt;?:&lt;/c&gt;] operator, if the regex matches, the block of code will return the string &lt;c&gt;"(?:$1(?{'$2'}))"&lt;/c&gt;, and if it doesn't match, [doc://die] is called. So in this case the [doc://map] operation is not returning a hash (or a list of key-value pairs), but just one output string for each input string, the input strings being one line of the regexes each.&lt;/p&gt;
+&lt;p&gt;So with the &lt;c&gt;join '|', ...&lt;/c&gt;, as you said the code is constructing a single regex. The general process of doing so is something I discussed in my tutorial [id://1179840], but this one is a bit more specialized. For the names, [tybalt89] is using a neat trick using [doc://perlre#(?{-code-})|&lt;c&gt;(?{...})&lt;/c&gt;], which allows you to insert arbitrary code into a regular expression, the return value of the most recent code is then stored in the special variable [doc://$^R]. The [doc://re|&lt;c&gt;use re 'eval';&lt;/c&gt;] is necessary because these &lt;c&gt;(?{})&lt;/c&gt; blocks are being interpolated from strings into the regex, so this is a security feature of Perl.&lt;/p&gt;
+&lt;p&gt;Consider this regex (I'm using the &lt;c&gt;/x&lt;/c&gt; [doc://perlre#Modifiers|modifier] for readability): &lt;c&gt;m{ ^[a-zA-Z]\w+$ (?{'one'}) | ^[0-9]\w+$ (?{'two'}) }x&lt;/c&gt;. When matching against the string &lt;c&gt;"3abc"&lt;/c&gt;, it will match the second alternation, that is, &lt;c&gt;^[0-9]\w+$&lt;/c&gt;, and then it will execute &lt;c&gt;(?{'two'})&lt;/c&gt;, and since the last value in that piece of code is &lt;c&gt;'two'&lt;/c&gt;, that is what it returns and what &lt;c&gt;$^R&lt;/c&gt; gets set to. After the regex has executed and matched successfully, you can simply look at the value of &lt;c&gt;$^R&lt;/c&gt; to see which of the two patterns contained in the regex were matched.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor edits for clarity.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1200434</root_node>
+<parent_node field_name="parent_node">1200463</parent_node>
+<thread id="1200434">
+<node id="1200435"><node id="1200463"><node id="1200471"/>
+<node id="1200473"/>
+</node>
+</node>
+<node id="1200438"/>
+<node id="1200452"><node id="1200456"/>
+</node>
+<node id="1200464"/>
+<node id="1200490"/>
+</thread></node>

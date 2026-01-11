@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1197699" title="Re: readdir() on a sysopen() handle?" created="2017-08-20 09:05:43" updated="2017-08-20 09:05:43" _doctext_mode="lenient"><type id="11">note</type>
+<author id="747201">afoken</author>
+<doctext field_name="doctext">&lt;p&gt;Looking through several linux man pages, it looks like you normally should use [man://opendir], [man://readdir] or [man://scandir], and [man://closedir] from C. Those functions are specified by POSIX and are portable. But the glibc also offers [man://fdopendir] that converts a plain integer file descriptor to a &lt;c&gt;DIR *&lt;/c&gt;. So in C, something like this should work:&lt;/p&gt;
+&lt;c&gt;
+/* UNTESTED! */
+
+DIR * d opendir_nofollow(const char * pathname)
+{
+    int fd = open(pathname, O_DIRECTORY | O_NOFOLLOW);
+    if (fd == -1) {
+        return NULL;
+    }
+    return fdopendir(fd);
+}
+&lt;/c&gt;
+&lt;p&gt;Converting that to a perl directory handle will very likely require a little bit of XS code. Perhaps [mod://Inline::C] might be helpful. You definitively want to have a look at the perl sources, the part that implements the [doc://opendir] function, to see how to correctly create a directory handle.&lt;/p&gt;
+&lt;p&gt;Alexander&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-747201"&gt;
+--&lt;br&gt;
+Today I will gladly share my knowledge and experience, for there are no sweeter words than "I told you so". ;-)
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1197688</root_node>
+<parent_node field_name="parent_node">1197688</parent_node>
+<thread id="1197688">
+<node id="1197692"><node id="1197694"><node id="1197704"><node id="1197744"/>
+</node>
+<node id="1197709"><node id="1197711"/>
+</node>
+</node>
+</node>
+<node id="1197695"><node id="1197697"/>
+</node>
+<node id="1197699"><node id="1197703"><node id="1197718"><node id="1197723"><node id="1197756"><node id="1197774"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1197717"><node id="1197745"/>
+</node>
+</thread></node>

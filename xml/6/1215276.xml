@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1215276" title="Re^7: Perl app won't compile /run from cron" created="2018-05-27 11:39:50" updated="2018-05-27 11:39:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;It should be easy.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Agreed, and I know issues like this can be frustrating to debug, so I hope some clarification is helpful:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;the @INC is correctly updated ... That fails because cpan didn't update @INC environment correctly. ... the user environment @INC is updated by cpan&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sorry, no, because it's not [doc://cpan|&lt;c&gt;cpan&lt;/c&gt;]'s job to change [doc://@INC|&lt;c&gt;@INC&lt;/c&gt;] or the environment. &lt;c&gt;cpan&lt;/c&gt; just installs modules into the directories that are available.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;installing modules as root to avoid the issue for a user is also a work-around, and not a good one&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Well, if you're installing modules into the system Perl, then normally &lt;i&gt;only&lt;/i&gt; &lt;c&gt;root&lt;/c&gt; has access to those directories.&lt;/p&gt;
+&lt;p&gt;Here's a brief and slightly simplified overview of what's going on here:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Perl is compiled with a default set of paths of paths for &lt;c&gt;@INC&lt;/c&gt;. For the system Perl, these are usually under &lt;c&gt;/usr&lt;/c&gt;, and can be written to only by &lt;c&gt;root&lt;/c&gt;. You can install modules there via the system's package manager (preferred, because otherwise there is a small but nonzero chance that a module installation can mess up the system Perl, and that's a huge pain to clean up), or with &lt;c&gt;sudo cpan&lt;/c&gt; or a manual install performed with &lt;c&gt;sudo&lt;/c&gt;. These modules are then available to everyone and don't require any changes to &lt;c&gt;@INC&lt;/c&gt; because the paths are compiled into the &lt;c&gt;perl&lt;/c&gt; binary. &lt;/li&gt;
+&lt;li&gt;Unfortunately, [mod://Image::Grab] does not seem to be available as a precompiled Debian package - if it were, it'd probably be named &lt;c&gt;libimage-grab-perl&lt;/c&gt;. So the approach to use &lt;c&gt;cpan&lt;/c&gt; is fine. (Side note: you might want to check out [mod://App::cpanminus|&lt;c&gt;cpanm&lt;/c&gt;], a nice alternative.)&lt;/li&gt;
+&lt;li&gt;What happened here is that when you run &lt;c&gt;cpan&lt;/c&gt; as a normal user &lt;i&gt;without&lt;/i&gt; &lt;c&gt;sudo&lt;/c&gt;, on the first run modern versions of &lt;c&gt;cpan&lt;/c&gt; will detect that they don't have write permissions to the system directories compiled into &lt;c&gt;perl&lt;/c&gt;. It will then offer you some alternatives, the default being the use of [mod://local::lib].&lt;/li&gt;
+&lt;li&gt;[mod://local::lib] will set up a directory, by default &lt;c&gt;~/perl5/lib/perl5&lt;/c&gt;, and it will also set up environment variables, normally by appending them to &lt;c&gt;.profile&lt;/c&gt; or &lt;c&gt;.bashrc&lt;/c&gt;, which do two things: First, they direct Perl's module installation tools to install modules in the new location. Second, it sets the [doc://perlrun#PERL5LIB|&lt;c&gt;PERL5LIB&lt;/c&gt;] environment variable to point to the new directory. &lt;c&gt;PERL5LIB&lt;/c&gt; is the environment variable that &lt;c&gt;perl&lt;/c&gt; looks at for additional entries for &lt;c&gt;@INC&lt;/c&gt;. This is why, when you log into a new shell, things "just work": &lt;c&gt;PERL5LIB&lt;/c&gt; is set up correctly because &lt;c&gt;.profile&lt;/c&gt; and &lt;c&gt;.bashrc&lt;/c&gt; are run at login. It also means that it &lt;i&gt;only&lt;/i&gt; works in the login shell of that user.&lt;/li&gt;
+&lt;li&gt;When running from [man://cron|&lt;c&gt;cron&lt;/c&gt;], things are different! &lt;c&gt;cron&lt;/c&gt; only provides a &lt;i&gt;limited&lt;/i&gt; environment to the programs it runs. This means that &lt;c&gt;PERL5LIB&lt;/c&gt; is not available by default there. You can see this yourself in action by running this from the shell: &lt;c&gt;perl -MData::Dumper -e 'print Dumper($^X, $ENV{PERL5LIB}, \@INC)'&lt;/c&gt; and then putting the same thing in a &lt;c&gt;crontab&lt;/c&gt; entry (redirect the output to a file, e.g. &lt;c&gt;&gt;/tmp/crontest&lt;/c&gt;, to capture the output) and comparing the outputs.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;&lt;i&gt;The solution is to fix the root cause.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I hope you see now that the root cause here is the environment provided by [man://cron|&lt;c&gt;cron&lt;/c&gt;].&lt;/p&gt;
+&lt;p&gt;This being Perl, there are a bunch of different solutions: a bunch of different ways to set &lt;c&gt;PERL5LIB&lt;/c&gt; so that it's available even when scripts are run by &lt;c&gt;cron&lt;/c&gt; ([https://unix.stackexchange.com/questions/27289/how-can-i-run-a-cron-command-with-existing-environmental-variables|one example]), other [id://1200044|ways to set up &lt;c&gt;@INC&lt;/c&gt;] so that it always includes the directory where the modules are installed, and ways of installing modules so that &lt;c&gt;perl&lt;/c&gt; can always find them (as I've described). So many, in fact, that I don't think listing them all here will be very helpful - each has its advantages and disadvantages, also depending on things like whether you need the modules to be available to all users or even all scripts that you want to run, and so on. So I'll just make a few suggestions of solutions (not workarounds!), and if you need more information, feel free to ask and provide more details of how you want your setup to look.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;You can keep using [mod://local::lib], and as I've said before you can set up &lt;c&gt;PERL5LIB&lt;/c&gt; in your [man://crontab;5|&lt;c&gt;crontab&lt;/c&gt;], since this really is the root cause. It's pretty simple: From your shell where things work, run &lt;c&gt;echo $PERL5LIB&lt;/c&gt;, then take that value and stick a new line &lt;c&gt;PERL5LIB=...&lt;/c&gt; at the top of your &lt;c&gt;crontab&lt;/c&gt; (like &lt;c&gt;PERL5LIB=/home/darren/perl5/lib/perl5&lt;/c&gt;).&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Using [https://perlbrew.pl/|&lt;c&gt;perlbrew&lt;/c&gt;], you can install your own version(s) of Perl into your home directory (by default under &lt;c&gt;~/perl5/perlbrew&lt;/c&gt;). When you install Perl into a single directory like this, the nice thing is that it does not spread its library paths (the ones compiled into the &lt;c&gt;perl&lt;/c&gt; binary) all around the system - instead they are all contained underneath that one directory, no fiddling around with &lt;c&gt;PERL5LIB&lt;/c&gt; or [mod://local::lib] necessary!&lt;/p&gt;
+&lt;p&gt;So for example, I just used &lt;c&gt;perlbrew&lt;/c&gt; to install Perl v5.26.2 on one of my Raspberry Pis. I disabled the [mod://local::lib] environment variables, and now can do &lt;c&gt;perlbrew use perl-5.26.2&lt;/c&gt;, and then use &lt;c&gt;cpan&lt;/c&gt; to install modules into that Perl normally. And, I can now run that copy of Perl from my &lt;c&gt;crontab&lt;/c&gt; via &lt;c&gt;/home/pi/perl5/perlbrew/perls/perl-5.26.2/bin/perl&lt;/c&gt;, with access to all the modules!&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Although as I said, installing modules into the system Perl has risks, if it's only one module and this is just a single-user system (in my experience on a Raspberry Pi one just tends to stick with the default &lt;c&gt;pi&lt;/c&gt; user), the risk isn't too great. Since you've already got [mod://local::lib] set up for the normal user, it might be easiest to not try and clean that up, and instead log in as root via &lt;c&gt;sudo -i&lt;/c&gt; and then just run &lt;c&gt;cpan&lt;/c&gt; from there. The advantage of this method over the above two is that the modules become available to everyone.&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</doctext>
+<root_node field_name="root_node">1215113</root_node>
+<parent_node field_name="parent_node">1215260</parent_node>
+<thread id="1215113">
+<node id="1215115"><node id="1215199"><node id="1215206"/>
+<node id="1215211"/>
+</node>
+</node>
+<node id="1215116"><node id="1215117"/>
+</node>
+<node id="1215119"/>
+<node id="1215138"><node id="1215148"><node id="1215150"><node id="1215177"><node id="1215181"/>
+<node id="1215188"><node id="1215260"><node id="1215263"><node id="1215266"><node id="1215267"/>
+<node id="1215268"/>
+<node id="1215270"/>
+</node>
+</node>
+<node id="1215276"><node id="1215277"><node id="1215285"><node id="1215286"><node id="1215322"/>
+</node>
+<node id="1215321"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1215140"><node id="1215145"/>
+<node id="1215147"/>
+<node id="1215669"/>
+</node>
+<node id="1215141"><node id="1215142"/>
+<node id="1215143"><node id="1215149"/>
+</node>
+</node>
+<node id="1215152"/>
+</thread></node>

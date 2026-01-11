@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11122694" title="Re^3: What's happening in this expression?" created="2020-10-11 06:08:29" updated="2020-10-11 06:08:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;What are the two warnings "Useless use of a variable in void context at -e line 1." referring to?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;They're referring to &lt;c&gt;$x&lt;/c&gt; and &lt;c&gt;$y&lt;/c&gt;, because the statement as written above is in void context, so these variables are in void context too. I was intentionally a little vauge with my "simply sitting there" because it's possible for them to not be in void context, for example if this statement was the last thing in a &lt;c&gt;sub&lt;/c&gt; (the context that the &lt;c&gt;sub&lt;/c&gt; is called in is passed through):&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+my ($x,$y,$z);
+sub foo { qw/a b c d/ }
+sub bar {
+	my $a, $x, $y, $z = foo()
+}
+my @x = bar();
+my $r = bar();
+&lt;/c&gt;
+&lt;p&gt;This only produces the warning "&lt;c&gt;Parentheses missing around "my" list"&lt;/c&gt;. &lt;c&gt;@x&lt;/c&gt; will contain the values &lt;c&gt;(undef, undef, undef, "d")&lt;/c&gt;, because &lt;c&gt;$a&lt;/c&gt;, &lt;c&gt;$x&lt;/c&gt;, and &lt;c&gt;$y&lt;/c&gt; are &lt;c&gt;undef&lt;/c&gt; (nothing is assigned to them), while &lt;c&gt;$z&lt;/c&gt; is assigned the return value of &lt;c&gt;foo()&lt;/c&gt;, which means it is assigned &lt;c&gt;"d"&lt;/c&gt; because my example &lt;c&gt;sub foo&lt;/c&gt; is returning a list, and a list in scalar context evaluates to its last value. &lt;c&gt;$r&lt;/c&gt; will contain &lt;c&gt;"d"&lt;/c&gt; for the same reason.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11122690</root_node>
+<parent_node field_name="parent_node">11122693</parent_node>
+<thread id="11122690">
+<node id="11122691"><node id="11122693"><node id="11122694"><node id="11122701"><node id="11122702"/>
+</node>
+</node>
+<node id="11122695"/>
+</node>
+</node>
+<node id="11122692"><node id="11122697"><node id="11122752"/>
+</node>
+</node>
+<node id="11122699"><node id="11122719"><node id="11122721"/>
+<node id="11122722"><node id="11122853"><node id="11122857"><node id="11122927"><node id="11122941"><node id="11123104"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11122727"/>
+<node id="11122735"/>
+</node>
+</node>
+<node id="11122700"/>
+<node id="11122724"/>
+<node id="11122747"/>
+</thread></node>

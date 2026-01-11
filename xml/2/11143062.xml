@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11143062" title="Re: Can I catch a die from someone else's module?" created="2022-04-18 15:56:53" updated="2022-04-18 15:56:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Which &lt;c&gt;try&lt;/c&gt;/&lt;c&gt;catch&lt;/c&gt; module are you using? Because if it's [mod://Try::Tiny], note that the &lt;c&gt;try&lt;/c&gt; and &lt;c&gt;catch&lt;/c&gt; blocks are actually anonymous &lt;c&gt;sub&lt;/c&gt;s, so when you &lt;c&gt;return&lt;/c&gt; from them, you're actually just returning from that block, and not any surrounding function. So the following won't work:&lt;/p&gt;
+&lt;c&gt;
+use Try::Tiny;
+sub foo {
+	try { die "bang" }
+	catch { return "nope" }; # just returns from this block!
+	return "foo";
+}
+print foo(), "\n"; # prints "foo"
+&lt;/c&gt;
+&lt;p&gt;To work around this, you'll have to either not rely on &lt;c&gt;return&lt;/c&gt; from the blocks, instead e.g. using flag variables, or you'll have to switch to a different &lt;c&gt;try&lt;/c&gt;/&lt;c&gt;catch&lt;/c&gt; module, or perhaps even the new &lt;i&gt;experimental&lt;/i&gt; built-in [doc://perlsyn#Try-Catch-Exception-Handling] in Perl 5.34+.&lt;/p&gt;
+&lt;p&gt;However, personally I usually stick with [mod://Try::Tiny] and work around the limitation described above.&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; To answer the question in the title, generally yes, you can catch errors thrown by third party code like this as well. In my experience it's very rare that an error in a module will cause the entire &lt;c&gt;perl&lt;/c&gt; interpreter to exit abruptly, and if it does, that's almost certainly a bug.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11143055</root_node>
+<parent_node field_name="parent_node">11143055</parent_node>
+<thread id="11143055">
+<node id="11143062"/>
+<node id="11143063"><node id="11143064"/>
+<node id="11143099"><node id="11143101"><node id="11143103"><node id="11143116"/>
+</node>
+</node>
+<node id="11143114"/>
+<node id="11143509"/>
+<node id="11143510"/>
+</node>
+</node>
+<node id="11143065"/>
+<node id="11143485"/>
+</thread></node>

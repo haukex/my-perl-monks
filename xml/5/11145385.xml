@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11145385" title="Re: CGI::Session Cookies" created="2022-07-09 04:40:59" updated="2022-07-09 04:40:59" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Note that [mod://CGI::Session] was last released in 2011, its maintainer hasn't made any CPAN releases since 2012, it has 23 open issues on RT, and its maintainer hasn't made any commits to [https://github.com/markstos/cgi-session/commits/new|the repo] since 2015 and it is now marked read-only. In general, [mod://CGI].pm, while it still works, isn't really recommended any more, and especially not for new developments. In particular, you're using its HTML generation functions, which are deprecated (I'm &lt;c&gt;print&lt;/c&gt;ing strings below, which isn't recommended either, but since this is about cookies and the strings are entirely static, I think it's ok for this demo).&lt;/p&gt;
+&lt;p&gt;For more modern approaches, see e.g. [id://11132949|this node], in particular I personally like [mod://Mojolicious::Guides::Tutorial#Hello-World|Mojolicious], which supports (client-side) sessions out of the box, and I have quite a few examples [id://830550|on my scratchpad], for example a comparison between Mojo and &lt;c&gt;CGI.pm&lt;/c&gt; [id://11131500|here].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Soon, cookies without the “SameSite” attribute or with an invalid value will be treated as “Lax”.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note that this means that explicitly setting the value to &lt;c&gt;"Lax"&lt;/c&gt; doesn't seem strictly necessary, other than perhaps to quiet the warning.&lt;/p&gt;
+&lt;p&gt;Anyway, one way that I see that this issue could be patched is by subclassing [mod://CGI::Session] and overriding its &lt;c&gt;cookie&lt;/c&gt; method, which is what generates the cookies (this is called by its &lt;c&gt;header&lt;/c&gt; method, which is why your approach to reaching into the &lt;c&gt;query&lt;/c&gt; object didn't work). Though [mod://CGI::Cookie] doesn't document it, which I am guessing may be an oversight instead of an intentional omission, it does have accessors to change its &lt;c&gt;samesite&lt;/c&gt; etc. properties.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use CGI;
+use CGI::Carp 'fatalsToBrowser';
+use CGI::Session;
+
+package CGI::Session::Mine {
+    use parent 'CGI::Session';
+    sub cookie {
+        my $self = shift;
+        my $cookie = $self-&gt;SUPER::cookie(@_);
+        $cookie-&gt;secure(1);
+        $cookie-&gt;samesite('Lax');
+        return $cookie;
+    }   
+}
+
+my $CS = CGI::Session::Mine-&gt;new();
+$CS-&gt;expire('+1d');
+print $CS-&gt;header();
+print '&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;title&gt;Test&lt;/title&gt;&lt;/head&gt;'
+    .'&lt;body&gt;&lt;h1&gt;Test&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;';
+&lt;/c&gt;
+&lt;p&gt;An alternative is to patch directly into [mod://CGI::Session] using [mod://Class::Method::Modifiers], since the former's &lt;c&gt;cookie&lt;/c&gt; method does support the passing of additional parameters to the constructor:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use CGI;
+use CGI::Carp 'fatalsToBrowser';
+use CGI::Session;
+use Class::Method::Modifiers 'around';
+
+around 'CGI::Session::cookie' =&gt; sub {
+    my ($orig, $self) = (shift, shift);
+    $orig-&gt;($self, @_, secure=&gt;1, samesite=&gt;'Lax');
+};
+
+my $CS = CGI::Session-&gt;new();
+$CS-&gt;expire('+1d');
+print $CS-&gt;header();
+print '&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;title&gt;Test&lt;/title&gt;&lt;/head&gt;'
+    .'&lt;body&gt;&lt;h1&gt;Test&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;';
+&lt;/c&gt;
+&lt;p&gt;In fact, you can mix and match the two approaches of patching the method vs. subclassing, and modifying the returned cookie vs. passing additional arguments to the method.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;While testing further and trying CGI::Cookie, I'm still not able to assign "SameSite" values&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This workaround works for me, perhaps your version of [mod://CGI::Cookie] is too old?&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11145381</root_node>
+<parent_node field_name="parent_node">11145381</parent_node>
+<thread id="11145381">
+<node id="11145385"><node id="11145403"/>
+</node>
+<node id="11145394"><node id="11145402"/>
+</node>
+</thread></node>

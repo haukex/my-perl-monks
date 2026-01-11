@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1226521" title="Re^9: using online translation engines with perl (ping)" created="2018-11-29 19:28:15" updated="2018-11-29 19:28:15" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext"> 
+&lt;i&gt;Perhaps this pared-down test would be a starting point?&lt;/i&gt;
+&lt;p&gt;I can't get anything from [Net::Ping], likely because I understand less than half of it. To my way of the thinking, it is "actually" the system that pings, and the perl module that wraps this call. (Is that wrong?) If I can do that with a straight-up system call, then that's what they are for.&lt;/p&gt;
+
+&lt;p&gt;I hadn't used &lt;c&gt;prove&lt;/c&gt; before, so I was glad to see how this goes:&lt;/p&gt;
+
+&lt;c&gt;$ sudo prove -v 5.ping3.pl 
+[sudo] password for bob: 
+5.ping3.pl .. 
+1..2
+ok 1 - System ping to www.google.com
+not ok 2 - Net::Ping to www.google.com
+#   Failed test 'Net::Ping to www.google.com'
+#   at 5.ping3.pl line 14.
+# Looks like you failed 1 test of 2.
+Dubious, test returned 1 (wstat 256, 0x100)
+Failed 1/2 subtests 
+
+Test Summary Report
+-------------------
+5.ping3.pl (Wstat: 256 Tests: 2 Failed: 1)
+  Failed test:  2
+  Non-zero exit status: 1
+Files=1, Tests=2, 11 wallclock secs ( 0.04 usr  0.02 sys +  0.14 cusr  0.03 csys =  0.23 CPU)
+Result: FAIL
+$ cat 5.ping3.pl 
+#!/usr/bin/perl -w
+use 5.011;
+use Net::Ping;
+use Test::More tests =&gt; 2;
+
+my $dest   = 'www.google.com';
+my $pinger = Net::Ping-&gt;new ('icmp', 10);
+my $res;
+
+$res = system ("ping -nqc1 -w 3 -W 3 $dest &gt; /tmp/ping.log");
+is ($res, 0E0, "System ping to $dest");
+
+$res = $pinger-&gt;ping ($dest);
+ok ($res, "Net::Ping to $dest");
+
+$pinger-&gt;close;
+
+$ ping -nqc1 -w 3 -W 3 www.google.com
+PING www.google.com(2607:f8b0:400a:800::2004) 56 data bytes
+
+--- www.google.com ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 24.338/24.338/24.338/0.000 ms
+$ 
+&lt;/c&gt;
+
+&lt;p&gt;So the problem exists somewhere between my chair and the operating system. But I've got a version that works, so I can just use that. Why play bad logic games? Between the following readmore tags are output, then source, including a template that provides monastery tags, and the output of the system command appended in that same, unique, time-based file:&lt;/p&gt;
+
+&lt;readmore&gt;
+&lt;c&gt;PING www.google.com(2607:f8b0:400a:808::2004) 56 data bytes
+
+--- www.google.com ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 23.928/23.928/23.928/0.000 ms
+PING www.translate.yandex.ru(2a02:6b8::193) 56 data bytes
+
+--- www.translate.yandex.ru ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 199.524/199.524/199.524/0.000 ms
+PING a-0001.a-msedge.net (204.79.197.200) 56(84) bytes of data.
+
+--- a-0001.a-msedge.net ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 2049ms
+
+PING www.yahoo.com(2001:4998:c:1023::4) 56 data bytes
+
+--- www.yahoo.com ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 21.701/21.701/21.701/0.000 ms&lt;/c&gt;
+&lt;p&gt;Source:&lt;/p&gt;
+&lt;c&gt;$ cat 3.ping3a.pl
+#!/usr/bin/perl -w
+use 5.011;
+use Path::Tiny;
+use POSIX qw(strftime);
+
+# initialization that must precede main data structure
+# User: enter a subdirectory you would like to create
+#       enter a subdirectory of this^^^ for output
+
+my $ts     = "template_stuff";
+my $output = "translations";
+
+## turning things to Path::Tiny
+my $abs   = path(__FILE__)-&gt;absolute;
+my $path1 = Path::Tiny-&gt;cwd;
+my $path2 = path( $path1, $ts );
+say "abs is $abs";
+say "path1 is $path1";
+say "path2 is $path2";
+print "This script will build the above path2. Proceed? (y|n)";
+
+my $prompt = &lt;STDIN&gt;;
+chomp $prompt;
+die unless ( $prompt eq "y" );
+my $template_file   = "1.monk.tmpl";
+my $abs_to_template = path( $path2, $template_file )-&gt;touchpath;
+my $string1         = '&lt;{$symbol}&gt;&lt;/{$symbol}&gt;';
+my $return5         = $abs_to_template-&gt;spew_utf8($string1);
+say "return5 is $return5";
+
+# script params
+my %vars = (
+  monk_tags    =&gt; path( $path2, $template_file ),
+  translations =&gt; path( $path2, $output ),
+  book         =&gt; 'monastery tags ',
+);
+
+my $rvars   = \%vars;
+my $return1 = write_monk_tags($rvars);
+say "return1 is $return1";
+my $munge = strftime( "%d-%m-%Y-%H-%M-%S", localtime );
+$munge .= ".monk.txt";
+
+# use Path::Tiny to create and write to a text in relevant directory
+my $save_file = path( $vars{$output}, $munge )-&gt;touchpath;
+my $return2 = $save_file-&gt;spew_utf8($return1);
+say "return2 is $return2";
+
+## ping a few sites and add it to this log; append output
+# keep time
+
+my $start = time;
+
+my $return3 = ping_sites($save_file);
+say "return3 is $return3";
+say time - $start, "seconds elapsed during pinging";
+
+say "created file $save_file";
+system("gedit $save_file &amp;");
+
+sub ping_sites {
+
+  use 5.011;
+  use Path::Tiny;
+
+  my $outfile = shift;
+
+  for my $dest (
+    'www.google.com', 'www.translate.yandex.ru',
+    'www.bing.com',   'www.yahoo.com'
+    )
+  {
+    system("ping -nqc1 -w 3 -W 3 $dest &gt;&gt; $outfile")
+      and print "### $dest is unreachable\n";
+  }
+  return "done with pinging";
+}
+
+sub write_monk_tags {
+  use warnings;
+  use 5.011;
+  use Text::Template;
+
+  my $rvars = shift;
+  my %vars  = %$rvars;
+
+  my $body     = $vars{"monk_tags"};
+  my $template = Text::Template-&gt;new(
+    ENCODING =&gt; 'utf8',
+    SOURCE   =&gt; "$body",
+  ) or die "Couldn't construct template: $!";
+  my $return = "$vars{\"book\"}\n";
+
+  # User: change these quoted values for different order or tags
+  my @buchstaben = qw/i p c readmore b/;
+  for my $i (@buchstaben) {
+    $vars{"symbol"} = $i;
+    print "How many $i tag pairs would you like?: ";
+    my $prompt = &lt;STDIN&gt;;
+    chomp $prompt;
+    if ( $prompt lt 1 ) {
+      $prompt = 0;
+    }
+    while ( $prompt gt 0 ) {
+      my $result = $template-&gt;fill_in( HASH =&gt; \%vars );
+      $return = $return . $result;
+      --$prompt;
+    }
+  }
+  return $return;
+}
+__END__ 
+$ 
+&lt;/c&gt;
+&lt;/readmore&gt;
+
+&lt;p&gt;I'm happy with this result from this thread. Thank you for your comments.&lt;/p&gt;
+
+
+&lt;i&gt;If you can run this and pass one test but not the other, I suggest firing up wireshark and see what's actually happening on the network. &lt;/i&gt;
+
+&lt;c&gt;
+ sudo add-apt-repository ppa:wireshark-dev/stable
+ sudo apt-get update
+ sudo apt-get install wireshark
+ sudo wireshark
+&lt;/c&gt;
+
+&lt;p&gt;Eye-popping software. Thx.&lt;/p&gt;
+
+
+&lt;c&gt;&lt;/c&gt;&lt;readmore&gt;&lt;/readmore&gt;&lt;b&gt;&lt;/b&gt;&lt;b&gt;&lt;/b&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1225233</root_node>
+<parent_node field_name="parent_node">1226490</parent_node>
+<thread id="1225233">
+<node id="1225256"><node id="1225346"><node id="1225348"/>
+</node>
+</node>
+<node id="1225307"><node id="1225343"/>
+<node id="1225458"><node id="1226163"><node id="1226171"><node id="1226316"><node id="1226327"/>
+<node id="1226338"><node id="1226476"><node id="1226490"><node id="1226521"><node id="1226524"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1225460"/>
+</thread></node>

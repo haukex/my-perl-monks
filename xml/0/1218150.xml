@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1218150" title="Re^2: How to differentiate an empty array from an unitialized one?" created="2018-07-09 05:29:55" updated="2018-07-09 05:29:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;@array&lt;/c&gt; has a defined value, period. ... therefore &lt;c&gt;@array&lt;/c&gt; is not undefined. ... Even &lt;c&gt;split ",", undef;&lt;/c&gt; returns an empty list, which is a defined value.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sorry, this is incorrect, arrays don't have a concept of "(un)defined", only the elements of an array do - an array is either empty, or not empty. Whether or not the elements of an array are &lt;c&gt;undef&lt;/c&gt; or not is a different question - even an array of one &lt;c&gt;undef&lt;/c&gt; element is considered "true" by Perl because the array is non-empty.&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -Mdiagnostics -le 'my @array; print defined(@array)'
+Can't use 'defined(@array)' (Maybe you should just omit the defined()?) at -e
+	line 1 (#1)
+    (F) defined() is not useful on arrays because it
+    checks for an undefined scalar value.  If you want to see if the
+    array is empty, just use if (@array) { # not empty } for example.
+    
+Uncaught exception from user code:
+	Can't use 'defined(@array)' (Maybe you should just omit the defined()?) at -e line 1.
+
+$ perl -wMstrict -le 'my @array=(undef); print @array?"true":"false"'
+true
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;Once you execute &lt;c&gt;my @array =  split ( "," , $_ );&lt;/c&gt;, &lt;c&gt;@array&lt;/c&gt; has a defined value, period.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;c&gt;
+$ perl -wMstrict -MData::Dump -e 'my @array; dd @array; $_="";
+    @array = split(",",$_ ); dd @array'
+()
+()
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;If &lt;c&gt;split&lt;/c&gt; could return &lt;c&gt;undef&lt;/c&gt; ... but &lt;c&gt;split&lt;/c&gt; doesn't do that.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;c&gt;
+$ perl -wMstrict -MData::Dump -e 'dd split /-|(x)/, "-", -1'
+("", undef, "")
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1218126</root_node>
+<parent_node field_name="parent_node">1218148</parent_node>
+<thread id="1218126">
+<node id="1218127"/>
+<node id="1218128"/>
+<node id="1218129"><node id="1218134"><node id="1218142"/>
+<node id="1218149"/>
+</node>
+<node id="1218143"><node id="1218145"/>
+</node>
+</node>
+<node id="1218144"/>
+<node id="1218147"/>
+<node id="1218148"><node id="1218150"><node id="1218225"><node id="1218232"><node id="1218285"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1218165"><node id="1218177"/>
+<node id="1218189"/>
+<node id="1218191"><node id="1218192"/>
+</node>
+</node>
+</thread></node>

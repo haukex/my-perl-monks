@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1216545" title="Centos 7 getadsmtp.pl outputing blank" created="2018-06-13 06:14:06" updated="2018-06-13 06:14:06" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1216543">gml_perl</author>
+<doctext field_name="doctext">&lt;p&gt;I am running getadsmtp.pl script to pull email addresses from the active directory on Centos 7 perl version v5.16.3 but it not outputing anything. I have the same script running on Ubuntu 14 perl version 5.10.0 and Centos 6.5 perl version 5.10.1 perfectly. Can you assist? &lt;/p&gt;
+
+&lt;p&gt;getadsmtp.pl code &lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl -T -w
+
+# Version 1.01
+
+# This script will pull all users' SMTP addresses from your Active Directory
+# (including primary and secondary email addresses) and list them in the
+# format "user@example.com OK" which Postfix uses with relay_recipient_maps.
+# Be sure to double-check the path to perl above.
+
+# This requires Net::LDAP to be installed.  To install Net::LDAP, at a shell
+# type "perl -MCPAN -e shell" and then "install Net::LDAP"
+
+use Net::LDAP;
+use Net::LDAP::Control::Paged;
+use Net::LDAP::Constant ( "LDAP_CONTROL_PAGED" );
+
+# Enter the path/file for the output
+$VALID = "/etc/postfix/ad_28vegas";
+
+# Enter the FQDN of your Active Directory domain controllers below
+$dc1="srvleon.verpakt.com";
+$dc2="srvdeon.verpakt.com";
+
+# Enter the LDAP container for your userbase.
+# The syntax is CN=Users,dc=example,dc=com
+# This can be found by installing the Windows 2000 Support Tools
+# then running ADSI Edit.
+# In ADSI Edit, expand the "Domain NC [domaincontroller1.example.com]" &amp;
+# you will see, for example, DC=example,DC=com (this is your base).
+# The Users Container will be specified in the right pane as
+# CN=Users depending on your schema (this is your container).
+# You can double-check this by clicking "Properties" of your user
+# folder in ADSI Edit and examining the "Path" value, such as:
+# LDAP://domaincontroller1.example.com/CN=Users,DC=example,DC=com
+# which would be $hqbase="cn=Users,dc=example,dc=com"
+# Note:  You can also use just $hqbase="dc=example,dc=com"
+$hqbase="ou=28vegas,ou=Verpakt casino's,dc=verpakt,dc=com";
+
+# Enter the username &amp; password for a valid user in your Active Directory
+# with username in the form cn=username,cn=Users,dc=example,dc=com
+# Make sure the user's password does not expire.  Note that this user
+# does not require any special privileges.
+# You can double-check this by clicking "Properties" of your user in
+# ADSI Edit and examining the "Path" value, such as:
+# LDAP://domaincontroller1.example.com/CN=user,CN=Users,DC=example,DC=com
+# which would be $user="cn=user,cn=Users,dc=example,dc=com"
+# Note: You can also use the UPN login: "user\@example.com"
+$user="cn=debian,cn=Users,dc=verpakt,dc=com";
+$passwd="Yuuthw1";
+
+# Connecting to Active Directory domain controllers
+$noldapserver=0;
+$ldap = Net::LDAP-&gt;new($dc1) or
+   $noldapserver=1;
+if ($noldapserver == 1)  {
+   $ldap = Net::LDAP-&gt;new($dc2) or
+      die "Error connecting to specified domain controllers $@ \n";
+}
+
+$mesg = $ldap-&gt;bind ( dn =&gt; $user,
+                     password =&gt;$passwd);
+if ( $mesg-&gt;code()) {
+ die ("error:", $mesg-&gt;code(),"\n");
+}
+
+# How many LDAP query results to grab for each paged round
+# Set to under 1000 for Active Directory
+$page = Net::LDAP::Control::Paged-&gt;new( size =&gt; 990 );
+
+@args = ( base     =&gt; $hqbase,
+# Play around with this to grab objects such as Contacts, Public Folders, etc.
+# A minimal filter for just users with email would be:
+# filter =&gt; "(&amp;(sAMAccountName=*)(mail=*))"
+         filter =&gt; "(&amp; (mailnickname=*) (| (&amp;(objectCategory=person)
+                    (objectClass=user)(!(homeMDB=*))(!(msExchHomeServerName=*)))
+                    (&amp;(objectCategory=person)(objectClass=user)(|(homeMDB=*)
+                    (msExchHomeServerName=*)))(&amp;(objectCategory=person)(objectClass=contact))
+                    (objectCategory=group)(objectCategory=publicFolder) ))",
+          control  =&gt; [ $page ],
+          attrs  =&gt; "proxyAddresses",
+);
+
+my $cookie;
+while(1) {
+  # Perform search
+  my $mesg = $ldap-&gt;search( @args );
+
+# Filtering results for proxyAddresses attributes
+  foreach my $entry ( $mesg-&gt;entries ) {
+    my $name = $entry-&gt;get_value( "cn" );
+    # LDAP Attributes are multi-valued, so we have to print each one.
+    foreach my $mail ( $entry-&gt;get_value( "proxyAddresses" ) ) {
+     # Test if the Line starts with one of the following lines:
+     # proxyAddresses: [smtp|SMTP]:
+     # and also discard this starting string, so that $mail is only the
+     # address without any other characters...
+     if ( $mail =~ s/^(smtp|SMTP)://gs ) {
+       push(@valid, $mail." OK\n");
+     }
+    }
+  }
+
+  # Only continue on LDAP_SUCCESS
+  $mesg-&gt;code and last;
+
+  # Get cookie from paged control
+  my($resp)  = $mesg-&gt;control( LDAP_CONTROL_PAGED ) or last;
+  $cookie    = $resp-&gt;cookie or last;
+
+  # Set cookie in paged control
+  $page-&gt;cookie($cookie);
+}
+
+if ($cookie) {
+  # We had an abnormal exit, so let the server know we do not want any more
+  $page-&gt;cookie($cookie);
+  $page-&gt;size(0);
+  $ldap-&gt;search( @args );
+  # Also would be a good idea to die unhappily and inform OP at this point
+     die("LDAP query unsuccessful");
+}
+# Only write the file once the query is successful
+open VALID, "&gt;$VALID" or die "CANNOT OPEN $VALID $!";
+print VALID @valid;
+# Add additional restrictions, users, etc. to the output file below.
+#print VALID "user\@example.com OK\n";
+#print VALID "user1\@example.com 550 User unknown.\n";
+#print VALID "bad.example.com 550 User does not exist.\n";
+
+close VALID;
+&lt;/code&gt;</doctext>
+<thread id="1216545">
+<node id="1216546"><node id="1217432"><node id="1217664"><node id="1217828"><node id="1217832"><node id="1217893"><node id="1217895"><node id="1220996"><node id="1221074"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1216552"><node id="11105139"><node id="11105161"><node id="11105728"/>
+</node>
+</node>
+</node>
+<node id="11119651"/>
+</thread></node>

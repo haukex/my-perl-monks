@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11119173" title="Server hold udp packets in reciev queue" created="2020-07-10 22:54:20" updated="2020-07-10 22:54:20" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11116905">throwaway</author>
+<doctext field_name="doctext">I am working through a book where it uses perl to learn network programming. With a client written in a similar manner as to this server, the udp datagram is a little bit of text. When I run the program and send the packet it just sits in the receiv queue. I see this using netstat on all listening ports does anyone know how to not have it hold them in there and just process them?
+
+&lt;code&gt;
+#! /usr/bin/perl -w 
+
+use strict;
+use Socket;
+
+use constant SIMPLE_UDP_PORT =&gt; 4001;
+use constant MAX_RECV_LEN =&gt; 1500;
+use constant LOCAL_INETNAME =&gt; 'localhost';
+
+my $trans_serv = getprotobyname('udp');
+
+my $local_host = pack "C4", split('\.', "127.0.0.1");
+
+my $local_port = shift || SIMPLE_UDP_PORT;
+my $local_addr = sockaddr_in($local_port, INADDR_ANY);
+
+socket(UDP_SOCK, PF_INET, SOCK_DGRAM, $trans_serv);
+
+bind(UDP_SOCK, $local_addr);
+
+my $data;
+
+while(1)
+{
+	my $from_who = recv(UDP_SOCK, $data, MAX_RECV_LEN, 0);
+	
+	if ($from_who)
+	{
+		my($the_port, $the_ip) = sockaddr_in($from_who);
+		warn 'Received from ', inet_ntoa($the_ip), ": $data\n";
+	}
+	else
+	{
+		warn "Problem with recv: $!\n";
+	}
+}
+&lt;/code&gt;
+
+&lt;p&gt;&lt;small&gt;&lt;i&gt;2020-07-14 [Athanasius] added code tags.&lt;/small&gt;&lt;/p&gt;
+</doctext>
+<thread id="11119173">
+<node id="11119175"/>
+</thread></node>

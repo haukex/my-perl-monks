@@ -1,0 +1,740 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198286" title="SOS: Ability to GET got BOMed (resolved)" created="2017-08-29 13:46:12" updated="2017-08-29 13:46:12" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="892476">palkia</author>
+<doctext field_name="doctext">Problem resolved !&lt;br&gt;
+I apologize to everyone who attempted to assist me with this strange problem, for not figuring it sooner (this is the 1st time I encounter this limit (I'll explain).&lt;br&gt;
+&lt;br&gt;&lt;b&gt;Timeline:&lt;/b&gt;&lt;br&gt; 
+As always I allowed my long process apps to run overnight, and in this particular case, download a mass of files to 1 directory.&lt;br&gt;
+In the next day I attempted to install File::BOM and failed, and after running the same (completely unchanged) app overnight again, I noticed in the day after it downloaded nothing, and confirmed it is no longer able to download anything (no warning/error messages).&lt;br&gt;
+&lt;br&gt;&lt;b&gt;Setup:&lt;/b&gt;&lt;br&gt;
+Later, apparently when I ran the same app in a different directory, it worked normally, making me think something is wrong with the directory or file system or maybe even some super-localized hardware problem in my hard drive (a stretch but I felt pretty open minded at this point).&lt;br&gt;
+So I attempted and as expected failed to create a new file in that directory (using Os methods, nothing to do with perl), so I guessed and confirmed I can create exactly 3 files there after moving exactly 3 files away.&lt;br&gt;
+Yep you get it.&lt;br&gt;
+&lt;br&gt;&lt;b&gt;Punchline:&lt;/b&gt; (this is one for the books)&lt;br&gt;
+Apparently I have reached (for the 1st time in my life) the maximum number of files allowed in one directory (about 65529 if I'm not mistaken) this is obviously the classic 65535 (FFFF hex) with some padding.&lt;br&gt;
+&lt;br&gt;&lt;b&gt;Random Coincidence:&lt;/b&gt;&lt;br&gt;
+Basically this entire misunderstanding happened only because (completely coincidentally) I've attempted to install a module exactly 1 day after (for the 1st time ever) reaching the maximum allowed number of files in a directory, using a perl app.............&lt;br&gt;
+&lt;br&gt;&lt;b&gt;In Conclusion:&lt;/b&gt;&lt;br&gt;
+Yes that's really all there's to it.&lt;br&gt;
+Sorry again for not realizing this sooner, and thank you all so much for trying to help me.&lt;br&gt;&lt;br&gt;
+&lt;b&gt;About CPAN&lt;/b&gt;&lt;br&gt;
+The issue of not being able to get new cpan modules may still stand, but after this scare, I think I'll take some time before "rocking the boat" again ^^.&lt;br&gt;
+Thx again and I promise I'll try harder to not waist anyone's time in the future &amp;#9786;&lt;br&gt;
+&lt;br&gt;------------------------------------------&lt;br&gt;
+&lt;br&gt;Hello.&lt;br&gt;
+I'm a perl novas and have recently [http://www.perlmonks.org/index.pl?node_id=1198027|inquired] as to a way to convert utf8 encoded *.txt files, and was recommended to try File::BOM, but after an installation (attempt), not only the module didn't work, but also the module WWW::Mechanize, which I had no problems with until now.&lt;br&gt;
+(I'm using strawberry on Win-xp sp2 in case that matters)&lt;br&gt;
+&lt;br&gt;
+To make things clearer: (unlike with File::BOM) I have no error/die report when&lt;br&gt;&lt;code&gt;use WWW::Mechanize;&lt;/code&gt;&lt;br&gt;nor when&lt;code&gt;my $mech = WWW::Mechanize-&gt;new( autocheck =&gt; 1 );
+eval{$mech-&gt;get($url, ':content_file' =&gt; $downName);};
+if($@){print "Error: $@"; &lt;&gt;;}
+&lt;/code&gt;
+accept that now these code lines no longer produce downloaded files.&lt;br&gt;
+Based on the timing, I figured installing File::BOM somehow damaged the files of WWW::Mechanize, so I tried to reinstall WWW::Mechanize but the problem remained the same.&lt;br&gt;&lt;br&gt;
+I use multiple perl apps of my own making, that uses this form of file downloading option on a regular basis, both in my personal and professional life, in other words, if I can't fix this soon nor find some reliable alternative way to download files automatically, I might actually lose my job.&lt;br&gt;
+I'm going to try using an old computer where this problem doesn't exist (nor most of my files and apps) but this is a temporary solution at best.&lt;br&gt;
+Please please help.&lt;br&gt;
+&lt;br&gt;
+Here are the terminal lines (way beyond my understanding) of the installs of both modules:&lt;br&gt;&lt;br&gt;
+File::BOM install (attempt):&lt;br&gt;
+&lt;code&gt;
+Microsoft Windows XP [Version 5.1.2600]
+(C) Copyright 1985-2001 Microsoft Corp.
+
+C:\Documents and Settings\Administrator&gt;cpan File::BOM
+CPAN: LWP::UserAgent loaded ok (v5.835)
+CPAN: Time::HiRes loaded ok (v1.9719)
+Fetching with LWP:
+http://cpan.strawberryperl.com/authors/01mailrc.txt.gz
+CPAN: YAML loaded ok (v0.71)
+CPAN: CPAN::SQLite loaded ok (v0.199)
+Fetching with LWP:
+http://cpan.strawberryperl.com/modules/02packages.details.txt.gz
+Fetching with LWP:
+http://cpan.strawberryperl.com/modules/03modlist.data.gz
+Database was generated on Sun, 12 Feb 2012 01:23:51 GMT
+Updating database file ...
+
+Gathering information from index files ...
+Obtaining current state of database ...
+Populating database tables ...
+Done!
+Running install for module 'File::BOM'
+Running make for M/MA/MATTLAW/File-BOM-0.15.tar.gz
+Fetching with LWP:
+http://cpan.strawberryperl.com/authors/id/M/MA/MATTLAW/File-BOM-0.15.tar.gz
+CPAN: Digest::SHA loaded ok (v5.48)
+Fetching with LWP:
+http://cpan.strawberryperl.com/authors/id/M/MA/MATTLAW/CHECKSUMS
+CPAN: Compress::Zlib loaded ok (v2.024)
+Checksum for C:\strawberry\cpan\sources\authors\id\M\MA\MATTLAW\File-BOM-0.15.ta
+r.gz ok
+CPAN: Archive::Tar loaded ok (v1.54)
+CPAN: File::Temp loaded ok (v0.22)
+CPAN: Module::CoreList loaded ok (v2.25)
+---- Unsatisfied dependencies detected during ----
+----       MATTLAW/File-BOM-0.15.tar.gz       ----
+    Module::Build [build_requires]
+Running make test
+  Make had some problems, won't test
+  Delayed until after prerequisites
+Running make install
+  Make had some problems, won't install
+  Delayed until after prerequisites
+Running install for module 'Module::Build'
+Running make for L/LE/LEONT/Module-Build-0.4224.tar.gz
+Fetching with LWP:
+http://cpan.strawberryperl.com/authors/id/L/LE/LEONT/Module-Build-0.4224.tar.gz
+Fetching with LWP:
+http://cpan.strawberryperl.com/authors/id/L/LE/LEONT/CHECKSUMS
+Checksum for C:\strawberry\cpan\sources\authors\id\L\LE\LEONT\Module-Build-0.422
+4.tar.gz ok
+Couldn't move C:\strawberry\cpan\build\tmp-2064\Module-Build-0.4224\t to C:\stra
+wberry\cpan\build\Module-Build-0.4224-5jzHls\t: No such file or directory at C:\
+strawberry\perl\lib/CPAN/Distribution.pm line 516
+        CPAN::Distribution::run_preps_on_packagedir('CPAN::Distribution=HASH(0x2
+df25b4)') called at C:\strawberry\perl\lib/CPAN/Distribution.pm line 347
+        CPAN::Distribution::get('CPAN::Distribution=HASH(0x2df25b4)') called at
+C:\strawberry\perl\lib/CPAN/Distribution.pm line 1687
+        CPAN::Distribution::make('CPAN::Distribution=HASH(0x2df25b4)') called at
+ C:\strawberry\perl\lib/CPAN/Distribution.pm line 2915
+        CPAN::Distribution::test('CPAN::Distribution=HASH(0x2df25b4)') called at
+ C:\strawberry\perl\lib/CPAN/Distribution.pm line 3305
+        CPAN::Distribution::install('CPAN::Distribution=HASH(0x2df25b4)') called
+ at C:\strawberry\perl\lib/CPAN/Module.pm line 479
+        eval {...} called at C:\strawberry\perl\lib/CPAN/Module.pm line 478
+        CPAN::Module::rematein('CPAN::Module=HASH(0x2df2504)', 'install') called
+ at C:\strawberry\perl\lib/CPAN/Module.pm line 578
+        CPAN::Module::install('CPAN::Module=HASH(0x2df2504)') called at C:\straw
+berry\perl\lib/CPAN/Shell.pm line 1790
+        CPAN::Shell::rematein('CPAN::Shell', 'install', 'File::BOM') called at C
+:\strawberry\perl\lib/CPAN/Shell.pm line 1970
+        CPAN::Shell::__ANON__('CPAN::Shell', 'File::BOM') called at C:/strawberr
+y/perl/lib/App/Cpan.pm line 459
+        App::Cpan::__ANON__('File::BOM') called at C:/strawberry/perl/lib/App/Cp
+an.pm line 468
+        App::Cpan::_default('ARRAY(0xbec2b4)', 'HASH(0x166601c)') called at C:/s
+trawberry/perl/lib/App/Cpan.pm line 386
+        App::Cpan::run('App::Cpan', 'File::BOM') called at C:\strawberry\perl\bi
+n/cpan line 8
+
+C:\Documents and Settings\Administrator&gt;cpan File::BOM
+CPAN: CPAN::SQLite loaded ok (v0.199)
+Database was generated on Sun, 27 Aug 2017 21:44:37 GMT
+Running install for module 'File::BOM'
+CPAN: YAML loaded ok (v0.71)
+Running make for M/MA/MATTLAW/File-BOM-0.15.tar.gz
+CPAN: Digest::SHA loaded ok (v5.48)
+CPAN: Compress::Zlib loaded ok (v2.024)
+Checksum for C:\strawberry\cpan\sources\authors\id\M\MA\MATTLAW\File-BOM-0.15.ta
+r.gz ok
+CPAN: Archive::Tar loaded ok (v1.54)
+CPAN: File::Temp loaded ok (v0.22)
+CPAN: Module::CoreList loaded ok (v2.25)
+---- Unsatisfied dependencies detected during ----
+----       MATTLAW/File-BOM-0.15.tar.gz       ----
+    Module::Build [build_requires]
+Running make test
+  Make had some problems, won't test
+  Delayed until after prerequisites
+Running make install
+  Make had some problems, won't install
+  Delayed until after prerequisites
+Running install for module 'Module::Build'
+Running make for L/LE/LEONT/Module-Build-0.4224.tar.gz
+Checksum for C:\strawberry\cpan\sources\authors\id\L\LE\LEONT\Module-Build-0.422
+4.tar.gz ok
+Couldn't move C:\strawberry\cpan\build\tmp-3004\Module-Build-0.4224\t to C:\stra
+wberry\cpan\build\Module-Build-0.4224-7kNRxr\t: No such file or directory at C:\
+strawberry\perl\lib/CPAN/Distribution.pm line 516
+        CPAN::Distribution::run_preps_on_packagedir('CPAN::Distribution=HASH(0x2
+a14fd4)') called at C:\strawberry\perl\lib/CPAN/Distribution.pm line 347
+        CPAN::Distribution::get('CPAN::Distribution=HASH(0x2a14fd4)') called at
+C:\strawberry\perl\lib/CPAN/Distribution.pm line 1687
+        CPAN::Distribution::make('CPAN::Distribution=HASH(0x2a14fd4)') called at
+ C:\strawberry\perl\lib/CPAN/Distribution.pm line 2915
+        CPAN::Distribution::test('CPAN::Distribution=HASH(0x2a14fd4)') called at
+ C:\strawberry\perl\lib/CPAN/Distribution.pm line 3305
+        CPAN::Distribution::install('CPAN::Distribution=HASH(0x2a14fd4)') called
+ at C:\strawberry\perl\lib/CPAN/Module.pm line 479
+        eval {...} called at C:\strawberry\perl\lib/CPAN/Module.pm line 478
+        CPAN::Module::rematein('CPAN::Module=HASH(0x2a15134)', 'install') called
+ at C:\strawberry\perl\lib/CPAN/Module.pm line 578
+        CPAN::Module::install('CPAN::Module=HASH(0x2a15134)') called at C:\straw
+berry\perl\lib/CPAN/Shell.pm line 1790
+        CPAN::Shell::rematein('CPAN::Shell', 'install', 'File::BOM') called at C
+:\strawberry\perl\lib/CPAN/Shell.pm line 1970
+        CPAN::Shell::__ANON__('CPAN::Shell', 'File::BOM') called at C:/strawberr
+y/perl/lib/App/Cpan.pm line 459
+        App::Cpan::__ANON__('File::BOM') called at C:/strawberry/perl/lib/App/Cp
+an.pm line 468
+        App::Cpan::_default('ARRAY(0xbec294)', 'HASH(0x166635c)') called at C:/s
+trawberry/perl/lib/App/Cpan.pm line 386
+        App::Cpan::run('App::Cpan', 'File::BOM') called at C:\strawberry\perl\bi
+n/cpan line 8
+
+C:\Documents and Settings\Administrator&gt;
+&lt;/code&gt;
+&lt;br&gt;The last 300 lines (that the terminal kept) of the WWW::Mechanize 1st reinstallation attempt (since the BOM)&lt;br&gt;
+&lt;code&gt;
+
+Checking if your kit is complete...
+Looks good
+Writing Makefile for HTML::Parser
+cp lib/HTML/PullParser.pm blib\lib\HTML\PullParser.pm
+cp Parser.pm blib\lib\HTML\Parser.pm
+cp lib/HTML/Entities.pm blib\lib\HTML\Entities.pm
+cp lib/HTML/LinkExtor.pm blib\lib\HTML\LinkExtor.pm
+cp lib/HTML/TokeParser.pm blib\lib\HTML\TokeParser.pm
+cp lib/HTML/Filter.pm blib\lib\HTML\Filter.pm
+cp lib/HTML/HeadParser.pm blib\lib\HTML\HeadParser.pm
+C:\strawberry\perl\bin\perl.exe mkhctype &gt;hctype.h
+C:\strawberry\perl\bin\perl.exe mkpfunc &gt;pfunc.h
+C:\strawberry\perl\bin\perl.exe C:\strawberry\perl\lib\ExtUtils\xsubpp  -typemap
+ C:\strawberry\perl\lib\ExtUtils\typemap -typemap typemap  Parser.xs &gt; Parser.xs
+c &amp;&amp; C:\strawberry\perl\bin\perl.exe -MExtUtils::Command -e "mv" -- Parser.xsc P
+arser.c
+gcc -c          -s -O2 -DWIN32 -DHAVE_DES_FCRYPT -DUSE_SITECUSTOMIZE -DPERL_IMPL
+ICIT_CONTEXT -DPERL_IMPLICIT_SYS -fno-strict-aliasing -DPERL_MSVCRT_READFIX -s -
+O2        -DVERSION=\"3.72\"    -DXS_VERSION=\"3.72\"  "-IC:\strawberry\perl\lib
+\CORE"  -DMARKED_SECTION Parser.c
+Running Mkbootstrap for HTML::Parser ()
+C:\strawberry\perl\bin\perl.exe -MExtUtils::Command -e "chmod" -- 644 Parser.bs
+C:\strawberry\perl\bin\perl.exe -MExtUtils::Mksymlists \
+     -e "Mksymlists('NAME'=&gt;\"HTML::Parser\", 'DLBASE' =&gt; 'Parser', 'DL_FUNCS' =
+&gt; {  }, 'FUNCLIST' =&gt; [], 'IMPORTS' =&gt; {  }, 'DL_VARS' =&gt; []);"
+dlltool --def Parser.def --output-exp dll.exp
+g++ -o blib\arch\auto\HTML\Parser\Parser.dll -Wl,--base-file -Wl,dll.base -mdll
+-s -L"C:\strawberry\perl\lib\CORE" -L"C:\strawberry\c\lib" Parser.o -Wl,--image-
+base,0x35130000  C:\strawberry\perl\lib\CORE\libperl510.a -lmoldname -lkernel32
+-luser32 -lgdi32 -lwinspool -lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -
+lnetapi32 -luuid -lws2_32 -lmpr -lwinmm -lversion -lodbc32 -lodbccp32 dll.exp
+dlltool --def Parser.def --base-file dll.base --output-exp dll.exp
+g++ -o blib\arch\auto\HTML\Parser\Parser.dll -mdll -s -L"C:\strawberry\perl\lib\
+CORE" -L"C:\strawberry\c\lib" Parser.o -Wl,--image-base,0x35130000  C:\strawberr
+y\perl\lib\CORE\libperl510.a -lmoldname -lkernel32 -luser32 -lgdi32 -lwinspool -
+lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -lnetapi32 -luuid -lws2_32 -lm
+pr -lwinmm -lversion -lodbc32 -lodbccp32 dll.exp
+C:\strawberry\perl\bin\perl.exe -MExtUtils::Command -e "chmod" -- 755 blib\arch\
+auto\HTML\Parser\Parser.dll
+C:\strawberry\perl\bin\perl.exe -MExtUtils::Command -e "cp" -- Parser.bs blib\ar
+ch\auto\HTML\Parser\Parser.bs
+C:\strawberry\perl\bin\perl.exe -MExtUtils::Command -e "chmod" -- 644 blib\arch\
+auto\HTML\Parser\Parser.bs
+  GAAS/HTML-Parser-3.72.tar.gz
+  C:\strawberry\c\bin\dmake.EXE -- OK
+Running make test
+C:\strawberry\perl\bin\perl.exe "-MExtUtils::Command::MM" "-e" "test_harness(0,
+'blib\lib', 'blib\arch')" t/*.t
+t/api_version.t ...... ok
+t/argspec-bad.t ...... ok
+t/argspec.t .......... ok
+t/argspec2.t ......... ok
+t/attr-encoded.t ..... ok
+t/callback.t ......... ok
+t/case-sensitive.t ... ok
+t/cases.t ............ ok
+t/comment.t .......... ok
+t/crashme.t .......... ok
+t/declaration.t ...... ok
+t/default.t .......... ok
+t/document.t ......... ok
+t/dtext.t ............ ok
+t/entities.t ......... ok
+t/entities2.t ........ ok
+t/filter-methods.t ... ok
+t/filter.t ........... ok
+t/handler-eof.t ...... ok
+t/handler.t .......... ok
+t/headparser-http.t .. ok
+t/headparser.t ....... ok
+t/ignore.t ........... ok
+t/largetags.t ........ ok
+t/linkextor-base.t ... ok
+t/linkextor-rel.t .... ok
+t/magic.t ............ ok
+t/marked-sect.t ...... ok
+t/msie-compat.t ...... ok
+t/offset.t ........... ok
+t/options.t .......... ok
+t/parsefile.t ........ ok
+t/parser.t ........... ok
+t/plaintext.t ........ ok
+t/pod.t .............. ok
+t/process.t .......... ok
+t/pullparser.t ....... ok
+t/script.t ........... ok
+t/skipped-text.t ..... ok
+t/stack-realloc.t .... ok
+t/textarea.t ......... ok
+t/threads.t .......... ok
+t/tokeparser.t ....... ok
+t/uentities.t ........ ok
+t/unbroken-text.t .... ok
+t/unicode-bom.t ...... ok
+t/unicode.t .......... ok
+t/xml-mode.t ......... ok
+All tests successful.
+Files=48, Tests=458, 21 wallclock secs ( 0.49 usr +  0.38 sys =  0.87 CPU)
+Result: PASS
+  GAAS/HTML-Parser-3.72.tar.gz
+  C:\strawberry\c\bin\dmake.EXE test -- OK
+Running make install
+Prepending C:\strawberry\cpan\build\HTML-Parser-3.72-6K97lD/blib/arch C:\strawbe
+rry\cpan\build\HTML-Parser-3.72-6K97lD/blib/lib to PERL5LIB for 'install'
+WARNING: Unable to unlink 'C:\strawberry\perl\site\lib\auto\HTML\Parser\Parser.d
+ll': Permission denied
+Going to try to rename it to 'C:\strawberry\perl\site\lib\auto\HTML\Parser\Parse
+r.dll.AAA'.
+Rename succesful. Scheduling 'C:\strawberry\perl\site\lib\auto\HTML\Parser\Parse
+r.dll.AAA'
+for deletion at reboot.
+Files found in blib\arch: installing files in blib\lib into architecture depende
+nt library tree
+Installing C:\strawberry\perl\site\lib\auto\HTML\Parser\Parser.dll
+Installing C:\strawberry\perl\site\lib\HTML\Entities.pm
+Installing C:\strawberry\perl\site\lib\HTML\Filter.pm
+Installing C:\strawberry\perl\site\lib\HTML\HeadParser.pm
+Installing C:\strawberry\perl\site\lib\HTML\LinkExtor.pm
+Installing C:\strawberry\perl\site\lib\HTML\Parser.pm
+Installing C:\strawberry\perl\site\lib\HTML\TokeParser.pm
+Appending installation info to C:\strawberry\perl\lib/perllocal.pod
+  GAAS/HTML-Parser-3.72.tar.gz
+  C:\strawberry\c\bin\dmake.EXE install UNINST=1 -- OK
+Running make for L/LE/LEEJO/CGI-4.36.tar.gz
+  Has already been unwrapped into directory C:\strawberry\cpan\build\CGI-4.36-PO
+ghoC
+
+  CPAN.pm: Going to build L/LE/LEEJO/CGI-4.36.tar.gz
+
+cp lib/CGI.pod blib\lib\CGI.pod
+cp lib/CGI/Cookie.pm blib\lib\CGI\Cookie.pm
+cp lib/CGI/Pretty.pm blib\lib\CGI\Pretty.pm
+cp lib/CGI/HTML/Functions.pod blib\lib\CGI\HTML\Functions.pod
+cp lib/CGI.pm blib\lib\CGI.pm
+cp lib/CGI/HTML/Functions.pm blib\lib\CGI\HTML\Functions.pm
+cp lib/CGI/Carp.pm blib\lib\CGI\Carp.pm
+cp lib/CGI/Util.pm blib\lib\CGI\Util.pm
+cp lib/Fh.pm blib\lib\Fh.pm
+cp lib/CGI/File/Temp.pm blib\lib\CGI\File\Temp.pm
+cp lib/CGI/Push.pm blib\lib\CGI\Push.pm
+  LEEJO/CGI-4.36.tar.gz
+  C:\strawberry\c\bin\dmake.EXE -- OK
+Running make test
+C:\strawberry\perl\bin\perl.exe "-MExtUtils::Command::MM" "-e" "test_harness(0,
+'blib\lib', 'blib\arch')" t/*.t t/headers/*.t
+t/arbitrary_handles.t ...... ok
+t/autoescape.t ............. ok
+t/can.t .................... ok
+t/carp.t ................... [Tue Aug 29 03:19:23 2017] carp.t: "my" variable $f
+h masks earlier declaration in same scope at t/carp.t line 448.
+t/carp.t ................... 1/76 [Tue Aug 29 03:19:23 2017] carp.t: foo at C:\s
+trawberry\cpan\build\CGI-4.36-POghoC\blib\lib/CGI/Carp.pm line 361.
+t/carp.t ................... ok
+t/cgi.t .................... 1/25 # cgi-lib.pl routines
+Use of uninitialized value $src in concatenation (.) or string at C:\strawberry\
+cpan\build\CGI-4.36-POghoC\blib\lib/CGI.pm line 1824.
+private_tempfiles has been deprecated at C:\strawberry\cpan\build\CGI-4.36-POgho
+C\blib\lib/CGI.pm line 3227.
+t/cgi.t .................... ok
+t/changes.t ................ skipped: Test::CPAN::Changes required for this test
+
+t/charset.t ................ ok
+t/checkbox_group.t ......... ok
+t/command_line.t ........... skipped: No relevant to Windows
+t/compiles_pod.t ........... ok
+t/cookie.t ................. ok
+t/delete.t ................. ok
+t/Dump.t ................... ok
+t/end_form.t ............... ok
+t/form.t ................... ok
+t/function.t ............... ok
+t/gh-155.t ................. ok
+t/headers.t ................ ok
+t/headers/attachment.t ..... ok
+t/headers/charset.t ........ ok
+t/headers/cookie.t ......... ok
+t/headers/default.t ........ ok
+t/headers/nph.t ............ ok
+t/headers/p3p.t ............ ok
+t/headers/target.t ......... ok
+t/headers/type.t ........... ok
+t/hidden.t ................. ok
+t/html.t ................... ok
+t/html_functions.t ......... ok
+t/http.t ................... ok
+t/init.t ................... ok
+t/multipart_globals.t ...... ok
+t/multipart_init.t ......... ok
+t/multipart_start.t ........ ok
+t/no_tabindex.t ............ ok
+t/param_fetch.t ............ ok
+t/param_list_context.t ..... ok
+t/popup_menu.t ............. ok
+t/postdata.t ............... ok
+t/pretty.t ................. CGI::Pretty is DEPRECATED and will be removed in a
+future release. Please see https://github.com/leejo/CGI.pm/issues/162 for more i
+nformation at C:\strawberry\cpan\build\CGI-4.36-POghoC\blib\lib/CGI/Pretty.pm li
+ne 21.
+t/pretty.t ................. ok
+t/push.t ................... ok
+t/query_string.t ........... ok
+t/redirect_query_string.t .. ok
+t/request.t ................ ok
+t/rt-31107.t ............... ok
+t/rt-52469.t ............... ok
+t/rt-57524.t ............... ok
+t/rt-75628.t ............... ok
+t/rt-84767.t ............... ok
+t/save_read_roundtrip.t .... ok
+t/sorted.t ................. ok
+t/start_end_asterisk.t ..... ok
+t/start_end_end.t .......... ok
+t/start_end_start.t ........ ok
+t/unescapeHTML.t ........... ok
+t/upload.t ................. ok
+t/uploadInfo.t ............. ok
+t/url.t .................... ok
+t/user_agent.t ............. ok
+t/utf8.t ................... ok
+t/util-58.t ................ ok
+t/util.t ................... ok
+All tests successful.
+Files=62, Tests=1545, 32 wallclock secs ( 0.75 usr +  0.57 sys =  1.32 CPU)
+Result: PASS
+  LEEJO/CGI-4.36.tar.gz
+  C:\strawberry\c\bin\dmake.EXE test -- OK
+Running make install
+Prepending C:\strawberry\cpan\build\CGI-4.36-POghoC/blib/arch C:\strawberry\cpan
+\build\CGI-4.36-POghoC/blib/lib to PERL5LIB for 'install'
+Installing C:\strawberry\perl\lib\CGI.pm
+Installing C:\strawberry\perl\lib\CGI.pod
+Installing C:\strawberry\perl\lib\Fh.pm
+Installing C:\strawberry\perl\lib\CGI\Carp.pm
+Installing C:\strawberry\perl\lib\CGI\Cookie.pm
+Installing C:\strawberry\perl\lib\CGI\Pretty.pm
+Installing C:\strawberry\perl\lib\CGI\Push.pm
+Installing C:\strawberry\perl\lib\CGI\Util.pm
+Installing C:\strawberry\perl\lib\CGI\File\Temp.pm
+Installing C:\strawberry\perl\lib\CGI\HTML\Functions.pm
+Installing C:\strawberry\perl\lib\CGI\HTML\Functions.pod
+Appending installation info to C:\strawberry\perl\lib/perllocal.pod
+  LEEJO/CGI-4.36.tar.gz
+  C:\strawberry\c\bin\dmake.EXE install UNINST=1 -- OK
+Running install for module 'Test::Output'
+Running make for B/BD/BDFOY/Test-Output-1.031.tar.gz
+Fetching with LWP:
+http://cpan.strawberryperl.com/authors/id/B/BD/BDFOY/Test-Output-1.031.tar.gz
+Fetching with LWP:
+http://cpan.strawberryperl.com/authors/id/B/BD/BDFOY/CHECKSUMS
+Checksum for C:\strawberry\cpan\sources\authors\id\B\BD\BDFOY\Test-Output-1.031.
+tar.gz ok
+---- Unsatisfied dependencies detected during ----
+----      BDFOY/Test-Output-1.031.tar.gz      ----
+    ExtUtils::MakeMaker [build_requires]
+Running make test
+  Make had some problems, won't test
+  Delayed until after prerequisites
+Running make install
+  Make had some problems, won't install
+  Delayed until after prerequisites
+Running install for module 'ExtUtils::MakeMaker'
+Running make for B/BI/BINGOS/ExtUtils-MakeMaker-7.30.tar.gz
+Fetching with LWP:
+http://cpan.strawberryperl.com/authors/id/B/BI/BINGOS/ExtUtils-MakeMaker-7.30.ta
+r.gz
+Fetching with LWP:
+http://cpan.strawberryperl.com/authors/id/B/BI/BINGOS/CHECKSUMS
+Checksum for C:\strawberry\cpan\sources\authors\id\B\BI\BINGOS\ExtUtils-MakeMake
+r-7.30.tar.gz ok
+Couldn't move C:\strawberry\cpan\build\tmp-3808\ExtUtils-MakeMaker-7.30\lib to C
+:\strawberry\cpan\build\ExtUtils-MakeMaker-7.30-pzCWn3\lib: No such file or dire
+ctory at C:\strawberry\perl\lib/CPAN/Distribution.pm line 516
+        CPAN::Distribution::run_preps_on_packagedir('CPAN::Distribution=HASH(0x2
+eeee54)') called at C:\strawberry\perl\lib/CPAN/Distribution.pm line 347
+        CPAN::Distribution::get('CPAN::Distribution=HASH(0x2eeee54)') called at
+C:\strawberry\perl\lib/CPAN/Distribution.pm line 1687
+        CPAN::Distribution::make('CPAN::Distribution=HASH(0x2eeee54)') called at
+ C:\strawberry\perl\lib/CPAN/Distribution.pm line 2915
+        CPAN::Distribution::test('CPAN::Distribution=HASH(0x2eeee54)') called at
+ C:\strawberry\perl\lib/CPAN/Distribution.pm line 3305
+        CPAN::Distribution::install('CPAN::Distribution=HASH(0x2eeee54)') called
+ at C:\strawberry\perl\lib/CPAN/Module.pm line 479
+        eval {...} called at C:\strawberry\perl\lib/CPAN/Module.pm line 478
+        CPAN::Module::rematein('CPAN::Module=HASH(0x2d27e8c)', 'install') called
+ at C:\strawberry\perl\lib/CPAN/Module.pm line 578
+        CPAN::Module::install('CPAN::Module=HASH(0x2d27e8c)') called at C:\straw
+berry\perl\lib/CPAN/Shell.pm line 1790
+        CPAN::Shell::rematein('CPAN::Shell', 'install', 'WWW::Mechanize') called
+ at C:\strawberry\perl\lib/CPAN/Shell.pm line 1970
+        CPAN::Shell::__ANON__('CPAN::Shell', 'WWW::Mechanize') called at C:/stra
+wberry/perl/lib/App/Cpan.pm line 459
+        App::Cpan::__ANON__('WWW::Mechanize') called at C:/strawberry/perl/lib/A
+pp/Cpan.pm line 468
+        App::Cpan::_default('ARRAY(0xbec284)', 'HASH(0x1665f64)') called at C:/s
+trawberry/perl/lib/App/Cpan.pm line 386
+        App::Cpan::run('App::Cpan', 'WWW::Mechanize') called at C:\strawberry\pe
+rl\bin/cpan line 8
+
+C:\Documents and Settings\Administrator&gt;
+&lt;/code&gt;
+&lt;br&gt;A few additional attempts to reinstall WWW::Mechanize, which gave fewer terminal lines for some reason:&lt;br&gt;
+&lt;code&gt;
+Microsoft Windows XP [Version 5.1.2600]
+(C) Copyright 1985-2001 Microsoft Corp.
+
+C:\Documents and Settings\Administrator&gt;cpan WWW::Mechanize 'new'
+CPAN: CPAN::SQLite loaded ok (v0.199)
+Database was generated on Tue, 29 Aug 2017 01:11:57 GMT
+Running install for module 'WWW::Mechanize'
+CPAN: YAML loaded ok (v0.71)
+Running make for O/OA/OALDERS/WWW-Mechanize-1.86.tar.gz
+CPAN: Digest::SHA loaded ok (v5.48)
+CPAN: Compress::Zlib loaded ok (v2.024)
+Checksum for C:\strawberry\cpan\sources\authors\id\O\OA\OALDERS\WWW-Mechanize-1.
+86.tar.gz ok
+CPAN: Archive::Tar loaded ok (v1.54)
+CPAN: File::Temp loaded ok (v0.22)
+Couldn't move C:\strawberry\cpan\build\tmp-2908\WWW-Mechanize-1.86\etc to C:\str
+awberry\cpan\build\WWW-Mechanize-1.86-u2xDCt\etc: No such file or directory at C
+:\strawberry\perl\lib/CPAN/Distribution.pm line 516
+        CPAN::Distribution::run_preps_on_packagedir('CPAN::Distribution=HASH(0x1
+8c1794)') called at C:\strawberry\perl\lib/CPAN/Distribution.pm line 347
+        CPAN::Distribution::get('CPAN::Distribution=HASH(0x18c1794)') called at
+C:\strawberry\perl\lib/CPAN/Distribution.pm line 1687
+        CPAN::Distribution::make('CPAN::Distribution=HASH(0x18c1794)') called at
+ C:\strawberry\perl\lib/CPAN/Distribution.pm line 2915
+        CPAN::Distribution::test('CPAN::Distribution=HASH(0x18c1794)') called at
+ C:\strawberry\perl\lib/CPAN/Distribution.pm line 3305
+        CPAN::Distribution::install('CPAN::Distribution=HASH(0x18c1794)') called
+ at C:\strawberry\perl\lib/CPAN/Module.pm line 479
+        eval {...} called at C:\strawberry\perl\lib/CPAN/Module.pm line 478
+        CPAN::Module::rematein('CPAN::Module=HASH(0x18c1764)', 'install') called
+ at C:\strawberry\perl\lib/CPAN/Module.pm line 578
+        CPAN::Module::install('CPAN::Module=HASH(0x18c1764)') called at C:\straw
+berry\perl\lib/CPAN/Shell.pm line 1790
+        CPAN::Shell::rematein('CPAN::Shell', 'install', 'WWW::Mechanize') called
+ at C:\strawberry\perl\lib/CPAN/Shell.pm line 1970
+        CPAN::Shell::__ANON__('CPAN::Shell', 'WWW::Mechanize') called at C:/stra
+wberry/perl/lib/App/Cpan.pm line 459
+        App::Cpan::__ANON__('WWW::Mechanize') called at C:/strawberry/perl/lib/A
+pp/Cpan.pm line 468
+        App::Cpan::_default('ARRAY(0xbec254)', 'HASH(0x166642c)') called at C:/s
+trawberry/perl/lib/App/Cpan.pm line 386
+        App::Cpan::run('App::Cpan', 'WWW::Mechanize', '\'new\'') called at C:\st
+rawberry\perl\bin/cpan line 8
+
+C:\Documents and Settings\Administrator&gt;
+C:\Documents and Settings\Administrator&gt;
+C:\Documents and Settings\Administrator&gt;
+C:\Documents and Settings\Administrator&gt;
+C:\Documents and Settings\Administrator&gt;
+C:\Documents and Settings\Administrator&gt;
+C:\Documents and Settings\Administrator&gt;
+C:\Documents and Settings\Administrator&gt;cpan WWW::Mechanize
+CPAN: CPAN::SQLite loaded ok (v0.199)
+Database was generated on Tue, 29 Aug 2017 01:11:57 GMT
+Running install for module 'WWW::Mechanize'
+CPAN: YAML loaded ok (v0.71)
+Running make for O/OA/OALDERS/WWW-Mechanize-1.86.tar.gz
+CPAN: Digest::SHA loaded ok (v5.48)
+CPAN: Compress::Zlib loaded ok (v2.024)
+Checksum for C:\strawberry\cpan\sources\authors\id\O\OA\OALDERS\WWW-Mechanize-1.
+86.tar.gz ok
+CPAN: Archive::Tar loaded ok (v1.54)
+CPAN: File::Temp loaded ok (v0.22)
+
+  CPAN.pm: Going to build O/OA/OALDERS/WWW-Mechanize-1.86.tar.gz
+
+Checking if your kit is complete...
+Looks good
+Warning: prerequisite Test::Output 0 not found.
+Warning: prerequisite Test::Warnings 0 not found.
+Writing Makefile for WWW::Mechanize
+CPAN: Module::CoreList loaded ok (v2.25)
+---- Unsatisfied dependencies detected during ----
+----     OALDERS/WWW-Mechanize-1.86.tar.gz    ----
+    Test::Output [build_requires]
+    Test::Warnings [build_requires]
+Running make test
+  Delayed until after prerequisites
+Running make install
+  Delayed until after prerequisites
+Running install for module 'Test::Output'
+Running make for B/BD/BDFOY/Test-Output-1.031.tar.gz
+Checksum for C:\strawberry\cpan\sources\authors\id\B\BD\BDFOY\Test-Output-1.031.
+tar.gz ok
+Couldn't move C:\strawberry\cpan\build\tmp-3436\Test-Output-1.031\t to C:\strawb
+erry\cpan\build\Test-Output-1.031-18fXSW\t: No such file or directory at C:\stra
+wberry\perl\lib/CPAN/Distribution.pm line 516
+        CPAN::Distribution::run_preps_on_packagedir('CPAN::Distribution=HASH(0x3
+43858c)') called at C:\strawberry\perl\lib/CPAN/Distribution.pm line 347
+        CPAN::Distribution::get('CPAN::Distribution=HASH(0x343858c)') called at
+C:\strawberry\perl\lib/CPAN/Distribution.pm line 1687
+        CPAN::Distribution::make('CPAN::Distribution=HASH(0x343858c)') called at
+ C:\strawberry\perl\lib/CPAN/Distribution.pm line 2915
+        CPAN::Distribution::test('CPAN::Distribution=HASH(0x343858c)') called at
+ C:\strawberry\perl\lib/CPAN/Distribution.pm line 3305
+        CPAN::Distribution::install('CPAN::Distribution=HASH(0x343858c)') called
+ at C:\strawberry\perl\lib/CPAN/Module.pm line 479
+        eval {...} called at C:\strawberry\perl\lib/CPAN/Module.pm line 478
+        CPAN::Module::rematein('CPAN::Module=HASH(0x3437cb4)', 'install') called
+ at C:\strawberry\perl\lib/CPAN/Module.pm line 578
+        CPAN::Module::install('CPAN::Module=HASH(0x3437cb4)') called at C:\straw
+berry\perl\lib/CPAN/Shell.pm line 1790
+        CPAN::Shell::rematein('CPAN::Shell', 'install', 'WWW::Mechanize') called
+ at C:\strawberry\perl\lib/CPAN/Shell.pm line 1970
+        CPAN::Shell::__ANON__('CPAN::Shell', 'WWW::Mechanize') called at C:/stra
+wberry/perl/lib/App/Cpan.pm line 459
+        App::Cpan::__ANON__('WWW::Mechanize') called at C:/strawberry/perl/lib/A
+pp/Cpan.pm line 468
+        App::Cpan::_default('ARRAY(0xbec284)', 'HASH(0x1665c74)') called at C:/s
+trawberry/perl/lib/App/Cpan.pm line 386
+        App::Cpan::run('App::Cpan', 'WWW::Mechanize') called at C:\strawberry\pe
+rl\bin/cpan line 8
+
+C:\Documents and Settings\Administrator&gt;cpan WWW::Mechanize 'new'
+CPAN: CPAN::SQLite loaded ok (v0.199)
+Database was generated on Tue, 29 Aug 2017 01:11:57 GMT
+Running install for module 'WWW::Mechanize'
+CPAN: YAML loaded ok (v0.71)
+Running make for O/OA/OALDERS/WWW-Mechanize-1.86.tar.gz
+CPAN: Digest::SHA loaded ok (v5.48)
+CPAN: Compress::Zlib loaded ok (v2.024)
+Checksum for C:\strawberry\cpan\sources\authors\id\O\OA\OALDERS\WWW-Mechanize-1.
+86.tar.gz ok
+CPAN: Archive::Tar loaded ok (v1.54)
+CPAN: File::Temp loaded ok (v0.22)
+
+  CPAN.pm: Going to build O/OA/OALDERS/WWW-Mechanize-1.86.tar.gz
+
+Checking if your kit is complete...
+Looks good
+Warning: prerequisite Test::Output 0 not found.
+Warning: prerequisite Test::Warnings 0 not found.
+Writing Makefile for WWW::Mechanize
+CPAN: Module::CoreList loaded ok (v2.25)
+---- Unsatisfied dependencies detected during ----
+----     OALDERS/WWW-Mechanize-1.86.tar.gz    ----
+    Test::Output [build_requires]
+    Test::Warnings [build_requires]
+Running make test
+  Delayed until after prerequisites
+Running make install
+  Delayed until after prerequisites
+Running install for module 'Test::Output'
+Running make for B/BD/BDFOY/Test-Output-1.031.tar.gz
+Checksum for C:\strawberry\cpan\sources\authors\id\B\BD\BDFOY\Test-Output-1.031.
+tar.gz ok
+Couldn't move C:\strawberry\cpan\build\tmp-2444\Test-Output-1.031\t to C:\strawb
+erry\cpan\build\Test-Output-1.031-9btu0L\t: No such file or directory at C:\stra
+wberry\perl\lib/CPAN/Distribution.pm line 516
+        CPAN::Distribution::run_preps_on_packagedir('CPAN::Distribution=HASH(0x3
+42a59c)') called at C:\strawberry\perl\lib/CPAN/Distribution.pm line 347
+        CPAN::Distribution::get('CPAN::Distribution=HASH(0x342a59c)') called at
+C:\strawberry\perl\lib/CPAN/Distribution.pm line 1687
+        CPAN::Distribution::make('CPAN::Distribution=HASH(0x342a59c)') called at
+ C:\strawberry\perl\lib/CPAN/Distribution.pm line 2915
+        CPAN::Distribution::test('CPAN::Distribution=HASH(0x342a59c)') called at
+ C:\strawberry\perl\lib/CPAN/Distribution.pm line 3305
+        CPAN::Distribution::install('CPAN::Distribution=HASH(0x342a59c)') called
+ at C:\strawberry\perl\lib/CPAN/Module.pm line 479
+        eval {...} called at C:\strawberry\perl\lib/CPAN/Module.pm line 478
+        CPAN::Module::rematein('CPAN::Module=HASH(0x3429cc4)', 'install') called
+ at C:\strawberry\perl\lib/CPAN/Module.pm line 578
+        CPAN::Module::install('CPAN::Module=HASH(0x3429cc4)') called at C:\straw
+berry\perl\lib/CPAN/Shell.pm line 1790
+        CPAN::Shell::rematein('CPAN::Shell', 'install', 'WWW::Mechanize') called
+ at C:\strawberry\perl\lib/CPAN/Shell.pm line 1970
+        CPAN::Shell::__ANON__('CPAN::Shell', 'WWW::Mechanize') called at C:/stra
+wberry/perl/lib/App/Cpan.pm line 459
+        App::Cpan::__ANON__('WWW::Mechanize') called at C:/strawberry/perl/lib/A
+pp/Cpan.pm line 468
+        App::Cpan::_default('ARRAY(0xbec2b4)', 'HASH(0x1665bac)') called at C:/s
+trawberry/perl/lib/App/Cpan.pm line 386
+        App::Cpan::run('App::Cpan', 'WWW::Mechanize', '\'new\'') called at C:\st
+rawberry\perl\bin/cpan line 8
+
+C:\Documents and Settings\Administrator&gt;
+&lt;/code&gt;
+&lt;br&gt;&lt;br&gt;
+If the GET is damaged, then does that mean I can't download and reinstall a fix to WWW::Mechanize from cpan (because maybe it uses the same GET) ?&lt;br&gt;
+Thank you very much for any assistance (I'm way over my head here).&lt;br&gt;
+&lt;br&gt;
+UPDATE:&lt;br&gt;
+I have done some experimentation and now believe that WWW::Mechanize does go online but fails to save files.&lt;br&gt;
+&lt;code&gt;
+
+use strict;
+use warnings;
+use diagnostics;
+use WWW::Mechanize;
+$|=1;
+
+print "Init\n";
+
+if($@){print "\n\$@ = $@\n"; $@=0;}
+if($!){print "\n\$! = $!\n"; $!=0;}
+
+print "Mech\n";
+
+my $mech = WWW::Mechanize-&gt;new( autocheck =&gt; 1 );
+
+if($@){print "\n\$@ = $@\n"; $@=0;}
+if($!){print "\n\$! = $!\n"; $!=0;}
+
+print "Get\n";
+
+#$mech-&gt;get('https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png', ':content_file' =&gt; 'z.png');
+#$mech-&gt;get('https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/White_pearl_necklace.jpg/220px-White_pearl_necklace.jpg', ':content_file' =&gt; 'zzz.jpg');
+#$mech-&gt;get('https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Various_pearls.jpg/210px-Various_pearls.jpg', ':content_file' =&gt; 'zz.jpg');
+#$mech-&gt;get('http://google.com/ncr'); #print $mech-&gt;content( format =&gt; 'text' );
+#$mech-&gt;get('http://google.com/ncr'); #print $mech-&gt;content( format =&gt; 'text' );
+
+if($@){print "\n\$@ = $@\n"; $@=0;}
+if($!){print "\n\$! = $!\n"; $!=0;}
+print "\nDone\n"; &lt;&gt;;
+exit;
+&lt;/code&gt;
+&lt;br&gt;
+In this code I use "#" 7 times.&lt;br&gt;
+If I drop any 1 or 0 of them, my terminal shows:&lt;br&gt;
+&lt;code&gt;
+Init
+Mech
+
+$! = Bad file descriptor
+Get
+
+Done
+&lt;/code&gt;
+If I drop any 2 # (unless its 5 but not 4, or 7 but not 6 obviously) I get
+&lt;code&gt;
+Init
+Mech
+
+$! = Bad file descriptor
+Get
+
+$! = Bad file descriptor
+
+Done
+&lt;/code&gt;
+&lt;br&gt;
+If I drop the last 2 #, I do get the content of the page.&lt;br&gt;
+If I understand correctly this means I do get online files/pages but can't save them for some reason.&lt;br&gt;
+As before, no combination produced any downloaded files.&lt;br&gt;
+&lt;br&gt;
+Your thoughts ? &lt;br&gt;
+Thank you.</doctext>
+<thread id="1198286">
+<node id="1198293"><node id="1198366"><node id="1198627"/>
+</node>
+</node>
+<node id="1198295"><node id="1198367"/>
+</node>
+<node id="1198296"><node id="1198372"><node id="1198422"><node id="1198556"/>
+</node>
+</node>
+</node>
+</thread></node>

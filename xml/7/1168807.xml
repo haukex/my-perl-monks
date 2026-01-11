@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1168807" title="Difference between these regexes" created="2016-07-29 08:36:21" updated="2016-07-29 08:36:21" _doctext_mode="strict"><type id="115">perlquestion</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Fellow Monks,&lt;/p&gt;
+&lt;p&gt;I seek your wisdom: A recent node ([id://1168717]) got me wondering: Is there a difference between these three regexes that I am missing, primarily in terms of what they match? In particular I'm interested in the first two - I understand the first and third regexes, but am not an expert on look-arounds.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;c&gt;/&lt;(.*?)&gt;/s&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;/&lt;((?:(?!&gt;).)*)&gt;/s&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;/&lt;([^&gt;]*)&gt;/s&lt;/c&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;I have yet to find a difference - I am not sure if there even is one - but I'm probably not being creative enough in my test cases...&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Test::More;
+
+#use re 'debug';
+sub testre (_) {
+	my $txt = shift;
+	my @m1 = $txt =~ /&lt;(.*?)&gt;/sg;
+	my @m2 = $txt =~ /&lt;((?:(?!&gt;).)*)&gt;/sg;
+	my @m3 = $txt =~ /&lt;([^&gt;]*)&gt;/sg;
+	is_deeply \@m1, \@m2, "$txt =&gt; (@m1) = (@m2)";
+	is_deeply \@m1, \@m3, "$txt =&gt; (@m1) = (@m3)";
+}
+testre for (
+	"&lt;", "&lt;&lt;", "&lt;&lt;&lt;", "&gt;", "&gt;&gt;", "&gt;&gt;&gt;",
+	"&lt;&lt;&lt;&gt;", "&lt;&lt;&gt;", "&lt;&gt;", "&lt;&gt;&gt;", "&lt;&gt;&gt;&gt;",
+	"&lt;&lt;&gt;&gt;", "&lt;&lt;&lt;&gt;&gt;&gt;",
+	"&lt;&gt;&lt;&gt;",  "&lt;&gt;&lt;&gt;&lt;&gt;", "&lt;&gt;&lt;&lt;&gt;&lt;&gt;", "&lt;&gt;&lt;&gt;&gt;&lt;&gt;",
+	"a&lt;b&gt;c", "a&lt;b&gt;&gt;c", "a&lt;b&gt;&gt;&gt;c", "a&lt;&lt;b&gt;c", "a&lt;&lt;&lt;b&gt;c",
+	"a&lt;&lt;b&gt;&gt;c", "a&lt;&lt;&lt;b&gt;&gt;&gt;c",
+	"a&lt;b&gt;c&lt;d&gt;e",  "a&lt;b&gt;c&lt;d&gt;e&lt;f&gt;g",
+	"a&lt;b&gt;c&lt;&lt;e&gt;f&lt;g&gt;h", "a&lt;b&gt;c&lt;d&gt;&gt;e&lt;f&gt;g",
+	"a&lt;b&gt;c&lt;e&lt;f&gt;g&lt;h&gt;i", "a&lt;b&gt;c&lt;d&gt;e&gt;f&lt;g&gt;h",
+	"&lt;\n&gt;\n", "&lt;\n&lt;\n&gt;\n&gt;\n", "&lt;\n&gt;\n&lt;\n&gt;\n",
+);
+done_testing;
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Regards,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<thread id="1168807">
+<node id="1168810"/>
+<node id="1168812"/>
+<node id="1168813"/>
+<node id="1168820"/>
+<node id="1168857"><node id="1168885"/>
+</node>
+</thread></node>

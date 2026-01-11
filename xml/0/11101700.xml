@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101700" title="Re^2: Scanning Hashes for Repeated values" created="2019-06-21 19:04:45" updated="2019-06-21 19:04:45" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Sorry, but your description is still quite unclear and your code does not run because it contains a lot of variables that we don't know about (I'm going to guess they aren't relevant to the question either). If you could please reduce your problem down to: short sample input, &lt;i&gt;runnable&lt;/i&gt; code, the expected output for that input, and the actual output you're getting, including any error messages, each within &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags. As [choroba] already [id://11101687|said], please read [id://1177642|SSCCE], and also [id://174051].&lt;/p&gt;
+&lt;p&gt;Just for fun, I'm going to take a &lt;i&gt;guess&lt;/i&gt; at what you might mean. Note this is a brute force approach that I just whipped up, there's probably a much more intelligent algorithm than this.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my @input = qw/ 51:50 51:50:47 51:50:47:42 37:30 51:50:47:42:37:30 /;
+
+my %seen;
+for my $in (@input) {
+	my @items = split /:/, $in;
+	my @subsets;
+	for my $start (0..$#items-1) {
+		for my $end ($start+1..$#items) {
+			push @subsets, join ":", @items[$start..$end];
+		}
+	}
+	@subsets = sort { length $b &lt;=&gt; length $a } @subsets;
+	my @seen;
+	for my $subset (@subsets) {
+		push @seen, $subset if $seen{$subset}++;
+	}
+	if (@seen) {
+		my $new = $in;
+		my ($re) = map {qr/\b(?:$_)\b/} join '|',
+			map { quotemeta } @seen;
+		1 while $new =~ s/$re/:/g;
+		$new =~ s/:+/:/g;
+		$new =~ s/\A:|:\z//g;
+		$new = length $new ? "'$new' is new" : "nothing is new";
+		print "In '$in', I've seen ", join('/', map {"'$_'"} @seen),
+			" before, $new.\n";
+	}
+	else {
+		print "I have not seen '$in' before, it is new.\n";
+	}
+}
+
+__END__
+
+I have not seen '51:50' before, it is new.
+In '51:50:47', I've seen '51:50' before, '47' is new.
+In '51:50:47:42', I've seen '51:50:47'/'51:50'/'50:47' before, '42' is new.
+I have not seen '37:30' before, it is new.
+In '51:50:47:42:37:30', I've seen '51:50:47:42'/'51:50:47'/'50:47:42'/'51:50'/'50:47'/'47:42'/'37:30' before, nothing is new.
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11101686</root_node>
+<parent_node field_name="parent_node">11101689</parent_node>
+<thread id="11101686">
+<node id="11101687"/>
+<node id="11101689"><node id="11101700"/>
+</node>
+</thread></node>

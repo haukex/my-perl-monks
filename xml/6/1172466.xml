@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1172466" title="Problem using POE::Wheel::ReadWrite with pipes." created="2016-09-23 10:20:11" updated="2016-09-23 10:20:11" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1172462">ombibulous</author>
+<doctext field_name="doctext">&lt;p&gt;
+Hello,
+&lt;/p&gt;
+
+&lt;p&gt;
+I'm playing with a toy POE program that implements two sessions connected
+by a pipe that should simply cat an inupt file.  Something like this:
+&lt;/p&gt;
+
+&lt;code&gt;
+                              +- read side of pipe
+                             /
+          ----------         ----------
+STDIN --&gt; | reader | -pipe-&gt; | writer | --&gt; STDOUT
+          ----------         ----------
+                    \
+                     +- write side of pipe
+&lt;/code&gt;
+
+&lt;p&gt;
+I started by using rcaputo's example that he posted here at perlmonks.org/?node_id=949005 and came up with this non-working code:
+&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+
+use IO::Pipely qw(pipely);
+use POE qw(Wheel::ReadWrite);
+
+my ($read_pipe, $write_pipe) = pipely();
+
+# reader sends output to the write pipe
+my $reader = POE::Session-&gt;create(
+    args =&gt; [ $write_pipe ],
+    inline_states =&gt; {
+        _start =&gt; sub {
+            $_[HEAP]-&gt;{wheel} = POE::Wheel::ReadWrite-&gt;new(
+                InputHandle  =&gt; \*STDIN,
+                OutputHandle =&gt; $_[ARG0],
+                InputEvent   =&gt; 'got_input',
+                ErrorEvent   =&gt; 'got_input_error',
+            );
+        },
+        got_input          =&gt; \&amp;handle_input,
+        got_input_error    =&gt; \&amp;handle_input_error,
+        process_next_input =&gt; \&amp;process_next_input,
+    }
+);
+
+# writer reads input from the read pipe
+my $writer = POE::Session-&gt;create(
+    args =&gt; [$read_pipe],
+    inline_states =&gt; {
+        _start =&gt; sub {
+            $_[HEAP]-&gt;{wheel} = POE::Wheel::ReadWrite-&gt;new(
+                InputHandle  =&gt; $_[ARG0],
+                OutputHandle =&gt; \*STDOUT,
+                InputEvent   =&gt; 'got_input',
+                ErrorEvent   =&gt; 'got_input_error',
+            );
+        },
+        got_input          =&gt; \&amp;handle_input,
+        got_input_error    =&gt; \&amp;handle_input_error,
+        process_next_input =&gt; \&amp;process_next_input,
+    }
+);
+
+POE::Kernel-&gt;run();
+exit;
+
+sub handle_input
+{
+    my ( $kernel, $heap, $input ) = @_[KERNEL, HEAP, ARG0];
+    print $heap-&gt;{wheel}-&gt;put( $input );
+    $heap-&gt;{wheel}-&gt;flush();
+    $heap-&gt;{wheel}-&gt;pause_input();
+    $kernel-&gt;yield( 'process_next_input' );
+}
+
+sub handle_input_error
+{
+    my ($kernel, $heap) = @_[KERNEL, HEAP];
+    $kernel-&gt;yield( 'process_next_input' );
+    delete $heap-&gt;{wheel};
+}
+
+sub process_next_input
+{
+    my ($kernel, $heap) = @_[KERNEL, HEAP];
+    $heap-&gt;{wheel}-&gt;resume_input() if $heap-&gt;{wheel};
+}
+&lt;/code&gt;
+
+&lt;p&gt;
+On my Mac using Perl 5.20 I get this as the output when I feed the program a three line CSV file:
+&lt;/p&gt;
+
+&lt;code&gt;
+ombibulous&gt; perl cat.pl &lt; test.csv
+00001,2,3,4
+0a,b,c,d
+0foo,bar,baz
+^C
+ombibulous&gt;
+&lt;/code&gt;
+
+&lt;p&gt;
+The ^C is me yanking the rope on my hung program.  The lines should not begin with '0's, I don't know how they are creeping in.
+&lt;/p&gt;
+
+&lt;p&gt;
+I thought (hoped) that after the $reader's handle_input() subroutine does a put(), pauses_input(), and yield(), then POE would see that there is an input for the $writer session and call its input handler.  WRONG!  I'm not getting how one session cedes processing to another session.  I've seen the examples using posts() but I'm trying pipes instead.  Can anyone tell me what I'm doing wrong?
+&lt;/p&gt;
+
+&lt;p&gt;
+Eventually I'd like to build up a chain of sessions, connected by pipes, where each session does a particular transformation on input data; e.g., reader -&gt; parser -&gt; writer.  I've already done this with a single process, parsing and writing within a read loop, and subprocesses, forked process for each step. I'd like to see how it works using POE.  Is POE::Wheel::ReadWrite the best package to use if I'm going to use a single process?
+&lt;/p&gt;
+
+&lt;p&gt;
+Thanks for any help, insights, and/or solutions.
+&lt;/p&gt;
+</doctext>
+<thread id="1172466">
+<node id="1172536"/>
+<node id="1172552"/>
+<node id="1172627"/>
+</thread></node>

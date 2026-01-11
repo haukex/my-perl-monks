@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1186112" title="Re^5: DateTime::Format::Flexible; for Log Parse with multiple formatted lines" created="2017-03-27 14:07:31" updated="2017-03-27 14:07:31" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Please remember I am new to Perl. I am trying to understand your code examples but have not been able to get it to work in any way.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sure, I understand, we all start somewhere :-) Sorry if I threw too many new concepts out there at once. But I also ask you to please understand that neither I nor PerlMonks are a free code writing service - I posted that working first script because I wanted to get you started with code that shows some things I'd consider best practices. Beyond that, monks will usually expect to see some efforts to learn and write code, for example you could try writing some more regexes and showing us where they are going wrong. Also, note that when you say things similar to "it didn't work", that doesn't give us enough information to help you debug - see [id://174051] and [id://1177642].&lt;/p&gt;
+&lt;p&gt;If you're still working on getting the hang of regexes, then I recommend you get started with [doc://perlretut] and [doc://perlrequick]. Also, when working on regexes, it's best to use a variation of test inputs to use as test cases. Here, I will show you one way to test your regexes as you are working on them using [doc://Test::More] (see [doc://perlop#Quote-and-Quote-like-Operators] for information on &lt;c&gt;q{}&lt;/c&gt; - in short, it's like single quotes). I hope it won't be too difficult to adapt for your testing. Note that the elements of the &lt;c&gt;@out&lt;/c&gt; array correspond to &lt;c&gt;$1, $2, ...&lt;/c&gt;. Also, sites like [https://regex101.com/] can help ([https://regex101.com/r/JCnBl7/2|here's] something to get you started), although some of the more advanced regex syntax is not compatible with Perl.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More;
+
+# this is the regex we're working on
+my $regex = qr/^ \s* (\d+) \s* \[(\d+)\] \s+ (\S+) \s+ \[(.+?)\] \s* (\w+): \s* (.*?) \s* $/x;
+
+{
+  ok my @out =
+    # inside the q{} is the test input string
+    q{ 20848[30892]    0000000000000000    [DM_MQ_I_DAEMON_START]info:  "Message queue daemon (tid : 27944, session 0102b20d80000456) is started sucessfully." }
+    =~ $regex;
+  is_deeply \@out,
+    # inside the [] is the expected output (capture group matches)
+    [ '20848', '30892', '0000000000000000', 'DM_MQ_I_DAEMON_START', 'info',
+    q{"Message queue daemon (tid : 27944, session 0102b20d80000456) is started sucessfully."} ]
+    or diag explain \@out;
+}
+# ... add more test cases here!
+
+done_testing;
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1185654</root_node>
+<parent_node field_name="parent_node">1186096</parent_node>
+<thread id="1185654">
+<node id="1185665"><node id="1185672"><node id="1185683"/>
+<node id="1185690"/>
+</node>
+</node>
+<node id="1185669"><node id="1186075"><node id="1186082"><node id="1186096"><node id="1186102"/>
+<node id="1186112"/>
+<node id="1186147"/>
+</node>
+</node>
+</node>
+<node id="1186994"><node id="1186995"/>
+<node id="1186996"/>
+</node>
+</node>
+</thread></node>

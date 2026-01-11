@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1043841" title="Re: High-speed Date Formatting" created="2013-07-11 20:23:00" updated="2013-07-11 20:23:00" _doctext_mode="lenient"><type id="11">note</type>
+<author id="171588">BrowserUk</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;If can live with its limitations(&lt;sup&gt;1&lt;/sup&gt;), you could try something like this:
+&lt;code&gt;
+#! perl -slw
+use strict;
+use constant MONTHS =&gt; { qw[
+    Jan 0 Feb 31 Mar 59 Apr 90 May 120 Jun 151
+    Jul 181 Aug 212 Sep 242 Oct 272 Nov 303 Dec 334
+] };
+
+sub str2epoch {
+    my( $d, $m, $y, $H, $M, $S ) = $_[0] =~
+        m[^.... (\d\d) (...) (\d\d\d\d) (\d\d):(\d\d):(\d\d)] 
+        or die "Bad format $_[0]";
+        
+    my $leaps =  int( ($y - 1970) / 4 + 0.5 );
+    (((($y-1970)*365 +$leaps+MONTHS-&gt;{$m}+($d-1))*24 +$H)*60 +$M)*60 +$S;
+}
+
+my $date = 'Fri, 01 Mar 2013 01:21:14 +0000';;
+print str2epoch( $date );
+
+print scalar localtime str2epoch( $date );
+
+print scalar localtime str2epoch( 'Fri, 12 Jul 2013 01:20:34' );;
+
+__END__
+C:\test\primes&gt;..\str2epoch.pl
+1362100874
+Fri Mar  1 01:21:14 2013
+Fri Jul 12 02:20:34 2013
+
+&lt;/code&gt;
+
+&lt;P&gt;And if you need a little more you might parse the numbers with [unpack] instead of the regex engine.
+
+&lt;p&gt;&lt;sup&gt;1&lt;/sup&gt; Limitations include:
+
+&lt;ul&gt;&lt;li&gt;No leap seconds;
+&lt;/li&gt;&lt;li&gt;No daylight savings;
+&lt;/li&gt;&lt;li&gt;No timezones;
+&lt;/li&gt;&lt;li&gt;Only works for another 87 years.
+&lt;/li&gt;&lt;/ul&gt;
+
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-171588"&gt;
+&lt;hr /&gt;
+&lt;font size=1 &gt;
+&lt;div&gt;With the rise and rise of 'Social' network sites: 'Computers are making people easier to use everyday'&lt;/div&gt;
+&lt;div&gt;Examine what is said, not who speaks -- Silence betokens consent -- Love the truth but pardon error.&lt;/div&gt;
+&lt;div&gt;"Science is about questioning the status quo. Questioning authority". &lt;/div&gt;
+&lt;div&gt;In the absence of evidence, opinion is indistinguishable from prejudice.
+&lt;/div&gt;
+&lt;/font&gt;
+
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1043832</root_node>
+<parent_node field_name="parent_node">1043832</parent_node>
+<thread id="1043832">
+<node id="1043841"><node id="1043845"><node id="1043852"/>
+</node>
+<node id="1043861"/>
+<node id="1043913"/>
+</node>
+<node id="1043844"><node id="1044007"/>
+<node id="1082683"/>
+</node>
+<node id="1043846"/>
+<node id="1043893"><node id="1043905"/>
+</node>
+</thread></node>

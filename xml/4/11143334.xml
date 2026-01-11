@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11143334" title="Replacing a module dependency" created="2022-04-26 19:34:51" updated="2022-04-26 19:34:51" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11123653">Bod</author>
+<doctext field_name="doctext">&lt;p&gt;We send automated emails with things like registration verifications automatically.  We user [mod://MIME::Lite] to do the sending and use the default &lt;code&gt;send&lt;/code&gt; mechanism which is &lt;code&gt;sendmail&lt;/code&gt; as it is a Linux server.&lt;/p&gt;
+
+&lt;p&gt;But we are having some issues with deliverability.  So, I decided to switch to using SMTP instead to see if that works more reliably.  To send via SMTP [mod://MIME::Lite] uses [mod://Net::SMTP] which in turn requires [mod://MIME::Base64].  This last module is XS and I don't have it installed on the shared hosting.&lt;/p&gt;
+
+&lt;p&gt;We use [mod://Net::SMTP] elsewhere to send lots of emails so I have looked at what I did in the past to get around this problem.  It turns out that I created a new module that inherits from [mod://Net::SMTP] and overrides the &lt;code&gt;auth&lt;/code&gt; method.  This works fine as we always send through the same SMTP server with the same authentication.  Doing the same will be fine for the [mod://MIME::Lite] setup.&lt;/p&gt;
+
+&lt;p&gt;Like this:
+&lt;code&gt;
+package Mail::SMTP;
+
+require Net::SMTP;
+
+$VERSION="1.0";
+
+@ISA=qw(Net::SMTP);
+
+sub auth {
+	my $self = shift;
+	my $code;
+
+	my $CMD_MORE = 3;
+	my $CMD_OK   = 2;
+
+	my @cmd = ("AUTH LOGIN");
+	push @cmd, 'xxxxx=';	# Base64 encoded username
+
+	while (($code = $self-&gt;command(@cmd)-&gt;response()) == $CMD_MORE) {
+		@cmd = ('xxxxx=');	# Base64 encoded password
+	}
+
+	$code == $CMD_OK;
+}
+
+1;
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;But, how can I easily get [mod://MIME::Lite] to use the new module inherited from [mod://New::SMTP]?&lt;/p&gt;
+
+&lt;p&gt;I could created a new module that inherits from [mod://MIME::Lite] and just override the &lt;code&gt;send_by_smtp&lt;/code&gt; with the only change being the &lt;code&gt;require&lt;/code&gt; file it calls.  But that doesn't seen a very elegant solution!&lt;/p&gt;
+
+&lt;p&gt;Is there some way to instead put a new version of [mod://Net::SMTP] in a directory relative to my script and get [mod://MIME::Lite] to use that?  If so, how can I inherit from a module of the same name (but a different path) as the new module?&lt;/p&gt;
+
+&lt;p&gt;Or is there a 'better' solution I am missing?&lt;/p&gt;</doctext>
+<thread id="11143334">
+<node id="11143335"><node id="11143344"/>
+</node>
+<node id="11143336"><node id="11143343"/>
+</node>
+<node id="11143339"><node id="11143341"/>
+</node>
+<node id="11143340"><node id="11143346"/>
+</node>
+</thread></node>

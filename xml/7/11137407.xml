@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11137407" title="Re: count backrefenence regex" created="2021-10-10 17:01:09" updated="2021-10-10 17:01:09" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Oneliners are great, but not for readability, and when you want people to be able to help you easily, smashing this code into a oneliner is not the best way to present a [id://1177642]. Also, [id://111088].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;if i 1st assign $+{repeat} to a variable, i get the substring&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The [doc://perlvar#Variables-related-to-regular-expressions] are reset by each &lt;ins&gt;successful&lt;/ins&gt; regex operation and are dynamically scoped, so if you want to use them later, you should generally always store them into other variables, and only use them if the match is successful in the first place. &lt;small&gt;(related recent thread in regards to the variables' scoping: [id://11136828])&lt;/small&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;adding //g back gets back to the non-functional state&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;As per [doc://perlop#Regexp-Quote-Like-Operators]:&lt;/p&gt;
+&lt;blockquote&gt;In scalar context, each execution of &lt;c&gt;m//g&lt;/c&gt; finds the next match, returning true if it matches, and false if there is no further match. The position after the last match can be read or set using the &lt;c&gt;pos()&lt;/c&gt; function; see [doc://pos|"pos" in perlfunc]. A failed match normally resets the search position to the beginning of the string, but you can avoid that by adding the &lt;c&gt;/c&lt;/c&gt; modifier (for example, &lt;c&gt;m//gc&lt;/c&gt;). Modifying the target string also resets the search position.&lt;/blockquote&gt;
+&lt;p&gt;The thing to note here is that [doc://pos] is &lt;i&gt;per string&lt;/i&gt;. You're matching against &lt;c&gt;$s&lt;/c&gt; in the &lt;c&gt;while&lt;/c&gt;'s condition, but then also matching against &lt;c&gt;$s&lt;/c&gt; again inside the &lt;c&gt;while&lt;/c&gt;'s body, each operation using and affecting &lt;c&gt;$s&lt;/c&gt;'s [doc://pos].&lt;/p&gt;
+&lt;p&gt;As far as I can tell, what your current algorithm is trying to do is count the ocurrences of repeated substrings immediately, each time you find them. This seems quite inefficient.&lt;/p&gt;
+&lt;p&gt;You've got a few other issues in your code: Your first two examples have "Useless use of hash element in void context" because you just have &lt;c&gt;$+{repeat};&lt;/c&gt; all on its own, and second, &lt;c&gt;$x=int(1000*rand())&lt;/c&gt; and then using &lt;c&gt;$x&lt;/c&gt; as an index to &lt;c&gt;@a&lt;/c&gt; is going to cause a ton of nonexistent array elements to be picked. Also, random strings are not usually a good idea for testing during development, since tests should be repeatable.&lt;/p&gt;
+&lt;p&gt;Another issue that I see is that your current regex will consume not only the match &lt;c&gt;(?&lt;repeat&gt;\w{3,})&lt;/c&gt;, but also all characters between that match (&lt;c&gt;\w*&lt;/c&gt;) and the repetition itself (&lt;c&gt;\g{repeat}&lt;/c&gt;), so all of those latter characters won't be checked for repetitions. This can be solved with zero-width [doc://perlre#Lookaround-Assertions], however, you haven't specified what should happen if the sequences overlap and so on. That's why test cases are important.&lt;/p&gt;
+&lt;p&gt;Anyway, here's a starting point for what I &lt;i&gt;think&lt;/i&gt; you might want. Note how I'm simply using a hash to count occurrences.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More;
+
+sub count_reps {
+	my $data = shift;
+	my %seqs;
+	while ( $data =~ m{ (?&lt;repeat&gt;\w{3,}) (?= \w* \g{repeat} ) }xg ) {
+		$seqs{ $+{repeat} }++;
+	}
+	return \%seqs;
+}
+
+
+is_deeply count_reps('AGCAGC'),
+	{ AGC =&gt; 1 };
+
+is_deeply count_reps('AATGCAATCGCAGCAGCA'),
+	{ AAT =&gt; 1, GCA =&gt; 3 };
+
+is_deeply count_reps('AGCTACCCAGCTAGGGAGCTA'),
+	{ AGCTA =&gt; 2 };
+
+done_testing;
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor edits for clarity.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11137405</root_node>
+<parent_node field_name="parent_node">11137405</parent_node>
+<thread id="11137405">
+<node id="11137406"><node id="11137411"><node id="11137413"/>
+<node id="11137414"/>
+</node>
+</node>
+<node id="11137407"><node id="11137410"/>
+</node>
+<node id="11137409"/>
+<node id="11137631"/>
+</thread></node>

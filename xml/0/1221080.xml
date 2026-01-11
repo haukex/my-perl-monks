@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1221080" title="Re^2: Regex for removing Template::Toolkit comments?" created="2018-08-25 05:01:21" updated="2018-08-25 05:01:21" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;filter the content by hooking in&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Out of curiosity I looked into this a bit, and it turns out that hacking/hooking into [mod://Template::Parser] (via [mod://Template::Directive], [mod://Template::Grammar], or even [https://metacpan.org/source/ABW/Template-Toolkit-2.27/parser/Parser.yp|Parser.yp]) is difficult, because it looks like &lt;c&gt;Template::Parser::_parse&lt;/c&gt; drops the original source text and doesn't pass it into the handlers. But for a first step, all that's needed are the tokens, which can be provided by [https://metacpan.org/source/ABW/Template-Toolkit-2.27/lib/Template/Parser.pm#L378|&lt;c&gt;Template::Parser::split_text&lt;/c&gt;]... but &lt;b&gt;careful&lt;/b&gt; with the following, I haven't tested with a lot of different cases yet to see if there might be token types this doesn't handle.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Data::Dump qw/dd pp/;
+use Template::Parser;
+
+my $text = &lt;&lt;'END';
+before
+[% # this is a comment to the end of line
+   foo = 'bar'
+%]
+
+&lt;p&gt;bw, bliako&lt;/p&gt;
+
+[%# placing the '#' immediately inside the directive
+    tag comments out the entire directive
+%]
+[% outside %]
+after
+END
+
+my $parser = Template::Parser-&gt;new();
+my $tokens = $parser-&gt;split_text($text);
+#dd $tokens; # Debug
+
+my $o = '';
+for (my $i=0; $i&lt;@$tokens; $i++) {
+	if (ref $tokens-&gt;[$i]) {
+		my $text = $tokens-&gt;[$i][0];
+		#dd $text; # Debug
+		$o .= "[% $text %]";
+	}
+	elsif ($tokens-&gt;[$i] eq 'TEXT') {
+		my $text = $tokens-&gt;[++$i];
+		#dd $text; # Debug
+		$o .= $text;
+	}
+	else { die pp($i,$tokens-&gt;[$i]) }
+}
+
+print $o;
+
+__END__
+
+before
+[% # this is a comment to the end of line
+   foo = 'bar' %]
+
+&lt;p&gt;bw, bliako&lt;/p&gt;
+
+
+[% outside %]
+after
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1221039</root_node>
+<parent_node field_name="parent_node">1221048</parent_node>
+<thread id="1221039">
+<node id="1221044"><node id="1221049"><node id="1221051"><node id="1221053"><node id="1221055"><node id="1221057"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1221048"><node id="1221054"><node id="1221056"/>
+</node>
+<node id="1221080"><node id="1221093"/>
+<node id="1221125"/>
+</node>
+</node>
+<node id="1221063"><node id="1221124"><node id="1221133"><node id="1221179"><node id="1221192"><node id="1221199"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

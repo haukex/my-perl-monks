@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228760" title="Re: Error: Attempt to reload module.. while testing failing require" created="2019-01-20 17:23:12" updated="2019-01-20 17:23:12" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Note the pseudocode documented in [doc://require]: If a module fails to compile ([doc://do] returns &lt;c&gt;undef&lt;/c&gt;), it will still get an [doc://%INC] entry of &lt;c&gt;undef&lt;/c&gt;, meaning that the entry still [doc://exists], but it indicates a failed load.&lt;/p&gt;
+&lt;c&gt;
+$ echo "die" &gt; Whatever.pm
+$ perl -wMstrict -MData::Dumper -I. -e 'eval {require Whatever}; print Dumper({%INC{"Whatever.pm"}})'
+$VAR1 = {
+          'Whatever.pm' =&gt; undef
+        };
+&lt;/c&gt;
+&lt;p&gt;[doc://perldiag] says about that error message: "&lt;b&gt;Attempt to reload %s aborted.&lt;/b&gt; (F) You tried to load a file with [doc://use] or [doc://require] that failed to compile once already. Perl will not try to compile this file again unless you delete its entry from %INC. See [doc://require] and [doc://%INC|%INC in perlvar]." So [doc://delete]ing the [doc://%INC] entry is the way to go, &lt;i&gt;if&lt;/i&gt; you want to structure your code this way.&lt;/p&gt;
+&lt;p&gt;By the way, is the source of &lt;c&gt;Win32::Backup::Robocopy&lt;/c&gt; [https://github.com/LorenzoTa/Win32-Backup-Robocopy/blob/master/lib/Win32/Backup/Robocopy.pm|this]? I don't see it currently making use of &lt;c&gt;$ENV{PERL_ROBOCOPY_EXE}&lt;/c&gt;. It would be good to see that source.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;how can I return 0 from the &lt;c&gt;BEGIN&lt;/c&gt; block?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I don't think you can... I'm not sure that you need &lt;c&gt;BEGIN&lt;/c&gt; blocks in the test code in the first place (as you noted in your update).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;There are better ways to do this?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;My suggestion would be to not do the checks on &lt;c&gt;$ENV{PERL_ROBOCOPY_EXE}&lt;/c&gt; in the main code of the module. It seems to be an OO module, so why not just check for &lt;c&gt;robocopy.exe&lt;/c&gt; in &lt;c&gt;new&lt;/c&gt;? If you want to give a default that should be modifiable globally, then you could put an &lt;c&gt;our $DEFAULT_ROBOCOPY_EXE = length $ENV{PERL_ROBOCOPY_EXE} ? $ENV{PERL_ROBOCOPY_EXE} : 'C:\\Windows\\System32\\robocopy.exe';&lt;/c&gt; in the main code of &lt;c&gt;Win32::Backup::Robocopy&lt;/c&gt;, and then in &lt;c&gt;new&lt;/c&gt;, do something along the lines of &lt;c&gt;$self-&gt;{robocopy_exe} = $arg{robocopy_exe}//$DEFAULT_ROBOCOPY_EXE;&lt;/c&gt;, and &lt;i&gt;then&lt;/i&gt; check for the existence of the file &lt;c&gt;$self-&gt;{robocopy_exe}&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;If this were a non-OO module that has to do some initialization in the main code of the module, then I might abstract out that initialization into a &lt;c&gt;sub&lt;/c&gt;, such as &lt;c&gt;sub _init { ... } _init();&lt;/c&gt;, as this would allow me to call &lt;c&gt;My::Module::_init()&lt;/c&gt; as many times as I want without having to reload the module.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1228758</root_node>
+<parent_node field_name="parent_node">1228758</parent_node>
+<thread id="1228758">
+<node id="1228760"><node id="1228764"><node id="1228768"/>
+</node>
+<node id="1228765"/>
+</node>
+</thread></node>

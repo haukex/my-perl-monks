@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1167110" title="Re: Return array from sub or return empty array (updated)" created="2016-07-04 02:37:33" updated="2016-07-04 02:37:33" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [gregzartman],&lt;/p&gt;
+&lt;p&gt;You've already got some good replies (it's all about Perl's concept of context); just to provide a different angle: what do you &lt;i&gt;want&lt;/i&gt; the variables to hold?&lt;/p&gt;
+&lt;p&gt;When you write &lt;c&gt;my $foo;&lt;/c&gt;, the variable initially holds [doc://undef], and it's understandable and common to write something like &lt;c&gt;$foo = func() // '';&lt;/c&gt; (that is, set &lt;c&gt;$foo&lt;/c&gt; to the scalar return value of &lt;c&gt;func()&lt;/c&gt;, but when that return value is &lt;c&gt;undef&lt;/c&gt;, set &lt;c&gt;$foo&lt;/c&gt; to the empty string instead). Whether it's good practice depends on the situation; the point of this might be to prevent later warnings about &lt;c&gt;$foo&lt;/c&gt; being undefined when interpolated into a string, &lt;small&gt;&lt;i&gt;(Update 2:)&lt;/i&gt;&lt;/small&gt; or to detect whether &lt;c&gt;$foo&lt;/c&gt; has been assigned to or not. Note that the [doc://perlop#Logical-Defined-Or|&lt;c&gt;//&lt;/c&gt; defined-or operator] became available in Perl 5.10.&lt;/p&gt;
+&lt;p&gt;However, when you write &lt;c&gt;my @bar;&lt;/c&gt;, that variable doesn't contain [doc://undef], it simply contains zero values. Also, a function which returns a list or array would normally not return &lt;c&gt;undef&lt;/c&gt; to mean "no results", it would return an empty list*. So there is no need to do something like "assign an empty value to an array if the function doesn't return anything", since the array will simply continue to contain zero values, and there are no warnings about that.&lt;/p&gt;
+&lt;p&gt;Now, a different question might be: what if a function returning zero values were to represent an error condition that you wanted to detect? To do that, I would suggest to first fetch the return value of the function into an array, and then test it, for example: &lt;c&gt;@bar = func2(); if (!@bar) { warn "func2 returned nothing" }&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;* &lt;i&gt;Update 2:&lt;/i&gt; Some really interesting discussions come up when you search for [href://?node_id=3989;BIT=return%20undef;BIS=_|"return undef"], for example [id://1146837|this thread] seems to be very relevant, also [id://1158903|this one].&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Updated:&lt;/i&gt; Typo fix and minor rewordings.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1167104</root_node>
+<parent_node field_name="parent_node">1167104</parent_node>
+<thread id="1167104">
+<node id="1167105"/>
+<node id="1167107"/>
+<node id="1167110"><node id="1167113"/>
+<node id="1167158"><node id="1167169"/>
+</node>
+</node>
+<node id="1167199"/>
+</thread></node>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1197847" title="Re: Inline change to the file passed by Glob" created="2017-08-23 01:35:41" updated="2017-08-23 01:35:41" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;make inline changes ... &lt;c&gt;open(STDOUT, "+&gt;csv_add_up")&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Are you sure you want to do it this way? An [doc://open] mode of &lt;c&gt;+&gt;&lt;/c&gt; clobbers the file first, I don't think that's what you want. Also you don't have error checking (as in &lt;c&gt;open ... or die "$filename: $!";&lt;/c&gt;).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;i have to use stdout redirection&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Normally, you would do something like &lt;c&gt;open my $out_fh, '&gt;', $filename or die "$filename: $!";&lt;/c&gt; and then &lt;c&gt;print $out_fh "output\n";&lt;/c&gt;. Alternatively one could use [doc://select], but the disadvantage is that it redirects &lt;i&gt;all&lt;/i&gt; [doc://print] and related statements. Re-opening &lt;c&gt;STDOUT&lt;/c&gt; is something one should do only if you know what you are doing and why. (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; If you really needed to capture &lt;c&gt;STDOUT&lt;/c&gt;, which I don't think is the case here, use [mod://Capture::Tiny].)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;passed using Glob&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Is this a requirement? (I'm asking because I wouldn't necessarily do it this way.)&lt;/p&gt;
+&lt;p&gt;Anyway, the usual way to make "inline" changes is to either open a temporary file, write to it, and then rename the temporary file over the original, or the way Perl's &lt;c&gt;-i&lt;/c&gt; switch does it, by renaming the original and then opening a new file with the same name as the original. It's theoretically possible to do it by opening a file in read-write mode (e.g. reading the entire file into memory, [doc://seek]ing and [doc://truncate]ing the file, and writing it back out), but I have to say I personally have almost never done this because it's not safe - if the program crashes, gets killed, the machine loses power, etc., you'll lose data! While not "inline" in the strictest sense, since [doc://rename] is an atomic operation on many[wp://Atomic rename|*] filesystems, it's much safer - the file will either be the original or the updated version.&lt;/p&gt;
+&lt;p&gt;Example Code: [id://1180937|Here] is a demo of the [doc://rename] method, and [id://1182738|here] is a demo of a trick using [doc://$^I], which is the same as Perl's &lt;c&gt;-i&lt;/c&gt; switch ([doc://perlrun]).&lt;/p&gt;
+&lt;p&gt;Lastly, I would strongly recommend [mod://Text::CSV] for CSV file operations (also install [mod://Text::CSV_XS] for speed).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1197845</root_node>
+<parent_node field_name="parent_node">1197845</parent_node>
+<thread id="1197845">
+<node id="1197847"><node id="1197848"><node id="1197850"/>
+<node id="1197852"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1195241" title="Re: How can I use printf FORMAT strings for (Win32) shell globs?" created="2017-07-17 06:16:49" updated="2017-07-17 06:16:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;That's an interesting question. But I am wondering about a few things:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Perl's [doc://sprintf] format strings are pretty complex - are you aiming to support all of it (I assume not), or just a subset, and if so, what subset?&lt;/li&gt;
+&lt;li&gt;Why are you getting the patterns as printf format strings in the first place, instead of globs or regular expressions? Maybe you could approach the problem from a different angle and have the user input one of those?&lt;/li&gt;
+&lt;li&gt;A printf format string of &lt;c&gt;"Img%04d.png"&lt;/c&gt; can also produce an output of &lt;c&gt;"Img123456.png"&lt;/c&gt;, since &lt;c&gt;%04d&lt;/c&gt; is just a &lt;i&gt;minimum&lt;/i&gt; width specifier, but in your code you take it to mean &lt;i&gt;exactly&lt;/i&gt; four digits. Plus, you exclude negative numbers, which are also possible with &lt;c&gt;%04d&lt;/c&gt;. Why the difference?&lt;/li&gt;
+&lt;li&gt;Why do you convert to [doc://glob] patterns first, why not just stick to regular expressions all the way through? They're more powerful and can also be used for listing files in combination with [doc://readdir], [mod://Path::Class], [mod://Path::Tiny], or [mod://File::Find::Rule]. (&lt;i&gt;Update:&lt;/i&gt; And they &lt;i&gt;could&lt;/i&gt; even be used like so: &lt;c&gt;my @files = grep {/$regex/} glob(".* *");&lt;/c&gt;, although I'd strongly recommend one of the aforementioned modules.)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The following is just something I played with, note it is very minimal and unfinished, e.g. it currently supports only a few specifiers and doesn't do anything with the &lt;c&gt;flags&lt;/c&gt; or &lt;c&gt;width&lt;/c&gt; fields. But basically, it'll turn a format string like &lt;c&gt;"Img%04d.png"&lt;/c&gt; into a regex roughly like &lt;c&gt;/^Img([-+]?[0123456789]+)\.png$/&lt;/c&gt; (I used [mod://Regexp::Common::number] to implement the number matching).&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Regexp::Common qw/number/;
+
+sub fmtstr2regex {
+	my ($fmtstr) = @_;
+	my $parse_fmtstr = qr{
+			(?&lt;esc&gt;%%) | (?&lt;plain&gt;[^%]+)
+			| % (?&lt;flags&gt;[-+ 0])? (?&lt;width&gt;\d+)?
+			  (?:\.(?&lt;prec&gt;\d+))? (?&lt;type&gt;[dfs])
+		}msx;
+	my $outregex="\n";
+	pos($fmtstr)=undef;
+	while ($fmtstr=~/\G$parse_fmtstr/gc) {
+		$outregex .= "\t";
+		if (exists $+{esc})
+			{ $outregex .= "\\%" }
+		elsif (exists $+{plain})
+			{ $outregex .= quotemeta $+{plain} }
+		else {
+			if ($+{type} eq 'd')
+				{ $outregex .= '('.$RE{num}{int}.')' }
+			elsif ($+{type} eq 'f') {
+				if (defined $+{prec})
+					{ $outregex .= '('
+						.$RE{num}{real}{-places=&gt;$+{prec}}.')' }
+				else
+					{ $outregex .= '('.$RE{num}{real}.')' }
+			}
+			elsif ($+{type} eq 's')
+				{ $outregex .= '((?s).*?)' }
+		}
+		$outregex .= "\n";
+	}
+	die "failed to parse '$fmtstr'"
+		unless pos($fmtstr)==length($fmtstr);
+	return qr/\A$outregex\z/x;
+}
+
+use Test::More;
+{
+	my $fmtstr = 'Img%04d.png';
+	my $regex = fmtstr2regex($fmtstr);
+	note '$regex = ', explain $regex;
+	my @grepped = grep {/$regex/} qw/ Img0001.png Hello.txt
+		Img6789.png ImgABCD.png Img2000.png Img1234.jpg Img0123.png /;
+	is_deeply \@grepped, [qw/ Img0001.png Img6789.png Img2000.png
+		Img0123.png /], 'grepped list of files';
+}
+{
+	my $fmtstr = 'fo.o%sbar%03d%%% 5squz *%4.2f9baz';
+	my $regex = fmtstr2regex($fmtstr);
+	note '$regex = ', explain $regex;
+	{
+		my $string = sprintf($fmtstr,"TEST",45,"Foo",1.234);
+		is $string, 'fo.oTESTbar045%  Fooquz *1.239baz', 'sprintf';
+		ok my @m = $string=~$regex, 'regex matches';
+		is_deeply \@m, [ "TEST", "045", "  Foo", "1.23" ],
+			'capture groups';
+	}
+	{
+		my $string = sprintf($fmtstr,"  34bar",1234,"**",567.890);
+		is $string, 'fo.o  34barbar1234%   **quz *567.899baz', 'sprintf';
+		ok my @m = $string=~$regex, 'regex matches';
+		is_deeply \@m, [ "  34bar", "1234", "   **", "567.89" ],
+			'capture groups';
+	}
+}
+done_testing;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1195222</root_node>
+<parent_node field_name="parent_node">1195222</parent_node>
+<thread id="1195222">
+<node id="1195223"><node id="1195225"/>
+</node>
+<node id="1195228"/>
+<node id="1195233"/>
+<node id="1195241"/>
+<node id="1195257"><node id="1195264"/>
+</node>
+<node id="1195280"/>
+<node id="1195286"><node id="1195310"><node id="1195394"/>
+</node>
+<node id="1195408"/>
+<node id="1195653"/>
+</node>
+</thread></node>

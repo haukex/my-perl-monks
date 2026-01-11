@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1205375" title="Re: Simple indentation. Does it need improvement?" created="2017-12-12 17:33:02" updated="2017-12-12 17:33:02" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;This seems like something that would be ideal as an OO module, your &lt;c&gt;sub&lt;/c&gt;s could be converted to methods. This would also make the objects safe to mix, instead of simply having one "global" indent level.&lt;/p&gt;
+&lt;p&gt;As for the code you posted, [holli] already pointed out that module names in lower case are by convention pragmas. Also, just a small note on &lt;c&gt;( shift || "" )&lt;/c&gt;: this means that if &lt;c&gt;$_[0]&lt;/c&gt; is &lt;c&gt;"0"&lt;/c&gt; or &lt;c&gt;0&lt;/c&gt;, it will be replaced by an empty string. You probably want the defined-or &lt;c&gt;//&lt;/c&gt; instead, but it's usually fine to implement a &lt;c&gt;printf&lt;/c&gt; replacement simply as &lt;c&gt;sprintf(shift, @_)&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Since your post inspired me, here's my idea using [doc://overload]ing:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+{
+	package Indent;
+	sub new { my $c=shift; bless { i=&gt;shift//"\t", c=&gt;0 }, $c }
+	use overload  '++' =&gt; sub { ++shift-&gt;{c} },
+		'--' =&gt; sub { my $s=shift; $$s{c}=0 if --$$s{c}&lt;0; $$s{c} },
+		'""' =&gt; sub { my $s=shift; $$s{i} x $$s{c} },
+		'='  =&gt; sub { my $s=shift; bless {%$s}, ref $s },
+}
+
+my $recurse; $recurse = sub {
+	my ($lvl,$i) = @_ ? @_ : (0, Indent-&gt;new("foo"));
+	print "&lt;", $i++, "&gt; Enter\n";
+	$recurse-&gt;($lvl+1,$i) unless $lvl&gt;=2;
+	print "&lt;", --$i, "&gt; Leave\n";
+};
+$recurse-&gt;();
+
+__END__
+
+&lt;&gt; Enter
+&lt;foo&gt; Enter
+&lt;foofoo&gt; Enter
+&lt;foofoo&gt; Leave
+&lt;foo&gt; Leave
+&lt;&gt; Leave
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1205367</root_node>
+<parent_node field_name="parent_node">1205367</parent_node>
+<thread id="1205367">
+<node id="1205372"><node id="1205373"/>
+<node id="1205378"/>
+</node>
+<node id="1205375"><node id="1205392"/>
+</node>
+<node id="1205376"/>
+<node id="1205415"/>
+<node id="1205744"/>
+</thread></node>

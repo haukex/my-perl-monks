@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1232696" title="Re: fix ODT files with line breaks looking poor" created="2019-04-16 19:32:44" updated="2019-04-16 19:32:44" _doctext_mode="lenient"><type id="11">note</type>
+<author id="105128">Jenda</author>
+<doctext field_name="doctext">&lt;p&gt;I know nothing of ODT and the example presented by [haukex] fails to open so I can't test whether I broke something, but here's a possible solution using [CPAN://XML::Rules].&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use XML::Rules;
+
+my $filter = XML::Rules-&gt;new(
+	style =&gt; 'filter',
+	namespaces =&gt; {
+		'urn:oasis:names:tc:opendocument:xmlns:text:1.0' =&gt; 'text',
+		'urn:oasis:names:tc:opendocument:xmlns:office:1.0' =&gt; 'office'
+	},
+	rules =&gt; {
+		_default =&gt; 'raw', # we do not care what's inside the tags, 
+			 # we just want to preserve everything
+		'text:p' =&gt; sub { return $_[0] =&gt; $_[1] }, # this doesn't seem to do anything, 
+			# but it's necessary. The filter mode sends everything outside tags 
+			# with special rules directly to output
+		'text:line-break' =&gt; sub {
+			my ($tag, $attrs, $parents, $parentAttrs, $parser) = @_;
+			
+			my $idx = $#$parents; # find the &lt;text:p&gt; tag enclosing this one
+			$idx-- while ($idx &gt;=0 &amp;&amp; $parents-&gt;[$idx] ne 'text:p');
+			
+			return $tag =&gt; $attrs if ($parents-&gt;[$idx] ne 'text:p');
+			# line break outside paragraph, leave alone
+
+			my $level = $#$parents - $idx + 1;
+			print { $parser-&gt;{FH} } $parser-&gt;parentsToXML( $level); 
+			#output the &lt;text:p&gt; and everything inside we read so far
+
+			print { $parser-&gt;{FH} } $parser-&gt;closeParentsToXML( $level);
+			# close the opened tags all the way to the &lt;text:p&gt;
+
+			print { $parser-&gt;{FH} } "\n";
+			
+			foreach my $i ($idx .. $#$parents) { # remove the printed content
+				delete $parentAttrs-&gt;[$i]-&gt;{_content}; # leaves the attributes intact
+			}
+
+			return; # remove the &lt;text:line-break/&gt;
+		}
+	}
+);
+
+$filter-&gt;filter( \*DATA, \*STDOUT);
+
+
+__DATA__
+&lt;?xml version="1.0"?&gt;
+&lt;office:document-content office:version="1.2"
+    xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+    xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"&gt;
+&lt;office:body&gt;&lt;office:text&gt;
+&lt;text:p text:style-name="P1"&gt;
+    Fo&lt;text:span text:style-name="T1"&gt;o&lt;text:line-break/&gt;
+    B&lt;/text:span&gt;&lt;text:span text:style-name="T3"&gt;a&lt;/text:span&gt;
+    &lt;text:span text:style-name="T5"&gt;r&lt;text:line-break/&gt;&lt;/text:span&gt;
+&lt;/text:p&gt;
+&lt;/office:text&gt;&lt;/office:body&gt;
+&lt;/office:document-content&gt;
+&lt;/code&gt;
+
+
+&lt;p&gt;The code will work correctly (provided I understood the requirements right) no matter how many tags are open within the &amp;lt;text:p&amp;gt;.&lt;/p&gt;
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-105128"&gt;
+&lt;p&gt;Jenda&lt;br&gt;
+&lt;b&gt;Enoch was right!&lt;/b&gt;&lt;br/&gt;
+Enjoy the last years of Rome.
+&lt;/p&gt;
+
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1232242</root_node>
+<parent_node field_name="parent_node">1232242</parent_node>
+<thread id="1232242">
+<node id="1232243"><node id="1232244"/>
+</node>
+<node id="1232245"><node id="1232251"/>
+<node id="1232253"><node id="1232314"/>
+</node>
+</node>
+<node id="1232696"><node id="1232727"><node id="1232759"/>
+</node>
+</node>
+</thread></node>

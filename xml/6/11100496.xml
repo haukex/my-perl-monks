@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100496" title="how to avoid full scan in file." created="2019-05-24 19:03:13" updated="2019-05-24 19:03:13" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1212091">EBK</author>
+<doctext field_name="doctext">Hi guys, I have this code working almost perfectly.
+I am reading the file "A" and looking for a match in file "B" and decrement a value from file A.
+
+My big problem is that I am doing a full scan in the file "B" and my file "A" has 75k lines and file "B" has 880 lines.
+
+Do you have any idea about how to avoid full scan?
+
+Example of two files
+
+File "A"
+&lt;p&gt;l100101,aaaaaaa,a_0100,loc,10,1&lt;/p&gt;
+&lt;p&gt;l100101,aaaaaaa,a_0100,loc,11,1&lt;/p&gt;
+&lt;p&gt;l100101,aaaaaaa,a_0100,loc,12,6&lt;/p&gt;
+
+File "B"
+
+&lt;p&gt;l103709,bbbbbbb,c_0200,929&lt;/p&gt;
+&lt;p&gt;l100109,bbbbbbb,b_0100,442&lt;/p&gt;
+&lt;p&gt;l100107,bbbbbbb,c_0300,389&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+$|=1;
+
+my $filea = $ARGV[0];
+my $fileb = $ARGV[1];
+my $FileC = "result.csv";
+
+
+open ( FA, '&lt;', $filea) || die ( "File $filea Not Found!" );
+open ( FB, '&lt;', $fileb) || die ( "File $fileb Not Found!" );
+open ( FC, "&gt;", $FileC) || die ( "File $FileC Not Found!" );
+
+my @B;
+while ( &lt;FB&gt; ) {
+    chomp;
+    my($look, $sec, $cls, $max) = split ",";
+    push @B, [$look, $sec, $cls, $max];
+}
+
+my @A;
+while ( &lt;FA&gt; ) {
+    chomp;
+    my($look, $sec, $cls, $att, $idx, $qtd) = split ",";
+    push @A, [$look, $sec, $cls, $att, $idx, $qtd];
+}
+
+my $i = 1;
+my $j = 0;
+my $k = 0;
+my $count=0;
+while ( 1 ) {
+    # -- keep looping til nothing is modified --
+    my $modified=0;
+    $j = 0;
+    foreach my $row ( @A ) {
+        # -- loop through FileA, $j is rowcount --
+        $j++;
+        $k=0;
+		# -- loop through FileB, $k is linecount --
+        foreach my $line ( @B ) {
+            $k++;
+            my $idx1= @$line[0].@$line[1].@$line[2];
+            my $idx2= @$row[0].@$row[1].@$row[2];
+			# -- has to match on the index fields --
+            if ($idx1 eq $idx2) {
+                my $max = @$line[3];
+                my $tot = @$row[5] -1;
+                last if $count == $max;
+                if ( $tot &gt;= 0 ) {
+                        #print "FileA[".$j."]: ".join(",", @$row[0],@$row[1],@$row[3],@$row[4],@$row[5]  )."\n";
+                        print FC join(",", @$row[0],@$row[1],@$row[3],@$row[4],$max  )."\n";
+                        $count++;
+
+                    @$row[5]=$tot;
+                    $modified = 1;
+                }
+             }
+        }
+    }
+    if ((! $modified ) || ($i &gt; 10)) {
+        last;
+    }
+}
+&lt;/code&gt;</doctext>
+<thread id="11100496">
+<node id="11100497"><node id="11100502"/>
+</node>
+<node id="11100503"><node id="11100504"><node id="11100514"><node id="11100521"><node id="11100522"><node id="11100524"><node id="11100526"><node id="11100539"><node id="11100549"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11100523"/>
+</node>
+</node>
+</node>
+<node id="11100505"/>
+</thread></node>

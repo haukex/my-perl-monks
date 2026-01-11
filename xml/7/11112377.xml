@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112377" title="Re^3: Using Cartons to automate module installs" created="2020-02-04 12:52:26" updated="2020-02-04 12:52:26" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;i&gt;I suspect it's because the first paragraph of the Carton docs is:&lt;/i&gt;
+&lt;p&gt;You were exactly right, and while the absense of core modules might be problematic for a Carton, it is immaterial to a cpanfile, which, after a ton of reading about it, seems to suit my needs fine. I have been trying to implement them in varying ways and find success in a bash script that relies on &lt;c&gt;scandeps.pl&lt;/c&gt; .&lt;/p&gt;
+&lt;p&gt;It seems to me that it invites disaster to compose a cpanfile by hand, never mind the tedium. It has to be named 'cpanfile' for the command &lt;c&gt;sudo cpanm --installdeps .&lt;/c&gt; to work. There has been a fair amount of evolution in these matters over the years, so newer sources of information are more reliable. I found these html pages helpful and up to date: [http://blogs.perl.org/users/neilb/2017/05/specifying-dependencies-for-your-cpan-distribution.html|specifying-dependencies-for-your-cpan-distribution] and 
+[http://blogs.perl.org/users/neilb/2017/04/an-introduction-to-distribution-metadata.html|introduction-to-distribution-metadata]. The bash script wraps the invocation of &lt;c&gt;scandeps.pl&lt;/c&gt;, creating a directory to house the files to be scanned and the resulting &lt;c&gt;cpanfile&lt;/c&gt;. I also get a "paper trail" for what happens on STDOUT with &lt;c&gt;| tee -a "$out"&lt;/c&gt; .&lt;/p&gt;
+&lt;p&gt;Here is sample output:&lt;/p&gt;
+
+&lt;c&gt;$ ./1.cpan_dir.sh 
+mkdir: cannot create directory ‘logs’: File exists
+basename dollar sign zero is 1.cpan_dir.sh
+path is /logs
+Munged time is 02-03-2020_17-25-09
+out fn is /home/hogan/Documents/hogan//logs/02-03-2020_17-25-09.log
+/home/hogan/Documents/hogan
+/home/hogan/Documents/hogan/cpan_file_dir2
+/home/hogan/Documents/hogan/cpan_file_dir2/cpanfile
+/home/hogan/Documents/hogan/cpan_file_dir2/scandeps.pl
+--&gt; Working on .
+Configuring /home/hogan/Documents/hogan/cpan_file_dir2 ... OK
+&lt;== Installed dependencies for .. Finishing.
+behold your output:
+requires "ExtUtils::MM_AIX", "7.44";
+requires "ExtUtils::MM_Any", "7.44";
+requires "ExtUtils::MM_BeOS", "7.44";
+requires "ExtUtils::MM_Cygwin", "7.44";
+requires "ExtUtils::MM_DOS", "7.44";
+requires "ExtUtils::MM_Darwin", "7.44";
+requires "ExtUtils::MM_MacOS", "7.44";
+requires "ExtUtils::MM_NW5", "7.44";
+requires "ExtUtils::MM_OS2", "7.44";
+requires "ExtUtils::MM_QNX", "7.44";
+requires "ExtUtils::MM_UWIN", "7.44";
+requires "ExtUtils::MM_Unix", "7.44";
+requires "ExtUtils::MM_VMS", "7.44";
+requires "ExtUtils::MM_VOS", "7.44";
+requires "ExtUtils::MM_Win32", "7.44";
+requires "ExtUtils::MM_Win95", "7.44";
+requires "ExtUtils::MakeMaker", "7.44";
+requires "File::Temp", "0.2309";
+requires "Module::ScanDeps", "1.27";
+
+duration=20
+Mon Feb  3 17:25:29 PST 2020
+$ 
+&lt;/c&gt;
+&lt;p&gt;Source:&lt;/p&gt;
+
+&lt;c&gt;#!/bin/bash
+#  
+# 
+#  keep a log named by time stamp
+export PATH=:/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:/bin
+set -u
+app=${0##*/}
+mkdir "logs"
+pathto=/logs
+timename=$(date +"%m-%d-%Y_%H-%M-%S")
+out=$HOME/Documents/hogan/$pathto/$timename.log
+declare -ir SUCCESS=0
+declare -ir E_FATAL=1
+
+if [ 1 -eq 1 ] ; then
+echo "basename dollar sign zero is" $app
+echo "path is" $pathto
+echo "Munged time is" $timename
+echo "out fn is $out"
+echo "Time is $timename " &gt; "$out"
+fi # end if [ 1 -eq 0 ] 
+
+pwd | tee -a "$out"
+folder='cpan_file_dir2'
+mkdir $folder
+cp /home/hogan/.cpan/build/Module-ScanDeps-1.27-0/blib/script/scandeps.pl $PWD/$folder/ 
+cd $folder
+pwd | tee -a "$out"
+scandeps.pl -R *.pl | perl -ne   'printf qq{requires "%s", "%s";\n}, eval' &gt;&gt;cpanfile
+ls -d $PWD/* | tee -a "$out"
+sudo cpanm --installdeps . | tee -a "$out"
+echo "behold your output:" | tee -a "$out"
+cat cpanfile | tee -a "$out"
+gedit $out &amp; 
+read -n 1
+echo "duration=$SECONDS"  | tee -a "$out"
+date  | tee -a "$out"
+exit $SUCCESS
+
+&lt;/c&gt;
+&lt;p&gt;So, yay, that I'm getting results, but I don't quite understand the line of code I'm using to get them. Can you "talk through" what happens on this line, in particular, how the %s's get populated?&lt;/p&gt;
+
+&lt;c&gt;scandeps.pl -R *.pl | perl -ne   'printf qq{requires "%s", "%s";\n}, eval'&lt;/c&gt;
+&lt;p&gt;Thank you for your comments.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11112133</root_node>
+<parent_node field_name="parent_node">11112193</parent_node>
+<thread id="11112133">
+<node id="11112136"/>
+<node id="11112172"><node id="11112193"><node id="11112377"><node id="11112381"/>
+<node id="11112398"/>
+</node>
+</node>
+</node>
+</thread></node>

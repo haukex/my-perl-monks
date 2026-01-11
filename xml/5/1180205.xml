@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1180205" title="Re: select from mysql table based on two column match" created="2017-01-24 05:37:59" updated="2017-01-24 05:37:59" _doctext_mode="lenient"><type id="11">note</type>
+<author id="539642">madtoperl</author>
+<doctext field_name="doctext">If I understood your question correctly, you are trying to get two inputs from user in terminal say cat, dog and if those columns values in the table are matching with cat and dog respectively, &lt;br&gt;you need to select some other columns in the matching row and print it out.&lt;br&gt; If that is what you are looking for here you go, Untested though!
+
+&lt;code&gt;
+#!/usr/bin/perl -w
+use strict;
+use warnings;
+use DBI;
+
+#Get first input
+print "Enter cpt code&gt; ";
+my $cptcode = &lt;STDIN&gt;;
+
+#Get Second input
+print "Enter cpt2 code&gt; ";
+my $cpt2code = &lt;STDIN&gt;;
+
+if ( ($cptcode != “”) &amp;&amp; ($cpt2code != “”)) {
+        my $dbh = DBI-&gt;connect('dbi:mysql:mydatabase:localhost:3306','
++abc','xyz') or die "Couldn't connect to database: " . DBI-&gt;errstr;
+        my $sth = $dbh-&gt;prepare('SELECT * FROM charge WHERE column1 = $cptcode AND column2 = $cpt2code’)
+                or die "Couldn't prepare statement: " . $dbh-&gt;errstr;
+
+                 $sth-&gt;execute()    # Execute the query
+                or die "Couldn't execute statement: " . $sth-&gt;errstr;
+
+        # Read the matching records and print them out
+        while (my @data = $sth-&gt;fetchrow_array()) {
+                my $cptanswer = $data[1];
+                my $insid = $data[2];
+                my $preauth = $data[3];
+                my $updated = $data[5];
+                print "\t$cptanswer\t$insid\t$preauth\t$updated\n";
+        }
+
+        if ($sth-&gt;rows == 0) {
+                print "No names matched `$cptcode'.\n\n";
+        }
+
+        $sth-&gt;finish; 
+
+        $dbh-&gt;disconnect;
+}
+&lt;/code&gt;
+</doctext>
+<root_node field_name="root_node">1180198</root_node>
+<parent_node field_name="parent_node">1180198</parent_node>
+<thread id="1180198">
+<node id="1180199"/>
+<node id="1180205"><node id="1180206"><node id="1180390"/>
+</node>
+<node id="1180207"/>
+<node id="1180229"><node id="1180270"/>
+</node>
+</node>
+<node id="1180249"><node id="1180261"/>
+</node>
+<node id="1180260"/>
+</thread></node>

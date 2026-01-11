@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108913" title="Note on usage of ours variables and a question" created="2019-11-19 17:27:42" updated="2019-11-19 17:27:42" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1203274">likbez</author>
+<doctext field_name="doctext">I would like to avoid qualification with package name a variable that I use in many modules in many situations. For example, variable debug. 
+&lt;p&gt;
+Looks like I can't use our declaration for this purpose (see below) Does any other mechanism exist?
+&lt;p&gt;
+Also question about 'export" behavior". If I export variable debug from module A does it became "normal variable" in main:: so that I can use it in module B?  what will happen if I export it from module b as well ? It should bind it to the same variable, right? 
+&lt;p&gt;
+Can anybody enlighten me about this behavior? BTW does Perl have a system variable "debug" that is global and does not need qualification with the package name? 
+&lt;p&gt;
+For example, if I created module example.pm it compiles OK, but produces a run time error  because Perl assumes that our debug is $example::debug not $main::debug
+&lt;p&gt;
+May be our behavior can be generalized to handle this case as well? Why we can't alias variables in other namespaces? Is not this an artificial restriction?  
+&lt;p&gt;
+
+&lt;code&gt;
+package example;
+use v5.10;
+   use warnings;
+   use strict 'subs';
+   use feature 'state';
+
+require Exporter;
+
+our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
+@ISA = qw(Exporter);
+$::debug=1;
+{
+our $debug;
+   say "debug=$debug";
+}
+$VERSION = '1.10';
+1;
+
+and the test script:
+
+&lt;code&gt;
+#!/usr/bin/perl
+#:: test of ours
+
+   use v5.10;
+   use warnings;
+   use strict 'subs';
+   use feature 'state';
+   use lib '.';
+   use example;
+
+   say "debug=$debug";
+&lt;/code&gt;
+  
+It complains that it is undefined:  
+&lt;code&gt;
+
+[255]  # perl test_our_behaviour.pl
+&lt;code&gt;
+[0]  # perl test_our_behaviour.pl
+Use of uninitialized value $example::debug in concatenation (.) or string at example.pm line 14.
+IN EXAMPLE: debug=
+debug=1
+&lt;/code&gt;</doctext>
+<thread id="11108913">
+<node id="11108914"><node id="11108926"/>
+<node id="11108951"/>
+</node>
+<node id="11108915"/>
+<node id="11108917"/>
+<node id="11108918"><node id="11108923"><node id="11108925"><node id="11108927"/>
+</node>
+</node>
+<node id="11108924"/>
+</node>
+<node id="11108948"/>
+<node id="11108950"/>
+<node id="11109004"/>
+</thread></node>

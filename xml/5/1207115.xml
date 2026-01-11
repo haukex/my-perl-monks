@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1207115" title="Re^2: To glob or not to glob" created="2018-01-11 07:09:43" updated="2018-01-11 07:09:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Thank you for the reply!&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Using it the way you describe will cause porting issues for older perl versions&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;You are correct that the &lt;c&gt;:bsd_glob&lt;/c&gt; export tag wasn't added until Perl v5.16, &lt;del&gt;sometime from File::Glob 1.13 to 1.17&lt;/del&gt; &lt;ins&gt;[https://perl5.git.perl.org/perl.git/commitdiff/f4cbf9907d63df65667e01b565f10d18b7166dce|in File::Glob 1.15]&lt;/ins&gt;. (&lt;del&gt;Note you've got a typo in your example, &lt;tt&gt;-MFile::Glob&lt;b&gt;&lt;u&gt;:&lt;/u&gt;&lt;/b&gt;:bsd_glob&lt;/tt&gt;.&lt;/del&gt; &lt;ins&gt;fixed&lt;/ins&gt;) But from the [doc://File::Glob] docs:&lt;/p&gt;
+&lt;blockquote&gt;The &lt;c&gt;:glob&lt;/c&gt; tag, now discouraged, is the old version of &lt;c&gt;:bsd_glob&lt;/c&gt;. It exports the same constants and functions, but its glob() override does not support iteration; it returns the last file name in scalar context.&lt;/blockquote&gt;
+&lt;p&gt;So one backwards-compatible way to go is &lt;c&gt;use File::Glob ':glob';&lt;/c&gt;, unless you want to use it in scalar context, which might not be a good idea anyway due to the issue [choroba] [id://1206895|described].&lt;/p&gt;
+&lt;c&gt;
+$ touch 'foo bar.txt'
+$ perl -MFile::Glob=:glob -e 'print for &lt;*foo bar*&gt;'
+&lt;/c&gt;
+&lt;p&gt;This works in Perl 5.6.2 thru 5.24, and warns about the deprecation of &lt;c&gt;:glob&lt;/c&gt; in 5.26. What you can do in Perl v5.6 thru v5.26 (and hopefully beyond) is either 
+&lt;/p&gt;
+&lt;c&gt;
+use File::Glob 'bsd_glob';
+print for bsd_glob('*foo bar*');
+# -- or --
+use File::Glob $] lt '5.016' ? ':glob' : ':bsd_glob';
+print for &lt;*foo bar*&gt;;
+&lt;/c&gt;
+&lt;p&gt;With the limitation of not being able to use the latter in scalar context until Perl v5.16 and up (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; and the former not at all, unfortunately).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Does this in your opinion imply that File::Glob should be dual-lived?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;No, I don't yet have a well-formed opinion either way.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1206848</root_node>
+<parent_node field_name="parent_node">1207102</parent_node>
+<thread id="1206848">
+<node id="1206860"/>
+<node id="1206865"/>
+<node id="1206895"/>
+<node id="1206899"/>
+<node id="1206905"/>
+<node id="1207015"/>
+<node id="1207102"><node id="1207115"/>
+</node>
+</thread></node>

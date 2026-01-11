@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11142892" title="Re^3: 32bit/64bit hash function: Use perls internal hash function? (Updated!)" created="2022-04-10 07:33:38" updated="2022-04-10 07:33:38" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;it appears to use a printf function to make its output string&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That is true, but its [https://metacpan.org/release/SHAY/perl-5.34.1/source/ext/B/B.xs#L754|implementation] in XS is pretty simple and can be adapted to suit your needs.
+Given the performance constraints you've [id://11142889|described], I think you're going to have to venture in the direction of C/XS anyway.
+&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; In fact, it turns out to be pretty easy!&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use B 'hash';
+use Inline C =&gt; &lt;&lt;'_C_';
+U32 myhash(SV* sv) {
+	STRLEN len;
+	U32 hash = 0;
+	const char *s = SvPVbyte(sv, len);
+	PERL_HASH(hash, s, len);
+	return hash;
+}
+_C_
+
+print hash("foo"), "\n";
+printf "%#x\n", myhash("foo");
+
+__END__
+
+0x6611676e
+0x6611676e
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11142822</root_node>
+<parent_node field_name="parent_node">11142887</parent_node>
+<thread id="11142822">
+<node id="11142823"/>
+<node id="11142824"/>
+<node id="11142825"><node id="11142887"><node id="11142892"/>
+</node>
+<node id="11142893"><node id="11142914"/>
+</node>
+</node>
+<node id="11142827"><node id="11142863"><node id="11142864"><node id="11142869"/>
+</node>
+<node id="11142865"><node id="11142888"/>
+<node id="11142889"/>
+</node>
+<node id="11142868"/>
+</node>
+</node>
+</thread></node>

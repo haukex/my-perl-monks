@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1195302" title="Re: references - proper use of infix (arrow) and deprecated hash references" created="2017-07-18 05:04:50" updated="2017-07-18 05:04:50" _doctext_mode="lenient"><type id="11">note</type>
+<author id="163790">dsheroh</author>
+<doctext field_name="doctext">In short, you appear to have confused a hash reference (i.e., a reference &lt;i&gt;to&lt;/i&gt; a hash) with a hash &lt;i&gt;containing&lt;/i&gt; references.  What you have here in the posted code is just a plain ol' hash (&lt;c&gt;%hash&lt;/c&gt;) which holds a number of array references (&lt;c&gt;[ ... ]&lt;/c&gt;).
+&lt;p&gt;
+To fix the last line, you need to treat the hash as a hash instead of trying to use it as a reference - change &lt;c&gt;%hash-&gt;{$_}[1]&lt;/c&gt; to &lt;c&gt;$hash{$_}[1]&lt;/c&gt; (and the same for &lt;c&gt;[2]&lt;/c&gt;) and you should be good to go.
+&lt;p&gt;
+As for the error messages:
+&lt;p&gt;
+&lt;i&gt;Using a hash as a reference is deprecated&lt;/i&gt;:  You get this because you're trying to use an actual hash (not a hash reference) as if it were a reference.  This used to be allowed, but isn't any more.
+&lt;p&gt;
+&lt;i&gt;Global symbol "$hash" requires explicit package name&lt;/i&gt;: This one comes from trying to dereference the variable &lt;c&gt;$hash&lt;/c&gt;, which doesn't exist.  In Perl 5, &lt;c&gt;%hash&lt;/c&gt; refers to the hash as a whole and &lt;c&gt;$hash{x}&lt;/c&gt; refers to a single item within &lt;c&gt;%hash&lt;/c&gt;, while &lt;c&gt;$hash&lt;/c&gt; (with no &lt;c&gt;{}&lt;/c&gt;) is an independent scalar.  The sigil represents the part of the variable you're accessing, not the variable itself.  (Note that this is different in Perl 6, where anything related to &lt;c&gt;%hash&lt;/c&gt; is always accessed using the &lt;c&gt;%&lt;/c&gt; sigil.)
+&lt;p&gt;
+&lt;b&gt;Edit:&lt;/b&gt; Corrected typo. Had a &lt;c&gt;%_&lt;/c&gt; where it should have been &lt;c&gt;$_&lt;/c&gt;.</doctext>
+<root_node field_name="root_node">1195297</root_node>
+<parent_node field_name="parent_node">1195297</parent_node>
+<thread id="1195297">
+<node id="1195299"><node id="1195308"/>
+</node>
+<node id="1195302"><node id="1195307"/>
+<node id="1195351"><node id="1195497"/>
+</node>
+</node>
+<node id="1195314"/>
+<node id="1195338"/>
+</thread></node>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118671" title="Re: Reliably parsing an integer" created="2020-06-29 14:54:56" updated="2020-06-29 14:54:56" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1166559">harangzsolt33</author>
+<doctext field_name="doctext">What you need is a BigInt Compare function that allows you to tell if your potentially big integer stored in a string is bigger than Perl's max value. And if it is, then just ignore it or use the max value. You could also just check the length of the string. That would be the fastest solution. If the string is longer than, let's say, 8 bytes, then it may be a number that is too big. So, instead of using that number, you just use 99,999,999. Anything above that value gets cut off. Or you could use this:
+
+&lt;P&gt;&lt;code&gt;
+##################################################
+#                                       v2019.9.27
+# Compares two large positive integers.
+# The integers can be binary, octal,
+# decimal, or hexadecimal.
+#
+# NOTE: Both numbers must be in the same base.
+# The numbers should not contain spaces, tabs, line breaks,
+# minus sign, decimal points, or anything other than digits!
+# Illegal characters can mess up the result.
+#
+# Returns: 0 if they are equal
+#          1 if the first one is greater
+#          2 if the second one is greater
+#
+# Special cases:
+# * When comparing zero against an empty string or
+#   undefined value, the zero will be greater.
+# * When comparing an undefined value against
+#   an empty string, they will be equal.
+#
+# Usage: INTEGER = CMP(STRING, STRING)
+#
+sub CMP
+{
+  my $A = defined $_[0] ? uc($_[0]) : '';
+  my $B = defined $_[1] ? uc($_[1]) : '';
+  my $AL = length($A);
+  my $BL = length($B);
+  return 2 if ($AL &lt; $BL);
+  return 1 if ($AL &gt; $BL);
+  return 0 if ($A eq $B);
+
+# At this point, we know that both numbers have the
+# same length, and one of them is greater than the other.
+
+  my $DIFF = 0;
+  for (my $i = 0; $DIFF == 0 &amp;&amp; $i &lt; $AL; $i++)
+  {
+    $DIFF = vec($A, $i, 8) - vec($B, $i, 8);
+  }
+  return ($DIFF &gt; 0) ? 1 : 2;
+}
+&lt;/code&gt;
+
+&lt;P&gt;DISCLAIMER: I am a beginner perl programmer. I wrote this sub last year, and it may have some bugs! For example, the most obvious one is that if you compare two strings "003" and "13" the result will be that the first one is greater. Why? Because it's longer. Lol :P</doctext>
+<root_node field_name="root_node">11118650</root_node>
+<parent_node field_name="parent_node">11118650</parent_node>
+<thread id="11118650">
+<node id="11118652"><node id="11118666"><node id="11118669"><node id="11118722"><node id="11118724"/>
+<node id="11118728"/>
+</node>
+</node>
+<node id="11118670"><node id="11118676"><node id="11118680"><node id="11118705"><node id="11118710"><node id="11118714"><node id="11118716"><node id="11118720"><node id="11118723"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11118712"><node id="11118721"><node id="11118730"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11118681"/>
+</node>
+<node id="11118679"/>
+</node>
+</node>
+<node id="11118658"/>
+<node id="11118671"><node id="11118673"><node id="11118678"/>
+<node id="11118698"/>
+</node>
+</node>
+<node id="11118708"/>
+<node id="11118880"/>
+</thread></node>

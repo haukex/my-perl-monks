@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201064" title="Problems Getting the Template Correct when Using unpack()" created="2017-10-10 00:01:53" updated="2017-10-10 00:01:53" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="346494">ozboomer</author>
+<doctext field_name="doctext">&lt;p&gt;Hi, all...
+&lt;/p&gt;
+&lt;p&gt;Another couple of funny things... with unpack() this time.
+&lt;/p&gt;
+&lt;p&gt;I'm opening a binary data file, setting binary mode... and then reading some blocks of data...  but while I'm getting the data out of the file Ok, translating/mapping it into some useful variables is causing me all sorts of troubles.
+&lt;/p&gt;
+&lt;p&gt;In the attached code, the data is placed into the '$inbuf' string so that it is stored the same way as when I'm reading the data directly from the file.
+&lt;/p&gt;
+&lt;p&gt;What I'm expecting to get out of the code is something like:-
+&lt;code&gt;
+       Format: (TBA)
+   $event_len: 2Ex = 46
+    $date_str: 4/10/2017
+    $time_str: 00:00:00
+$rec_type_idx: 10x = 16
+ $source_name: !WV2   !
+        $data: !CI=427 Lamp dim state=2 [SCATS=0].!
+    $tail_len: 2Ex = 46
+&lt;/code&gt;
+&lt;p&gt;*Note: The 'C' near the start of the $data output is actually a 080x value.  I didn't want to
+post a binary value here.
+&lt;/p&gt;
+&lt;p&gt;...but what I'm actually getting as an output is as follows (my attempts at using varying unpack() templates):-
+&lt;code&gt;
+$inbuf: &gt;.u[EOT]   [DLE]WV2   CI=427 Lamp dim state=2 [SCATS=0].&lt;
+
+        Format: C*
+   $event_len: 2Ex = 46
+    $date_str: 4/10/2017
+    $time_str: 00:00:00
+$rec_type_idx: 10x = 16
+ $source_name: !87!
+        $data: !86!
+    $tail_len: 32x = 50
+
+        Format: C8a6C*
+   $event_len: 2Ex = 46
+    $date_str: 4/10/2017
+    $time_str: 00:00:00
+$rec_type_idx: 10x = 16
+ $source_name: !WV2   !
+        $data: !128!
+    $tail_len: 49x = 73
+
+        Format: C8a*
+   $event_len: 2Ex = 46
+    $date_str: 4/10/2017
+    $time_str: 00:00:00
+$rec_type_idx: 10x = 16
+ $source_name: !WV2   CI=427 Lamp dim state=2 [SCATS=0].!
+        $data: !!
+    $tail_len: 00x = 0
+
+        Format: C8a6C33C1
+   $event_len: 2Ex = 46
+    $date_str: 4/10/2017
+    $time_str: 00:00:00
+$rec_type_idx: 10x = 16
+ $source_name: !WV2   !
+        $data: !128!
+    $tail_len: 49x = 73
+&lt;/code&gt;
+&lt;p&gt;Note that the 0x2E byte is the 'length of record' and appears before and after the actual data record (hence, the 0x2E values at the bounds of the above array).
+&lt;/p&gt;
+&lt;p&gt;Here's the code I'm using:
+&lt;/p&gt;
+&lt;code&gt;
+
+use strict;
+use warnings;
+
+my @data = ( 0x2E, 0x75, 0x0A, 0x04, 0x00, 0x00, 0x00, 0x10, 0x57, 0x56, 
+             0x32, 0x20, 0x20, 0x20, 0x80, 0x49, 0x3D, 0x34, 0x32, 0x37, 
+             0x20, 0x4C, 0x61, 0x6D, 0x70, 0x20, 0x64, 0x69, 0x6D, 0x20, 
+             0x73, 0x74, 0x61, 0x74, 0x65, 0x3D, 0x32, 0x20, 0x5B, 0x53, 
+             0x43, 0x41, 0x54, 0x53, 0x3D, 0x30, 0x5D, 0x2E );
+
+
+my @formats = ( "C*", "C8a6C*", "C8a*", "C8a6C33C1" );
+             
+my $inbuf = join('', map { chr($_) } @data);  # Input buffer
+
+
+printf("\$inbuf: &gt;%s&lt;\n", $inbuf);
+printf("\n");
+
+foreach my $fmt (@formats) {
+   my $tmpbuf = $inbuf;  # In case something's being corrupted
+   my ($event_len, $year, $mon, $day, $hour, $min, $sec, 
+       $rec_type_idx, $source_name, $data, $tail_len) = unpack($fmt, $tmpbuf);
+   
+   my $date_str = sprintf("%s/%s/%s", $day, $mon, $year+1900);
+   my $time_str = sprintf("%02d:%02d:%02d", $hour, $min, $sec);
+      $rec_type_idx &amp;= 0x1F;      # Only use b0-b6 
+      
+   printf("        Format: %s\n", $fmt);
+   printf("   \$event_len: %02Xx = %d\n", $event_len, $event_len);   
+   printf("    \$date_str: %s\n", $date_str);   
+   printf("    \$time_str: %s\n", $time_str);   
+   printf("\$rec_type_idx: %02Xx = %d\n", $rec_type_idx, $rec_type_idx);   
+   printf(" \$source_name: !%s!\n", $source_name);   
+   printf("        \$data: !%s!\n", $data);   
+   printf("    \$tail_len: %02Xx = %d\n", $tail_len, $tail_len);   
+   printf("\n");
+   
+}
+&lt;/code&gt;
+&lt;p&gt;Environment: ActiveState Perl v5.16.3, Windows 10 64-bit.
+&lt;/p&gt;
+&lt;p&gt;I'd greatly appreciate any clues as to what I should be trying to do with the unpack() template.
+&lt;/p&gt;
+</doctext>
+<thread id="1201064">
+<node id="1201065"><node id="1201092"><node id="1201095"><node id="1201121"/>
+</node>
+</node>
+</node>
+<node id="1201067"/>
+<node id="1201122"><node id="1201124"><node id="1201145"/>
+</node>
+</node>
+<node id="1201125"><node id="1201160"/>
+</node>
+<node id="1201187"/>
+</thread></node>

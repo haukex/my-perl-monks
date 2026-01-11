@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101498" title="Re^2: chunking up texts correctly for online translation" created="2019-06-17 19:46:52" updated="2019-06-17 19:46:52" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;i&gt;enable the :crlf PerlIO layer&lt;/i&gt;
+
+&lt;p&gt;Thx [haukex], that worked. Even so, the input to google exceeded their rate limit, so I had to slow it down. I added sleep time and a means to keep track of how long a file takes to translate.&lt;/p&gt;
+&lt;c&gt;for my $file (@texts) {
+
+  local $/ = "";
+  open my $fh, '&lt;:crlf', $file or die;
+  my $base_name = path("$file")-&gt;basename;
+  my $out_file = path( $out_dir, $base_name )-&gt;touchpath;
+  say "out_file is $out_file";
+
+  ## time it
+  use Benchmark;
+  my $t0 = Benchmark-&gt;new;
+
+  while (&lt;$fh&gt;) {
+
+    print "New Paragraph: $_";
+    my $r = get_trans( $wgt, $_ );
+    for my $trans_rh ( @{ $r-&gt;{data}-&gt;{translations} } ) {
+      my $result = $trans_rh-&gt;{translatedText};
+      say "result is $result ";
+      my @lines = split /\n/, $result;
+      push @lines, "\n";
+      path("$out_file")-&gt;append_utf8(@lines);
+      sleep(1);
+    }
+
+  }
+  my $t1 = Benchmark-&gt;new;
+
+  my $td = timediff( $t1, $t0 );
+  print "$file took:", timestr($td), "\n";
+  sleep(3);
+
+  close $fh;&lt;/c&gt;
+
+&lt;p&gt;84-0.txt is Shelley's Frankenstein, which is about 450 k in length. Of the $300 credit they give anyone to sign up for their API, I used 7 cents of it, so I'm down to $297.22 left. It made for an interesting way to skim both the original and the translation. This ballparks 20 minutes as an outer limit:&lt;/p&gt;
+&lt;c&gt;/home/bob/Documents/meditations/castaways/Translate1/data/84-0.txt took:1180 wallclock secs (23.34 usr +  1.36 sys = 24.70 CPU)
+$ &lt;/c&gt;
+&lt;p&gt;Q3: What do the usr and sys numbers mean?&lt;/p&gt;
+
+&lt;i&gt;Module names in all lowercase are reserved (by convention) for pragmas, so I'd name your module Translate. Also, you're not checking your open for errors.&lt;/i&gt;
+&lt;p&gt;I did fix both of these but went with Translate1 . The reason I did this is that I know there is going to be a Translate2 that will not work with Translate1. I've heard such naming called "trampolining," and something to be avoided. Q4: Am I supposed to not have such collisions using version numbers or clever use of git? The features of the package change quickly, and sometimes, I have to roll back to something that actually worked.&lt;/p&gt;
+&lt;p&gt;I found that I had to go back to make clean every time I made a change in the script, so I wrote a little helper bash script:&lt;/p&gt;
+
+&lt;c&gt;$  cat 1.google.sh 
+#!/bin/bash  
+pwd
+make clean
+perl Makefile.PL
+make
+make test
+make install
+ls
+cd blib
+cd script
+./3.my_script.pl
+$ 
+&lt;/c&gt;
+&lt;p&gt;I offer this as a keystroke reduction mechanism, not wanting to be OT.&lt;/p&gt;
+&lt;p&gt;The translations went well with the exception of certain characters. Let's look at a couple paragraphs with differing tags. Here is output with pre tags&lt;/p&gt;
+
+
+
+
+&lt;pre&gt;New Paragraph: â&amp;#128;&amp;#156;Are you mad, my friend?â&amp;#128; said he. â&amp;#128;&amp;#156;Or whither does your
+senseless curiosity lead you? Would you also create for yourself and the
+world a demoniacal enemy? Peace, peace! Learn my miseries and do not seek
+to increase your own.â&amp;#128;
+
+result is - &amp;#1058;&amp;#1099; &amp;#1079;&amp;#1083;&amp;#1080;&amp;#1096;&amp;#1100;&amp;#1089;&amp;#1103;, &amp;#1076;&amp;#1088;&amp;#1091;&amp;#1075; &amp;#1084;&amp;#1086;&amp;#1081;? - &amp;#1089;&amp;#1087;&amp;#1088;&amp;#1086;&amp;#1089;&amp;#1080;&amp;#1083; &amp;#1086;&amp;#1085;. «&amp;#1048;&amp;#1083;&amp;#1080; &amp;#1082;&amp;#1091;&amp;#1076;&amp;#1072; &amp;#1090;&amp;#1099;
+&amp;#1073;&amp;#1077;&amp;#1089;&amp;#1089;&amp;#1084;&amp;#1099;&amp;#1089;&amp;#1083;&amp;#1077;&amp;#1085;&amp;#1085;&amp;#1086;&amp;#1077; &amp;#1083;&amp;#1102;&amp;#1073;&amp;#1086;&amp;#1087;&amp;#1099;&amp;#1090;&amp;#1089;&amp;#1090;&amp;#1074;&amp;#1086; &amp;#1087;&amp;#1088;&amp;#1080;&amp;#1074;&amp;#1077;&amp;#1076;&amp;#1077;&amp;#1090; &amp;#1090;&amp;#1077;&amp;#1073;&amp;#1103;? &amp;#1053;&amp;#1077; &amp;#1084;&amp;#1086;&amp;#1075;&amp;#1083;&amp;#1080; &amp;#1073;&amp;#1099; &amp;#1074;&amp;#1099; &amp;#1090;&amp;#1072;&amp;#1082;&amp;#1078;&amp;#1077; &amp;#1089;&amp;#1086;&amp;#1079;&amp;#1076;&amp;#1072;&amp;#1090;&amp;#1100; &amp;#1076;&amp;#1083;&amp;#1103; &amp;#1089;&amp;#1077;&amp;#1073;&amp;#1103; &amp;#1080;
+&amp;#1084;&amp;#1080;&amp;#1088; &amp;#1076;&amp;#1077;&amp;#1084;&amp;#1086;&amp;#1085;&amp;#1080;&amp;#1095;&amp;#1077;&amp;#1089;&amp;#1082;&amp;#1080;&amp;#1081; &amp;#1074;&amp;#1088;&amp;#1072;&amp;#1075;? &amp;#1052;&amp;#1080;&amp;#1088;, &amp;#1084;&amp;#1080;&amp;#1088;! &amp;#1059;&amp;#1079;&amp;#1085;&amp;#1072;&amp;#1081; &amp;#1084;&amp;#1086;&amp;#1080; &amp;#1089;&amp;#1090;&amp;#1088;&amp;#1072;&amp;#1076;&amp;#1072;&amp;#1085;&amp;#1080;&amp;#1103; &amp;#1080; &amp;#1085;&amp;#1077; &amp;#1080;&amp;#1097;&amp;#1080;
+&amp;#1091;&amp;#1074;&amp;#1077;&amp;#1083;&amp;#1080;&amp;#1095;&amp;#1080;&amp;#1090;&amp;#1100; &amp;#1089;&amp;#1074;&amp;#1086;&amp;#1081; &amp;#1089;&amp;#1086;&amp;#1073;&amp;#1089;&amp;#1090;&amp;#1074;&amp;#1077;&amp;#1085;&amp;#1085;&amp;#1099;&amp;#1081;. €
+
+ 
+New Paragraph: Frankenstein discovered that I made notes concerning his history; he asked
+to see them and then himself corrected and augmented them in many places,
+but principally in giving the life and spirit to the conversations he held
+with his enemy. â&amp;#128;&amp;#156;Since you have preserved my narration,â&amp;#128; said
+he, â&amp;#128;&amp;#156;I would not that a mutilated one should go down to
+posterity.â&amp;#128;
+
+result is &amp;#1060;&amp;#1088;&amp;#1072;&amp;#1085;&amp;#1082;&amp;#1077;&amp;#1085;&amp;#1096;&amp;#1090;&amp;#1077;&amp;#1081;&amp;#1085; &amp;#1086;&amp;#1073;&amp;#1085;&amp;#1072;&amp;#1088;&amp;#1091;&amp;#1078;&amp;#1080;&amp;#1083;, &amp;#1095;&amp;#1090;&amp;#1086; &amp;#1103; &amp;#1076;&amp;#1077;&amp;#1083;&amp;#1072;&amp;#1083; &amp;#1079;&amp;#1072;&amp;#1084;&amp;#1077;&amp;#1090;&amp;#1082;&amp;#1080;, &amp;#1082;&amp;#1072;&amp;#1089;&amp;#1072;&amp;#1102;&amp;#1097;&amp;#1080;&amp;#1077;&amp;#1089;&amp;#1103; &amp;#1077;&amp;#1075;&amp;#1086; &amp;#1080;&amp;#1089;&amp;#1090;&amp;#1086;&amp;#1088;&amp;#1080;&amp;#1080;; &amp;#1086;&amp;#1085; &amp;#1089;&amp;#1087;&amp;#1088;&amp;#1086;&amp;#1089;&amp;#1080;&amp;#1083;
+&amp;#1095;&amp;#1090;&amp;#1086;&amp;#1073;&amp;#1099; &amp;#1091;&amp;#1074;&amp;#1080;&amp;#1076;&amp;#1077;&amp;#1090;&amp;#1100; &amp;#1080;&amp;#1093;, &amp;#1072; &amp;#1079;&amp;#1072;&amp;#1090;&amp;#1077;&amp;#1084; &amp;#1089;&amp;#1072;&amp;#1084; &amp;#1080;&amp;#1089;&amp;#1087;&amp;#1088;&amp;#1072;&amp;#1074;&amp;#1080;&amp;#1090;&amp;#1100; &amp;#1080; &amp;#1076;&amp;#1086;&amp;#1087;&amp;#1086;&amp;#1083;&amp;#1085;&amp;#1080;&amp;#1090;&amp;#1100; &amp;#1080;&amp;#1093; &amp;#1074;&amp;#1086; &amp;#1084;&amp;#1085;&amp;#1086;&amp;#1075;&amp;#1080;&amp;#1093; &amp;#1084;&amp;#1077;&amp;#1089;&amp;#1090;&amp;#1072;&amp;#1093;,
+&amp;#1085;&amp;#1086; &amp;#1075;&amp;#1083;&amp;#1072;&amp;#1074;&amp;#1085;&amp;#1099;&amp;#1084; &amp;#1086;&amp;#1073;&amp;#1088;&amp;#1072;&amp;#1079;&amp;#1086;&amp;#1084; &amp;#1074; &amp;#1090;&amp;#1086;&amp;#1084;, &amp;#1095;&amp;#1090;&amp;#1086;&amp;#1073;&amp;#1099; &amp;#1076;&amp;#1072;&amp;#1090;&amp;#1100; &amp;#1078;&amp;#1080;&amp;#1079;&amp;#1085;&amp;#1100; &amp;#1080; &amp;#1076;&amp;#1091;&amp;#1093; &amp;#1088;&amp;#1072;&amp;#1079;&amp;#1075;&amp;#1086;&amp;#1074;&amp;#1086;&amp;#1088;&amp;#1072;&amp;#1084;, &amp;#1082;&amp;#1086;&amp;#1090;&amp;#1086;&amp;#1088;&amp;#1099;&amp;#1077; &amp;#1086;&amp;#1085; &amp;#1074;&amp;#1077;&amp;#1083;
+&amp;#1089;&amp;#1086; &amp;#1089;&amp;#1074;&amp;#1086;&amp;#1080;&amp;#1084; &amp;#1074;&amp;#1088;&amp;#1072;&amp;#1075;&amp;#1086;&amp;#1084;. "&amp;#1058;&amp;#1072;&amp;#1082; &amp;#1082;&amp;#1072;&amp;#1082; &amp;#1074;&amp;#1099; &amp;#1089;&amp;#1086;&amp;#1093;&amp;#1088;&amp;#1072;&amp;#1085;&amp;#1080;&amp;#1083;&amp;#1080; &amp;#1084;&amp;#1086;&amp;#1077; &amp;#1087;&amp;#1086;&amp;#1074;&amp;#1077;&amp;#1089;&amp;#1090;&amp;#1074;&amp;#1086;&amp;#1074;&amp;#1072;&amp;#1085;&amp;#1080;&amp;#1077;", &amp;#1089;&amp;#1082;&amp;#1072;&amp;#1079;&amp;#1072;&amp;#1083;
+&amp;#1086;&amp;#1085;, «&amp;#1071; &amp;#1073;&amp;#1099; &amp;#1085;&amp;#1077; &amp;#1093;&amp;#1086;&amp;#1090;&amp;#1077;&amp;#1083;, &amp;#1095;&amp;#1090;&amp;#1086;&amp;#1073;&amp;#1099; &amp;#1080;&amp;#1079;&amp;#1091;&amp;#1088;&amp;#1086;&amp;#1076;&amp;#1086;&amp;#1074;&amp;#1072;&amp;#1085;&amp;#1085;&amp;#1099;&amp;#1081;
+posterity.â&lt;/pre&gt;
+
+&lt;p&gt;Here is what the 1st paragraph looks like in code tags:&lt;/p&gt;
+
+&lt;c&gt;New Paragraph: â&amp;#128;&amp;#156;Are you mad, my friend?â&amp;#128; said he. â&amp;#128;&amp;#156;Or whither does your
+senseless curiosity lead you? Would you also create for yourself and the
+world a demoniacal enemy? Peace, peace! Learn my miseries and do not seek
+to increase your own.â&amp;#128;
+&lt;/c&gt;
+
+&lt;p&gt;For some reason, Shelley quotes paragraphs as a matter of course, and they are getting garbled as I read in under these conditions:&lt;/p&gt;
+&lt;c&gt;#!/usr/bin/perl -w
+use 5.011;
+
+use WWW::Google::Translate;
+use Data::Dumper;
+use open OUT =&gt; ':utf8';
+use Path::Tiny;
+use lib ".";
+use translate;
+binmode STDOUT, 'utf8';
+use POSIX qw(strftime);&lt;/c&gt;
+
+&lt;p&gt;Google sometimes gives the correct rendering of quotes in russian. They do it somewhat like this: &lt;&lt; &gt;&gt; .&lt;/p&gt;
+&lt;p&gt;Q5: How do I change my script so that these characters are rendered correctly? They look right as I read them in gedit.&lt;/p&gt;
+
+&lt;p&gt;Finally, as I look at the arguments in Makefile.Pl:&lt;/p&gt;
+&lt;c&gt;my %WriteMakefileArgs = (
+    NAME             =&gt; 'Translate1',
+    AUTHOR           =&gt; q{gilligan &lt;gilligan@island.coconut&gt;},
+    VERSION_FROM     =&gt; 'lib/Translate1.pm',
+    LICENSE          =&gt; 'artistic_2',
+    MIN_PERL_VERSION =&gt; '5.006',
+    CONFIGURE_REQUIRES =&gt; {
+        'ExtUtils::MakeMaker' =&gt; '0',
+    },
+    TEST_REQUIRES =&gt; {
+        'Test::More' =&gt; '0',
+    },
+    PREREQ_PM =&gt; {
+        #'ABC'              =&gt; '1.6',
+        #'Foo::Bar::Module' =&gt; '5.0401',
+    },
+    EXE_FILES =&gt; ['lib/3.my_script.pl'], 
+    dist  =&gt; { COMPRESS =&gt; 'gzip -9f', SUFFIX =&gt; 'gz', },
+    clean =&gt; { FILES =&gt; 'Translate1-*' },
+);
+&lt;/c&gt;
+&lt;p&gt;Q6: How would I determine which version of WWW::Google::Translate to require?&lt;/p&gt;
+&lt;p&gt;Thank you for your comments,&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11101367</root_node>
+<parent_node field_name="parent_node">11101368</parent_node>
+<thread id="11101367">
+<node id="11101368"><node id="11101498"><node id="11101559"><node id="11102038"><node id="11102042"/>
+<node id="11102150"/>
+</node>
+</node>
+<node id="11102491"/>
+</node>
+</node>
+<node id="11101369"><node id="11102317"><node id="11102321"/>
+</node>
+</node>
+<node id="11101375"><node id="11101387"><node id="11102200"><node id="11102222"><node id="11102279"><node id="11102281"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

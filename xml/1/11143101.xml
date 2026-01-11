@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11143101" title="Re^3: Can I catch a die from someone else's module?" created="2022-04-19 14:57:35" updated="2022-04-19 14:57:35" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Do I need the 1; ?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Generally, yes, you should include it. The reason is that [doc://eval] returns &lt;c&gt;undef&lt;/c&gt; on failure, which is what the &lt;c&gt;or do { ... }&lt;/c&gt; is intended to react to. However, the &lt;c&gt;or&lt;/c&gt; would also be triggered if the &lt;c&gt;eval&lt;/c&gt; block were to return [id://11104607|any other false value], such as &lt;c&gt;0&lt;/c&gt; or the empty string. For example, the following incorrectly prints &lt;c&gt;"Error from Module::That::Dies:"&lt;/c&gt;. So unless you can be absolutely sure that the &lt;c&gt;eval&lt;/c&gt; block always returns a true value, you should include the &lt;c&gt;1&lt;/c&gt; (or any other true value) as the last statement of the block.&lt;/p&gt;
+&lt;c&gt;
+sub Module::That::Dies::die_here { return 0 }
+eval {
+    Module::That::Dies::die_here();
+	#1;
+} or do {
+    warn "Error from Module::That::Dies:\n$@\n";
+};
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; I tend to write it like the following, since the &lt;c&gt;1&lt;/c&gt; on a line by itsself can look out of place and might be accidentally deleted:&lt;/p&gt;
+&lt;c&gt;
+eval {
+	...
+;1 } or do { # catch
+	...
+}
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11143055</root_node>
+<parent_node field_name="parent_node">11143099</parent_node>
+<thread id="11143055">
+<node id="11143062"/>
+<node id="11143063"><node id="11143064"/>
+<node id="11143099"><node id="11143101"><node id="11143103"><node id="11143116"/>
+</node>
+</node>
+<node id="11143114"/>
+<node id="11143509"/>
+<node id="11143510"/>
+</node>
+</node>
+<node id="11143065"/>
+<node id="11143485"/>
+</thread></node>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100478" title="Re: If Condition causes totally blank Output File/Issue in Writing to Output" created="2019-05-24 13:10:03" updated="2019-05-24 13:10:03" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Welcome to Perl and the Monastery, [hghosh]!&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;it will return a completely empty file&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If you don't have a &lt;c&gt;use autodie;&lt;/c&gt; at the top of the script, then you are not checking for errors in creating the file. The typical way to do this would be e.g. &lt;c&gt;open my $fh, '&gt;', $filename or die "$filename: $!";&lt;/c&gt;. Other than that, based on the code you've shown, the only other reason the first piece of code would not produce any output would be that the loops don't run because &lt;c&gt;%chrsize&lt;/c&gt; has no entries or all its values are less than 0 - you can check this by using a tool like [doc://Data::Dumper] to look at the hash (see also the [id://745674]). Also, just to be safe: are you doing a &lt;c&gt;close OUT;&lt;/c&gt; at the appropriate time?&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;wouldn't Perl automatically set "non-existent" keys to zero/undefined?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;When attempting to access a hash key that does not exist, Perl will return &lt;c&gt;undef&lt;/c&gt;. Therefore the two pieces of code are not equivalent: the first sets &lt;c&gt;$piRNA{$chr}{$index}&lt;/c&gt; to &lt;c&gt;0&lt;/c&gt; if there was previously no key &lt;c&gt;$index&lt;/c&gt;, and then prints the line unconditionally, while the second piece of code only prints the output line if the key &lt;c&gt;$index&lt;/c&gt; exists in the hash &lt;c&gt;%{ $piRNA{$chr} }&lt;/c&gt;. In general:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;[doc://exists]: In &lt;c&gt;my %foo = ( bar =&gt; 1 );&lt;/c&gt;, &lt;c&gt;exists $foo{quz}&lt;/c&gt; is false, and after a &lt;c&gt;delete $foo{bar}&lt;/c&gt;, &lt;c&gt;exists $foo{bar}&lt;/c&gt; is also false. A key existing or not has nothing to do with its value - assigning any value to a hash entry will not delete that entry/key, only [doc://delete] does that.&lt;/li&gt;
+&lt;li&gt;[doc://defined]: In &lt;c&gt;my %foo = ( bar =&gt; undef );&lt;/c&gt;, the key &lt;c&gt;bar&lt;/c&gt; exists, but testing it with &lt;c&gt;defined $foo{bar}&lt;/c&gt; will return false.&lt;/li&gt;
+&lt;li&gt;[id://11104607]: A hash entry can exist and be defined, but its value can still be logically false (i.e. when used in an &lt;c&gt;if&lt;/c&gt; condition and other "boolean contexts") if its value is [doc://undef], &lt;c&gt;0&lt;/c&gt;, &lt;c&gt;"0"&lt;/c&gt;, or &lt;c&gt;""&lt;/c&gt; (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; where the first of those, &lt;c&gt;undef&lt;/c&gt;, means [doc://defined] will be false, but it will be true for the rest).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;&lt;i&gt;If I get rid of the if statement ... It will return the $chr and $index formatted correctly, but will not print the last value.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sounds to me like &lt;c&gt;$piRNA{$chr}{$index}&lt;/c&gt; might be &lt;c&gt;undef&lt;/c&gt; or &lt;c&gt;""&lt;/c&gt;, which you can see with the aforementioned [doc://Data::Dumper], and also, if it's &lt;c&gt;undef&lt;/c&gt; you should be seeing warnings about uninitialized values (one of the reasons [id://111088] is a best practice). However, if I understand your description correctly, this still doesn't explain the empty output file.&lt;/p&gt;
+&lt;p&gt;If you could use a tool like [doc://Data::Dumper] or [mod://Data::Dump] to get the contents of &lt;c&gt;%chrsize&lt;/c&gt;, then you could use this to build a [id://1177642] - a short piece of code that we can run to reproduce the problem on our end.&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update 2019-08-17:&lt;/i&gt; Updated the link to "Truth and Falsehood".&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11100474</root_node>
+<parent_node field_name="parent_node">11100474</parent_node>
+<thread id="11100474">
+<node id="11100478"/>
+<node id="11100506"><node id="11100589"/>
+</node>
+<node id="11100635"><node id="11100636"/>
+<node id="11100637"/>
+</node>
+</thread></node>

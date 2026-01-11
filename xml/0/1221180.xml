@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1221180" title="Re: Execute command with spaces in perl" created="2018-08-27 06:48:29" updated="2018-08-27 06:48:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I would strongly recommend you use a module to do this for you, instead of trying to do it yourself. For example, there's &lt;c&gt;capturex&lt;/c&gt; from [mod://IPC::System::Simple], or [mod://IPC::Run3], which uses [mod://Win32::ShellQuote] under the hood on Windows:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use IPC::Run3 'run3';
+
+my $cmd = 'C:\Program Files\Mozilla Firefox\firefox.exe';
+run3 [$cmd,'--version'], undef, \my $out or die "run3: $!";
+die "\$?=$?" if $?;
+chomp $out;
+&lt;/c&gt;
+&lt;p&gt;If you want to stick with piped [doc://open], you could also use [mod://Win32::ShellQuote] directly to do the quoting for you. I wrote about the above options, as well as the pitfalls with running external commands, at length [id://1180578|here], with example code. In this case, since you're running a fixed external command with one or more arguments, you can also use the &lt;c&gt;LIST&lt;/c&gt; form of [doc://open]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $cmd = 'C:\Program Files\Mozilla Firefox\firefox.exe';
+open my $fh, '-|', $cmd, '--version' or die $!;
+my $out = do { local $/; &lt;$fh&gt; };  # slurp
+close $fh or die $! ? $! : "\$?=$?";
+chomp $out;
+&lt;/c&gt;
+&lt;p&gt;Note how I am also checking [doc://close] for errors, this is necessary for a piped [doc://open]. I'm also slupring the entire output of the command into my variable &lt;c&gt;$out&lt;/c&gt;; in your code you're only fetching the first line of output, despite that you've named your variable &lt;c&gt;$aarray&lt;/c&gt;.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1221169</root_node>
+<parent_node field_name="parent_node">1221169</parent_node>
+<thread id="1221169">
+<node id="1221172"><node id="1221208"/>
+</node>
+<node id="1221180"><node id="1221188"><node id="1221190"><node id="1221203"><node id="1221206"><node id="1221245"><node id="1221261"/>
+</node>
+</node>
+<node id="1221207"><node id="1221210"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1221193"><node id="1221194"/>
+</node>
+</node>
+</thread></node>

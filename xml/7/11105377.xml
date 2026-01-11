@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11105377" title="Re: How to declare a dependency on PerlIO in a CPAN module?" created="2019-09-01 09:18:46" updated="2019-09-01 09:18:46" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;How likely do you think that it is your code will be run on such a Perl?&lt;/p&gt;
+&lt;p&gt;Note that even if certain things can't be expressed in the CPAN metadata (I'm not sure whether [doc://PerlIO] is one of them at the moment, you could try declaring a dependency on [doc://PerlIO::scalar]), you can at least gracefully bail out from &lt;c&gt;Makefile.PL&lt;/c&gt;. See the [http://cpanwiki.grango.org/wiki/CPANAuthorNotes|CPAN Testers Authors FAQ]:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;b&gt;"How can I indicate that my distribution only works on a particular operating system?"&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;While it isn't a very elegant solution, the recommend approach is to either die in the Makefile.PL or Build.PL (or BAIL_OUT in a test file) with one of the following messages:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;tt&gt;No support for OS&lt;/tt&gt;&lt;/li&gt;
+&lt;li&gt;&lt;tt&gt;OS unsupported &lt;/tt&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;CPAN Testers tools will look for one of those phrases and will send an NA (Not Available) report for that platform.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;"How can I stop getting FAIL reports for missing libraries or other non-Perl dependencies?"&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;If you have some special dependencies and don't want to get CPAN Testers reports if a dependency is not available, just exit from the Makefile.PL or Build.PL normally (with an exit code of 0) before the Makefile or Build file is created.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;So in your case maybe:&lt;/p&gt;
+&lt;c&gt;
+eval {
+	my $data="x";
+	open my $fh, "&lt;", \$data or die $!;
+	die unless &lt;$fh&gt; eq "x";
+	close $fh;
+1 } or do {
+	print "# ##### Bailing Out #####\n";
+	print "Something went wrong trying to use an in-memory ",
+		"filehandle: ", $@,
+		"Does your build of Perl include PerlIO?\n";
+	exit 0;
+};
+&lt;/c&gt;
+&lt;p&gt;(At the top of &lt;c&gt;Makefile.PL&lt;/c&gt;, before &lt;c&gt;WriteMakefile()&lt;/c&gt;.)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11105354</root_node>
+<parent_node field_name="parent_node">11105354</parent_node>
+<thread id="11105354">
+<node id="11105357"><node id="11105362"><node id="11105372"/>
+</node>
+</node>
+<node id="11105365"><node id="11105368"><node id="11105369"><node id="11105390"><node id="11105391"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11105377"><node id="11105393"><node id="11105406"><node id="11105477"><node id="11105515"><node id="11105550"><node id="11105666"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198033" title="Re: Converting UTF8 to ANSI" created="2017-08-25 15:38:39" updated="2017-08-25 15:38:39" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;c&gt;\x{EF}\x{BB}\x{BF}&lt;/c&gt; is the UTF-8 [wp://Byte Order Mark|BOM], but because you're looking for the UTF-8 encoded BOM &lt;c&gt;EF BB BF&lt;/c&gt; instead of the Unicode character &lt;c&gt;U+FEFF&lt;/c&gt;, that tells me you haven't opened the file with the right encoding, and personally I think decoding afterwards is more of a pain than opening the file with the right encoding in the first place. Also, by "ANSI" I assume you mean [wp://Windows-1252]. Anyway, if you are certain that &lt;i&gt;all&lt;/i&gt; of your UTF-8 encoded files begin with a BOM, you can use [mod://File::BOM], the following will open files that have a BOM with the proper encoding, but fall back to CP-1252 if they don't:&lt;/p&gt;
+&lt;c&gt;
+use File::BOM qw/open_bom/;
+open_bom(my $fh, $filename, ':encoding(cp1252)');
+&lt;/c&gt;
+&lt;p&gt;Otherwise, if you have no sure way of telling the files apart, you may have to use [mod://Encode::Guess], with the caveat that it's just a guess. Something like this maybe:&lt;/p&gt;
+&lt;c&gt;
+use Encode::Guess;
+open my $fh, '&lt;:raw', $filename or die $!;
+read $fh, my $buf, 1024; # may need bigger buffer for better guess?
+close $fh;
+my $enc = guess_encoding($buf, qw/cp1252 utf8 UTF-16/);
+ref($enc) or die "Can't guess $filename: $enc";
+print "$filename: guessed ",$enc-&gt;name,"\n"; #Debug
+open $fh, '&lt;:encoding('.$enc-&gt;name.')', $filename or die $!;
+&lt;/c&gt;
+&lt;p&gt;In both cases, you may want to strip the BOM off the beginning of the data read from the file via &lt;c&gt;$data =~ s/\A\x{FEFF}//;&lt;/c&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1198027</root_node>
+<parent_node field_name="parent_node">1198027</parent_node>
+<thread id="1198027">
+<node id="1198033"><node id="1198128"><node id="1198288"/>
+<node id="1198289"/>
+</node>
+<node id="1198287"><node id="1198294"/>
+<node id="1198298"/>
+</node>
+</node>
+</thread></node>

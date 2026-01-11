@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1190208" title="Re: I'm trying to consolidate my functions into subroutines" created="2017-05-13 13:15:05" updated="2017-05-13 13:15:05" _doctext_mode="lenient"><type id="11">note</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">Parameter passing is kind of weird in Perl. When you say
+&lt;code&gt;
+SpecifySeqLengths(my $id, my %seq);
+&lt;/code&gt;
+it's actually creating global variables $id and %seq. But your subs don't use those global variables, they create their own variables by saying "my". Those "my" variables have the same name, but they are actually completely separate, so they don't actually share data with each other. Putting your data in global variables is arguably a bad habit, as it tends to inhibit code reuse. The "best practice" is to write something like this:
+&lt;code&gt;
+{
+   my $seq = HashSequences();
+   SpecifySeqLengths($seq);
+}
+
+sub HashSequences {
+   my $seq = {};
+   ...
+      $seq-&gt;{$id} .= $1;
+   ...
+   return $seq;
+}
+
+sub SpecifySeqLengths {
+   my ($seq) = @_;
+   ...
+   for my $id (keys %$seq) {
+      ... length($seq-&gt;{$id}) ...
+   }
+   ...
+}
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">1190199</root_node>
+<parent_node field_name="parent_node">1190199</parent_node>
+<reputation field_name="reputation">13</reputation>
+<thread id="1190199">
+<node id="1190201"><node id="1190202"><node id="1190203"><node id="1190205"><node id="1190207"/>
+</node>
+</node>
+<node id="1190413"><node id="1190416"><node id="1190429"/>
+<node id="1190446"/>
+<node id="1190495"><node id="1190547"/>
+</node>
+<node id="1190501"><node id="1190502"/>
+</node>
+<node id="1190512"/>
+</node>
+<node id="1190479"><node id="1190497"/>
+</node>
+</node>
+</node>
+<node id="1190204"><node id="1190209"/>
+</node>
+</node>
+<node id="1190208"><node id="1190214"><node id="1190215"><node id="1190217"/>
+<node id="1190218"/>
+</node>
+</node>
+<node id="1190216"/>
+</node>
+<node id="1190256"/>
+<node id="1190292"/>
+</thread></node>

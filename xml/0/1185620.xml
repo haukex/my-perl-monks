@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1185620" title="Re: Any reason NV is not marked as POK when accessed as string? (updated)" created="2017-03-23 08:11:13" updated="2017-03-23 08:11:13" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You could also force stringification to get an even bigger speedup compared to calling [doc://pack] on every hash access (if that's what you're doing), e.g. &lt;c&gt;$x = "$x"&lt;/c&gt; or &lt;c&gt;$_="$_" for @values;&lt;/c&gt;. &lt;b&gt;Update:&lt;/b&gt; Added the pre-packed test with &lt;c&gt;$p&lt;/c&gt;, which surprisingly is still not as fast as the stringified float &lt;c&gt;$y&lt;/c&gt;. &lt;b&gt;Update 2:&lt;/b&gt; By giving each test case its own hash instead of using one hash for all tests, now the test cases "y" and "p" perform roughly the same, as I would have originally expected (&lt;small&gt;&lt;i&gt;Update 3:&lt;/i&gt;&lt;/small&gt; However, across multiple runs of this benchmark, "y" still tends to outperform "p", often significantly). &lt;b&gt;Update 4:&lt;/b&gt; If you set &lt;c&gt;$x = 42.123456789&lt;/c&gt;, then "p" consistently outperforms "y", so I'd guess it has to do with the hash key length. &lt;small&gt;(last update, I promise &lt;c&gt;;-)&lt;/c&gt;&amp;nbsp;)&lt;/small&gt;&lt;/p&gt;
+&lt;c&gt;
+use Benchmark qw/ cmpthese /;
+my $x = 42.0;
+my $y = "$x";
+my $p = pack 'F', $x;
+my (%h1,%h2,%h3,%h4);
+cmpthese( -1, {
+    F =&gt; sub { $h1{ pack 'F', $x } = 1 },
+    s =&gt; sub { $h2{ $x }           = 1 },
+    y =&gt; sub { $h3{ $y }           = 1 },
+    p =&gt; sub { $h4{ $p }           = 1 },
+});
+
+__END__
+
+        Rate    s    F    p    y
+s  4032984/s   -- -64% -84% -84%
+F 11327209/s 181%   -- -54% -56%
+p 24707825/s 513% 118%   --  -5%
+y 25997751/s 545% 130%   5%   --
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1185615</root_node>
+<parent_node field_name="parent_node">1185615</parent_node>
+<thread id="1185615">
+<node id="1185618"><node id="1185627"/>
+<node id="1185666"><node id="1185694"><node id="1185695"/>
+</node>
+</node>
+</node>
+<node id="1185620"><node id="1185629"/>
+</node>
+</thread></node>

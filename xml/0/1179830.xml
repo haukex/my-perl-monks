@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1179830" title="Re: Last service name comes up empty in NMAP Parser" created="2017-01-18 06:16:52" updated="2017-01-18 06:16:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [Noosrep],&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;c&gt;
+my $fct_openPort = (join ',',$fct_host_obj-&gt;tcp_ports('open'))."\n" ;
+my @fct_ports = split ',', $fct_openPort;
+&lt;/c&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;First of all, why first join the list of ports into a comma-separated string, only to split it back out again? Why not say &lt;c&gt;for my $fct_port ($fct_host_obj-&gt;tcp_ports('open'))&lt;/c&gt;?&lt;/p&gt;
+&lt;p&gt;Second, note the &lt;c&gt;."\n"&lt;/c&gt;: you're appending a newline to the end of the string, which remains there after the [doc://split]. See the [id://745674], especially item 3 (unexpected whitespace)*. Remove the &lt;c&gt;."\n"&lt;/c&gt; and I suspect your code will work.&lt;/p&gt;
+&lt;c&gt;
+my @tcp_ports = qw/ 139 445 1984 /;
+
+my $fct_openPort = (join ',',@tcp_ports)."\n" ;
+my @fct_ports = split ',', $fct_openPort;
+
+use Data::Dumper;
+$Data::Dumper::Useqq = 1;
+print Dumper(\@tcp_ports,\@fct_ports);
+
+__END__
+
+$VAR1 = [ 139, 445, 1984 ];
+$VAR2 = [ 139, 445, "1984\n" ];
+&lt;/c&gt;
+&lt;p&gt;Also, you never tell us which module you're using? (I assume it's not relevant here, but you never know...)&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;* Update:&lt;/i&gt; You can already see the extra newline character in your output: "service and port = 1984 &lt;i&gt;&amp;lt;newline&amp;gt;&lt;/i&gt; :"&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1179825</root_node>
+<parent_node field_name="parent_node">1179825</parent_node>
+<thread id="1179825">
+<node id="1179828"><node id="1179831"/>
+</node>
+<node id="1179830"><node id="1179832"/>
+</node>
+</thread></node>

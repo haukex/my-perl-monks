@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1185138" title="Re^2: Wrap multiple programs" created="2017-03-18 07:06:48" updated="2017-03-18 07:06:48" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;To the OP: Although below I'll show a way to put multiple commands on one command line, I actually don't necessarily recommend this, nor would I recommend building a monolithic "one script to do it all", instead follow [stevieb]'s and [Athanasius]'s advice to modularize. One element of the [wp://Unix philosophy] is to make each tool "Do One Thing and Do It Well". If your scripts need to share common functions, then do that through a module, rather than shoving all the code into one script.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;You can not get command line options twice within the same program.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That statement is just a little too absolute for my tastes, it's totally possible to get too clever with &lt;c&gt;@ARGV&lt;/c&gt; :-)&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+use Getopt::Std;
+use Getopt::Long;
+
+# fake command line
+local @ARGV = qw/
+	one -abc --
+	two -d -e --
+	three -abcdef --
+	four --foo --bar --bar --bar --
+	five --foo --quz baz /;
+
+while (@ARGV) {
+	my $cmd = shift @ARGV;
+	getopts('abcdef', \my %o);
+	dd $cmd, \%o;
+	last if $o{f};
+}
+
+while (@ARGV) {
+	my $cmd = shift @ARGV;
+	GetOptions(\my %o, 'foo!', 'bar+', 'quz!');
+	dd $cmd, \%o;
+	last if $o{quz};
+}
+
+dd @ARGV;
+
+__END__
+
+("one", { a =&gt; 1, b =&gt; 1, c =&gt; 1 })
+("two", { d =&gt; 1, e =&gt; 1 })
+("three", { a =&gt; 1, b =&gt; 1, c =&gt; 1, d =&gt; 1, e =&gt; 1, f =&gt; 1 })
+("four", { bar =&gt; 3, foo =&gt; 1 })
+("five", { foo =&gt; 1, quz =&gt; 1 })
+"baz"
+&lt;/c&gt;
+&lt;p&gt;Also, it's possible to read options from strings, such as the lines of &lt;c&gt;STDIN&lt;/c&gt;. [doc://Getopt::Long] has &lt;c&gt;GetOptionsFromString&lt;/c&gt;, and with [doc://Getopt::Std] it's possible with [id://1163430|a little trick].&lt;/p&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1185096</root_node>
+<parent_node field_name="parent_node">1185097</parent_node>
+<thread id="1185096">
+<node id="1185097"><node id="1185138"/>
+</node>
+<node id="1185130"><node id="1185262"/>
+</node>
+</thread></node>

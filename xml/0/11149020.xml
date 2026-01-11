@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11149020" title="Re: How encode space into %20 in URI" created="2022-12-22 04:21:56" updated="2022-12-22 04:21:56" _doctext_mode="lenient"><type id="11">note</type>
+<author id="861371">kcott</author>
+<doctext field_name="doctext">&lt;p&gt;
+Firstly, I can reproduce what you're seeing.
+&lt;/p&gt;
+
+&lt;p&gt;
+There have been a number of changes to the "[https://metacpan.org/dist/URI|URI distribution]" recently.
+These include merging [https://metacpan.org/pod/URI::QueryParam|URI::QueryParam] methods into [https://metacpan.org/pod/URI|URI]
+as well as some changes to &lt;c&gt;uri_escape()&lt;/c&gt; &amp;mdash; see the [https://metacpan.org/dist/URI/changes|Changes] file.
+&lt;/p&gt;
+
+&lt;p&gt;
+The latest version of &lt;c&gt;URI&lt;/c&gt; is &lt;c&gt;5.17&lt;/c&gt;; I've used this in the code below.
+I don't know if the '&lt;c&gt;%20&lt;/c&gt;' vs. '&lt;c&gt;+&lt;/c&gt;' issue has always existed, 
+or if it's something that was inadvertently introduced with some change.
+It would make sense that the escaping mechanism was consistent across modules in the same distribution:
+I recommend that you raise a bug report.
+&lt;/p&gt;
+
+&lt;p&gt;
+The annotated code below shows a reproduction of '&lt;c&gt;%20&lt;/c&gt;' vs. '&lt;c&gt;+&lt;/c&gt;',
+two unsuccessful workaround attempts,
+and two successful workaround attempts.
+&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use URI 5.17;
+use URI::Escape 5.17;
+
+print "OS[$^O] perl[$^V]\n";
+
+# uri_escape() gives %20
+my $str = '2022-12-18 12:19:57';
+print "\$str[$str]\n";
+my $esc_str = uri_escape($str);
+print "\$esc_str[$esc_str]\n";
+
+# query_param() gives +
+{
+    my $u = URI-&gt;new('/api/Data', 'http');
+    print 'URI init=[', $u-&gt;as_string(), "]\n";
+    $u-&gt;query_param(t1 =&gt; '2022-12-18 12:19:57');
+    print 'URI raw_param=[', $u-&gt;as_string(), "]\n";
+}
+
+# If escaped string is used, %20 -&gt; %2520
+{
+    my $u = URI-&gt;new('/api/Data', 'http');
+    $u-&gt;query_param(t1 =&gt; $esc_str);
+    print 'URI esc_param=[', $u-&gt;as_string(), "]\n";
+}
+
+# If string escaped in situ, still %20 -&gt; %2520
+{
+    my $u = URI-&gt;new('/api/Data', 'http');
+    $u-&gt;query_param(t1 =&gt; uri_escape('2022-12-18 12:19:57'));
+    print 'URI in_situ_esc_param=[', $u-&gt;as_string(), "]\n";
+}
+
+# You can modify the query string to change + to %20
+{
+    my $u = URI-&gt;new('/api/Data', 'http');
+    $u-&gt;query_param(t1 =&gt; '2022-12-18 12:19:57');
+    my $query = $u-&gt;query();
+    $query =~ s/\+/%20/g;
+    $u-&gt;query($query);
+    print 'URI long_re_sub_param=[', $u-&gt;as_string(), "]\n";
+}
+
+# Perl 5.14 and later has the /r modifier:
+#   use for a more succinct version of the above
+#   with identical output.
+{
+    my $u = URI-&gt;new('/api/Data', 'http');
+    $u-&gt;query_param(t1 =&gt; '2022-12-18 12:19:57');
+    $u-&gt;query($u-&gt;query() =~ s/\+/%20/gr);
+    print 'URI rmod_re_sub_param=[', $u-&gt;as_string(), "]\n";
+}
+
+&lt;/code&gt;
+
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;code&gt;
+OS[cygwin] perl[v5.36.0]
+$str[2022-12-18 12:19:57]
+$esc_str[2022-12-18%2012%3A19%3A57]
+URI init=[/api/Data]
+URI raw_param=[/api/Data?t1=2022-12-18+12%3A19%3A57]
+URI esc_param=[/api/Data?t1=2022-12-18%252012%253A19%253A57]
+URI in_situ_esc_param=[/api/Data?t1=2022-12-18%252012%253A19%253A57]
+URI long_re_sub_param=[/api/Data?t1=2022-12-18%2012%3A19%3A57]
+URI rmod_re_sub_param=[/api/Data?t1=2022-12-18%2012%3A19%3A57]
+&lt;/code&gt;
+
+&lt;p&gt;&lt;/p&gt;
+
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-861371"&gt;
+&lt;p&gt;&amp;mdash; Ken&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11149016</root_node>
+<parent_node field_name="parent_node">11149016</parent_node>
+<thread id="11149016">
+<node id="11149020"><node id="11149021"><node id="11149025"><node id="11149026"/>
+</node>
+</node>
+</node>
+<node id="11149022"/>
+</thread></node>

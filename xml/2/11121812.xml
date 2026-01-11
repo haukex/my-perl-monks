@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11121812" title="Re: Change to package name handling in Perl 5.18?" created="2020-09-15 16:30:06" updated="2020-09-15 16:30:06" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;pre&gt;
+[id://11110663|./Porting/bisect.pl] --target=miniperl --start=v5.16.3 --end=v5.18.0 --expect-fail -e &amp;#39;sub foo::new {} &amp;quot;::foo&amp;quot;-&amp;gt;new&amp;#39;
+...
+
+commit [https://github.com/Perl/perl5/commit/7156e69abfd37|7156e69abfd37267e85105c6ec0c449ce4e41523]
+Author: Father Chrysostomos &amp;lt;sprout@cpan.org&amp;gt;
+Date:   Thu Sep 20 08:56:38 2012 -0700
+
+    [https://github.com/Perl/perl5/issues/11800|&amp;#91;perl #105922&amp;#93;] Allow any string before -&amp;gt;meth
+    
+    The rules for filtering out what do not look like package names are
+    not logical and disallow valid things like &amp;quot;::main&amp;quot;, while allowing
+    q&amp;quot;_#@*$!@*^(&amp;quot;.
+    
+    This commit simply lets any non-empty string be used as a package
+    name.  If it is a typo, you&amp;rsquo;ll get an error anyway.  This allows
+    autobox-style calls like &amp;quot;3foo&amp;quot;-&amp;gt;CORE::uc, or even &amp;quot;3foo&amp;quot;-&amp;gt;uc if you
+    set up @ISA first.
+    
+    I made an exception for the empty string because it messes up caches
+    somehow and causes subsequent method calls all to be called on the
+    main package.  I haven&amp;rsquo;t looked into that yet.  I don&amp;rsquo;t know whether
+    it&amp;rsquo;s worth it.
+    
+    The changes to the tests in cpan/Test-Simple have been submit-
+    ted upstream.
+&lt;/pre&gt;
+&lt;p&gt;Mentioned in [doc://perl5180delta#Selected-Bug-Fixes|perl5180delta]:&lt;/p&gt;
+&lt;blockquote&gt;Class method calls are now allowed on any string, and not just strings beginning with an alphanumeric character. &amp;#91;perl #105922&amp;#93;&lt;/blockquote&gt;</doctext>
+<root_node field_name="root_node">11121810</root_node>
+<parent_node field_name="parent_node">11121810</parent_node>
+<thread id="11121810">
+<node id="11121812"><node id="11121816"/>
+</node>
+</thread></node>

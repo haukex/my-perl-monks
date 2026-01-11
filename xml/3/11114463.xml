@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11114463" title="Re^3: Mojolicious absolute url with query in template? (updated)" created="2020-03-19 05:35:06" updated="2020-03-19 05:35:06" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Oh, I think I see what you're getting at. Note the documentation for [mod://Mojolicious::Plugin::DefaultHelpers#url_with|&lt;c&gt;url_with&lt;/c&gt;]:&lt;/p&gt;
+&lt;blockquote&gt;Does the same as [mod://Mojolicious::Controller#url_for|"url_for"], but inherits query parameters from the current request.&lt;/blockquote&gt;
+&lt;p&gt;&lt;small&gt;&lt;b&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/b&gt; Expanded &lt;c&gt;url_for&lt;/c&gt; vs. &lt;c&gt;url_with&lt;/c&gt; examples. &lt;b&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/b&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use Mojolicious::Lite -signatures;
+
+get '/' =&gt; sub ($c) {
+	if ( !$c-&gt;param('foo') )
+		{ $c-&gt;redirect_to( $c-&gt;url_for('index')-&gt;query(foo=&gt;"bar") ) }
+	else { $c-&gt;render('index') }
+} =&gt; 'index';
+
+app-&gt;start;
+
+__DATA__
+
+@@ index.html.ep
+% layout 'main', title =&gt; 'Hello, World!';
+&lt;pre&gt;
+%=  url_for('/')
+%=  url_for('/')-&gt;to_abs
+%=  url_for('/')-&gt;to_abs-&gt;query(abc=&gt;"xyz")
+%= url_with('/')
+%= url_with('/')-&gt;to_abs
+%= url_with('/')-&gt;to_abs-&gt;query(abc=&gt;"xyz")
+&lt;/pre&gt;
+
+@@ layouts/main.html.ep
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;&lt;main&gt;
+&lt;%= content %&gt;
+&lt;/main&gt;&lt;/body&gt;
+&lt;/html&gt;
+&lt;/c&gt;
+&lt;p&gt;Visiting &lt;c&gt;http://localhost:3000/&lt;/c&gt; results in a single redirect (to add the query for demonstration purposes), and then renders as:&lt;/p&gt;
+&lt;c&gt;
+/
+http://localhost:3000/
+http://localhost:3000/?abc=xyz
+/?foo=bar
+http://localhost:3000/?foo=bar
+http://localhost:3000/?abc=xyz
+&lt;/c&gt;
+&lt;p&gt;Also, note the [mod://Mojolicious::Plugin::TagHelpers#link_to|&lt;c&gt;link_to&lt;/c&gt;] helper: &lt;c&gt;%= link_to Reload =&gt; url_with('/')-&gt;to_abs&lt;/c&gt; results in &lt;c&gt;&lt;a href="http://localhost:3000/?foo=bar"&gt;Reload&lt;/a&gt;&lt;/c&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11114451</root_node>
+<parent_node field_name="parent_node">11114460</parent_node>
+<thread id="11114451">
+<node id="11114453"><node id="11114462"><node id="11114473"><node id="11114474"><node id="11114484"/>
+</node>
+</node>
+<node id="11114531"/>
+</node>
+</node>
+<node id="11114455"><node id="11114460"><node id="11114461"><node id="11114465"/>
+</node>
+<node id="11114463"><node id="11114467"/>
+</node>
+</node>
+</node>
+</thread></node>

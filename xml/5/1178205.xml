@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1178205" title="Re: passing parameters from shell script to perl program doesn't preserve spaces" created="2016-12-20 07:57:46" updated="2016-12-20 07:57:46" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [peterbk],&lt;/p&gt;
+&lt;p&gt;It is not Perl which decides how to split the command line arguments, it is the shell. Which shell are you using? I'm not an expert on the intricacies of shell quoting, but from what I do know it can be a minefield of brittle/non-portable solutions.&lt;/p&gt;
+&lt;p&gt;I would recommend finding a different solution to passing arguments to your script, such as allowing your script to get options from a file in addition to accepting ones from the command line (I don't find that awkward). Also, note that Perl can access environment variables via the [doc://%ENV] hash, but if those contain quotes, you will have to parse those yourself, such as with &lt;c&gt;shellwords&lt;/c&gt; from [doc://Text::ParseWords], as [Corion] suggested.&lt;/p&gt;
+&lt;p&gt;Using a file to pass parameters gives you a lot of flexibility on formats, which all handle the quoting/escaping of values too (JSON, YAML, XML, any of the [cpan://Config::] modules, etc.).&lt;/p&gt;
+&lt;p&gt;Here's a little [man://bash] trick I sometimes use for temporary files that get cleaned up when the script ends, you could use this to generate the file which holds the values:&lt;/p&gt;
+&lt;c&gt;
+# in your bash script
+TEMPFILE="`mktemp`"
+trap 'rm -f "$TEMPFILE"' EXIT
+echo "whatever" &gt;$TEMPFILE
+# ...
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; If your Perl script happens to be using [doc://Getopt::Long], note that it has the function &lt;c&gt;GetOptionsFromString&lt;/c&gt;, and if you're using [doc://Getopt::Std], see my node [id://1163430|here]. Both of these solutions use &lt;c&gt;shellwords&lt;/c&gt; from [doc://Text::ParseWords].&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1178202</root_node>
+<parent_node field_name="parent_node">1178202</parent_node>
+<thread id="1178202">
+<node id="1178203"/>
+<node id="1178204"><node id="1178206"/>
+<node id="1178207"><node id="1178208"/>
+</node>
+</node>
+<node id="1178205"/>
+<node id="1178212"/>
+<node id="1178224"><node id="1178283"><node id="1178284"/>
+</node>
+</node>
+<node id="1178295"/>
+</thread></node>

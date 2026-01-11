@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11104502" title="Re^7: Text::CSV encoding parse()" created="2019-08-15 02:43:57" updated="2019-08-15 02:43:57" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Try taking the following code and replacing &lt;c&gt;my $data&lt;/c&gt; with your code that fetches the data from the database (as short as possible), and post both your code and the output here. &lt;small&gt;&lt;i&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/i&gt;&lt;/small&gt; Note that PerlMonks does not handle Unicode inside of &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags well, so tell us if you've got any Unicode in there. &lt;small&gt;&lt;i&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;pre&gt;
+#!/usr/bin/env perl
+use warnings;
+use 5.012;
+use utf8; # Perl script file is encoded as UTF-8
+use open qw/:utf8 :std/; # reopen STDIN/OUT/ERR as UTF-8
+use Text::CSV;
+use CGI qw/escapeHTML/;
+use CGI::Carp qw/fatalsToBrowser warningsToBrowser/; # for debug ONLY!
+use Data::Dumper;
+$Data::Dumper::Useqq=1;
+
+my $cgi = CGI-&amp;gt;new;
+print $cgi-&amp;gt;header(-charset=&amp;gt;'UTF-8');
+print $cgi-&amp;gt;start_html(-title=&amp;gt;'Example', -encoding=&amp;gt;'UTF-8');
+warningsToBrowser(1);
+
+my $data = "Euro symbol: € | I \N{U+2764}\N{U+FE0F} \N{U+1F42A}";
+
+print $cgi-&amp;gt;pre(escapeHTML( Dumper( $data ) # debugging
+	."UTF-8 flag is ".( utf8::is_utf8( $data )?'on':'off' ) ));
+
+print $cgi-&amp;gt;p(escapeHTML( $data ));
+
+my $csv = Text::CSV-&amp;gt;new ({ binary =&amp;gt; 1, sep_char =&amp;gt; "|" });
+$csv-&amp;gt;parse($data);
+my ($c1,$c2) = $csv-&amp;gt;fields;
+print $cgi-&amp;gt;p(escapeHTML( "After Text::CSV: ".$c1." | ".$c2 ));
+
+print $cgi-&amp;gt;end_html;
+&lt;/pre&gt;
+&lt;p&gt;(Note: It is better to use &lt;c&gt;utf8::is_utf8()&lt;/c&gt; &lt;i&gt;only&lt;/i&gt; for debugging.) The output you should see in the browser from the above:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;pre&gt;$VAR1 = &amp;quot;Euro symbol: \x{20ac} | I \x{2764}\x{fe0f} \x{1f42a}&amp;quot;;
+UTF-8 flag is on&lt;/pre&gt;&lt;p&gt;Euro symbol: € | I &amp;#10084;&amp;#65039; &amp;#128042;&lt;/p&gt;&lt;p&gt;After Text::CSV: Euro symbol: €  |  I &amp;#10084;&amp;#65039; &amp;#128042;&lt;/p&gt;
+&lt;/blockquote&gt;
+</doctext>
+<root_node field_name="root_node">11104403</root_node>
+<parent_node field_name="parent_node">11104489</parent_node>
+<thread id="11104403">
+<node id="11104405"><node id="11104407"><node id="11104415"><node id="11104468"><node id="11104476"><node id="11104482"/>
+</node>
+<node id="11104478"><node id="11104489"><node id="11104494"/>
+<node id="11104502"><node id="11104507"/>
+<node id="11104508"/>
+<node id="11104509"><node id="11104512"/>
+</node>
+<node id="11104578"><node id="11104604"><node id="11104749"><node id="11104759"><node id="11104828"><node id="11104832"><node id="11104835"><node id="11104847"><node id="11104867"><node id="11104896"><node id="11104911"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11104764"><node id="11104827"><node id="11104845"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11104428"><node id="11104470"><node id="11104493"/>
+<node id="11104496"><node id="11104527"><node id="11104537"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

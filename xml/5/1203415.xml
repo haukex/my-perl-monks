@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203415" title="Re^5: Regex result being defined when it shouldn't be(?) (updated)" created="2017-11-14 13:10:43" updated="2017-11-14 13:10:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Seems like there's a huge difference on readability, not even getting into when you have many alternations.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Definitely, but there are some mechanisms to make regexes more readable, such as &lt;c&gt;/x&lt;/c&gt; (as you're already using) and the things I mentioned [id://1203389|here], including precompiled regexes via [doc://perlretut#Compiling-and-saving-regular-expressions|&lt;c&gt;qr//&lt;/c&gt;], which you can interpolate into other regexes, [id://1179840], or even advanced features like &lt;c&gt;(?(DEFINE) ...)&lt;/c&gt; ([doc://perlre]).&lt;/p&gt;
+&lt;c&gt;
+my $re1 = qr{ ... }msx;
+my $re2 = qr{ ... }msx;
+my $big_re = qr{ (?: $re1 | $re2 ) }msx;
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;so if you were looking for numeric characters, you can't use if($1)&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;As far as I can tell from what you're written so far, you seem to be very interested in whether a capture group matched something or not. This should make named capture groups, as I mentioned before, more interesting:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump qw/dd/; # for debugging
+
+my $re = qr{
+		^ \s*             # beginning of line
+		(?&lt;name&gt; \w+ )    # the variable name
+		\s* = \s*         # equals
+		(?:               # one of the following (
+		    (?&lt;num&gt; \d+ )   # a number
+		|                   # or
+		    (?&lt;str&gt; \w+ )   # a word
+		)                 # )
+		\s* $             # end of line
+	}msx;
+
+my @lines = split /\n/, &lt;&lt;'SAMPLE_INPUT';
+foo=bar
+ quz = 5 
+SAMPLE_INPUT
+
+for my $line (@lines) {
+	$line =~ $re or die "Failed to parse '$line'";
+	dd \%+; # debug
+	print "Match! Name: '$+{name}'\n";
+	if (exists $+{num})
+		{ print "It was a number: '$+{num}'\n" }
+	elsif (exists $+{str})
+		{ print "It was a string: '$+{str}'\n" }
+	else { die "internal error: neither str nor num" }
+}
+
+__END__
+
+{
+  # tied Tie::Hash::NamedCapture
+  name =&gt; "foo",
+  str  =&gt; "bar",
+}
+Match! Name: 'foo'
+It was a string: 'bar'
+{
+  # tied Tie::Hash::NamedCapture
+  name =&gt; "quz",
+  num  =&gt; 5,
+}
+Match! Name: 'quz'
+It was a number: '5'
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; I'm not sure when you made your "Edit" but I didn't see it until later. The explanation for the behavior you are seeing is this (note I'm ignoring [doc://overload]ing here):&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;Numeric comparisons like &lt;c&gt;==&lt;/c&gt;, &lt;c&gt;!=&lt;/c&gt;, &lt;c&gt;&gt;&lt;/c&gt;, etc. cause their arguments to be taken as numbers. This means:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;undef&lt;/c&gt; is converted to &lt;c&gt;0&lt;/c&gt; but is subject to a warning.&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;""&lt;/c&gt; is not a number so it is subject to a warning, and is converted to &lt;c&gt;0&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;"0"&lt;/c&gt; is converted to &lt;c&gt;0&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;0&lt;/c&gt; is already a number and doesn't need to be converted.&lt;/li&gt;
+&lt;li&gt;Perl's "false" (&lt;c&gt;!1&lt;/c&gt;, including &lt;c&gt;defined(undef)&lt;/c&gt;) already has a numeric value of &lt;c&gt;0&lt;/c&gt;, so that is used.&lt;/li&gt;
+&lt;li&gt;Perl will attempt to convert any other string into a number, warning if it cannot do so cleanly. The string &lt;c&gt;"0 but true"&lt;/c&gt; is special-cased to be exempt from this warning.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;String comparisons like &lt;c&gt;eq&lt;/c&gt;, &lt;c&gt;ne&lt;/c&gt;, &lt;c&gt;gt&lt;/c&gt; etc. cause their arguments to be taken as strings. That means:
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;undef&lt;/c&gt; is converted to &lt;c&gt;""&lt;/c&gt; but is subject to a warning.&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;""&lt;/c&gt;, &lt;c&gt;"0"&lt;/c&gt;, and &lt;c&gt;"0 but true"&lt;/c&gt; are already strings and don't need to be converted.&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;0&lt;/c&gt; is converted to &lt;c&gt;"0"&lt;/c&gt;, and of course any other number is stringified.&lt;/li&gt;
+&lt;li&gt;Perl's "false" (&lt;c&gt;!1&lt;/c&gt;, including &lt;c&gt;defined(undef)&lt;/c&gt;) already has a string value of &lt;c&gt;""&lt;/c&gt;, so that is used.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;This is why &lt;c&gt;"" eq 0&lt;/c&gt; and &lt;c&gt;undef eq 0&lt;/c&gt; are false, because they're both the same as &lt;c&gt;"" eq "0"&lt;/c&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;See [doc://perlop#Relational-Operators] and [doc://perlop#Equality-Operators]. As for why you shouldn't use these operators to check boolean values, I've already [id://1203512|explained that] elsewhere.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203386</root_node>
+<parent_node field_name="parent_node">1203408</parent_node>
+<thread id="1203386">
+<node id="1203389"><node id="1203396"><node id="1203398"/>
+<node id="1203400"><node id="1203404"/>
+<node id="1203405"><node id="1203410"><node id="1203481"><node id="1203495"><node id="1203613"><node id="1203724"/>
+</node>
+<node id="1224565"><node id="1224568"/>
+<node id="1224592"/>
+</node>
+</node>
+<node id="1203512"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1203401"><node id="1203407"><node id="1203408"><node id="1203415"/>
+</node>
+</node>
+<node id="1203417"/>
+</node>
+</node>
+<node id="1203399"/>
+</thread></node>

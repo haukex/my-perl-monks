@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1195200" title="Re^8: Easiest way to filter a file based on user input (updated)" created="2017-07-16 05:14:56" updated="2017-07-16 05:14:56" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1189649">Peter Keystrokes</author>
+<doctext field_name="doctext">Hi there,
+
+I've since downloaded and installed the Regexp::Common module.
+I've used it in my script as seen below.
+
+&lt;p&gt;When I run the script below and enter &lt;b&gt;-3&lt;/b&gt; I expect the script to filter my text file of all the lines beginning with 'None' or numbers which are &lt;b&gt;greater than -3&lt;/b&gt;, leaving only lines with &lt;b&gt;numbers equal to or less than -3&lt;/b&gt;&lt;/p&gt;
+Here is an example of my data:
+&lt;code&gt;
+&gt;hsa_circ_0067224|chr3:128345575-128345675-|NM_002950|RPN1  FORWARD
+-4.4       6 ..      17   xxxxxxxxxxGTGAC                CAGT ATGC ACTG                 AAGATGAGGTTTGTG
+-0.9       5 ..      18   xxxxxxxxxxxGTGA               CCAGT ATGC ACTGA                AGATGAGGTTTGTGG
+None       1 ..      20   xxxxxxxxxxxxxxx             GTGACCAGTATGCACTGAAG              ATGAGGTTTGTGGAC
+None       2 ..      21   xxxxxxxxxxxxxxG             TGACCAGTATGCACTGAAGA              TGAGGTTTGTGGACC
+None       6 ..      25   xxxxxxxxxxGTGAC             CAGTATGCACTGAAGATGAG              GTTTGTGGACCATGT
+-2.3       5 ..      26   xxxxxxxxxxxGTGA           C CAGTATGCACTGAAGATGAG G            TTTGTGGACCATGTG
+-3.2       4 ..      27   xxxxxxxxxxxxGTG          AC CAGTATGCACTGAAGATGAG GT           TTGTGGACCATGTGT
+-1.9       3 ..      28   xxxxxxxxxxxxxGT         GAC CAGTATGCACTGAAGATGAG GTT          TGTGGACCATGTGTT
+&lt;/code&gt;
+&lt;p&gt;If I typed &lt;b&gt;-3&lt;/b&gt; I should be left with:&lt;/p&gt;
+&lt;code&gt;
+&gt;hsa_circ_0067224|chr3:128345575-128345675-|NM_002950|RPN1  FORWARD
+-4.4       6 ..      17   xxxxxxxxxxGTGAC                CAGT ATGC ACTG                 AAGATGAGGTTTGTG
+-3.2       4 ..      27   xxxxxxxxxxxxGTG          AC CAGTATGCACTGAAGATGAG GT           TTGTGGACCATGTGT
+&lt;/code&gt;
+&lt;p&gt;So far it is only able to filter the 'None'. Shouldn't &lt;code&gt;$RE{num}{real}{-places=&gt;2}&lt;/code&gt; capture real &amp;
+ irrational numbers?&lt;/p&gt;
+The script:
+&lt;code&gt; 
+#!/usr/bin/perl 
+use strict;
+use warnings;
+use Regexp::Common qw /number/;
+
+
+print "Enter limit: ";
+chomp( my $limit = &lt;STDIN&gt; );
+$limit = abs($limit);
+
+open my $IN, '&lt;', "xt_spacer_results.hairpin" or die $!;
+open my $SIFTED, '&gt;', "new_xt_spacer_results.hairpin" or die $!;
+
+while (&lt;$IN&gt;){
+    next if /^None/;
+    next if /^($RE{num}{real}{-places=&gt;2})/ &amp;&amp; $1 &gt; $limit;
+    print $SIFTED $_;
+}
+
+close $IN;
+close $SIFTED;
+&lt;/code&gt;</doctext>
+<root_node field_name="root_node">1194465</root_node>
+<parent_node field_name="parent_node">1194688</parent_node>
+<thread id="1194465">
+<node id="1194467"><node id="1194471"><node id="1194491"><node id="1194503"/>
+</node>
+</node>
+</node>
+<node id="1194468"><node id="1194472"><node id="1194479"><node id="1194509"/>
+<node id="1194518"><node id="1194519"><node id="1194686"><node id="1194688"><node id="1195200"><node id="1195201"><node id="1195207"><node id="1195209"><node id="1195212"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11138621" title="Re: s///g within m//g regions" created="2021-11-09 09:22:31" updated="2021-11-09 09:22:31" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;There are quite a few techniques you can use to make your regexen nicer, any combination of which might be useful to you, see for example &lt;c&gt;/x&lt;/c&gt;, &lt;c&gt;/e&lt;/c&gt;, &lt;c&gt;/r&lt;/c&gt;, &lt;c&gt;\K&lt;/c&gt;, and lookarounds in [doc://perlre#Modifiers|perlre]. In the following example I've thrown all of them together into one, which may be overkill. &lt;small&gt;&lt;i&gt;(I see [ikegami] has posted something similar, albeit non-functional, while I was composing this.)&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;!--
+s{
+   ( ^ \#[ ]START \n )
+   ( .*?             )
+   ( ^ \#[ ]END   \n )
+}{
+   $1 . ( $2 =~ s/^[ $]*//rg ) . $3
+}xsmeg;
+--&gt;
+&lt;c&gt;
+my $data = &lt;&lt;'END';
+foo123bar
+# foo123bar foo456bar
+# xyz foo789bar abc
+foo456bar
+END
+
+$data =~ s{
+	^                 # beginning of line
+	\h* \# \h*        # comment lines
+	\K                # keep everything up to here in replacement
+	(?&lt;comment&gt; \N*)  # capture the comment
+	$                 # end of line
+} { handle_foobar( $+{comment} ) }msxge;
+
+sub handle_foobar {
+	return shift =~ s{
+			foo \K (\d+) (?= bar )
+		}{
+			$1 =~ tr/0-9/a-j/r
+		}msxger;
+}
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;I could turn the string into a line-list&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note it's also possible to [doc://open] a string as an in-memory filehandle:&lt;/p&gt;
+&lt;c&gt;
+my $str = &lt;&lt;'END';
+Hello
+# START
+World
+# END
+Aaa
+# START
+Bbb
+# END
+Ccc
+END
+
+open my $fh, '&lt;', \$str or die $!;
+while (&lt;$fh&gt;) {
+	chomp;
+	if ( /^# START/ .. /^# END/ ) {
+		print "&lt;$_&gt;\n";
+	}
+}
+close $fh;
+&lt;/c&gt;
+&lt;p&gt;Also, a more advanced regex technique is &lt;c&gt;m/\G.../gc&lt;/c&gt; parsing, which is described in [doc://perlop#\G-assertion|perlop]. Also, as for your example [id://11138614|here], if the delimiters need to be escaped, see [mod://Regexp::Common::delimited].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11138609</root_node>
+<parent_node field_name="parent_node">11138609</parent_node>
+<thread id="11138609">
+<node id="11138610"><node id="11138611"><node id="11138612"><node id="11138614"><node id="11138616"/>
+<node id="11138618"/>
+<node id="11138645"><node id="11138647"/>
+</node>
+</node>
+<node id="11138728"><node id="11138732"/>
+<node id="11138733"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11138615"><node id="11138627"><node id="11138697"/>
+</node>
+</node>
+<node id="11138620"/>
+<node id="11138621"><node id="11138652"/>
+</node>
+</thread></node>

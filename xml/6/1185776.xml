@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1185776" title="Re: [OT] Thoughts on Ruby's new absent operator?" created="2017-03-24 08:43:19" updated="2017-03-24 08:43:19" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;It would probably be better to link to [https://medium.com/rubyinside/the-new-absent-operator-in-ruby-s-regular-expressions-7c3ef6cd0b99#.rbnekbh23|the article itself]. Anyway, I get the idea that &lt;c&gt;(?~abc)&lt;/c&gt; would be analogous to &lt;c&gt;[^x]&lt;/c&gt;, except that the former is for multi-character sequences. I assume that similar effects can be achieved in Perl with [doc://perlre#Lookaround-Assertions]. What I'm missing at the moment are some more examples of practical applications - the only one mentioned in the article and the Ruby docs is not matching invalid C comments (&lt;strike&gt;second&lt;/strike&gt; final example below).&lt;/p&gt;
+&lt;p&gt;An excerpt from [https://github.com/k-takata/Onigmo/blob/master/doc/RE#L311|the Ruby docs]:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;c&gt;(?~subexp)&lt;/c&gt; absent operator (experimental)&lt;/p&gt;
+&lt;p&gt;Matches any string which doesn't contain any string which matches &lt;c&gt;subexp&lt;/c&gt;. Similar to &lt;c&gt;(?:(?!subexp).)*&lt;/c&gt;, but easy to write.&lt;/p&gt;
+&lt;p&gt;Unlike &lt;c&gt;(?:(?!abc).)*c&lt;/c&gt;, &lt;c&gt;(?~abc)c&lt;/c&gt; matches &lt;c&gt;"abc"&lt;/c&gt;, because &lt;c&gt;(?~abc)&lt;/c&gt; matches &lt;c&gt;"ab"&lt;/c&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;A sandbox for finding equivalent expressions:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More;
+
+# in Ruby: (?~abc)
+my $re1 = qr{ \A (?: (?!abc) . )* \z }x;
+like '', $re1;
+like 'ab', $re1;
+like 'aab', $re1;
+like 'ccdd', $re1;
+unlike 'abc', $re1;
+unlike 'aabc', $re1;
+unlike 'ccccabc', $re1;
+unlike 'ccabcdd', $re1;
+
+# in Ruby: (?~abc)c
+# this example fails in Perl
+like 'abc', qr{ \A (?: (?!abc) . )* c \z }x;
+
+# in Ruby: \A\/\*(?~\*\/)\*\/\z
+my $re2 = qr{ \A /\* ( (?!\*/). )*? \*/ \z }x;
+like '/**/', $re2;
+like '/* foobar */', $re2;
+unlike '/**/ */', $re2;
+
+done_testing;
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1185762</root_node>
+<parent_node field_name="parent_node">1185762</parent_node>
+<thread id="1185762">
+<node id="1185768"><node id="1185817"/>
+<node id="1185857"><node id="1185882"/>
+</node>
+</node>
+<node id="1185772"><node id="1185816"/>
+</node>
+<node id="1185776"><node id="1185789"><node id="1185859"/>
+</node>
+<node id="1185808"/>
+</node>
+<node id="1185779"/>
+<node id="1190474"><node id="1190482"/>
+</node>
+</thread></node>

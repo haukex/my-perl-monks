@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11114964" title="Perl seems to mistreat &quot;PerlIO&quot; environment variable (Windows)" created="2020-04-02 18:27:34" updated="2020-04-02 18:27:34" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1020196">vr</author>
+<doctext field_name="doctext">&lt;p&gt;Instead of poking inside source of some &lt;c&gt;App::*&lt;/c&gt; CPAN distribution, I tried to fix app's binary STDOUT output (prevent &lt;c&gt;lf&lt;/c&gt; to &lt;c&gt;crlf&lt;/c&gt; conversion) using said &lt;a href="https://perldoc.perl.org/perlrun.html#ENVIRONMENT"&gt;variable&lt;/a&gt;, here's SSCCE:&lt;/p&gt;
+&lt;c&gt;
+@echo off
+set PERLIO=
+perl -E "print qq(\n)" &gt;&gt; tmp
+perl -E "binmode STDOUT; print qq(\n)" &gt;&gt; tmp
+set PERLIO=:raw
+perl -E "print qq(\n)" &gt;&gt; tmp
+perl -E "binmode STDOUT; print qq(\n)" &gt;&gt; tmp
+set PERLIO=:raw:crlf:pop
+perl -E "print qq(\n)" &gt;&gt; tmp
+perl -E "binmode STDOUT; print qq(\n)" &gt;&gt; tmp
+perl -E "binmode STDOUT, ':crlf'; print qq(\n)" &gt;&gt; tmp
+set PERLIO=
+perl -Mopen=IO,raw -E "say unpack 'H*', $_ while &lt;ARGV&gt;" tmp
+del tmp
+&lt;/c&gt;
+&lt;p&gt;output:&lt;/p&gt;
+&lt;c&gt;
+0d0a
+0a
+0d0a
+0d0a
+0a
+0a
+0d0a
+&lt;/c&gt;
+&lt;p&gt;Line 3 seems to indicate that&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;The list becomes the default for all Perl's IO&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;(quote from link above) doesn't work; line 4 is weird -- IO is now broken and unfixable; further lines demonstrate working and toggleable solution (including from the same perl line/script, not shown above), using strange sandwiches -- &lt;c&gt;:raw:crlf:raw&lt;/c&gt; works, too. Looks like a bug to me, maybe not urgent (was it always there?), let it be documented, TWIMC.&lt;/p&gt;
+
+</doctext>
+<thread id="11114964">
+<node id="11114976"><node id="11114987"/>
+</node>
+</thread></node>

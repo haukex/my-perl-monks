@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203085" title="Re^2: Playing sounds" created="2017-11-09 17:09:40" updated="2017-11-09 17:09:40" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I'm not sure which node you are replying to (there are per-node "reply" links next to each post), but I'll reply anyway.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;But to have any hope of running my program on other machines, never mind other systems, I'd rather avoid that.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;AFAIK sound is always going to be an OS-dependent thing, so any Perl code would at some level have to access an external OS-dependent library or tool. Yes, running an external program just to play a sound is a bit wasteful, but you said this was for a game, and unless you're playing hundreds of sounds a second, or you need high precision in playback (precise timing down to the millisecond of when the sounds are played), or this is going to be run on very low-end machines, then IMHO using an external program is probably fine, especially for background music. (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; On the other hand, see [Discipulus]'s and [zentara]'s comments about [mod://SDL] [id://1203073|here].)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;If it's running an external process anyway, I might as well do it with afplay, right?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Personally I'd look at it differently: If I'm going to be running an external process anyway, I'd like to use the same one no matter which OS, then I will only have to handle one interface (command line arguments etc.). Then, the "only" issues I'd have to worry about are possibly pathname issues, which can be handled with a cross-platform tool like [mod://Path::Class] or at least the core [doc://File::Spec], and making it as easy as possible for a user of my program to install that external tool. Perhaps you can try installing the previously mentioned [http://mpg123.org/|mpg123] or [http://sox.sourceforge.net/|SoX] on different machines to see how easily their installers handle, how easy it is for your Perl script to call those external programs after their installation (potential &lt;c&gt;PATH&lt;/c&gt; issues etc.), and so on.&lt;/p&gt;
+&lt;p&gt;You might just simply document for your users, "if you want sound support, install package &lt;i&gt;X&lt;/i&gt; and set configuration option &lt;i&gt;Y&lt;/i&gt; to the installation path", and have your program gracefully handle the case of the sound playback tool not being installed (if having no sound is an option for you). Or, if your program has an installer, and you wanted to go this far, the installers of the audio software may support a "quiet" installation, which you can run during your program's installation, and depending on the license terms you might even distribute the audio package contained within yours.&lt;/p&gt;
+&lt;p&gt;As for your code, I don't quite understand why you want to go through an external file - is that for interprocess communication, or will your user be editing that file? Note that both aforementioned players can play multiple files one after the other if given on the command line, and play a single file multiple times (e.g. &lt;c&gt;play sound.mp3 repeat 2&lt;/c&gt; and &lt;c&gt;mpg123 --loop 3 sound.mp3&lt;/c&gt; both play the same file three times). If you want to monitor the playback and re-start after it is finished, then yes, one way to do that would be to fork a child and have it block until the sound stops playing, but on the other hand, since I assume your code is probably based on an event loop, then regularly polling the state of the playback of the music and re-starting if necessary is also an option (that's what I do in my code below). Anyway, as a fun little project I whipped up an OO package based on [id://1200658|the code] I linked to earlier (only tested on Linux so far):&lt;/p&gt;
+&lt;c&gt;
+{ # ---8&lt;--- put this in file Sound.pm if you like ---8&lt;---
+
+package Sound;
+use warnings;
+use strict;
+use Carp;
+use IPC::Run qw/start/;
+use Scalar::Util qw/weaken/;
+
+our $DEFAULT_PLAYER = ['play','-q']; # SoX
+my @all_sounds;
+my %NEW_KNOWN_ARGS = map {$_=&gt;1} qw/file player/;
+
+sub new {
+	my $class = shift;
+	my %self = (player =&gt; $DEFAULT_PLAYER);
+	$self{file} = shift if @_%2;
+	my %args = @_;
+	$NEW_KNOWN_ARGS{$_} or croak "new: unknown arg '$_'"
+		for keys %args;
+	carp "new: file specified twice (or odd number of arguments)"
+		if defined $self{file} &amp;&amp; defined $args{file};
+	defined $args{$_} and $self{$_} = $args{$_} for keys %args;
+	croak "new: player must be a nonempty arrayref"
+		if ref $self{player} ne 'ARRAY' || @{$self{player}}&lt;1;
+	croak "new: no file specified" unless defined $self{file};
+	my $self = bless \%self, $class;
+	push @all_sounds, $self;
+	weaken $all_sounds[-1];
+	return $self;
+}
+sub stop_all_Sounds { # package function, stops *all* Sounds globally!
+	defined and $_-&gt;stop for @all_sounds;
+}
+sub play {
+	my $self = shift;
+	$self-&gt;stop if $self-&gt;is_playing;
+	$self-&gt;{harness} = start [ @{$self-&gt;{player}},
+		ref $self-&gt;{file} eq 'ARRAY'
+		? @{$self-&gt;{file}} : $self-&gt;{file} ];
+	return $self;
+}
+sub is_playing {
+	my $h = shift-&gt;{harness};
+	return unless defined $h;
+	return 1 if $h-&gt;pumpable;
+	$h-&gt;finish;
+	return;
+}
+sub wait {
+	my $h = shift-&gt;{harness};
+	return unless defined $h;
+	return $h-&gt;finish;
+}
+sub stop {
+	my $h = shift-&gt;{harness};
+	return unless defined $h;
+	$h-&gt;signal('INT');
+	return $h-&gt;finish;
+}
+sub DESTROY {
+	shift-&gt;stop;
+	# take this opportunity to clean up the array a bit
+	@all_sounds = grep {defined} @all_sounds;
+	# need to re-weaken as per Scalar::Util docs
+	weaken $_ for @all_sounds;
+}
+
+1;
+
+} # ---&gt;8--- end package Sound ---&gt;8---
+BEGIN { $INC{'Sound.pm'}++ } # ignore; just for inlining the package
+
+# ----- ----- Demo ----- -----
+use warnings;
+use strict;
+use Sound;
+
+# Note: my "short" sound is ~2.3s long
+my $snd_short = Sound-&gt;new('/tmp/short.mp3');
+my $snd_long  = Sound-&gt;new('/tmp/long.mp3');
+local $SIG{INT} = sub {
+	print "Caught SIGINT, stopping and exiting...\n";
+	Sound-&gt;stop_all_Sounds();
+	exit };
+
+print "Playing long sound in background, and sleeping 10s...\n";
+$snd_long-&gt;play;
+sleep 10;
+print "Playing short sound, blocking until done...\n";
+$snd_short-&gt;play-&gt;wait;
+print "Sleeping 3s...\n";
+sleep 3;
+print "Playing short sound in background, not sleeping...\n";
+$snd_short-&gt;play;
+print "Re-starting playback of long sound...\n";
+$snd_long-&gt;play;
+print "Waiting for playback of short sound to finish...\n";
+$snd_short-&gt;wait;
+print "Sleeping 5s (long sound playback will continue)...\n";
+sleep 5;
+# $snd_long will stop playing when the variable goes out of scope
+# (in this case, when the script ends)
+
+my $snd_two = Sound-&gt;new(
+	# multiple files played one after another
+	file =&gt; ['/tmp/short.mp3', '/tmp/short.mp3'],
+	# player can be specified with absolute path, or no path
+	# if the binary is in the PATH environment variable
+	player =&gt; ['/usr/bin/mpg123','-q'] );
+print "Playing second short sound in background...\n";
+$snd_two-&gt;play;
+for (1..10) { # loop for roughly 10 seconds
+	print "Monitoring playback (loop $_, sleeping)...\n";
+	sleep 1;
+	if (not $snd_two-&gt;is_playing) { 
+		print "Playback ended, re-starting with long sound...\n";
+		$snd_two = Sound-&gt;new('/tmp/long.mp3')-&gt;play;
+	}
+}
+print "Stopping second sound...\n";
+$snd_two-&gt;stop;
+print "Script done.\n";
+&lt;/c&gt;
+&lt;p&gt;(BTW, yet another option for commandline playback is from the powerful [https://ffmpeg.org/|FFmpeg] or [https://libav.org/|libav] packages, the command line tools &lt;c&gt;ffplay&lt;/c&gt;/&lt;c&gt;avplay&lt;/c&gt; can be used like so: &lt;c&gt;avplay -vn -nodisp -autoexit -nostats -loglevel quiet sound.mp3&lt;/c&gt;, I believe the options are identical for &lt;c&gt;ffplay&lt;/c&gt;.)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203062</root_node>
+<parent_node field_name="parent_node">1203076</parent_node>
+<thread id="1203062">
+<node id="1203063"/>
+<node id="1203069"/>
+<node id="1203073"><node id="1203121"/>
+</node>
+<node id="1203076"><node id="1203085"/>
+</node>
+<node id="1203078"/>
+<node id="1203089"/>
+</thread></node>

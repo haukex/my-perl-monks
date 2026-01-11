@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1175199" title="can't locate object method new in perl" created="2016-11-03 04:06:49" updated="2016-11-03 04:06:49" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1175197">Bhabesh347</author>
+<doctext field_name="doctext">while running a perl script in unix , which worksS perfectly in windows strawberry, i am getting following error:
+
+cant locate object method "new" via package "Text::CSV"
+
+Any insights to identify this is highly appreciated
+
+MyScript.pl
+
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Net::LDAP;
+use Text::CSV;
+use Net::LDAP::E#ntry;
+use File::Basename;
+use File::chmod;
+use Config::Tiny;
+use File::Copy;
+use Text::Trim;
+use Data::Dumper qw(Dumper);
+use Net::LDAP::Util qw(ldap_error_text);
+use Net::LDAP::Constant;
+
+my $config = Config::Tiny-&gt;read('config.ini');
+
+#Variable Declaration section
+my ($bindhost,$port,$bindpwd,$binddn,$base_search,$ldap,$customerCode,$logDir,$entry,$result,$csv,$file,$line,$data,$cn,$dn,$entry2,$start_timestamp,$new,$u,$ct,$old,$logfile,$max,$stop_timestamp);
+
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime(time);
+$start_timestamp = sprintf ( "%04d%02d%02d %02d:%02d:%02d",$year+1900,$mon+1,$mday,$hour,$min,$sec);
+
+foreach my $section (keys %{$config}) {
+        #LDAP Binding Connectivity variables declaration
+        $bindhost = $config-&gt;{$section}-&gt;{'ldap_host'};
+        $port = $config-&gt;{$section}-&gt;{'ldap_port'};
+        $bindpwd = $config-&gt;{$section}-&gt;{'ldap_password'};
+        $binddn = $config-&gt;{$section}-&gt;{'ldap_user'};
+        $base_search = $config-&gt;{$section}-&gt;{'ldap_customers_ou_dn'};
+        $logDir = $config-&gt;{$section}-&gt;{'log_dir'};
+
+        # connect to the ldap server
+        my $ldap = Net::LDAP-&gt;new($bindhost,port=&gt;$port,timeout=&gt;240) or die "Could not bind to ldap server: $! - $@\n";
+
+        $result = $ldap-&gt;bind
+        (
+                dn =&gt; trim($binddn), password=&gt;trim($bindpwd)
+        );
+
+        #Open Script directory over here
+        opendir(DIR, ".");
+        my @files = grep(/\.csv$/,readdir(DIR));
+        closedir(DIR);
+        $csv = Text::CSV-&gt;new({ sep_char =&gt; ',' });
+        #print "\n Script starts processing for the timings $start_timestamp";
+
+        #Visit each .csv file by checking its naming convention over here
+        my $fileCt = 0;
+
+        if($file=$ARGV[0]){
+                print "\n Script starts processing for the timings $start_timestamp";
+                $ct = 1;
+                open($data, '&lt;', $file) or die "Could not open given file \n";
+                open($logfile, '&gt;&gt;', 'logfile.txt');
+                print $logfile "Script started running for file $file at ".$start_timestamp."\n";
+                close $logfile;
+
+                while ($line = &lt;$data&gt;){
+                        if ($csv-&gt;parse($line)) {
+                                my @fields = $csv-&gt;fields();
+                                $customerCode = $fields[0];
+                                $result = $ldap-&gt;search(
+                                                base =&gt; "$base_search",
+                                                filter =&gt; "(&amp;(customerCode=$customerCode))",
+                                                );
+                                die ldap_error_text($result-&gt;code) if $result-&gt;code;
+
+                                $max = $result-&gt;count; 
+                                if($max == 0) {
+                                        open($logfile, '&gt;&gt;', 'logfile.txt');
+                                        print $logfile "This customerCode $customerCode was not found in LDAP and was not reset\n";
+                                        close $logfile
+                                }
+                                else { 
+                                        open($logfile, '&gt;&gt;', 'logfile.txt');
+                                        print $logfile "This customerCode $customerCode was found in LDAP and is reset\n";
+                                        close $logfile
+                                }      
+                                for (my $index = 0 ; $index &lt; $max ; $index++) {
+                                        my $entry = $result-&gt;entry($index);
+                                        $u = ${$entry-&gt;get('uid')}[0];
+                                        $dn = "uid=$u,$base_search";   
+                                }
+
+                                my @all = ();
+                @all = trim($result-&gt;entries);
+                foreach $entry (@all){}
+
+                                $entry = Net::LDAP::Entry-&gt;new;
+                                $entry-&gt;dn($dn);
+                                $entry-&gt;replace(
+                                'cn' =&gt; " ",
+                                'userPassword'=&gt; "",
+                                'challengeQuestion'=&gt; "",
+                                'challengeAnswer'=&gt; "",
+                                'ctscPasswordCreationDate'=&gt; "",
+                                'ctscPasswordExpirationDate'=&gt; "",
+                                'ctscPasswordHistory'=&gt; "",
+                                'ctscPasswordResetAttempts'=&gt; "",
+                                'ctscPasswordLockoutEnable'=&gt; "",
+                                'ctscLastResetDate'=&gt; "",
+                                'ctscFailedLoginCount'=&gt; "",  
+                                );
+
+                                $entry-&gt;update ($ldap);
+
+                                $old = ${$entry-&gt;get('cn')}[0];
+                                $old = ${$entry-&gt;get('userPassword')}[0];
+                                $old = ${$entry-&gt;get('challengeQuestion')}[0];
+                                $old = ${$entry-&gt;get('challengeAnswer')}[0];
+                                $old = ${$entry-&gt;get('ctscPasswordCreationDate')}[0];
+                                $old = ${$entry-&gt;get('ctscPasswordExpirationDate')}[0];
+                                $old = ${$entry-&gt;get('ctscPasswordHistory')}[0];
+                                $old = ${$entry-&gt;get('ctscPasswordResetAttempts')}[0];
+                                $old = ${$entry-&gt;get('ctscPasswordLockoutEnable')}[0];
+                                $old = ${$entry-&gt;get('ctscLastResetDate')}[0];
+                                $old = ${$entry-&gt;get('ctscFailedLoginCount')}[0];
+                                $entry2 = $entry-&gt;clone; # copies entry
+
+                                $ldap-&gt;modify($dn, replace =&gt; {'cn' =&gt; "" });
+                                $ldap-&gt;modify($dn, replace =&gt; {'userPassword' =&gt; "" });
+                                $ldap-&gt;modify($dn, replace =&gt; {'challengeQuestion' =&gt; "" });
+                                $ldap-&gt;modify($dn, replace =&gt; {'challengeAnswer' =&gt; "" });
+                                $ldap-&gt;modify($dn, replace =&gt; {'ctscPasswordCreationDate' =&gt; "" });
+                                $ldap-&gt;modify($dn, replace =&gt; {'ctscPasswordExpirationDate' =&gt; "" });
+                                $ldap-&gt;modify($dn, replace =&gt; {'ctscPasswordHistory' =&gt; "" });
+                                $ldap-&gt;modify($dn, replace =&gt; {'ctscPasswordResetAttempts' =&gt; "" });
+                                $ldap-&gt;modify($dn, replace =&gt; {'ctscPasswordLockoutEnable' =&gt; "" });
+                                $ldap-&gt;modify($dn, replace =&gt; {'ctscLastResetDate' =&gt; "" });
+                                $ldap-&gt;modify($dn, replace =&gt; {'ctscFailedLoginCount' =&gt; "" });                        
+                                }
+                                else {
+                                        warn "Line could not be parsed: $line\n";
+                                }
+                                $ct++;
+                    } #End while loop  
+
+                        my ($sec1,$min1,$hour1,$mday1,$mon1,$year1,$wday1,$yday1,$isdst1)=localtime(time);
+                        $stop_timestamp = sprintf ( "%04d%02d%02d %02d:%02d:%02d",$year1+1900,$mon1+1,$mday1,$hour1,$min1,$sec1);
+                        print "\n Script ends Here for the timings - $stop_timestamp ";
+                        open($logfile, '&gt;&gt;', 'logfile.txt');
+                        print $logfile "Processing stopped at ".$stop_timestamp."\n";
+                        close $logfile;
+                        close $data;
+                }       #if     file pattern checking loop ends        
+                else {
+                        print "\n Please provide a .csv file as an input";
+                }
+        }
+
+&lt;/code&gt;
+CSV.pm:
+&lt;code&gt;
+use Text::CSV;
+
+my @rows;
+my $csv = Text::CSV-&gt;new ( { binary =&gt; 1 } )  # should set binary attribute.
+                or die "Cannot use CSV: ".Text::CSV-&gt;error_diag ();
+
+open my $fh, "&lt;:encoding(utf8)", "test.csv" or die "test.csv: $!";
+while ( my $row = $csv-&gt;getline( $fh ) ) {
+    $row-&gt;[2] =~ m/pattern/ or next; # 3rd field should match
+    push @rows, $row;
+}
+$csv-&gt;eof or $csv-&gt;error_diag();
+close $fh;
+
+$csv-&gt;eol ("\r\n");
+
+open $fh, "&gt;:encoding(utf8)", "new.csv" or die "new.csv: $!";
+$csv-&gt;print ($fh, $_) for @rows;
+close $fh or die "new.csv: $!";
+
+#
+# parse and combine style
+#
+
+$status = $csv-&gt;combine(@columns);    # combine columns into a string
+$line   = $csv-&gt;string();             # get the combined string
+
+$status  = $csv-&gt;parse($line);        # parse a CSV string into fields
+@columns = $csv-&gt;fields();            # get the parsed fields
+
+$status       = $csv-&gt;status ();      # get the most recent status
+$bad_argument = $csv-&gt;error_input (); # get the most recent bad argument
+$diag         = $csv-&gt;error_diag ();  # if an error occured, explains WHY
+
+$status = $csv-&gt;print ($io, $colref); # Write an array of fields
+                                      # immediately to a file $io
+$colref = $csv-&gt;getline ($io);        # Read a line from file $io,
+                                      # parse it and return an array
+                                      # ref of fields
+$csv-&gt;column_names (@names);          # Set column names for getline_hr ()
+$ref = $csv-&gt;getline_hr ($io);        # getline (), but returns a hashref
+$eof = $csv-&gt;eof ();                  # Indicate if last parse or
+                                      # getline () hit End Of File
+
+$csv-&gt;types(\@t_array);               # Set column types
+
+&lt;/code&gt;</doctext>
+<thread id="1175199">
+<node id="1175201"/>
+<node id="1175203"/>
+<node id="1175206"/>
+</thread></node>

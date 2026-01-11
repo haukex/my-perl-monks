@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229780" title="Re^7: Extending a perl program with Scheme, Lua, or JS" created="2019-02-12 04:15:03" updated="2019-02-12 04:15:03" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;just in general the fact that it leaks memory suggests to me that it's not something high quality and well maintained, which makes me not want to commit myself to it&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I completely understand the worry. Just to clarify, the reason I wasn't too worried about the module was that the module's author, Father Chrysostomos / sprout, [https://perl5.git.perl.org/perl.git/search/?s=sprout;st=author|is one of] the Perl 5 Porters. However, I just used [mod://Test::LeakTrace] on a simple script, and unfortunately, according to that module it does appear to leak a lot.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Devel::Size 'total_size';
+$Devel::Size::warn = 0;
+use Test::LeakTrace;
+use JE;
+
+leaktrace {
+	my $j = JE-&gt;new;
+	$j-&gt;eval('function foo (x) { return x / 10; }');
+	my $rv = 0+$j-&gt;{foo}-&gt;(50);
+};
+
+my $j = JE-&gt;new;
+print total_size($j), "\n";  # e.g. 434280
+$j-&gt;eval('function foo (x) { return x / 10; }');
+print total_size($j), "\n";  # e.g. 440614
+for (1..100_000) {
+	my $rv = 0+$j-&gt;{foo}-&gt;(50);
+}
+print total_size($j), "\n";  # e.g. 441601
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1229572</root_node>
+<parent_node field_name="parent_node">1229769</parent_node>
+<thread id="1229572">
+<node id="1229574"><node id="1229576"><node id="1229581"/>
+</node>
+</node>
+<node id="1229580"><node id="1229590"><node id="1229600"/>
+<node id="1229675"><node id="1229709"><node id="1229742"><node id="1229749"/>
+</node>
+</node>
+<node id="1229717"/>
+</node>
+</node>
+<node id="1229682"/>
+<node id="1229891"/>
+</node>
+<node id="1229594"><node id="1229683"><node id="1229685"><node id="1229739"><node id="1229748"><node id="1229769"><node id="1229780"><node id="1229789"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1229722"/>
+<node id="1229770"><node id="1229781"><node id="1229852"/>
+</node>
+<node id="1229786"><node id="1229853"/>
+</node>
+</node>
+<node id="1229859"/>
+<node id="1229882"/>
+</thread></node>

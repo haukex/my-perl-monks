@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1191205" title="Re: Use CGI to run a Perl script via web server" created="2017-05-25 07:27:53" updated="2017-05-25 07:27:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;First of all, doing &lt;c&gt;my $sso = $query-&gt;param( "sso" ); system( "perl myscript.pl $sso" );&lt;/c&gt; like that in a CGI script is &lt;b&gt;&lt;i&gt;extremely&lt;/i&gt; dangerous!&lt;/b&gt; - you are allowing &lt;i&gt;anyone&lt;/i&gt; to execute &lt;i&gt;any&lt;/i&gt; command on your server with this CGI script! To see what I mean, try setting &lt;c&gt;$sso&lt;/c&gt; to &lt;c&gt;"; cat /etc/passwd"&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;I think that any kind of calling of an external command in a CGI script should be used as rarely as possible, if at all, and even when it is used, the commands executed must be very tightly controlled to prevent this kind of security hole.&lt;/p&gt;
+&lt;p&gt;It is very likely that whatever you are trying to implement with this CGI script can probably be accomplished without calling an external command. If you could explain what you are trying to do overall, we can probably suggest a better solution.&lt;/p&gt;
+&lt;p&gt;Now, getting to your code. You say that it does not work, but don't explain what that means - [id://174051] Also, the code you posted does not compile - see [id://1177642]. As for debugging CGI scripts, try adding &lt;c&gt;use CGI::Carp qw/fatalsToBrowser/;&lt;/c&gt; at the top of your script, and see the [id://165253] and [id://380424].&lt;/p&gt;
+&lt;p&gt;As for what might be going wrong, aside from the above, you are calling [doc://system], which may generate output, before you finish outputting the header (&lt;c&gt;print "Content-type...&lt;/c&gt;). Also, it's better to use &lt;c&gt;$query-&gt;header&lt;/c&gt; instead of generating it yourself.&lt;/p&gt;
+&lt;p&gt;Lastly, if you really have a really good reason for executing external commands from a CGI script, I wrote at length about avoiding the shell [id://1180578|here]. But this is just one of several possible security holes, and by itself will probably still not close all attack possibilities.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1191201</root_node>
+<parent_node field_name="parent_node">1191201</parent_node>
+<thread id="1191201">
+<node id="1191202"/>
+<node id="1191203"><node id="1191211"><node id="1191212"/>
+<node id="1191214"/>
+<node id="1191217"><node id="1191247"><node id="1191248"/>
+<node id="1191253"><node id="1191270"><node id="1191271"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1191204"/>
+<node id="1191205"/>
+<node id="1191206"/>
+</thread></node>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11144747" title="Cannot write to, or read from, the SerialPort" created="2022-06-14 19:41:14" updated="2022-06-14 19:41:14" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11144745">macdev</author>
+<doctext field_name="doctext">&lt;p&gt;
+I can write to, and read from, a TRENDnet TU-S9 USB to RS-232 Adapter via AppleScript and Python; not with Perl.&lt;br&gt;
+I cannot figure what I maybe missing or configured improperly.&lt;br&gt;
+Any Assistance is welcomed and appreciated.&lt;br&gt;
+&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/local/bin/perl
+use strict;
+
+# Computer: iMac 2017;, USB to Serial Adapter: TRENDnet TU-S9;
+
+# Just showing the Locations of the 'SerialPort' Files.
+#use lib "/usr/local/lib/perl5/site_perl/5.36.0/darwin-2level/auto/Device/SerialPort/SerialPort.bundle";
+#use lib "/usr/local/lib/perl5/site_perl/5.36.0/darwin-2level/Device/SerialPort/SerialPort.pm";
+use Device::SerialPort;
+
+# I tried each of the below my $port = Device::SericalPort-&gt;new ...Lines of Code.
+#my $port = Device::SerialPort-&gt;new("/dev/cu.usbserial");
+#my $port = Device::SerialPort-&gt;new("/dev/tty.usbserial");
+#my $port = Device::SerialPort-&gt;new("/dev/ttys0");
+
+my $port = Device::SerialPort-&gt;new("/dev/ttys1");  # Like the three (3) Lines above, this Driver produces the same Result.
+
+# The below Parameters are from my AppleScript and Python Code , which both work flawlessly via the TRENDnet TU-S9.
+$port-&gt;databits(8);
+$port-&gt;baudrate(4800);
+$port-&gt;handshake("rts");
+$port-&gt;parity("none");
+$port-&gt;stopbits(1);
+
+#$port-&gt;write_settings || undef $port;
+
+print "01";
+print "\n";
+
+$port-&gt;write("FA21050000;");  # Write "FA21050000;" Hz to Yaesu FTdx-1200 Transceiver to set VFO-A Frequency.
+# The VFO-A Frequency is NOT changed.
+
+print "02";
+print "\n";
+
+$port-&gt;write("FB;");          # Write "FB;" to FTdx-1200 to have Transceiver place Frequency of VFO-B into its Buffer.
+my $byte=$port-&gt;read(11);     # Read the VFO-B Frequency, in "FBXXXXXXXX;" Format
+print "$byte";                # Print expected returned Frequency, in "FBXXXXXXXX;" Format, where XXXXXXXX is Freq. in Hz.
+print "\n";
+#The VFO-B Frequency is NOT retreived from the FTdx-1200 Transceiver.
+
+print "03";
+print "\n";
+
+$port-&gt;close();
+&lt;/code&gt;
+
+&lt;p&gt;
+Instead of seeing:
+01          ... followed by the, Variable Frequency Oscillator, VFO-A change to '21050000' Hz- which does not occur.&lt;br&gt;
+02&lt;br&gt;
+FBXXXXXXXX; ... where 'XXXXXXXX' is the Frequency, in Hz, which is what ever VFO-B is set to.&lt;br&gt;
+03&lt;br&gt;
+... what is displayed is:&lt;br&gt;
+01          ... VFO-A is not changed to '21050000' Hz.&lt;br&gt;
+02&lt;br&gt;
+&lt;br&gt;
+03&lt;br&gt;
+&lt;/p&gt;</doctext>
+<thread id="11144747">
+<node id="11144760"><node id="11144804"/>
+</node>
+<node id="11144776"><node id="11144805"/>
+</node>
+<node id="11144810"><node id="11144841"/>
+<node id="11144884"/>
+</node>
+</thread></node>

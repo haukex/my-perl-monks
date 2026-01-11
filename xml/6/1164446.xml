@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1164446" title="Re^2: converting context free grammar to BNF" created="2016-05-29 10:56:44" updated="2016-05-29 10:56:44" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1162446">nido203</author>
+<doctext field_name="doctext">&lt;p&gt;Hi! Sorry for so little information. I'm relatively new to this so I'm still discovering things. I'm using perl5. Bellow is the entire code. I'm trying to translate grammar to BNF&lt;/p&gt;
+
+&lt;code&gt;
+use Parse::RecDescent;
+use Data::Dumper;
+
+$::RD_AUTOACTION = q { [@item] };
+
+
+$grammar = q{
+start: seq
+
+seq: '(' seqstr(s) ')'
+
+seqstr: seq | tagstr
+
+tagstr: OZN ( seq | rijec )
+
+OZN: /[A-Z.,?'*:`*]+ /
+rijec: /[\w-?,:&lt;*`*]+/
+};
+
+my $parser=Parse::RecDescent-&gt;new($grammar);
+my $result = $parser-&gt;start("(SBARQ (WHNP (WP Who))(SQ (VP (VBZ says)(, ,)(S (SBAR (`` ``)(IN If)(S (NP (PRP you))(VP (VBP do)(RB n&lt;t)(VP (VB look)(ADJP (JJ good)))))(, ,)(S (NP (PRP we))(VP (VBP do)(RB n&lt;t)(VP (VB look)(ADJP (JJ good)('' &lt;&lt;)))))))))(? ?))");
+print Dumper($result);
+&lt;/code&gt;
+
+&lt;p&gt; I found something similar to code bellow on github and tried to modify it&lt;/p&gt;
+&lt;code&gt;
+use Grammar::BNF;
+use Parse::RecDescent;
+use Data::Dumper;
+
+
+$::RD_AUTOACTION = q { [@item] };
+
+
+my $g = Grammar::BNF.generate(Q:to&lt;END&gt;
+&lt;start&gt; ::= &lt;seq&gt;
+
+&lt;seq&gt; ::= '(' &lt;seqstr(s)&gt; ')'
+
+&lt;seqstr&gt; ::= &lt;seq&gt; | &lt;tagstr&gt;
+
+&lt;tagstr&gt; ::= &lt;OZN&gt; '(' &lt;seq&gt; | &lt;rijec&gt; ')'
+
+&lt;OZN&gt; ::= /[A-Z.,?'*:`*]+ /
+&lt;rijec&gt; ::= /[\w-?,:&lt;*`*]+/
+END
+);
+
+my $parser=Parse::RecDescent-&gt;new($g);
+my $result = $parser-&gt;start("(SBARQ (WHNP (WP Who))(SQ (VP (VBZ says)(, ,)(S (SBAR (`` ``)(IN If)(S (NP (PRP you))(VP (VBP do)(RB n&lt;t)(VP (VB look)(ADJP (JJ good)))))(, ,)(S (NP (PRP we))(VP (VBP do)(RB n&lt;t)(VP (VB look)(ADJP (JJ good)('' &lt;&lt;)))))))))(? ?))");
+print Dumper($result);
+&lt;/code&gt;
+&lt;p&gt;This is the message that shows:
+
+"Can't locate Grammar/BNF.pm in @INC (@INC contains: /etc/perl /usr/local/lib/perl/5.14.2 /usr/local/share/perl/5.14.2 /usr/lib/perl5 /usr/share/perl5 /usr/lib/perl/5.14 /usr/share/perl/5.14 /usr/local/lib/site_perl .) at gramatika_bnf line 1.
+BEGIN failed--compilation aborted at gramatika_bnf line 1."
+
+It seems that i have been using wrong syntax but what shoud i'do to fix it? Should i have perl6?
+Thank you for your time!
+&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1164407</root_node>
+<parent_node field_name="parent_node">1164414</parent_node>
+<thread id="1164407">
+<node id="1164413"/>
+<node id="1164414"><node id="1164446"><node id="1164448"/>
+</node>
+</node>
+<node id="1164451"><node id="1164629"><node id="1164632"><node id="1164887"><node id="1164913"><node id="1164915"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

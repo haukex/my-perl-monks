@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11131881" title="Re^7: Referencing the locals" created="2021-04-29 11:28:51" updated="2021-04-29 11:28:51" _doctext_mode="lenient"><type id="11">note</type>
+<author id="823433">Chuma</author>
+<doctext field_name="doctext">&lt;p&gt;Right, but wouldn't a deep copy mean that the nested stuff also gets copied, so it's even slower? And the fast way would be to make an alias, i.e. copy just the reference to the whole array? Which... I can't figure out how to do. Google suggests&lt;/p&gt;
+
+&lt;code&gt;*cat = \@{$animals{'cat'}};&lt;/code&gt;
+
+&lt;p&gt;but that apparently &lt;i&gt;also&lt;/i&gt; insists on using the global cat, so we're back to the original problem. I could do&lt;/p&gt;
+
+&lt;code&gt;$cat = \@{$animals{'cat'}};&lt;/code&gt;
+
+&lt;p&gt;but then the array would be referred to as @$cat, which would be confusing in the rest of the code. Or did I miss something?&lt;/p&gt;
+
+&lt;p&gt;EDIT: In the specific case at hand, it seems that a decent compromise might be a hash &lt;i&gt;of&lt;/i&gt; references. Like so:&lt;/p&gt;
+
+&lt;code&gt;my @cat=(1,2,3);
+my @dog=(5,6);
+my @pig=(4,3,2,1);
+my %animals;
+$animals{'cat'}=\@cat;
+$animals{'dog'}=\@dog;
+$animals{'pig'}=\@pig;
+for('cat','dog','pig'){ # we want the specific order
+	${$animals{$_}}[1]=$_;
+	#stuff(@{$animals{$_}})
+}
+say @cat;&lt;/code&gt;
+
+&lt;p&gt;Slightly wordy, but fulfils all the criteria: No symbolic references, no globals, no copying, and @cat etc. look like they're supposed to for the remaining code. Right?&lt;/p&gt;
+
+&lt;p&gt;I'm still interested in learning about copying/aliasing though, even if it's not needed for this particular thing.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11131804</root_node>
+<parent_node field_name="parent_node">11131876</parent_node>
+<thread id="11131804">
+<node id="11131813"/>
+<node id="11131811"><node id="11131822"><node id="11131825"><node id="11131839"/>
+</node>
+<node id="11131840"/>
+<node id="11131826"/>
+</node>
+</node>
+<node id="11131833"/>
+<node id="11131835"><node id="11131848"><node id="11131864"><node id="11131866"><node id="11131875"><node id="11131876"><node id="11131881"><node id="11131887"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11131809"><node id="11131814"><node id="11131816"><node id="11131818"/>
+</node>
+</node>
+</node>
+<node id="11131805"/>
+</thread></node>

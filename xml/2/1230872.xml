@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230872" title="Re^3: require in script breaks module" created="2019-03-04 16:38:02" updated="2019-03-04 16:38:02" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Peeking inside the .ph file on my machines, it's mostly just more &lt;c&gt;require&lt;/c&gt;s.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, the "load a file only once" logic with [doc://%INC] would apply to every [doc://require] call. I don't have enough time to test right now, but assuming that those files don't load any other modules, an ugly hack might be &lt;c&gt;{ package Foo; local %INC; require "..."; }&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;By the way, I took a look at your commit, and I noticed this logic:&lt;/p&gt;
+&lt;c&gt;
+eval { require 'sys/ioctl.ph' };
+$Tcl::pTk::_FE_unavailable = $@;
+...
+if ($Tcl::pTk::_FE_unavailable) {
+...
+&lt;/c&gt;
+&lt;p&gt;Be aware of [id://1153468] and that &lt;c&gt;$@&lt;/c&gt; may not be a true value after an [doc://eval] failure. The better pattern would be for example:&lt;/p&gt;
+&lt;c&gt;
+eval {
+    require 'sys/ioctl.ph';
+1 } or do {
+    $Tcl::pTk::_FE_unavailable = $@||'unknown error';
+};
+&lt;/c&gt;
+&lt;p&gt;because in this case &lt;c&gt;$Tcl::pTk::_FE_unavailable&lt;/c&gt; will always be a true value if an error occurs, even if &lt;c&gt;$@&lt;/c&gt; is not.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1230761</root_node>
+<parent_node field_name="parent_node">1230821</parent_node>
+<thread id="1230761">
+<node id="1230762"/>
+<node id="1230763"><node id="1230821"><node id="1230872"/>
+</node>
+</node>
+</thread></node>

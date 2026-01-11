@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116851" title="Converting Hashes to Objects" created="2020-05-17 09:13:05" updated="2020-05-17 09:13:05" _doctext_mode="strict"><type id="120">perlmeditation</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Inspiration whacked me in the head yesterday, and I realized that it was pretty easy to take an arbitrary hash reference and turn it into an object, so that instead of writing &lt;c&gt;$hash-&gt;{key}&lt;/c&gt; I can just write &lt;c&gt;$hash-&gt;key&lt;/c&gt;, saving two characters and giving me protection from typos. Enter [mod://Util::H2O]:&lt;/p&gt;
+&lt;c&gt;
+use Util::H2O;
+my $hash = h2o { foo =&gt; "bar", x =&gt; "y" }, qw/ more keys /;
+print $hash-&gt;foo, "\n";  # prints "bar"
+$hash-&gt;x("z");  # setter
+&lt;/c&gt;
+&lt;p&gt;Deeply nested structures can be converted too...&lt;/p&gt;
+&lt;c&gt;
+my $struct = { hello =&gt; { perl =&gt; { world =&gt; "yay" } } };
+h2o -recurse, $struct;
+print $struct-&gt;hello-&gt;perl-&gt;world, "\n";  # prints "yay"
+&lt;/c&gt;
+&lt;p&gt;The function [doc://bless]es its hashref argument into a new package, and returns that hashref as well. The hashrefs otherwise remain the same as before, so you can still use &lt;c&gt;$hash-&gt;{key}&lt;/c&gt; and so on if you like. The newly created package is cleaned up by default when the object is destroyed (configurable). These objects are of course a bit less performant than a regular hashref, but this wasn't intended for high-performance applications.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; As of the freshly-released v0.06, the &lt;c&gt;h2o&lt;/c&gt; function also locks the hash's keyset by default, to prevent typos when using the hash like a regular hashref. This can be disabled with the &lt;c&gt;-lock=&gt;0&lt;/c&gt; option. &lt;b&gt;/Update&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;I quickly realized I could do more with this, like add methods to these objects:&lt;/p&gt;
+&lt;c&gt;
+my $obj = h2o -meth, {
+	one =&gt; 123, two =&gt; 456,
+	sum =&gt; sub {
+		my $self = shift;
+		return $self-&gt;one + $self-&gt;two;
+	} };
+print $obj-&gt;sum, "\n";  # prints "579"
+&lt;/c&gt;
+&lt;p&gt;And I could even make it easy to create classes; the &lt;c&gt;-new&lt;/c&gt; option generates a constructor:&lt;/p&gt;
+&lt;c&gt;
+h2o -class=&gt;'Point', -new, -meth, {
+		angle =&gt; sub { my $self = shift; atan2($self-&gt;y, $self-&gt;x) },
+	}, qw/ x y /;
+my $one = Point-&gt;new(x=&gt;1, y=&gt;2);
+my $two = Point-&gt;new(x=&gt;3, y=&gt;4);
+$two-&gt;y(5);
+printf "%.4f\n", $two-&gt;angle;  # prints 1.0304
+&lt;/c&gt;
+&lt;p&gt;Yes, I realize that might be taking it a little bit too far, but it was easy to implement - plus, I figured this could possibly be useful for whipping up mock objects in tests. And yes, I'm aware similar tools exist &lt;c&gt;;-)&lt;/c&gt;&lt;/p&gt;</doctext>
+<thread id="11116851">
+<node id="11116852"><node id="11116853"><node id="11116854"><node id="11116856"/>
+</node>
+</node>
+<node id="11116890"/>
+</node>
+<node id="11116855"><node id="11116858"><node id="11116863"/>
+</node>
+</node>
+<node id="11116864"><node id="11116866"/>
+<node id="11116875"/>
+</node>
+<node id="11116886"><node id="11116887"/>
+</node>
+<node id="11116892"><node id="11116901"><node id="11116972"><node id="11116974"/>
+</node>
+</node>
+</node>
+<node id="11116937"><node id="11116938"/>
+</node>
+<node id="11116943"><node id="11116945"/>
+</node>
+<node id="11116960"><node id="11116966"/>
+</node>
+<node id="11116985"><node id="11117059"/>
+</node>
+</thread></node>

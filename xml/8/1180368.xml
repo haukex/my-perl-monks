@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1180368" title="Re: DBI and SQLite's .read feature (updated)" created="2017-01-26 03:53:31" updated="2017-01-26 03:53:31" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [aplonis],&lt;/p&gt;
+&lt;p&gt;It's possible to call &lt;c&gt;sqlite3&lt;/c&gt; via [doc://system]. However, I would strongly recommend that you do all of your &lt;c&gt;SELECT&lt;/c&gt;ing via DBI, because otherwise you're left parsing the output of the CLI tool. However, I have in the past done something similar to the following, you could change this to &lt;c&gt;.read&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+system('sqlite3', $DB_FILE, '.dump')==0
+    or die "sqlite3 failed, \$?=$?";
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Added the first sentence above; also I found this in the [mod://DBD::SQLite] docs:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;b&gt;Processing Multiple Statements At A Time&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;DBI's statement handle is not supposed to process multiple statements at a time. So if you pass a string that contains multiple statements (a dump) to a statement handle (via prepare or do), DBD::SQLite only processes the first statement, and discards the rest.&lt;/p&gt;
+&lt;p&gt;If you need to process multiple statements at a time, set a sqlite_allow_multiple_statements attribute of a database handle to true when you connect to a database, and do method takes care of the rest (since 1.30_01, and without creating DBI's statement handles internally since 1.47_01). If you do need to use prepare or prepare_cached (which I don't recommend in this case, because typically there's no placeholder nor reusable part in a dump), you can look at $sth-&amp;gt;{sqlite_unprepared_statements} to retrieve what's left, though it usually contains nothing but white spaces.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1180363</root_node>
+<parent_node field_name="parent_node">1180363</parent_node>
+<thread id="1180363">
+<node id="1180364"/>
+<node id="1180366"/>
+<node id="1180368"><node id="1180385"/>
+</node>
+<node id="1180371"><node id="1180372"><node id="1180380"/>
+</node>
+</node>
+<node id="1180373"/>
+</thread></node>

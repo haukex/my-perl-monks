@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1216372" title="Re: Array of Arrays: why is &quot;$VAR1-&gt;[0][1]&quot; and the like embedded within?" created="2018-06-11 04:40:39" updated="2018-06-11 04:40:39" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;As the others have said, it's because those array elements are referencing &lt;i&gt;the same&lt;/i&gt; data structure. A simplified version demonstrating this:&lt;/p&gt;
+&lt;c&gt;
+use Data::Dumper;
+my $aref = ['x','y'];
+my @a = ($aref, $aref);
+print Dumper(\@a);
+__END__
+$VAR1 = [
+          [
+            'x',
+            'y'
+          ],
+          $VAR1-&gt;[0]
+        ];
+&lt;/c&gt;
+&lt;p&gt;I hope it's clear that both elements of &lt;c&gt;@a&lt;/c&gt; are referring to the &lt;i&gt;same&lt;/i&gt; anonymous array, and that's what [doc://Data::Dumper] is trying to say with &lt;c&gt;$VAR1-&gt;[0]&lt;/c&gt;: "this element of the array is the same as the first element of the array reference &lt;c&gt;$VAR1&lt;/c&gt;".&lt;/p&gt;
+&lt;p&gt;Note: Unfortunately, the above syntax, when [doc://eval]ed, does &lt;i&gt;not&lt;/i&gt; produce the same data structure, because a data structure can't actually reference itself this way - remember that [doc://Data::Dumper] is a debugging tool. But if you need it, you can get [doc://Data::Dumper] to output something that can be [doc://eval]ed if you use its &lt;c&gt;Purity&lt;/c&gt; option:&lt;/p&gt;
+&lt;c&gt;
+use Data::Dumper;
+my $aref = ['x','y'];
+my @a = ($aref, $aref);
+$Data::Dumper::Purity=1;
+print Dumper(\@a);
+__END__
+$VAR1 = [
+          [
+            'x',
+            'y'
+          ],
+          []
+        ];
+$VAR1-&gt;[1] = $VAR1-&gt;[0];
+&lt;/c&gt;
+&lt;p&gt;This kind of data structure could maybe become an issue if you modify elements in the nested data: In the above example, if I modify &lt;c&gt;$a[0][0]&lt;/c&gt;, then &lt;c&gt;$a[1][0]&lt;/c&gt; will change too, since it's &lt;i&gt;the same&lt;/i&gt; anonymous array. But if the rest of the code in your program is only reading this data structure, not modifying it, you won't notice the difference in this regard (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; code that cares about whether two references are pointing to the same data structure might, like we're seeing here with &lt;c&gt;Dumper&lt;/c&gt;).&lt;/p&gt;
+&lt;p&gt;If you do need all elements of the nested data structure to be &lt;i&gt;different&lt;/i&gt;, one way to do that is to use something like [doc://Storable]'s &lt;c&gt;dclone&lt;/c&gt; to make a deep copy of the data structures. (There are other ways of course, especially if you know the structure of your input data, but this one has the advantage of being able to copy almost any nested data structure.)&lt;/p&gt;
+&lt;c&gt;
+use Data::Dumper;
+use Storable qw/dclone/;
+
+my @a = (1,2,3,4,6);
+$Data::Dumper::Indent=0;
+print Dumper(increment(increment(\@a))), "\n";
+
+sub increment{
+   my $d = shift;
+   my @b;
+   for my $i (1..$#$d){
+      my @a = @$d[$i-1..$i];
+      push @b, dclone \@a;
+   }
+   return \@b;
+}
+
+__END__
+
+$VAR1 = [[[1,2],[2,3]],[[2,3],[3,4]],[[3,4],[4,6]]];
+&lt;/c&gt;
+&lt;p&gt;BTW, I think [mod://Data::Dump] represents these data structures a bit more nicely (and, in a way that can be [doc://eval]ed back into Perl better, if need be):&lt;/p&gt;
+&lt;c&gt;
+use Data::Dump;
+my $aref = ['x','y'];
+my @a = ($aref, $aref);
+dd \@a;
+__END__
+do {
+  my $a = [["x", "y"], 'fix'];
+  $a-&gt;[1] = $a-&gt;[0];
+  $a;
+}
+&lt;/c&gt;
+&lt;p&gt;Also, if you want [doc://Data::Dumper] to &lt;i&gt;display&lt;/i&gt; these kinds of data structures as if there were no such references, you can use its &lt;c&gt;Deepcopy&lt;/c&gt; option:&lt;/p&gt;
+&lt;c&gt;
+use Data::Dumper;
+$Data::Dumper::Deepcopy = 1;
+$Data::Dumper::Indent = 0;
+my $aref = ['x','y'];
+my @a = ($aref, $aref);
+print Dumper(\@a), "\n";
+__END__
+$VAR1 = [['x','y'],['x','y']];
+&lt;/c&gt;
+&lt;p&gt;But remember this affects the output &lt;i&gt;only&lt;/i&gt;, the references haven't changed. This may lead to confusion if you change one element, and another element appears to "magically" change.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1216360</root_node>
+<parent_node field_name="parent_node">1216360</parent_node>
+<thread id="1216360">
+<node id="1216364"><node id="1216365"><node id="1216366"><node id="1216367"><node id="1216397"/>
+</node>
+</node>
+<node id="1216396"/>
+</node>
+<node id="1216395"/>
+</node>
+<node id="1216372"><node id="1216399"/>
+</node>
+</thread></node>

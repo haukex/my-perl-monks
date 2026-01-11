@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1179523" title="Re: Cannot get Perl to replace a specific string in my textfile" created="2017-01-13 10:52:19" updated="2017-01-13 10:52:19" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [skasch],&lt;/p&gt;
+&lt;p&gt;Assuming that difference in the two strings pointed out in the [id://1179497|AM post] is just a copy/paste mistake and you meant to say "_A_domain_D_com" instead of "_A_albertbauer_D_com", the reason why your code isn't working as intended is &lt;b&gt;&lt;c&gt;\b&lt;/c&gt;&lt;/b&gt;. This matches the boundary between a word (&lt;c&gt;\w&lt;/c&gt;) and non-word (&lt;c&gt;\W&lt;/c&gt;) character. &lt;c&gt;\w&lt;/c&gt; is discussed in detail [doc://perlrecharclass#Word-characters|here], but to simplify, under ASCII (&lt;c&gt;/a&lt;/c&gt;) it's the set &lt;c&gt;[a-zA-Z0-9_]&lt;/c&gt;. Note how it includes letters, digits, and the underscore. Therefore, the string &lt;c&gt;user_A_domain_D_com_BCA&lt;/c&gt; contains no internal word bounaries, and the regex you are trying to match it against, &lt;c&gt;/\b_A_domain_D_com_\b/&lt;/c&gt; will not match that string.&lt;/p&gt;
+&lt;p&gt;Having said that, note how in your solution you're having to maintain two sets of regexes: &lt;c&gt;%replacements&lt;/c&gt; and the long &lt;c&gt;if&lt;/c&gt; statement. While it's possible this is necessary due to the structure of the data (I don't know all your requirements), note that there are ways to express the same stuff without the repetition. Here's one way to dynamically build the regex:&lt;/p&gt;
+&lt;c&gt;
+my %replacements = (...);
+my $regex = join '|',
+	map {quotemeta}
+	sort { length $b &lt;=&gt; length $a }
+	keys %replacements;
+$regex = qr/$regex/;
+# ...
+while ( &lt;$readFile&gt; ) {
+	s/($regex)/$replacements{$1}/g;
+	print $_;
+}
+&lt;/c&gt;
+&lt;p&gt;And if you need to check for the presence of the strings "Calendar" / "Contacts" / "Users", as in your example code, you can combine the multiple regexes into something like &lt;c&gt;/:(?:Calendar|Contacts)(?=\/)|(?&lt;=\"\/)Users/&lt;/c&gt; &lt;small&gt;&lt;i&gt;(Update: shortened regex slightly)&lt;/i&gt;&lt;/small&gt;.&lt;/p&gt;
+&lt;p&gt;One more thing: [id://1156540] Note how the &lt;c&gt;%replacements&lt;/c&gt; key &lt;c&gt;user.name@domain.com&lt;/c&gt; contains two dots - in your current solution, those will match any character. Only if you say &lt;c&gt;\Q$key\E&lt;/c&gt; (or manually use [doc://quotemeta] as I showed above) will the dots and any other special regex chars be matched literally.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1179494</root_node>
+<parent_node field_name="parent_node">1179494</parent_node>
+<thread id="1179494">
+<node id="1179496"><node id="1179524"/>
+</node>
+<node id="1179497"/>
+<node id="1179523"/>
+<node id="1179574"/>
+</thread></node>

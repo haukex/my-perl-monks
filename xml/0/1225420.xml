@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1225420" title="Re: webperl: fetching data over the web" created="2018-11-08 10:15:50" updated="2018-11-08 10:15:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;&lt;strike&gt;You're right that it has to do with async execution - the fetch happens in the background, and you can't just check &lt;c&gt;req.status&lt;/c&gt; right away - you need to register an event listener (I think you were probably just lucky in your tests that the requests returned very quickly &lt;c&gt;:-)&lt;/c&gt;&amp;nbsp;).&lt;/strike&gt; (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; Oops, see replies!) See e.g. [https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest|Using XMLHttpRequest].&lt;/p&gt;
+&lt;p&gt;&lt;del&gt;The second&lt;/del&gt;&lt;ins&gt;Another&lt;/ins&gt; issue &lt;ins&gt;to be aware of&lt;/ins&gt; is that scripts in the "[https://webperl.zero-g.net/democode/|democode]" page are run in a &lt;c&gt;perl&lt;/c&gt; that gets ended when the main script is done; no async stuff is possible. For that, you need to either embed &lt;c&gt;&lt;script&gt;&lt;/c&gt; tags in an HTML file, or use the "Run &amp;amp; Persist" mode of the [https://webperl.zero-g.net/using.html#the-mini-ide|"mini IDE"]. In the latter, the following works for me. (Note there are also other events on [https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest|XMLHttpRequest], such as &lt;c&gt;error&lt;/c&gt; and &lt;c&gt;abort&lt;/c&gt;.)&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use 5.028;
+use WebPerl qw/js js_new/;
+
+my $xhr = js_new('XMLHttpRequest');
+$xhr-&gt;addEventListener("load", sub {
+	say "Loaded! &lt;&lt;&lt;&lt;&lt;",$xhr-&gt;{responseText},"&gt;&gt;&gt;&gt;&gt;\n";
+});
+$xhr-&gt;open("GET", "http://localhost:5000/");
+say "Sending...\n";
+$xhr-&gt;send();
+&lt;/c&gt;
+&lt;p&gt;Actually, I am currently working on a subclass of [mod://Future::HTTP] that I'd like to include by default in WebPerl to make HTTP requests easier out of the box, hopefully I can release it soon.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1225419</root_node>
+<parent_node field_name="parent_node">1225419</parent_node>
+<thread id="1225419">
+<node id="1225420"><node id="1225424"><node id="1225426"><node id="1225429"/>
+</node>
+</node>
+</node>
+<node id="1225422"><node id="1225423"><node id="1225425"><node id="1225430"><node id="1225439"><node id="1225440"><node id="1225443"><node id="1225444"/>
+</node>
+<node id="1225445"><node id="1225447"/>
+</node>
+<node id="1225540"><node id="1225567"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1225491"/>
+</thread></node>

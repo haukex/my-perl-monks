@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100133" title="Re^3: processing file content as string vs array" created="2019-05-16 21:13:45" updated="2019-05-16 21:13:45" _doctext_mode="lenient"><type id="11">note</type>
+<author id="732669">Marshall</author>
+<doctext field_name="doctext">Good points.&lt;p&gt;
+
+&lt;i&gt;but what if the final line is supposed to be processed by some other piece of code? You can't just ungetc a readline...&lt;/i&gt;&lt;p&gt;
+You are correct in that there is no "unget" or "un-read" for a line that has already been read. There are various ways of handling that sort of situation. In the case where the process() sub needs to deal with the first line, I pass that first line as a parameter to the process() sub.  Usually these sorts of things are record oriented.... something has to be done with a record that was read and the process() sub's job is to assemble a complete record. If you want the code that "does something to the record" to be in the main driver, then just have process() return a structure or modify a struct ref that is passed in. I don't see any issue here at all. Can't use Perl's single action "if" in that situation, but I don't see any issue.&lt;p&gt;
+
+&lt;i&gt;Also, note that your process_record is making use of a global variable, DATA, and three of your four examples will throw an undef warning if the end-of-file is reached before the closing line is seen.&lt;/i&gt;&lt;p&gt;
+As far as global DATA goes, I have no issue with that for a short (&lt;1 page) piece of code. In a larger program I would pass a lexical file handle to the sub.  Note: You can make a lexical file handle out of DATA like this: &lt;c&gt;my $fh = *DATA; print while (&lt;fh&gt;);&lt;/c&gt; Pass $fh to the sub.  &lt;p&gt;
+
+In almost all of the situations I deal with, throwing an error for a malformed file input is the correct behaviour. This is a usually good thing and the input file needs to be fixed.  It is rare for me to throw away or silently ignore a malformed record. Of course "seldom" does not mean "never".  It could certainly be argued that the program that doesn't throw an undef warning is in error!  Of course the programs I demoed can be modified to have either behaviour.&lt;p&gt;
+
+&lt;i&gt;I think a state machine type approach would be better, because it is more flexible and can handle the above cases specially, if needed.&lt;/i&gt;&lt;p&gt;
+I guess we disagree. I don't see any case for "more flexible".  However, having said that, there is no real quibble on my part with having a state variable approach. Using a sub() to keep track of the "inside record" state is very clean. I actually think the Perl flip-flop operator is very cool. No problem with that either! When I use it, I have to go to [Grandfather]'s classic post and look at the various start/end regex situations.&lt;p&gt;
+
+I often have to write "one-off" programs to convert wierd file formats. I will attach such a program that I wrote a few days ago.  For such a thing, efficiency doesn't matter, "general purpose" doesn't matter - I will never see a file like this again.  My job was to convert this file as part of a larger project. This is not "perfect" but it did its job.&lt;p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dump qw(pp);
+use Data::Dumper;
+$|=1;
+
+while (my $line = &lt;DATA&gt;)
+{
+   process_record ($line) if $line =~ /^&lt;CALL/;
+}
+
+sub process_record
+{
+   my $line = shift;
+   chomp $line; 
+   my $data = $line;
+   
+   while ( $line = &lt;DATA&gt;)
+   {
+      last if $line =~ /^&lt;EOR/;
+      chomp $line;
+      $data .= $line;
+   }
+   
+   my %hash = $data =~ /&lt;(\w+):\d+&gt;([\w. ]+)/g;
+   
+   print_Cabrillo_QSO (\%hash);   
+}
+
+sub print_Cabrillo_QSO
+{
+    my $Qref = shift;
+    
+    print "QSO:  ";
+    my $freq = $Qref-&gt;{FREQ}*100;
+    $freq = int $freq;
+    printf "%i6 ",$freq;
+    print "PH ";
+    my $date = $Qref-&gt;{QSO_DATE}; # 29180504 =&gt; 2019-05-04
+    $date =~ s/(\d\d\d\d)(\d\d)(\d\d)/$1-$2-$3/;
+    print "$date ";
+    my $time = $Qref-&gt;{TIME_ON};
+    $time =~ s/^(\d\d\d\d).*/$1/;
+    print "$time ";
+    print "W7RN          59 NVSTO ";
+    printf "%15s ",$Qref-&gt;{CALL};
+    print "59 ";
+    $Qref-&gt;{COMMENT}=~ s/ +//g; #assume next field is &lt;
+    print $Qref-&gt;{COMMENT};
+   # my $qth = $Qref-&gt;{QTH};
+    #$qth //= '';
+    #print $qth;
+    
+    print "\n";
+}
+
+=Prints
+QSO:  3816 PH 2019-05-05 0659 W7RN          59 NVSTO           W6LVW 59 CO
+QSO:  3816 PH 2019-05-05 0657 W7RN          59 NVSTO           K7CAR 59 UTWSH
+=cut
+
+
+__DATA__
+This ADIF file was created by MacLoggerDX
+&lt;PROGRAMID:11&gt;MacLoggerDX&lt;PROGRAMVERSION:4&gt;6.22&lt;ADIF_VER:5&gt;3.0.7
+&lt;EOH&gt;
+
+&lt;CALL:5&gt;W6LVW&lt;NAME:18&gt;Michael J Sparling&lt;QTH:8&gt;MONUMENT&lt;STATE:2&gt;CO&lt;CNTY:7&gt;El Paso&lt;QSO_DATE:8&gt;20190505&lt;TIME_ON:6&gt;065952&lt;QSO_DATE_OFF:8&gt;20190505&lt;TIME_OFF:6&gt;070013
+&lt;FREQ_RX:5&gt;3.816&lt;FREQ:5&gt;3.816&lt;BAND:3&gt;80M&lt;BAND_RX:3&gt;80M&lt;MODE:3&gt;SSB&lt;SUBMODE:3&gt;LSB
+&lt;TX_PWR:3&gt;100&lt;ANT_AZ:4&gt;86.8&lt;RST_SENT:2&gt;59&lt;RST_RCVD:2&gt;59
+&lt;DXCC:3&gt;291&lt;COUNTRY:13&gt;United States&lt;GRIDSQUARE:6&gt;DM79nb&lt;LAT:11&gt;N039 04.562&lt;LON:11&gt;W104 53.096
+&lt;MY_GRIDSQUARE:6&gt;DM09ei&lt;OPERATOR:4&gt;K5XI&lt;MY_RIG:11&gt;Elecraft K3&lt;COMMENT:2&gt;CO&lt;EMAIL:19&gt;mickspa@comcast.net
+&lt;EOR&gt;
+
+&lt;CALL:5&gt;K7CAR&lt;NAME:13&gt;Kent B O Sell&lt;QTH:9&gt;Hillsboro&lt;STATE:2&gt;OR&lt;CNTY:10&gt;Washington&lt;QSO_DATE:8&gt;20190505&lt;TIME_ON:6&gt;065758&lt;QSO_DATE_OFF:8&gt;20190505&lt;TIME_OFF:6&gt;065814
+&lt;FREQ_RX:5&gt;3.816&lt;FREQ:5&gt;3.816&lt;BAND:3&gt;80M&lt;BAND_RX:3&gt;80M&lt;MODE:3&gt;SSB&lt;SUBMODE:3&gt;LSB
+&lt;TX_PWR:3&gt;100&lt;ANT_AZ:3&gt;124&lt;RST_SENT:2&gt;59&lt;RST_RCVD:2&gt;59&lt;QSL_VIA:10&gt;eQSL, LoTW
+&lt;DXCC:3&gt;291&lt;COUNTRY:13&gt;United States&lt;GRIDSQUARE:6&gt;DM44ik&lt;LAT:11&gt;N034 25.359&lt;LON:11&gt;W111 19.869
+&lt;MY_GRIDSQUARE:6&gt;DM09ei&lt;OPERATOR:4&gt;K5XI&lt;MY_RIG:11&gt;Elecraft K3&lt;COMMENT:6&gt;UT WSH&lt;EMAIL:17&gt;kent@premier1.net
+&lt;EOR&gt;
+&lt;/c&gt;
+&lt;/readmore&gt;
+</doctext>
+<root_node field_name="root_node">1233681</root_node>
+<parent_node field_name="parent_node">11100041</parent_node>
+<thread id="1233681">
+<node id="1233684"><node id="1233687"><node id="1233688"/>
+<node id="1233689"/>
+<node id="1233732"/>
+</node>
+</node>
+<node id="1233692"><node id="1233694"><node id="1233695"><node id="1233698"/>
+</node>
+<node id="1233755"/>
+</node>
+</node>
+<node id="11100004"><node id="11100041"><node id="11100133"><node id="11100227"><node id="11100307"><node id="11100327"><node id="11100328"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

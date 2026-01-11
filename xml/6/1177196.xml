@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1177196" title="Re: Pattern matching and deriving the data between the &quot;(double quotes) in HTML tag" created="2016-12-05 00:23:47" updated="2016-12-05 00:23:47" _doctext_mode="lenient"><type id="11">note</type>
+<author id="281137">davido</author>
+<doctext field_name="doctext">&lt;p&gt;This looks like an XML element.  You might consider an XML parser too heavy for simply grabbing a couple of dates, but parsing libraries exist because XML is not as simple as people wish it were. Regular expressions, as powerful as they are, become the basis for fragile solutions when employed as simple XML parsers.
+&lt;/p&gt;
+&lt;p&gt;
+One problem is that regular expressions alone often are guided to examine a document as a string of characters, without considering its semantic meaning.  XML parsers deal with the semantics, and consequently facilitate more reliable parsing.
+&lt;/p&gt;
+&lt;p&gt;Here's an example using [mod://XML::Twig]:&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+use XML::Twig;
+
+my $xml = q{&lt;timeLimit endTime="2016-12-28T23:59:59" startTime="2016-09-30T00:00:00"&gt;&lt;/timeLimit&gt;};
+
+my $t = XML::Twig-&gt;new(
+    twig_handlers =&gt; {
+        timeLimit =&gt; sub {
+            my $atts = $_-&gt;atts;
+            foreach (keys %$atts) {
+                /^(?:start|end)Time$/ &amp;&amp; do {print "$_ =&gt; $atts-&gt;{$_}\n"; next;};
+            }
+        },
+    },
+);
+
+$t-&gt;parse($xml);
+&lt;/c&gt;
+&lt;p&gt;The output is:&lt;/p&gt;
+&lt;c&gt;
+endTime =&gt; 2016-12-28T23:59:59
+startTime =&gt; 2016-09-30T00:00:00
+&lt;/c&gt;
+&lt;p&gt;To get output similar to what your script seemed to be attempting, you might do it this way:&lt;/p&gt;
+&lt;c&gt;
+my @time_limits;
+
+my $t = XML::Twig-&gt;new(
+    twig_handlers =&gt; {
+        timeLimit =&gt; sub {
+            my $atts = $_-&gt;atts;
+            if (exists $atts-&gt;{startTime} &amp;&amp; exists $atts-&gt;{endTime}) {
+                push @time_limits, [$atts-&gt;{startTime}, $atts-&gt;{endTime}];
+            }
+        },
+    },
+);
+
+$t-&gt;parse($xml);
+print "[$_-&gt;[0]], [$_-&gt;[1]]\n" foreach @time_limits;
+&lt;/c&gt;
+&lt;p&gt;This produces the following:&lt;/p&gt;
+&lt;c&gt;
+[2016-09-30T00:00:00], [2016-12-28T23:59:59]
+&lt;/c&gt;
+&lt;p&gt;Notice how it's now not a double-quote issue at all; it's a matter of deciding on a way to drill down to the specific attributes you are interested in and keep track of their content. By side-stepping the regex parsing altogether, we've also avoided issues such as whitespace, newlines showing up mid-element, embedded quotes, and a number of other problems that eventually break regexp-based approaches to scraping XML.&lt;/p&gt;
+&lt;p&gt;If this is actually HTML as your title states, then use one of the many capable HTML parsers, also on CPAN.&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-281137"&gt;
+&lt;br /&gt;&lt;p&gt;Dave&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1177192</root_node>
+<parent_node field_name="parent_node">1177192</parent_node>
+<thread id="1177192">
+<node id="1177193"/>
+<node id="1177194"/>
+<node id="1177195"><node id="1177289"><node id="1177311"/>
+</node>
+</node>
+<node id="1177196"/>
+<node id="1177197"/>
+<node id="1177203"/>
+</thread></node>

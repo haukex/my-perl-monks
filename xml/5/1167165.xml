@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1167165" title="Re: RegExp error PLEASE HELP!" created="2016-07-04 15:56:44" updated="2016-07-04 15:56:44" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [harangzsolt33],&lt;/p&gt;
+&lt;p&gt;As others have pointed out, the first argument to [doc://split] is a regular expression. So to protect against special characters you could do something like &lt;c&gt;split(quotemeta($PATTERN), $STRING, 2);&lt;/c&gt; (see [doc://quotemeta]).&lt;/p&gt;
+&lt;p&gt;However, you don't need to parse URLs by hand, there's the [mod://URI] module:&lt;/p&gt;
+&lt;c&gt;
+my @urls = (
+	"file:///c:/html/testing.html?P1=123&amp;P2=%28%28BLAH+BLAH+BLAH%29%29",
+	"http://www.cnn.org/g/ar.shtml?c=123055&amp;s=%28Top+Stories+%29",
+	"http://www.something.com/example/article.php?P1=123&amp;P2=%28%28DATA+GOES+HERE%29%29%0D%0A#PGTOP",
+);
+use URI;
+for my $url (@urls) {
+	my $u = URI-&gt;new($url);
+	print "$u\n";
+	my @q = $u-&gt;query_form;
+	print "\t\"$_\"\n" for @q;
+}
+
+__END__
+
+file:///c:/html/testing.html?P1=123&amp;P2=%28%28BLAH+BLAH+BLAH%29%29
+	"P1"
+	"123"
+	"P2"
+	"((BLAH BLAH BLAH))"
+http://www.cnn.org/g/ar.shtml?c=123055&amp;s=%28Top+Stories+%29
+	"c"
+	"123055"
+	"s"
+	"(Top Stories )"
+http://www.something.com/example/article.php?P1=123&amp;P2=%28%28DATA+GOES+HERE%29%29%0D%0A#PGTOP
+	"P1"
+	"123"
+	"P2"
+	"((DATA GOES HERE))
+"
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1167160</root_node>
+<parent_node field_name="parent_node">1167160</parent_node>
+<thread id="1167160">
+<node id="1167163"/>
+<node id="1167164"/>
+<node id="1167165"><node id="1167167"><node id="1167177"/>
+</node>
+</node>
+<node id="1167170"/>
+<node id="1167176"/>
+<node id="1167182"/>
+<node id="1167226"/>
+</thread></node>

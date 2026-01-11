@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11130730" title="Re^5: Getting all subpaths from a path" created="2021-04-02 14:33:31" updated="2021-04-02 14:33:31" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Thanks for the clarification. It's important to know because it tells us the restrictions you're working under, i.e. why the "just use [man://rsync]/[man://tar]/[man://shar]" suggestions weren't what you were looking for (though they could still be used...). I think that's led to some confusion in this thread so far. Anyway:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;User gives me all the paths that he thinks are needed to run the tool inside the container (he gives a file that contains those paths and I read them into an array).&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;An important question here is: Would it be correct to assume you have access to the filesystem where these files are located? In other words, the Perl script, the input list of files, and the files themselves are all on the same machine? It's also still unclear to me if you want to mirror the files exactly as they are on the host machine, or if you want to manipulate the paths in any way?&lt;/p&gt;
+&lt;p&gt;Again, showing us with code is best, like [choroba] did in his &lt;c&gt;Makefile&lt;/c&gt;. You also still haven't shown what format this list provided by the user looks like. Note that these things will also significantly benefit you in your development since they are at the same time test cases. In other words, the IMHO better way to ask the questions you [id://11130638|asked] is if you add them as test cases to the [id://1177642|SSCCE] that [choroba] [id://11130636|provided].&lt;/p&gt;
+&lt;p&gt;I &lt;i&gt;think&lt;/i&gt; your main concern seems to be this: if a user provides a path that includes a symlink, you want to make sure not to copy only that symlink, but also the target it points to, so that the symlink doesn't end up broken in the container. Another thing that is still unclear to me in this context is whether it is acceptable to you to rewrite any of the symlinks you encounter - for example, potential solutions could rewrite all relative symlinks to absolute ones, or symlink chains could be reduced by simply creating copies.&lt;/p&gt;
+&lt;p&gt;Anyway, what I've done here is construct an example that I &lt;i&gt;think&lt;/i&gt; demonstrates what you're asking about.&lt;/p&gt;
+&lt;c&gt;
+mkdir -p /tmp/bar /tmp/foo
+touch /tmp/foo/one
+ln -fns /tmp/bar /tmp/foo/quz
+ln -fns ../foo/quz /tmp/bar/baz
+ln -fns ../foo/one /tmp/bar/two
+&lt;/c&gt;
+&lt;p&gt;In this example, the issue is that if the user were to specify &lt;i&gt;only&lt;/i&gt; the path &lt;c&gt;/tmp/bar/baz/two&lt;/c&gt;, then you need to figure out that &lt;i&gt;all&lt;/i&gt; of &lt;c&gt;/tmp/foo/{one,quz}&lt;/c&gt; and &lt;c&gt;/tmp/bar/{two,baz}&lt;/c&gt; need to be reconstructed in order for the link to be valid. Here's my attempt at solving this; the tricky bit turned out to be figuring out the dependency chain for the symlinks. &lt;c&gt;sub resolvesymlink&lt;/c&gt; is extracted from my script that I [id://11130533|linked you to] earlier (that includes [https://bitbucket.org/haukex/htools/src/a500e09/t/relink.t|tests] so I'm fairly confident it's decent code, keeping in mind what I [id://11130533|said]). Note how this essentially does what I said [id://11130714|above]: round-trip the commands needed to recreate a directory structure.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Disclaimer:&lt;/b&gt; I've so far only tested it for the above test case plus a few variations. Use at your own risk. Though I do hope it's a starting point.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use File::Basename 'fileparse';
+use Cwd qw/getcwd abs_path/;
+use File::Spec::Functions qw/ splitdir catdir catfile
+	file_name_is_absolute rel2abs rootdir /;
+use String::ShellQuote 'shell_quote';
+use Graph;
+
+my @queue = @ARGV;
+
+# gather all dirs, files, and links
+my (%dirs,%files,%links);
+while ( my $targ = shift @queue ) {
+	$targ = rel2abs($targ);
+	die "does not exist: $targ" unless -e $targ;
+	my @path = splitdir($targ);
+	for my $i (1..$#path) {
+		my $cur = catdir(@path[0..$i]);
+		if ( -l $cur ) {
+			defined( $links{$cur} = readlink($cur) )
+				or die "readlink $cur: $!";
+			# enqueue everything in the link chain
+			# (excluding already seen symlinks)
+			push @queue, grep { !$links{$_} } resolvesymlink($cur);
+		}
+		elsif ( -f $cur ) { $files{abs_path($cur)}++ }
+		elsif ( -d $cur ) { $dirs{abs_path($cur)}++ }
+		else { warn "skipping $cur, unknown type" }
+	}
+}
+
+# simplify the dirs to shorten the mkdir command
+my $dg = Graph-&gt;new;
+for my $d (keys %dirs) {
+	my @s = splitdir($d);
+	$dg-&gt;add_edge(catdir(@s[0..$_]), catdir(@s[0..$_-1])) for 1..$#s;
+}
+# exterior vertices = leaves of the tree
+my @dirs = grep { $_ ne rootdir } sort $dg-&gt;exterior_vertices;
+print "mkdir -p ",shell_quote(@dirs),"\n" if @dirs;
+
+# output the files
+print "touch ",shell_quote(sort keys %files),"\n" if %files;
+
+# determine dependencies in symlinks via a topological sort
+my $lg = Graph-&gt;new;
+for my $l (keys %links) {
+	my @res = resolvesymlink($l);
+	die "unexpected resolvesymlink($l)" if @res&lt;2;
+	$lg-&gt;add_edge($l, $res[1]); # link depends on its target
+	my @s = splitdir($l);
+	for my $i (reverse 1..$#s-1) {
+		my $d = catdir(@s[0..$i]);
+		# if there's a link in the paths, this link depends on it too
+		$lg-&gt;add_edge($l, $d) if defined $links{$d};
+	}
+}
+my @links = reverse grep { defined $links{$_} } $lg-&gt;topological_sort;
+print "ln -snf ",shell_quote($links{$_}, $_),"\n" for @links;
+
+# from https://bitbucket.org/haukex/htools/src/master/relink (a500e09)
+sub resolvesymlink {
+	my $file = shift;
+	die "not absolute: $file" unless file_name_is_absolute($file);
+	my @files;
+	my $origwd = getcwd;
+	my $rv = eval { # in eval so orig working dir is always restored
+		my $f = $file;
+		while (1) {
+			my $dir;
+			($f,$dir) = fileparse($f);
+			last unless -d $dir;
+			chdir $dir or die "chdir $dir: $!";
+			push @files, catfile(getcwd,$f);
+			last unless -l $f;
+			defined( $f = readlink $f )
+				or die "readlink $f (cwd=".getcwd."): $!";
+		}
+	1 }; my $err = $@||'unknown error';
+	chdir $origwd or die "chdir $origwd: $!";
+	die $err unless $rv;
+	return @files ? @files : ($file);
+}
+
+__END__
+
+mkdir -p /tmp/bar /tmp/foo
+touch /tmp/foo/one
+ln -snf /tmp/bar /tmp/foo/quz
+ln -snf ../foo/one /tmp/bar/two
+ln -snf ../foo/quz /tmp/bar/baz
+ln -snf ../foo/one /tmp/bar/baz/two
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Added the &lt;c&gt;if @dirs&lt;/c&gt; and &lt;c&gt;if %files&lt;/c&gt; to the two &lt;c&gt;print&lt;/c&gt;s.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11130527</root_node>
+<parent_node field_name="parent_node">11130725</parent_node>
+<thread id="11130527">
+<node id="11130528"/>
+<node id="11130533"><node id="11130546"><node id="11130632"><node id="11130634"><node id="11130635"/>
+</node>
+<node id="11130636"><node id="11130638"/>
+</node>
+<node id="11130637"><node id="11130639"/>
+</node>
+</node>
+<node id="11130714"><node id="11130725"><node id="11130730"><node id="11130731"><node id="11130760"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11130736"/>
+</thread></node>

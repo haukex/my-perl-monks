@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217874" title="Re^3: Trouble emailing zip file" created="2018-07-04 06:04:23" updated="2018-07-04 06:04:23" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Unfortunately I don't have any of the email modules installed&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Please see [id://693828] - if you can install Perl scripts on the server, then normally you can install modules there too, for example with [man://local::lib].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Could you please post an example on how to encode the zip file into the temp file?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I initially thought that [man://uuencode] could write its output to a file, but I was mistaken, it apparently always writes to its standard output. Since [id://1180578|I don't recommend &lt;c&gt;qx//&lt;/c&gt;], capturing its output is not trivial - see the section "Use a Piped &lt;c&gt;open&lt;/c&gt;" in that link for a way to do it with pure Perl. Alternatively, you don't have to shell out at all, since [doc://pack] supports uuencoding - with thanks to the [https://metacpan.org/source/BDFOY/PerlPowerTools-1.012/bin/uuencode|Perl Power Tools]:&lt;/p&gt;
+&lt;c&gt;
+# takes one argument, the filename to encode
+# returns one value, the filename of the temporary(!) output file
+use File::Temp qw/tempfile/;
+sub uuencode {
+	my ($infile) = @_;
+	my ($tfh,$tfn) = tempfile(UNLINK=&gt;1);
+	open my $fh, '&lt;:raw', $infile or die "$infile: $!";
+	printf $tfh "begin %03o %s\n",
+		((stat($infile))[2] &amp; 0666)||0644, $infile;
+	my $buf;
+	print $tfh pack 'u', $buf while read $fh, $buf, 45;
+	print $tfh "`\n", "end\n";
+	close $fh; close $tfh;
+	return $tfn;
+}
+&lt;/c&gt;
+&lt;p&gt;That will return the filename of the temporary file that you can then pass to [man://mailx] - but &lt;i&gt;make sure&lt;/i&gt; to use the "list" form of [doc://system], as I showed in the above link as well.&lt;/p&gt;
+&lt;p&gt;By the way, in your original post, you said &lt;c&gt;mailx -r $recipient1&lt;/c&gt; - but the &lt;c&gt;-r&lt;/c&gt; option sets the &lt;c&gt;From&lt;/c&gt; address. Are you sure you've got your [man://mailx] command right?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1217814</root_node>
+<parent_node field_name="parent_node">1217829</parent_node>
+<thread id="1217814">
+<node id="1217816"><node id="1217819"><node id="1217820"><node id="1217823"/>
+</node>
+<node id="1217821"><node id="1217830"/>
+</node>
+<node id="1217822"/>
+</node>
+</node>
+<node id="1217818"><node id="1217824"/>
+<node id="1217829"><node id="1217857"/>
+<node id="1217874"><node id="1217900"><node id="1217903"><node id="1217914"><node id="1217915"/>
+</node>
+</node>
+<node id="1217917"/>
+<node id="1218039"/>
+</node>
+</node>
+<node id="1217983"><node id="1217985"><node id="1217989"><node id="1217992"/>
+</node>
+</node>
+<node id="1217991"><node id="1218003"><node id="1218036"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1217977"/>
+</thread></node>

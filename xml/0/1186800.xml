@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1186800" title="Re^2: &quot;Cannot find location&quot;" created="2017-04-03 04:37:12" updated="2017-04-03 04:37:12" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Digest::MD5 ... does not include the functions I am using. ... If I remove the "::File" line I get this error...&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I didn't mean that [doc://Digest::MD5] is a drop-in replacement for [mod://Digest::MD5::File], sorry for the misunderstanding. You would need to use [doc://Digest::MD5] according to its documented API. ([mod://Digest::MD5::File] appears to monkey-patch its functions into [doc://Digest::MD5], which probably just adds to the confusion.) For example, here's how you might replace the module's &lt;c&gt;file_md5_hex&lt;/c&gt; function:&lt;/p&gt;
+&lt;c&gt;
+use Digest::MD5;
+sub file_md5_hex {
+	my $filename = shift;
+	open my $fh, '&lt;:raw', $filename
+		or die "open $filename: $!";
+	my $md5 = Digest::MD5-&gt;new-&gt;addfile($fh);
+	close $fh;
+	return $md5-&gt;hexdigest;
+}
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1186659</root_node>
+<parent_node field_name="parent_node">1186731</parent_node>
+<thread id="1186659">
+<node id="1186661"><node id="1186738"><node id="1186803"/>
+</node>
+</node>
+<node id="1186663"><node id="1186664"/>
+</node>
+<node id="1186665"/>
+<node id="1186668"><node id="1186680"/>
+</node>
+<node id="1186681"/>
+<node id="1186731"><node id="1186800"/>
+</node>
+<node id="1186741"/>
+</thread></node>

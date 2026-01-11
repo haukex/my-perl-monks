@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1202048" title="Re^2: Variable-Width Lookbehind (hacked via recursion)" created="2017-10-26 01:04:16" updated="2017-10-26 01:04:16" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Excellent point, thank you for spotting that! I can confirm that the &lt;c&gt;(?= )&lt;/c&gt; around &lt;c&gt;(?&lt;lookback&gt; )&lt;/c&gt; can be removed in all cases in the root node (since &lt;c&gt;(?&lt;= )&lt;/c&gt; is already zero-width). Makes the regexes even shorter! :-)&lt;/p&gt;
+&lt;p&gt;It's probably a vestige from the negative case like [id://1201959|here] or in the following, where the &lt;c&gt;(?! (?&lt;lookback&gt; ... ) )&lt;/c&gt; is needed*.&lt;/p&gt;
+&lt;c&gt;
+# Match any /\d./ that is *not* preceded by an /a/
+
+my $re5 = qr{
+	(?! (?&lt;lookback&gt;
+		(?&lt;=
+			a
+		|
+			(?=(?&amp;lookback)) .
+		)
+	) )
+	(?&lt;target&gt; \d . )
+}msx;
+my $re5_short = qr
+	/(?!((?&lt;= a |(?=(?-1)).))) (\d.) /sx;
+
+for my $regex ($re5,$re5_short) {
+	unlike "fo",        $regex;
+	unlike "x5",        $regex;
+	unlike "ab5 x4",    $regex;
+	  like "5ab",       $regex;
+	  like "x5 ab5",    $regex;
+	  like "x5 ab5 x2", $regex;
+	my @results;
+	while ("x2 4x3a55aaa1" =~ /$regex/g)
+		{ push @results, $+{target} // $2 }
+	is_deeply \@results, ["2 ","4x","3a"];
+}
+&lt;/c&gt;
+&lt;p&gt;* &lt;i&gt;Update:&lt;/i&gt; Hmm, actually, it turns out this seems to work too... (although putting the exact explanation of why into words is eluding me at the moment...)&lt;/p&gt;
+&lt;c&gt;
+my $re5 = qr{
+	(?&lt;lookback&gt;
+		(?&lt;!
+			a
+		|
+			(?!(?&amp;lookback)) .
+		)
+	)
+	(?&lt;target&gt; \d . )
+}msx;
+my $re5_short = qr
+	/((?&lt;! a |(?!(?-1)).)) (\d.) /sx;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1201976</root_node>
+<parent_node field_name="parent_node">1202033</parent_node>
+<thread id="1201976">
+<node id="1202033"><node id="1202048"><node id="1202346"/>
+</node>
+</node>
+</thread></node>

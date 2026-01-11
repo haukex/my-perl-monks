@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1221175" title="Re: Another date question" created="2018-08-27 06:28:15" updated="2018-08-27 06:28:15" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I think most of you would agree that the cal command output is correct.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That depends... [https://en.wikipedia.org/wiki/ISO_week_date#First_week|Wikipedia] says that the ISO week number 1 "has 4 January in it." So it appears to me that your output of the [man://cal] command does not correspond to that definition, and in fact &lt;c&gt;cal&lt;/c&gt; (or rather, &lt;c&gt;ncal&lt;/c&gt;, since my &lt;c&gt;cal&lt;/c&gt; doesn't have &lt;c&gt;-w&lt;/c&gt;) on my system outputs something different:&lt;/p&gt;
+&lt;c&gt;
+$ ncal -w 1 2016
+    Januar 2016       
+Mo     4 11 18 25   
+Di     5 12 19 26   
+Mi     6 13 20 27   
+Do     7 14 21 28   
+Fr  1  8 15 22 29   
+Sa  2  9 16 23 30   
+So  3 10 17 24 31   
+   53  1  2  3  4   
+&lt;/c&gt;
+&lt;p&gt;Is your &lt;c&gt;cal&lt;/c&gt;'s &lt;c&gt;-w&lt;/c&gt; option perhaps giving you the "week of month"? ([mod://DateTime]'s &lt;c&gt;-&gt;week_of_month&lt;/c&gt;, [id://1201207|see also])&lt;/p&gt;
+&lt;p&gt;So [mod://DateTime]'s output for &lt;c&gt;-&gt;week_number&lt;/c&gt; seems to match the ISO definition:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime;
+
+my $dt = DateTime-&gt;new(year=&gt;2015,month=&gt;12,day=&gt;30);
+for (1..10) {
+	print $dt-&gt;ymd, " week ",$dt-&gt;week_number,"\n";
+	$dt-&gt;add(days=&gt;1);
+}
+
+__END__
+
+2015-12-30 week 53
+2015-12-31 week 53
+2016-01-01 week 53
+2016-01-02 week 53
+2016-01-03 week 53
+2016-01-04 week 1
+2016-01-05 week 1
+2016-01-06 week 1
+2016-01-07 week 1
+2016-01-08 week 1
+&lt;/c&gt;
+&lt;p&gt;If you have a different definition of "week number" from those two (week of month, or ISO week), you'll have to define that clearly, and then there's probably a way to do some DateTime math to derive that week number.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1221170</root_node>
+<parent_node field_name="parent_node">1221170</parent_node>
+<thread id="1221170">
+<node id="1221175"/>
+<node id="1221176"/>
+<node id="1221182"><node id="1221189"><node id="1221195"/>
+</node>
+</node>
+<node id="1221184"/>
+</thread></node>

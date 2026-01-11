@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1184423" title="SSH and qx" created="2017-03-13 09:55:44" updated="2017-03-13 09:55:44" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1183826">cbeckley</author>
+<doctext field_name="doctext">&lt;p&gt;
+I'm using qx to ssh several admin commands on remote servers.  I know I should be using Net::SSH, but the machines involved are legacy.  And by legacy, I mean so ancient that we can't install, update, or patch either the OS or anything else.
+&lt;/p&gt;
+&lt;p&gt;
+I really appreciate any time you can spare to sanity check this script.  It's currently running and getting the job done, but if you could let me know if I'm doing anything dangerous or if there's a better and/or more stable way of doing it, that would be wonderful.
+&lt;/p&gt;
+
+&lt;p&gt;
+&lt;blockquote&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+use Data::Dumper;
+use File::Basename qw(basename);
+#use Net::OpenSSH;
+
+sub ops_do_ssh_qx {
+   my ($cmd) = @_;
+
+   $cmd-&gt;{ssh_cmd} = 'ssh ' .  $cmd-&gt;{user} . '\@' . $cmd-&gt;{host} . ' \'' . $cmd-&gt;{command} . '\'' . ' 2&gt;/dev/null';
+
+   $cmd-&gt;{output} = qx($cmd-&gt;{ssh_cmd});
+   if ( defined $cmd-&gt;{output} ) {
+      $cmd-&gt;{cmd_ret_code} = $?;
+      chomp $cmd-&gt;{output};
+   }
+   else {
+      ($cmd-&gt;{ssh_ret_code}, $cmd-&gt;{ssh_ret_msg}) = (0 + $!, '' . $!);
+   }
+
+   return $cmd;
+}
+
+my $state = {
+   progname =&gt; basename($0),
+   status =&gt; 'success'
+};
+
+my @commands = (
+   { name =&gt; 'command_name1',
+     user =&gt; 'user1',
+     host =&gt; 'server1.foo.com',
+     command =&gt; 'rsync_command yadda yadda'
+   },
+   { name =&gt; 'command_name2',
+     user =&gt; 'user2',
+     host =&gt; 'server2.foo.com',
+     command =&gt; 'rsync_command yadda yadda'
+   }
+);
+
+for my $cmd (@commands) {
+   if ($state-&gt;{status} eq 'success') {
+      my $cmd_status = ops_do_ssh_qx($cmd);
+      if ( (!defined $cmd_status-&gt;{cmd_ret_code}) or ($cmd_status-&gt;{cmd_ret_code} != 0) ) {
+         $state-&gt;{status} = 'failure';
+         $state-&gt;{stack_trace} = $cmd_status;
+      }
+   }
+}
+
+if ($state-&gt;{status} ne 'success') {
+   $Data::Dumper::Varname = $state-&gt;{progname} . '_state_';
+   print Dumper($state);
+   exit 1;
+}
+&lt;/code&gt;
+&lt;/blockquote&gt;
+&lt;/p&gt;
+
+
+&lt;p&gt;
+Thanks,
+&lt;br&gt;cbeckley
+&lt;/p&gt;
+
+&lt;p&gt;
+&lt;b&gt;Update:&lt;/b&gt; I meant Net::OpenSSH rather than Net::SSH
+&lt;/p&gt;</doctext>
+<thread id="1184423">
+<node id="1184426"><node id="1184442"><node id="1184517"><node id="1184567"/>
+</node>
+</node>
+</node>
+<node id="1184433"><node id="1184447"/>
+</node>
+</thread></node>

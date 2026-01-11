@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203397" title="Re^3: Array dereference in foreach()" created="2017-11-14 11:20:23" updated="2017-11-14 11:20:23" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I think that the OPs problem is that an array-type variable, &lt;c&gt;@a&lt;/c&gt;, is being assigned an array reference, &lt;c&gt;$href&lt;/c&gt;.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sorry, but that's not the right way to look at it. &lt;c&gt;@a&lt;/c&gt; is not being assigned a reference, instead, the &lt;c&gt;@{...}&lt;/c&gt; &lt;b&gt;de&lt;/b&gt;references the array reference, and it can be used in place of any normal array ([doc://perlref]), so in effect &lt;c&gt;my @x = @{...}&lt;/c&gt; is like assigning an array to an array.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;In your third one-liner example, &lt;c&gt;$a&lt;/c&gt; plausibly could be undefined.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'm not sure what you mean, &lt;c&gt;$a&lt;/c&gt; is initially undefined in every example. Autovivification is what is causing both &lt;c&gt;$a&lt;/c&gt; to go from being uninitialized to holding a hashref (because it's being dereferenced as such with &lt;c&gt;-&gt;{...}&lt;/c&gt;) and &lt;c&gt;$a-&gt;{list}&lt;/c&gt; to come into existence as a hash entry with a value of &lt;c&gt;[]&lt;/c&gt; (empty array ref). The third example does not work because in &lt;c&gt;my @x = @{$a-&gt;{list}};&lt;/c&gt;, the &lt;c&gt;@{$a-&gt;{list}}&lt;/c&gt; is not in lvalue context. Personally, I think in this case the autovivification behavior is fairly consistent with DWIM:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;In &lt;c&gt;@x = @{$a-&gt;{list}}&lt;/c&gt;, I am asking Perl to access and dereference a reference, but there is no such reference there - the thing I expected to be there isn't, so Perl complains.&lt;/li&gt;
+&lt;li&gt;In &lt;c&gt;@{$a-&gt;{list}} = ()&lt;/c&gt;, I am explicitly telling Perl that I want to assign something to that reference and I want it to be an array reference, so it makes sense for that thing to come into existence.&lt;/li&gt;
+&lt;li&gt;The only "potentially surprising" thing here is the &lt;c&gt;foreach&lt;/c&gt; behavior, which I explained in the first reply.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Edit:&lt;/i&gt; Just moved a sentence so the order makes more sense.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203377</root_node>
+<parent_node field_name="parent_node">1203394</parent_node>
+<thread id="1203377">
+<node id="1203378"><node id="1203394"><node id="1203397"><node id="1203576"><node id="1203577"><node id="1203582"><node id="1203584"><node id="1203586"><node id="1203587"><node id="1203591"/>
+</node>
+</node>
+</node>
+<node id="1203585"/>
+</node>
+</node>
+<node id="1203583"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

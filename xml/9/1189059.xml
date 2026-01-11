@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1189059" title="Re: Array of variables" created="2017-04-27 12:08:01" updated="2017-04-27 12:08:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;From the documentation of [doc://perlsyn#Foreach-Loops]: "... the &lt;c&gt;foreach&lt;/c&gt; loop index variable is an implicit alias for each item in the list that you're looping over." Meaning you can simply assign back to the &lt;c&gt;$Date_Ref&lt;/c&gt; variable in order to assign to the element in the array. You can even modify the original variables by writing &lt;c&gt;for my $Date_Ref ($Map_Request_Date, ...) { ...&lt;/c&gt; &lt;small&gt;(&lt;i&gt;Update:&lt;/i&gt; It seems [choroba] has [id://1189058|made] the same point while I was typing.)&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;In the following, I've taken the liberty of writing the code the way I might have (see also [id://111088]), although I prefer using modules like [mod://DateTime] (plus [mod://DateTime::Format::Strptime]) for all my date/time handling needs, even if it seems like overkill sometimes. (&lt;i&gt;Update:&lt;/i&gt; Note that I kept your technique of adding a leading zero to &lt;c&gt;$Day&lt;/c&gt; instead of switching to [doc://sprintf] because I wanted to demonstrate using &lt;c&gt;if&lt;/c&gt; as a [doc://perlsyn#Statement-Modifiers|statement modifier], but if I were writing this from scratch I'd have used [doc://sprintf] instead.)&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dumper;
+
+my %Months = ( 'Jan' =&gt; '01',  'Feb' =&gt; '02',  'Mar' =&gt; '03', 'Apr' =&gt; '04', 
+	'May' =&gt; '05',  'Jun' =&gt; '06',  'Jul' =&gt; '07', 'Aug' =&gt; '08',
+	'Sep' =&gt; '09',  'Oct' =&gt; '10',  'Nov' =&gt; '11', 'Dec' =&gt; '12'  );
+
+my ($Date1,$Date2) = ('Jul  3 2016 10:45 UTC','Aug 12 2017 11:56 EST');
+
+my @Variables = ($Date1,$Date2);
+for my $Date_Ref (@Variables) {
+	my ($Month,$Day,$Year,$Time) = split ' ', $Date_Ref, 4;
+	$Day = "0$Day" if length($Day) == 1;
+	$Date_Ref = $Year."-".$Months{$Month}."-".$Day;
+}
+
+print Dumper \@Variables;
+
+__END__
+
+$VAR1 = [
+          '2016-07-03',
+          '2017-08-12'
+        ];
+&lt;/c&gt;
+&lt;p&gt;Note: &lt;c&gt;split ' ', ...&lt;/c&gt;, as opposed to &lt;c&gt;split / /, ...&lt;/c&gt; has a special behavior, see [doc://split]: "any leading whitespace in EXPR is removed before splitting occurs, and the PATTERN is instead treated as if it were &lt;c&gt;/\s+/&lt;/c&gt;; in particular, this means that &lt;i&gt;any&lt;/i&gt; contiguous whitespace (not just a single space character) is used as a separator.".&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1189054</root_node>
+<parent_node field_name="parent_node">1189054</parent_node>
+<thread id="1189054">
+<node id="1189056"><node id="1189060"><node id="1189061"/>
+</node>
+</node>
+<node id="1189057"/>
+<node id="1189058"><node id="1189062"/>
+<node id="1189068"/>
+<node id="1189072"/>
+</node>
+<node id="1189059"/>
+<node id="1189085"/>
+<node id="1189106"/>
+<node id="1189110"/>
+<node id="11139620"><node id="11139626"><node id="11139628"/>
+</node>
+<node id="11139629"><node id="11139630"><node id="11139644"><node id="11139648"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11138210" title="Re: Sorting numerials first and then numerials with alpha characters last" created="2021-10-29 09:31:24" updated="2021-10-29 09:31:24" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Though there are ways to do it in a single pass, I found it a bit easier to think about if one first splits the list out into two and then sorts them individually. Note I'm using [mod://Sort::Key::Natural] to sort the mixed values in a hopefully intuitive way (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; you may note I added the test case &lt;c&gt;"12c"&lt;/c&gt; to demonstrate the difference to a simple [doc://sort]).&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More;
+use List::Util qw/uniq/;
+use Sort::Key::Natural qw/natsort/;
+
+my @in  = ( "2bc", "1", "12c", "12", "21", "1", "1a", "2", "2", "2",
+	"2", "3", "35", "31", "2b", "4", "42", "5", "51", "2ac",
+	"52", "6", "7" );
+
+my @expect = ( "1", "2", "3", "4", "5", "6", "7", "12", "21", "31",
+	"35","42", "51", "52", "1a", "2ac", "2b", "2bc", "12c" );
+
+my (@nums, @mixed);
+/^\d+$/ and push @nums, $_ or push @mixed, $_ for @in;
+my @out = uniq(
+		sort( { $a &lt;=&gt; $b } @nums),
+		natsort(@mixed),
+	);
+
+is_deeply \@out, \@expect or diag explain \@out;
+
+done_testing;
+&lt;/c&gt;
+&lt;p&gt;As opposed to your [id://11137683|previous thread], these tags look much more like HTML/XML, so you [id://11116478|really should use an appropriate parser]!&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11138205</root_node>
+<parent_node field_name="parent_node">11138205</parent_node>
+<thread id="11138205">
+<node id="11138210"><node id="11138222"><node id="11138224"><node id="11138226"><node id="11138227"><node id="11138228"><node id="11138229"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11138211"><node id="11138232"/>
+</node>
+<node id="11138218"/>
+<node id="11138220"/>
+<node id="11138223"/>
+<node id="11138300"/>
+</thread></node>

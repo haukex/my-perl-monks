@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1185915" title="Re: How to code a complex AoH?" created="2017-03-25 11:55:41" updated="2017-03-25 11:55:41" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You've already got some answers to your issue - just note the issue with &lt;c&gt;\@points&lt;/c&gt; that I discussed [id://1185906|here], including that it's a good idea if you [id://111088].&lt;/p&gt;
+&lt;p&gt;Since it looks like you're parsing CSV, I'd recommend using a module for this, in particular [mod://Text::CSV]:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Text::CSV;
+
+my $csv = Text::CSV-&gt;new({binary=&gt;1, auto_diag=&gt;2});
+$csv-&gt;getline(\*DATA); # read and discard header
+my @candidates;
+while ( my $row = $csv-&gt;getline(\*DATA) ) {
+	my %student;
+	for my $key (qw/ id gender birthday status room seat version /) {
+		# remove the first elements of the arrayref
+		$student{$key} = shift @$row;
+	}
+	# all that's left in the arrayref is the points
+	$student{points} = $row;
+	push @candidates, \%student;
+}
+$csv-&gt;eof or $csv-&gt;error_diag;
+
+use Data::Dump;
+dd \@candidates;
+
+__DATA__
+ID,gender,birthdate,order,room,seat,version,points,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+277710814533,f,01/02/1993,m,sr_3,A11,A, 1,1,1,1,0,1,1,1,.5,1,1,1,0,1,.5,1,1,1,0,1,.5,1,1,0,1,1,1,1,1,1,1,0,0,1,0,1,.5,1,1,1,1,.5,0,1,1,1,0,1,1,1,1,1,0,1,1,1,.5,1,1,1
+755310765962,f,31/07/1992 00:00,v,aula,C11,C,1,.5,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,.5,1,0,.5,1,0,1,.5,0,.5,0,1,0,0,.5,1,1,0,.5,1,1,.5,.5,1,.5,.5,1,1,1,.5,.5
+394610513538,m,20/10/1992 00:00,m,sr_3,E13,E,1,1,0,.5,1,1,1,1,1,1,1,.5,1,1,.5,.5,1,1,1,.5,.5,1,1,1,1,0,0,.5,1,1,.5,.5,.5,.5,0,1,0,.5,0,0,1,0,1,.5,0,1,0,0,.5,1,0,1,1,0,.5,.5,.5,.5,.5,.5
+&lt;/c&gt;
+&lt;p&gt;Note that &lt;c&gt;DATA&lt;/c&gt; is a special filehandle that refers to the &lt;c&gt;__DATA__&lt;/c&gt; section at the end of the script, but you can use any other filehandle here, like &lt;c&gt;FH&lt;/c&gt; in your program. Although, it'd be better to switch to "lexical" filehandles, that is &lt;c&gt;open my $fh, '&lt;', $filename or die "open $filename: $!";&lt;/c&gt; (see [doc://open]).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1185891</root_node>
+<parent_node field_name="parent_node">1185891</parent_node>
+<thread id="1185891">
+<node id="1185893"><node id="1186519"/>
+</node>
+<node id="1185895"><node id="1185906"/>
+<node id="1185941"/>
+<node id="1186520"/>
+</node>
+<node id="1185915"><node id="1186507"/>
+</node>
+</thread></node>

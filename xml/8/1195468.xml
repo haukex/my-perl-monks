@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1195468" title="Re^5: perl and apache2 on ubuntu 17.04" created="2017-07-19 09:57:35" updated="2017-07-19 09:57:35" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1183663">jamroll</author>
+<doctext field_name="doctext">&lt;p&gt;i see.  i will read that Tom Christiansen doc...
+i like the prototyping, and i don't expect anyone to be maintaining my code...i literally am a one man band here.  besides, i'm 100% certain anyone who comes along to maintain my code...would start totally anew.  eg?&lt;/p&gt;
+
+this code just verifies user's email input is valid (of course, doesn't check if email address exists or not) - just confirms conformity
+&lt;code&gt;
+#!/usr/bin/perl
+
+# /var/www/html/verifyemail.pl
+
+# must have's!
+use strict;
+use warnings;
+use CGI::Carp qw(fatalsToBrowser);
+use URI::Escape;
+
+use lib "/var/www/html/Pm";
+
+use Bc_misc qw(get_param);
+use Bc_sql qw(sql_connect sql_execute sql_disconnect);
+
+my $e = uri_unescape(get_param("e"));
+$e =~ s/(\!|\#|\$|\%|\&amp;|\'|\*|\+|\-|\/|\=|\?|\^|\_|\`|\{|\||\}|\~)/\\$1/g;
+my $usable = 1; # start off assuming the email address is valid, even if it isn't
+
+my $DEBUG = 0;
+
+print "cache-control: no-cache, no-store\ncontent-type: text/plain\n\n";
+
+if ($e) {
+  my $db = sql_connect("ns.db");
+  my $sql = sql_execute($db, "select email from users", "verifyemail.pl"); # the last param appends to an error msg, if error (so i know what causes the error)
+  if ($sql) {
+    my @users = @$sql;
+    foreach my $userRef (@users) {
+      my %user = %$userRef;
+      if (uri_unescape($user{email}) =~ /^$e$/i) { $usable = 0; }
+    }
+  }
+  sql_disconnect($db);
+} else {
+  $usable = -1;
+}
+
+# now, check to make sure the email is actually valid
+if ($usable) {
+  # email addresses already in DB don't need verification...duh
+  # we're just gonna make sure there's only ONE @ symbol, and at least one dot
+  # first, let's split the address up at the @
+  my @addy = split(/\@/, $e);
+  # it should only be two pieces
+  if (@addy != 2) {
+    $usable = -2;
+  } else {
+    # okay, so it's got two bits.
+    # now check for double . and leading/trailing dots in both parts of addy
+    if ($addy[0] =~ /\.(\.)+/ or $addy[1] =~ /\.(\.)+/ or
+        $addy[0] =~ /^\./     or $addy[1] =~ /^\./ or
+        $addy[0] =~ /\.$/     or $addy[1] =~ /\.$/ or
+        $addy[1] !~ /\./) {
+      $usable = -3;
+    } else {
+      # now, we gotta make sure only valid characters
+      # are in both parts
+      # first, we'll start with the stuff before @
+      # and then work on the stuff after
+
+      # remove all valid characters from the email address.
+      # whatever's left over is invalid, unless it's blank!
+      # blank is GOOD
+      my $addy1 = $addy[0];
+      my $addy2 = $addy[1];
+      $addy1 =~ s/[a-z]//ig;
+      $addy1 =~ s/[0-9]//ig;
+
+      # remove `~!#$%^&amp;*-_=+/?{}'
+      $addy1 =~ s/\\\!|\\\#|\\\$|\\\%|\\\&amp;|\\\*|\\\+|\\\-|\\\/|\\\=|\\\?|\\\^|\\\_|\\\`|\\\{|\\\||\\\}|\\\~|\\'//g; # '  &lt;-- here to terminate the first quote!
+
+      $addy1 =~ s/\.//g;
+
+      # and now the stuff after @
+      $addy2 =~ s/[a-z]//ig;
+      $addy2 =~ s/[0-9]//ig;
+      $addy2 =~ s/\.//g;
+      $addy2 =~ s/-//g;
+
+      if ($addy1) { $usable = -4; }
+      if ($addy2) { $usable = -5; }
+    }
+  }
+}
+
+if ($DEBUG) {
+  print $usable;
+  print "\n$e";
+} else {
+  print $usable;
+}
+
+exit 1;
+&lt;/code&gt;
+
+and....what's meant by &lt;code&gt;will they be surprised at how their code gets parsed?&lt;/code&gt; - parsed?  I know what parsing is....but why would my code get parsed??</doctext>
+<root_node field_name="root_node">1195176</root_node>
+<parent_node field_name="parent_node">1195409</parent_node>
+<thread id="1195176">
+<node id="1195177"/>
+<node id="1195180"/>
+<node id="1195213"/>
+<node id="1195249"/>
+<node id="1195376"><node id="1195384"><node id="1195387"><node id="1195409"><node id="1195468"><node id="1195509"><node id="1223974"/>
+</node>
+<node id="1195839"/>
+</node>
+</node>
+</node>
+<node id="1195390"/>
+</node>
+<node id="1195391"><node id="1195392"/>
+</node>
+</node>
+</thread></node>

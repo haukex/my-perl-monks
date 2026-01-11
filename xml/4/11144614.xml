@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11144614" title="Heredoc Inconsistency: Bareword Filehandle vs Lexical Filehandle" created="2022-06-09 15:45:05" updated="2022-06-09 15:45:05" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="140424">roho</author>
+<doctext field_name="doctext">I have not used bareword filehandles since lexical filehandles were made available. While upgrading a Perl program from bareword filehandles to lexical filehandles I noticed an inconsistency using heredocs. Bareword filehandles in heredocs work fine with a space following the "&lt;&lt;", but lexical filehandles in heredocs generate an error with a space following the "&lt;&lt;".
+&lt;p&gt;
+Since bareword filehandles are due to be deprecated, this may not be a pressing issue. I'm posting this so that others who may run into the same situation do not have to spend the debugging time tracking down this inconsistency.
+&lt;p&gt;
+The following code shows the inconsistency:
+&lt;p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+my $HFILE;
+my $hfile = 'foo.txt';
+
+# GOOD
+#####################################################################
+# Bareword filehandle works with space following heredoc "&lt;&lt;".
+#####################################################################
+open(HFILE, '&gt;', $hfile) or die "Error opening help file $hfile: $!\n";
+print HFILE &lt;&lt; "EOT";
+Usage: foo.pl
+Options:
+--------
+-h          Display help information.
+EOT
+
+# BAD
+#####################################################################
+# Lexical filehandle does NOT work with space following heredoc "&lt;&lt;".
+#####################################################################
+open($HFILE, '&gt;', $hfile) or die "Error opening help file $hfile: $!\n";
+print $HFILE &lt;&lt; "EOT";
+Usage: foo.pl
+Options:
+--------
+-h          Display help information.
+EOT
+&lt;/code&gt;
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-140424"&gt;
+&lt;p&gt;
+"It's not how hard you work, it's how much you get done."
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="11144614">
+<node id="11144617"><node id="11144621"/>
+</node>
+</thread></node>

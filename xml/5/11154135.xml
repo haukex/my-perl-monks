@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11154135" title="Re: Writing my first module" created="2023-08-30 02:58:47" updated="2023-08-30 02:58:47" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;1. Do I need to put "use strict; use warnings;" at the top of my module?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, [id://111088] applies to modules as well. If you see modules not doing that, then likey they are very old and/or not following best practices (or in some modern cases, they may be [doc://use]ing a module that enables them automatically - one example would be [mod://Mojo::Base|&lt;c&gt;use Mojo::Base -strict;&lt;/c&gt;]).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;2. Should I start the perl module with #!/usr/bin/perl or is it okay to leave this off?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It's usually fine to leave it off. The shebang's primary use is when executing scripts from the shell on *NIX systems, or for CGI scripts, and since modules typically don't get executed directly, only [doc://use]d, the shebang isn't needed for that. (I did use to have a text editor that used the shebang to detect Perl scripts for its syntax highlighting, so a lot of my modules start with &lt;c&gt;#!perl&lt;/c&gt;, but that's usually not needed otherwise.)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;3. I think, I am going to write "use MyPackage;" in my perl program, and then myPackage.pm will be placed in my Perl's INC directory. Is this how it should be done?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Yes, that's the standard practice. [doc://require] executes at runtime, while [doc://use] executes at compile time, meaning that errors will be caught earlier, and also it calls the module's &lt;c&gt;sub import&lt;/c&gt; if it has one, so it's the standard way of loading modules. You may also want to look into [doc://Exporter] to provide the &lt;c&gt;import&lt;/c&gt; functionality for you.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;4. I've noticed that some modules have "our $VERSION = ..." but I start my module with "my $VERSION" Is that okay?&lt;br&gt;
+5. Btw what's the purpose of the $VERSION string? Is there a part of Perl that will try to access that value at some point during my program's execution? &lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;&lt;c&gt;our $VERSION&lt;/c&gt; is better, because some Perl utilities need access to the variable (like [doc://UNIVERSAL]'s &lt;c&gt;-&gt;VERSION&lt;/c&gt;), and some parse the &lt;c&gt;$VERSION&lt;/c&gt; out of modules (like the CPAN indexer, IIRC).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;6. What if my module's name conflicts with another module that exists out there?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The best thing would be to check the CPAN to avoid such conflicts entirely. But if it can't be avoided - one valid reason might be if you're monkey patching a module - and you don't plan on uploading your module to the CPAN, then the typical way to avoid conflicts on your local machine is to add a directory to [doc://@INC] where you install the modules, making sure that directory appears first in [doc://@INC].&lt;/p&gt;
+&lt;p&gt;I notice you wrote &lt;i&gt;"the INC directory"&lt;/i&gt; in several places; note there is more than one, and Perl searches them in order for modules, and you can add your own entries to [doc://@INC|the list] in several different ways, e.g. [doc://lib|&lt;c&gt;use lib&lt;/c&gt;] or the &lt;c&gt;PERL5LIB&lt;/c&gt; environment variable. And typically, you wouldn't manually place your module into Perl's standard [doc://@INC] directories, because that's the job of tools like [mod://cpanm], so instead you'd add your own directory to [doc://@INC] so that you can manually modify the contents of that directory without messing up your Perl installation by accident.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;7. What if my module tries to achieve the same result that another popular module does but mine goes about doing it very differently? How should I name my module?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That depends; if you plan to publish your code to the CPAN then I would recommend you ask for suggestions here by telling us what the modules are and how yours differs (both in functionality and in its API).&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;8. Is it important to upload a module to CPAN, or can I just put it on my website and host it there?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The advantage of the CPAN is that standard tools like [mod://cpanm] can be used to install modules from there, and as you said, that it is likely to be around for longer. But putting modules on the CPAN does require a bit more work, since you have to put them in a distribution, providing proper documentation, a test suite, a &lt;c&gt;Makefile.PL&lt;/c&gt;, and so on. You might want to look at [mod://module-starter] for that.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;9. When I open some pm files in the INC directory, I notice that a lot of them seem to have plain text mixed with program code. The text or documentation is preceded by something like "=head1 DESCRIPTION" and I am not sure what this is.&lt;br&gt;
+10. Is it's okay if I put my documentation on simple comment lines started with "#" instead of "=" ? &lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That's Plain Old Documentation (POD), and is described in [doc://perlpod] (plus [doc://perlpodstyle], [doc://perlmodstyle], and [doc://perlpodspec]). It's much better to use that instead of comments because the standard Perl tools like [doc://perldoc] will automatically turn that into the nicely-formatted documentation you get when you run &lt;c&gt;perldoc MyModule.pm&lt;/c&gt; and when you visit the CPAN website.&lt;/p&gt;
+&lt;p&gt;Here's all that applied to your example code:&lt;/p&gt;
+&lt;c&gt;
+package MyPackage;
+use warnings;
+use strict;
+use Exporter 'import';
+
+our @EXPORT_OK = qw/ myFunc /;
+
+our $VERSION = "1.00";
+
+=head1 myFunc()
+
+This function is just a test.
+
+=cut
+
+my $PRIVATE = 444;
+
+sub myFunc
+{
+  $PRIVATE++;
+  print "\nPackage MyPackage::myFunc(@_)\nPRIVATE = $PRIVATE\n";
+}
+
+1;
+&lt;/c&gt;
+&lt;p&gt;And an example main code, where one quick way you can tell Perl how to find the module is &lt;c&gt;perl -Ipath/to/package script.pl&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use MyPackage qw/myFunc/;
+
+myFunc();
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11154133</root_node>
+<parent_node field_name="parent_node">11154133</parent_node>
+<thread id="11154133">
+<node id="11154134"><node id="11154144"/>
+</node>
+<node id="11154135"><node id="11154143"><node id="11154149"/>
+<node id="11154152"/>
+<node id="11154157"><node id="11154160"/>
+</node>
+</node>
+<node id="11154166"/>
+</node>
+<node id="11154138"><node id="11154146"><node id="11154147"/>
+<node id="11154148"/>
+</node>
+</node>
+<node id="11154139"><node id="11154145"/>
+</node>
+<node id="11154142"/>
+<node id="11154175"/>
+</thread></node>

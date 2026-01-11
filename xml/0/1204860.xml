@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1204860" title="Re: Multiple patterns match in a big file and track the counts of each pattern matched" created="2017-12-04 08:18:53" updated="2017-12-04 08:18:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I'm a bit late to the party but I noticed this thread is still active. Here's my contribution, which is based on and very similar to [choroba]'s idea but using [doc://%+] instead of [doc://%-], and adding [siberia-man]'s suggestion for skipping lines of the file before the main loop. The idea of the following code is that since we're constructing the regex ourselves, we know that only one named capture group &lt;tt&gt;(?&amp;lt;m&lt;i&gt;N&lt;/i&gt;&amp;gt;...)&lt;/tt&gt; will match at a time, and so &lt;c&gt;keys %+&lt;/c&gt; should only ever return one value, from which we extract the digits &lt;i&gt;&lt;tt&gt;N&lt;/tt&gt;&lt;/i&gt;. As for why I sort the strings by length, see the tutorial [id://1179840]. Another thing to note is that if multiple patters could match on a single line, only the first one is matched; I'm not sure if that's acceptable in your case? It would also be possible to modify the code to find all matches on a single line with the [doc://perlretut#Global-matching|&lt;c&gt;/g&lt;/c&gt; modifier].&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my @pat_array = sort { length $b &lt;=&gt; length $a }
+	qw/ foo ba baz quzz /;
+my $InStartLineNumber = 2; # nr. of lines to skip
+
+my $i=0;
+my ($regex) = map {qr/$_/} join '|',
+	map { '(?&lt;m'.$i++.'&gt;'.quotemeta.')' }
+	@pat_array; # pre-sorted above
+my @match_count = (0) x @pat_array;
+
+&lt;DATA&gt; for 1..$InStartLineNumber;
+while (&lt;DATA&gt;) {
+	if ($_=~$regex) {
+		$match_count[ substr( (keys %+)[0], 1 ) ]++;
+	}
+}
+
+for my $i (0..$#pat_array) {
+	print $pat_array[$i],": ",$match_count[$i],"\n";
+}
+
+__DATA__
+Skip me foo
+Skip me bar
+Hello foo
+World
+bar
+foo bar
+baz
+foo
+quz
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+quzz: 0
+foo: 3
+baz: 1
+ba: 1
+&lt;/c&gt;
+&lt;p&gt;I haven't yet benchmarked this against a big file, but give it a try. The above code assumes that you need your output in &lt;c&gt;@match_count&lt;/c&gt; as you showed. If other data structures are acceptable, note the code can be simplified even more by using a single capture group and a hash, as follows. The set-up code and &lt;c&gt;__DATA__&lt;/c&gt; section is the same as the above.&lt;/p&gt;
+&lt;c&gt;
+my ($regex) = map {qr/($_)/} join '|', map {quotemeta} @pat_array;
+my %match_count;
+
+&lt;DATA&gt; for 1..$InStartLineNumber;
+while (&lt;DATA&gt;) {
+	if ($_=~$regex) {
+		$match_count{$1}++;
+	}
+}
+
+for my $k (sort keys %match_count) {
+	print $k,": ",$match_count{$k},"\n";
+}
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+ba: 1
+baz: 1
+foo: 3
+&lt;/c&gt;
+&lt;p&gt;One more thought: You haven't said why you need to skip lines in the file, but if the number of lines you're skipping is large, then of course that will take some time. If the amount of data you want to skip is somehow predictable, you could [doc://seek] ahead in the file, this would be much faster. For example, say you have already processed a set of lines from the beginning of the file, and now you want to process the rest of the file, then I would suggest that the code which processes the first part of the file should record where it stopped ([doc://tell]), so you can then [doc://seek] to that position.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1204414</root_node>
+<parent_node field_name="parent_node">1204414</parent_node>
+<thread id="1204414">
+<node id="1204418"><node id="1204419"/>
+</node>
+<node id="1204421"><node id="1204836"><node id="1204840"/>
+</node>
+</node>
+<node id="1204422"><node id="1204837"><node id="1204890"/>
+</node>
+</node>
+<node id="1204462"><node id="1204486"/>
+</node>
+<node id="1204523"/>
+<node id="1204860"/>
+</thread></node>

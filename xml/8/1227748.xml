@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227748" title="json Array with URI" created="2018-12-27 09:41:15" updated="2018-12-27 09:41:15" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1189588">IB2017</author>
+<doctext field_name="doctext">&lt;p&gt;I am a bit confused by the error I get when using &lt;code&gt;my $decoded_json = decode_json( $json_text );&lt;/code&gt;. I retrieve $json_text with:&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;EDIT&lt;/b&gt;&lt;/p&gt;
+&lt;code&gt;
+use strict;
+use warnings;
+use LWP::UserAgent;
+use Data::Dumper;
+use JSON::PP;
+use HTTP::Request::Common;
+
+my $query = "research";
+my $format = "";
+my $domain = "";
+my $language = "";
+	
+my $data = { query =&gt; $query, format =&gt; $format, domain =&gt; $domain, language =&gt; $language };
+
+my $url = 'MyDomain/cgi-bin/querySearchEngine.pl';
+my $ua  = LWP::UserAgent-&gt;new;
+my $request = POST($url, Content_Type=&gt;'application/json',
+	Content =&gt; encode_json($data) );
+my $response = $ua-&gt;request($request);
+	
+if ($response-&gt;is_success) {
+	my $json_text= $response-&gt;content;    
+	my $decoded_json = decode_json( $json_text );
+}
+&lt;/code&gt;
+&lt;p&gt;My response $json_text (an array with a list of URI) looks like this:&lt;/p&gt;
+&lt;code&gt;
+{"myData":["https://www.sante.de/fileadmin/user_upload/Stellenanzeige_Mitarbeiter_Research__Development.pdf","https://www.national-bank.de/fileadmin/user_upload/nationalbank/Vermoegensmanagement/Research/Kapitalmarkt_Studien/Kapitalmarktmonitor_Dezember_2018.pdf","https://www.acxit.com/en/wp-content/uploads/2018/12/CAREERS_Stellenanzeige_WS_Research_Deal_Generation_20181211.pdf","https://www.s-a.uni-muenchen.de/studierende/jobboerse/jobangebote/aktuelle/20181221_44.pdf","https://www.dbresearch.de/PROD/RPS_DE-PROD/PROD0000000000459596/Deutscher_H%C3%A4user-_und_Wohnungsmarkt_2018.pdf","https://www.bayernlb.de/internet/media/de/ir/downloads_1/bayernlb_research/multiasset_produkte/Perspektiven.pdf","https://www.borders-in-motion.de/documents/12991/347234/Flyer_Research_Factory_WS18-19.pdf/2baa6987-219a-4cbb-8ab0-da36754f1282","https://deka.de/site/dekade_privatkunden_site/get/documents/dekade/Publikationen/2018/Volkswirtschaft/Aktuell/20181220_VA_USA_Zinsentscheid.pdf","https://www.dmtm.com/medienverwaltung/medien/181218_Research_Engineer_Website.pdf","https://www.ewi.research-scenarios.de/cms/wp-content/uploads/2018/08/Czock_CV_de_20181214.pdf"]}
+&lt;/code&gt;
+&lt;p&gt;Server side &lt;b&gt;EDIT&lt;/b&gt;&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use CGI qw(:standard);
+use JSON;
+use utf8;
+use LWP::UserAgent;
+use HTTP::Request::Common;
+use Data::Dumper;
+
+my $q = CGI-&gt;new();
+print $q-&gt;header;
+my $data = $q-&gt;param('POSTDATA');
+$data = decode_json($data) if $data;
+
+my $query = $data-&gt;{'query'};
+my $format = $data-&gt;{'format'};
+my $domain = $data-&gt;{'domain'};
+my $language = $data-&gt;{'language'};
+
+my @UriCollected;
+
+print "Content-type: application/json;\n\n";
+
+#performing crawling here and collecting uri in @UriCollected
+print objToJson( { myData =&gt; \@UriCollected } );
+&lt;/code&gt;
+&lt;p&gt;Error is:&lt;/p&gt;
+&lt;code&gt;
+malformed JSON string, neither array, object, number, string or atom, at character offset 0 (before "Content-type: applic...") at
+&lt;/code&gt;
+&lt;p&gt;Error line &lt;code&gt;my $decoded_json = decode_json( $json_text );&lt;/code&gt;&lt;/p&gt;&lt;p&gt; I use a similar way to exchange information in many cgi scripts with no problems. So I must be doing a very stupid error here... but I do not understand where...&lt;/p&gt;</doctext>
+<thread id="1227748">
+<node id="1227750"/>
+<node id="1227751"/>
+<node id="1227752"><node id="1227753"><node id="1227755"/>
+</node>
+<node id="1227756"><node id="1227760"><node id="1227763"/>
+</node>
+</node>
+</node>
+</thread></node>

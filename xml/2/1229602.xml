@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1229602" title="Re^2: Fastest way to sort a list of integers into 0,1,2,3,-3,-2,-1" created="2019-02-08 04:12:07" updated="2019-02-08 04:12:07" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I am not sure how to precisely measure its speed in Perl.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;As [Corion] [id://1229456|said], you can use [doc://Benchmark] as I showed in the root node, and I also think that the built-in [doc://sort] will always be faster. In fact, roughly 19 times faster:&lt;/p&gt;
+&lt;c&gt;
+           Rate custom  qsort   sort
+custom  10697/s     --   -83%   -95%
+qsort   62127/s   481%     --   -70%
+sort   209474/s  1858%   237%     --
+&lt;/c&gt;
+&lt;p&gt;Where &lt;c&gt;qsort&lt;/c&gt; is from [mod://List::MoreUtils].&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Benchmark 'cmpthese';
+use List::Util 'shuffle';
+# to run tests first: $ DO_CHECK=1 perl sort.pl &amp;&amp; perl sort.pl
+use constant DO_CHECK =&gt; !!$ENV{DO_CHECK};
+use if DO_CHECK, 'Data::Compare', qw/Compare/;
+
+srand 123;
+my @tests = ( # first item here will be used in benchmark by default
+	[ [shuffle -52,-50..50,52,0], [-52,-50..-1,0,0..50,52], 'random'],
+	[ [-52,-50..50,52,0], [-52,-50..-1,0,0..50,52], 'ordered' ],
+	[ [shuffle -50..-1,1..50], [-50..-1,1..50], 'no zero'],
+	[ [shuffle -102,-100..-1], [-102,-100..-1], 'negative only' ],
+	[ [shuffle -102,-100..0], [-102,-100..-1,0],
+		'negative only with zero'],
+	[ [shuffle 0..100,102],[0..100,102],'positive only with zero' ],
+	[ [shuffle 1..100,102],[1..100,102],'positive only without zero'],
+	[ [shuffle((-4..4)x10)], [ map {($_)x10} -4..4 ], 'many dupes' ],
+);
+
+for my $t (@tests) {
+	print "# ### Benchmarking with data set: $$t[2] ###\n";
+	cmpthese(DO_CHECK ? 1 : -2, {
+		sort =&gt; sub {
+			my @list = @{$$t[0]};
+			@list = sort {$a&lt;=&gt;$b} @list;
+			Compare(\@list,$$t[1]) or die "&lt;@list&gt;" if DO_CHECK;
+		},
+		qsort =&gt; sub {
+			use List::MoreUtils 'qsort';
+			my @list = @{$$t[0]};
+			qsort {$a&lt;=&gt;$b} @list;
+			Compare(\@list,$$t[1]) or die "&lt;@list&gt;" if DO_CHECK;
+		},
+		custom =&gt; sub {
+			my @list = @{$$t[0]};
+			QSort(@list);
+			Compare(\@list,$$t[1]) or die "&lt;@list&gt;" if DO_CHECK;
+		},
+	});
+}
+
+sub QSort {
+	@_ or return;
+	my $First = 0;
+	my $Last = @_ - 1;
+	my @QStack;
+	my $StackPtr = 0;
+	my $temp;
+	my $i;
+	my $j;
+	for (;;) {
+		do {
+			$temp = $_[int(($Last + $First) / 2)];
+			$i = $First;
+			$j = $Last;
+			do {
+				while ($_[$i] &lt; $temp) { $i++; }
+				while ($_[$j] &gt; $temp) { $j--; }
+				if ($i &lt; $j) { @_[$i, $j] = @_[$j, $i]; }
+				if ($i &lt;= $j) { $i++; $j--; }
+			} while ($i &lt;= $j);
+			if ($i &lt; $Last) {
+			$QStack[$StackPtr++] = $i;
+			$QStack[$StackPtr++] = $Last;
+			}
+			$Last = $j;
+		} while ($First &lt; $Last);
+		$StackPtr or return;
+		$Last = $QStack[--$StackPtr];
+		$First = $QStack[--$StackPtr];
+	}
+}
+
+__END__
+
+# ### Benchmarking with data set: random ###
+           Rate custom  qsort   sort
+custom  10697/s     --   -83%   -95%
+qsort   62127/s   481%     --   -70%
+sort   209474/s  1858%   237%     --
+# ### Benchmarking with data set: ordered ###
+           Rate custom  qsort   sort
+custom  16593/s     --   -72%   -96%
+qsort   59065/s   256%     --   -84%
+sort   376539/s  2169%   537%     --
+# ### Benchmarking with data set: no zero ###
+           Rate custom  qsort   sort
+custom  10808/s     --   -83%   -95%
+qsort   65159/s   503%     --   -69%
+sort   213372/s  1874%   227%     --
+# ### Benchmarking with data set: negative only ###
+           Rate custom  qsort   sort
+custom  11058/s     --   -82%   -95%
+qsort   62126/s   462%     --   -72%
+sort   219498/s  1885%   253%     --
+# ### Benchmarking with data set: negative only with zero ###
+           Rate custom  qsort   sort
+custom  11441/s     --   -82%   -95%
+qsort   63315/s   453%     --   -71%
+sort   217417/s  1800%   243%     --
+# ### Benchmarking with data set: positive only with zero ###
+           Rate custom  qsort   sort
+custom  10453/s     --   -83%   -95%
+qsort   60424/s   478%     --   -71%
+sort   212006/s  1928%   251%     --
+# ### Benchmarking with data set: positive only without zero ###
+           Rate custom  qsort   sort
+custom  10900/s     --   -83%   -95%
+qsort   65471/s   501%     --   -70%
+sort   216391/s  1885%   231%     --
+# ### Benchmarking with data set: many dupes ###
+           Rate custom  qsort   sort
+custom  13091/s     --   -89%   -95%
+qsort  123098/s   840%     --   -48%
+sort   238432/s  1721%    94%     --
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1229406</root_node>
+<parent_node field_name="parent_node">1229450</parent_node>
+<thread id="1229406">
+<node id="1229407"/>
+<node id="1229408"/>
+<node id="1229409"/>
+<node id="1229410"/>
+<node id="1229411"><node id="1229428"/>
+<node id="1229462"/>
+</node>
+<node id="1229415"><node id="1229418"/>
+<node id="1229422"/>
+<node id="1229429"/>
+<node id="1229451"><node id="1229457"><node id="1229495"/>
+</node>
+</node>
+</node>
+<node id="1229416"><node id="1229417"/>
+</node>
+<node id="1229419"><node id="1229420"><node id="1229437"/>
+<node id="1229463"><node id="1229465"/>
+</node>
+</node>
+<node id="1229458"/>
+</node>
+<node id="1229425"/>
+<node id="1229444"><node id="1229448"/>
+</node>
+<node id="1229446"><node id="1229447"><node id="1229512"/>
+</node>
+<node id="1229454"><node id="1229505"><node id="1229509"/>
+</node>
+</node>
+</node>
+<node id="1229450"><node id="1229456"/>
+<node id="1229602"/>
+</node>
+<node id="1229466"/>
+<node id="1229492"><node id="1229511"/>
+<node id="1229529"/>
+</node>
+<node id="1229493"><node id="1229496"/>
+</node>
+<node id="1229500"/>
+</thread></node>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198825" title="MongoDB Perl Wrapper" created="2017-09-07 03:57:15" updated="2017-09-07 03:57:15" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1198741">IruP</author>
+<doctext field_name="doctext">&lt;p&gt;I'm trying to create a custom "mongodb perl wrapper". I created the following perl module, which local on my machine runs. My questions to the are:
+&lt;br&gt;
+1. Would you create the module different?
+&lt;br&gt;
+2. Do you have improvements or adaptations to create the module better?
+&lt;br&gt;
+Code:&lt;/p&gt; 
+&lt;code&gt;
+package MyMongo;
+
+use strict;
+use Exporter;
+use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
+use MongoDB;
+
+$VERSION     = 1.00;
+@ISA         = qw(Exporter);
+@EXPORT      = qw();
+@EXPORT_OK   = qw();
+%EXPORT_TAGS = ( DEFAULT =&gt; [qw()],
+                 Both    =&gt; [qw()]);
+
+sub new {
+    my ($class, $args) = @_;
+    my $self = {
+        host     =&gt; $args-&gt;{host} || 'localhost',       
+        port     =&gt; $args-&gt;{port} || '27017',
+        database =&gt; $args-&gt;{database} || '',
+        connection =&gt; $class-&gt;_set_connection(),
+    };
+    return bless $self, $class;
+}
+
+sub _set_connection {
+    my $self = shift;
+    my $client = MongoDB-&gt;connect('mongodb://localhost');
+    return $client;
+}
+
+sub get_database_names {
+    # Lists all databases on the mongo server
+    my $self = shift;
+    return  $self-&gt;{connection}-&gt;database_names;
+}
+
+sub get_database {
+    # Returns a MongoDB::Database instance for database with the given $name
+    my ($self, $dbname) = @_;
+    return $self-&gt;{connection}-&gt;get_database($dbname);
+}
+
+sub authenticate {
+    my ($self, $args) = @_;
+    $self = {
+        dbname =&gt; $args-&gt;{dbname},
+        user =&gt; $args-&gt;{user},
+        password =&gt; $args-&gt;{password}
+    };
+    $self-&gt;{connection}-&gt;authenticate($self-&gt;{dbname}, $self-&gt;{user}, $self-&gt;{password});
+}
+1;
+&lt;/code&gt;</doctext>
+<thread id="1198825">
+<node id="1198829"/>
+<node id="1198832"/>
+<node id="1198872"/>
+<node id="1198984"><node id="1198990"/>
+</node>
+</thread></node>

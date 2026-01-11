@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1171763" title="Re: Relationship between timezone country and locale territory? (updated x3)" created="2016-09-14 15:07:26" updated="2016-09-14 15:07:26" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [Nocturnus],&lt;/p&gt;
+&lt;p&gt;Not an expert on locales, but I think the modules [mod://Locale::Codes::Language] and [mod://Locale::Codes::Country] might be helpful. I played with this a bit and here's my naive implementation which seems to work on my Linux box. See also [doc://perllocale#Finding-locales|Finding locales in perllocale].&lt;/p&gt;
+&lt;c&gt;
+use Locale::Codes::Language 'code2language';
+use Locale::Codes::Country 'code2country';
+for (`locale -a`) {
+	chomp;
+	my ($lang,$terr) = /^(\w+)_(\w+)\b/;
+	print "$_ - ",code2language($lang)//'(unknown)',
+		" - ",code2country($terr)//'(unknown)',"\n";
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; You said &lt;i&gt;"I don't think that (all) territory codes are valid country codes or vice versa"&lt;/i&gt;. The information I am finding is that locale names are typically (apparently this varies from system to system) made up of the ISO 639 (language) and ISO 3166-1 (country) codes, which is what the two aforementioned modules handle. Also, at least on Debian-based systems, the list of all supported locales (as opposed to just the ones installed reported by &lt;c&gt;locale -a&lt;/c&gt;) is in the file &lt;c&gt;/usr/share/i18n/SUPPORTED&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; I assume the list of &lt;i&gt;supported&lt;/i&gt; locales is not an exhaustive list of which languages are spoken in each country. You'll have to draw the line somewhere though, depending on what you want the user's choice to mean in your application (do you plan on supporting hundreds of locales?). Anyway, I revised the script based on the above:&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+use Locale::Codes::Language 'code2language';
+use Locale::Codes::Country 'code2country';
+
+# list of supported locales (at least on Debian-based systems)
+open my $fh, '&lt;', '/usr/share/i18n/SUPPORTED' or die $!;
+chomp( my @locales = grep {/\S/ &amp;&amp; !/^\s*#/} &lt;$fh&gt; );
+close $fh;
+
+# just a test of getting installed locales
+chomp( my @installed_locales = `locale -a` );
+push @locales, @installed_locales;
+
+my %locales;
+for (@locales) {
+	my ($lang,$terr) = /^([a-z]+)(?:_([a-z]+))?\b/i;
+	$terr = code2country($terr) ||"unknown";
+	$lang = code2language($lang)||"unknown";
+	push @{ $locales{$terr}{$lang} }, $_;
+}
+
+for my $terr (sort keys %locales) {
+	print "$terr\n";
+	for my $lang (sort keys %{ $locales{$terr} }) {
+		print "\t$lang: ",
+			join(" / ",@{ $locales{$terr}{$lang} }), "\n";
+	}
+}
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;&lt;b&gt;Update 3:&lt;/b&gt; Ok, last update for tonight ;-) You asked how to match the locale codes to timezone names, and the documentation for &lt;c&gt;DateTime::TimeZone-&gt;names_in_country&lt;/c&gt; says that it accepts two-letter ISO3166 codes, which is apparently the same code typically used in locale names, so you should be able to just match those up.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1171750</root_node>
+<parent_node field_name="parent_node">1171750</parent_node>
+<thread id="1171750">
+<node id="1171763"><node id="1171818"/>
+</node>
+<node id="1171783"><node id="1171820"><node id="1171864"><node id="1171870"/>
+</node>
+<node id="1171921"/>
+</node>
+</node>
+</thread></node>

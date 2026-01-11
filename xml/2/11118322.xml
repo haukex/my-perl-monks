@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118322" title="Re^5: Calculated position incorrect when using regex in text file that also contains binary info" created="2020-06-21 15:01:46" updated="2020-06-21 15:01:46" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I really have to learn to be more precise (and maybe concise too???) in my answers. Really sorry for that, I'm feeling a bit uncomfortable and embarrassed now...&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Don't worry! Even the pros sometimes need to be reminded of [id://1177642|SSCCE], sometimes because one becomes so deeply buried in a problem that one forgets that not everyone else is so into it as well :-)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Could you tell me how to attach a file to a message, if that's allowed?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Everything goes in &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags, individual ones for input, code, output, etc., so it's easier to download. As long as it's ASCII, it'll work fine, hence my suggestion for showing binary data via [man://hexdump|&lt;tt&gt;hexdump -C &lt;i&gt;file&lt;/i&gt;&lt;/tt&gt;] or [man://od|&lt;tt&gt;od -tx1c &lt;i&gt;file&lt;/i&gt;&lt;/tt&gt;] (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; or on Windows, I like [https://github.com/hollasch/hex|this little tool], see the "Releases" for a single-exe download). There are other potential formats too, like for example [mod://Data::Dump] will automatically use [doc://pack] or [doc://MIME::Base64] for binary data as necessary - &lt;i&gt;however&lt;/i&gt;, if you use this module to show binary data, make sure you've read the data from the file in "raw" format, that is, with [doc://open] mode &lt;c&gt;'&lt;:raw'&lt;/c&gt;, [doc://binmode]d the filehandle before reading, or an equivalent method like &lt;c&gt;slurp_raw&lt;/c&gt; from [mod://Path::Tiny].&lt;/p&gt;
+&lt;p&gt;So for example, you can use the following to take the binary file &lt;c&gt;$filename&lt;/c&gt; and output its contents in a Perl format, suitable for pasting into your SSCCE:&lt;/p&gt;
+&lt;c&gt;
+use Data::Dump qw/pp/;
+print 'my $data = ',pp(do { open my $fh, '&lt;:raw', $filename or die $!;
+	local $/; &lt;$fh&gt; }),";\n";
+&lt;/c&gt;
+&lt;p&gt;Sometimes, if the problem might be related to the UTF-8 encoding of the Perl source code itself (&lt;c&gt;use utf8;&lt;/c&gt;), the source can be posted inside &lt;c&gt;&lt;pre&gt;&lt;/c&gt; instead of &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags, &lt;i&gt;but&lt;/i&gt; only if all HTML special characters are escaped - one way is "&lt;c&gt;perl -MHTML::Entities -CSD -pe 'encode_entities $_' source.pl&lt;/c&gt;". Personally I try to avoid this, and use escapes like &lt;c&gt;"\N{U+0000}"&lt;/c&gt; or &lt;c&gt;"\N{CHARNAME}"&lt;/c&gt;, so the source code can stay in ASCII. And as [hippo] [id://11118319|said], use PerlMonks' &lt;c&gt;&lt;readmore&gt;&lt;/c&gt; tags if necessary, although you should try to keep things as short as possible - but still representative.&lt;/p&gt;
+&lt;p&gt;If the only way to demonstrate a problem is with a fairly large file, then sometimes it's possible to provide a short script that &lt;i&gt;generates&lt;/i&gt; such a file here, instead of the file itself (it shouldn't use [doc://rand] or similar though, for reproducibility). And in the very worst case, large files can be uploaded to third-party sites, although that's the least preferable method because it's not permanent.&lt;/p&gt;
+&lt;p&gt;In your case, I think you should be able to edit down your input file to something short enough to post here that still reproduces the issue, following the above guidelines. And as usual in such cases, this may even help you pinpoint the problem better.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11118037</root_node>
+<parent_node field_name="parent_node">11118318</parent_node>
+<thread id="11118037">
+<node id="11118039"><node id="11118163"><node id="11118174"><node id="11118213"/>
+</node>
+<node id="11118308"><node id="11118318"><node id="11118319"/>
+<node id="11118322"><node id="11118325"/>
+<node id="11118593"><node id="11118656"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11118042"><node id="11118166"><node id="11118181"/>
+<node id="11118249"/>
+</node>
+</node>
+<node id="11118048"><node id="11118165"/>
+</node>
+<node id="11118070"><node id="11118164"><node id="11118218"/>
+</node>
+</node>
+</thread></node>

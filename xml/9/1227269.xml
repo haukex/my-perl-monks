@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227269" title="Re: Print text on the same line after match" created="2018-12-14 16:00:29" updated="2018-12-14 16:00:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt; I have only been able to come up with the match regex, but I'm not sure how to get the text at the end.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Unless you're really concerned about performance, it doesn't hurt to split things up into two regexes to make things easier to think about, for example you could say:&lt;/p&gt;
+&lt;c&gt;
+($number) = /(\d+)~$/ if /INC\*XX\*/;
+&lt;/c&gt;
+&lt;p&gt;But in this case it's not too difficult to do it in a single regex, see below.&lt;/p&gt;
+&lt;p&gt;(&lt;i&gt;Update:&lt;/i&gt; To answer your question more basically, have a look at [doc://perlretut], where capturing groups are explained.)&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Inside my perl script I assume that I will use something like this&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It's almost never necessary to call &lt;c&gt;perl&lt;/c&gt; from inside a Perl script. The &lt;c&gt;while&lt;/c&gt; loop in the following code is the equivalent of a one-liner. I've added some checks to make sure that the number is found exactly once in the input file - I use [doc://defined] instead of a boolean check to differentiate between &lt;c&gt;0&lt;/c&gt;, which Perl would consider false, and &lt;c&gt;undef&lt;/c&gt;, which in this case means that no number was found. In the regex, I'm using a couple of techniques: &lt;c&gt;/x&lt;/c&gt; for readability, and a negative lookbehind &lt;c&gt;(?&lt;!\d)&lt;/c&gt; to make sure the thing before the number is not also a number - not really required in this case (it's a bit of paranoia), but it could become an important technique if your match happens to get more complex. You didn't say whether there could be any characters in the string between &lt;c&gt;"INC*XX*"&lt;/c&gt; and the number; if not, then the regex could be simplified to just &lt;c&gt;/INC\*XX\*(\d+)~$/&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dumper;
+$Data::Dumper::Useqq=1;
+
+my $filename = 'cr835.txt';
+open my $fh, '&lt;', $filename or die "$filename: $!";
+my $number;
+while (&lt;$fh&gt;) {
+	if ( m{ INC\*XX\* .* (?&lt;!\d) (\d+) ~ $ }x ) {
+		die "number matched twice" if defined $number;
+		$number = $1;
+	}
+}
+die "no number found" unless defined $number;
+close $fh;
+
+print Dumper($number);
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1227265</root_node>
+<parent_node field_name="parent_node">1227265</parent_node>
+<thread id="1227265">
+<node id="1227266"><node id="1227280"><node id="1227281"/>
+</node>
+</node>
+<node id="1227269"/>
+<node id="1227282"/>
+<node id="1227283"><node id="1227289"><node id="1227300"/>
+</node>
+</node>
+</thread></node>

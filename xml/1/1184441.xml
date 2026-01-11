@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1184441" title="Re^3: Returning an array in a specific way for csv" created="2017-03-13 12:18:35" updated="2017-03-13 12:18:35" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;That doesn't answer my question as to what the output for the input I showed should look like.&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+my @data;
+my %tags;
+my $cur_tag;
+while (&lt;DATA&gt;) {
+	chomp;
+	if (/^BEGIN_TAG/)
+		{ push @data, {} }
+	elsif ( my ($tag,$line) = /^(X\S+)\s+(.+)$/ ) {
+		$data[-1]{$tag} .= " NewRec " if exists $data[-1]{$tag};
+		$data[-1]{$tag} .= $line;
+		$tags{$tag}++;
+		$cur_tag = $tag;
+	}
+	elsif ($cur_tag) {
+		$data[-1]{$cur_tag} .= " NewLine ".$_;
+	}
+}
+
+use Text::CSV;
+my $csv = Text::CSV-&gt;new({binary=&gt;1,auto_diag=&gt;2,eol=&gt;"\n",
+	sep_char=&gt;";",always_quote=&gt;1,blank_is_undef=&gt;1});
+$csv-&gt;print(select, [sort keys %tags]);
+for my $row (@data) {
+	my @vals = map { $row-&gt;{$_} } sort keys %tags;
+	$csv-&gt;print(select, \@vals);
+}
+
+__DATA__
+BEGIN_TAG
+X1 a b
+X2 one two
+X4 foo
+X1 c d
+X3 test
+BEGIN_TAG
+X1 e f
+g h
+X2 three four
+X4 bar
+quz baz
+X2 five
+six
+&lt;/c&gt;
+&lt;p&gt;Output&lt;/p&gt;
+&lt;c&gt;
+"X1";"X2";"X3";"X4"
+"a b NewRec c d";"one two";"test";"foo"
+"e f NewLine g h";"three four NewRec five NewLine six";;"bar NewLine quz baz"
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1184431</root_node>
+<parent_node field_name="parent_node">1184438</parent_node>
+<thread id="1184431">
+<node id="1184434"><node id="1184438"><node id="1184441"><node id="1184521"/>
+</node>
+</node>
+</node>
+<node id="1184437"/>
+<node id="1184480"><node id="1184522"/>
+</node>
+</thread></node>

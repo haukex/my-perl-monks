@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11145977" title="Re^3: Immediately writing the results of search-and-replace" created="2022-08-05 16:20:47" updated="2022-08-05 16:20:47" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Thanks for providing additional context.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;if my script finds that a file contains the search string 'IP whitelist' on a given line, even if I confirm that I want to replace this with 'IP access list', it will then prompt me to replace just 'whitelist' with one of its various candidates. What I would expect to happen in that case is that the replacement of 'IP whitelist' with 'IP access list' happens before the search for the 'whitelist' key is initiated, preventing it from finding a match there.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;What is actually going on (and what I didn't realize on my first reading) is that you're reading a line from the input file into the &lt;c&gt;$target_string&lt;/c&gt; variable, but once that line is in that variable, it never changes, regardless of whether you edit the file it came from, since the line was copied from the file into memory. That's why the regex engine continues to find matches in &lt;c&gt;$target_string&lt;/c&gt; even after you've made the edit in the file.&lt;/p&gt;
+&lt;p&gt;The common pattern to use in Perl instead is to write an output file with the modified lines while reading the input file. Since in your code, you seem to want to do in-place edits of the file, see [id://11120515|my node on that here]. The slurp-then-spew approach is fairly easy if your files will always fit comfortably into memory; for line-by-line editing I might recommend my own module [mod://File::Replace] (for examples of line-by-line editing, see the module's documentation instead of the aforementioned node).&lt;/p&gt;
+&lt;p&gt;In other words, instead of your &lt;c&gt;edit_file&lt;/c&gt; calls, you'd do something like &lt;c&gt;$target_string =~ s/$search/$replace_choice/gi&lt;/c&gt;, and then build your output file by writing out each &lt;c&gt;$target_string&lt;/c&gt; line. However, there is still more trickyness here: If you have a line such as &lt;c&gt;"Edit the whitelist by pressing the edit whitelist button."&lt;/c&gt; or something like that, then because of the &lt;c&gt;/g&lt;/c&gt; modifier on that regex, you'd only be presented with the choice for what term to replace &lt;c&gt;"whilelist"&lt;/c&gt; with once, and that replacement would be carried out for the entire line. I kind of doubt that's a desired behavior for you.&lt;/p&gt;
+&lt;p&gt;BTW, are you sure your search terms will always be on one line, or could strings like &lt;c&gt;"whitelist entries"&lt;/c&gt; be split on two lines? That would also require an advanced approach.&lt;/p&gt;
+&lt;p&gt;These are examples for reasons why I asked for representative sample input along with the expected output for that input, and in this case representative also means that it should include all of such "interesting" cases. While I'd like to provide sample code or at least more specific advice on how to fix your code, without knowing the answers to questions like these, I run the risk of writing something that ends up not working on your actual data. Extensive test cases are very useful!&lt;/p&gt;
+&lt;p&gt;What I am currently thinking is that it should be possible to do something like &lt;c&gt;s{ ($search) }{ get_replacement($1) }xeg&lt;/c&gt; where &lt;c&gt;sub get_replacement&lt;/c&gt; does the prompting of the user and returns the replacement term (or the original string if the user doesn't want to replace). &lt;c&gt;$search&lt;/c&gt; can even be a regex of all of the search terms, built dynamically.&lt;/p&gt;
+&lt;p&gt;A few more things I noticed in your code:&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;Check your [doc://open]s for errors - [id://11102684]&lt;/li&gt;
+	&lt;li&gt;Even though you're using [doc://File::Find], for better modularity I would use regular argument passing to &lt;c&gt;sub search_and_replace&lt;/c&gt;, and write e.g. &lt;c&gt;wanted =&gt; sub { search_and_replace(\@table, $_) }&lt;/c&gt;&lt;/li&gt;
+	&lt;li&gt;It seems to me like your &lt;c&gt;@table&lt;/c&gt; could be replaced by a hash instead of all the duplicate key detection code you currently have. Keys in Perl hashes are unique, and such tables are easy to build with Perl's autovivification - if I treat a nonexistent hash entry as if it were an array reference, it will automagically become an array reference. Note that since you want to do case-insenstive matching I'm using [doc://fc], which is better than [doc://lc] in case of Unicode. Building a [doc://perldsc|hash of arrays] using your sample data:
+&lt;c&gt;
+use warnings;
+use strict;
+use feature qw/fc/;
+use Text::CSV_XS;
+use List::Util qw/uniq/;
+use Data::Dump;
+
+my $csvfile = $ARGV[0];
+my %table;
+open my $fh, '&lt;', $csvfile or die "$csvfile: $!";
+my $csv = Text::CSV_XS-&gt;new({binary=&gt;1, auto_diag=&gt;2});
+while ( my $row = $csv-&gt;getline($fh) ) {
+	push @{$table{ fc($row-&gt;[0]) }}, $row-&gt;[2];
+}
+$csv-&gt;eof or $csv-&gt;error_diag;
+close $fh;
+$_ = [uniq @$_] for values %table;
+
+dd \%table;
+
+__END__
+
+{
+  "ip whitelist"         =&gt; ["IP access list"],
+  "ip whitelist entries" =&gt; ["IP access list entries"],
+  "whitelist"            =&gt; ["allow", "access list", "access-list"],
+  "whitelist entries"    =&gt; ["access list entries"],
+  "your whitelist"       =&gt; ["your access list"],
+}
+&lt;/c&gt;&lt;/li&gt;
+	&lt;li&gt;As before, instead of looping over &lt;c&gt;@tables&lt;/c&gt; (or &lt;c&gt;%tables&lt;/c&gt;), [id://1179840|building a single regex] should be more efficient.&lt;/li&gt;
+	&lt;li&gt;You may wish to consider [id://1190704|modules for prompting] instead of rolling your own.&lt;/li&gt;
+	&lt;li&gt;(It's Friday evening here so I didn't scan the rest of your code in detail, so other Monks may have further tips.)&lt;/li&gt;
+&lt;/ul&gt;</doctext>
+<root_node field_name="root_node">11145971</root_node>
+<parent_node field_name="parent_node">11145975</parent_node>
+<thread id="11145971">
+<node id="11145972"><node id="11145975"><node id="11145976"/>
+<node id="11145977"><node id="11145978"><node id="11146003"><node id="11146017"/>
+</node>
+<node id="11149762"><node id="11149767"/>
+</node>
+</node>
+<node id="11146065"/>
+</node>
+<node id="11145979"><node id="11146066"/>
+</node>
+<node id="11146022"><node id="11146026"><node id="11146027"><node id="11146030"><node id="11146032"><node id="11146037"><node id="11146040"><node id="11146041"><node id="11146064"/>
+<node id="11146110"><node id="11146114"/>
+<node id="11146115"><node id="11146117"><node id="11146118"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11145980"><node id="11146067"/>
+</node>
+</thread></node>

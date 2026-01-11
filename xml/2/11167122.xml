@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11167122" title="Warn if STDIN pipe is missing or unwanted" created="2026-01-10 20:56:54" updated="2026-01-10 20:56:54" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;
+I have a script that can accept input from STDIN, but only if the proper
+option is specified (&lt;code&gt;-i -&lt;/code&gt;). I want the script to warn if STDIN is
+not specified but the script is being piped to (&lt;code&gt;echo test | ./script.pl&lt;/code&gt;)
+or if input is redirected (&lt;code&gt;./script &lt; input.txt&lt;/code&gt;). I also want it to warn in the opposite case, where STDIN is specified, but the script is not being piped or input is not redirected.
+&lt;/p&gt;
+
+&lt;p&gt;
+I can detect if STDIN is a pipe with &lt;code&gt;-p STDIN&lt;/code&gt; and if STDIN is
+redirected using &lt;code&gt;(stat STDIN)[0] != 0&lt;/code&gt;, but when the script is
+run under cron, STDIN is a pipe even if the command is not being piped to. The
+only case under cron where STDIN is not a pipe is if it is redirected input.
+And testing if STDIN is empty is inadequate, because it's possible that the
+writing command in a pipeline will not have any output. 
+&lt;/p&gt;
+&lt;p&gt;
+Is it possible to do what I'm attempting, or is a bad idea?
+&lt;/p&gt;
+
+&lt;readmore /&gt;
+&lt;code&gt;
+use Getopt::Long qw(:config bundling);
+GetOptions('input-file|i=s' =&gt; \my @file);
+
+my ($stdin_is_redir, $want_stdin) = !! (stat STDIN)[0];
+for my $arg (@file) {
+    my $fh;
+    if ('-' eq $arg) {
+        $want_stdin = 1;
+        # This is never triggered under cron.
+        warn "stdin isn't connected- missing pipe?\n" and next
+            unless -p STDIN or ($stdin_is_redir and ! -t STDIN);
+        $fh = *STDIN{IO};
+    }
+    else {
+        require Path::Tiny;
+        my $file = path($arg);
+        $fh = eval { $file-&gt;openr } or warn "$file: $@-&gt;{err}\n" and next;
+    }
+    # do_something($_) while &lt;$fh&gt;;
+}
+
+# This is always triggered under cron unless $stdin_is_redir
+warn "stdin is connected, missing `-i -`?\n"
+    if ! $want_stdin and ! -t STDIN and ($stdin_is_redir or -p STDIN);
+
+# Tested with:
+# ./script.pl
+# ./script.pl -i -
+# ./script.pl -i /dev/null
+# ./script.pl -i - &lt; /dev/null
+# echo test | ./script.pl
+# echo test | ./script.pl -i -
+&lt;/code&gt;</doctext>
+<reputation field_name="reputation">8</reputation>
+<thread id="11167122">
+<node id="11167124"><node id="11167127"><node id="11167131"><node id="11167132"><node id="11167135"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

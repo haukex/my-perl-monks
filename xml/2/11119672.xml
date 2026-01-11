@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11119672" title="Re^3: Split does not behave like a subroutine" created="2020-07-22 14:27:32" updated="2020-07-22 14:27:32" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;The word "list" is often used. Often it is not clear to which list it refers.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I don't normally think about lists in a way as complicated as you are here, but for initial learning that's probably fine (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; to clarify: it's fine as a learning method). Personally, I think about "lists" in Perl as there being only one kind of list, and it's a somewhat loose term that can refer to argument lists (which the subroutine ends up seeing as an array), list value constructors, and [doc://return] values. AFAICT, your description in your node seems to fit "lists" in general pretty well, so unfortunately I'm not quite sure what your specific question is here?&lt;/p&gt;
+&lt;c&gt;
+sub foo {
+	my @x = ("a", @_, "b"); # interpolation
+	return "x", @x, "y";    # interpolation
+}
+my @y = ("i", "j");
+my @z = foo("r", @y, "s");  # interpolation
+# @z is ("x", "a", "r", "i", "j", "s", "b", "y")
+
+# also: comma operator in scalar context via "return"
+my $x = foo("u", "v");
+# $x is "y" !!
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;This list contains references to the argument values.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Just to nitpick this, note that these are not "references" in the sense of hard references described in [doc://perlref]. They are more commonly referred to as [id://11119164|aliases].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;How or where can you find the restrictions on the arguments to split?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;There is a huge caveat to the "arguments to &lt;c&gt;sub&lt;/c&gt;s are flattened": [doc://perlsub#Prototypes], which I suggest you read up on. These change the way the function call is &lt;i&gt;parsed&lt;/i&gt;, and this can include forcing arguments that would normally be flattened / interpolated, like in your case &lt;c&gt;@_[1,2]&lt;/c&gt;, to in fact be taken as if they have an implicit [doc://scalar] on them.&lt;/p&gt;
+&lt;p&gt;Builtin functions can indeed sometimes be a little confusing in this respect, because they are parsed as with prototypes, even if the prototypes are never stated explicitly for many functions. In fact, the use of prototypes is otherwise generally discouraged because of their often confusing effects on how function calls are parsed, but in the Perl core I believe they have historic significance. The &lt;c&gt;$&lt;/c&gt;&lt;!--&lt;/c&gt;--&gt; prototype is probably the closest equivalent to what's going on with [doc://split]:&lt;/p&gt;
+&lt;c&gt;
+sub mysplit1        { ... }
+sub mysplit2 ($$;$) { ... }
+
+my @x = ("a:b:c", -1);
+ mysplit1(":", @x);  # arguments to mysplit1 are flattened
+ mysplit2(":", @x);  # parsed like mysplit2(":", scalar(@x)) !!!
+&amp;mysplit2(":", @x);  # prototype is ignored, arguments are flattened!
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Minor typo fixes.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11119478</root_node>
+<parent_node field_name="parent_node">11119656</parent_node>
+<thread id="11119478">
+<node id="11119479"><node id="11119512"><node id="11119521"/>
+<node id="11119527"><node id="11119621"><node id="11119641"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11119482"><node id="11119495"><node id="11119503"><node id="11119504"/>
+</node>
+</node>
+<node id="11119656"><node id="11119672"/>
+<node id="11119675"/>
+</node>
+</node>
+<node id="11119489"/>
+</thread></node>

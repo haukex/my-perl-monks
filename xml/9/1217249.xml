@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217249" title="Re^2: Using 'no warnings' to disable own debug warn(ing)s?" created="2018-06-22 15:06:35" updated="2018-06-22 15:06:35" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Well, my thinking was that since I've used [doc://warnings::register] in my modules and &lt;c&gt;warnings::warnif&lt;/c&gt; to create custom warnings, and that function is sensitive to &lt;c&gt;FATAL&lt;/c&gt; warnings, I thought it'd be sensitive to &lt;c&gt;no warnings&lt;/c&gt; as well, since AFAIK [doc://warn] just unconditionally warns (and AFAIK the only way to catch it is with [doc://%SIG]). And it does indeed work, but unfortunately it seems that it only works across package boundaries, I'm not entirely sure yet why, but from a quick look at the [https://perl5.git.perl.org/perl.git/blob/v5.26.2:/lib/warnings.pm#l344|source] it seems to be because it uses (parts of) [doc://Carp] under the hood, looking up the call stack.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+{
+	package Foo;
+	use warnings::register;
+	sub bar {
+		warnings::warnif("bar: $_[0]");
+	}
+}
+
+{
+	no warnings;
+	Foo::bar("inside");
+}
+Foo::bar("outside");
+
+use warnings::register;
+use Carp;
+{
+	no warnings;
+	warn "warn";
+	warnings::warn("warnings::warn");
+	carp "carp";
+	warnings::warnif("inside 2");
+}
+warnings::warnif("outside 2");
+
+__END__
+
+bar: outside at w.pl line 17.
+warn at w.pl line 23.
+warnings::warn at w.pl line 24.
+carp at w.pl line 25.
+&lt;/c&gt;
+&lt;p&gt;So at the moment my only two suggestions are to either go across package boundaries like I did in the above, or write your own debug function, which I tend to do. Just one example from [https://bitbucket.org/haukex/hgpstools/src/ef4d857c61cf6142efda6d347afcdb7f56c61ac1/SerialPort.pm#SerialPort.pm-116|here]:&lt;/p&gt;
+&lt;c&gt;
+sub _debug {
+	my ($self, $lvl, @out) = @_;
+	return if $self-&gt;{debug}&lt;$lvl || !@out;
+	print STDERR __PACKAGE__, " DEBUG: ", @out, "\n";
+}
+# ...
+$self-&gt;_debug(2, ...);
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1217230</root_node>
+<parent_node field_name="parent_node">1217241</parent_node>
+<thread id="1217230">
+<node id="1217241"><node id="1217249"/>
+</node>
+</thread></node>

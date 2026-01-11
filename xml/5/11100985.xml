@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100985" title="Cwd::abs_path or FindBin::Bin?" created="2019-06-05 02:34:24" updated="2019-06-05 02:34:24" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="253915">Skeeve</author>
+<doctext field_name="doctext">&lt;p&gt;
+What are you thoughts about using Cwd::abs_path() instead of $FindBin::Bin?
+&lt;/p&gt;
+&lt;h4&gt;Motivation&lt;/h4&gt;
+&lt;p&gt;
+In Mojolicious the auto-generated application script contains:
+&lt;/p&gt;
+&lt;code&gt;
+use FindBin;
+BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
+&lt;/code&gt;
+&lt;p&gt;
+The issue I have with this is: $FindBin::Bin will not resolve a symbolic link. This can be fine in cases where you want to use different libraries with the same script. Simply create a symbolic link of the script to the location where your different libraries are.
+&lt;/p&gt;
+&lt;p&gt;
+But in my situation I simply wanted to create a symbolic link of the startscript to /usr/local/bin. Of course this is doomed to fail as I will end up with "/usr/local/bin/../lib". But the libraries are in "/app/myapp/lib".
+&lt;/p&gt;
+&lt;p&gt;
+So I've changed it now to
+&lt;/p&gt;
+&lt;code&gt;
+use Cwd 'abs_path';
+BEGIN { unshift @INC, abs_path("$0/../../lib") }
+&lt;/code&gt;
+&lt;p&gt;
+Not only will it work in my situation, additionally the "relative part" gets resolved and the path added to @INC will be "/app/myapp/lib".
+&lt;/p&gt;
+&lt;h4&gt;Questions&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;
+Will it fail in any situation you can think of?
+&lt;/li&gt;
+&lt;li&gt;
+Is there any disadvantage in using Cwd instead of FindBin?
+&lt;/li&gt;
+&lt;li&gt;
+What are your thoughts on this matter?
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-253915"&gt;
+&lt;hr&gt;&lt;code&gt;s$$([},&amp;%#}/&amp;/]+}%&amp;{})*;#$&amp;&amp;s&amp;&amp;$^X.($'^"%]=\&amp;(|?*{%&lt;/code&gt;
+&lt;br&gt;&lt;font color="red"&gt;&lt;code&gt;+&lt;/code&gt;&lt;/font&gt;&lt;code&gt;.+=%;.#_}\&amp;"^"-+%*).}%:##%}={~=~:.")&amp;e&amp;&amp;s""`$''`"e&lt;/code&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="11100985">
+<node id="11100987"><node id="11100988"><node id="11100990"><node id="11100998"><node id="11100999"><node id="11101000"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11101122"/>
+</thread></node>

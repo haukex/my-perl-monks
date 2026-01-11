@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1222807" title="Prototypes required even after mocking a sub" created="2018-09-21 15:11:19" updated="2018-09-21 15:11:19" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="789891">stevieb</author>
+<doctext field_name="doctext">&lt;p&gt;So, I had a user of my [metamod://Mock::Sub] distribution file an [https://github.com/stevieb9/mock-sub/issues/27|issue report] where trying to mock a subroutine that has prototypes threw a warning. After monkeying about with it, I was able to quell said warnings, but it raised something else that I don't understand. I'll post some code and context, then get to what I'm hoping to have answered.&lt;/p&gt;
+
+&lt;p&gt;This is a runnable example based on the snippet that the user reported:&lt;/p&gt;
+
+&lt;c&gt;
+use warnings;
+use strict;
+
+use Mock::Sub;
+
+my $m = Mock::Sub-&gt;new;
+
+sub foo ($$$){
+    return undef;
+}
+
+my $foo_sub = $m-&gt;mock('foo');
+&lt;/c&gt;
+
+&lt;p&gt;Result:&lt;/p&gt;
+
+&lt;c&gt;
+Prototype mismatch: sub main::foo ($$$) vs none at /home/stevieb/perl5/perlbrew/perls/perl-5.26.1/lib/site_perl/5.26.1/Mock/Sub/Child.pm line 122.
+Prototype mismatch: sub main::foo: none vs ($$$) at /home/stevieb/perl5/perlbrew/perls/perl-5.26.1/lib/site_perl/5.26.1/Mock/Sub/Child.pm line 140.
+&lt;/c&gt;
+
+&lt;p&gt;All well and good. As a response to the user, I drummed up a test script with a signal handler to catch Prototype warnings, and just evaporate them (I'll incorporate this into the distribution directly if the reporter is satisfied, enabled only if requested explicitly):&lt;/p&gt;
+
+&lt;c&gt;
+use warnings;
+use strict;
+use feature 'say';
+
+use Mock::Sub;
+
+$SIG{__WARN__} = sub {say $_[0] if $_[0] !~ /Prototype/};
+
+my $m = Mock::Sub-&gt;new;
+
+sub foo ($$$){
+    say "hello!"; # doesn't get called
+    return undef;
+}
+
+my $foo = $m-&gt;mock('foo');
+$foo-&gt;return_value('test');
+
+say foo(1, 2, 3);
+say foo(1, 2, 3);
+say foo(1, 2, 3);
+
+say $foo-&gt;called_count;
+&lt;/c&gt;
+
+&lt;p&gt;That code does the right thing, insofar that the mocked sub is properly called and the prototype warnings are no longer displayed:&lt;/p&gt;
+
+&lt;c&gt;
+test
+test
+test
+3
+&lt;/c&gt;
+
+&lt;p&gt;Now, what I found while testing, is that initially, I called &lt;c&gt;foo()&lt;/c&gt; with no parameters, but the prototype stuck, resulting in fatality. Instead of &lt;c&gt;foo(1, 2, 3);&lt;/c&gt; (proper number of params), I had just &lt;c&gt;foo()&lt;/c&gt;, and...&lt;/p&gt;
+
+&lt;c&gt;
+Not enough arguments for main::foo at mock.pl line 21, near "()"
+Execution of mock.pl aborted due to compilation errors.
+&lt;/c&gt;
+
+&lt;p&gt;All I do when I mock out a sub, is overwrite the symbol table for it (actual code from the module):&lt;/p&gt;
+
+&lt;c&gt;
+    {
+        no strict 'refs';
+        no warnings 'redefine';
+ 
+        my $mock = $self;
+        weaken $mock;
+ 
+        *$sub = sub {
+ 
+            @{ $mock-&gt;{called_with} } = @_;
+            ++$mock-&gt;{called_count};
+ 
+            if ($mock-&gt;{side_effect}) {
+                if (wantarray){
+                    my @effect = $mock-&gt;{side_effect}-&gt;(@_);
+                    return @effect if @effect;
+                }
+                else {
+                    my $effect = $mock-&gt;{side_effect}-&gt;(@_);
+                    return $effect if defined $effect;
+                }
+            }
+ 
+            return if ! defined $mock-&gt;{return};
+ 
+            if ($mock-&gt;{return}[0] &amp;&amp; $mock-&gt;{return}[0] eq 'params'){
+                return ! wantarray ? $_[0] : @_;
+            }
+            else {
+                return ! wantarray &amp;&amp; @{ $mock-&gt;{return} } == 1
+                    ? $mock-&gt;{return}[0]
+                    : @{ $mock-&gt;{return} };
+            }
+        };
+    }
+&lt;/c&gt;
+
+&lt;p&gt;My question here, is if the symtab entry was overwritten correctly (ie. the mocked sub is most definitely called as desired), why does perl still think that it requires the prototyped parameters? Clearly, that information is stored somewhere, but where and how?&lt;/p&gt;
+
+&lt;p&gt;Can someone point me in a direction I can look down to understand this, or even explain it to me?&lt;/p&gt;
+
+&lt;p&gt;Thanks, as always,&lt;/p&gt;
+
+&lt;p&gt;-stevieb&lt;/p&gt;
+</doctext>
+<thread id="1222807">
+<node id="1222810"><node id="1222812"><node id="1222814"/>
+<node id="1222816"/>
+</node>
+</node>
+<node id="1222811"><node id="1222813"><node id="1222815"><node id="1222818"><node id="1222819"><node id="1222820"><node id="1222821"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1222933"/>
+</thread></node>

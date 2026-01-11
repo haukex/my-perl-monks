@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1199310" title="Re^3: Counting text with ligatures" created="2017-09-13 10:02:51" updated="2017-09-13 10:02:51" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;My initial understanding of the OP's question was that it has to do with Unicode being able to represent the same user-visible character in multiple different ways, like with combining characters. That is, the two strings &lt;c&gt;"\N{LATIN SMALL LETTER E WITH ACUTE}"&lt;/c&gt; and &lt;c&gt;"e\N{COMBINING ACUTE ACCENT}"&lt;/c&gt; report different [doc://length]s (1 resp. 2), even though on the screen they both look like "é" (one "grapheme"), and so users would expect a "length" of each string to be reported as 1. I may have misunderstood the OP's question though - if you have the strings &lt;c&gt;"ffi"&lt;/c&gt; vs. &lt;tt&gt;"&amp;#64259;"&lt;/tt&gt;, and you want to know if they have the same length and/or are equal, then perhaps what the OP is looking for is [wp://Unicode equivalence] ([http://unicode.org/faq/normalization.html|normalization]).&lt;/p&gt;
+&lt;c&gt;
+use Unicode::Normalize;
+use Data::Dump;
+dd NFD("\N{LATIN SMALL LETTER E WITH ACUTE}"),
+   NFD("e\N{COMBINING ACUTE ACCENT}");
+dd NFC("\N{LATIN SMALL LETTER E WITH ACUTE}"),
+   NFC("e\N{COMBINING ACUTE ACCENT}");
+dd NFKD("\N{LATIN SMALL LIGATURE FFI}");
+__END__
+("e\x{301}", "e\x{301}")
+("\xE9", "\xE9")
+"ffi"
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Updated&lt;/i&gt; example code to include the "é" examples.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1199301</root_node>
+<parent_node field_name="parent_node">1199306</parent_node>
+<thread id="1199301">
+<node id="1199304"><node id="1199306"><node id="1199310"/>
+</node>
+</node>
+<node id="1199308"><node id="1199311"/>
+</node>
+<node id="1199325"/>
+</thread></node>

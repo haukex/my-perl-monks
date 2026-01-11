@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1180952" title="Re: is there a way to ensure some code is the last thing that is run?" created="2017-02-03 05:50:55" updated="2017-02-03 05:50:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [morgon],&lt;/p&gt;
+&lt;p&gt;Based on your [id://1180914|example code], would it be correct to assume that the problem is happening because of circular references? If so, then tracking those down might be a good start, it should lead you to the culprit code.&lt;/p&gt;
+&lt;p&gt;I looked into tracking circular references, unfortunately it seems that [mod://Devel::LeakTrace] and [mod://Devel::LeakTrace::Fast] don't compile on modern versions of Perl/glib, [mod://Devel::Leak] seems a bit too low-level, and [mod://Devel::Cycle] requires you to specify which variables to check for cycles, which can be difficult if you have lots of objects being created. So far, the "best" thing I have found seems to be [mod://Devel::Leak::Object], which can override [doc://bless].&lt;/p&gt;
+&lt;p&gt;Also, I fiddled around with [mod://Devel::Gladiator] and &lt;c&gt;has_circular_ref&lt;/c&gt; from [mod://Data::Structure::Util], which seems to support more types of data than [mod://Devel::Cycle]. Note that it appears to be important to limit the inspection to those things that we're actually interested in, in this case objects - just blindly using it on everything that &lt;c&gt;walk_arena()&lt;/c&gt; returns leads to errors, and I even got some segfaults at one point. But the following seems to work, at least on your example code:&lt;/p&gt;
+&lt;c&gt;
+use Devel::Gladiator qw/walk_arena/;
+use Data::Structure::Util qw/has_circular_ref/;
+use Scalar::Util qw/blessed/;
+sub find_all_cycles {
+	my $all = walk_arena();
+	for my $sv (@$all) {
+		# limit search to objects
+		next unless blessed($sv);
+		warn "Has circular references: $sv\n"
+			if has_circular_ref($sv);
+	}
+	@$all=();
+}
+END { find_all_cycles() }
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1180911</root_node>
+<parent_node field_name="parent_node">1180911</parent_node>
+<thread id="1180911">
+<node id="1180913"><node id="1180914"><node id="1180938"/>
+<node id="1180940"><node id="1180968"/>
+</node>
+<node id="1180941"><node id="1180947"><node id="1180950"><node id="1180951"/>
+<node id="1180953"><node id="1181003"><node id="1181004"/>
+</node>
+</node>
+<node id="1181001"/>
+</node>
+</node>
+</node>
+<node id="1180954"><node id="1180959"><node id="1180966"><node id="1180971"/>
+</node>
+<node id="1180973"><node id="1180977"><node id="1180978"><node id="1180979"><node id="1180981"><node id="1180982"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1181086"/>
+</node>
+</node>
+</node>
+<node id="1181000"/>
+</node>
+</node>
+<node id="1180915"/>
+<node id="1180952"><node id="1180967"><node id="1180991"/>
+<node id="1181203"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11119876" title="Re: Getting query string with CGI::Fast" created="2020-07-27 23:26:27" updated="2020-07-27 23:26:27" _doctext_mode="lenient"><type id="11">note</type>
+<author id="313292">perlfan</author>
+<doctext field_name="doctext">This is the ideal case to add:
+
+&lt;code&gt;
+use strict;
+use warnings;
+&lt;/code&gt;
+
+Also, I think you want an &lt;code&gt;if&lt;/code&gt;, not a &lt;code&gt;while&lt;/code&gt; (strict/warnings would not have caught the infinite loop tho):
+
+&lt;code&gt;
+while ( my $q = new CGI::Fast ) {
+    my $query = $q-&gt;param('node');
+    print "Content-type: text/plain\n\n";
+    ++$n;
+    print "You are request number $n. Have a good day!\n";
+    print "query: $query\n";
+    $nodes{ exists $nodes{$query} ? $query : '_err' }();
+    print "done!\n";
+}
+&lt;/code&gt;
+
+Update:
+
+&lt;p&gt;
+
+&lt;strike&gt;You're not actually calling &lt;code&gt;do_something&lt;/code&gt; in any execution path.&lt;/strike&gt; And you don't need to use [mod://CGI] in your package just to get the query option. You should be able to get it in the call to [mod://CGI::Fast] and pass it to a method in your package, assuming you actually call it.
+
+&lt;p&gt;
+&lt;strike&gt;Maybe &lt;code&gt;nodes{ exists $nodes{$query} ? $query : '_err' }();&lt;/code&gt; needs to be &lt;code&gt;nodes{ exists $nodes{$query} ? $query : '_err' }-&gt;();&lt;/code&gt;&lt;/strike&gt; ... sorry missed that it was a real hash.
+
+&lt;p&gt;
+Yeah you got a lot going on. Simplify it. Get rid of the &lt;code&gt;package&lt;/code&gt; stuff, make sure your dispatching is clear, and make sure one of your terminal methods actually terminates. Hard to tell at first glance, but I still think your &lt;code&gt;while&lt;/code&gt; is causing you some grief.</doctext>
+<root_node field_name="root_node">11119873</root_node>
+<parent_node field_name="parent_node">11119873</parent_node>
+<thread id="11119873">
+<node id="11119876"><node id="11119884"><node id="11119886"><node id="11119889"><node id="11119895"><node id="11119898"><node id="11119933"/>
+</node>
+<node id="11119899"/>
+</node>
+<node id="11119912"/>
+</node>
+</node>
+</node>
+<node id="11119891"/>
+</node>
+<node id="11119890"><node id="11119893"><node id="11119894"><node id="11119897"><node id="11119902"><node id="11119905"><node id="11119909"><node id="11119910"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

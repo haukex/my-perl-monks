@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1162942" title="Elegantly dereferencing multiple references" created="2016-05-13 07:48:31" updated="2016-05-13 07:48:31" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">&lt;p&gt;
+Hello!
+
+I often find myself needing to input and return multiple references from a subroutine and end up writing code that takes the following form:
+&lt;/p&gt;
+
+&lt;code&gt;
+my %x = ("a"  =&gt; "red");
+my %y = ("b"  =&gt; "green");
+my %z = ("c"  =&gt; "black");
+
+my ($ref1, $ref2, $ref3) = &amp;modfifyHash(\%x, \%y, \%z);
+%x = %{ $ref1 };
+%y = %{ $ref2 };
+%z = %{ $ref3 };
+
+sub modfifyHash {
+    my ($ref1, $ref2, $ref3) = @_;
+    my %x = %{ $ref1 };
+    my %y = %{ $ref2 };
+    my %z = %{ $ref3 };
+    
+    $x{ "a" } = "circle";
+    $y{ "b" } = "square";
+    $z{ "c" } = "rectangle";
+    return(\%x, \%y, \%z)
+}
+&lt;/code&gt; 
+
+&lt;p&gt;
+The, 1) create a variable to hold the reference, 2) dereference each reference, steps takes up considerable amount of space and feels like it just clutters the whole code a lot (especially when I end up doing this many times throughout a script and/or am inputing or returning many referenced variable).
+So I am looking for a more compact and elegant solution.... I would like to write something like: 
+&lt;/p&gt;
+&lt;code&gt;
+my %x = ("a"  =&gt; "red");
+my %y = ("b"  =&gt; "green");
+my %z = ("c"  =&gt; "black");
+
+(%x, %y, %z) = %{ &amp;modfifyHash(\%x, \%y, \%z) };
+
+sub modfifyHash {
+    my (%x, %y, %z) = %{ @_ };
+    $x{ "a" } = "circle";
+    $y{ "b" } = "square";
+    $z{ "c" } = "rectangle";
+    return(\%x, \%y, \%z)
+}
+&lt;/code&gt;
+&lt;p&gt;
+...but this does not produce the desired results, i.e. each input/returned hash in an individual variable. 
+I also thought I might be able to use map in some clever way like:
+
+&lt;code&gt;
+my %x = ("a"  =&gt; "red");
+my %y = ("b"  =&gt; "green");
+my %z = ("c"  =&gt; "black");
+
+(%x, %y, %z) = map %{ $_ }, &amp;modfifyHash(\%x, \%y, \%z);
+
+sub modfifyHash {
+    my (%x, %y, %z) = map %{ $_ }, @_;
+    $x{ "a" } = "circle";
+    $y{ "b" } = "square";
+    $z{ "c" } = "rectangle";
+    return(\%x, \%y, \%z)
+}
+&lt;/code&gt; 
+&lt;p&gt; 
+...but, again, this is not working as I would like. Could anyone share how they typically handle this in a better way?
+&lt;/p&gt;
+
+</doctext>
+<reputation field_name="reputation">6</reputation>
+<thread id="1162942">
+<node id="1162944"/>
+<node id="1162945"/>
+<node id="1162948"><node id="1162951"><node id="1162953"/>
+</node>
+<node id="1162956"/>
+</node>
+<node id="1162949"/>
+<node id="1162966"/>
+<node id="1163485"/>
+</thread></node>

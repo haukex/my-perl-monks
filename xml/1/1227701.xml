@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227701" title="Handling utf-8 characters when scraping" created="2018-12-26 01:14:09" updated="2018-12-26 01:14:09" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="66801">nysus</author>
+<doctext field_name="doctext">&lt;p&gt;I'm trying to properly handle UTF-8 characters scraped from a web page using the &lt;a href=""&gt;Web::Scraper&lt;/a&gt; module. Here is some sample code that simulates a snippet from a utf-8 encoded web page with an ellipsis character:
+
+&lt;c&gt;
+use warnings;
+use strict;
+use utf8;
+use Data::Dumper qw(Dumper);
+use Web::Scraper::LibXML;
+
+my $scraper = scraper {
+        process '//p[contains(@class, "myClass")]',
+            'paragraph' =&gt; 'TEXT';
+    };
+
+print Dumper $scraper-&gt;scrape(\&lt;&lt;'END_HTML');
+&lt;p class="myClass"&gt;…&lt;/p&gt;
+END_HTML
+
+__END__
+&lt;/c&gt;
+
+&lt;p&gt;This script outputs:
+
+&lt;c&gt;
+$VAR1 = {                                                         
+          'paragraph' =&gt; "\x{2026}"                                
+        };
+&lt;/c&gt;
+
+&lt;p&gt;I've tried various methods of encoding the input and/or decoding the output of the print statement using different methods and modules but I'm having no luck figuring out how to properly handle these characters so the utf8 characters are generated as they appear in the original source code. As usual, character encoding is confusing the hell out of me. The &lt;c&gt;Web::Scraper&lt;/c&gt; manual says "If you pass URI or HTTP::Response object, Web::Scraper will automatically guesses the encoding of the content by looking at Content-Type headers and META tags. Otherwise you need to decode the HTML to Unicode before passing it to scrape method." Can someone please point me in the right direction?&lt;/p&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-66801"&gt;
+&lt;font size=2&gt;&lt;p&gt;
+$PM = "Perl Monk's";&lt;br&gt;
+$MCF = "Most Clueless &lt;strike&gt;Friar&lt;/strike&gt; &lt;strike&gt;Abbot&lt;/strike&gt; &lt;strike&gt;Bishop&lt;/strike&gt; &lt;strike&gt;Pontiff&lt;/strike&gt; &lt;strike&gt;Deacon&lt;/strike&gt; &lt;strike&gt;Curate&lt;/strike&gt; &lt;strike&gt;Priest&lt;/strike&gt; Vicar";&lt;br&gt;
+$nysus = $PM . ' ' . $MCF;&lt;br&gt;
+&lt;a href="http://perlmonks.org/index.pl?node=Offering%20Plate"&gt;Click here if you love Perl Monks&lt;/a&gt;&lt;br&gt;&lt;/font&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1227701">
+<node id="1227702"><node id="1227703"><node id="1227705"><node id="1227720"><node id="1227736"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

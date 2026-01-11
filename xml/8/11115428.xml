@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11115428" title="Re: glob() and dot files (updated)" created="2020-04-13 04:19:07" updated="2020-04-13 04:19:07" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You might be interested in my node [id://1206848] for the caveats of [doc://glob].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;What would be the easiest to accomplish "listing all files/subdirectories including dotfiles/dotsubdirs but without the . and .." and "listing all dotfiles/dotsubdirs only, without the . and .."?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;If you mean core-only, then:&lt;/p&gt;
+&lt;c&gt;
+use File::Spec::Functions qw/ no_upwards catfile catdir /;
+opendir my $dh, $path or die "$path: $!";
+my @files = map { -d catdir($path,$_) ? catdir($path,$_)
+	: catfile($path,$_) } sort +no_upwards readdir $dh;
+closedir $dh;
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Note:&lt;/i&gt; I think that on some OSes (VMS?), there's a difference between &lt;c&gt;catfile&lt;/c&gt; and &lt;c&gt;catdir&lt;/c&gt;, that would require you to use the [doc://-X|-d] test, but I believe the above should work fine on any other OS. (Or, you can omit the &lt;c&gt;catfile&lt;/c&gt; entirely if bare filenames are ok.) &lt;b&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/b&gt; Confirmed the difference between &lt;c&gt;catfile&lt;/c&gt; and &lt;c&gt;catdir&lt;/c&gt; with [doc://File::Spec::VMS] and [doc://File::Spec::Mac], so I updated the above example with the &lt;c&gt;-d&lt;/c&gt; test accordingly. &lt;b&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/b&gt;  &lt;b&gt;&lt;c&gt;&lt;update2&gt;&lt;/c&gt;&lt;/b&gt; I don't have a VMS or Classic Mac to test on, but I realized that my update had a bug in that I wasn't doing the &lt;c&gt;-d&lt;/c&gt; test on the full filename. So I hope that this updated version would really be correct on those platforms. &lt;b&gt;&lt;c&gt;&lt;/update2&gt;&lt;/c&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;If you need absolute pathnames, you probably want to add a &lt;c&gt;$path = rel2abs($path);&lt;/c&gt; (also from [doc://File::Spec]). Otherwise, if CPAN is fine, then I really like [mod://Path::Class], its &lt;c&gt;children&lt;/c&gt; includes everything except the &lt;c&gt;.&lt;/c&gt; and &lt;c&gt;..&lt;/c&gt; by default:&lt;/p&gt;
+&lt;c&gt;
+use Path::Class;
+my @files = dir($path)-&gt;children();
+# - or - 
+my @files = dir($path)-&gt;absolute-&gt;children();
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11115413</root_node>
+<parent_node field_name="parent_node">11115413</parent_node>
+<thread id="11115413">
+<node id="11115415"/>
+<node id="11115417"><node id="11115429"><node id="11115433"><node id="11115650"><node id="11115715"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11115428"><node id="11115439"><node id="11115441"><node id="11115446"/>
+</node>
+</node>
+</node>
+</thread></node>

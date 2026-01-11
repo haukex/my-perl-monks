@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111014" title="Re^3: Print Behavior with Carriage Return" created="2020-01-05 18:36:38" updated="2020-01-05 18:36:38" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;However, this is only a good idea if your open statement opens only windows files.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Why do you say this? The &lt;c&gt;:crlf&lt;/c&gt; layer doesn't hurt when opening files that have LF only. The following test passes on both Linux and Windows.&lt;/p&gt;
+&lt;readmore&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use File::Temp qw/tempfile/;
+
+my %tf = (
+	crlf =&gt; do {
+		my ($tfh, $tfn) = tempfile(UNLINK=&gt;1);
+		binmode $tfh;
+		print $tfh "Foo\r\nBar\r\nQuz\r\n";
+		close $tfh;
+		$tfn },
+	lf =&gt; do {
+		my ($tfh, $tfn) = tempfile(UNLINK=&gt;1);
+		binmode $tfh;
+		print $tfh "Foo\nBar\nQuz\n";
+		close $tfh;
+		$tfn },
+	mix =&gt; do {
+		my ($tfh, $tfn) = tempfile(UNLINK=&gt;1);
+		binmode $tfh;
+		print $tfh "Foo\r\nBar\nQuz\r\n";
+		close $tfh;
+		$tfn },
+	);
+
+sub slurp {
+	my ($fn, $mode) = @_;
+	open my $fh, '&lt;'.$mode, $fn or die "$fn: $!";
+	local $/ = undef;
+	return scalar &lt;$fh&gt;;
+}
+
+use Test::More tests=&gt;10;
+
+is $/, "\n";
+
+is slurp($tf{crlf}, ':raw' ), "Foo\r\nBar\r\nQuz\r\n";
+is slurp($tf{lf},   ':raw' ), "Foo\nBar\nQuz\n";
+is slurp($tf{mix},  ':raw' ), "Foo\r\nBar\nQuz\r\n";
+
+is slurp($tf{crlf}, ':crlf'), "Foo\nBar\nQuz\n";
+is slurp($tf{lf},   ':crlf'), "Foo\nBar\nQuz\n";
+is slurp($tf{mix},  ':crlf'), "Foo\nBar\nQuz\n";
+
+is slurp($tf{crlf}, ''     ),
+	$^O eq 'MSWin32' ? "Foo\nBar\nQuz\n" : "Foo\r\nBar\r\nQuz\r\n";
+is slurp($tf{lf},   ''     ),
+	$^O eq 'MSWin32' ? "Foo\nBar\nQuz\n" : "Foo\nBar\nQuz\n";
+is slurp($tf{mix},  ''     ),
+	$^O eq 'MSWin32' ? "Foo\nBar\nQuz\n" : "Foo\r\nBar\nQuz\r\n";
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11110962</root_node>
+<parent_node field_name="parent_node">11111013</parent_node>
+<thread id="11110962">
+<node id="11110963"/>
+<node id="11110964"/>
+<node id="11110967"/>
+<node id="11110973"><node id="11110994"/>
+</node>
+<node id="11110996"><node id="11111004"/>
+<node id="11111013"><node id="11111014"><node id="11111026"><node id="11111046"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

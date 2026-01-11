@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11140666" title="Re: Replace empty alt tag on &lt;img&gt; tag (updated)" created="2022-01-21 01:22:54" updated="2022-01-21 01:22:54" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Please see [id://17557|It is uncool to update a node in a way that renders replies confusing or meaningless] and mark your updates as such. It's the part starting with:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Here is my tried implementation. what changes do I need to make to get the desired output?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;!--
+sub RemoveAltTag($)
+{
+my $doc = shift;
+
+##############################
+    my $cnt = 0;
+    my $nodes = $doc-&gt;getElementsByTagName("image");
+    
+    for(my $i = 0;$i &lt; $nodes-&gt;getLength(); $i++)
+    {
+     my $kids = $nodes-&gt;item($i)-&gt;getChildNodes();
+     
+     for(my $k =0; $k &lt; $kids-&gt;getLength(); $k++)
+     {
+      if($kids-&gt;item($k)-&gt;toString() =~ /&lt;alt&gt;/i)
+      {
+       $nodes-&gt;item($i)-&gt;removeChild($kids-&gt;item($k));
+
+       print "\n Removed &lt;alt&gt; tag" if $VERBOSE;
+       
+       $cnt++
+      }
+     }
+    }
+
+    return $cnt;
+--&gt;
+&lt;p&gt;Your example is not complete ([id://1177642|SSCCE]) because it does not compile, does not show any input data, or most importantly which XML/HTML module you are using. My best guess at the moment based on the method names is [mod://XML::DOM]. If that is the case, then the minimum change needed to your code to get it to work* is to change &lt;c&gt;if($kids-&gt;item($k)-&gt;toString() =~ /&lt;alt&gt;/i)&lt;/c&gt; to &lt;c&gt;if ( $kids-&gt;item($k)-&gt;getNodeType==ELEMENT_NODE &amp;&amp; $kids-&gt;item($k)-&gt;getTagName eq 'alt' )&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;* &lt;i&gt;Update:&lt;/i&gt; "work" in this case meaning, to actually have an effect on the single example you provided. This doesn't address the question of only removing empty tags, but your approach of iterating over the list of children would work there as well, inspecting each one to see whether you consider it "content" or not, similar to what I do in [id://11140633|my Mojo example].&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; You edited the root node [id://11141006|again]. As I said above, don't do that, post a new question.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11140628</root_node>
+<parent_node field_name="parent_node">11140628</parent_node>
+<thread id="11140628">
+<node id="11140630"><node id="11140639"><node id="11140640"><node id="11140663"><node id="11140664"/>
+</node>
+</node>
+<node id="11140641"><node id="11140648"><node id="11140652"/>
+<node id="11140657"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11140633"/>
+<node id="11140666"/>
+<node id="11141006"><node id="11141008"><node id="11141010"><node id="11141011"/>
+<node id="11141012"/>
+</node>
+</node>
+</node>
+</thread></node>

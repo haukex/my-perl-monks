@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224330" title="WebPerlizator - automating WebPerl (by haukex) page creation" created="2018-10-19 07:10:05" updated="2018-10-19 07:10:05" _doctext_mode="lenient"><type id="1042">CUFP</type>
+<author id="174111">Discipulus</author>
+<doctext field_name="doctext">Hello nuns and monks!&lt;P&gt;
+
+did you heard the big news? [id://1220426|WebPerl] by [haukex] is here!&lt;P&gt;
+
+I smell it as the best thing happened to Perl since years (alongside with [metamod://MCE] ..) and I already used to produce PM examples: very useful and shining.&lt;P&gt;
+
+
+But as I'm really lazy I wrote the below snippet that try to automate the process of copying perl code to the page, creating input files, etc..&lt;P&gt;
+
+Imagine that you have &lt;C&gt;simple_reader.pl&lt;/C&gt; as follow:&lt;P&gt;
+
+&lt;c&gt;
+use strict;
+use warnings;
+
+open my $fh,'&lt;', 'input1.txt' or die; 
+while (&lt;$fh&gt;) {print if /b/}
+&lt;/c&gt;&lt;P&gt;
+
+and &lt;C&gt;input1.txt&lt;/C&gt; containing:
+&lt;c&gt;
+aaa
+bbb
+ccc
+&lt;/c&gt;&lt;P&gt;
+
+
+then you can just run:
+&lt;c&gt;
+perl webperlizator.pl  -s simple_reader.pl -i input1.txt
+
+https://webperl.zero-g.net/democode/perleditor.html#%7B%22script_fn%22%3A%22simple_reader.pl%22%2C%22script
+%22%3A%22use%20strict%3B%5Cnuse%20warnings%3B%5Cn%5Cnopen%20my%20%24fh%2C%27%3C%27%2C%20%27input1.txt%27%20or
+%20die%3B%20%5Cnwhile%20%28%3C%24fh%3E%29%20%7Bprint%20if%20%2Fb%2F%7D%22%2C%22inputs%22%3A%5B%7B%22text%22%3
+A%22aaa%5Cnbbb%5Cnccc%5Cn%22%2C%22fn%22%3A%22input1.txt%22%7D%5D%2C%22cmdline%22%3A%22perl%20simple_reader.pl%22%7D
+&lt;/c&gt;&lt;P&gt;
+
+or even &lt;C&gt;perl webperlizator.pl  -s simple_reader.pl -i input1.txt --browse&lt;/C&gt; to open it directly in the browser!&lt;P&gt;
+
+have fun and thanks [haukex]!!&lt;P&gt;
+
+&lt;B&gt;update&lt;/B&gt; newer version, with more features, is on my [https://github.com/LorenzoTa/WebPerlizator|github]
+&lt;c&gt;
+use strict;
+use warnings;
+use URI::Escape;
+use Getopt::Long;
+use JSON::MaybeXS qw(encode_json);
+
+my (@infiles, @outfiles, $script, $lineofcode, $browse, $help);
+unless ( GetOptions (
+                        "script=s" =&gt; \$script,
+                        "line|oneliner|code|c=s" =&gt; \$lineofcode,
+                        "inputfiles=s"   =&gt; \@infiles,
+                        "outputfiles|o=s"  =&gt; \@outfiles,
+                        "browse"         =&gt; \$browse,
+                        "help"        =&gt; \$help
+                    )) 
+                        {
+                            print "GetOpt::Long returned errors (see above), available options:\n\n".help();
+                            exit;
+                        }
+if ($help){ print help(); exit 0;}
+
+my $json = {};
+if ($lineofcode){
+    $$json{cmdline} = "perl $lineofcode";
+}
+elsif ($script){
+    open my $fh, '&lt;', $script or die "unable to read $script!";
+    while (&lt;$fh&gt;){
+        $$json{script} .= $_ ;
+    }
+    $$json{script_fn} = $script;
+    $$json{cmdline} = "perl $script";
+}
+else{
+    die "Please feed at least one script using -script or a line of perl code via -code\n\n".help();
+}
+if ( $infiles[0] ){
+    $$json{inputs}=[];
+}
+foreach my $in (@infiles){
+    open my $fh, '&lt;', $in or die "unable to read $in!";
+    my $file = { fn =&gt; $in};
+    
+    while (&lt;$fh&gt;){
+        $$file{text}.=$_;
+    }
+    push @{$$json{inputs}},$file;    
+}
+if ( $outfiles[0]){
+    $$json{outputs} = \@outfiles ;
+}
+
+my $url = 'https://webperl.zero-g.net/democode/perleditor.html#'.(uri_escape( encode_json( $json ) ));
+if ($browse){
+    if ($^O =~/mswin32/i) {exec "start $url"}
+    else{ exec "xdg-open $url"}
+}
+else{
+    print $url;
+}
+####
+sub help{
+    return &lt;&lt;EOH;
+$0 USAGE:
+
+	--script file|--code line [--inputfile file [--inputfile file] --outputfile file [--outputfile file] --browse]
+	
+    $0 -script script.pl 
+    $0 -script script.pl [ -inputfile file1.txt  -inputfile file2.txt -outputfile file3.txt -browse]
+    $0 -code "-e 'print qq(Hello WebPerl!)'"
+    $0 -code "-e 'print qq(Hello WebPerl!)'" [ -i infile1.txt -i infile2.txt  -o outfile3.txt -browse]    
+
+	
+	--script -s accept a perl program filename as only argument. 
+        Both --script and --code make no sense: just specify one.
+	
+        --code -c is intended to be used to pass a oneliner. The executable name, aka perl, will be
+	prepended automatically. Any perl switch must be explicitly passed also -e
+	For example: 
+	
+	webperlizator.pl -code "-le 'print qq(Hello WebPerl!)'"
+	webperlizator.pl -code "-lne 'print \"found a b\" if /b/' file1.txt" -i file1.txt -b
+	
+	Pay attention on quotes suitable for you OS.
+	
+	--inputfiles -i is for input files; more than one can be feed
+	
+	--outputfiles -o is for output file and more than one can be passed in
+	
+	--browse -b open the default browser, hopefully, pointing to the WebPerl right page
+	
+	--help -h prints this help
+
+    
+EOH
+}
+&lt;/c&gt;&lt;P&gt;
+
+L*&lt;P&gt;
+
+&lt;B&gt;PS&lt;/B&gt; updated to handle onliners in a better way&lt;P&gt;
+
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-174111"&gt;
+There are no rules, there are no thumbs..&lt;BR&gt;
+Reinvent the wheel, then learn The Wheel; may be one day you reinvent one of THE WHEELS.
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.142} --&gt;</doctext>
+<thread id="1224330">
+<node id="1224333"/>
+<node id="1224341"/>
+<node id="1224366"/>
+</thread></node>

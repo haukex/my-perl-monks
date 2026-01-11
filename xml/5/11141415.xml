@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11141415" title="Re: Win::OLE Excel: disable macros" created="2022-02-16 05:07:34" updated="2022-02-16 05:07:34" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The documentation of [https://docs.microsoft.com/en-us/office/vba/api/excel.workbooks.open#remarks|Workbooks.Open] says:&lt;/p&gt;
+&lt;blockquote&gt;By default, macros are enabled when opening files programmatically. Use the [https://docs.microsoft.com/en-us/office/vba/api/excel.application.automationsecurity|AutomationSecurity] property to set the macro security mode used when opening files programmatically.&lt;/blockquote&gt;
+&lt;p&gt;This works for me:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Win32::OLE ();
+use Win32::OLE::Const 'Microsoft Excel';
+$Win32::OLE::Warn = 3;  # die on errors
+
+my $Excel = Win32::OLE-&gt;new('Excel.Application', 'Quit') or die "Failed to open Excel";
+# or to get running Excel instance: Win32::OLE-&gt;GetActiveObject('Excel.Application')
+
+my $const = Win32::OLE::Const-&gt;Load('Microsoft Office '.$Excel-&gt;{Version}.' Object Library');
+$Excel-&gt;{AutomationSecurity} = $const-&gt;{msoAutomationSecurityForceDisable};
+
+$Excel-&gt;{Visible} = 1;
+my $Book = $Excel-&gt;Workbooks-&gt;Open("filename.xlsm");
+$Book-&gt;Activate;
+# ...
+$Excel-&gt;Quit;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11141413</root_node>
+<parent_node field_name="parent_node">11141413</parent_node>
+<thread id="11141413">
+<node id="11141415"><node id="11141423"/>
+</node>
+<node id="11141416"/>
+</thread></node>

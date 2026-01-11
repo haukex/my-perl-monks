@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1232314" title="Re^3: fix ODT files with line breaks looking poor" created="2019-04-08 15:59:24" updated="2019-04-08 15:59:24" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Here's my solution, it also handles the more deeply nested cases like &lt;c&gt;&lt;r&gt;&lt;p&gt;a&lt;x&gt;b&lt;y&gt;c&lt;x&gt;d&lt;s/&gt;e&lt;/x&gt;f&lt;/y&gt;g&lt;/x&gt;h&lt;/p&gt;&lt;/r&gt;&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+
+my $dom = XML::LibXML-&gt;load_xml(string =&gt; &lt;&lt;'END_XML');
+&lt;?xml version="1.0"?&gt;
+&lt;office:document-content office:version="1.2"
+	xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+	xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"&gt;
+&lt;office:body&gt;&lt;office:text&gt;
+&lt;text:p text:style-name="P1"&gt;
+	Fo&lt;text:span text:style-name="T1"&gt;o&lt;text:line-break/&gt;B&lt;/text:span&gt;
+	&lt;text:span text:style-name="T3"&gt;a&lt;/text:span&gt;
+	&lt;text:span text:style-name="T5"&gt;r&lt;text:line-break/&gt;&lt;/text:span&gt;
+&lt;/text:p&gt;
+&lt;/office:text&gt;&lt;/office:body&gt;
+&lt;/office:document-content&gt;
+END_XML
+
+my $xpc = XML::LibXML::XPathContext-&gt;new($dom);
+$xpc-&gt;registerNs('office',
+	'urn:oasis:names:tc:opendocument:xmlns:office:1.0');
+$xpc-&gt;registerNs('text',
+	'urn:oasis:names:tc:opendocument:xmlns:text:1.0');
+my $breakat = 'text:line-break';
+my $ancestor = 'text:p';
+while (1) {
+	my ($br1) = $xpc-&gt;findnodes("//$ancestor//${breakat}[1]") or last;
+	die "can't handle &lt;$breakat&gt; with children: $br1"
+		if $br1-&gt;hasChildNodes;
+	my ($an1) = $xpc-&gt;findnodes("ancestor::${ancestor}[1]",$br1)
+		or die "failed to find &lt;$ancestor&gt; ancestor of $br1";
+	my $an2 = $an1-&gt;cloneNode(1);
+	my ($br2) = $xpc-&gt;findnodes(".//${breakat}[1]", $an2)
+		or die "internal error: failed to find &lt;$breakat&gt; in $an2";
+	for ( my $cur = $br1; $cur!=$an1 ; $cur = $cur-&gt;parentNode ) {
+		while ( my $s = $cur-&gt;nextSibling )
+			{ $s-&gt;unbindNode }
+	}
+	$br1-&gt;unbindNode;
+	for ( my $cur = $br2; $cur!=$an2 ; $cur = $cur-&gt;parentNode ) {
+		while ( my $s = $cur-&gt;previousSibling )
+			{ $s-&gt;unbindNode }
+	}
+	$br2-&gt;unbindNode;
+	$an1-&gt;parentNode-&gt;insertAfter($an2, $an1);
+}
+print $dom;
+
+__END__
+
+&lt;?xml version="1.0"?&gt;
+&lt;office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" office:version="1.2"&gt;
+&lt;office:body&gt;&lt;office:text&gt;
+&lt;text:p text:style-name="P1"&gt;
+	Fo&lt;text:span text:style-name="T1"&gt;o&lt;/text:span&gt;&lt;/text:p&gt;&lt;text:p text:style-name="P1"&gt;&lt;text:span text:style-name="T1"&gt;B&lt;/text:span&gt;
+	&lt;text:span text:style-name="T3"&gt;a&lt;/text:span&gt;
+	&lt;text:span text:style-name="T5"&gt;r&lt;/text:span&gt;&lt;/text:p&gt;&lt;text:p text:style-name="P1"&gt;&lt;text:span text:style-name="T5"/&gt;
+&lt;/text:p&gt;
+&lt;/office:text&gt;&lt;/office:body&gt;
+&lt;/office:document-content&gt;
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1232242</root_node>
+<parent_node field_name="parent_node">1232253</parent_node>
+<thread id="1232242">
+<node id="1232243"><node id="1232244"/>
+</node>
+<node id="1232245"><node id="1232251"/>
+<node id="1232253"><node id="1232314"/>
+</node>
+</node>
+<node id="1232696"><node id="1232727"><node id="1232759"/>
+</node>
+</node>
+</thread></node>

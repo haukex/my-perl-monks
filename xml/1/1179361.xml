@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1179361" title="Re^5: Begginer's question: If loops one after the other. Is that code correct?" created="2017-01-10 17:22:47" updated="2017-01-10 17:22:47" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1179174">predrag</author>
+<doctext field_name="doctext">&lt;p&gt;Here is the code of the converter. It is for my non commercial beekeeping website that is on Serbian Latin alphabet. I am working on its new design and would like to have it converted into Cyrillic too. It is not small site, maybe few hundreds pages. I know there is a software for that but somehow, I don't like it. Till recently I never expected I could even have site in Cyrillic, or even could try to do it myself, but with Perl I think it is possible, even for such beginner like me. &lt;/p&gt;
+
+&lt;p&gt;It works for simple html pages. If I have external CSS files, maybe it will work with CSS pages too, didn't try yet. So, I ask monks just for the comments on my approach. &lt;/p&gt;
+
+&lt;p&gt;It reads a html file, converts the text into Cyrillic, leaves code untouched, and creates new html file in Cyrillic. Next steps are to read whole directory or whole website, and a lot of other things to be done, but it is not a part of my question now. &lt;/p&gt;
+
+&lt;p&gt;I read that input file/string part by part, where one part is either string code between &lt;&gt; or string with text &gt; &lt;
+To determine where is a code and where is a text, I have a parameter k that after "&lt;" receives value 1 and after "&gt;" value 2. &lt;/p&gt;
+
+&lt;p&gt;Subroutine converts strings. A hash contains dictionary of one to one equivalents. Letters that are the same (for example "a", "e" etc.) are omitted and I wonder if is it ok, for example are Latin and Cyrillic letter "a" are the same in html file and coding? &lt;/p&gt;
+
+&lt;p&gt;script prints output file on standard output too  &lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl 
+use strict;
+use warnings;
+
+use utf8;
+binmode(STDOUT, ":utf8");
+
+use open ':encoding(utf8)'; # input/output default encoding will be
+                                # UTF-8
+
+my $infile;			# reads input file into string $infile
+
+open INPUT, "&lt;index_latin.html";
+undef $/;
+$infile =&lt;INPUT&gt;;
+close INPUT;
+
+
+my $k;              	  # parameter =1 between &lt; &gt; , =2 between &gt; &lt;
+my $string;          	  #  "&lt;code between&gt;" 
+my $txtstring = '';    	#  &gt;"text between"&lt;
+my $outcode = '';   	# output: code and converted text together
+my $for_conv;      	# string to be converted by sub
+my $char;         	 # chatacter from input file
+my $convert;     	 # converted string by sub
+
+
+			# splits input file into characters 
+foreach $char (split//, $infile) {
+
+	if ($char eq "&lt;") {
+		$k = 1;
+	}
+
+	if ($k ==2)  {
+		$txtstring= $txtstring . $char;
+	}
+
+	else {
+		$string = $string .$char;
+	}
+
+
+	if ($char eq "&gt;") {
+
+		if (substr($txtstring, 0, 1) eq "&amp;" ){   
+				# &amp;nbsp will not be converted
+			$string =$txtstring.$string;  #goes to string code
+			$txtstring = '';  ## 
+		}
+
+	$for_conv = $txtstring;
+
+	$convert = konverter($for_conv);
+
+	$outcode = $outcode .$convert.$string;
+
+	$k = 2;	
+	$string = '';
+	$txtstring = '';
+	
+	}  		# of if char eq "&gt;"
+
+}   	# of foreach
+
+				# writing to  file
+	my $filename = "index_cyrilic.htm";	
+	open(FH, '&gt;', $filename) or die $!;
+	print FH $outcode ;
+	close(FH);
+&lt;readmore&gt;
+
+print "\n";
+print "code on the output:\n";
+print "\n";
+print "$outcode\n";
+
+# converting string into Cyrillic
+
+sub konverter  {
+              # dictionary
+
+my %dict = ( "b"=&gt; "&amp;#1073;","B"=&gt; "&amp;#1041;","c"=&gt; "&amp;#1094;","C"=&gt; "&amp;#1062;","&amp;#269;"=&gt; "&amp;#1095;","&amp;#268;"=&gt; "&amp;#1063;","&amp;#263;"=&gt; "&amp;#1115;","&amp;#262;"=&gt; "&amp;#1035;","d"=&gt; "&amp;#1076;","D"=&gt; "&amp;#1044;","&amp;#273;"=&gt; "&amp;#1106;","&amp;#272;"=&gt; "&amp;#1026;","f"=&gt; "&amp;#1092;","F"=&gt; "&amp;#1060;","g"=&gt; "&amp;#1075;","G"=&gt; "&amp;#1043;","h"=&gt; "&amp;#1093;","H"=&gt; "&amp;#1061;","i"=&gt; "&amp;#1080;","I"=&gt; "&amp;#1048;","l"=&gt; "&amp;#1083;","L"=&gt; "&amp;#1051;","m"=&gt; "&amp;#1084;","n"=&gt; "&amp;#1085;","N"=&gt; "&amp;#1053;","p"=&gt; "&amp;#1087;","P" =&gt; "&amp;#1055;","r" =&gt; "&amp;#1088;","R" =&gt; "&amp;#1056;","s"=&gt; "&amp;#1089;","S"=&gt; "&amp;#1057;","š"=&gt; "&amp;#1096;","Š"=&gt; "&amp;#1064;","t"=&gt; "&amp;#1090;","u"=&gt; "&amp;#1091;","U"=&gt; "&amp;#1059;","v"=&gt; "&amp;#1074;","V" =&gt; "&amp;#1042;","z"=&gt; "&amp;#1079;", "Z"  =&gt; "&amp;#1047;","ž"=&gt; "&amp;#1078;","Ž"=&gt; "&amp;#1046;"); 
+
+my @conv_arr = split (//, $for_conv);   # splits input string for conversion
+
+my $ind = 0;    # index of array element
+my $out = "";   # output, converted string
+my $str_char;   # string character
+my $next;       # next string character
+my $nj;  # Latin two character letters to be replaced with one Cyrillic 
+my $Nj;
+my $lj;
+my $Lj;
+my $dz;
+my $Dz;
+
+while ($ind &lt;= $#conv_arr){
+	$str_char = $conv_arr[$ind];   # current character 
+
+	if ($ind ==$#conv_arr) {
+		$next ="";  # there are no more characters
+	}
+	else {
+		$next =$conv_arr[$ind+1];	# next character
+	}
+	
+	if (exists ($dict{$str_char})) {  
+
+                            # combination nj gives $nj = "&amp;#1114;"
+		if (($str_char eq "n") &amp;&amp; ($next eq "j")){
+			$nj = "&amp;#1114;";
+			$out = $out.$nj;
+			$ind = $ind+1;
+		}
+
+		elsif (($str_char eq "N") &amp;&amp; ($next eq "j")){
+			$Nj = "&amp;#1034;";
+			$out = $out.$Nj;
+			$ind = $ind+1;
+		}
+
+		elsif (($str_char eq "l") &amp;&amp; ($next eq "j")){
+			$lj = "&amp;#1113;";
+			$out = $out.$lj;
+			$ind = $ind+1;
+		}
+
+		elsif (($str_char eq "L") &amp;&amp; ($next eq "j")){
+			$Lj = "&amp;#1033;";
+			$out = $out.$Lj;
+			$ind = $ind+1;
+		}
+
+		elsif (($str_char eq "d") &amp;&amp; ($next eq "ž")){
+			$dz = "&amp;#1119;";
+			$out = $out.$dz;
+			$ind = $ind+1;
+		}
+
+		elsif (($str_char eq "D") &amp;&amp; ($next eq "ž")){
+			$Dz = "&amp;#1039;";
+			$out = $out.$Dz;
+			$ind = $ind+1;
+		}
+		else {   # one character letters
+			$out = $out.$dict{$str_char};
+		} 
+
+	$ind++;
+	} # of if exists
+
+	else {      
+		$out = $out.$str_char;
+		$ind++;
+	} 
+}  		# of while
+
+return $out;
+} 		# of sub
+&lt;/readmore&gt;
+
+&lt;/code&gt;
+
+&lt;p&gt; Here is the html code of input file index_latin.html for testing&lt;/p&gt;
+
+
+&lt;readmore&gt;
+&lt;code&gt;
+
+&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;test&lt;/title&gt;
+&lt;meta http-equiv="Content-Type" content="text/html; charset=utf-8"&gt;
+&lt;/head&gt;
+
+&lt;body&gt;
+&lt;p&gt;primer &lt;font color="#003300"&gt;&lt;strong&gt;&lt;font color="#006600"&gt;sajta&lt;/font&gt;&lt;/strong&gt;&lt;/font&gt;&lt;/p&gt;
+&lt;table width="124" border="1" cellspacing="2" cellpadding="2"&gt;
+  &lt;tr&gt;
+    &lt;td width="41"&gt;Fhšž&lt;/td&gt;
+    &lt;td width="63"&gt;Hj&amp;#263;&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td&gt;abcd&lt;/td&gt;
+    &lt;td&gt;145&lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;konverzija&lt;/em&gt; iz latinice u &amp;#263;irilicu šŠ &amp;#269;&amp;#268; &amp;#273;&amp;#272; žŽ nj Nj&lt;/p&gt;
+&lt;p&gt;poslednji red&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/code&gt;
+&lt;/readmore&gt;
+
+&lt;p&gt;it is the output code, I hope that I was successful with readmore&lt;/p&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;&amp;#1090;e&amp;#1089;&amp;#1090;&lt;/title&gt;
+&lt;meta http-equiv="Content-Type" content="text/html; charset=utf-8"&gt;
+&lt;/head&gt;
+
+&lt;body&gt;
+&lt;p&gt;&amp;#1087;&amp;#1088;&amp;#1080;&amp;#1084;e&amp;#1088; &lt;font color="#003300"&gt;&lt;strong&gt;&lt;font color="#006600"&gt;&amp;#1089;aj&amp;#1090;a&lt;/font&gt;&lt;/strong&gt;&lt;/font&gt;&lt;/p&gt;
+&lt;table width="124" border="1" cellspacing="2" cellpadding="2"&gt;
+  &lt;tr&gt;
+    &lt;td width="41"&gt;&amp;#1060;&amp;#1093;&amp;#1096;&amp;#1078;&lt;/td&gt;
+    &lt;td width="63"&gt;&amp;#1061;j&amp;#1115;&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td&gt;a&amp;#1073;&amp;#1094;&amp;#1076;&lt;/td&gt;
+    &lt;td&gt;145&lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;ko&amp;#1085;&amp;#1074;e&amp;#1088;&amp;#1079;&amp;#1080;ja&lt;/em&gt; &amp;#1080;&amp;#1079; &amp;#1083;a&amp;#1090;&amp;#1080;&amp;#1085;&amp;#1080;&amp;#1094;e &amp;#1091; &amp;#1115;&amp;#1080;&amp;#1088;&amp;#1080;&amp;#1083;&amp;#1080;&amp;#1094;&amp;#1091; &amp;#1096;&amp;#1064; &amp;#1095;&amp;#1063; &amp;#1106;&amp;#1026; &amp;#1078;&amp;#1046; &amp;#1114; &amp;#1034;&lt;/p&gt;
+&lt;p&gt;&amp;#1087;o&amp;#1089;&amp;#1083;e&amp;#1076;&amp;#1114;&amp;#1080; &amp;#1088;e&amp;#1076;&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/code&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1179302</root_node>
+<parent_node field_name="parent_node">1179342</parent_node>
+<thread id="1179302">
+<node id="1179304"><node id="1179390"/>
+</node>
+<node id="1179308"/>
+<node id="1179309"><node id="1179321"><node id="1179326"><node id="1179341"/>
+</node>
+<node id="1179336"><node id="1179342"><node id="1179361"><node id="1179363"><node id="1179418"><node id="1179419"><node id="1179452"><node id="1179455"><node id="1179456"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1179541"><node id="1179553"><node id="1179565"><node id="1179571"><node id="1179573"><node id="1179575"/>
+</node>
+<node id="1179736"><node id="1179858"><node id="1179865"><node id="1179867"><node id="1179868"/>
+</node>
+</node>
+<node id="1179915"><node id="1179931"/>
+<node id="1179981"><node id="1180109"><node id="1180164"><node id="1180166"><node id="1180181"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1179391"/>
+</node>
+</node>
+</node>
+</thread></node>

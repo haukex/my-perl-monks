@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1210635" title="HTML::TreeBuilder::LibXML creates multiple copies of the same result" created="2018-03-10 15:36:57" updated="2018-03-10 15:36:57" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="897532">password</author>
+<doctext field_name="doctext">&lt;p&gt;Hi monks,&lt;/p&gt;
+&lt;p&gt;it seems HTML::TreeBuilder::LibXML finds the same node 6 times (3 times if the new lines are removed in the html).&lt;/p&gt;
+&lt;p&gt;Shouldn't it be just 1 result?&lt;/p&gt;
+&lt;p&gt;Thank you!!!&lt;/p&gt;
+
+&lt;code&gt;
+use strict;
+use warnings;
+use diagnostics;
+use HTML::TreeBuilder::LibXML;
+
+my $body;
+while (&lt;DATA&gt;) { $body .= $_; }
+
+my $tree = HTML::TreeBuilder::LibXML-&gt;new_from_content($body);
+
+my $xpath = '//div[@class="ccc"]/node()';
+
+my @superCats = $tree-&gt;findnodes($xpath);
+
+$tree-&gt;delete;
+
+for my $superCat(@superCats)
+{
+my $sc = ${$superCat-&gt;parent}{'node'};
+print  "$sc\n\n";
+}
+
+exit;
+
+__DATA__
+&lt;div class="ccc"&gt;
+&lt;img src=""&gt;&lt;h2&gt;Hello&lt;/h2&gt;
+&lt;div class='s'&gt;
+&lt;a href="/"&gt;All&lt;/a&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/code&gt;</doctext>
+<thread id="1210635">
+<node id="1210636"><node id="1210637"/>
+</node>
+<node id="1210638"/>
+</thread></node>

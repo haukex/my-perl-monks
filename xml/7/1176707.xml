@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1176707" title="Re: Propose addition to use warnings?" created="2016-11-28 09:41:35" updated="2016-11-28 09:41:35" _doctext_mode="lenient"><type id="11">note</type>
+<author id="5348">Corion</author>
+<doctext field_name="doctext">&lt;p&gt;You must have done something weird in &lt;c&gt;my_sub&lt;/c&gt; because for me, warnings already tell me that I'm using a closed filehandle:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+open my $fh, '&lt;', $0
+    or die "I can't read myself";
+open my $fh2, '&lt;', $0
+    or die "I can't read myself (2)";
+my @lines = &lt;$fh&gt;;
+close $fh;
+
+sub my_sub {
+    my( $this_fh, $line ) = @_;
+    warn sprintf "At offset %d: %s", tell $this_fh, $line;
+};
+
+while (my $line = &lt;$fh2&gt;) {
+    my @data = my_sub($fh, $line); # copy/paste error, should have passed $second_fh here
+
+    # and of course a bunch of non-relevant stuff here
+}
+__END__
+tell() on closed filehandle $fh at tmp.pl line 15.
+At offset -1: #!/usr/bin/perl
+tell() on closed filehandle $fh at tmp.pl line 15.
+At offset -1:
+...
+&lt;/c&gt;
+&lt;p&gt;Maybe you can show us what you were doing in &lt;c&gt;my_sub&lt;/c&gt; with the filehandle and where Perl didn't warn there?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1176706</root_node>
+<parent_node field_name="parent_node">1176706</parent_node>
+<thread id="1176706">
+<node id="1176707"><node id="1176710"><node id="1176721"/>
+</node>
+</node>
+<node id="1176708"><node id="1176724"><node id="1176739"/>
+</node>
+</node>
+<node id="1176709"><node id="1176719"><node id="1176723"/>
+</node>
+</node>
+<node id="1176712"><node id="1176720"/>
+</node>
+<node id="1176715"><node id="1176722"><node id="1176725"/>
+</node>
+</node>
+<node id="1176757"><node id="1176816"/>
+</node>
+</thread></node>

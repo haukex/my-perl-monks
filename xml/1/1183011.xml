@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1183011" title="Re: Assigning mapped regex to a list" created="2017-02-27 15:54:24" updated="2017-02-27 15:54:24" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Two problems: First, note that each &lt;c&gt;qr//&lt;/c&gt; has its own set of modifiers, so the &lt;c&gt;/mix&lt;/c&gt; modifiers don't affect those regexes, and the &lt;c&gt;^&lt;/c&gt; anchors to the beginning of the string, not each line. Second, the &lt;c&gt;||&lt;/c&gt; operator places the &lt;c&gt;=~ m//&lt;/c&gt; operation into scalar context, so it won't return the list of capture groups, just a true/false value for success/failure. The following works for me:&lt;/p&gt;
+&lt;c&gt;
+my $pre_regex = qr/^\s*define\s*\(\s*['"]/mix;
+my $post_regex = qr/['"]\s*,\s*['"]([^'"]+)['"]/mix;
+($db, $db_user, $db_pass) =
+	map { $string =~ /$pre_regex $_ $post_regex/mix ? $1 : 'unknown' }
+	qw(DB_NAME DB_USER DB_PASSWORD);
+&lt;/c&gt;
+&lt;p&gt;However, having said that, I don't quite understand this approach. What is this you're trying to parse, some kind of config file? Parsing parenthesized and quoted stuff can easily become nontrivial (escaping, nesting, etc.), and this regex approach seems a little too simplistic.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1183008</root_node>
+<parent_node field_name="parent_node">1183008</parent_node>
+<thread id="1183008">
+<node id="1183010"/>
+<node id="1183011"><node id="1183012"/>
+<node id="1183013"><node id="1183017"><node id="1183021"/>
+</node>
+<node id="1183020"/>
+</node>
+<node id="1183014"><node id="1183016"/>
+</node>
+</node>
+</thread></node>

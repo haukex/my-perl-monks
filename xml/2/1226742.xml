@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1226742" title="Re^3: german Alphabet" created="2018-12-04 16:02:33" updated="2018-12-04 16:02:33" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I don't see in ikegami's script the need for &lt;c&gt;use utf8;&lt;/c&gt;.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The OP as well as [ikegami]'s script contain the string &lt;c&gt;'Fräsen und ndk (Kamera - Fräsaufnahme)'&lt;/c&gt;. From [doc://utf8]: "The use utf8 pragma tells the Perl parser to allow UTF-8 in the program text in the current lexical scope. ... Do not use this pragma for anything else than telling Perl that your script is written in UTF-8. ... Because it is not possible to reliably tell UTF-8 from native 8 bit encodings, you need either a Byte Order Mark at the beginning of your source code, or &lt;c&gt;use utf8;&lt;/c&gt;, to instruct perl."&lt;/p&gt;
+&lt;p&gt;Although the "ä" may &lt;del&gt;happen&lt;/del&gt; &lt;ins&gt;appear&lt;/ins&gt; to work because it's part of the Latin1 character set, &lt;del&gt;which Perl typically uses internally&lt;/del&gt;, it will most likely not do what you want on any Unicode characters outside of that set. As you can see below, the only version of the code in which the &lt;c&gt;UTF8&lt;/c&gt; is flag properly set on the string is the one where the source is encoded as UTF-8 &lt;i&gt;and&lt;/i&gt; &lt;c&gt;use utf8;&lt;/c&gt; is used. The rule of thumb I always use is to either work entirely in ASCII (using escapes such as &lt;c&gt;\N{}&lt;/c&gt; to specify Unicode characters), or otherwise use a UTF-8 encoding on the source code and &lt;c&gt;use utf8;&lt;/c&gt;. See also [doc://perluniintro] and [doc://perlunicode].&lt;/p&gt;
+&lt;c&gt;
+$ cat with_utf8.pl 
+use warnings;
+use strict;
+use utf8;
+use Devel::Peek;
+my $string = 'Fräsen und ndk (Kamera - Fräsaufnahme)';
+Dump($string);
+
+$ perl -pe 's/^(?=.*utf8)/#/' with_utf8.pl | tee without_utf8.pl
+use warnings;
+use strict;
+#use utf8;
+use Devel::Peek;
+my $string = 'Fräsen und ndk (Kamera - Fräsaufnahme)';
+Dump($string);
+
+$ iconv -f UTF-8 -t Latin1 without_utf8.pl -o latin1.pl
+$ file -i *.pl
+latin1.pl:       text/plain; charset=iso-8859-1
+without_utf8.pl: text/plain; charset=utf-8
+with_utf8.pl:    text/plain; charset=utf-8
+
+$ perl latin1.pl 
+SV = PV(0x1365d70) at 0x13855c0
+  REFCNT = 1
+  FLAGS = (POK,IsCOW,pPOK)
+  PV = 0x13d7160 "Fr\344sen und ndk (Kamera - Fr\344saufnahme)"\0
+  CUR = 38
+  LEN = 40
+  COW_REFCNT = 1
+
+$ perl without_utf8.pl 
+SV = PV(0xa15d70) at 0xa355c0
+  REFCNT = 1
+  FLAGS = (POK,IsCOW,pPOK)
+  PV = 0xa87190 "Fr\303\244sen und ndk (Kamera - Fr\303\244saufnahme)"\0
+  CUR = 40
+  LEN = 42
+  COW_REFCNT = 1
+
+$ perl with_utf8.pl 
+SV = PV(0x18d5d70) at 0x18f55d8
+  REFCNT = 1
+  FLAGS = (POK,IsCOW,pPOK,UTF8)
+  PV = 0x19384a0 "Fr\303\244sen und ndk (Kamera - Fr\303\244saufnahme)"\0 [UTF8 "Fr\x{e4}sen und ndk (Kamera - Fr\x{e4}saufnahme)"]
+  CUR = 40
+  LEN = 42
+  COW_REFCNT = 1
+
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Updated&lt;/i&gt; as per [ikegami]'s reply.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1226699</root_node>
+<parent_node field_name="parent_node">1226738</parent_node>
+<thread id="1226699">
+<node id="1226700"/>
+<node id="1226710"/>
+<node id="1226713"><node id="1226738"><node id="1226742"><node id="1226759"><node id="1227303"><node id="1227329"><node id="1227331"/>
+</node>
+</node>
+</node>
+<node id="1226930"><node id="1226947"/>
+<node id="1227116"/>
+</node>
+</node>
+</node>
+<node id="1226758"/>
+</node>
+</thread></node>

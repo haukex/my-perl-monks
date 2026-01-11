@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227090" title="Re: How does rename() work on read-only files? (updated)" created="2018-12-11 06:13:28" updated="2018-12-11 06:13:28" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Perhaps it helps to think of a "directory" &lt;i&gt;like&lt;/i&gt; just another file, but a special file that contains a list of other files. In order to rename a file, you don't need access to that file itself, you need access to the place where it is listed, the directory. So in the following example, you've got a file &lt;c&gt;foo&lt;/c&gt; and two directories, &lt;c&gt;one&lt;/c&gt; and &lt;c&gt;two&lt;/c&gt;. In order to move the entry for the file &lt;c&gt;foo&lt;/c&gt; from one directory to the other, you need write access to both &lt;c&gt;one&lt;/c&gt; and &lt;c&gt;two&lt;/c&gt;'s list of files, and if I take &lt;i&gt;that&lt;/i&gt; away, I can't move the file.&lt;/p&gt;
+&lt;c&gt;
+$ cd `mktemp -d`
+$ mkdir one
+$ mkdir two
+$ chmod -R 755 .
+$ touch one/foo
+$ chmod 0 one/foo
+$ cat one/foo
+cat: one/foo: Permission denied
+$ mv -v one/foo two/
+‘one/foo’ -&gt; ‘two/foo’
+$ chmod a-w one
+$ mv -v two/foo one/
+‘two/foo’ -&gt; ‘one/foo’
+mv: cannot move ‘two/foo’ to ‘one/foo’: Permission denied
+$ chmod u+w one
+$ chmod a-w two
+$ mv -v two/foo one/
+‘two/foo’ -&gt; ‘one/foo’
+mv: cannot move ‘two/foo’ to ‘one/foo’: Permission denied
+$ chmod u+w two
+$ mv -v two/foo one/
+‘two/foo’ -&gt; ‘one/foo’
+&lt;/c&gt;
+&lt;p&gt;By the way, if this is about the &lt;c&gt;-i&lt;/c&gt; switch and needing a reliable mechanism for "overwriting" files in-place, my module [mod://File::Replace] might be of interest to you. &lt;b&gt;Update:&lt;/b&gt; See [id://1227995]&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1227075</root_node>
+<parent_node field_name="parent_node">1227075</parent_node>
+<thread id="1227075">
+<node id="1227077"><node id="1227087"><node id="1227110"><node id="1227114"/>
+</node>
+</node>
+</node>
+<node id="1227085"><node id="1227086"><node id="1227088"><node id="1227115"/>
+</node>
+<node id="1227089"><node id="1227118"><node id="1227125"><node id="1227129"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1227090"/>
+<node id="1227117"><node id="1227127"/>
+</node>
+</thread></node>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1212093" title="Perl to run 2 files and print the third with loop" created="2018-04-01 00:46:43" updated="2018-04-01 00:46:43" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1212091">EBK</author>
+<doctext field_name="doctext">&lt;p&gt;Let me explain more clearly now.
+I ask some days ago about to join two files with conditional and loop. I got to solve partially the problem but I need to change these demand to the following situation.&lt;/p&gt;
+
+File A with 9 or more lines and the second column is the key.
+&lt;code&gt;
+    life_1,23032018,a_0300,true,3
+    life_1,23032018,a_0200,true,4
+    life_1,23032018,a_0100,true,3
+    life_1,23032018,c_0300,true,21
+    life_1,23032018,c_0200,true,21
+    life_1,23032018,c_0100,true,25
+    life_1,23032018,d_0300,true,23
+    life_1,23032018,d_0200,true,21
+    life_1,23032018,d_0100,true,24
+&lt;/code&gt;
+File B with 800 or more lines and the second column is the key.
+
+&lt;code&gt;
+    201810021569661,23032018
+    201810021569678,23032018
+    201810021569685,23032018
+    201810021569708,23032018
+    201810021569715,23032018
+    201810021569722,23032018
+    201810021569739,23032018
+    201810021569746,23032018
+    201810021569753,23032018
+    201810021569760,23032018
+&lt;/code&gt;
+I am using Perl in the File A and using the 5th column to run through the number of lines of the File B and creating a third file. But when the for loop of the 5th column from File A finish I have to stop in the line in the File B and continue the next loop in the same line and not to restart from the First line in File B.
+
+The result I got with my script is. The second column values are repeated on each loop. For example, the value 201810021569661 is showing 3 times in my result.
+&lt;code&gt;
+    Loop tot-&gt;3
+    life_1,201810021569661,a_0300
+    life_1,201810021569678,a_0300
+    life_1,201810021569685,a_0300
+    Loop tot-&gt;4
+    life_1,201810021569661,a_0200
+    life_1,201810021569678,a_0200
+    life_1,201810021569685,a_0200
+    life_1,201810021569739,a_0200
+    Loop tot-&gt;3
+    life_1,201810021569661,a_0100
+    life_1,201810021569678,a_0100
+    life_1,201810021569685,a_0100
+&lt;/code&gt;
+
+The result I want is this. Look the result is the second column does not repeat.
+Now the value 201810021569661 is showing only one time.
+&lt;code&gt;
+    Loop tot-&gt;3
+    life_1,201810021569661,a_0300
+    life_1,201810021569678,a_0300
+    life_1,201810021569685,a_0300
+    Loop tot-&gt;4
+    life_1,201810021569708,a_0200
+    life_1,201810021569715,a_0200
+    life_1,201810021569722,a_0200
+    life_1,201810021569739,a_0200
+    Loop tot-&gt;3
+    life_1,201810021569746,a_0100
+    life_1,201810021569753,a_0100
+    life_1,201810021569760,a_0100
+&lt;/code&gt;
+With the help of all of you, I did something but it is restarting the File B on each loop.
+
+&lt;code&gt;
+    use strict;
+    use warnings;
+    use Data::Dumper qw(Dumper);
+
+    my $filea = FileA;
+    my $fileb = FileB;
+
+    open ( FA, '&lt;', $filea) || die ( "File $filea Not Found!" );
+    open ( FB, '&lt;', $fileb) || die ( "File $fileb Not Found!" );
+
+    my %ts;
+    while ( &lt;FB&gt; ) {
+        chomp;
+        my($ids, $timestamp) = split ",";
+        push @{ $ts{$timestamp} }, $ids;
+    }
+    
+    while ( &lt;FA&gt; ) {
+        chomp;
+        my($life,$timestamp,$cls,$bool,$tot) = split ",";
+        print STDERR "Loop tot-&gt; $tot"; scalar &lt;STDIN&gt;;
+            for my $ids ( @{ $ts{$timestamp} } ) {
+                    last if $tot-- &lt; 1;
+                    print join(",",$life, $ids, $cls )."\n";
+            }
+     }
+&lt;/code&gt;</doctext>
+<thread id="1212093">
+<node id="1212095"><node id="1212105"><node id="1212119"/>
+<node id="1212137"><node id="1212186"/>
+<node id="1212188"/>
+</node>
+</node>
+<node id="1212111"><node id="1212112"><node id="1212135"/>
+</node>
+</node>
+</node>
+<node id="1212098"/>
+<node id="1212107"/>
+<node id="1212114"/>
+</thread></node>

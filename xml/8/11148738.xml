@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11148738" title="Re^3: use of Backticks to catch console output" created="2022-12-11 09:11:26" updated="2022-12-11 09:11:26" _doctext_mode="lenient"><type id="11">note</type>
+<author id="861371">kcott</author>
+<doctext field_name="doctext">&lt;p&gt;G'day [id://830549|haukex],&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;em&gt;"Just a small nitpick: on Windows it is almost impossible to avoid the shell."&lt;/em&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;
+I checked out that module's documentation and code not so long; I've just checked again.
+Both are still very clear that &lt;c&gt;capturex()&lt;/c&gt; does not invoke the shell.
+Here's a selection of extracts (non-exhaustive):
+&lt;/p&gt;
+
+&lt;p&gt;
+From [https://metacpan.org/pod/IPC%3A%3ASystem%3A%3ASimple#SYNOPSIS|SYNOPSIS]:
+&lt;/p&gt;
+&lt;code&gt;
+# As above, but NEVER invokes the shell.
+my $output = capturex("some_command", @args);
+&lt;/code&gt;
+
+&lt;p&gt;
+From [https://metacpan.org/dist/IPC-System-Simple/source/lib/IPC/System/Simple.pm|source], 
+starting at [https://metacpan.org/dist/IPC-System-Simple/source/lib/IPC/System/Simple.pm#L361|Line 361]
+(note the "&lt;c&gt;NO_SHELL&lt;/c&gt;"):
+&lt;/p&gt;
+&lt;code&gt;
+# capturex() is just like backticks/qx, but never invokes the shell.
+ 
+sub capturex {
+...
+        if (WINDOWS) {
+            return _win32_capture(NO_SHELL, $valid_returns, $command, @args);
+        }
+&lt;/code&gt;
+
+&lt;p&gt;
+Are you possibly confusing &lt;c&gt;capturex()&lt;/c&gt; with &lt;c&gt;capture()&lt;/c&gt;?
+Same source, starting at [https://metacpan.org/dist/IPC-System-Simple/source/lib/IPC/System/Simple.pm#L220|Line 220]
+(note the "&lt;c&gt;USE_SHELL&lt;/c&gt;"):
+&lt;/p&gt;
+&lt;code&gt;
+# capture is our way of running a process with backticks/qx semantics
+ 
+sub capture {
+...
+        if (WINDOWS) {
+            # USE_SHELL really means "You may use the shell if you need it."
+            return _win32_capture(USE_SHELL, $valid_returns, $command);
+        }
+&lt;/code&gt;
+
+&lt;p&gt;
+If not a case of confusion, do you think the documentation, code, or something else, is wrong?
+&lt;/p&gt;
+
+&lt;small&gt;
+&lt;p&gt;
+All links and extracts are from the [https://metacpan.org/dist/IPC-System-Simple|IPC-System-Simple-1.30] distribution
+(released "Mar 24, 2020").
+&lt;/p&gt;
+&lt;/small&gt;
+
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-861371"&gt;
+&lt;p&gt;&amp;mdash; Ken&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11148715</root_node>
+<parent_node field_name="parent_node">11148734</parent_node>
+<thread id="11148715">
+<node id="11148716"><node id="11148718"/>
+</node>
+<node id="11148717"/>
+<node id="11148722"><node id="11148734"><node id="11148738"><node id="11148739"><node id="11148741"><node id="11148747"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

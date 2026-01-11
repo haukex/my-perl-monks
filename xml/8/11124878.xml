@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11124878" title="Re: match two files" created="2020-12-09 07:31:38" updated="2020-12-09 07:31:38" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Although overkill for the example you showed, it might be useful to see how this can be done with SQL. The following uses [mod://DBD::CSV] so it can work with your input files directly to produce your expected output, though for "production" work you would probably want to use a real database. Also, my output code is somewhat simplistic, one could use [mod://Text::CSV]([mod://Text::CSV_XS|_XS]) for that purpose as well.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DBI;
+
+my $dbh = DBI-&gt;connect("dbi:CSV:", undef, undef, {
+		csv_sep_char =&gt; "\t", f_ext =&gt; '', RaiseError =&gt; 1,
+	}) or die "Cannot connect: $DBI::errstr";
+ 
+my $sth = $dbh-&gt;prepare(&lt;&lt;'ENDSQL');
+SELECT
+	tmp01.PeptideID as PeptideID,
+	tmp01.ProteinID as ProteinID,
+	tmp02.SpectrumID as SpectrumID,
+	tmp02.Sequence as Sequence
+	FROM tmp01
+	LEFT OUTER JOIN tmp02
+		ON tmp01.PeptideID = tmp02.PeptideID
+ENDSQL
+$sth-&gt;execute;
+print join("\t", @{ $sth-&gt;{NAME} } ), "\n";
+while ( my $row = $sth-&gt;fetchrow_arrayref ) {
+	print join("\t", @$row ), "\n";
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Also make sure to read up on the different kinds of [wp://Join_(SQL)|SQL JOINs] to see the difference between those and which one is appropriate for your case.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11124864</root_node>
+<parent_node field_name="parent_node">11124864</parent_node>
+<thread id="11124864">
+<node id="11124866"><node id="11124867"/>
+</node>
+<node id="11124868"><node id="11124869"/>
+</node>
+<node id="11124873"><node id="11124886"><node id="11124888"><node id="11124893"/>
+</node>
+</node>
+</node>
+<node id="11124874"><node id="11124887"><node id="11124891"><node id="11124898"><node id="11124903"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11124878"><node id="11124900"/>
+</node>
+<node id="11124928"/>
+<node id="11124971"><node id="11124974"><node id="11125037"/>
+</node>
+<node id="11125004"/>
+</node>
+</thread></node>

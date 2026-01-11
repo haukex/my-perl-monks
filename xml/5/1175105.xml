@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1175105" title="Re^2: 255: perl compilation error code and ssh cannot connect code (updated)" created="2016-11-02 04:13:00" updated="2016-11-02 04:13:00" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi,&lt;/p&gt;
+&lt;p&gt;Testing this shows that it appears to work, even for compile-time* errors:&lt;/p&gt;
+&lt;c&gt;
+$ cat ex.pl
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+END { $? = 250 if $? == 255 }
+
+print $c;
+
+$ perl ex.pl ; echo $?
+Global symbol "$c" requires explicit package name (did you forget to declare "my $c"?) at ex.pl line 7.
+Execution of ex.pl aborted due to compilation errors.
+250
+&lt;/c&gt;
+&lt;p&gt;Note this is documented in [doc://$?]. However, this solution means you'd have to insert the END block at the top of every script that you run like this, so personally I like [Corion]'s suggestion of a wrapper script better. Also, consider what kind of errors you are catching. Syntax errors are something that you can catch when you're developing the script, so I don't see how those could sneak in. Runtime errors, like you mention in the bug report accessing something that doesn't exist, are something you could catch and handle gracefully within the script, for example there's [mod://Try::Tiny].&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;* Update:&lt;/b&gt; Actually I think this may be inaccurate, although it seems to catch many syntax errors and such, there might be cases where the END block isn't executed; if I get around to it I'll test more later.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1175089</root_node>
+<parent_node field_name="parent_node">1175098</parent_node>
+<thread id="1175089">
+<node id="1175090"><node id="1175091"><node id="1175092"/>
+</node>
+</node>
+<node id="1175098"><node id="1175105"><node id="1175108"/>
+<node id="1175125"><node id="1175137"/>
+</node>
+</node>
+<node id="1175107"><node id="1175111"><node id="1175116"/>
+</node>
+</node>
+</node>
+<node id="1175104"><node id="1175106"/>
+</node>
+</thread></node>

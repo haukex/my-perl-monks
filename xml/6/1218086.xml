@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1218086" title="Re: shedding a bash wrapper and updating to Path::Tiny" created="2018-07-07 04:32:05" updated="2018-07-07 04:32:05" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I essentially want to combine what these 2 do&lt;/i&gt;&lt;/blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;c&gt;chmod&lt;/c&gt;: [mod://Path::Tiny] supports a &lt;c&gt;chmod&lt;/c&gt; method (e.g. &lt;c&gt;$obj-&gt;chmod("0755")&lt;/c&gt; or &lt;c&gt;$obj-&gt;chmod("a+x")&lt;/c&gt;), which it gets from [mod://File::chmod], unfortunately [mod://Path::Class], which you're using in your code, does not, but you can use Perl's [doc://chmod] (just make sure to check for errors). Perl's [doc://chmod] only supports numeric modes, though.&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;cd&lt;/c&gt;: [doc://chdir] (make sure to check for errors)&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;pwd&lt;/c&gt;: &lt;c&gt;getcwd&lt;/c&gt; from [doc://Cwd]&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;As for your code, it's pretty long and I've only skimmed it for now, but one thing I noticed is that you're using &lt;c&gt;-&gt;stringfiy&lt;/c&gt; a lot, into temporary variables. While certainly not wrong, it's kind of cluttering up your code a bit - for debug output, you should be able to [doc://print] the objects directly, and also note that it's not necessary to stringify the objects only to turn them back into objects again later. Using &lt;c&gt;$srd3&lt;/c&gt; as an example:&lt;/p&gt;
+&lt;c&gt;
+my $rd3 = dir( ... );
+my $srd3 = $rd3-&gt;stringify;
+mkdir $srd3 or warn "couldn't make $srd3: $!\n";
+say "srd3 is $srd3";
+$b = file( $srd3, $_ );
+&lt;/c&gt;
+&lt;p&gt;Can be written instead as:&lt;/p&gt;
+&lt;c&gt;
+my $rd3 = dir( ... );
+$rd3-&gt;mkpath();
+say "rd3 is $rd3";
+my $f = $rd3-&gt;file( $_ );
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1218074</root_node>
+<parent_node field_name="parent_node">1218074</parent_node>
+<thread id="1218074">
+<node id="1218076"><node id="1218264"><node id="1218409"><node id="1218421"><node id="1219221"><node id="1219294"><node id="1219335"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1218086"><node id="1218335"/>
+</node>
+</thread></node>

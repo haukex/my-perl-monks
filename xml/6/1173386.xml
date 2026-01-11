@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1173386" title="Perplexing JSON decoding issue." created="2016-10-06 05:13:55" updated="2016-10-06 05:13:55" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1173384">Miyako</author>
+<doctext field_name="doctext">&lt;p&gt;Hello, I am having a slight issue in Perl 5.2. I've used libjson-perl for a few years and written many things which used it to decode Json from websites. I am now in the process of writing a bot for the chat app Discord which uses a Json api, much like other places I've written bots for previously. I know my code is right, or at least should be, yet I am getting the "not a hash reference error." Here is the output I am getting in my terminal.&lt;/p&gt; &lt;code&gt;$VAR1 = [
+          {
+            'mentions' =&gt; [],
+            'author' =&gt; {
+                          'avatar' =&gt; '035a793a88596c440cb0434f272d8f3c',
+                          'discriminator' =&gt; '4559',
+                          'id' =&gt; '159495601208164353',
+                          'username' =&gt; 'MiyakoProductions'
+                        },
+            'embeds' =&gt; [],
+            'channel_id' =&gt; '193239098226376705',
+            'tts' =&gt; bless( do{\(my $o = 0)}, 'JSON::XS::Boolean' ),
+            'mention_roles' =&gt; [],
+            'mention_everyone' =&gt; $VAR1-&gt;[0]{'tts'},
+            'content' =&gt; 'so i wrote a simple script to pull each one automatically',
+            'id' =&gt; '233412710220562432',
+            'type' =&gt; 0,
+            'pinned' =&gt; $VAR1-&gt;[0]{'tts'},
+            'edited_timestamp' =&gt; undef,
+            'timestamp' =&gt; '2016-10-06T02:18:46.715000+00:00',
+            'attachments' =&gt; []
+          }
+        ];
+
+Not a HASH reference at discord.pl line 70.&lt;/code&gt; &lt;p&gt;My code itself is:&lt;/p&gt; &lt;code&gt;sub getMessages($) {
+	my $apiUrl = $baseUrl . "channels/" . $_[0] . "/messages?limit=1";
+	print "$apiUrl\n";
+	my $discordClient = WWW::Mechanize-&gt;new( agent =&gt; 'DiscordBot (LibDiscord-Perl5 1)' );
+	$discordClient-&gt;add_header('Authorization' =&gt; "$authToken");
+	my $clientConnected = eval { $discordClient-&gt;get($apiUrl, 'Content-Type' =&gt; 'application/json'); };
+	if (! $clientConnected ) { errorCon(); }
+	else { # Set values when connection is successful
+		our $apiContent = $discordClient-&gt;content;
+		#print Dumper($apiContent) . "\n";
+		my @apiJson = decode_json( $apiContent );
+		print "Pretty Response:\n" . Dumper( @apiJson ) . "\n";
+		my $msgID = $apiJson[0]-&gt;{'id'};
+		my $msgAuthor = $apiJson[0]-&gt;{'author'}-&gt;{'username'};
+		my $msgContent = $apiJson[0]-&gt;{'content'};
+		
+		if ($msgID &gt; $lastMsgID) {
+			print "&lt;$msgAuthor&gt; $msgContent\n";
+			$lastMsgID = $msgID;
+		}
+	}
+}
+
+sub errorCon {
+	print "Error: Unable to connect to Discord!\n";
+}&lt;/code&gt; &lt;p&gt;The response is generally 50 messages long, however I limit it to 1 message for ease of parsing and debugging. Therefore, I am treating the response first as an array, and yes I have tried to foreach through it. After treating it as an array I do the normal syntax to retrieve the value of a key. Is there something I am missing?&lt;/p&gt;</doctext>
+<thread id="1173386">
+<node id="1173388"/>
+<node id="1173389"/>
+<node id="1173422"><node id="1173424"/>
+</node>
+</thread></node>

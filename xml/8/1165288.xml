@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1165288" title="Trying to get information about network interfaces" created="2016-06-10 09:55:17" updated="2016-06-10 09:55:17" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1134717">iRemix94</author>
+<doctext field_name="doctext">&lt;p&gt;
+Hello fellow perl users,
+I currently try to find a way to get information about my local network interfaces. To be more precise, I want to know which one of my network interfaces is a real (physical) or a virtual one. I don't had my eyes on the Net::Interface module, but apparently my ppm won't find the package at all. Additionally, I don't really know if the Net::Interface module can distinguish between physical and virtual network interfaces. Is there a way to get the information without the usage of that package? 
+&lt;br&gt;&lt;br&gt;
+Edit: For anyone interested, I found a solution:
+&lt;/p&gt;
+&lt;code&gt;
+my $dbh = DBI-&gt;connect('dbi:WMI:');
+
+
+my $stmt = "
+SELECT Name, NetConnectionID 
+FROM Win32_NetworkAdapter 
+WHERE  Manufacturer != 'Microsoft' 
+AND NOT PNPDeviceID LIKE 'ROOT\\\\%'
+";
+
+my $sth = $dbh-&gt;prepare($stmt);
+
+$sth-&gt;execute();
+while (my @row = $sth-&gt;fetchrow_array) {
+   print "Name:\t\t\t$row[0]\Interface:\t$row[1]\n\n";
+}
+&lt;/code&gt;</doctext>
+<thread id="1165288">
+<node id="1165291"><node id="1165360"><node id="1165527"/>
+</node>
+</node>
+<node id="1165292"><node id="1165361"/>
+</node>
+<node id="1165364"/>
+</thread></node>

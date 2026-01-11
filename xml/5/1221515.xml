@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1221515" title="Re: package variable does not persist" created="2018-09-01 06:36:03" updated="2018-09-01 06:36:03" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;First, make sure you've got [doc://warnings] enabled everywhere, it'll help you catch typos and other accidents (see also [id://111088]):&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -e '$Module::configvar=0; if($Module::confgivar=1)
+	{ print "&lt;$Module::configvar&gt;\n"; }'
+Found = in conditional, should be == at -e line 1.
+Name "Module::confgivar" used only once: possible typo at -e line 1.
+&lt;0&gt;
+&lt;/c&gt;
+&lt;p&gt;If that doesn't help, you can trace when the variable gets set, put the following debug code at the top of your program, above &lt;c&gt;use Module;&lt;/c&gt; and anything else that may make use of &lt;c&gt;$Module::configvar&lt;/c&gt;. It will show you exactly when values are stored in the variable.&lt;/p&gt;
+&lt;c&gt;
+BEGIN {
+	package LoggingScalar;
+	require Tie::Scalar;
+	our @ISA = 'Tie::StdScalar';
+	use Carp 'cluck';
+	sub STORE { cluck "STORE"; shift-&gt;SUPER::STORE(@_) }
+	tie $Module::configvar, 'LoggingScalar';
+}
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1221498</root_node>
+<parent_node field_name="parent_node">1221498</parent_node>
+<thread id="1221498">
+<node id="1221499"/>
+<node id="1221503"/>
+<node id="1221508"><node id="1221513"/>
+<node id="1221549"/>
+</node>
+<node id="1221515"/>
+</thread></node>

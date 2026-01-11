@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118491" title="Re: Push array to hash" created="2020-06-25 03:03:43" updated="2020-06-25 03:03:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;The first structure appears just fine, but subsequent pushes only show as "${$VAR1}-&amp;gt;&amp;#91;0&amp;#93;" - not sure why?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;As [BillKSmith] [id://11118446|mentioned], what's going on here is that you have &lt;i&gt;one&lt;/i&gt; hash &lt;c&gt;%lag_detail&lt;/c&gt;, and every time you [doc://push] a reference to that hash onto the array, you're pushing a reference to the &lt;i&gt;same&lt;/i&gt;  one hash. This also means that when you write &lt;c&gt;%lag_detail = ( ... );&lt;/c&gt;, you're resetting that one hash, and therefore every reference to the hash will reflect that change, which is unlikely to be what you want. That's what &lt;c&gt;${$VAR1}-&gt;[0]&lt;/c&gt; means: [doc://Data::Dumper] is trying to tell you that the other elements of the array refer to the &lt;i&gt;exact same&lt;/i&gt; data structure.&lt;/p&gt;
+&lt;p&gt;In essence, this is what's going on - note how both times, a reference to the &lt;i&gt;same&lt;/i&gt; hash is pushed onto the array:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dumper;
+
+my @array;
+my %hash = ( abc=&gt;123 );
+push @array, \%hash;
+%hash = ( def=&gt;456 );
+push @array, \%hash;
+
+print Dumper(\@array);
+print $array[1]{def}, "\n"; # ok
+print $array[0]{abc}, "\n"; # nope! hash was cleared!
+
+__END__
+
+$VAR1 = [
+          {
+            'def' =&gt; 456
+          },
+          $VAR1-&gt;[0]
+        ];
+456
+Use of uninitialized value in print at test.pl line 13.
+&lt;/c&gt;
+&lt;p&gt;There are a couple of ways to fix this. The one that I think is probably most applicable in this case is to change from using a hash &lt;c&gt;%lag_detail&lt;/c&gt; to a reference to an anonymous hash (hashref), as in:&lt;/p&gt;
+&lt;c&gt;
+my $lag_detail;
+foreach my $line ( split( /\n/, $c ) ) {
+	if ( $line =~ m/someregex/ ) {
+		if ( exists $lag_detail-&gt;{ports} ) {
+			push( @{ $self-&gt;{lags} }, $lag_detail );
+		}
+		$lag_detail = { lagid =&gt; $lag, lagdesc =&gt; $4,
+			operationstate =&gt; $3, adminstate =&gt; $2 };
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;The reason this works is that with &lt;c&gt;$lag_detail = { ... }&lt;/c&gt;, you're actually allocating a &lt;i&gt;new&lt;/i&gt; anonymous hash every time and getting a reference to it. See [doc://perlreftut] and [doc://perlref] if you're unsure about some of the details of references.&lt;/p&gt;	
+&lt;p&gt;Just for completeness, in addition to the (shallow) copying of the hash that [BillKSmith] suggested, a very common solution to this problem is to define the hash inside the loop, which also gets you a &lt;i&gt;new&lt;/i&gt; hash on every iteration of the loop:&lt;/p&gt;
+&lt;c&gt;
+foreach my $line ( split( /\n/, $c ) ) {
+	my %lag_detail;
+	...
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;However&lt;/i&gt;, since it looks to me like you're probably parsing a multiline data strucutre and don't want to push a record onto the array until it is complete, I think this is unlikely to be the correct fix in your case.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11118431</root_node>
+<parent_node field_name="parent_node">11118431</parent_node>
+<thread id="11118431">
+<node id="11118446"><node id="11118463"/>
+</node>
+<node id="11118460"><node id="11118487"/>
+<node id="11118505"/>
+</node>
+<node id="11118466"/>
+<node id="11118467"/>
+<node id="11118491"/>
+<node id="11118510"/>
+</thread></node>

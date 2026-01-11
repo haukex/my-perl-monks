@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11145133" title="Re: Any security holes?" created="2022-06-28 06:57:49" updated="2022-06-28 06:57:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I think you might be following a really outdated CGI tutorial. Here is an example using the much more modern [mod://Mojolicious] and [mod://Mojo::SQLite]. It avoids many of the issues mentioned in this thread, but note it is not complete yet, for example there is no checking of duplicate submissions or rate limiting (someone could fill up your hard drive with lots of requests), no constraints on the database table (like unique nicknames), and no checks on the format of the submitted data, like no strict checking of URLs (so somebody could submit an image with nefarious content, or link to a nefarious website, for example). This particular Mojo app works as a CGI script as well, in addition to the usual Mojo ways like development via [mod://morbo]. I hope this, along with [mod://Mojolicious::Guides::Tutorial], [doc://perlintro], and [doc://perlreftut], will be a &lt;i&gt;much&lt;/i&gt; better starting point for you. The script does contain some advanced techniques, like my use of &lt;c&gt;map&lt;/c&gt; to work with the columns, but if you have any questions, please feel free to ask!&lt;/p&gt;
+&lt;c&gt;
+use Mojolicious::Lite -signatures; # turns on strict and warnings too
+use Mojo::SQLite;
+use Hash::Ordered;
+
+helper sqlite =&gt;
+	sub { state $sql = Mojo::SQLite-&gt;new('sqlite:/path/to/mydb.db') };
+
+# disable template cache when running under morbo/development mode
+app-&gt;renderer-&gt;cache-&gt;max_keys(0) if app-&gt;mode eq 'development';
+
+# define the database columns; used everywhere in this script
+# and most code depends on this hash being ordered
+tie my %COLS, 'Hash::Ordered',
+	nick=&gt;'Nickname', pic=&gt;'Picture', say=&gt;'Says', likes=&gt;'Likes',
+	fav=&gt;'Favorite vehicle', car=&gt;'Real life car/vehicle', age=&gt;'Age',
+	town=&gt;'Hometown', drink=&gt;'Favorite drink', wpage=&gt;'Webpage';
+
+# dynamically generate the table definition based on the columns
+# (if columns are modified later this might mess things up)
+my $CREATE = app-&gt;sqlite-&gt;abstract-&gt;generate('create table',
+	'drivers', [ 'id INTEGER PRIMARY KEY AUTOINCREMENT',
+		map {"$_ TEXT"} sort keys %COLS ] );
+app-&gt;sqlite-&gt;migrations-&gt;from_string(&lt;&lt;"END_MIGR")-&gt;migrate;
+-- 1 up
+$CREATE;
+-- 1 down
+DROP TABLE IF EXISTS drivers;
+END_MIGR
+
+# a normal GET request queries the database and renders the template
+get '/' =&gt; sub ($c) {
+	$c-&gt;stash( COLS =&gt; \%COLS, rows =&gt;
+		$c-&gt;sqlite-&gt;db-&gt;select('drivers', [keys %COLS])-&gt;hashes );
+	$c-&gt;render('main');
+} =&gt; 'drivers';
+
+# a POST request adds a row to the database and redirects back
+post '/' =&gt; sub ($c) {
+	$c-&gt;sqlite-&gt;db-&gt;insert('drivers',
+		{ map { $_=&gt;$c-&gt;param($_) } keys %COLS } );
+	$c-&gt;redirect_to($c-&gt;url_for('drivers'));
+} =&gt; 'newdriver';
+
+app-&gt;start;
+
+__DATA__
+
+@@ main.html.ep
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;Drivers&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+&lt;h1&gt;Drivers&lt;/h1&gt;
+
+% if (@$rows) {
+	&lt;div&gt;&lt;table border="1"&gt;
+	&lt;tr&gt;
+	% for my $col (values %$COLS) {
+		&lt;th&gt;&lt;%= $col %&gt;&lt;/th&gt;
+	% }
+	&lt;/tr&gt;
+	% for my $row (@$rows) {
+		&lt;tr&gt;
+		% for my $col (keys %$COLS) {
+			&lt;td&gt;
+			% if ($col eq 'pic') {
+				%= image $row-&gt;{$col}
+			% } elsif ($col eq 'wpage') {
+				%= link_to $row-&gt;{$col} =&gt; $row-&gt;{$col}
+			% } else {
+				%= $row-&gt;{$col}
+			% }
+			&lt;/td&gt;
+		% }
+		&lt;/tr&gt;
+	% }
+	&lt;/table&gt;&lt;/div&gt;
+% } else {
+	&lt;div&gt;&lt;b&gt;No records found!&lt;/b&gt;&lt;/div&gt;
+% }
+
+&lt;h2&gt;Add a New Driver&lt;/h2&gt;
+&lt;div&gt;
+%= form_for newdriver =&gt; ( method =&gt; 'post' ) =&gt; begin
+&lt;table&gt;
+% for my $col (keys %$COLS) {
+&lt;tr&gt;
+	&lt;td&gt;&lt;%= label_for $col =&gt; $COLS-&gt;{$col} %&gt;&lt;/td&gt;
+	&lt;td&gt;
+	% if ($col eq 'pic' || $col eq 'wpage') {
+		%= url_field $col, placeholder=&gt;'https://example.com/...',
+			required=&gt;'required', pattern=&gt;'https://.*'
+	% } else {
+		%= text_field $col, placeholder=&gt;$COLS-&gt;{$col},
+			required=&gt;'required'
+	% }
+	&lt;/td&gt;
+&lt;/tr&gt;
+% }
+&lt;/table&gt;
+%= submit_button 'Add Driver'
+%= end
+&lt;/div&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11145079</root_node>
+<parent_node field_name="parent_node">11145079</parent_node>
+<thread id="11145079">
+<node id="11145080"/>
+<node id="11145084"/>
+<node id="11145085"><node id="11145092"><node id="11145093"><node id="11145094"><node id="11145096"/>
+</node>
+</node>
+<node id="11145095"><node id="11145097"/>
+<node id="11145098"/>
+<node id="11145116"/>
+</node>
+</node>
+<node id="11145099"><node id="11145100"><node id="11145101"/>
+</node>
+<node id="11145127"/>
+</node>
+</node>
+<node id="11145087"/>
+<node id="11145102"><node id="11145105"><node id="11145109"/>
+</node>
+<node id="11145110"><node id="11145119"><node id="11145120"><node id="11145124"><node id="11145128"><node id="11145145"><node id="11145163"/>
+</node>
+<node id="11145148"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11145113"><node id="11145114"><node id="11145118"/>
+</node>
+</node>
+</node>
+<node id="11145107"/>
+<node id="11145129"/>
+<node id="11145133"><node id="11145135"/>
+</node>
+<node id="11145137"/>
+</thread></node>

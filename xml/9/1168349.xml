@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1168349" title="Re^3: Quoting each word in an arrayref" created="2016-07-22 07:37:53" updated="2016-07-22 07:37:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [soundX],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Is there a better way to do this?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;That depends, personally I like the [doc://map] solution, but if your data structure is more complicated than the small example you've shown then perhaps there is an even better solution. Note that the solution given by [Corion], based on your code, only pulls the first value out of the nested array, if the nested arrays have a different number of values in them then another approach might be more appropriate. Here are some variations to play around with (JSON output manually sorted):&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use JSON::MaybeXS;
+
+my $rows   = [["val1"],["val2"]];
+my $rows_a = [[],["val2","val3"]];
+my $return;
+$return-&gt;{'key1'}   = [join(', ', map { $_-&gt;[0] } @$rows)];
+$return-&gt;{'key2'}   = [map { $_-&gt;[0] } @$rows];
+$return-&gt;{'key3'}   = [map { @$_     } @$rows];
+$return-&gt;{'key2_a'} = [map { $_-&gt;[0] } @$rows_a];
+$return-&gt;{'key3_a'} = [map { @$_     } @$rows_a];
+print encode_json($return), "\n";
+
+__END__
+{
+"key1":["val1, val2"],
+"key2":["val1","val2"],
+"key3":["val1","val2"],
+"key2_a":[null,"val2"],
+"key3_a":["val2","val3"]
+}
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1168318</root_node>
+<parent_node field_name="parent_node">1168338</parent_node>
+<thread id="1168318">
+<node id="1168319"><node id="1168338"><node id="1168349"/>
+</node>
+</node>
+<node id="1168324"/>
+<node id="1168501"/>
+</thread></node>

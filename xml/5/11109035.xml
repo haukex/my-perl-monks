@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109035" title="Converting to number doesn't always work..." created="2019-11-21 23:47:05" updated="2019-11-21 23:47:05" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1166559">harangzsolt33</author>
+<doctext field_name="doctext">Dear Monks,
+
+&lt;P&gt;I have a sub called TEST() which converts every sort of input to a number. It should return 0 if the input value is undefined or uninitialized or blank or contains letters only. But if it contains digits, it should return those digits only.
+
+&lt;P&gt;So, &lt;B&gt;if I ask to convert "55a" then it returns "55" which is fine. But if I try to convert "a55" then it returns 0, which baffles me! It should return 55.&lt;/B&gt; Why does this happen?
+
+&lt;P&gt;Edit: It seems like I am able to access the value of $N from within the warning exception, but I cannot modify it. The changes do not stick. So, I guess the question is how can I export the value of $N from within the warning sub { } so that it would overwrite the value of $N in the TEST sub?
+
+&lt;P&gt;
+&lt;CODE&gt;
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+
+my @TEST_VALUES = ('55a', 'a55');
+
+foreach my $i (@TEST_VALUES)
+{
+  print "Calling TEST('$i'): ";
+  print "\nTEST return value = ", TEST($i), "\n";
+}
+exit;
+
+#######################################
+sub TEST
+{
+  print " TEST() was called ";
+  defined $_[0] or return 0;
+  my $N = shift;
+  print "with argument: '$N'\n";
+
+  # If we get a warning, it's probably because $N
+  # is not a number. So, we remove all non-digits
+  # and then it becomes a number!
+  local $SIG{__WARN__} = sub { print "\t\t(((warning '$N'-&gt;"; $N =~ tr|0-9||cd; $N = "0$N"; print "'$N')))\n"; };
+
+  $N += 0;
+  print "\nThe value of N is now '$N'\n";
+  return int($N);
+}
+&lt;/CODE&gt;</doctext>
+<thread id="11109035">
+<node id="11109043"><node id="11109046"/>
+</node>
+<node id="11109044"/>
+<node id="11109047"><node id="11109052"><node id="11109054"><node id="11109061"><node id="11109063"><node id="11109065"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11109057"/>
+</node>
+<node id="11109070"/>
+<node id="11109080"><node id="11109085"><node id="11109101"><node id="11109105"/>
+<node id="11109115"><node id="11109192"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

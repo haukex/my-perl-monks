@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11126158" title="Re^5: Calling module function from within a blessed module" created="2021-01-02 14:48:28" updated="2021-01-02 14:48:28" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Naming a package &lt;c&gt;0&lt;/c&gt; is a fatal, compilation error ... The problem is likely to occur where, in some code completely separate from yours, someone writes '&lt;c&gt;$x-&gt;your_method()&lt;/c&gt;' when, perhaps, '&lt;c&gt;$y-&gt;your_method()&lt;/c&gt;' was intended.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Another example might be auto-generated package names (though if such code generated a package named &lt;c&gt;"0"&lt;/c&gt;, one could question the sanity of that choice...)&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+{ package Foo;
+	use Data::Dump;
+	use Scalar::Util qw/blessed/;
+	sub new { return bless {}, shift }
+	sub foo {
+		my $self = shift if blessed($_[0]) &amp;&amp; $_[0]-&gt;isa(__PACKAGE__);
+		dd 'foo', $self, \@_;
+	}
+	sub bar {
+		my $self = shift if defined blessed($_[0])
+			&amp;&amp; $_[0]-&gt;isa(__PACKAGE__);
+		dd 'bar', $self, \@_;
+	}
+}
+
+{ no strict 'refs'; @{"0::ISA"} = ('Foo') }
+
+my $x = bless {}, '0';
+$x-&gt;foo();  # ("foo", undef, ["0=HASH(0x561239194f3e)"])
+$x-&gt;bar();  # ("bar", "0=HASH(0x561239194f3e)", [])
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11126140</root_node>
+<parent_node field_name="parent_node">11126157</parent_node>
+<thread id="11126140">
+<node id="11126142"><node id="11126145"/>
+</node>
+<node id="11126143"><node id="11126144"/>
+</node>
+<node id="11126146"><node id="11126147"><node id="11126148"><node id="11126157"><node id="11126158"><node id="11126169"><node id="11126188"><node id="11126237"/>
+</node>
+</node>
+</node>
+<node id="11126159"/>
+<node id="11126249"/>
+</node>
+</node>
+<node id="11126149"/>
+</node>
+</node>
+<node id="11126150"><node id="11126151"/>
+</node>
+<node id="11126192"><node id="11126193"><node id="11126196"/>
+</node>
+</node>
+</thread></node>

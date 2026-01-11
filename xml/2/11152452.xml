@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11152452" title="perl 5.32 format question" created="2023-05-29 02:46:13" updated="2023-05-29 02:46:13" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="839293">hotpelmen</author>
+<doctext field_name="doctext">Hi Monks,
+&lt;p&gt;
+Could you please kindly help with printing empty line into report when using Perl v5.32?
+&lt;/p&gt;
+&lt;p&gt;
+Background: while transferring an old Perl application (a collection of scripts) from RHEL7 (Perl 5.16) to RHEL9 (Perl 5.32), found some tests failing in 5.32 because whitespace value refuses to get printed on its own line into report when format uses picture line that starts with caret and ends with two tildes. 
+&lt;/p&gt;
+&lt;p&gt;
+Removing tildes (or running the following sample code in Perl 5.16) results in whitespace printed on its own line without issues. 
+&lt;/p&gt;
+&lt;p&gt;
+I wrote the following script for the purpose of illustration of the phenomenon. Note: same behavior is displayed when using "format NAME = ..." syntax instead of "$format = ..." + "eval $format".
+&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+my ($date, $reference, $rep_line);
+
+my $format = q/format REP_TOP =
+@&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; @&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;
+$date, $reference
+.
+/;
+eval $format;
+
+$format = q/format REP =
+^&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; ~~
+$rep_line
+.
+/;
+eval $format;
+
+$date = "11/11/2011";
+$reference = "REF123";
+
+open my $fh, "&gt;", "/tmp/test.txt" or die "$!\n";
+
+$fh-&gt;format_name("REP");
+$fh-&gt;format_top_name("REP_TOP");
+$fh-&gt;autoflush(1);
+$fh-&gt;format_lines_per_page(10);
+
+for (@ARGV) {
+    $rep_line = $_;
+    write $fh;
+}
+&lt;/code&gt;
+
+Running this script as follows prints only lines with non-whitespace values:
+
+&lt;code&gt;
+$ perl testformat.pl 0 1 " " 2 3 " " 4 5;
+$ cat /tmp/test.txt
+11/11/2011                REF123
+0
+1
+2
+3
+4
+5
+&lt;/code&gt;
+
+Expected (and as it works with 5.16):
+
+&lt;code&gt;
+$ perl testformat.pl 0 1 " " 2 3 " " 4 5;
+$ cat /tmp/test.txt
+11/11/2011                REF123
+0
+1
+
+2
+3
+
+4
+5
+&lt;/code&gt;
+
+Assuming I still want to use format, how would you advise to overcome this and achieve printing of whitespace values into separate lines of report? I need to keep ~~ there to be able to wrap longer values. It appears that ~~ is confused by Perl with single ~. Any idea WHY the behavior changed? Is it a bug?
+
+</doctext>
+<thread id="11152452">
+<node id="11152460"><node id="11152524"/>
+</node>
+<node id="11152465"><node id="11152526"/>
+</node>
+</thread></node>

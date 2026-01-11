@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11124003" title="Multi-dimensional constants" created="2020-11-22 00:44:32" updated="2020-11-22 00:44:32" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11123488">Ionic</author>
+<doctext field_name="doctext">&lt;p&gt;
+I'm trying to create a read-only &amp;quot;multi-dimensional&amp;quot; constant using the built-in [doc://constant] pragma. I know that there's the [mod://Readonly] module (amongst others), but I'm trying to stick to basics.
+&lt;/p&gt;
+&lt;p&gt;
+Using anonymous list references doesn't really work, because they can be modified, as documented:
+
+&lt;blockquote&gt;&lt;i&gt;Even though a reference may be declared as a constant, the reference may point to data which may be changed, as this code shows.&lt;/i&gt;&lt;br /&gt;
+&lt;c&gt;use constant ARRAY =&gt; [ 1,2,3,4 ];
+print ARRAY-&gt;[1];
+ARRAY-&gt;[1] = " be changed";
+print ARRAY-&gt;[1];&lt;/c&gt;&lt;/blockquote&gt;
+&lt;/p&gt;
+&lt;p&gt;
+&lt;i&gt;Okay, so I'll use some sort of indirection&lt;/i&gt;, I thought, and came up with something like this:
+&lt;c&gt;
+use strict;
+use warnings;
+use Data::Dumper;
+
+use constant INVALID_DATA =&gt; ( q{invalid}, 0 );
+use constant ADD_DATA =&gt; ( q{add}, 1 );
+use constant REMOVE_DATA =&gt; ( q{remove}, 2 );
+use constant MODES =&gt; ( \&amp;ADD_DATA, \&amp;REMOVE_DATA );
+
+print {*STDERR} "Dumping MODES: " . Dumper ((MODES));
+
+1;
+&lt;/c&gt;
+
+&amp;hellip; but, this doesn't quite do what I expected. Output:
+&lt;c&gt;
+Dumping MODES: $VAR1 = sub { "DUMMY" };
+$VAR2 = sub { "DUMMY" };
+&lt;/c&gt;
+
+I was under the impression that constants are really subs that I could take the reference of, but this doesn't seem to be the case.
+&lt;/p&gt;
+&lt;p&gt;
+Alternatively, I've tried taking direct references, but this is... just merging the lists (which is obviously bad to begin with and what I wanted to avoid by using references) in a weird &amp;quot;reference all elements individually&amp;quot; way:
+&lt;c&gt;
+use constant MODES =&gt; ( \ADD_DATA, \REMOVE_DATA );
+&lt;/c&gt;
+
+leading to
+&lt;c&gt;
+Dumping MODES: $VAR1 = \'add';
+$VAR2 = \1;
+$VAR3 = \'remove';
+$VAR4 = \2;
+&lt;/c&gt;
+&lt;/p&gt;
+&lt;p&gt;
+Is there any proper way to do this?
+&lt;/p&gt;</doctext>
+<thread id="11124003">
+<node id="11124004"><node id="11124007"><node id="11124008"><node id="11124009"/>
+</node>
+</node>
+</node>
+<node id="11124011"/>
+<node id="11124014"><node id="11124024"/>
+</node>
+<node id="11124017"/>
+<node id="11124026"/>
+<node id="11124028"/>
+</thread></node>

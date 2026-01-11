@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193769" title="Re: execute if date is greater then 2hours" created="2017-06-28 04:01:01" updated="2017-06-28 04:01:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;If you've already got [mod://DateTime] objects, then you should use their methods to do all your date/time math, and &lt;i&gt;not&lt;/i&gt; be working with regexes or manual date/time math. To turn a string into a [mod://DateTime] object, I like [mod://DateTime::Format::Strptime]. Note that you need to supply the correct time zone to [mod://DateTime::Format::Strptime] for the comparison to work, and also that &lt;c&gt;subtract_datetime_absolute&lt;/c&gt; is "the only way to accurately measure the absolute amount of time between two datetimes, since units larger than a second do not represent a fixed number of seconds." (Although in this case that level of accuracy might not be needed, and regular [mod://DateTime::Duration] calculations might be enough.)&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime::Format::Strptime;
+
+my $now = DateTime-&gt;now;
+print "$now\n";
+
+my $strp = DateTime::Format::Strptime-&gt;new(on_error=&gt;'croak',
+	pattern =&gt; '%Y-%m-%d %H:%M:%S', time_zone=&gt;'UTC');
+my $dtevent = $strp-&gt;parse_datetime('2017-06-28 05:30:31');
+print "$dtevent\n";
+
+my $diff_sec = $now-&gt;subtract_datetime_absolute($dtevent)
+	-&gt;in_units('seconds');
+my $diff_hours = $diff_sec/(60*60);
+print "$diff_sec s / $diff_hours h\n";
+
+if ($diff_hours&gt;2) {
+	print "$dtevent was more than 2 hours ago\n";
+}
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1193762</root_node>
+<parent_node field_name="parent_node">1193762</parent_node>
+<thread id="1193762">
+<node id="1193768"><node id="1193776"/>
+</node>
+<node id="1193769"><node id="1193775"/>
+</node>
+</thread></node>

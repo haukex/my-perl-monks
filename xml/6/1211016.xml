@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1211016" title="Re: Simple Q. for You" created="2018-03-16 04:46:33" updated="2018-03-16 04:46:33" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;return 1 if ( $d-&gt;{foo} &amp;&amp; $d-&gt;{foo} =~ /X/i )&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Most of the following has already been covered by [trippledubs], but let me lay it out in order:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;&lt;tt&gt;&lt;i&gt;Something&lt;/i&gt; if &lt;i&gt;Something&lt;/i&gt;&lt;/tt&gt; is a [doc://perlsyn#Statement-Modifiers|statement modifier]. That line of code is the same as&lt;/p&gt;
+&lt;blockquote&gt;&lt;c&gt;if ( $d-&gt;{foo} &amp;&amp; $d-&gt;{foo} =~ /X/i ) { return 1 }&lt;/c&gt;&lt;/blockquote&gt;
+&lt;p&gt;so let's look at it in that order. (Statement modifiers can make Perl read a lot more like English.)&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;The first part of the &lt;c&gt;if&lt;/c&gt; condition is &lt;c&gt;$d-&gt;{foo}&lt;/c&gt;. &lt;c&gt;-&gt;{...}&lt;/c&gt; dereferences a hash reference (see [doc://perlreftut]), in other words, &lt;c&gt;$d&lt;/c&gt; is a reference to a hash, and we're asking Perl to look up the key &lt;c&gt;foo&lt;/c&gt; in that hash.&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Since in the first part of the condition we're not applying any other operators other than [doc://perlop#C-style-Logical-And|&lt;c&gt;&amp;&amp;&lt;/c&gt;], this means we are checking for whether &lt;c&gt;$d-&gt;{foo}&lt;/c&gt; holds [id://11104607|a true or a false] value. Why would we want to do this? Most likely, because if &lt;c&gt;$d-&gt;{foo}&lt;/c&gt; was [doc://undef|&lt;c&gt;undef&lt;/c&gt;], Perl would issue a warning later on when we use the &lt;c&gt;=~&lt;/c&gt; operator (more on that below). This also applies if the hash did not even contain a key &lt;c&gt;foo&lt;/c&gt; - in this case Perl would also return &lt;c&gt;undef&lt;/c&gt; for that key. (Note: You can check for &lt;c&gt;undef&lt;/c&gt; explicitly with the [doc://defined] function, and check for the existence of a hash key with [doc://exists]. The fact that this code does not use these means that if &lt;c&gt;$d-&gt;{foo}&lt;/c&gt; were to hold the value &lt;c&gt;"0"&lt;/c&gt;, then that would still be evaluated as "false". But since this code is looking for &lt;c&gt;"X"&lt;/c&gt;, that should not be a problem in this case.)&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;The [doc://perlop#C-style-Logical-And|&lt;c&gt;&amp;&amp;&lt;/c&gt; operator] "short-circuits", meaning that if the left side is false, the right side does not even get executed and tested, because if the left is false, we already know that the whole &lt;c&gt;&amp;&amp;&lt;/c&gt; will be false. If the left side is true, then the operator will test the right side.&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;In the right side of the condition, &lt;c&gt;$d-&gt;{foo} =~ /X/i&lt;/c&gt;, the [doc://perlop#Binding-Operators|&lt;c&gt;=~&lt;/c&gt; operator] basically applies the regular expression &lt;c&gt;/X/i&lt;/c&gt; to the string value of &lt;c&gt;$d-&gt;{foo}&lt;/c&gt;.&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;The regular expression (see [doc://perlretut]) &lt;c&gt;/X/i&lt;/c&gt; basically means "find &lt;c&gt;X&lt;/c&gt; case-insensitively" - the &lt;c&gt;/i&lt;/c&gt; is a "modifier" on the regular expression &lt;c&gt;/X/&lt;/c&gt; that turns on case-insensitive matching.&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;The [doc://return] statement will return the value &lt;c&gt;1&lt;/c&gt; from the &lt;c&gt;sub&lt;/c&gt;routine (or similar block) it is inside of, aborting its execution at that point (see also [doc://perlsub]).&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;So taking all of that together, that line of code reads as "return 1 if the hash referenced by &lt;c&gt;$d&lt;/c&gt; contains a key &lt;c&gt;foo&lt;/c&gt; with a true value that also contains the string &lt;c&gt;X&lt;/c&gt; (case-insensitively)".&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update 2019-08-17:&lt;/i&gt; Updated the link to "Truth and Falsehood".&lt;/small&gt;&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1211005</root_node>
+<parent_node field_name="parent_node">1211005</parent_node>
+<thread id="1211005">
+<node id="1211007"><node id="1211009"/>
+</node>
+<node id="1211010"/>
+<node id="1211016"/>
+<node id="1211036"><node id="1211037"><node id="1211215"/>
+</node>
+<node id="1211042"/>
+</node>
+<node id="1211226"/>
+</thread></node>

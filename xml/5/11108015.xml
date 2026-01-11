@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11108015" title="Re: forked process silently dies without coredump. No clue what's going on (updated)" created="2019-10-27 08:41:01" updated="2019-10-27 08:41:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;What's puzzling me here actuall is the 2nd and following print of the Dumper so the lines starting with "... re-check system load" which pints just $load = $load instead of $load = { .... }&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;[doc://Data::Dumper] remembers which references it's already output, and will just output a "reference" to the previous &lt;del&gt;variable&lt;/del&gt;&lt;ins&gt;data structure&lt;/ins&gt; if you dump it twice. Use its &lt;c&gt;-&gt;Reset&lt;/c&gt; method to reset its &lt;c&gt;Seen&lt;/c&gt; cache.&lt;/p&gt;
+&lt;c&gt;
+use Data::Dumper;
+my $load = { foo =&gt; 123 };
+my $dumper = Data::Dumper-&gt;new([$load],[qw($load)]);
+print $dumper-&gt;Dump();  # $load = { 'foo' =&gt; 123 };
+print $dumper-&gt;Dump();  # $load = $load;
+$dumper-&gt;Reset;
+print $dumper-&gt;Dump();  # $load = { 'foo' =&gt; 123 };
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;eval { ... }; if ($@) { ...&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;See [id://1153468], although I'm not sure if this has anything to do with your issues. Why do you have the &lt;c&gt;eval&lt;/c&gt; in the first place? The only thing I see where I would consider &lt;c&gt;die&lt;/c&gt;ing realistic is the call to &lt;c&gt;loadavg()&lt;/c&gt;, although you don't guard the first call to that function. And since you haven't shown that function, we can't tell if that might be the source of the issues.&lt;/p&gt;
+&lt;p&gt;As for the actual problem, this seems like it may be a case for stripping down the code to a minimal [id://1177642|SSCCE] that reproduces the issue. This will help you narrow down the source of the problems. For example, to make sure that it isn't something strange with the logging, perhaps remove that, and add your own simple [doc://print] statements to a file (with autoflush turned on). From the code you've shown, I'm not able to see what else the issue might be - maybe another Monk does, but the major advantage of a [id://1177642] is that we just can download and run it to reproduce the issue on our end.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Also, what's happening with &lt;c&gt;STDOUT&lt;/c&gt; and especially &lt;c&gt;STDERR&lt;/c&gt; of this process, do you have the ability to see that somewhere?&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11108014</root_node>
+<parent_node field_name="parent_node">11108014</parent_node>
+<thread id="11108014">
+<node id="11108015"/>
+<node id="11108016"><node id="11108167"><node id="11108170"/>
+</node>
+</node>
+<node id="11108027"><node id="11108166"><node id="11108209"/>
+</node>
+</node>
+</thread></node>

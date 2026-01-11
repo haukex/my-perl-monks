@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11103824" title="Code review: Start and End markers to ensure Serial data is valid" created="2019-08-03 16:34:06" updated="2019-08-03 16:34:06" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="789891">stevieb</author>
+<doctext field_name="doctext">&lt;p&gt;Changing it up a bit here. I'm doing some prototype code that will eventually be translated into C/XS, but I'm having some brain fart moments here trying to sort out whether my logic is, actually logical.&lt;/p&gt;
+
+&lt;p&gt;Because the distribution isn't available yet, it's not test-worthy. What I'm looking for is eyes on the logic itself, not whether it works or not. What's supposed to happen is this:&lt;/p&gt;
+
+&lt;p&gt;caller sends in a start data marker (&lt;c&gt;[&lt;/c&gt;), an end data marker (&lt;c&gt;]&lt;/c&gt;), a digit that represents the number of times the start/end markers should be seen before identifying we have data (&lt;c&gt;3&lt;/c&gt;), and finally, a test "reset" identifier (&lt;c&gt;!&lt;/c&gt;) for the transmitter to say "wait, reset that crap, let's start over"&lt;/p&gt; 
+
+&lt;p&gt;I've got it working in basic test cases, but I'm wondering if some keen-eyed Monks can have a glance at the situation (I've left everything as simple-to-understand &lt;c&gt;if()&lt;/c&gt; statements for this review) to see how I could expand on the assurance aspect of ensuring the receiver only gets good data, and continues to work if not.&lt;/p&gt;
+
+&lt;p&gt;Receiver (rx):&lt;/p&gt;
+
+&lt;c&gt;
+use warnings;
+use strict;
+
+use RPi::Serial;
+
+my $s = RPi::Serial-&gt;new('/dev/ttyUSB0', 9600);
+
+my $data;
+my ($rx_started, $rx_ended) = (0, 0);
+
+while (1){
+    if ($s-&gt;avail){
+        my $data_populated = rx('[', ']', 3, '!');
+
+        if ($data_populated){
+            print "$data\n";
+            rx_reset();
+        }
+    }
+}
+
+sub rx {
+    my ($start, $end, $delim_count, $rx_reset) = @_;
+
+    my $c = chr($s-&gt;getc); # getc() returns the ord() val on a char* perl-wise
+
+    if ($c ne $start &amp;&amp; ! $rx_started == $delim_count){
+        rx_reset();
+        return;
+    }
+    if ($c eq $rx_reset){
+        rx_reset();
+        return;
+    }
+    if ($c eq $start){
+        $rx_started++;
+        return;
+    }
+    if ($c eq $end){
+        $rx_ended++;
+    }
+    if ($rx_started == $delim_count &amp;&amp; ! $rx_ended){
+        $data .= $c;
+    }
+    if ($rx_started == $delim_count &amp;&amp; $rx_ended == $delim_count){
+        return 1;
+    }
+}
+sub rx_reset {
+    $rx_started = 0;
+    $rx_ended = 0;
+    $data = '';
+}
+&lt;/c&gt;
+
+&lt;p&gt;Sender (tx):&lt;/p&gt;
+
+&lt;c&gt;
+use warnings;
+use strict;
+
+use RPi::Serial;
+
+my $s = RPi::Serial-&gt;new('/dev/ttyS0', 9600);
+
+for (qw(x [[[hello]]] ! [[[world]]] a b)){
+    # x     = no start marker seen yet, reset
+    # [[[   = start data ok
+    # hello = data
+    # ]]]   = end data ok
+    # !     = RX reset command
+    # [[[   = start data ok
+    # world = data
+    # ]]]   = end data ok
+    # a     = no start marker set, reset
+    # b     = no start marker set, reset
+
+    $s-&gt;puts($_);
+}
+&lt;/c&gt;
+
+&lt;p&gt;Works fine in such a situation, here's the output after starting rx in one window, and running tx in another window after that:&lt;/p&gt;
+
+&lt;c&gt;
+$ perl examples/rx.pl
+hello
+world
+&lt;/c&gt;
+
+&lt;p&gt;I apologize for the lack of a testable example, but this is a thought-process-only kind of post I'm trying to get ideas from by eye at this time.&lt;/p&gt;
+
+&lt;p&gt;Thanks all,&lt;/p&gt;
+
+&lt;p&gt;-stevieb&lt;/p&gt;</doctext>
+<thread id="11103824">
+<node id="11103827"/>
+<node id="11103871"/>
+<node id="11103892"><node id="11104058"><node id="11104061"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117864" title="Re^2: Substitute some Unicodes with their escapes" created="2020-06-09 07:31:02" updated="2020-06-09 07:31:02" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1129446">jjmoka</author>
+<doctext field_name="doctext">Yes &lt;code&gt;$_table{'Ö'}&lt;/code&gt; is an example. There is no &lt;code&gt;use utf8;&lt;/code&gt;. No identifiers neither Unicode strings are builtin into the module. The hash is sourced via this function:
+&lt;code&gt;
+my %_table = ();
+
+    sub load_map
+    {
+      open( UTF8, "&lt;:encoding(utf8)", 'tab.bin' ) || die "can't open tab.bin : $!";
+
+      while( &lt;UTF8&gt; ) {
+        chomp;
+        my $offset = index($_,' ');
+        my $bin    = substr($_,$offset+1);
+        my $esc    = substr($_,0,$offset);
+        $_table{$bin} = $esc;
+      }
+      close( UTF8 );
+    }
+&lt;/code&gt;
+
+A &lt;code&gt;Dump&lt;/code&gt; of a (short) received string is this:
+&lt;code&gt;
+SV = PVMG(0x12fca50) at 0x134f698
+  REFCNT = 4
+  FLAGS = (PADMY,POK,pPOK,UTF8)
+  IV = 0
+  NV = 0
+  PV = 0x1361200 "                           &lt;entry&gt;R\303\226CHLING ENGINEERING PLASTICS (UK) LIMITED&lt;/entry&gt;"\0 [UTF8 "                           &lt;entry&gt;R\x{d6}CHLING ENGINEERING PLASTICS (UK) LIMITED&lt;/entry&gt;"]
+  CUR = 85
+  LEN = 88
+&lt;/code&gt;
+
+Going to think about that SSCCE.
+Thanks
+
+&lt;p&gt;
+UPDATE:
+ here the SSCCE: &lt;/p&gt;
+&lt;code&gt;
+use strict;
+use utf8;     # used only for this SSCCE to set scalar $SGML at line 44
+use Devel::Peek qw (Dump);
+use Encode qw(encode_utf8);
+
+binmode(STDOUT, ":utf8");
+
+my %_table = ();
+# -----------------------------------
+sub load_map
+{
+   while( &lt;DATA&gt; ) {
+     chomp;
+     my $offset = index($_,' ');
+     my $bin    = substr($_,$offset+1);
+     my $esc    = substr($_,0,$offset);
+     $_table{$bin} = $esc;
+   }
+}
+
+# -----------------------------------
+sub _mapchar
+{
+   my ($char) = @_;
+   if ( $char !~ /[\r\n\s]/) {
+        my $nbytes = length encode_utf8($char);
+        if ($nbytes &gt; 1) {
+        $char = exists $_table{$char} ? $_table{$char} : '?';
+        }
+   }
+   return $char;
+}
+# -----------------------------------
+sub escapeUTF8
+{
+   my ( $sgml_r) = @_;
+
+   Dump $$sgml_r;
+   $$sgml_r =~ s/(.)/_mapchar($1)/eg;
+}
+
+load_map();
+
+my $SGML='RÖCHLING';
+print "1: $SGML\n";
+escapeUTF8(\$SGML);
+print "2: $SGML\n";
+
+__DATA__
+&amp;dollar; $
+&amp;Ouml; Ö
+&amp;raquo; »
+~
+&lt;/code&gt; &lt;p&gt;it works, but still the regex is on every char&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11117861</root_node>
+<parent_node field_name="parent_node">11117862</parent_node>
+<thread id="11117861">
+<node id="11117862"><node id="11117864"><node id="11117866"><node id="11117871"/>
+</node>
+<node id="11117888"><node id="11117889"/>
+</node>
+</node>
+</node>
+<node id="11117867"><node id="11117872"/>
+<node id="11117873"/>
+</node>
+</thread></node>

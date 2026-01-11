@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1195816" title="Understanding endianness of a number" created="2017-07-23 11:07:47" updated="2017-07-23 11:07:47" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="789891">stevieb</author>
+<doctext field_name="doctext">&lt;p&gt;Hey all,&lt;/p&gt;
+
+&lt;p&gt;I ran into a situation recently where I was reading from an I2C device, and the byte ordering was in the opposite endianness that I was expecting. Although I fixed the problem by reversing the bytes before returning them, I went off to research exactly what endian was. I've spent numerous hours testing, reading and more testing, but I still can't grasp it fully. I'm hoping just one or two more examples will have it 'click'.&lt;/p&gt;
+
+&lt;p&gt;So, I'll start off with a couple of examples here to see if I have the basics down. Please feel free to elaborate with other examples or comments etc.&lt;/p&gt;
+
+&lt;p&gt;Set up our number, and two byte scalars (full version copy/pastable at the bottom of the post):&lt;/p&gt;
+
+&lt;c&gt;
+use warnings;
+use strict;
+use feature 'say';
+
+my $num = 1023; # 0x03ff
+my ($b1, $b2);
+&lt;/c&gt;
+
+&lt;p&gt;Now, if I do the following bit shifting, the &lt;c&gt;printf()&lt;/c&gt; is printing the bytes in big endian format, correct?&lt;/p&gt;
+
+&lt;c&gt;
+$b1 = ($num &amp; 0xff00) &gt;&gt; 8;
+$b2 = $num &amp; 0xff;
+
+printf("%x, %x\n", $b1, $b2); # 3, ff
+&lt;/c&gt;
+
+&lt;p&gt;Likewise, if I reverse the operations/bytes, this one will print in little endian format, right?&lt;/p&gt;
+
+&lt;c&gt;
+$b1 = $num &amp; 0xff;
+$b2 = ($num &amp; 0xff00) &gt;&gt; 8;
+
+printf("%x, %x\n", $b1, $b2); # ff, 3
+&lt;/c&gt;
+
+
+&lt;p&gt;Full code:&lt;/p&gt;
+
+&lt;c&gt;
+use warnings;
+use strict;
+use feature 'say';
+
+my $num = 1023;
+
+my ($b1, $b2);
+
+$b1 = ($num &amp; 0xff00) &gt;&gt; 8;
+$b2 = $num &amp; 0xff;
+
+printf("%x, %x\n", $b1, $b2);
+
+$b1 = $num &amp; 0xff;
+$b2 = ($num &amp; 0xff00) &gt;&gt; 8;
+
+printf("%x, %x\n", $b1, $b2);
+&lt;/c&gt;</doctext>
+<thread id="1195816">
+<node id="1195818"><node id="1195833"/>
+</node>
+<node id="1195831"><node id="1195832"><node id="1195834"><node id="1195835"/>
+</node>
+<node id="1195845"><node id="1195846"><node id="1195853"><node id="1196123"/>
+</node>
+<node id="1196176"><node id="1196177"><node id="1196184"><node id="1196186"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1195887"/>
+</thread></node>

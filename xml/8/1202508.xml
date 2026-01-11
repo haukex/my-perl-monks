@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1202508" title="Re: Comparing DateTime objects in different timezones" created="2017-11-01 06:50:34" updated="2017-11-01 06:50:34" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I specifically set the timezone of the two dates to Australia/Sydney and America/Los_Angeles.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Be careful with this, since using &lt;c&gt;set_time_zone&lt;/c&gt; may actually change the time value. If you have parsed times that include time zone information, then you do not need to use &lt;c&gt;set_time_zone&lt;/c&gt; unless you specifically want to represent the time in another zone, but this is not necessary for comparisons! Only if your time did not include time zone information and it is in the special "floating" zone should you use &lt;c&gt;set_time_zone&lt;/c&gt;, because as per the [mod://DateTime] docs, comparisons are best between objects in a specific time zone (even if it's just UTC). See also my post [id://1192739|here].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Then I get the UTC offset of the two dates, to compare&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;It sounds like you might be over-thinking the solution - [mod://DateTime] allows for comparison of objects even if they are in different time zones. See its docs: &lt;c&gt;subtract_datetime_absolute&lt;/c&gt; "is the only way to accurately measure the absolute amount of time between two datetimes, since units larger than a second do not represent a fixed number of seconds." For example (from [id://1193769|here]):&lt;/p&gt;
+&lt;c&gt;
+my $diff_sec = $dt2-&gt;subtract_datetime_absolute($dt1)
+    -&gt;in_units('seconds');
+&lt;/c&gt;
+&lt;p&gt;So your steps should be:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Parse your strings into [mod://DateTime] objects (e.g. [mod://DateTime::Format::Strptime])&lt;/li&gt;
+&lt;li&gt;For debugging, print out your objects including TZ info (e.g. &lt;c&gt; $dt-&gt;strftime('%Y-%m-%d %H:%M:%S.%3N %Z (%z)')&lt;/c&gt;)&lt;/li&gt;
+&lt;li&gt;If and only if any of the objects are in the "floating" zone, set their time zone.&lt;/li&gt;
+&lt;li&gt;Use &lt;c&gt;subtract_datetime_absolute&lt;/c&gt; to compare them, as shown above.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Since the [mod://DateTime] family are my favorite modules for date/time processing, I've written about them a lot, you should be able to find some good snippets [href://?node_id=3989;BIT=use%20DateTime;BIS=_;a=haukex|among my posts]. &lt;i&gt;Update:&lt;/i&gt; In fact, [id://1178209|this] post should give you everything you need!&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1202481</root_node>
+<parent_node field_name="parent_node">1202481</parent_node>
+<thread id="1202481">
+<node id="1202483"/>
+<node id="1202485"><node id="1202488"/>
+</node>
+<node id="1202499"/>
+<node id="1202508"/>
+</thread></node>

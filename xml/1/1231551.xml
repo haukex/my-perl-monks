@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1231551" title="Re: JSON::Path and node iteration" created="2019-03-21 11:31:45" updated="2019-03-21 11:31:45" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You don't say what your expected output for that input is, but based on running your code against your sample data, it seems that you want only the first author (&lt;c&gt;$data_ar = $data_ar-&gt;[0]&lt;/c&gt;), with the return value of &lt;c&gt;unfoldauthors&lt;/c&gt; in this format (Perl):&lt;/p&gt;
+&lt;c&gt;
+["Oubaha, Brahim; Laboratory of Biology and Biotechnology of Microorganisms Faculty of Sciences Semlalia Cadi Ayyad University Marrakech Morocco - Laboratory of Interaction Plant\x{2010}Microorganisms, Department of Biology University of Fribourg Fribourg Switzerland "]
+&lt;/c&gt;
+&lt;p&gt;Your stated requirement seems fairly straightforward, and so I'm not really sure what all the code in &lt;c&gt;for my $s (@selectors)&lt;/c&gt; is doing - maybe you could explain that?&lt;/p&gt;
+&lt;p&gt;Here, I've written &lt;c&gt;unfoldauthors2&lt;/c&gt; to give you just the first author, and &lt;c&gt;unfoldauthors3&lt;/c&gt; to give you all authors:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+use JSON::Path;
+use JSON;
+
+my $data = decode_json(&lt;&lt;'ENDJSON');
+{"status":"ok","message-type":"work-list","message-version":"1.0.0",
+"message":{"facets":{},"total-results":1,"items": [
+	{"author":[
+		{"given":"Brahim","family":"Oubaha","sequence":"first","affiliation":[
+			{"name":"Laboratory of Biology and Biotechnology of Microorganisms Faculty of Sciences Semlalia Cadi Ayyad University Marrakech Morocco"},
+			{"name":"Laboratory of Interaction Plant\u2010Microorganisms, Department of Biology University of Fribourg Fribourg Switzerland"} ]},
+		{"given":"Ahmed","family":"Nafis","sequence":"additional","affiliation":[
+			{"name":"Laboratory of Biology and Biotechnology of Microorganisms Faculty of Sciences Semlalia Cadi Ayyad University Marrakech Morocco"} ]},
+		{"given":"Mohamed","family":"Baz","sequence":"additional","affiliation":[
+			{"name":"Laboratory of Biology and Biotechnology of Microorganisms Faculty of Sciences Semlalia Cadi Ayyad University Marrakech Morocco"} ]},
+		{"given":"Felix","family":"Mauch","sequence":"additional","affiliation":[
+			{"name":"Laboratory of Interaction Plant\u2010Microorganisms, Department of Biology University of Fribourg Fribourg Switzerland"}]},
+		{"given":"Mustapha","family":"Barakate","ORCID":"http:\/\/orcid.org\/0000-0001-7949-5592","authenticated-orcid":false,"sequence":"additional","affiliation":[
+			{"name":"Laboratory of Biology and Biotechnology of Microorganisms Faculty of Sciences Semlalia Cadi Ayyad University Marrakech Morocco"},
+			{"name":"Agrobiosciences &amp;amp; Fertilizers Program University Mohammed IV Polytechnic (UM6P) Benguerir Morocco"}]}
+	],"title":["The potential of antagonistic moroccan\n            Streptomyces\n            isolates for the biological control of damping\u2010off disease of pea (\n            Pisum sativum\n            L.) caused by\n            Aphanomyces euteiches"]}
+], "items-per-page":20,"query":{"start-index":0,"search-terms":null}}}
+ENDJSON
+
+dd unfoldauthors($data-&gt;{message}{items}[0]{author});
+dd unfoldauthors2($data-&gt;{message}{items}[0]{author});
+dd unfoldauthors3($data-&gt;{message}{items}[0]{author});
+
+sub unfoldauthors {
+	my ($data_ar) = @_;
+	return unless ($data_ar);
+	$data_ar = $data_ar-&gt;[0];
+	my @paths = qw( $..family $..given $..affiliation );
+	my @selectors;
+	for my $p (@paths) {
+		push @selectors, JSON::Path-&gt;new($p);
+	}
+	my $aff_name = JSON::Path-&gt;new('$..name');
+	my $name;
+	my @lines;
+	my @sep = ( ", ", "; ", " " );
+	my $col = 0;
+	for my $s (@selectors) {
+		my @text = $s-&gt;values($data_ar);
+		my $authors_limit = 50;
+		my $last = $authors_limit - 1;
+		if ( @text &gt; $authors_limit ) {
+			@text = @text[ 0 .. $last ];
+			$text[$last] .= " ..." if ( $col == 1 );
+		}
+		my $pos = 0;
+		for my $name (@text) {
+			#print "$col $name\n";
+			if ( $col == 2 ) {
+				my @aff = $aff_name-&gt;values( $text[$pos] );
+				$name = join( " - ", @aff );
+			}
+			$lines[ $pos++ ] .= $name . $sep[$col];
+		}
+		$col++;
+	}
+	return \@lines;
+}
+
+sub unfoldauthors2 {
+	my ($authors) = @_;
+	return [ $authors-&gt;[0]{family}.', '.$authors-&gt;[0]{given}.'; '.
+		join(' - ', map {$_-&gt;{name}} @{$authors-&gt;[0]{affiliation}}) ];
+}
+
+sub unfoldauthors3 {
+	my ($authors) = @_;
+	return [ map { $_-&gt;{family}.', '.$_-&gt;{given}.'; '.join(' - ',
+		map {$_-&gt;{name}} @{ $_-&gt;{affiliation} }) } @$authors ];
+}
+
+__END__
+
+[
+  "Oubaha, Brahim; Laboratory of Biology and Biotechnology of Microorganisms Faculty of Sciences Semlalia Cadi Ayyad University Marrakech Morocco - Laboratory of Interaction Plant\x{2010}Microorganisms, Department of Biology University of Fribourg Fribourg Switzerland ",
+]
+[
+  "Oubaha, Brahim; Laboratory of Biology and Biotechnology of Microorganisms Faculty of Sciences Semlalia Cadi Ayyad University Marrakech Morocco - Laboratory of Interaction Plant\x{2010}Microorganisms, Department of Biology University of Fribourg Fribourg Switzerland",
+]
+[
+  "Oubaha, Brahim; Laboratory of Biology and Biotechnology of Microorganisms Faculty of Sciences Semlalia Cadi Ayyad University Marrakech Morocco - Laboratory of Interaction Plant\x{2010}Microorganisms, Department of Biology University of Fribourg Fribourg Switzerland",
+  "Nafis, Ahmed; Laboratory of Biology and Biotechnology of Microorganisms Faculty of Sciences Semlalia Cadi Ayyad University Marrakech Morocco",
+  "Baz, Mohamed; Laboratory of Biology and Biotechnology of Microorganisms Faculty of Sciences Semlalia Cadi Ayyad University Marrakech Morocco",
+  "Mauch, Felix; Laboratory of Interaction Plant\x{2010}Microorganisms, Department of Biology University of Fribourg Fribourg Switzerland",
+  "Barakate, Mustapha; Laboratory of Biology and Biotechnology of Microorganisms Faculty of Sciences Semlalia Cadi Ayyad University Marrakech Morocco - Agrobiosciences &amp;amp; Fertilizers Program University Mohammed IV Polytechnic (UM6P) Benguerir Morocco",
+]
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1231547</root_node>
+<parent_node field_name="parent_node">1231547</parent_node>
+<thread id="1231547">
+<node id="1231551"><node id="1231552"><node id="1231553"><node id="1231564"><node id="1231572"><node id="1231573"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

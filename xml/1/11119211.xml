@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11119211" title="Re: Modifying muliple matched strings in text (updated)" created="2020-07-12 09:36:44" updated="2020-07-12 09:36:44" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Though it seems to work, I have a hunch this isn't ideal.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Of course, the best way is to use a proper parser. In this case, the [https://daringfireball.net/projects/markdown/|original Markdown] is a Perl script itself, and the regex extracted from it looks like the following (modified slightly to put it into &lt;c&gt;qr//&lt;/c&gt; form). Of course, now there are tons of different Markdown variations and parsers, and probably several that are more robust than this "just a regex" parser, but as long as your Markdown input is simple enough, it should probably be ok. &lt;b&gt;&lt;tt&gt;&amp;lt;update&amp;gt;&lt;/tt&gt;&lt;/b&gt; There are caveats to this approach, though - for example, the following regex will also operate on code blocks! As usual, more representative sample data will result in more accurate solutions &lt;c&gt;:-)&lt;/c&gt; &lt;b&gt;&lt;tt&gt;&amp;lt;/update&amp;gt;&lt;/tt&gt;&lt;/b&gt;&lt;/p&gt;
+&lt;c&gt;
+my $g_nested_brackets;
+$g_nested_brackets = qr{
+    (?&gt;                             # Atomic matching
+       [^\[\]]+                     # Anything other than brackets
+     | 
+       \[
+         (??{ $g_nested_brackets }) # Recursive set of nested brackets
+       \]
+    )*
+}x;
+my $anchors = qr{
+    (                # wrap whole match in $1
+      \[
+        ($g_nested_brackets)    # link text = $2
+      \]
+      \(            # literal paren
+        [ \t]*
+        &lt;?(.*?)&gt;?   # href = $3
+        [ \t]*
+        (           # $4
+          (['"])    # quote char = $5
+          (.*?)     # Title = $6
+          \5        # matching quote
+        )?          # title is optional
+      \)
+    )
+}xs;
+&lt;/c&gt;
+&lt;p&gt;I've taken this regex and modified it to modernize it a bit and only capture the things we're interested in:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $anchors = qr{
+	(?(DEFINE) (?&lt;nested_brackets&gt;
+		(?&gt; [^\[\]]+ | \[ (?&amp;nested_brackets) \] )*
+	) )
+	\[ (?&lt;text&gt; (?&amp;nested_brackets) ) \]
+	\( (?&lt;link&gt;
+		[ \t]* &lt;? .*? &gt;? [ \t]*
+		(?: (?&lt;titlequote&gt;['"]) .*? \k&lt;titlequote&gt; )?
+	) \)
+}xs;
+
+my $input = &lt;&lt;'END';
+blah blah [click me](click me) more stuff
+blah [link here](link here) blah blah
+END
+my $expect = &lt;&lt;'END';
+blah blah [click me](/click-me) more stuff
+blah [link here](/link-here) blah blah
+END
+(my $output = $input) =~
+	s{$anchors}{
+		my ($t, $l) = @+{qw/ text link /};
+		$l =~ s/\s+/-/g;
+		"[$t](/$l)"
+	}ge;
+
+use Test::More tests=&gt;1;
+is $output, $expect;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11119206</root_node>
+<parent_node field_name="parent_node">11119206</parent_node>
+<thread id="11119206">
+<node id="11119208"><node id="11119303"/>
+</node>
+<node id="11119211"><node id="11119304"/>
+</node>
+<node id="11119220"/>
+</thread></node>

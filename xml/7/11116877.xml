@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116877" title="Re: Regex with Backslashes (updated)" created="2020-05-17 17:54:32" updated="2020-05-17 17:54:32" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;To avoid further confusion, I suggest we take a step back and agree on how to communicate the strings appropriately. I think what is causing confusion here is that you are using single quotes to show strings*, and we, being Perl programmers, are assuming that Perl's rules for single-quoted string literals apply, but based on what you've written I don't think that's the definition you're using. So:&lt;/p&gt;
+&lt;ol&gt;
+	&lt;li&gt;When you write &lt;c&gt;'foo \x \\ \' \ bar'&lt;/c&gt;, due to Perl's rules for single-quoted strings ([doc://perlop#Quote-Like-Operators]: "A backslash represents a backslash unless followed by the delimiter or another backslash, in which case the delimiter or backslash is interpolated."), this string is actually the 16-character string &amp;laquo;&lt;c&gt;foo \x \ ' \ bar&lt;/c&gt;&amp;raquo;, as you can see when you execute the Perl code &lt;c&gt;print 'foo \x \\ \' \ bar', "\n";&lt;/c&gt;.
+		&lt;ul&gt;&lt;li&gt;&lt;i&gt;Note:&lt;/i&gt; I'm using these special quoting characters here to make it clear that I &lt;i&gt;don't&lt;/i&gt; mean Perl's quotes. In PerlMonks' HTML, what I've written is &lt;code&gt;&amp;laquo;&lt;c&gt;my string here&lt;/c&gt;&amp;raquo;&lt;/code&gt;. This is not an established standard, just something I'm doing in this node to differentiate between &lt;c&gt;""&lt;/c&gt;, &lt;c&gt;''&lt;/c&gt;, and "the characters the string literals actually represent".&lt;/li&gt;&lt;/ul&gt;
+	&lt;/li&gt;
+	&lt;li&gt;When you write &lt;c&gt;"foo \x22 \\ \' \" bar"&lt;/c&gt;, due to Perl's rules (same link as above), this string is actually the 15-character string &amp;laquo;&lt;c&gt;foo " \ ' " bar&lt;/c&gt;&amp;raquo; (try &lt;c&gt;print "foo \x22 \\ \' \" bar", "\n";&lt;/c&gt;). This is the format that tools like [mod://Data::Dump] and [doc://Data::Dumper] (with &lt;c&gt;$Data::Dumper::Useqq=1;&lt;/c&gt; turned on, which I always recommend) will output. Because of this, I suggested you use this format to show us what strings you're working with.&lt;/li&gt;
+	&lt;li&gt;When you want to show us a string &lt;i&gt;without&lt;/i&gt; any quoting/escaping/interpolation, then &lt;i&gt;don't&lt;/i&gt; use &lt;c&gt;''&lt;/c&gt;'s or &lt;c&gt;""&lt;/c&gt;'s. Just show us the string in PerlMonks' &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags, as in: &lt;c&gt;My input is the 14-character string &lt;code&gt;my string here&lt;/code&gt;.&lt;/c&gt;, optionally add some special quotes like I showed above, and tell us the actual [doc://length] of the string so we can verify.
+		&lt;ul&gt;&lt;li&gt;* &lt;b&gt;Update:&lt;/b&gt; Another option is heredocs, as [tybalt89] showed [id://11116882|here]; just make sure to put the heredoc marker into single quotes, as in &lt;c&gt;my $str = &lt;&lt;'END'; ... END&lt;/c&gt;, to disable interpolation inside the heredoc. This might be useful because from your reply [id://11116867|here], I seem to understand the single quotes are actually part of the string, which would also help explain the confusion we've been having. (Note the other quoting methods still work too, as in &lt;c&gt;'\'...\''&lt;/c&gt; and &lt;c&gt;"'...'"&lt;/c&gt;.)&lt;/li&gt;&lt;/ul&gt;
+	&lt;/li&gt;
+	&lt;li&gt;When you want to show us a regex, show us the Perl code and use a &lt;c&gt;qr//&lt;/c&gt; operator, don't use quotes (and don't use &lt;c&gt;qr''&lt;/c&gt; either). Again, this is the least ambiguous format. (See also [doc://perlop#Regexp-Quote-Like-Operators].)&lt;/li&gt;
+	&lt;li&gt;If you wanted to be really, really thorough, or there is some real confusion as to what your inputs are, then you could also show us the output of [doc://Devel::Peek]'s &lt;c&gt;Dump()&lt;/c&gt;, or, for files, show us a hex dump of the file: On Linux, either &lt;tt&gt;hexdump -C &lt;i&gt;filename&lt;/i&gt;&lt;/tt&gt; or &lt;tt&gt;od -tx1c &lt;i&gt;filename&lt;/i&gt;&lt;/tt&gt; ([id://1233709|see also]).&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;I think once we've got that cleared up and we understand what your actual strings are, we'll be able to help much more effectively &lt;c&gt;:-)&lt;/c&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11116857</root_node>
+<parent_node field_name="parent_node">11116857</parent_node>
+<thread id="11116857">
+<node id="11116859"><node id="11116860"><node id="11116861"/>
+</node>
+</node>
+<node id="11116862"><node id="11116867"><node id="11116874"/>
+</node>
+</node>
+<node id="11116865"><node id="11116868"><node id="11116869"><node id="11116873"><node id="11116876"><node id="11116878"><node id="11116880"><node id="11116900"/>
+</node>
+</node>
+</node>
+<node id="11116882"><node id="11116912"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11116877"><node id="11116910"><node id="11116911"><node id="11116913"/>
+</node>
+<node id="11116914"><node id="11116916"><node id="11116917"><node id="11116918"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

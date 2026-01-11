@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11100884" title="Re^8: Win32::Daemon service doesn't reach RUNNING state" created="2019-06-03 12:09:48" updated="2019-06-03 12:09:48" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1023772">SwaJime</author>
+<doctext field_name="doctext">&lt;p&gt;All issues resolved.&lt;/p&gt;
+&lt;p&gt;Code now runs on 2013 and 2018 versions of Daemon.pm.&lt;/p&gt;
+&lt;p&gt;I also got pause and resume to work! :-D&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use File::Basename;
+use Cwd qw(abs_path getcwd);
+
+use Win32::Daemon;
+if ($Win32::Daemon::VERSION == 20181025) {
+	# Constants were not properly exported in this version
+	package Win32::Daemon;
+	sub SERVICE_NOT_READY        { return 0 };
+	sub SERVICE_STOPPED          { return 1 };
+	sub SERVICE_START_PENDING    { return 2 };
+	sub SERVICE_STOP_PENDING     { return 3 };
+	sub SERVICE_RUNNING          { return 4 };
+	sub SERVICE_CONTINUE_PENDING { return 5 };
+	sub SERVICE_PAUSE_PENDING    { return 6 };
+	sub SERVICE_PAUSED           { return 7 };
+}
+
+package main;
+
+our $iSleep = 2;
+
+open(my $fh, "&gt;&gt;", "C:\\Users\\ru601501\\test\\test.log");
+select($fh);
+$|=1;
+
+print "V: " . $Win32::Daemon::VERSION . "\n";
+
+use Cwd qw(abs_path getcwd);
+use File::Spec::Functions;
+
+# Get command line argument - if none passed, use empty string
+my $opt = $ARGV[0] || "";
+my $path = $ARGV[1];
+
+print $fh "Running Test Service.\n";
+print $fh "opt: $opt\n";
+print $fh "path: $path\n" if $path;
+
+# Check command line argument
+if ($opt =~ /^(-i|--install)$/i) {
+	install_service();
+} elsif ($opt =~ /^(-r|--remove)$/i) {
+	remove_service();
+} else {
+	if (!$path) {
+		print $fh "This program is intended to be run as a service.\n";
+		exit 1;
+	}
+	chdir $path;
+
+	Win32::Daemon::RegisterCallbacks( {
+		start       =&gt;  \&amp;Callback_Start,
+		running     =&gt;  \&amp;Callback_Running,
+		stop        =&gt;  \&amp;Callback_Stop,
+		pause       =&gt;  \&amp;Callback_Pause,
+		continue    =&gt;  \&amp;Callback_Continue,
+	} );
+
+	my %Context = (
+		last_state =&gt; SERVICE_STOPPED,
+		start_time =&gt; time(),
+	);
+
+	if ($Win32::Daemon::VERSION &lt; 20180000) {
+		Win32::Daemon::AcceptedControls(SERVICE_ACCEPT_STOP
+		                              | SERVICE_ACCEPT_PAUSE_CONTINUE
+		                              | SERVICE_ACCEPT_SHUTDOWN
+		                              | SERVICE_ACCEPT_PARAMCHANGE
+		                              | SERVICE_ACCEPT_NETBINDCHANGE);
+	}
+
+	# Setting more than 5 seconds causes some systems to never trigger Callback_Running().
+	Win32::Daemon::StartService( \%Context, 5 * 1000); # 5 seconds
+
+	if ($Win32::Daemon::VERSION &lt; 20180000) {
+		close STDERR;
+		close STDOUT;
+	}
+}
+
+{
+	my $counter = 0;
+
+	sub Callback_Running {
+		my ($Event, $Context) = @_;
+
+		if (SERVICE_RUNNING == Win32::Daemon::State()) {
+			$counter += 5;
+# print $fh $counter . "\n";
+			if ($counter &gt;= $iSleep * 60) {
+				print $fh "Checking in.\n";
+				$counter = 0;
+			}
+
+			# These two lines are needed for both versions
+			$Context-&gt;{last_state} = SERVICE_RUNNING;
+			Win32::Daemon::State( SERVICE_RUNNING );
+		}
+		elsif (SERVICE_PAUSED == Win32::Daemon::State()) {
+			# Without this, pause/continue fails
+			$Context-&gt;{last_state} = SERVICE_PAUSED;
+			Win32::Daemon::State( SERVICE_PAUSED );
+                }
+	}
+}
+
+sub Callback_Start {
+	my($Event, $Context) = @_;
+
+	print $fh "Starting\n";
+
+	$Context-&gt;{last_state} = SERVICE_RUNNING;
+	Win32::Daemon::State( SERVICE_RUNNING );
+}
+
+sub Callback_Pause {
+	my($Event, $Context) = @_;
+
+	print $fh "Paused.\n";
+
+	$Context-&gt;{last_state} = SERVICE_PAUSED;
+	Win32::Daemon::State( SERVICE_PAUSED );
+}
+
+sub Callback_Continue {
+	my( $Event, $Context ) = @_;
+
+	print $fh "Resumed running.";
+
+	$Context-&gt;{last_state} = SERVICE_RUNNING;
+	Win32::Daemon::State( SERVICE_RUNNING );
+}
+
+sub Callback_Stop {
+	my($Event, $Context) = @_;
+
+	print $fh "Stopped.\n";
+
+	$Context-&gt;{last_state} = SERVICE_STOPPED;
+	Win32::Daemon::State( SERVICE_STOPPED );
+
+	# We need to notify the Daemon that we want to stop callbacks and the service.
+	Win32::Daemon::StopService();
+}
+
+sub install_service {
+	my ($path, $parameters);
+	my $dir = getcwd;
+	# Get the program's full filename, break it down into constituent parts
+	my $fn = Win32::GetFullPathName($0);
+	my ($cwd,$bn,$ext) = ( $fn =~ /^(.*\\)(.*)\.(.*)$/ ) [0..2] ;
+	
+	# Determine service's path to executable based on file extension
+	if ($ext eq "pl") {
+		# Source perl script - invoke perl interpreter
+		$path = "\"$^X\"";
+		# Parameters include extra @INC directories and perl script
+		# @INC directories must not end in \ otherwise perl hangs
+		my $inc = ($cwd =~ /^(.*?)[\\]?$/) [0];
+		$parameters = "-I " . "\"$inc\"" . " \"$fn\" \"myflag\" \"$dir\"";
+	} else {
+		# Invalid file type?
+		die "Can not install service for $fn,
+		file extension $ext not supported.";
+	}
+	
+	my $sServiceName = "TestService";
+	
+	# Populate the service configuration hash 
+	# The hash is required by Win32::Daemon::CreateService
+	my %srv_config = (
+		name         =&gt; $sServiceName,
+		display      =&gt; "Test Service ($sServiceName)",
+		path         =&gt; $path,
+		description  =&gt; "For debugging.",
+		parameters   =&gt; $parameters,
+#		service_type =&gt; SERVICE_WIN32_OWN_PROCESS,
+#		start_type   =&gt; SERVICE_AUTO_START,
+	);
+	if ($Win32::Daemon::VERSION &lt; 20180000) {
+		$srv_config{service_type} = SERVICE_WIN32_OWN_PROCESS;
+		$srv_config{start_type} = SERVICE_AUTO_START;
+	}
+
+	# Install the service
+	if (Win32::Daemon::CreateService(\%srv_config)) {
+		print $fh "Test Service has been installed.\n";
+		print $fh "Setting agent service to delayed start.\n";
+		print $fh "sc config $sServiceName start= delayed-auto\n";
+		print $fh `sc config $sServiceName start= delayed-auto`  . "\n";
+	} else {
+		print $fh "Failed to install Test Service: " . Win32::FormatMessage(Win32::Daemon::GetLastError()) . "\n";
+	}
+}
+
+sub remove_service {
+	print $fh "Test Service is being removed.\n";
+
+	my $sServiceName = "TestService";
+	my $hostname = Win32::NodeName(); 
+
+	if (Win32::Daemon::DeleteService($sServiceName)) {
+		print $fh "Test Service uninstalled successfully.\n";
+	} else {
+		print $fh "Failed to uninstall Test Service.\n";
+	}
+}
+&lt;/code&gt;
+&lt;p&gt;Hopefully I won't run into more issues.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11100647</root_node>
+<parent_node field_name="parent_node">11100874</parent_node>
+<thread id="11100647">
+<node id="11100649"><node id="11100664"/>
+</node>
+<node id="11100651"><node id="11100652"><node id="11100655"/>
+</node>
+<node id="11100653"/>
+</node>
+<node id="11100680"><node id="11100698"><node id="11100731"><node id="11100733"><node id="11100780"><node id="11100809"><node id="11100874"><node id="11100884"><node id="11100892"><node id="11100912"><node id="11100943"><node id="11107033"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

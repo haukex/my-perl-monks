@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11154620" title="Re: Windows precompiled binaries or DIY compile" created="2023-09-23 21:34:57" updated="2023-09-23 21:34:57" _doctext_mode="lenient"><type id="11">note</type>
+<author id="524150">syphilis</author>
+<doctext field_name="doctext">&lt;i&gt;Is it better to use a "packaged" easily installable version of Perl such as Strawberry on a Windows OS or to compile a version or there is no practical difference, etc...?&lt;/i&gt;&lt;br&gt;&lt;br&gt;
+
+Perl 5.38.0 builds easily on Windows, and "straight out of the box" - using either Visual Studio 2022 or mingw-w64 ports of gcc-12 or gcc-13 (available from [https://winlibs.com]).
+&lt;br&gt;But I doubt that you'll get any advantage (in either speed or reliability) by using a perl that was built on your own machine.
+
+&lt;br&gt;&lt;br&gt;The main thing you'll get by building perl yourself is the opportunity to have a perl that's configured the way you want.
+&lt;br&gt;For example, if you're not wanting to use either the fork() function or threads, you could build your own unthreaded perl - which, I believe, does provide a measurable improvement in speed.
+&lt;br&gt;For example, if (as I do) you want a perl that has an nvtype of __float128, then you'll have to build that perl yourself.
+
+&lt;br&gt;&lt;br&gt;There are also considerations to be made in your choice of compiler.
+&lt;br&gt; For example, VS2022 builds of perl-5.38.0 support utf8 locales that StrawberryPerl doesn't.
+
+&lt;br&gt;&lt;br&gt;The main advantage of Strawberry Perl is that it comes with a large range of additional modules, many of which rely on 3rd party libraries.
+&lt;br&gt;A perl that you build from source won't include those modules (which populate Strawberry's perl/vendor/lib directory).
+
+&lt;br&gt;&lt;br&gt;The more people that build perl (including the monthly devel releases) on Windows, the better it is for perl.
+&lt;br&gt;One simple way is to start by editing the (self-documenting) perl-5.38.0/win32/GNUmakefile (or perl-5.38.0/win32 Makefile if building with MS Visual Studio).
+&lt;br&gt;All you really need do is:
+&lt;br&gt;1) Ensure that INST_DRV and INST_TOP specify the location in which you want perl to be installed;
+&lt;br&gt;2) For gcc builds, uncomment the line &lt;c&gt;#CCTYPE		:= GCC&lt;/c&gt;; for VS2022 builds, uncomment the line &lt;c&gt;#CCTYPE		= MSVC143&lt;/c&gt;;
+&lt;br&gt;3) For gcc builds, uncomment the line &lt;c&gt;#CCHOME		:= C:\MinGW&lt;/c&gt; and edit it to specify the directory that contains gcc's &lt;c&gt;bin&lt;/c&gt; directory.
+&lt;br&gt;That should build you a perl that is configured essentially the same as Strawberry Perl.
+
+&lt;br&gt;&lt;br&gt;Then, cd to the perl-5.38.0/win32 folder and run:
+&lt;br&gt;1) &lt;c&gt;gmake test&lt;/c&gt; (or &lt;c&gt;nmake test&lt;/c&gt; for Visual Studio builds).
+&lt;br&gt;2) &lt;c&gt;gmake install&lt;/c&gt; (or &lt;c&gt;nmake install&lt;/c&gt;).
+
+&lt;br&gt;&lt;br&gt;Following that, if you wish to re-use the same source to build a different configuration of perl, first run &lt;c&gt;gmake distclean&lt;/c&gt; or &lt;c&gt;nmake distclean&lt;/c&gt;.
+&lt;br&gt;Any problems, just ask.
+&lt;br&gt;&lt;br&gt;Cheers,&lt;br&gt;Rob.
+
+
+
+</doctext>
+<root_node field_name="root_node">11154613</root_node>
+<parent_node field_name="parent_node">11154613</parent_node>
+<thread id="11154613">
+<node id="11154616"><node id="11154658"/>
+</node>
+<node id="11154617"/>
+<node id="11154618"><node id="11154666"><node id="11154705"><node id="11154807"/>
+</node>
+</node>
+</node>
+<node id="11154619"/>
+<node id="11154620"><node id="11154622"><node id="11154715"/>
+</node>
+</node>
+<node id="11154623"><node id="11154624"/>
+</node>
+<node id="11154625"/>
+<node id="11154664"><node id="11154665"><node id="11154681"/>
+</node>
+<node id="11154675"/>
+</node>
+</thread></node>

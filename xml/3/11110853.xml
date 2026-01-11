@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11110853" title="Mixing asynchronous data feed with synchronous program flow control" created="2020-01-01 20:06:55" updated="2020-01-01 20:06:55" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="248054">Your Mother</author>
+<doctext field_name="doctext">&lt;p&gt;Long story short: I want to write client code that consumes a webservice, asynchronously receiving data, but need to be able to synchronously make program flow decisions by sending messages to the server.&lt;/p&gt;
+
+&lt;p&gt;I have an approach that works but I am certain it’s hacky and The Wrong Way®. It’s achieved by making the websocket transaction variable, &lt;c&gt;$TX&lt;/c&gt;, available from outside the transaction. Any guidance on the right way to mix async with sync code here would be much appreciated. Note, the client is all I care about. I provide the server to match just to help test. Modules: [metamod://Net::WebSocket::Server], [metamod://Mojo::IOLoop], and [metamod://Mojo::UserAgent]. Thank you!&lt;/p&gt;
+
+&lt;h3&gt;Sample server and client…&lt;/h3&gt;
+
+&lt;h4&gt;Save and run the server–&lt;/h4&gt;
+
+&lt;readmore&gt;&lt;code&gt;
+#!/usr/bin/env perl
+use utf8;
+use 5.10.2;
+use Net::WebSocket::Server;
+
+my $Running = 0;
+
+Net::WebSocket::Server-&gt;new(
+    listen =&gt; 8080,
+    tick_period =&gt; 1,
+    on_tick =&gt; sub {
+        my $server = shift;
+        return unless $Running;
+        $_-&gt;send_utf8("Running")
+            for $server-&gt;connections;
+    },
+    on_connect =&gt; sub {
+        my ( $server, $connection ) = @_;
+        $connection-&gt;on(
+            ready =&gt; sub {
+                my $connnection = shift;
+                $connection-&gt;send_utf8("Connected… RUN|STOP");
+            },
+            utf8 =&gt; sub {
+                my ( $connection, $message ) = @_;
+                if ( uc $message eq "RUN" )
+                {
+                    $connection-&gt;send_utf8( $Running ? "Already running" : "Starting to run…");
+                    $Running = 1;
+                }
+                elsif ( uc $message eq "STOP" )
+                {
+                    $connection-&gt;send_utf8($Running ? "Stopping…" : "Not running");
+                    $Running = 0;
+                }
+                else
+                {
+                    $connection-&gt;send_utf8("Unknown command: $message");
+                }
+            });
+    })
+    -&gt;start;
+&lt;/code&gt;&lt;/readmore&gt;
+
+&lt;h4&gt;Then the client–&lt;/h4&gt;
+
+&lt;readmore&gt;&lt;code&gt;
+#!/usr/bin/env perl
+use 5.10.2;
+use utf8;
+use strictures;
+use Mojo::UserAgent;
+
+my $ua  = Mojo::UserAgent-&gt;new;
+
+my $TX; # This is what has me thinking this is hacky/kludgy.
+my $conn = $ua-&gt;websocket("ws://localhost:8080/" =&gt; sub {
+    my $ua = shift;
+    $TX = shift;
+    say "WebSocket handshake failed!"
+        and return unless $TX-&gt;is_websocket;
+
+    $TX-&gt;on(finish =&gt; sub {
+        my ( $tx, $code, $reason ) = @_;
+        say "WebSocket closed with status $code.";
+        exit;
+    });
+
+    $TX-&gt;on(text =&gt; sub {
+        my $tx = shift;
+        say "Server &gt; ", +shift;
+    });
+});
+
+my @command = qw/ RUN STOP /;
+Mojo::IOLoop-&gt;recurring(5 =&gt; sub {
+    my $command = $command[rand@command];
+    say "Client &gt; $command";
+    $TX-&gt;send($command);
+});
+
+Mojo::IOLoop-&gt;start unless Mojo::IOLoop-&gt;is_running;
+&lt;/code&gt;&lt;/readmore&gt;
+</doctext>
+<thread id="11110853">
+<node id="11110859"><node id="11110867"/>
+</node>
+<node id="11110864"><node id="11110885"><node id="11110886"><node id="11110887"><node id="11110895"><node id="11110919"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11110871"/>
+<node id="11110913"><node id="11110915"><node id="11110920"><node id="11110924"/>
+</node>
+</node>
+</node>
+</thread></node>

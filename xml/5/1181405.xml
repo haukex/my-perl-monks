@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1181405" title="detecting of scalar is string or numeric" created="2017-02-08 08:43:52" updated="2017-02-08 08:43:52" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="629662">vkhera</author>
+<doctext field_name="doctext">Up until 5.24 where it was deprecated, one could safely use
+&lt;code&gt;
+$x ^ $x
+&lt;/code&gt;
+to determine if the value of $x is a string or a numeric value. However, now, if your string contains high code points (like emoji characters) perl issues a deprecation warning (see the last line in this snippet)
+
+&lt;code&gt;
+% perl -Mutf8 -e '$x = 42; if ($x ^ $x) {print "string\n";}'
+% perl -Mutf8 -e '$x = 42.24; if ($x ^ $x) {print "string\n";}'
+% perl -Mutf8 -e '$x = "42"; if ($x ^ $x) {print "string\n";}'
+string
+% perl -Mutf8 -e '$x = "00042"; if ($x ^ $x) {print "string\n";}'
+string
+% perl -Mutf8 -e '$x = "42\N{BLACK TELEPHONE}"; if ($x ^ $x) {print "string\n";}'
+Use of strings with code points over 0xFF as arguments to bitwise xor (^) operator is deprecated at -e line 1.
+string
+% perl -v
+
+This is perl 5, version 24, subversion 1 (v5.24.1) built for amd64-freebsd-thread-multi
+&lt;/code&gt;
+
+Since it still works, for now I'm just turning off that warning, but I need to find a replacement test. The Scalar::Util::looks_like_number() function doesn't do the same thing in that it considers the string form of "42" not to be a string in my test above.
+
+The purpose of this is to conditionally do utf8 encoding of a string for use with XMLRPC. The XMLRPC libraries need to detect if the variable holds a number or a string and generate the XML accordingly. I do not want to stringify numbers where I do not need to.
+
+I have not been able to find a replacement to this test searching this site and others. What should I do?</doctext>
+<thread id="1181405">
+<node id="1181407"/>
+<node id="1181408"/>
+<node id="1181477"><node id="1220175"/>
+</node>
+<node id="1181478"/>
+<node id="1181539"/>
+</thread></node>

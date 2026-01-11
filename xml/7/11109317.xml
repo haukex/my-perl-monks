@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109317" title="invoking module functions from a test script" created="2019-11-27 13:28:57" updated="2019-11-27 13:28:57" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="5816">chexmix</author>
+<doctext field_name="doctext">Greetings, Monks. And Happy Thanksgiving!
+
+&lt;p&gt;I'm running into a problem testing a module (call it &lt;b&gt;My::NEW::Module&lt;/b&gt;) I wrote for work.&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;My::NEW::Module&lt;/b&gt; and the test script 'use' another module I wrote years ago, let's call that one &lt;b&gt;My::OLD::Module&lt;/b&gt; -- which for better or worse* was written to simplify our DBI-driven interactions with databases.&lt;/p&gt;
+
+&lt;p&gt;What I am trying to test is the new module's ability to issue a query to a database and get results back. &lt;/p&gt;
+
+&lt;p&gt;So in the test script I create (successfully) a database handle (care of &lt;b&gt;My::OLD::Module&lt;/b&gt;) and then call one of the functions (&lt;b&gt;get_unpublished&lt;/b&gt;) in &lt;b&gt;My::NEW::Module&lt;/b&gt;, using the database handle and a couple of other numeric values as parameters. &lt;/p&gt;
+
+&lt;p&gt;This test was crapping out because (the output said) the function &lt;b&gt;create_query&lt;/b&gt; could not be found:&lt;/p&gt;
+
+&lt;code&gt;Can't locate object method "create_query" via package "My::NEW::Module" at ../lib/My/NEW/Module.pm line 46.&lt;/code&gt;
+
+&lt;p&gt;This message makes sense on one level because &lt;b&gt;create_query&lt;/b&gt; is a function in &lt;b&gt;My::OLD::Module&lt;/b&gt;, intended to be called by database handles created by &lt;b&gt;My::OLD::Module&lt;/b&gt; -- it is &lt;b&gt;not&lt;/b&gt; a function of the NEW module. But ... why was the function being called against the wrong object/module?&lt;/p&gt;
+
+&lt;p&gt;After tearing out some hair, I decided to try stepping through with the debugger to see if I could spot the problem. I think I did. At one point in the output I saw this:&lt;/p&gt;
+
+&lt;code&gt;"My::NEW::Module::get_unpublished('My::NEW::Module', 'My::OLD::Module::Connect=HASH(0x45dcd98)', 10, 250) called at module_test.t line 44"&lt;/code&gt;
+
+&lt;p&gt;So a function that takes (and has been called with) &lt;b&gt;three&lt;/b&gt; parameters is actually (somehow) winding up with &lt;b&gt;four&lt;/b&gt; instead. &lt;/p&gt;
+
+&lt;p&gt;And when the module function loads three variables from the @_ array, it is getting &lt;b&gt;My::NEW::Module&lt;/b&gt; as the first value, which should be the database handle. This causes problems when the subroutine, which assumes that that variable represents a &lt;b&gt;My::OLD::Module&lt;/b&gt;-style database handle, tries to call one of the handle's own methods ... this basically explains the error I was seeing from the test script. I could follow all this happening in the debugger output.&lt;/p&gt;
+
+&lt;p&gt;I am particularly confused because I have used &lt;b&gt;My::NEW::Module&lt;/b&gt; from scripts I am writing and in that context, it has worked fine (yeah, I'm writing tests retroactively, which I realize is bad). &lt;/p&gt;
+
+&lt;p&gt;I tried explicitly changing the &lt;b&gt;My::NEW::Module&lt;/b&gt; code so that it shifts the My::New::Module object off the @_ array explicitly, but when I do that the scripts that use the module error out. &lt;/p&gt;
+
+&lt;p&gt;So it appears this problem only exists in the testing environment. I admit I am completely mystified. &lt;/p&gt;
+
+&lt;p&gt;Does what I have described suggest ... anything? I know I haven't really posted code, and I apologize in advance if I have described this poorly.**&lt;/p&gt;
+
+&lt;p&gt;Anyhoo, thanks,&lt;/p&gt;
+
+&lt;p&gt;Glenn&lt;/p&gt;
+
+&lt;p&gt;* I'm painfully aware that in this case it's at least 99% 'worse' - DBI isn't hard to use. I only mention this b/c I have posted about this module on Perlmonks before and gotten lots of "why did you bother doing that?" It's a fair question.&lt;/p&gt;
+
+&lt;p&gt;** I fear I might be encountering the inescapable fact that the way we use Perl in my department is non-standard to say the least. Unfortunately, I have not had the time to fix the endemic problems. Perl programming is only part of my job. It has been very frustrating.&lt;/p&gt;</doctext>
+<thread id="11109317">
+<node id="11109318"><node id="11109320"><node id="11109333"/>
+</node>
+</node>
+</thread></node>

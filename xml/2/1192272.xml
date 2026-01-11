@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1192272" title="Re: Use of special character &quot;*&quot; to retrieve the contents" created="2017-06-07 09:30:08" updated="2017-06-07 09:30:08" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1069339">thanos1983</author>
+<doctext field_name="doctext">&lt;p&gt;Hello [id://1181792|dk27],&lt;/p&gt;
+
+&lt;p&gt;What about some alternatives? Such as [https://perldoc.perl.org/File/Find.html|File::Find]&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/env perl
+
+use warnings;
+use strict;
+use File::Find;
+
+my $location="$var1/$var2/$var3/";
+
+sub find_ksh {
+    my $F = $File::Find::name;
+
+    if ($F =~ /ksh$/ ) {
+        print "$F\n";
+    }
+}
+
+
+find({ wanted =&gt; \&amp;find_ksh, no_chdir=&gt;1}, $location);
+&lt;/code&gt;
+
+&lt;p&gt;Or [http://perldoc.perl.org/functions/readdir.html|readdir]:&lt;/p&gt;
+
+&lt;code&gt;
+opendir(my $dh, $some_dir) || die "Can't opendir $some_dir: $!";
+my @files= map{s/\.[^.]+$//;$_}grep {/\.ksh$/} readdir DIR;
+closedir $dh;
+&lt;/code&gt;
+
+&lt;p&gt;Both solutions are untested but they should work straight out of the box.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Update: &lt;/strong&gt;&lt;strike&gt;Also if you are running linuxOS or Cygwin terminal: &lt;/strike&gt;&lt;p&gt;&lt;strong&gt;Update3: &lt;/strong&gt;as monk [id://830549|haukex] pointed out using back ticks is not a good option, read the link on his response bellow why.&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+
+my $path = shift || '.';
+
+my @files = `find $path -name '*.ksh' -o -name '*.txt'`;
+
+chomp @files;
+print Dumper \@files;
+&lt;/code&gt;
+
+&lt;p&gt;WindowsOS with Cygwin:&lt;/p&gt;
+
+&lt;code&gt;
+my @files = `find $path \( -name '*.ksh' -o -name '*.txt' \)`;
+&lt;/code&gt;
+
+&lt;p&gt;&lt;strong&gt;Update2: &lt;/strong&gt; Similar question with some maybe useful answers combining regex on search see ([id://1189990|Re: File::Find find several strings in one directory]).
+
+&lt;p&gt;Hope this helps.&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1069339"&gt;
+Seeking for Perl wisdom...on the process of learning...not there...yet!
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1192265</root_node>
+<parent_node field_name="parent_node">1192265</parent_node>
+<thread id="1192265">
+<node id="1192266"/>
+<node id="1192269"><node id="1192277"/>
+</node>
+<node id="1192272"><node id="1192276"><node id="1192294"/>
+</node>
+<node id="1192279"/>
+</node>
+<node id="1192284"/>
+<node id="1192286"/>
+<node id="1192292"/>
+</thread></node>

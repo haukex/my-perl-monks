@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1180857" title="Best practices for module error-reporting" created="2017-02-02 11:37:07" updated="2017-02-02 11:37:07" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1117105">yulivee07</author>
+<doctext field_name="doctext">Hello fellow Perlmonks,&lt;br&gt;&lt;br&gt;
+
+today I am asking for your wisdom in regards to best practices for error reporting in modules. I still would consider myself a novice, so this question may sound foolish to some.&lt;br&gt;&lt;br&gt;
+
+So consider I want to write some kind of Module, currently I am working on one that internally deals with LDAP. The program using the module wants to know, if in a method call to the module something went wrong, e.g. the LDAP-connection timed out or something like this. There I somehow need to report errors happening to my module.&lt;br&gt;&lt;br&gt;
+
+I see multiple ways of tackeling this and I am not content with either of them:&lt;br&gt;&lt;br&gt;
+
+&lt;b&gt;Option 1: report it with Log4Perl&lt;/b&gt;&lt;br&gt;
+All my programs write logs with Log4Perl anyway. So when my Module encounters an error, I report the Error-Message with Log4Perl and return 1 indicating an error.&lt;br&gt;&lt;br&gt;
+
+&lt;b&gt;Pro:&lt;/b&gt; Easy to do, Error easily found in log, not much clutter in my code&lt;br&gt;
+&lt;b&gt;Cons: &lt;/b&gt;This is not very portable. Someone not using Log4Perl would not be able to use my module.&lt;br&gt;&lt;br&gt;
+
+&lt;b&gt;Option 2: internal error reporting in a moose errors accessor&lt;/b&gt;&lt;br&gt;
+I tend to write OO-Modules with Moose or Mouse. The module gets an accessor called "errors" like this:&lt;br&gt;
+&lt;code&gt;
+has "errors" =&gt; (
+is =&gt; rw,
+isa =&gt; "Str",
+predicate =&gt; "has_errors",
+reader =&gt; "get_errors",
+writer =&gt; "set_errors",
+clearer =&gt; "clear_errors",
+);
+&lt;/code&gt;
+
+Every public method first calls &lt;pre&gt; $self-&gt;clear_errors(); &lt;/pre&gt;, then executes its functionality. Everytime an error occurs I can perform a &lt;pre&gt; $self-&gt;set_errors($self-&gt;get_errors . $error_message); &lt;/pre&gt; and stash my errors this way. In the program using the module I can perform a &lt;pre&gt; $module-&gt;get_errors &lt;/pre&gt; to retrieve the error-messages and a &lt;pre&gt; $module-&gt;has_errors&lt;/pre&gt; to see if something went wrong.&lt;br&gt;&lt;br&gt;
+
+&lt;b&gt;Pro:&lt;/b&gt; Independent from Log4Perl!&lt;br&gt;
+&lt;b&gt;Cons: &lt;/b&gt;Every Module of mine now has an errors accessor and some helperfunctions to add to this accessor, violating the DRY-principle. Also, not applicable if a method in the module itself, calls another function, as this would erase the errors-accessor. Obviously, doesn't work that great with non-OO modules&lt;br&gt;&lt;br&gt;
+
+&lt;b&gt;Option 3: Return an Error-Code&lt;/b&gt;&lt;br&gt;
+If everything goes right in a function, return 0. If something fails, return 1 or any higher number.&lt;br&gt;&lt;br&gt;
+
+&lt;b&gt;Pro:&lt;/b&gt; No hassle with overwriting error-accessors. I tend to use this for internal module-methods in mix with Option 2.&lt;br&gt;
+&lt;b&gt;Cons:&lt;/b&gt; A lot! No proper error-message of what went wrong. If the method does return something (e.g. an LDAP-Object) this breaks and burns gloriously.&lt;br&gt;&lt;br&gt;
+
+
+Currently I tend to use a mix of all these options and I do not like it. Option 2 makes me write a lot of similar code again and again, Option 1 makes me dependend on Log4Perl and Option 3 just doesn't work if the method returns something useful.&lt;br&gt;&lt;br&gt;
+
+CPAN-Authors and Error-Catching-Perfectionists! How do you solve these problems? Proper error-catching is a very important duty in my coding environment as there services I have to work with tend to break a lot or are just not reliable and run a lot into timeouts.&lt;br&gt;&lt;br&gt;
+
+I would love to hear some best practices and further options for dealing with this!&lt;br&gt;&lt;br&gt;
+
+Greetings,&lt;br&gt;
+Yulivee
+</doctext>
+<thread id="1180857">
+<node id="1180858"/>
+<node id="1180866"/>
+<node id="1180887"/>
+</thread></node>

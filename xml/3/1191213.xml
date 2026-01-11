@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1191213" title="TCP Server: Beyond echoing request" created="2017-05-25 10:03:20" updated="2017-05-25 10:03:20" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="940643">jeremywakeman</author>
+<doctext field_name="doctext">&lt;p&gt;I'm building a TCP server to learn more about networking. What I have so far is based on various online examples: a server that responds to requests using a series of if, elsif, elsif attempts to match the request to an appropriate response.&lt;/p&gt;
+
+&lt;p&gt;It seems like I should be looking to implement an application layer protocol to transfer data (text) between server and client, but I don't want to invent my own protocol or use one that's more complex than I need. Google searches have not resulted in a definitive answer. Is there an existing protocol I should look into?&lt;/p&gt;
+
+&lt;p&gt;At the moment my client is just nc to the appropriate server port. I'm assuming I'll have to build a client if I implement an application level protocol&lt;/p&gt;
+
+&lt;p&gt;
+&lt;readmore&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+use POSIX;
+use IO::Socket;
+use IO::Select;
+use Tie::RefHash;
+
+my $port = 1800;
+
+### Create the server socket.
+my $server = IO::Socket::INET-&gt;new(
+  LocalPort =&gt; $port,
+  Listen    =&gt; 10,
+) or die "can't make server socket: $@\n";
+$server-&gt;blocking(0);
+### Set up structures to track input and output data.
+my %inbuffer  = ();
+my %outbuffer = ();
+my %ready     = ();
+tie %ready, "Tie::RefHash";
+### The select loop itself.
+my $select = IO::Select-&gt;new($server);
+
+while (1) {
+
+  # Process sockets that are ready for reading.
+  foreach my $client ($select-&gt;can_read(1)) {
+    handle_read($client);
+  }
+
+  # Process any complete requests.  Echo the data back to the client,
+  # by putting the ready lines into the client's output buffer.
+  foreach my $client (keys %ready) {
+    foreach my $request (@{$ready{$client}}) {
+		process_request($client,$request);
+	}
+    delete $ready{$client};
+  }
+
+  # Process sockets that are ready for writing.
+  foreach my $client ($select-&gt;can_write(1)) {
+    handle_write($client);
+  }
+}
+exit;
+
+sub process_request {
+	my ($client,$request) = @_;
+    print "Got request: $request";
+	chomp $request;
+	if ( $request eq "HELLO" ) {
+    	$outbuffer{$client} .= "TEST SERVER 0.1\n";
+	} elsif ($request eq "GET NODES" ) {
+    	$outbuffer{$client} .= "NODES: 0 ZERO, 1 ONE, 2 TWO, 4 FOUR\n";
+	} elsif ( $request =~ /^JOIN / ) {
+    	$outbuffer{$client} .= "JOINING NOT IMPLEMENTED\n";
+	} elsif ( $request =~ /^MSG / ) {
+    	$outbuffer{$client} .= "MSGING NOT IMPLEMENTED\n";
+	} else {
+    	$outbuffer{$client} .= "UNKNOWN COMMAND\n";
+	}
+}
+
+
+### Handle a socket that's ready to be read from.
+sub handle_read {
+  my $client = shift;
+
+  # If it's the server socket, accept a new client connection.
+  if ($client == $server) {
+    my $new_client = $server-&gt;accept();
+    $new_client-&gt;blocking(0);
+    $select-&gt;add($new_client);
+    return;
+  }
+
+  # Read from an established client socket.
+  my $data = "";
+  my $rv = $client-&gt;recv($data, POSIX::BUFSIZ, 0);
+
+  # Handle socket errors.
+  unless (defined($rv) and length($data)) {
+    handle_error($client);
+    return;
+  }
+
+  # Successful read.  Buffer the data we got, and parse it into lines.
+  # Place the lines into %ready, where they will be processed later.
+  $inbuffer{$client} .= $data;
+  while ($inbuffer{$client} =~ s/(.*\n)//) {
+    push @{$ready{$client}}, $1;
+  }
+}
+
+### Handle a socket that's ready to be written to.
+sub handle_write {
+  my $client = shift;
+
+  # Skip this client if there's nothing to write.
+  return unless exists $outbuffer{$client};
+
+  # Attempt to write pending data to the client.
+  my $rv = $client-&gt;send($outbuffer{$client}, 0);
+  unless (defined $rv) {
+    warn "I was told I could write, but I can't.\n";
+    return;
+  }
+
+  # Successful write.  Remove what was sent from the output buffer.
+  if ( $rv == length($outbuffer{$client})
+    or $! == POSIX::EWOULDBLOCK) {
+    substr($outbuffer{$client}, 0, $rv) = "";
+    delete $outbuffer{$client} unless length $outbuffer{$client};
+    return;
+  }
+
+  # Otherwise there was an error.
+  handle_error($client);
+}
+### Handle client errors.  Clean up after the dead socket.
+sub handle_error {
+  my $client = shift;
+  delete $inbuffer{$client};
+  delete $outbuffer{$client};
+  delete $ready{$client};
+  $select-&gt;remove($client);
+  close $client;
+}
+&lt;/code&gt;
+&lt;/readmore&gt;
+&lt;/p&gt;</doctext>
+<thread id="1191213">
+<node id="1191219"/>
+<node id="1191222"/>
+</thread></node>

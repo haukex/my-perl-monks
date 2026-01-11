@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1175028" title="Re: What does $, = &quot; &quot; do in this code?" created="2016-10-31 14:16:53" updated="2016-10-31 14:16:53" _doctext_mode="lenient"><type id="11">note</type>
+<author id="510280">shmem</author>
+<doctext field_name="doctext">&lt;p&gt;What others have said, yes. What they didn't address is the fact that &lt;c&gt;$,&lt;/c&gt; - like any other [doc://pervar|special variable] - is &lt;b&gt;a global variable&lt;/b&gt;.
+&lt;/p&gt;
+&lt;p&gt;So, this code is &lt;i&gt;badly behaved&lt;/i&gt; because it changes this variable's content for the caller &lt;i&gt;also&lt;/i&gt;, from the first invocation of this subroutine until the end of it's runtime. What it should do would be at least:
+&lt;code&gt;
+sub dumpvar {
+    ...
+    my $saved_sep = $,;
+    $, = " ";
+    # Iterate through the symbol table, which contains glob values
+    ...
+    $, = $saved_sep; # restore original value
+}
+&lt;/code&gt;
+&lt;p&gt;or, more concise
+&lt;c&gt;
+    local $, = " "; # localize the the change to this scope
+&lt;/c&gt;
+&lt;p&gt;See [doc://local].
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-510280"&gt;
+&lt;small&gt;perl -le'print map{pack c,($-++?1:13)+ord}split//,ESEL'&lt;/small&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1174995</root_node>
+<parent_node field_name="parent_node">1174995</parent_node>
+<thread id="1174995">
+<node id="1174996"><node id="1174997"><node id="1174999"/>
+</node>
+<node id="1174998"><node id="1175000"/>
+</node>
+</node>
+<node id="1175001"><node id="1175017"/>
+<node id="1175035"/>
+</node>
+<node id="1175022"/>
+<node id="1175028"/>
+</thread></node>

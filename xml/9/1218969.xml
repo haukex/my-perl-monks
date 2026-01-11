@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1218969" title="Re: Can you limit the scope of require?" created="2018-07-20 18:12:32" updated="2018-07-20 18:12:32" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I am assuming that you can't modify the &lt;c&gt;.conf&lt;/c&gt; files? If you can, then IMO the best solution (better than the following) would be to have them return or set references to anonymous &lt;c&gt;sub&lt;/c&gt;s rather than use named &lt;c&gt;sub&lt;/c&gt;s.&lt;/p&gt;
+&lt;p&gt;Otherwise, [tybalt89] and [dave_the_m] have provided two possible solutions that I think are good. Since TIMTOWTDI, here's one more - this one stores references to the &lt;c&gt;sub get_config&lt;/c&gt; in lexical variables, which has the advantage that they are normal variables with the same scoping rules, you can pass them around, etc.&lt;/p&gt;
+&lt;p&gt;I'm using [doc://do] (with the recommended error handling) instead of [doc://require] because the latter normally won't load a file more than once (see [doc://require] and [doc://%INC]). That means that if you were to use my &lt;c&gt;load_config&lt;/c&gt; more than once on the same file, with [doc://require] there is a chance that you could get a reference to the wrong sub, or it just plain wouldn't work. [doc://do] executes the file every time, which avoids this.&lt;/p&gt;
+&lt;p&gt;&lt;c&gt;Foo.conf&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+sub get_config { return "Foo!" }
+
+1;
+&lt;/c&gt;
+&lt;p&gt;&lt;c&gt;Bar.conf&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+sub get_config { return "Bar!" }
+
+1;
+&lt;/c&gt;
+&lt;p&gt;&lt;c&gt;main.pl&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+sub load_config {
+	my $file = shift;
+	local *get_config;
+	if (not my $return = do $file) {
+		die "couldn't parse $file: $@" if $@;
+		die "couldn't do $file: $!" unless defined $return;
+		die "couldn't run $file" unless $return;
+	}
+	return \&amp;get_config;
+}
+
+my $foo = load_config( "Foo.conf" );
+my $bar = load_config( "Bar.conf" );
+
+print $foo-&gt;(), "\n";  # prints "Foo!"
+print $bar-&gt;(), "\n";  # prints "Bar!"
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1218946</root_node>
+<parent_node field_name="parent_node">1218946</parent_node>
+<thread id="1218946">
+<node id="1218949"/>
+<node id="1218954"/>
+<node id="1218969"/>
+</thread></node>

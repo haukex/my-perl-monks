@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228621" title="Re: Reading a hash structure stored in a file" created="2019-01-15 16:19:20" updated="2019-01-15 16:19:20" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The main problem is that [doc://my] declares a lexical variable, meaning it is restricted to its lexical scope. [doc://eval]ed code has its own lexical scope, so the surrounding code can't see the &lt;c&gt;%hash1&lt;/c&gt; declared inside the [doc://eval]ed code. One possible way to fix this issue would be to append some code to the string that you are [doc://eval]ing that returns the values, so for example something like &lt;c&gt;my $hash1ref = eval($code."; return \\%hash1;");&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;However,&lt;/i&gt; [doc://eval] will execute arbitrary code, and if you use it for untrusted code, it might allow an attacker to inject any code into your system, which is of course a bad thing. One possible way around this is with my module [mod://Config::Perl], which will parse data structures like the one you showed. For example:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Config::Perl;
+use Data::Dumper;
+
+my $parser = Config::Perl-&gt;new;
+my $data = $parser-&gt;parse_or_die('file.pl');
+my %hash1 = %{ $data-&gt;{'%hash1'} };
+print Dumper(\%hash1);
+
+__END__
+
+$VAR1 = {
+          'hi' =&gt; 2,
+          'hello' =&gt; 1
+        };
+&lt;/c&gt;
+&lt;p&gt;Another issue with your original code is that you need to give [doc://eval] a string, not a filehandle. A simple way to slurp a file into memory is &lt;c&gt;my $code = do { local $/; &lt;$fh&gt; };&lt;/c&gt;. Also, if you really want to use [doc://eval], you should check it for errors, in the above example by checking if &lt;c&gt;$hash1ref&lt;/c&gt; is [doc://defined] or not. &lt;i&gt;Update:&lt;/i&gt; Also, instead of [doc://eval]ing a file, there's [doc://do]. But as I said, I wouldn't recommend these methods.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1228615</root_node>
+<parent_node field_name="parent_node">1228615</parent_node>
+<thread id="1228615">
+<node id="1228619"><node id="1228622"/>
+</node>
+<node id="1228621"><node id="1228787"><node id="1228817"/>
+</node>
+</node>
+<node id="1228623"/>
+<node id="1228647"/>
+<node id="1228648"><node id="1228691"><node id="1228692"/>
+<node id="1228698"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116741" title="udp broadcast" created="2020-05-13 04:29:36" updated="2020-05-13 04:29:36" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="315792">oha</author>
+<doctext field_name="doctext">dear Monks,
+&lt;p&gt;
+I have a device which sends udp broadcasts as shown in the tcpdump below:
+
+&lt;code&gt;
+10:23:48.240377 IP 192.168.0.50.49153 &gt; 192.168.0.255.4210: UDP, length 28
+&lt;/code&gt;
+
+and I wrote the following:
+
+&lt;c&gt;
+use strict;
+use warnings;
+
+use IO::Socket;
+
+my $sock = IO::Socket::INET-&gt;new(
+    Type =&gt; IO::Socket::SOCK_DGRAM,
+    Proto =&gt; 'udp',
+    PeerAddr  =&gt; '192.168.0.255:4210',
+    Broadcast =&gt; 1,
+    ReuseAddr =&gt; 1,
+);
+print inet_ntoa($sock-&gt;sockaddr()), ":", $sock-&gt;sockport(), "\n";
+print inet_ntoa($sock-&gt;peeraddr()), ":", $sock-&gt;peerport(), "\n";
+
+my $data;
+$sock-&gt;recv($data, 100) or die "$!";
+print "«$data»\n";
+&lt;/c&gt;
+
+which shows:
+
+&lt;c&gt;
+192.168.0.49:37550
+192.168.0.255:4210
+&lt;/c&gt;
+
+and then blocks forever, even tho tcpdump shows activity.
+
+&lt;p&gt;
+What am i doing wrong?</doctext>
+<thread id="11116741">
+<node id="11116744"><node id="11116745"><node id="11116746"/>
+</node>
+</node>
+</thread></node>

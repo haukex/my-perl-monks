@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1223502" title="Re^2: Loop is not working" created="2018-10-03 21:42:28" updated="2018-10-03 21:42:28" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1223480">ozdemmer</author>
+<doctext field_name="doctext">&lt;p&gt; 
+Thanks to everyone for commenting on my question. I just added the following line &lt;code&gt; use diagnostics; &lt;/code&gt; and reran the code. The loop worked successfully, and the result seems to be okay too. However, I received this long and confusing message in the terminal. What does this message mean exactly? &lt;/p&gt; 
+
+&lt;code&gt;
+
+sluser@localhost Scripts]$ perl Level1Run1_test.pl
+1538605204768	addons.update-checker	WARN	onUpdateCheckComplete failed to parse update manifest: [Exception... "Update manifest is missing a required addons property."  nsresult: "0x80004005 (NS_ERROR_FAILURE)"  location: "JS frame :: resource://gre/modules/addons/AddonUpdateChecker.jsm :: getRequiredProperty :: line 473"  data: no] Stack trace: getRequiredProperty()@resource://gre/modules/addons/AddonUpdateChecker.jsm:473 &lt; parseJSONManifest()@resource://gre/modules/addons/AddonUpdateChecker.jsm:483 &lt; UpdateParser.prototype.onLoad/parser()@resource://gre/modules/addons/AddonUpdateChecker.jsm:655 &lt; UpdateParser.prototype.onLoad()@resource://gre/modules/addons/AddonUpdateChecker.jsm:675 &lt; UpdateParser/&lt;()@resource://gre/modules/addons/AddonUpdateChecker.jsm:593
+1538605204784	addons.update-checker	WARN	onUpdateCheckComplete failed to parse update manifest: [Exception... "Update manifest is missing a required addons property."  nsresult: "0x80004005 (NS_ERROR_FAILURE)"  location: "JS frame :: resource://gre/modules/addons/AddonUpdateChecker.jsm :: getRequiredProperty :: line 473"  data: no] Stack trace: getRequiredProperty()@resource://gre/modules/addons/AddonUpdateChecker.jsm:473 &lt; parseJSONManifest()@resource://gre/modules/addons/AddonUpdateChecker.jsm:483 &lt; UpdateParser.prototype.onLoad/parser()@resource://gre/modules/addons/AddonUpdateChecker.jsm:655 &lt; UpdateParser.prototype.onLoad()@resource://gre/modules/addons/AddonUpdateChecker.jsm:675 &lt; UpdateParser/&lt;()@resource://gre/modules/addons/AddonUpdateChecker.jsm:593
+1538605204810	addons.update-checker	WARN	onUpdateCheckComplete failed to parse update manifest: [Exception... "Update manifest is missing a required addons property."  nsresult: "0x80004005 (NS_ERROR_FAILURE)"  location: "JS frame :: resource://gre/modules/addons/AddonUpdateChecker.jsm :: getRequiredProperty :: line 473" 
+ data: no] Stack trace: getRequiredProperty()@resource://gre/modules/addons/AddonUpdateChecker.jsm:473 &lt; parseJSONManifest()@resource://gre/modules/addons/AddonUpdateChecker.jsm:483 &lt; UpdateParser.prototype.onLoad/parser()@resource://gre/modules/addons/AddonUpdateChecker.jsm:655 &lt; UpdateParser.prototype.onLoad()@resource://gre/modules/addons/AddonUpdateChecker.jsm:675 &lt; UpdateParser/&lt;()@resource://gre/modules/addons/AddonUpdateChecker.jsm:593
+1538605204818	addons.update-checker	WARN	onUpdateCheckComplete failed to parse update manifest: [Exception... "Update manifest is missing a required addons property."  nsresult: "0x80004005 (NS_ERROR_FAILURE)"  location: "JS frame :: resource://gre/modules/addons/AddonUpdateChecker.jsm :: getRequiredProperty :: line 473"  data: no] Stack trace: getRequiredProperty()@resource://gre/modules/addons/AddonUpdateChecker.jsm:473 &lt; parseJSONManifest()@resource://gre/modules/addons/AddonUpdateChecker.jsm:483 &lt; UpdateParser.prototype.onLoad/parser()@resource://gre/modules/addons/AddonUpdateChecker.jsm:655 &lt; UpdateParser.prototype.onLoad()@resource://gre/modules/addons/AddonUpdateChecker.jsm:675 &lt; UpdateParser/&lt;()@resource://gre/modules/addons/AddonUpdateChecker.jsm:593
+1538605204826	addons.update-checker	WARN	onUpdateCheckComplete failed to parse update manifest: [Exception... "Update manifest is missing a required addons property."  nsresult: "0x80004005 (NS_ERROR_FAILURE)"  location: "JS frame :: resource://gre/modules/addons/AddonUpdateChecker.jsm :: getRequiredProperty :: line 473"  data: no] Stack trace: getRequiredProperty()@resource://gre/modules/addons/AddonUpdateChecker.jsm:473 &lt; parseJSONManifest()@resource://gre/modules/addons/AddonUpdateChecker.jsm:483 &lt; UpdateParser.prototype.onLoad/parser()@resource://gre/modules/addons/AddonUpdateChecker.jsm:655 &lt; UpdateParser.prototype.onLoad()@resource://gre/modules/addons/AddonUpdateChecker.jsm:675 &lt; UpdateParser/&lt;()@resource://gre/modules/addons/AddonUpdateChecker.jsm:593  
++ DONE +++ 
+&lt;/code&gt;
+
+ &lt;p&gt; Just in case you need to see the code I used again: &lt;/p&gt;
+
+ &lt;code&gt;
+
+#!/usr/bin/perl
+use strict;
+use warnings;
+use diagnostics;
+
+# do second level statistical analysis run by run
+# go to the directory where the fsf-file for stats 
+# and post-stats is stored
+chdir  "/mnt/hgfs/ExpAutism/Scripts";
+
+my $infile  = 'Level1Run1_test.fsf';
+my $outfile = 'Level1Run1_test_spec.fsf';
+my $program = '/usr/local/fsl/bin/feat';
+
+my @subjects = ("SubjectASD203","SubjectTD106C");
+foreach my $subject (@subjects){
+  open my $fh_IN, '&lt;', $infile 
+    or die "Could not open $infile ; $!";
+  open my $fh_OUT, '&gt;', $outfile 
+    or die "Could not open $outfile ; $!";  
+  # replace wildcards with specific titles of subjects
+  while (&lt;$fh_IN&gt;){
+    s/Subjectx/$subject/g;
+    print $fh_OUT $_;            
+  }
+  close $fh_IN;
+  close $fh_OUT;
+  system($program,$outfile) == 0
+        or die "$program $outfile failed: $?";
+}        
+print "\n +++ DONE +++ \n";
+
+&lt;/code&gt;
+
+&lt;p&gt; Thanks a ton! &lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1223482</root_node>
+<parent_node field_name="parent_node">1223500</parent_node>
+<thread id="1223482">
+<node id="1223485"><node id="1223503"/>
+</node>
+<node id="1223486"/>
+<node id="1223488"><node id="1223494"><node id="1223498"/>
+<node id="1223499"/>
+<node id="1223501"><node id="1223506"/>
+</node>
+<node id="1223505"/>
+</node>
+</node>
+<node id="1223500"><node id="1223502"><node id="1223504"/>
+<node id="1223507"><node id="1223585"/>
+</node>
+</node>
+</node>
+</thread></node>

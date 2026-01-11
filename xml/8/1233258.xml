@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1233258" title="Pasting text when capturing user input only prints one character if system call is made in the loop" created="2019-05-01 21:34:39" updated="2019-05-01 21:34:39" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="836704">Allasso</author>
+<doctext field_name="doctext">&lt;p&gt;I'm not sure if this problem is actually a perl issue, but I will start here.&lt;/p&gt;
+
+&lt;p&gt;I am running code to capture user input, attempting to do some stuff with the cursor conditionally (using system calls to tput) depending on which character is entered, then printing out each character so it appears on the screen (as they would if echo were enabled.)  All works fine if the user is typing input, the problem appears if the input is pasted into the terminal. I've isolated the problem to observe that it seems related to making a system call in the loop.  All the pasted characters get printed out okay, until the system call is made, where the next character prints, but none following get printed.  If I don't make the system call, all characters get printed fine.&lt;/p&gt;
+
+&lt;p&gt;I have also observed that it doesn't matter what system call I make (eg, &lt;code&gt;ls&lt;/code&gt; or whatever), the same thing happens, so it is not just related to calling tput.&lt;/p&gt;
+
+&lt;p&gt;I've reduced the code to minimally demonstrate the issue.  In this example, if text is pasted in, only the first character gets printed.  If the system call in the loop is commented out, then all the text gets printed as expected.  Also note that one character will print, regardless of whether the system call comes before or after the &lt;code&gt;print&lt;/code&gt; call.  Also note that it doesn't matter if I use &lt;code&gt;system()&lt;/code&gt; or backtick notation.&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+$| = 1;
+
+use strict;
+use warnings;
+
+system "stty -icanon -isig -echo min 1 time 0";
+system "tput clear";
+
+print "enter some text:\n";
+processText();
+
+sub processText {
+  while ( my $char = STDIN-&gt;getc() ) {
+    if (ord($char) == 3) {
+      # Ctrl-C
+      system "stty icanon echo isig";
+      exit;
+    }
+    # System call causes only a single character to print out, apparently can
+    # be anything, eg `ls`. Get same behavior with shell exec using backticks.
+    system "tput sc";
+    print($char);
+  }
+}
+
+system "stty icanon echo isig";
+&lt;/code&gt;</doctext>
+<thread id="1233258">
+<node id="1233260"/>
+<node id="1233270"/>
+<node id="1233271"><node id="1233432"/>
+</node>
+<node id="1233431"><node id="1233437"><node id="1233440"/>
+</node>
+</node>
+</thread></node>

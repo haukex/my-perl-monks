@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224456" title="Re: Extracting a bald host name" created="2018-10-22 04:01:07" updated="2018-10-22 04:01:07" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;A very quick skim of both [https://tools.ietf.org/html/rfc1034|RFC1034] and [https://tools.ietf.org/html/rfc1035|RFC1035] only gives the following grammar as a "should" - if there are more rules in the text, I haven't found them yet. [https://tools.ietf.org/html/rfc2181#section-11|RFC2181] ("Clarifications to the DNS Specification") does say "Occasionally it is assumed that the Domain Name System serves only the purpose of mapping Internet host names to data, and mapping Internet addresses to host names.  This is not correct, the DNS is a general (if somewhat limited) hierarchical database, and can store almost any kind of data, for almost any purpose."&lt;/p&gt;
+&lt;c&gt;
+&lt;domain&gt; ::= &lt;subdomain&gt; | " "
+
+&lt;subdomain&gt; ::= &lt;label&gt; | &lt;subdomain&gt; "." &lt;label&gt;
+
+&lt;label&gt; ::= &lt;letter&gt; [ [ &lt;ldh-str&gt; ] &lt;let-dig&gt; ]
+
+&lt;ldh-str&gt; ::= &lt;let-dig-hyp&gt; | &lt;let-dig-hyp&gt; &lt;ldh-str&gt;
+
+&lt;let-dig-hyp&gt; ::= &lt;let-dig&gt; | "-"
+
+&lt;let-dig&gt; ::= &lt;letter&gt; | &lt;digit&gt;
+
+&lt;letter&gt; ::= any one of the 52 alphabetic characters A through Z in
+upper case and a through z in lower case
+
+&lt;digit&gt; ::= any one of the ten digits 0 through 9
+&lt;/c&gt;
+&lt;p&gt;So splitting on dots seems to be fairly safe. If you wanted to go full CPAN on this:&lt;/p&gt;
+&lt;c&gt;
+use Net::DNS::DomainName;
+my $host = "foo.example.com";
+my $bare = (Net::DNS::DomainName-&gt;new($host)-&gt;label)[0];
+print "$bare\n";  # prints "foo"
+&lt;/c&gt;
+&lt;p&gt;Although according to [mod://Net::DNS::DomainName], several of the examples in your tests are not valid domain names.&lt;/p&gt;
+&lt;p&gt;For IP addresses, you might use [mod://Regexp::Common::net] to identify those, and as for port numbers and query strings, I might use [mod://URI] (if you are dealing with URLs, at least).&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1224446</root_node>
+<parent_node field_name="parent_node">1224446</parent_node>
+<thread id="1224446">
+<node id="1224451"/>
+<node id="1224454"/>
+<node id="1224456"/>
+</thread></node>

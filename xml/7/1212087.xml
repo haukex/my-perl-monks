@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1212087" title="Win32 Serial Under Windows 7" created="2018-03-31 18:31:48" updated="2018-03-31 18:31:48" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="329416">PilotinControl</author>
+<doctext field_name="doctext">Hello Esteemed monks! The below code works fine under windows vista....however it does not work fine under windows 7. Now I can send the commands just fine and it works connecting to the Arduino.....the issue is the messages from the Incoming Data are not being received... I disabled ALL network blocks so its sending the info just not receiving. Thanks in advanced and thanks to roboticus for helping so far.
+
+&lt;code&gt;
+
+#!/usr/bin/perl -w
+######################
+#
+# VARIABLES, 
+# PACKAGES, &amp; DEFINES
+#
+######################
+use strict;
+use warnings;
+use diagnostics;
+use Term::ReadKey;
+use Win32::Console::ANSI qw/ Title SetCloseButton Cursor :SW_ /;
+use Win32::Console::ANSI;
+use Win32::Console;
+use Term::ANSIColor;
+use Term::ANSIScreen qw/:cursor :screen/;
+
+##########################
+#
+# SET TERMINAL ATTRIBUTES
+#
+##########################
+
+$SIG{INT}= 'IGNORE'; 
+SetCloseButton(0);
+ShowConsoleWindow(SW_SHOWMAXIMIZED);
+
+####################################
+#
+# LOGGING KEY STROKE TIME STAMP SUB
+#
+####################################
+
+my $time = localtime(time); # ADD TIME STAMP TO LOGFILE
+
+##################
+#
+# SET SERIAL PORT
+#
+##################
+
+use Win32::SerialPort;
+my $port = Win32::SerialPort-&gt;new("COM7") or die "Open Port Failed. $!\n";
+$port-&gt;is_rs232;
+
+# SET UP THE SERIAL PORT
+# 9600 OR 19200, 81N ON THE USB FTDI DRIVER
+
+$port-&gt;initialize();
+$port-&gt;baudrate(9600);
+$port-&gt;databits(8);
+$port-&gt;parity("none");
+$port-&gt;stopbits(1);
+$port-&gt;write_settings || undef $port;
+
+##################
+#
+# MAIN SCREEN SUB
+#
+##################
+
+no warnings 'numeric';
+
+Title "Simple Signals Driver";
+print colored("CONNECTING TO SIGNAL SYSTEM...", 'bold green'), "\n";
+sleep(15);
+print "\n", colored("CONNECTED...",'bold green'), "\n", colored("STARTING RELAY SIGNAL PROGRAM", 'bold green'), "\n\n";
+
+# Buffer used to build our command line
+my $command_line = "";
+
+# Buffer for our serial data
+my @serial_data = ();
+
+# Put console into raw mode
+ReadMode 4;
+
+setup_serial_interface();
+
+my $are_we_done_yet = 0;
+while (!$are_we_done_yet) {
+my $con_key = ReadKey(-1);
+if (defined $con_key) {
+if ($con_key eq "\r" or $con_key eq "\n") {
+# user finished entering the command
+handle_command($command_line);
+$command_line = "";
+} else {
+            # Not end of line, so add to command line.
+            # NOTE: you'll want to handle backspace and/or
+            # other line editing commands.  But that's too
+            # much work for a quick demo...
+$command_line .= $con_key;
+}
+} elsif (is_serial_data_ready()) {
+        # Serial device gave us something to do
+handle_serial_data();
+} else {
+
+}
+}
+
+ReadMode(0); # RESTORE CONSOLE MODE
+
+#################
+#
+# HANDLE COMMAND
+#
+#################
+
+sub handle_command {
+my $cmd = shift;
+if ($cmd =~ /^q/i) {
+print "\n", colored("QUIT PROGRAM!", 'bold yellow'), "\n";
+$are_we_done_yet = 1;
+$port-&gt;purge_all;
+$port-&gt;close or die "CLOSE FAILED: $!\n";
+undef $port;                               # CLOSES PORT FREES MEMORY
+sleep(3);
+} elsif ($cmd =~ /^\d+$/i) {
+print colored("\nSENDING COMMAND $cmd $time...", 'bold yellow'), "\n\n";
+$port-&gt;write("$cmd\r");
+$port-&gt;lookclear();
+print colored("DONE!", 'bold yellow'), "\n\n";
+} else {
+print colored("UNKNOWN COMMAND: $cmd", 'bold red'), "\n";
+} # END ELSE
+} # END HANDLE COMMAND
+
+#############################
+#
+# USB/SERIAL/INTERFACE WITH
+# THE ARDUINO
+#
+#############################
+
+sub setup_serial_interface {
+my $seconds_per_transmission = 1.5;
+$SIG{ALRM} = sub {
+push @serial_data, rand;
+alarm $seconds_per_transmission;
+};       # ALARM SUB
+alarm(3); # LOOK FOR PACKET DATA
+}        # END SUB
+
+sub is_serial_data_ready {
+return scalar @serial_data;
+} # END SUB
+
+sub handle_serial_data {
+my $c = $port-&gt;input; # non-blocking read
+#$c =~ s/r/\n/;
+print colored("Incoming Data:", 'bold green'), colored("$c", 'bold yellow'), "\n";
+#print "Incoming Data: $c(", join(", ", @serial_data), ")\n";
+@serial_data = ();
+} # END SUB
+
+&lt;/code&gt;</doctext>
+<thread id="1212087">
+<node id="1212181"/>
+<node id="1212207"><node id="1212260"/>
+</node>
+<node id="1212215"><node id="1212268"><node id="1212279"><node id="1212281"/>
+</node>
+</node>
+</node>
+<node id="1212283"><node id="1212287"><node id="1212296"><node id="1212315"><node id="1212318"><node id="1212323"/>
+<node id="1212444"><node id="1212448"><node id="1212450"><node id="1212452"><node id="1212454"><node id="1212456"><node id="1212457"><node id="1212459"><node id="1212462"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1212312"/>
+</thread></node>

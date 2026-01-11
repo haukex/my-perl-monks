@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11101296" title="Makefile.PL does not always install changed file" created="2019-06-12 11:06:24" updated="2019-06-12 11:06:24" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11100050">williamcharles</author>
+<doctext field_name="doctext">Hi Perl Monks,
+
+&lt;p&gt;I have a Makefile.PL which creates a module say 'My_Config.pm' (Makefile.PL prompts for user password and stores it in 'My_Config.pm)' under the lib directory using some predefined template.&lt;/p&gt;
+
+&lt;p&gt;Upon &lt;code&gt;perl Makefile.PL &amp;&amp; make &lt;/code&gt; the file 'My_Config.pm' is created under lib/
+When performing &lt;code&gt;make install&lt;/code&gt; the 'My_Config.pm' is not always installed.
+Even if the file contains changes, the file is not always installed.&lt;/p&gt;
+
+&lt;p&gt;I am using File::ShareDir::Install 'postamble';&lt;/p&gt;
+
+&lt;p&gt;Any hints on what may be the problem here?&lt;/p&gt;
+&lt;p&gt;TIA&lt;/p&gt;
+
+Edit 1:
+&lt;p&gt;My_Config.tmpl&lt;/p&gt;
+&lt;code&gt;
+package My::Module::Name::My_Config;
+
+use strict;
+use warnings;
+
+use Exporter;
+our @ISA = 'Exporter';
+our @EXPORT_OK = 'MY_PASSWORD';
+
+our %EXPORT_TAGS =(CONSTANTS =&gt; ['MY_PASSWORD']);
+&lt;/code&gt;
+ 
+Makefile.PL
+&lt;code&gt;
+use strict;
+use warnings;
+use ExtUtils::MakeMaker;
+
+WriteMakeFile(
+    NAME   =&gt; 'My::Module::Name',
+    AUTHOR =&gt; 'XYZ',
+    VERSION_FROM =&gt; 'lib/My/Module/Name.pm'
+);
+
+package MY;
+sub xs_o {
+    my $pass = MM-&gt;prompt('Enter password');
+    chomp($pass);
+
+    my $tmpl = 'My_Config.tmpl';
+    my $config = 'lib/My/Module/Name/My_Config.pm';
+
+    return &lt;&lt;END;
+
+all: myconfig
+
+myconfig:
+\tperl -e 'open(IN, "&lt;" , "$tmpl"); open(OUT, "&gt;", "$config"); while(&lt;IN&gt;) { print OUT $_; } close(IN); close(OUT);'
+\tperl -e 'open(OUT, "&gt;&gt;", "$config"); print OUT "use constant MY_PASSWORD =&gt; qq($pass);\\n1;"; close(OUT);'
+
+END
+}
+
+use File::ShareDir::Install 'postamble';
+&lt;/code&gt;</doctext>
+<thread id="11101296">
+<node id="11101298"><node id="11101303"><node id="11101430"/>
+</node>
+</node>
+<node id="11101301"/>
+<node id="11101307"><node id="11101322"/>
+</node>
+<node id="11101324"/>
+</thread></node>

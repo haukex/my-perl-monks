@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1177209" title="Another &quot;Can't use string as an ARRAY ref&quot;" created="2016-12-05 08:46:49" updated="2016-12-05 08:46:49" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="273627">bradcathey</author>
+<doctext field_name="doctext">&lt;p&gt;Fellow Monasterians,&lt;/p&gt;
+&lt;p&gt;I'm building a complicated nested loop, or an AOH of AOH of AOH for an Excel::Template file but getting the proverbial:&lt;/p&gt;
+&lt;blockquote&gt;&lt;code&gt;Can't use string ("State Street Miyabe Maple ") as an ARRAY ref while "strict refs in use  line 74"&lt;/code&gt;&lt;/blockquote&gt; when building my third loop. Strange because I'm done this many times before, but this one must be different.&lt;/p&gt;
+&lt;p&gt;I have a &lt;b&gt;list of plants&lt;/b&gt; from one DB table, that I use to get a &lt;b&gt;list of sizes&lt;/b&gt; from another table, that I use to get a &lt;b&gt;list of growers&lt;/b&gt; that stock those plants for even another table (I did not build the DB). So, I want to end up with...&lt;/p&gt;
+&lt;blockquote&gt;&lt;code&gt;
+Roses-&gt;
+        2" -&gt;
+              MA 
+              CD 
+              TH
+        4" -&gt;
+              CD 
+              TH
+Violets-&gt;
+        3" -&gt;
+              MA 
+              TH
+etc.
+&lt;/code&gt;&lt;/blockquote&gt;
+&lt;p&gt;I've read several nodes on the topic here at the Monastery and elsewhere, but the light hasn't gone on. I know it has something to do with a scalar vs. an array ref, but I'm not seeing it here. Can someone help me get my head around the concept? Thanks!&lt;/p&gt;
+&lt;blockquote&gt;&lt;code&gt;
+
+...query statements built, etc., and get plants AOH...
+
+print "plants: ".Dumper($plants);      
+         
+for my $i (0..$#$plants) {      
+    $plants-&gt;[$i]{'common'} =  $plants-&gt;[$i]{'common_name'}; 
+    
+    #query the database for available sizes of the plants
+    $sizes = $self-&gt;dbh-&gt;selectall_arrayref($s_stmt, {Slice =&gt; {}},($plants-&gt;[$i]{'id'}, 1));  
+    
+    print "sizes: ".Dumper($sizes);
+     
+    if (@{$sizes}) {  
+        $jctr = 0;
+        for my $j (0..$#$sizes) {  #j-loop
+            print "j-loop: ". $plants-&gt;[$i]{'common'}."\n";
+line 74:    $plants-&gt;[$i]{'common'}-&gt;[$jctr]{'sizes'} = $sizes-&gt;[$j]{'plantsize'}.$sizes-&gt;[$j]{'unit'};
+             
+            #query the database for growers with those plants  
+            $growers = $self-&gt;dbh-&gt;selectall_arrayref($g_stmt, {Slice =&gt; {}}, ($sizes-&gt;[$j]{'plantid'}, $sizes-&gt;[$j]{'plantsize'}, 1)); 
+            
+            print "growers: ".Dumper($growers);
+            
+            #haven't gotten this far yet
+            if (@{$growers}) {
+                $kctr = 0;
+                for my $k (0..$#$growers) {
+                    $plants-&gt;[$i]{'common'}-&gt;[$jctr]{'sizes'}-&gt;[$kctr]{'growers'} = $growers-&gt;[$k]{'two_letter_abbrev'};
+                    $kctr++; #increase counter
+                } #for growers
+            } #if growers
+            
+            $jctr++;   #increase counter
+            
+        } #for sizes    
+    } #if sizes
+} #for plants loop
+    
+&lt;/code&gt;&lt;/blockquote&gt;
+&lt;p&gt;Dumper&lt;/p&gt;
+&lt;blockquote&gt;&lt;code&gt;
+plants: $VAR1 = [
+           {
+            'genus' =&gt; 'Acer miyabei \'Morton\'',
+            'common_name' =&gt; 'State Street Miyabe Maple',
+            'type' =&gt; '1',
+            'chicagoland_grows' =&gt; '0',
+            'id' =&gt; '1063'
+           }
+        ];
+          
+sizes: $VAR1 = [
+          {
+            'show_plant' =&gt; '1',
+            'plantsize' =&gt; '1.5-2',
+            'plantid' =&gt; '1063',
+            'unit' =&gt; '"',
+            'userid' =&gt; '4'
+          }
+        ];
+j-loop: State Street Miyabe Maple
+&lt;/code&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;b&gt;UPDATE:&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;Thanks for helping me get the concept.&lt;/p&gt;
+&lt;blockquote&gt;&lt;code&gt;
+for my $i (0..$#$plants) {      
+    $sizes = $self-&gt;dbh-&gt;selectall_arrayref($s_stmt, {Slice =&gt; {}},($plants-&gt;[$i]{'id'}, 1));
+     
+    if (@{$sizes}) {  
+        $jctr = 0;
+        for my $j (0..$#$sizes) { 
+            $plants-&gt;[$i]{'sizes'}-&gt;[$jctr]{'size'} = $sizes-&gt;[$j]{'plantsize'}.$sizes-&gt;[$j]{'unit'};
+            $jctr++; 
+            
+            #query just the growers with those plants, by size                
+            $growers = $self-&gt;dbh-&gt;selectall_arrayref($g_stmt, {Slice =&gt; {}}, ($sizes-&gt;[$j]{'plantid'}, $sizes-&gt;[$j]{'plantsize'}, $sizes-&gt;[$j]{'unitid'},1)); 
+            
+            if (@{$growers}) {
+                $kctr = 0;
+                for my $k (0..$#$growers) {
+                    $plants-&gt;[$i]{'sizes'}-&gt;[$j]{'growers'}-&gt;[$kctr]{'abbrev'} .= $growers-&gt;[$k]{'two_letter_abbrev'}." ";                        
+                } 
+                $kctr++; 
+            } 
+        }     
+    } 
+} 
+&lt;/code&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;Output.&lt;/p&gt;
+&lt;blockquote&gt;&lt;code&gt;
+[
+    {
+    'sizes' =&gt; [   # $i - loop
+                 {
+                   'size' =&gt; '5-6"',
+                   'growers' =&gt; [  # $j - loop
+                                  {
+                                    'abbrev' =&gt; 'KT '   # $k - loop
+                                  }
+                                ]
+                 }
+               ],
+    'chicagoland_grows' =&gt; '0',
+    'common_name' =&gt; 'Northern Pin Oak ',
+    'id' =&gt; '7108',
+    'genus' =&gt; '',
+    'type' =&gt; '1'
+    },
+    {
+    'sizes' =&gt; [
+                 {
+                   'growers' =&gt; [
+                                  {
+                                    'abbrev' =&gt; 'KN '
+                                  }
+                                ],
+                   'size' =&gt; '1.5-4.5"'
+                 },
+                 {
+                   'growers' =&gt; [
+                                  {
+                                    'abbrev' =&gt; 'HI '
+                                  }
+                                ],
+                   'size' =&gt; '2-4"'
+                 }
+               ],
+    'genus' =&gt; 'Acer nigrum \'Green Column\'',
+    'chicagoland_grows' =&gt; '1',
+    'common_name' =&gt; 'Green Column Black Maple',
+    'id' =&gt; '6',
+    'type' =&gt; '1'
+    }
+    ];
+&lt;/code&gt;&lt;/blockquote&gt;    
+
+
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-273627"&gt;
+&amp;mdash;Brad&lt;br /&gt;&lt;small&gt;&lt;i&gt;"The important work of moving the world forward does not wait to be done by perfect men."&lt;/i&gt;  George Eliot&lt;/small&gt;&lt;br&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1177209">
+<node id="1177212"/>
+<node id="1177213"/>
+<node id="1177214"><node id="1177218"><node id="1177219"><node id="1177287"/>
+</node>
+</node>
+</node>
+</thread></node>

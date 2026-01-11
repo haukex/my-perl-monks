@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203386" title="Regex result being defined when it shouldn't be(?)" created="2017-11-14 10:20:13" updated="2017-11-14 10:20:13" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1202478">chenhonkhonk</author>
+<doctext field_name="doctext">&lt;p&gt;
+Perl 5.26, Strawberry on Windows
+
+I'm writing a parser to decode an options file effectively into perl-like assignments. A primitive config might look like:
+&lt;br/&gt;&lt;br/&gt;
+@arr&amp;#91;2&amp;#93; = 5
+&lt;br/&gt;
+var = 10
+&lt;br/&gt;&lt;br/&gt;
+The example regex block is:
+&lt;/p&gt;
+&lt;code&gt;
+sub parse_options {    # \%options_we_can_write, \@lines_of_options_file. [ $die_on_extra_options ] 
+	#loads all matching values from an array of lines into the options hash
+	#uses '=' as the separator, one ( 1 ) space on either side
+	my ($options_we_can_write, $options_file_lines, $die_on_extra_options) = @_;
+	
+	my $var = "";
+	my $sigil = "";
+	my $val = "";
+	my $setter = "";
+	my $arraything = "";
+	my $fd = "";
+	my $rd = "";
+	my $index = "";
+	
+	if( ! %{$options_we_can_write} ){ die "no options to match\n" }
+
+
+	foreach ( @{ $options_file_lines } ){
+		if( $_ =~ m/
+					^([@%\$]?) # open sigil
+					([a-zA-Z_]+) # variable
+					(\[)? #optional open bracket
+					([\d]*) #optional number
+					(])? #optional close bracket
+					\ # space
+					= # equals
+					\ # space
+					([a-zA-Z0-9_\\\/:]+)$ # string until end of line
+				/x #end regex
+			){ #startif
+			#print "##$1## ##$2## ##$3## ##$4## ##$5## ##$6##\n"; #complains about undefined values
+
+			if( defined ($sigil = $1) eq "" ){ $sigil = '$' }
+			print "####sigil $sigil ##&gt;$1&lt;##\n";
+			$var = $2;
+			if( defined ($fd = $3) eq "" ){ $fd = "" };
+			if( defined ($index = $4) eq "" ){ $index = "" }
+			if( defined ($rd = $5) eq "" ){ $rd = "" };
+			
+			if ( ($fd eq '[' and $rd ne ']') or ($fd eq "{" and $rd ne '}') ){
+				print STDERR "Mismatched delimiters for $var, skipping\n";
+				next;
+			}
+			
+			if ( ($fd eq '[' and $rd eq ']') and ( ! is_whole_number($index) ) ){
+				print STDERR "array assignment $var needs whole number index\n";
+				next;
+			}
+			
+#			if ($fd eq "{" and $rd != '}' ){
+#				print STDERR "Error bad delimiter for $var";
+#			}
+
+
+			$setter = "$sigil\{ \$options_we_can_write-&gt;{$var} }$fd$index$rd = $val";
+			print "$setter\n";
+			
+			if( exists $options_we_can_write-&gt;{"$var"} ){
+				eval $setter;			
+			}
+		
+			next;
+		}
+	
+	
+	
+	
+	
+		if( $_ =~ m/^(.*?) = (.*)$/ ){
+			$var = $1;
+			$val = $2;
+
+			if( exists $options_we_can_write-&gt;{"$var"} ){
+				${ $options_we_can_write-&gt;{"$var"} } = $val;
+			} else {
+				print "Error: desired option $var not found\n";
+			}
+		}
+		#print "$_\n";
+	}
+	return 0;
+}
+&lt;/code&gt;
+
+It's obviously in-work, but $1 seems to always be being set to "" if there's no match and not undef as the other values are. For example:
+&lt;code&gt;
+if( defined ($fd = $3) eq "" ){ $fd = "" };
+&lt;/code&gt;
+can be changed to:
+&lt;code&gt;
+if( defined ($fd = $3) eq "" ){ $fd = "ssssssssss" };
+&lt;/code&gt;
+and the ssssssss gets shown in 'print $setter' for an assignment without a front-delimiter. I first thought it was because I had "\$" vs '$' but that made no difference. If I explicitly assign $sigil right after the defined line it is assigned, but the else is never executed for $1, unlike $3 and $5. There are no extra characters being passed (\r, \n, etc)</doctext>
+<thread id="1203386">
+<node id="1203389"><node id="1203396"><node id="1203398"/>
+<node id="1203400"><node id="1203404"/>
+<node id="1203405"><node id="1203410"><node id="1203481"><node id="1203495"><node id="1203613"><node id="1203724"/>
+</node>
+<node id="1224565"><node id="1224568"/>
+<node id="1224592"/>
+</node>
+</node>
+<node id="1203512"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1203401"><node id="1203407"><node id="1203408"><node id="1203415"/>
+</node>
+</node>
+<node id="1203417"/>
+</node>
+</node>
+<node id="1203399"/>
+</thread></node>

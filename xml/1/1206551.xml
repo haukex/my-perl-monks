@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1206551" title="Matching backslash in regexp negative lookbehind" created="2018-01-02 13:04:33" updated="2018-01-02 13:04:33" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1130276">1nickt</author>
+<doctext field_name="doctext">&lt;P&gt;
+Hello friends, I seek help with what I realize may be an XY problem (so I will describe it generally below).
+&lt;/p&gt;
+&lt;P&gt;
+I've inherited some code that is intended to mask sensitive data in logs. The application sends data to be formatted (flattened) for logging. The data may include JSON strings. The current code uses Data::Dumper to flatten the data. The resulting string may have "sensitive" keys quoted with single quotes (from Data::Dumper) or with double quotes (from JSON). Presumably, it could also contain embedded escaped quotes.
+&lt;/P&gt;
+&lt;P&gt;
+A regular expression is used to do the work. The current implementation is broken. I'm working on a replacement, and first it looks for the "quotation mark" in use to quote the key and the value. I'm using a negative lookbehind to skip escaped quotes. This seems to work in simple matching but what I am having trouble with is using the captured "quotation mark" (including the negative lookbehind to skip escaped quotes) in a character class or in a negative lookahead.
+&lt;c&gt;
+my $param = 'password';
+for ( q~{'password' =&gt; 'secret'}~, q~{"password" =&gt; "sec\"ret"}~ ) {
+    $_ =~ s/
+        (                   # capture everything up to the start of the value
+          (                   # capture the quotation mark we are using
+            (?&lt;!\\\\)         # not escaped
+            [ ' " ]           # either kind of quote
+          )                   # end capture quotation mark
+          $param              # the key
+          \2                  # the same quotation mark
+          \s*                 # any amount of space
+          (?: =&gt; | : )        # perl or JSON key-value "connector"
+          \s*                 # any amount of space
+          \2                  # the same quotation mark
+        )                   # end capture everything up to start of the value
+        (?:                 # group but do not capture the value
+          (?!\2) .           # defined as any character except the same quote
+        )*                  # any number of times
+    /$1***/smxg;            # the closing quotation mark will remain in place
+
+    say $_;
+}
+&lt;/c&gt;
+This outputs:
+&lt;c&gt;
+{'password' =&gt; '***'}
+{"password" =&gt; "***"ret"}
+&lt;/c&gt;
+&lt;/p&gt;
+&lt;P&gt;
+All suggestions welcome.
+&lt;/p&gt;
+&lt;BR&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1130276"&gt;
+&lt;i&gt;The way forward always starts with a minimal test.&lt;/i&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1206551">
+<node id="1206552"/>
+<node id="1206554"><node id="1206555"/>
+<node id="1206557"><node id="1206562"><node id="1206564"><node id="1206565"/>
+<node id="1206575"><node id="1206660"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1206558"/>
+<node id="1206561"/>
+<node id="1206567"><node id="1206570"/>
+</node>
+</thread></node>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1188551" title="Re^2: one liner question" created="2017-04-21 11:01:01" updated="2017-04-21 11:01:01" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;[doc://Tie::File] is a good idea. One disadvantage is that it'll have to scan the entire file once and use up some memory to store the offsets of all the lines in the file when it is determining the size of the array. I wondered if the optimization of &lt;c&gt;for (reverse @array)&lt;/c&gt; ([doc://perl586delta#Performance-Enhancements|since Perl v5.8.6]) also applies to tied arrays, and it turns out that it does:&lt;/p&gt;
+&lt;c&gt;
+{
+	package LoggedArray;
+	use Tie::Array;
+	our @ISA = ('Tie::StdArray');
+	sub TIEARRAY { bless [@_[1..$#_]], $_[0] }
+	for my $sub (qw/ FETCHSIZE STORESIZE STORE FETCH CLEAR
+		POP PUSH SHIFT UNSHIFT EXISTS DELETE SPLICE EXTEND /) {
+		no strict 'refs';
+		*$sub = sub {
+			my $self = shift;
+			warn "$sub @_\n";
+			$self-&gt;${\"SUPER::$sub"}(@_);
+		}
+	}
+}
+tie my @array, 'LoggedArray', qw/one two three/;
+print "&lt;$_&gt;\n" for reverse @array;
+
+__END__
+
+FETCHSIZE 
+FETCH 2
+&lt;three&gt;
+FETCH 1
+&lt;two&gt;
+FETCH 0
+&lt;one&gt;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1188377</root_node>
+<parent_node field_name="parent_node">1188546</parent_node>
+<thread id="1188377">
+<node id="1188379"/>
+<node id="1188380"/>
+<node id="1188382"/>
+<node id="1188452"><node id="1188586"/>
+</node>
+<node id="1188546"><node id="1188551"/>
+</node>
+</thread></node>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1173543" title="Back-ticks and bash" created="2016-10-08 11:48:34" updated="2016-10-08 11:48:34" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="583705">Wiggins</author>
+<doctext field_name="doctext">This is a puzzle of a cross-domain fashion in multiple environments.&lt;br&gt;
+
+Problem: an Perl installation script that installs a Perl program that auto-starts at boot, and can be started or stopped from the command line. In any release of RHEL, CentOS, Debian, Ubuntu, or Kali.&lt;p&gt;
+I have found a bash script that seems to reliably identify 'system5-init', 'upstart', and 'systemd' as foundations for process control. Running the script in back-ticks has interpretation problems. Using 'system' will only return the exit value, not the STDOUT (which is possibly usable, but rather opaque).
+
+&lt;code&gt;
+#create the bash script to determine whic Init System
+  my $tmpScript = "/tmp/whichSysInit";
+  my $whichInit = &lt;&lt;"END";
+      #!/bin/bash
+      if [[ `/sbin/init --version 2&gt;/dev/null` =~ upstart ]]; then 
+          echo using upstart;
+      elif [[ `systemctl` =~ -\.mount ]]; then 
+          echo using systemd;
+      elif [[ -f /etc/init.d/cron &amp;&amp; ! -h /etc/init.d/cron ]]; then 
+          echo using sysv-init;
+      else echo cannot tell; 
+      fi
+
+END
+
+  open  OPT, "&gt; $tmpScript";
+  print OPT $whichInit;
+  close OPT;
+  chmod 0555, $tmpScript;
+
+  #run that script to get answer
+  my $rslt= `$tmpScript`;
+  #unlink $tmpScript; # cleanup
+
+  print " Initialization is $rslt\n";
+
+  #react to the result
+  #if ($rslt =~/using\s(?&lt;si&gt;\S+)/){
+  #  my $sysInit= $+{si};
+  
+&lt;/code&gt;
+When I run the file left in /tmp/ from the command line, it echos the appropriate string.&lt;br&gt;
+When run the file in back-ticks the following errors are produced:
+&lt;code&gt;
+/tmp/whichSysInit: 2: /tmp/whichSysInit: [[: not found
+/tmp/whichSysInit: 1: /tmp/whichSysInit: systemctl: not found
+/tmp/whichSysInit: 4: /tmp/whichSysInit: [[: not found
+/tmp/whichSysInit: 6: /tmp/whichSysInit: [[: not found
+Can not determine System Init mechanism &lt;&gt;.
+ Exiting
+&lt;/code&gt;
+I searched for the program '[[', but none was found. &lt;br&gt;
+Linux ubuntu 3.11.0-26-generic #45~precise1-Ubuntu SMP Tue Jul 15 04:02:35 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux&lt;p&gt;
+The shell in the environmant is '/bin/bash'&lt;br&gt;
+Maybe the '#!' on line 1 isn't run? And bash isn't what is interpreting the script?&lt;br&gt;
+Thoughts?
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-583705"&gt;
+&lt;p&gt;&lt;i&gt;It is always better to have seen your target for yourself, rather than depend upon someone else's description.&lt;/i&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1173543">
+<node id="1173545"><node id="1173586"/>
+</node>
+<node id="1173546"/>
+<node id="1173551"/>
+<node id="1173574"><node id="1173585"><node id="1173609"/>
+</node>
+</node>
+</thread></node>

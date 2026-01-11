@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1169437" title="Re: finding intermediate range values from two file columns" created="2016-08-09 17:03:59" updated="2016-08-09 17:03:59" _doctext_mode="lenient"><type id="11">note</type>
+<author id="832495">choroba</author>
+<doctext field_name="doctext">As [perldigious] noted, your sample input and output don't make sense. I modified the input in the following way:
+&lt;c&gt;
+a 11-23
+b 33-39
+c 40-45
+d 48-58
+&lt;/c&gt;
+&lt;c&gt;
+1-34
+35-39
+40-42
+43-49
+51-59
+62-90
+&lt;/c&gt;&lt;P&gt;
+
+And got the following result:
+&lt;c&gt;
+a 11-23
+b 33-34
+b 35-39
+c 40-42
+c 43-45
+d 48-49
+d 51-58
+&lt;/c&gt;&lt;P&gt;
+
+from the following code:
+&lt;c&gt;
+#!/usr/bin/perl
+use warnings;
+use strict;
+use feature qw{ say };
+
+use constant {
+    FROM =&gt; 0,
+    TO   =&gt; 1,
+    NAME =&gt; 2,
+};
+
+my @ranges;
+open my $F1, '&lt;', shift or die $!;
+while (&lt;$F1&gt;) {
+    my ($name, $range) = split;
+    my ($from, $to) = split /-/, $range;
+    push @ranges, [$from, $to, $name];
+}
+
+my $range_idx = 0;
+open my $F2, '&lt;',shift or die $!;
+
+while (&lt;$F2&gt;) {
+    chomp;
+    my ($from, $to) = split /-/;
+    my $end;
+    do {
+        ++$range_idx until $range_idx &gt; $#ranges
+                        || $ranges[$range_idx][FROM] &lt;= $to
+                        &amp;&amp; $ranges[$range_idx][TO] &gt;= $from;
+        last if $range_idx &gt; $#ranges;
+
+        my $start = $from &gt; $ranges[$range_idx][FROM]
+                  ? $from
+                  : $ranges[$range_idx][FROM];
+        $end = $to &gt; $ranges[$range_idx][TO]
+             ? $ranges[$range_idx][TO]
+             : $to;
+        say $ranges[$range_idx][NAME], " $start-$end";
+    } while $to &gt; ($from = 1 + $end);
+}
+&lt;/c&gt;&lt;P&gt;
+
+Explanation: &lt;C&gt;@ranges&lt;/C&gt; is an array of arrays, it stores the ranges from the first file. While processing the second file, you remember the last range(1) used ( &lt;C&gt;$range_idx&lt;/C&gt; ) and for input ranges(2) spreading over more than one range(1), you adjust the &lt;C&gt;$from&lt;/C&gt; and try again.&lt;P&gt;
+
+Joining the b's and c's left as an exercise for the reader :-)&lt;P&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-832495"&gt;
+&lt;c&gt;($q=q:Sq=~/;[c](.)(.)/;chr(-||-|5+lengthSq)`"S|oS2"`map{chr |+ord
+}map{substrSq`S_+|`|}3E|-|`7**2-3:)=~y+S|`+$1,++print+eval$q,q,a,&lt;/c&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.1416} --&gt;</doctext>
+<root_node field_name="root_node">1169432</root_node>
+<parent_node field_name="parent_node">1169432</parent_node>
+<thread id="1169432">
+<node id="1169433"><node id="1169439"/>
+</node>
+<node id="1169437"/>
+<node id="1169438"><node id="1169447"/>
+</node>
+<node id="1169499"/>
+</thread></node>

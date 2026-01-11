@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1227736" title="Re^5: Handling utf-8 characters when scraping" created="2018-12-27 03:17:11" updated="2018-12-27 03:17:11" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;One way to verify what Perl is &lt;i&gt;really&lt;/i&gt; storing internally is [doc://Devel::Peek]. What I would look for is that the &lt;c&gt;UTF8&lt;/c&gt; flag is on, and the string when shown as UTF-8 is correct:&lt;/p&gt;
+&lt;c&gt;
+use Devel::Peek;
+my $str = "\x{20AC}";
+Dump($str);
+
+__END__
+
+SV = PV(0x15c0d70) at 0x15e0440
+  REFCNT = 1
+  FLAGS = (POK,IsCOW,pPOK,UTF8)
+  PV = 0x15e4e10 "\342\202\254"\0 [UTF8 "\x{20ac}"]
+  CUR = 3
+  LEN = 10
+  COW_REFCNT = 1
+&lt;/c&gt;
+&lt;p&gt;Here, &lt;c&gt;[UTF8 "\x{20ac}"]&lt;/c&gt; is correct. There's also &lt;c&gt;utf8::is_utf8($str)&lt;/c&gt; to check for the &lt;c&gt;UTF8&lt;/c&gt; flag, although I'd recommend only using that for debugging as well. If you don't want all the extra output, you might just say:&lt;/p&gt;
+&lt;c&gt;
+use Data::Dump;
+my $str = "\x{20AC}";
+dd $str, utf8::is_utf8($str);
+__END__
+("\x{20AC}", 1)
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1227701</root_node>
+<parent_node field_name="parent_node">1227720</parent_node>
+<thread id="1227701">
+<node id="1227702"><node id="1227703"><node id="1227705"><node id="1227720"><node id="1227736"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

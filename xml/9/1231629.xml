@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1231629" title="Re: Split lines in file to columns" created="2019-03-24 18:09:19" updated="2019-03-24 18:09:19" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1088483">pgmer6809</author>
+<doctext field_name="doctext">&lt;p&gt; Here is some code that makes use of a couple of very nice perl features.&lt;/p&gt;
+&lt;p&gt;1) You can put your data after the _END_ statement and then have while read it in, rather than putting it in an array at the source.
+Makes for easier setting of test cases.&lt;/p&gt;
+&lt;p&gt;2) It uses REGEX power of Perl to split the line. This is much more flexible than split, and is the usual way that perl programmers parse stuff.&lt;/p&gt;
+&lt;p&gt; I have added a couple of lines to your original input to show that a) if it is not REGION but say HQ the value is not replaced. Ditto if it is REGION but the original value is not XYZ. Not sure if that is exactly what you meant but the concept should be useful.&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl -w
+
+while (&lt;DATA&gt;) { #read a line into $_
+	chomp;
+	$_ =~ m/^\s*(\S+)\s+(\S+)\s+(\S+)\s+(.*)$/;
+	#             col1   col_b 	  xyz    Descr
+	my ($col1, $data_b, $xyz, $description ) = ($1, $2, $3, $4);
+
+	if ( ( $description =~ m/Region/ ) &amp;&amp; ( $xyz eq "XYZ" ) ) { $xyz = "N/A"; }
+	print "Line $. = $_\n"; 
+	print "\tXYZ result = $xyz \n";
+} #end while DATA
+exit 1;
+__END__
+ValuesInColumn1    DataColumnB    XYZ    RowDescription|RowCode|Supplier ID::Region
+ValuesInColumn1    DataColumnB    XYZ    RowDescription|RowCode|Supplier ID::Region
+ValuesInColumn1    DataColumnB    XYZ    RowDescription|RowCode|Supplier ID::Region
+ValuesInColumn1    DataColumnB    XYZ    RowDescription at RowCode
+ValuesInColumn1    DataColumnB    ABC    RowDescription at RowCode
+ValuesInColumn1    DataColumnB    XYZ    RowDescription|RowCode|Supplier ID::HQ
+ValuesInColumn1    DataColumnB    BCD    RowDescription|RowCode|Supplier ID::Region
+&lt;/code&gt;
+
+&lt;p&gt;The result of running the above is:&lt;/p&gt;
+&lt;code&gt;
+Line 1 = ValuesInColumn1    DataColumnB    XYZ    RowDescription|RowCode|Supplier ID::Region
+	XYZ result = N/A 
+Line 2 = ValuesInColumn1    DataColumnB    XYZ    RowDescription|RowCode|Supplier ID::Region
+	XYZ result = N/A 
+Line 3 = ValuesInColumn1    DataColumnB    XYZ    RowDescription|RowCode|Supplier ID::Region
+	XYZ result = N/A 
+Line 4 = ValuesInColumn1    DataColumnB    XYZ    RowDescription at RowCode
+	XYZ result = XYZ 
+Line 5 = ValuesInColumn1    DataColumnB    ABC    RowDescription at RowCode
+	XYZ result = ABC 
+Line 6 = ValuesInColumn1    DataColumnB    XYZ    RowDescription|RowCode|Supplier ID::HQ
+	XYZ result = XYZ 
+Line 7 = ValuesInColumn1    DataColumnB    BCD    RowDescription|RowCode|Supplier ID::Region
+	XYZ result = BCD 
+&lt;/code&gt;
+
+</doctext>
+<root_node field_name="root_node">1231482</root_node>
+<parent_node field_name="parent_node">1231482</parent_node>
+<thread id="1231482">
+<node id="1231483"><node id="1231484"/>
+</node>
+<node id="1231485"/>
+<node id="1231503"/>
+<node id="1231629"><node id="1231630"/>
+</node>
+</thread></node>

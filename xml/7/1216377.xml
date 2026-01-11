@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1216377" title="Re: Print lines between multi-line regex pattern" created="2018-06-11 05:56:07" updated="2018-06-11 05:56:07" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;When dealing with multi-line data, there are two basic possibilities: Either (1) read the entire file into memory (5000 lines is not that big, especially if the lines are only as short as you've shown) and apply a regex over the whole thing, or (2) read the file line-by-line and keep some kind of state, keeping in mind that you're only looking at one line at a time (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; or, if the state you are keeping is a buffer, like a sliding window, a few lines). This second point is why your code isn't working: You're expecting your regex &lt;c&gt;$beg&lt;/c&gt; to match two lines since you've included a &lt;c&gt;\n&lt;/c&gt; in your regex, but if you're reading the file line-by-line, you'll only ever have one line in &lt;c&gt;$_&lt;/c&gt; at a time (or &lt;c&gt;$line&lt;/c&gt;, that's unclear from your code).&lt;/p&gt;
+&lt;p&gt;The downside of the first approach is that it uses more RAM and will start being problematic if your files grow. Here's an example:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $data = do { open my $fh, '&lt;', 'sample.txt' or die $!;
+	local $/; &lt;$fh&gt; };  # slurp whole file into memory
+
+my $regex = qr{ 
+	^ \s*APP&gt;\sSTART_PARTU_8X8 \n
+	^ \s*APP&gt;\sPARTITION_SPLIT \n
+	(.*?)
+	^ \s*APP&gt;\sEND_PARTU_8X8 $
+	}msx;
+
+if ($data=~$regex) {
+	print $1;
+}
+&lt;/c&gt;
+&lt;p&gt;The downside of the second approach is that it makes the logic a bit more complex, but I tend to prefer it since it allows for any size input file, and it can be (IMO) more easily customized and extended for more complex state changes. Here's an example:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $beg1 = qr/^\s*APP&gt;\sSTART_PARTU_8X8$/;
+my $beg2 = qr/^\s*APP&gt;\sPARTITION_SPLIT$/;
+my $end  = qr/^\s*APP&gt;\sEND_PARTU_8X8$/;
+
+open my $fh, '&lt;', 'sample.txt' or die $!;
+my $prev_line;
+my $state = 'not_in_block';
+while ( my $line = &lt;$fh&gt; ) {
+	if ( $state eq 'not_in_block' ) {
+		if ( $prev_line &amp;&amp; $prev_line=~$beg1 &amp;&amp; $line=~$beg2 ) {
+			$state = 'am_in_block';
+		}
+	}
+	elsif ( $state eq 'am_in_block' ) {
+		if ( $line=~$end ) {
+			$state = 'not_in_block';
+		}
+		else {
+			print $line;
+		}
+	}
+} continue { $prev_line = $line }
+close $fh;
+&lt;/c&gt;
+&lt;p&gt;Using the sample input data from your post as &lt;c&gt;sample.txt&lt;/c&gt;, both pieces of code output:&lt;/p&gt;
+&lt;c&gt;
+    START_PARTU_4X4
+    ........
+    START_PARTU_4X4
+    ........
+    START_PARTU_4X4
+    ........
+    START_PARTU_4X4
+    ........
+&lt;/c&gt;
+&lt;p&gt;Of course, this being Perl, there are other ways to approach this, but these are two pretty common ones.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1216375</root_node>
+<parent_node field_name="parent_node">1216375</parent_node>
+<thread id="1216375">
+<node id="1216377"><node id="1217143"/>
+</node>
+<node id="1216451"><node id="1217144"/>
+</node>
+</thread></node>

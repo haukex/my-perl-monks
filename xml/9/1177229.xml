@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1177229" title="Re^3: Printing to STDOUT buffered when invoking Perl within a bash-script using tee" created="2016-12-05 10:24:06" updated="2016-12-05 10:24:06" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [TJCooper],&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;the Perl script is NOT buffered when ran as a standalone script&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;A described in the [http://perl.plover.com/FAQs/Buffering.html|article] I linked to, Perl decides whether STDOUT should be line or block buffered depending on whether it is connected to a terminal or not. For example, you should notice a difference in the behavior of the following: the middle one delays its output until the end due to the buffering.&lt;/p&gt;
+&lt;c&gt;
+$ perl -le 'for (0..10) { print; sleep 1 }'
+$ perl -le 'for (0..10) { print; sleep 1 }' | tee /tmp/foo
+$ perl -le '$|=1; for (0..10) { print; sleep 1 }' | tee /tmp/foo
+&lt;/c&gt;
+&lt;blockquote&gt;&lt;i&gt;I have tried this&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In the following bash script, if I remove the &lt;c&gt;$|=1;&lt;/c&gt;, it displays the undesired behavior you describe; with the autoflush turned on it shows the expected "live" view.&lt;/p&gt;
+&lt;c&gt;
+#!/bin/bash
+exec &gt; &gt;(tee "/tmp/foo")
+perl -le '$|=1; for (0..10) { print; sleep 1 }'
+&lt;/c&gt;
+&lt;p&gt;So if you've tried &lt;c&gt;$|=1;&lt;/c&gt; and are still getting the undesired behavior, perhaps you could show a [http://www.sscce.org/|Short, Self Contained, Correct (Compatible) Example] for us to reproduce the problem.&lt;/p&gt;
+&lt;p&gt;... after your update to the node while I was typing my reply:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I had tried using that magic-variable and it did not work...but now it does.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Please see [id://17557], especially "It is uncool to update a node in a way that renders replies confusing or meaningless".&lt;/p&gt;
+&lt;p&gt;Regards,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update: Referenced article.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1177221</root_node>
+<parent_node field_name="parent_node">1177223</parent_node>
+<thread id="1177221">
+<node id="1177222"><node id="1177223"><node id="1177229"/>
+</node>
+</node>
+</thread></node>

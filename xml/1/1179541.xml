@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1179541" title="Re^6: Begginer's question: If loops one after the other. Is that code correct?" created="2017-01-13 14:13:38" updated="2017-01-13 14:13:38" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [predrag],&lt;/p&gt;
+&lt;p&gt;[choroba] has already [id://1179363|shown] you a more "perlish" approach to the problem, using a hash table and a regular expression. However, note that just because you're writing in Perl doesn't mean you have to do it that way, since in Perl, TIMTOWTDI - There Is More Than One Way To Do It. (My [id://1179336|comments] that it's better to parse HTML with a module still apply, though.)&lt;/p&gt;
+&lt;p&gt;I had a look at your code, and even though I haven't tested it myself since you said that it works, it does look like the logic is fairly sound. I'm not entirely clear yet on the order of operations in the &lt;c&gt;foreach $char&lt;/c&gt; loop, but as I said before the best way to go about checking it is with enough sample input that exercises all the logic branches.&lt;/p&gt;
+&lt;p&gt;The one thing that I'm a little confused about is the placement of the &lt;c&gt;if (substr($txtstring, 0, 1) eq "&amp;" ){&lt;/c&gt; statement. It seems to me like this is only handling &amp;amp; characters at certain points in the input string, instead of anywhere in the input string. This might be a place where either [doc://index] or a regular expression might be more appropriate (or, of course, a full HTML parser &lt;c&gt;:-)&lt;/c&gt;).&lt;/p&gt;
+&lt;p&gt;Anyway, I thought I might give some general comments about your code:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Instead of &lt;c&gt;binmode(STDOUT, ":utf8"); use open ':encoding(utf8)';&lt;/c&gt;, I believe you can just say &lt;c&gt;use open qw/:std :utf8/;&lt;/c&gt; (this also affects STDIN and STDERR).&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;open INPUT, "&lt;index_latin.html";&lt;/c&gt; - I'd recommend the three-argument form of [doc://open], with error handling, as well as lexical filehandles (&lt;c&gt;my $infh&lt;/c&gt; instead of &lt;c&gt;INPUT&lt;/c&gt;): &lt;c&gt;open my $infh, '&lt;', 'index_latin.html' or die "open: $!";&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;undef $/;&lt;/c&gt; - the effect of a change to the [doc://$/] variable will be global, throughout the whole program. A common way to do this is to use [doc://local] inside of a [doc://do] block; the effect of [doc://local] will then cause the variable to be reset to its original value when the block is exited. You'll see this often in Perl to read an entire file at once ("slurp"): &lt;c&gt;my $infile = do { local $/; &lt;INPUT&gt; };&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;You have quite a few variable declarations (&lt;c&gt;my ...&lt;/c&gt;) before the code starts. Note that it's usually better to wait with declaring variables until the scope where they're needed, as otherwise there might be conflicts if you accidentally re-use a variable or forget which scope you're working in. For example, instead of &lt;c&gt;my $char; foreach $char ...&lt;/c&gt; it's usually better to say &lt;c&gt;foreach my $char ...&lt;/c&gt; (unless of course you specifically need &lt;c&gt;$char&lt;/c&gt; after the loop ends).&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;my $k;&lt;/c&gt; - I'd recommend to use textual representations instead of magic numbers here. For example, you can use [doc://constant]: &lt;c&gt;use constant { INSIDE_TAG=&gt;1, OUTSIDE_TAG=&gt;2 };&lt;/c&gt; and then use the two values &lt;c&gt;INSIDE_TAG&lt;/c&gt; and &lt;c&gt;OUTSIDE_TAG&lt;/c&gt; instead of the numbers.&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;my $Nj; ... $Nj = "&amp;#1034;"; $out = $out.$Nj;&lt;/c&gt; can also be written much shorter as &lt;c&gt;$out = $out."&amp;#1034;";&lt;/c&gt; (since each of those variables like &lt;c&gt;$Nj&lt;/c&gt; is used only once).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;As for your question [id://1179391|here] about &lt;c&gt;&amp;nbsp;&lt;/c&gt;, you're right, my code didn't handle that. The solution is to change the &lt;c&gt;'text'&lt;/c&gt; to &lt;c&gt;'dtext'&lt;/c&gt; (decoded text) in &lt;c&gt;$p-&gt;handler(text =&gt; sub { ... }, 'text');&lt;/c&gt;. Also, I didn't have full UTF-8 handling in that code, I should have said &lt;c&gt;open my $out, '&gt;:utf8', $outfile or die ...&lt;/c&gt; to open the output file, and for parsing the input file I should have done this: &lt;c&gt;open my $infh, '&lt;:utf8', $infile or die "open $infile: $!"; $p-&gt;parse_file($infh);&lt;/c&gt; (this is mentioned in the [mod://HTML::Parser] documentation).&lt;/p&gt;
+&lt;p&gt;As you've noticed, PerlMonks isn't perfect in regards to Unicode. Even though Perl itself handles it fine, I just wanted to point out that there are other ways to represent Unicode characters in Perl where the source file can be left in ASCII (and that won't cause trouble when posting to PerlMonks). For example, instead of "&amp;#269;"=&amp;gt;"&amp;#1095;", you can write &lt;c&gt;"\x{010D}"=&gt;"\x{0447}"&lt;/c&gt; or &lt;c&gt;"\N{LATIN SMALL LETTER C WITH CARON}"=&gt;"\N{CYRILLIC SMALL LETTER CHE}"&lt;/c&gt; (depending on the Perl version, for the latter you may have to add &lt;c&gt;use charnames ':full';&lt;/c&gt; at the top of your code). These forms certainly don't look as nice, so you don't have to use them if Unicode works for you, but it's also noteworthy that this will make the difference between "A" and "&amp;#1040;" more obvious (one of them is actually &lt;c&gt;"\N{CYRILLIC CAPITAL LETTER A}"&lt;/c&gt;).&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1179302</root_node>
+<parent_node field_name="parent_node">1179361</parent_node>
+<thread id="1179302">
+<node id="1179304"><node id="1179390"/>
+</node>
+<node id="1179308"/>
+<node id="1179309"><node id="1179321"><node id="1179326"><node id="1179341"/>
+</node>
+<node id="1179336"><node id="1179342"><node id="1179361"><node id="1179363"><node id="1179418"><node id="1179419"><node id="1179452"><node id="1179455"><node id="1179456"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1179541"><node id="1179553"><node id="1179565"><node id="1179571"><node id="1179573"><node id="1179575"/>
+</node>
+<node id="1179736"><node id="1179858"><node id="1179865"><node id="1179867"><node id="1179868"/>
+</node>
+</node>
+<node id="1179915"><node id="1179931"/>
+<node id="1179981"><node id="1180109"><node id="1180164"><node id="1180166"><node id="1180181"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1179391"/>
+</node>
+</node>
+</node>
+</thread></node>

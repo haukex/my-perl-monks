@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1231173" title="Re^6: PAR::Packer generated EXE that was detected as a trojan..." created="2019-03-12 13:51:31" updated="2019-03-12 13:51:31" _doctext_mode="lenient"><type id="11">note</type>
+<author id="324763">marto</author>
+<doctext field_name="doctext">&lt;p&gt;So to satisfy my curiosity (earlier today) I put the following together in a few minutes, excuse the mess:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use CPAN::Mirrors;
+use LWP::UserAgent;
+use Digest::SHA qw(sha256_hex);
+
+my $sha256  = '8e3fccbf4c7e87c2df7c1e756fc17666a708bab8b36fd200416375651d9b86e1';
+my $path    = 'authors/id/R/RS/RSCHUPP/PAR-Packer-1.047.tar.gz';
+my $mirrors = CPAN::Mirrors-&gt;new( 'MIRRORED.BY' );
+my @mirrors = $mirrors-&gt;mirrors();
+
+my ( @goodsha, @badsha, @problemmirror );
+my $ua = LWP::UserAgent-&gt;new();
+
+foreach my $cpan ( @mirrors ){
+  if ( $cpan-&gt;{http} ){
+    print "Checking Mirror: $cpan-&gt;{http}\n";
+    my $url = $cpan-&gt;{http} . $path;
+    my $res = $ua-&gt;get( $url ); 
+    if ( $res-&gt;is_success ){
+      my $file = $res-&gt;decoded_content( charset =&gt; 'none' );
+      my $file_sha = sha256_hex( $file );
+      if ( $file_sha eq $sha256 ){
+        print "Matching SHA\n";
+        push @goodsha, $url; 
+      }else{
+        print "Warning: SHA does not match!\n";
+        print "Got     : $file_sha\nExpected: $sha256\n";
+        push @badsha, $url;
+      }
+    }else{
+      print "Couldn't download $url\n";
+      push @problemmirror, $url;
+    }
+  }
+}
+
+print "'Bad' mirrorsn\n\n" . join( "\n", @badsha ) if ( @badsha );
+print "\n'Unreachable' mirrors\n\n" . join( "\n", @problemmirror ) if ( @problemmirror );
+&lt;/c&gt;
+&lt;p&gt;A &lt;c&gt;wget http://www.cpan.org/MIRRORED.BY&lt;/c&gt;, or otherwise having a copy in the same directory as this script is required. I get a few 'Unreachable' URLs (perhaps connectivity issues from here to there, rather than genuine downtime, see also [http://mirrors.cpan.org/], the same 4 at time of writing), and a few 'BAD' SHAs. On inspection these seem to be sending the value associated with 'sha256-ungz' (as listed in [https://www.cpan.org/authors/id/R/RS/RSCHUPP/CHECKSUMS|CHECKSUMS]), as yet I'm unsure why.&lt;/p&gt;
+&lt;p&gt;Obviously this does not take into account PPM repos, which I gave up on years ago for unrelated reasons.&lt;/p&gt;
+&lt;p&gt;&lt;B&gt;Update:&lt;/b&gt; For clarity, the script downloads PAR-Packer-1.047.tar.gz from each mirror and calculates the SHA256 and validates it against a known good SHA for the file. For a few of the sites the download of the tar.gz results in a different SHA:&lt;/p&gt;
+&lt;c&gt;
+Checking Mirror: http://mirrors.gossamer-threads.com/CPAN/
+Warning: SHA does not match!
+Got     : d339d474e8a87ceb3e0ad456acd13249e7e80eea0d735aed3a32108bdcfc85bd
+Expected: 8e3fccbf4c7e87c2df7c1e756fc17666a708bab8b36fd200416375651d9b86e1
+&lt;/c&gt;
+&lt;p&gt;Note that &lt;c&gt;d339d474e8a87ceb3e0ad456acd13249e7e80eea0d735aed3a32108bdcfc85bd&lt;/c&gt; is the sha256-ungz SHA: &lt;c&gt;'sha256-ungz' =&gt; 'd339d474e8a87ceb3e0ad456acd13249e7e80eea0d735aed3a32108bdcfc85bd',&lt;/c&gt; (from [https://www.cpan.org/authors/id/R/RS/RSCHUPP/CHECKSUMS|CHECKSUMS])</doctext>
+<root_node field_name="root_node">1222404</root_node>
+<parent_node field_name="parent_node">1231155</parent_node>
+<thread id="1222404">
+<node id="1222406"><node id="1222409"><node id="1222411"><node id="1222414"/>
+<node id="1231138"><node id="1231155"><node id="1231173"><node id="1231236"><node id="1231310"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1222407"><node id="1222408"/>
+</node>
+<node id="1222413"><node id="1222415"><node id="1222446"/>
+</node>
+</node>
+</thread></node>

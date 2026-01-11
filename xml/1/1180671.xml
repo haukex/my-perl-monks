@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1180671" title="Re: Loop problem: jumps one record (updated)" created="2017-01-31 06:03:05" updated="2017-01-31 06:03:05" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Anonymous,&lt;/p&gt;
+&lt;p&gt;The problem is that every time you write &lt;c&gt;&lt;&gt;&lt;/c&gt;, a new record is read from the file. &lt;c&gt;while (&lt;&gt;) { ... }&lt;/c&gt; will assign the current record to the &lt;c&gt;$_&lt;/c&gt; variable, so inside the loop you should just use that instead of &lt;c&gt;&lt;&gt;&lt;/c&gt;. Note that when you write a regex without the &lt;c&gt;=~&lt;/c&gt; operator, it will implicitly be tested against the &lt;c&gt;$_&lt;/c&gt; variable.&lt;/p&gt;
+&lt;p&gt;One way to do this is a state machine type approach, this has the advantages that you only read from &lt;c&gt;&lt;&gt;&lt;/c&gt; once, it has no nested loops, and it's very extensible.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use constant  {
+		IDLE =&gt; 0,
+		IP_ADDRS =&gt; 1,
+	};
+
+my $state = IDLE;
+while (&lt;&gt;) {
+	if ($state == IDLE) {
+		if (/Relay.access.denied/)
+			{ $state = IP_ADDRS }
+	}
+	elsif ($state == IP_ADDRS) {
+		if (/(\d+)\s+(\S+)/)
+			{ print "$2\n" }
+		else
+			{ $state = IDLE }
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;Of course, the nested loops approach is much shorter in this case, I just personally wouldn't do this because if your code gets longer, it will get more complicated and much harder to maintain than the above approach.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+while (&lt;&gt;) {
+	if (/Relay.access.denied/) {
+		while (&lt;&gt;) {
+			/(\d+)\s+(\S+)/ or last;
+			print "$2\n";
+		}
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; For completeness, note that it's also possible to invert the structure of the conditions in the state machine approach, which allows for a bit more error checking. Or, if you don't care about those conditions, they can be removed from the following code to make it shorter (about as long as the above state machine code). You can choose whether you want to use the above approach or the following one based on which one makes your logic easier to express. In this case it's roughly equivalent, but if your code gets longer that might change.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use constant  {
+		IDLE =&gt; 0,
+		IP_ADDRS =&gt; 1,
+	};
+
+my $state = IDLE;
+while (&lt;&gt;) {
+	chomp;
+	if (/Relay.access.denied/) {
+		if ($state == IDLE)
+			{ $state = IP_ADDRS }
+		elsif ($state == IP_ADDRS)
+			{ warn "unexpected: $_" }
+	}
+	elsif (/(\d+)\s+(\S+)/) {
+		if ($state == IDLE)
+			{ warn "unexpected: $_" }
+		elsif ($state == IP_ADDRS)
+			{ print "$2\n" }
+	}
+	else {
+		if ($state == IDLE)
+			{  }
+		elsif ($state == IP_ADDRS)
+			{ $state = IDLE }
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1180665</root_node>
+<parent_node field_name="parent_node">1180665</parent_node>
+<thread id="1180665">
+<node id="1180668"><node id="1180677"><node id="1180687"/>
+</node>
+</node>
+<node id="1180669"/>
+<node id="1180670"><node id="1180707"/>
+<node id="1180708"/>
+</node>
+<node id="1180671"><node id="1180676"><node id="1180678"><node id="1180681"><node id="1180682"><node id="1180683"><node id="1180685"/>
+</node>
+</node>
+<node id="1180684"/>
+<node id="1180701"/>
+</node>
+</node>
+<node id="1180679"/>
+</node>
+</node>
+<node id="1180680"/>
+<node id="1180686"/>
+</thread></node>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1181661" title="Perl/Tk menu and commands based on array" created="2017-02-10 08:52:48" updated="2017-02-10 08:52:48" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1181659">richie</author>
+<doctext field_name="doctext">&lt;p&gt;Hello!&lt;/p&gt;
+
+&lt;p&gt;I am using perk/tk here and am having issues creating a file menu and having it perform a specific action based on a directory search.&lt;/p&gt;
+&lt;p&gt;----------&lt;/p&gt;
+&lt;p&gt;So previously I had the commands hard-coded and it looked like this:
+&lt;code&gt; $menubar = $top-&gt;Menu;
+   $file_menu = $menubar-&gt;cascade(-label =&gt; "~File");
+   $file_menu-&gt;command(-label =&gt; "Restart", -command =&gt; \&amp;Restart);
+   $file_menu-&gt;command(-label =&gt; "Exit", -command =&gt; \&amp;Exit);
+
+   $file_menu = $menubar-&gt;cascade(-label =&gt; "Filter");
+
+   $file_menu-&gt;command(-label =&gt; "All", -command =&gt; sub {$fname = "machines"; &amp;Restart});
+   $file_menu-&gt;command(-label =&gt; "HP-UX", -command =&gt; sub {$fname = "machines.HPUX"; &amp;Restart});
+   $file_menu-&gt;command(-label =&gt; "Linux", -command =&gt; sub {$fname = "machines.Linux"; &amp;Restart}); &lt;/code&gt;
+&lt;p&gt;----------------&lt;/p&gt;
+&lt;p&gt;But have since decided to pull the list (HP-UX, Linux, other things in the future), from files found in a directory.  So now my code looks like this:&lt;/p&gt;
+&lt;code&gt;# Get filter list
+   my @filter = qw();
+   my $dir = '.';
+   my $x=0;
+   opendir(DIR, $dir) or die $!;
+   while (my $file = readdir(DIR)) {
+     next unless (-f "$dir/$file");
+     next unless ($file =~ m/^machines\./);
+     push (@filter, $file);
+   }
+   closedir(DIR);
+
+   $file_menu = $menubar-&gt;cascade(-label =&gt; "~File");
+   $file_menu-&gt;command(-label =&gt; "Restart", -command =&gt; \&amp;Restart);
+   $file_menu-&gt;command(-label =&gt; "Exit", -command =&gt; \&amp;Exit);
+
+   $file_menu = $menubar-&gt;cascade(-label =&gt; "Filter");
+   $file_menu-&gt;command(-label =&gt; "All", -command =&gt; sub {$fname = "machines"; &amp;Restart});
+
+   foreach (@filter) {
+     $file_menu-&gt;command(-label =&gt; "$_", -command =&gt; sub {$fname = "$_"; &amp;Restart});
+}&lt;/code&gt;
+&lt;p&gt;------------------&lt;/p&gt;
+&lt;p&gt;However the issues lies in that when the button is clicked, "$fname" no longer knows what "$_" is, or is null.&lt;/p&gt;
+
+&lt;p&gt;So my question is, how can I create a file menu based on an array but still be able to set a variable in the command portion of the menu command?&lt;/p&gt;
+
+&lt;p&gt;I hope that all makes sense!&lt;/p&gt;
+</doctext>
+<thread id="1181661">
+<node id="1181663"><node id="1181706"/>
+</node>
+<node id="1181741"/>
+</thread></node>

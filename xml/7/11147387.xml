@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11147387" title="stat function used with linux find gives me no data" created="2022-10-12 22:27:43" updated="2022-10-12 22:27:43" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1143474">daggett</author>
+<doctext field_name="doctext">&lt;p&gt;I need to search through a large structure with saved web pages and subsidiary files, saved from firefox, most often just to find the most recently updated page from its time stamp. I prefer to use the perl stat() function, rather than the ls command as I have been using:&lt;/p&gt;
+
+&lt;code&gt;
+james@tibrogargan:~/devel/find/testdirs$ find . -type f -exec ls -l --time-style=+%Y%m%d {} \;
+-rw-rw-r-- 1 james james 7 20221013 ./d2/d2_3/f2_3_1
+-rw-rw-r-- 1 james james 13 20221013 ./d2/d2_2/f2_2_2
+-rw-rw-r-- 1 james james 8 20221013 ./d2/d2_2/f2_2_1
+-rw-rw-r-- 1 james james 13 20221013 ./d2/f2_2
+-rw-rw-r-- 1 james james 0 20221012 ./d1/d3_3/f1
+-rw-rw-r-- 1 james james 0 20221012 ./d1/d1_1/f1
+-rw-rw-r-- 1 james james 0 20221012 ./d1/d1_1/f3
+-rw-rw-r-- 1 james james 0 20221012 ./d1/d1_1/f2
+-rw-rw-r-- 1 james james 0 20221012 ./d1/d1_2/f1
+-rw-rw-r-- 1 james james 0 20221012 ./d1/d1_2/f3
+-rw-rw-r-- 1 james james 0 20221012 ./d1/d1_2/f2
+&lt;/code&gt;
+
+&lt;p&gt;I want to transform the above in many ways, including placing the file basename at the start, etc., etc., roughly as follows:&lt;/p&gt;
+
+&lt;code&gt;
+f2_3_1 7 20221013 ./d2/d2_3/ &lt;directoryInodeNumber&gt;
+...
+&lt;/code&gt;
+
+&lt;p&gt;The program, I have written as my first step towards accomplishing this (less many comments and debugging statements) is:&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+use Cwd qw(cwd);
+my $wDirectory = cwd;
+my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size, $atime, $mtime, $ctime, $blksize, $blocks) = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+open(README, "find $wDirectory -type f |") or die "Can't run program: $!\n";
+while(&lt;README&gt;) {
+    $output = $_;
+    ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size, $atime, $mtime, $ctime, $blksize, $blocks) = stat("$output");
+    print("stats ");
+    print ("dev: $dev, ino: $ino, mode: $mode, nlink: $nlink, uid: $uid, gid: $gid, rdev: $rdev, size: $size, atime: $atime, mtime: $mtime, ctime: $ctime, blksize: $blksize, blocks: $blocks");
+   print("]\n");
+}
+close(README);
+&lt;/code&gt;
+
+
+&lt;p&gt;But when I execute the program I get no data whatsoever from the stat() function:&lt;/p&gt;
+
+&lt;code&gt;
+james@tibrogargan:~/devel/find/testdirs$ ~/devel/perl/findLsiCleaned.pl
+stats dev: , ino: , mode: , nlink: , uid: , gid: , rdev: , size: , atime: , mtime: , ctime: , blksize: , blocks: ]
+stats dev: , ino: , mode: , nlink: , uid: , gid: , rdev: , size: , atime: , mtime: , ctime: , blksize: , blocks: ]
+stats dev: , ino: , mode: , nlink: , uid: , gid: , rdev: , size: , atime: , mtime: , ctime: , blksize: , blocks: ]
+stats dev: , ino: , mode: , nlink: , uid: , gid: , rdev: , size: , atime: , mtime: , ctime: , blksize: , blocks: ]
+stats dev: , ino: , mode: , nlink: , uid: , gid: , rdev: , size: , atime: , mtime: , ctime: , blksize: , blocks: ]
+stats dev: , ino: , mode: , nlink: , uid: , gid: , rdev: , size: , atime: , mtime: , ctime: , blksize: , blocks: ]
+stats dev: , ino: , mode: , nlink: , uid: , gid: , rdev: , size: , atime: , mtime: , ctime: , blksize: , blocks: ]
+stats dev: , ino: , mode: , nlink: , uid: , gid: , rdev: , size: , atime: , mtime: , ctime: , blksize: , blocks: ]
+stats dev: , ino: , mode: , nlink: , uid: , gid: , rdev: , size: , atime: , mtime: , ctime: , blksize: , blocks: ]
+stats dev: , ino: , mode: , nlink: , uid: , gid: , rdev: , size: , atime: , mtime: , ctime: , blksize: , blocks: ]
+stats dev: , ino: , mode: , nlink: , uid: , gid: , rdev: , size: , atime: , mtime: , ctime: , blksize: , blocks: ]
+&lt;/code&gt;
+
+&lt;p&gt;Can anyone see why my script does not work?&lt;/p&gt;
+
+&lt;p&gt;Thank you for your attention.&lt;/p&gt;
+</doctext>
+<thread id="11147387">
+<node id="11147389"><node id="11147398"><node id="11147402"/>
+<node id="11147417"/>
+</node>
+</node>
+<node id="11147390"/>
+<node id="11147391"><node id="11147394"/>
+</node>
+<node id="11147393"/>
+<node id="11147404"/>
+<node id="11147408"/>
+</thread></node>

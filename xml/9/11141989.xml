@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11141989" title="Need help with IPC::run3" created="2022-03-10 21:55:10" updated="2022-03-10 21:55:10" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="964205">freonpsandoz</author>
+<doctext field_name="doctext">&lt;p&gt;
+I'm trying to execute external commands that may need Unicode pathnames, from a Perl script on Windows. Please see https://perlmonks.org/?node_id=11141819, where it was suggested that I try using IPC::run3 to pass parameters. I haven't been able to get it to work. The fact that I get the same result whether or not I include the parameter list makes me believe that the parameters aren't being passed to sacd_extract.exe. What am I doing wrong? Thanks.&lt;/p&gt;
+&lt;p&gt;
+Code:
+&lt;/p&gt;
+&lt;code&gt;
+use v5.16;
+use strict;
+use warnings;
+use open qw(:std :utf8); # Set the default encoding for STDIN, STDOUT &amp; STDERR to UTF-8 
+use IPC::Run3 qw( run3 );
+
+my $filepath = shift;
+my @extractcmd1 = qw( sacd_extract.exe );
+my @tempoutput1 = GetCommandOutput( @extractcmd1 );
+my @extractcmd2 = qw( sacd_extract.exe --print --export-cue );
+my @tempoutput2 = GetCommandOutput( @extractcmd2, qq(input=$filepath) );
+open( my $fh, "&gt;:raw", "run3.txt" );
+print( $fh "~~~$_" ) foreach (@tempoutput2);
+
+sub GetCommandOutput # (command-string [, params])
+{
+	my $stdout = '';
+	my $stderr = '';
+	my $exe = $_[0];
+	print "Command: "; 
+	print qq('$_' ) foreach (@_); 
+	print "\n";
+	eval { run3 \@_, \undef, \$stdout, \$stderr };
+	if		( $@ )	
+		{ say "$exe error: $@"; }
+	elsif	( $? &amp; 0x7F )	
+		{ say "$exe killed by signal ".( $? &amp; 0x7F ); }
+	elsif	( $? &gt;&gt; 8 )	
+		{ say "$exe exited with error ".( $? &gt;&gt; 8 ); }
+	else						
+		{ say "$exe completed successfully"; }
+	say "stdout=$stdout";
+	say "stderr=$stderr";
+	return map { chomp; $_ } split(/\n/, $stdout);
+}
+&lt;/code&gt;
+&lt;p&gt;Output&lt;/p&gt;
+&lt;code&gt;
+D:\test&gt;perl -S test-run3.pl "E:\Temp\Greatest Hits.iso"
+Command: 'sacd_extract.exe'
+sacd_extract.exe completed successfully
+stdout=
+
+stderr=No such file or directory
+libsacdread: Can't stat /dev/cdrom
+
+Command: 'sacd_extract.exe' '--print' '--export-cue' 'input=E:\Temp\Greatest Hits.iso'
+sacd_extract.exe completed successfully
+stdout=
+
+stderr=No such file or directory
+libsacdread: Can't stat /dev/cdrom
+&lt;/code&gt;
+
+&lt;p&gt;
+UPDATE: Oops, I accidentally left out '--' on 'input='; that's why this one didn't work. That sample script is working now, but the one I'm really trying to get working is this one:
+&lt;/p&gt;
+&lt;code&gt;
+use v5.16;
+use strict;
+use warnings;
+use open qw(:std :utf8); # Set the default encoding for STDIN, STDOUT &amp; STDERR to UTF-8 
+use Encode qw( decode );
+use IPC::Run3 qw( run3 );
+
+use constant CORECONVERTEREXE =&gt; 'C:\Program Files\dBpoweramp\coreconverter.exe';
+my $filepath = shift;
+my @convcmd = ( 
+	"${\CORECONVERTEREXE}", "-outfile=nul", "-convert_to=wave", "-errorfile=core.err", 
+	qq(-infile=$filepath)
+);
+my $tempoutput1 = decode( 'UTF-16LE', GetCommandOutput(@convcmd) );
+print "$tempoutput1\n";
+
+sub GetCommandOutput # (command-string [, params])
+{
+	my $stdout = '';
+	my $stderr = '';
+	my $exe = $_[0];
+	print "Command: "; 
+	print qq('$_' ) foreach (@_); 
+	print "\n";
+	eval { run3 \@_, \undef, \$stdout, \$stderr };
+	if		( $@ )	
+		{ say "$exe error: $@"; }
+	elsif	( $? )	
+		{ say "$exe exited with code $?"; }
+	else
+		{ say "$exe completed successfully"; }
+	return $stdout;
+}
+&lt;/code&gt;
+&lt;p&gt;
+Output:
+&lt;/p&gt;
+&lt;code&gt;
+D:\test&gt;perl -S test-run3conv.pl "E:\Temp\Greatest Hits.iso"
+Command: 'C:\Program Files\dBpoweramp\coreconverter.exe' '-outfile=nul' '-convert_to=wave' '-errorfile=core.err' '-infile=E:\Temp\Greatest Hits.iso'
+C:\Program Files\dBpoweramp\coreconverter.exe exited with code 256
+
+dBpoweramp Music Converter           (C) 2021 Illustrate Ltd
+
+Encoding: wave"
+Audio Source: E:\Temp\Greatest
+Audio Destination: nul"
+
+ 0%-----------25%-----------50%-----------75%-----------100%
+
+&lt;/code&gt;
+</doctext>
+<thread id="11141989">
+<node id="11141990"/>
+<node id="11141997"/>
+</thread></node>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1187618" title="Re: 'if' pragma and modules with an empty import list" created="2017-04-11 02:57:35" updated="2017-04-11 02:57:35" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I think the thing is that &lt;c&gt;use Module ();&lt;/c&gt; is a unique case, as [doc://use|the docs] highlight: "Again, there is a distinction between omitting LIST (import called with no arguments) and an explicit empty LIST &lt;c&gt;()&lt;/c&gt; (import not called)." I think that the LIST in &lt;c&gt;use Module VERSION LIST;&lt;/c&gt; is passed to the &lt;c&gt;Module-&gt;import(LIST)&lt;/c&gt; method using Perl's normal argument list handling, meaning that empty lists will be flattened. This includes everything &lt;i&gt;after&lt;/i&gt; the "&lt;c&gt;if&lt;/c&gt;" in &lt;c&gt;use if CONDITION, MODULE =&gt; ARGUMENTS;&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+$ cat Foo.pm 
+package Foo;
+use warnings;
+use strict;
+use Data::Dump 'pp';
+our $VERSION = 1.23;
+sub import { print "import ".pp(\@_)."\n" }
+1;
+$ perl -wMstrict -e 'use Foo ()'
+$ perl -wMstrict -e 'use Foo'
+import ["Foo"]
+$ perl -wMstrict -e 'use Foo "bar"'
+import ["Foo", "bar"]
+$ perl -wMstrict -e 'use Foo 1.20 "bar"'
+import ["Foo", "bar"]
+$ perl -wMstrict -e 'use Foo "bar", "quz"'
+import ["Foo", "bar", "quz"]
+$ perl -wMstrict -e 'use Foo "bar", ()'
+import ["Foo", "bar"]
+$ perl -wMstrict -e 'use Foo "bar", (), "quz"'
+import ["Foo", "bar", "quz"]
+$ perl -wMstrict -e 'use Foo "CONDITION", "MODULE" =&gt; "ARGUMENTS"'
+import ["Foo", "CONDITION", "MODULE", "ARGUMENTS"]
+$ perl -wMstrict -e 'use Foo "CONDITION", "MODULE"'
+import ["Foo", "CONDITION", "MODULE"]
+$ perl -wMstrict -e 'use Foo "CONDITION", "MODULE" =&gt; ()'
+import ["Foo", "CONDITION", "MODULE"]
+&lt;/c&gt;
+&lt;p&gt;So [doc://if]'s behavior isn't really surprising, but I agree that its docs could mention this. As [ikegami] said, it's the perfect chance to get a patch in :-)&lt;/p&gt;
+&lt;p&gt;Personally I wouldn't mind the workaround &lt;c&gt;BEGIN { require Module if CONDITION }&lt;/c&gt;, but you're right about the doc issue.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1187602</root_node>
+<parent_node field_name="parent_node">1187602</parent_node>
+<thread id="1187602">
+<node id="1187603"><node id="1187610"><node id="1187621"><node id="1187698"/>
+</node>
+</node>
+</node>
+<node id="1187613"><node id="1187616"><node id="1187684"><node id="1187693"/>
+</node>
+<node id="1187685"/>
+</node>
+</node>
+<node id="1187618"><node id="1187709"/>
+</node>
+<node id="1187816"/>
+</thread></node>

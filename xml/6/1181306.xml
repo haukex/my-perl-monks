@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1181306" title="Re: Tyring to grep array of hashes (updated)" created="2017-02-07 11:10:50" updated="2017-02-07 11:10:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [dirtdog],&lt;/p&gt;
+&lt;p&gt;In addition to [kennethk]'s [id://1181303|solution] of your problem, a few points on the [doc://grep]:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;You don't seem to need the variable &lt;c&gt;@type&lt;/c&gt;, or if you do, I'd recommend breaking it out into a separate statement for readability. That is, consider one of these alternatives:
+&lt;ol&gt;
+&lt;li&gt;&lt;c&gt;print "..." unless grep /\b$team\b/, ...;&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;my @type = grep /\b$team\b/, ...; print "..." unless @type;&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;&lt;c&gt;my $type = grep /\b$team\b/, ...; print "..." unless $type;&lt;/c&gt; (in scalar context, [doc://grep] returns a count of matched items)&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;Since you're just trying to see if any of the elements of the array match, and you're not interested in &lt;i&gt;all&lt;/i&gt; matches, consider using &lt;c&gt;first&lt;/c&gt; or &lt;c&gt;any&lt;/c&gt; from [doc://List::Util]. Or, if you're just interested in exact matches, build a hash from the array where the keys are the elements of the array, and then use hash lookups.&lt;/li&gt;
+&lt;li&gt;Consider using &lt;c&gt;/\b\Q$team\E\b/&lt;/c&gt;, as otherwise any characters in &lt;c&gt;$team&lt;/c&gt; which happen to be regex metacharacters (such as &lt;c&gt;.&lt;/c&gt;) will keep their special meaning. See also [id://1156540]&lt;/li&gt;
+&lt;li&gt;The regex &lt;c&gt;/\b$team\b/&lt;/c&gt; &lt;strike&gt;will match even if&lt;/strike&gt; may match in some cases when &lt;c&gt;$team&lt;/c&gt; is only a substring of the string being searched. If you want exact matches, you can use &lt;c&gt;grep {$_ eq $team} ...&lt;/c&gt; (but in that case, a hash lookup would probably be better).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;b&gt;Updated:&lt;/b&gt; Updated text of last bullet point slightly, as per [Athanasius]'s reply.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1181302</root_node>
+<parent_node field_name="parent_node">1181302</parent_node>
+<thread id="1181302">
+<node id="1181303"/>
+<node id="1181306"><node id="1181311"><node id="1181312"/>
+<node id="1181343"/>
+</node>
+</node>
+<node id="1181308"><node id="1181313"><node id="1181319"/>
+<node id="1181320"/>
+<node id="1181321"/>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11141922" title="Re^4: How to pass a folder name to Windows external commands?" created="2022-03-08 13:37:04" updated="2022-03-08 13:37:04" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I'm using 'dir' in an attempt to glob a filespec and get Unicode filenames&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I see, that does make it a bit more complicated. I used [mod://Win32::LongPath] in the following, plus [mod://Text::Glob] since you mentioned globs, but of course using a regex directly would be easier.&lt;/p&gt;
+&lt;pre&gt;
+use warnings;
+use strict;
+use utf8;
+use Text::Glob &amp;#39;glob_to_regex&amp;#39;;
+use Win32::LongPath;
+use File::Spec::Functions qw/no_upwards catfile/;
+use IPC::Run3 &amp;#39;run3&amp;#39;;
+use Data::Dump;
+
+my $glob = glob_to_regex(&amp;#39;*&amp;#1055;&amp;#1077;&amp;#1088;&amp;#1083;*&amp;#39;);
+my $dir = &amp;quot;C:\\Temp\\testuni&amp;quot;;
+
+my $dh = Win32::LongPath-&amp;gt;new;
+$dh-&amp;gt;opendirL($dir) or die &amp;quot;unable to open $dir: $^E&amp;quot;;
+for my $file ( grep {/$glob/} no_upwards $dh-&amp;gt;readdirL ) {
+	my $path = catfile($dir, $file);
+	my $sp = shortpathL($path);
+	run3 &amp;#91;&amp;#39;hex&amp;#39;, $sp&amp;#93;, undef, \my $out;
+	dd $path, $sp, $out;
+}
+$dh-&amp;gt;closedirL;
+&lt;/pre&gt;
+&lt;blockquote&gt;&lt;i&gt;Is 'hex' a command in your example?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I happened to have &lt;c&gt;C:\Windows\hex.exe&lt;/c&gt; lying around, a simple hex dump tool from [https://github.com/hollasch/hex|here].&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Is there a reason that you used short pathnames?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In my [id://11141828|first example], that's just how [mod://Path::Class] returned them; in my example above I used them because it appeared to be easier to pass the pathname to the external command that way.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I'm using robocopy /l to get the total size of a folder, including subfolders. It's supposed to be a fast way to do that.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I tried running &lt;c&gt;robocopy&lt;/c&gt;, and at least on my system the report it outputs doesn't mention file sizes anywhere. You might also want to look at e.g. the Perl version of [https://metacpan.org/dist/PerlPowerTools/source/bin/du|du] to see the algorithm used there.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I tried using run3, but I don't understand its rules and haven't got it working yet.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Again, it would be best if you can show an [id://1177642|SSCCE].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11141819</root_node>
+<parent_node field_name="parent_node">11141913</parent_node>
+<thread id="11141819">
+<node id="11141821"><node id="11141828"><node id="11141913"><node id="11141922"/>
+</node>
+</node>
+</node>
+<node id="11141825"><node id="11141826"><node id="11141914"><node id="11141949"/>
+</node>
+</node>
+</node>
+</thread></node>

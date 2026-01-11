@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11142538" title="Re: Read UUID on macOS from script" created="2022-03-30 06:31:43" updated="2022-03-30 06:31:43" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The "correct" answer to your question would be to [id://1180578|use a module] to run the external command, and as far as I understand &lt;c&gt;ioreg&lt;/c&gt; has an &lt;c&gt;-a&lt;/c&gt; switch to give its output in the more parseable XML format, and then use a module such as [mod://XML::LibXML] to parse that.&lt;/p&gt;
+&lt;p&gt;But this might be one of those rare cases where a "quick and dirty" solution is enough. (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; To clarify: using backticks is probably "ok" here if the command doesn't output anything on &lt;c&gt;STDERR&lt;/c&gt;, you don't care about the command's exit value, and because the command below doesn't contain any shell metacharacters or interpolated variables. I explain this more in the [id://1180578|link] above.)&lt;/p&gt;
+&lt;c&gt;
+my ($UUID) = `ioreg -d2 -c IOPlatformExpertDevice`
+	=~ /^.*\bIOPlatformUUID\b.*"([^"]+)"\s*$/m
+		or die "failed to parse ioreg";
+&lt;/c&gt;
+&lt;p&gt;Note I can't fully test this because I don't have a Mac handy. Also, this will match the first of &lt;i&gt;any&lt;/i&gt; lines with the string &lt;c&gt;IOPlatformUUID&lt;/c&gt;, so you have to be sure of the command's output, and the above code is correspondingly brittle.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;It is complaining with &lt;c&gt;sh: -c: line 0: unexpected EOF while looking for matching `"'&lt;/c&gt;. Why?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The &lt;c&gt;-F\"&lt;/c&gt; is being interpreted by Perl instead of the shell, and the shell is only seeing &lt;c&gt;-F"&lt;/c&gt;, which is an unmatched quote - this is one of the many pitfalls of backticks. Also, one shouldn't call [man://sed] or [man://awk] from Perl because native Perl code can replace these two commands and [id://1205217|plenty others].&lt;/p&gt;
+&lt;!-- The mostly equivalent Perl command to the awk command is:
+perl -lnaF\" -e 'print $F[-1] if /IOPlatformUUID/'
+--&gt;</doctext>
+<root_node field_name="root_node">11142530</root_node>
+<parent_node field_name="parent_node">11142530</parent_node>
+<thread id="11142530">
+<node id="11142537"/>
+<node id="11142538"><node id="11142554"/>
+</node>
+</thread></node>

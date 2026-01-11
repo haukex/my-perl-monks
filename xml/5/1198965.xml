@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1198965" title="Re^3: execute vbscript code inline in Perl script" created="2017-09-08 12:53:31" updated="2017-09-08 12:53:31" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;To pick up on what [NetWallah] [id://1198955|wrote], personally I usually [id://1180578|recommend using a module] instead of Perl's builtins like &lt;c&gt;qx//&lt;/c&gt; because modules will give you more features and better error handling. In this case, I might suggest [mod://IPC::System::Simple]'s &lt;c&gt;systemx&lt;/c&gt; and &lt;c&gt;capturex&lt;/c&gt; (the only downside in this case is that &lt;c&gt;STDERR&lt;/c&gt; can't be captured, but it doesn't look to me like you need that, although I could be wrong). If you are worried about where the script files might be written, or that they might get overwritten, you could use temporary files (which will have unique names) via the core module [doc://File::Temp], like this:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use File::Temp qw/tempfile/;
+use IPC::System::Simple qw/capturex/;
+
+my ($tfh,$tfn) = tempfile( SUFFIX=&gt;'.vbs', UNLINK=&gt;1 );
+print $tfh &lt;&lt;'END_VBS';
+    Dim num1, num2, final
+    num1 = 30
+    num2 = 50
+    final = num1*num2
+    WScript.Echo(final)
+END_VBS
+close $tfh;
+print "running $tfn\n"; # Debug
+my $final = capturex('cscript','//nologo',$tfn);
+chomp($final);
+print "final: '$final'\n";
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;(not fully tested because I'm not on Windows at the moment)&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;To have the scripts created in a specific directory, you can use &lt;c&gt;tempfile( ..., DIR=&gt;"C:\\Some\\Path" )&lt;/c&gt;. The &lt;c&gt;UNLINK&lt;/c&gt; option causes the temporary file to be deleted when the script ends.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1198898</root_node>
+<parent_node field_name="parent_node">1198952</parent_node>
+<thread id="1198898">
+<node id="1198899"><node id="1198949"/>
+<node id="1198962"><node id="1198964"><node id="1198966"><node id="1198967"><node id="1198968"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1198900"><node id="1198952"><node id="1198955"/>
+<node id="1198965"/>
+</node>
+</node>
+<node id="1199010"/>
+</thread></node>

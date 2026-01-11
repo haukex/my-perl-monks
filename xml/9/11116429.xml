@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11116429" title="Re^3: getting text from HTML (updated x2)" created="2020-05-04 05:46:55" updated="2020-05-04 05:46:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Looking at the code of [mod://Mojo::DOM], it doesn't look like it's directly supported. But luckily it's not too difficult to add (you can of course put the &lt;c&gt;package&lt;/c&gt; into its own &lt;c&gt;.pm&lt;/c&gt; file):&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; I've modified the methods so that they return a nested set of [mod://Mojo::Collection] objects of the callback results, so that &lt;c&gt;walk&lt;/c&gt; is kind of like a tree-based &lt;c&gt;map&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2:&lt;/b&gt; For an even more refined version, [https://github.com/mojolicious/mojo/compare/master...haukex:dom_walk|see here].&lt;/p&gt;
+&lt;c&gt;
+use Mojo::Base -strict;
+use 5.014;
+use Mojo::UserAgent;
+use Mojo::DOM;
+use Mojo::Util qw/dumper/;
+
+package Mojo::DOM::Role::TreeWalker {
+	use Mojo::Base -strict;
+	use Role::Tiny;
+	use Mojo::Collection;
+	sub walk { $_[0]-&gt;_walk($_[1], 0) || Mojo::Collection-&gt;new }
+	sub _walk {
+		my ($self, $cb, $depth) = @_;
+		my $c = Mojo::Collection-&gt;new;
+		{ local $_ = $self; push @$c, $cb-&gt;($self, $depth++); }
+		my $rv = $self-&gt;child_nodes-&gt;map('_walk', $cb, $depth);
+		push @$c, $rv if @$rv;
+		@$c ? $c : ();
+	}
+	sub walk_text {
+		my ($self, $cb) = @_;
+		$self-&gt;walk(sub { $_-&gt;type eq 'cdata' || $_-&gt;type eq 'raw'
+			|| $_-&gt;type eq 'text' ? $cb-&gt;(@_) : () });
+	}
+}
+
+my $ua = Mojo::UserAgent-&gt;new( max_redirects =&gt; 3 );
+my $res = $ua-&gt;get('http://www.spacex.com/webcast')-&gt;result;
+die $res-&gt;message unless $res-&gt;is_success;
+my $dom = $res-&gt;dom;
+
+$dom-&gt;find('script, style')-&gt;map('remove');
+
+my $texts = $dom-&gt;with_roles('+TreeWalker')-&gt;walk_text(sub {
+	$_-&gt;content=~/\S/ ? $_-&gt;content=~s/^\s+|\s+$//gr
+		: () })-&gt;flatten;
+print dumper $texts;
+
+__END__
+
+bless( [
+  "STARLINK MISSION | SpaceX",
+  "Jump to navigation",
+  "Falcon 9",
+  "Falcon Heavy",
+  "Dragon",
+  "Starship",
+  "Updates",
+  "About SpaceX",
+  "Careers",
+  "Shop",
+  "You are here",
+  "Home",
+  "STARLINK MISSION",
+  "On Wednesday, April 22 at 3:30 p.m. EDT, or 19:30 p.m. UTC, SpaceX launched its seventh Starlink mission. Falcon 9 lifted off from Launch Complex 39A (LC-39A) at NASA\x{2019}s Kennedy Space Center in Florida.",
+  "Falcon 9\x{2019}s first stage previously supported Crew Dragon\x{2019}s first flight to the International Space Station, launch of the RADARSAT Constellation Mission, and the fourth Starlink mission. Following stage separation, SpaceX landed Falcon 9\x{2019}s first stage on the \x{201c}Of Course I Still Love You\x{201d} droneship, which was stationed in the Atlantic Ocean. Falcon 9\x{2019}s fairing previously supported the AMOS-17 mission.",
+  "You can watch a replay of the launch below and learn more about the mission",
+  "here.",
+  "|",
+  "Twitter",
+  "YouTube",
+  "Flickr",
+  "Instagram",
+  "Privacy",
+  "\x{a9} 2020 Space Exploration Technologies Corp."
+], 'Mojo::Collection' )
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11116409</root_node>
+<parent_node field_name="parent_node">11116428</parent_node>
+<thread id="11116409">
+<node id="11116410"><node id="11116413"/>
+<node id="11116428"><node id="11116429"/>
+</node>
+</node>
+<node id="11116440"><node id="11116708"/>
+<node id="11116723"/>
+</node>
+<node id="11116693"/>
+</thread></node>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1230456" title="Re^9: Export and use different package in module" created="2019-02-23 04:36:49" updated="2019-02-23 04:36:49" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Ohh, I &lt;i&gt;think&lt;/i&gt; I see what you are getting at - is it the following?&lt;/p&gt;
+&lt;c&gt;
+package Foo;
+
+our $var = "Hello";
+sub func { print $var, "\n" }
+
+package Bar;
+
+print $var, "\n";  # Prints "Hello"
+func();            # Error: Undefined subroutine &amp;Bar::func called
+&lt;/c&gt;
+&lt;p&gt;In this example, why is &lt;c&gt;$var&lt;/c&gt; still accessible when we've switched to &lt;c&gt;package Bar&lt;/c&gt;, while &lt;c&gt;sub func&lt;/c&gt; is no longer accessible? Well, the answer is in what [doc://our] actually does: it "makes a lexical alias to a package (i.e. global) variable of the same name in the current package for use within the current lexical scope." Because in the above example, &lt;c&gt;package Bar&lt;/c&gt; is in the same lexical scope as &lt;c&gt;package Foo&lt;/c&gt;, anything declared for the current lexical scope in &lt;c&gt;package Foo&lt;/c&gt; is still accessible in &lt;c&gt;package Bar&lt;/c&gt;. The package variable is &lt;c&gt;$Foo::var&lt;/c&gt;, but its alias &lt;c&gt;$var&lt;/c&gt; is available in the whole lexical scope.&lt;/p&gt;
+&lt;p&gt;&lt;c&gt;sub&lt;/c&gt; declarations don't work the same way that &lt;c&gt;our&lt;/c&gt; does - in the above example, &lt;c&gt;sub func&lt;/c&gt; sets up &lt;c&gt;&amp;Foo::func&lt;/c&gt;, but that does not carry over into &lt;c&gt;Bar&lt;/c&gt;. I understand this distinction may be a bit strange, but it also has historical reasons: [doc://our] wasn't added to the language until [doc://perl56delta#"our"-declarations|Perl 5.6], about six years after Perl 5.0 - before that, there was the [doc://vars] pragma. (BTW, note that [doc://perlsub#Lexical-Subroutines] are no longer experimental in Perl 5.26 and up.)&lt;/p&gt;
+&lt;p&gt;Since declaring two &lt;c&gt;package&lt;/c&gt;s in the same lexical scope causes this "leakage" of lexically-scoped features across package boundaries, and this can cause confusion and sometimes subtle bugs, it's usually recommended to put each [doc://package] declaration into its own lexical scope, in other words:&lt;/p&gt;
+&lt;c&gt;
+{
+    package Foo;
+    our $var = "Hello";
+    sub func { print $var, "\n" }
+}
+{
+    package Bar;
+    print $Foo::var, "\n";
+    Foo::func();
+}
+# Or, as of Perl 5.14:
+package Foo {
+    ...
+}
+package Bar {
+    ...
+}
+&lt;/c&gt;
+&lt;p&gt;If you do this, it forces you to reach across &lt;c&gt;package&lt;/c&gt; boundaries using more explicit syntax, as I've shown above. Yes, it's more verbose, I understand you don't want to prefix everything with &lt;c&gt;Device::BCM2835::*&lt;/c&gt;. The usual mechanism to get symbols (package variables and &lt;c&gt;sub&lt;/c&gt;s, there is no difference there!) from one package to another is the import/export mechanism I [id://1230427|showed previously], i.e. copying symbol table entries. I poked around a bit on CPAN to see if there's a module to hide the somewhat ugly code I showed, and maybe [mod://Symbol::Alias] could be useful:&lt;/p&gt;
+&lt;c&gt;
+package Foo {
+    our $var = "Hello";
+    sub func { print $var, "\n" }
+}
+package Bar {
+    use Symbol::Alias '$Foo::var' =&gt; 'var', 'Foo::func' =&gt; 'func';
+    print $var, "\n";
+    func();
+}
+&lt;/c&gt;
+&lt;p&gt;Or for your case: &lt;c&gt;use Symbol::Alias map {("Device::BCM2835::$_"=&gt;$_)} qw/ gpio_fsel gpio_set gpio_clr ... /;&lt;/c&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1230405</root_node>
+<parent_node field_name="parent_node">1230450</parent_node>
+<thread id="1230405">
+<node id="1230408"><node id="1230422"><node id="1230424"><node id="1230425"><node id="1230427"><node id="1230431"><node id="1230437"><node id="1230450"><node id="1230456"><node id="1230467"><node id="1230470"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

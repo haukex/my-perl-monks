@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11115980" title="Re^5: Bug in Class::Struct?" created="2020-04-23 16:59:53" updated="2020-04-23 16:59:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Yep, your example shows what I'm talking about &lt;c&gt;:-)&lt;/c&gt; Remember Perl's special false value will &lt;i&gt;look&lt;/i&gt; like both the empty string and the number zero at the same time (it's basically a dualvar), in your YAML it's showing up as its string version. To identify Perl's special false value, you actually have to look a tiny bit into the internals. The first example below shows that in list context, a failed match is returning the empty list (which in a hash translates to &lt;c&gt;undef&lt;/c&gt;; add &lt;c&gt;-w&lt;/c&gt; to your first example and you get &lt;c&gt;Odd number of elements in anonymous hash&lt;/c&gt;). The second example shows that forcing [doc://scalar] context on the match causes it to return Perl's special false value.&lt;/p&gt;
+&lt;c&gt;
+$ perl -MDevel::Peek -le 'my @x = /abc/; Dump(@x)'
+SV = PVAV(0x51f85b346e78) at 0x51f85b3c66b8
+  REFCNT = 1
+  FLAGS = ()
+  ARRAY = 0x0
+  FILL = -1
+  MAX = -1
+  FLAGS = (REAL)
+
+$ perl -MDevel::Peek -le 'my @x = scalar(/abc/); Dump(@x)'
+SV = PVAV(0x579bb31a2e38) at 0x579bb31c86a8
+  REFCNT = 1
+  FLAGS = ()
+  ARRAY = 0x563bc3d01720
+  FILL = 0
+  MAX = 3
+  FLAGS = (REAL)
+  Elt No. 0
+  SV = PVNV(0x579bb31a1f40) at 0x579bb31a15a8
+    REFCNT = 1
+    FLAGS = (IOK,NOK,POK,pIOK,pNOK,pPOK)
+    IV = 0
+    NV = 0
+    PV = 0x579bb31cd6e4 ""\0
+    CUR = 0
+    LEN = 10
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">11115922</root_node>
+<parent_node field_name="parent_node">11115979</parent_node>
+<thread id="11115922">
+<node id="11115926"/>
+<node id="11115928"/>
+<node id="11115956"><node id="11115976"><node id="11115978"><node id="11115979"><node id="11115980"><node id="11115983"><node id="11115985"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11116097"><node id="11116101"/>
+<node id="11116106"><node id="11116179"/>
+</node>
+</node>
+</node>
+</thread></node>

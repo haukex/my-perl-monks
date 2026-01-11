@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11129659" title="Re^3: perlbrew: Command [ ... ] terminated with exit code 0 ($? = 13)" created="2021-03-15 07:15:54" updated="2021-03-15 07:15:54" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+But if I try with slightly changed line:
+&lt;c&gt;
+perlbrew exec perl -wle 'print " A" x 1e0 for 1 .. 1e2' | less -S
+&lt;/c&gt;
+There is no warning, although I didn't scroll the whole output. 
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;&lt;c&gt;perl -wle 'print " A" x 1e0 for 1 .. 1e2'&lt;/c&gt; is 300 bytes, while &lt;c&gt;perl -wle 'print " A" x 1e3 for 1 .. 1e2'&lt;/c&gt; is 200100 bytes. Since you're piping the output of &lt;c&gt;perl&lt;/c&gt; to another program, &lt;c&gt;perl&lt;/c&gt;'s output isn't line-based (see e.g. [https://perl.plover.com/FAQs/Buffering.html|Suffering from Buffering]), and so what I'm fairly certain is happening is that &lt;c&gt;perl&lt;/c&gt; is simply outputting the 300 bytes in one go. &lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; Because &lt;c&gt;perl -wle '$|++; print " A" x 1e0 for 1 .. 1e2'&lt;/c&gt; isn't killed by &lt;c&gt;SIGPIPE&lt;/c&gt; either, it may also have something to do with how much data a pipe can buffer, but I'm not an expert on that.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11129654</root_node>
+<parent_node field_name="parent_node">11129658</parent_node>
+<thread id="11129654">
+<node id="11129657"><node id="11129658"><node id="11129659"><node id="11129724"/>
+</node>
+</node>
+</node>
+</thread></node>

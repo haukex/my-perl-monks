@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203135" title="Searching between two hashes" created="2017-11-10 15:11:41" updated="2017-11-10 15:11:41" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="21156">TStanley</author>
+<doctext field_name="doctext">&lt;P&gt;
+Hey there fellow monks!
+
+I am trying to help out a client of ours by fixing up an import file of their medical equipment assets that have my company's asset tracking tag on them.
+Most of the assets in their system were added in without the tags, and they were tracking the MAC addresses of the tags on a separate spreadsheet. I exported
+the data out of their system (.csv file), and started to match the assets up using the asset identification number for each. One thing I discovered is that some
+of the assets they had listed on their spreadsheet were not even in the system, so I would have to add them in as well. My concern is the logic where I am
+comparing the files, setting aside any non-matches, writing to the final output file, and then adding in the items that didn't exist. My code is shown below.&lt;/P&gt;
+&lt;BR&gt;
+&lt;CODE&gt;
+#!C:\Perl64\bin\perl
+use strict;
+use warnings;
+
+my @input_array;
+my @output_array;
+my @extras;
+my ($INPUT,$data,$OUTPUT);
+
+open $INPUT,"&lt;","transfers.csv" || die "Can't open transfer.csv: $!\n";
+open $data,"&lt;","VHC-DVTPump.csv" || die "Can't open VHC-DVTPump.csv: $!\n";
+open $OUTPUT,"&gt;","Output.csv" || die "Can't open Output.csv: $!\n";
+
+while(&lt;$INPUT&gt;){
+  chomp;
+  my($MAC,$Serial,$ID)=split /,/;
+  #print "MAC: $MAC\tSerial: $Serial\tID: $ID\n";
+  my %hash=('MAC'=&gt;$MAC,'Serial'=&gt;$Serial,'ID'=&gt;$ID);
+  push @input_array,\%hash;
+}
+while(&lt;$data&gt;){
+  chomp;  
+  my($AssetName,$AssetId,$Serial,$Type,$ActivityStatus,$BusinessStatus,$Description,$PrimaryCategory,
+     $Category1,$Category2,$Category3,$Department1,$Department2,$Department3,$Department4,$Department5,
+	 $Department6,$Group1,$Group2,$NetworkID1,$TagType1,$TagClassification1,$TagProtected1,$TagDuress1,
+	 $NetworkID2,$TagType2,$TagClassification2,$TagProtected2,$TagDuress2,$MapID,$GatewayGroup,$X,$Y,$Z,
+	 $NISTCertificationDueDate,$RentalReturnDate,$Escalation3,$NISTCertificate,$Escalation2,$NISTTag,
+	 $ContactName,$Escalation1,$PMCompleted,$RentalInUser,$lastcolumn,$EOL)=split /,/;
+  my %hash=('Asset Name'=&gt;$AssetName,'Asset Application ID'=&gt;$AssetId,'Serial Number'=&gt;$Serial,'Asset Type'=&gt;$Type,
+          'Activity Status'=&gt;$ActivityStatus,'Business Status'=&gt;$BusinessStatus,'Description'=&gt;$Description,
+		  'Primary Category'=&gt;$PrimaryCategory,'Category 1'=&gt;$Category1,'Category 2'=&gt;$Category2,
+		  'Category 3'=&gt;$Category3,'Department 1'=&gt;$Department1,'Department 2'=&gt;$Department2,'Department 3'=&gt;$Department3,
+		  'Department 4'=&gt;$Department4,'Department 5'=&gt;$Department5,'Department 6'=&gt;$Department6,
+		  'Group 1'=&gt;$Group1,'Group 2'=&gt;$Group2,'Network ID 1'=&gt;$NetworkID1,'Tag Type 1'=&gt;$TagType1,
+		  'Tag Classification 1'=&gt;$TagClassification1,'Tag Protected 1'=&gt;$TagProtected1,'Tag Duress 1'=&gt;$TagDuress1,
+		  'Network ID 2'=&gt;$NetworkID2,'Tag Type 2'=&gt;$TagType2,'Tag Classification 2'=&gt;$TagClassification2,
+		  'Tag Protected 2'=&gt;$TagProtected2,'Tag Duress 2'=&gt;$TagDuress2,'Map ID'=&gt;$MapID,'Gateway Group'=&gt;$GatewayGroup,
+		  'X'=&gt;$X,'Y'=&gt;$Y,'Z'=&gt;$Z,'NIST Certification Due Date'=&gt;$NISTCertificationDueDate,
+		  'RentalReturnDate'=&gt;$RentalReturnDate,'Escalation3'=&gt;$Escalation3,'NIST Certificate'=&gt;$NISTCertificate,
+		  'Escalation2'=&gt;$Escalation2,'NIST Tag'=&gt;$NISTTag,'ContactName'=&gt;$ContactName,'Escalation1'=&gt;$Escalation1,
+		  'PM Completed'=&gt;$PMCompleted,'Rental In User'=&gt;$RentalInUser,'last column'=&gt;$lastcolumn,'EOL'=&gt;$EOL);
+  push @output_array,\%hash;	
+}
+
+close $INPUT;
+close $data;
+
+print $OUTPUT "Asset Name,Asset Application Id,Serial Number,Asset Type,Activity Status,Business Status,Description,Primary Category,Category 1,Category 2,Category 3,Department 1,Department 2,Department 3,Department 4,Department 5,Department 6,Group 1,Group 2,Network ID 1,Tag Type 1,Tag Classification 1,Tag Protected 1,Tag Duress 1,Network ID 2,Tag Type 2,Tag Classification 2,Tag Protected 2,Tag Duress 2,Map ID,Gateway Group,X,Y,Z,NIST Certification Due Date,Rental Return Date,Escalation3,NIST Certificate,Escalation2,NIST Tag,ContactName,Escalation1,PM Completed,Rental In User,last column,EOL\n";
+
+for my $ref(@input_array){
+   my $mac=$$ref{'MAC'};
+   my $ID = $$ref{'ID'};
+   for my $ref2(@output_array){
+      my $ID2 = $$ref2{'Asset Application Id'};
+      my $mac2 = $$ref2{'Network ID 1'};
+      if($ID = $ID2 and $mac2 = ''){
+        $$ref2{'Network ID 1'} = $mac;
+      }else{
+        push @extras,\$ref;
+      }
+    }
+}
+
+for (@output_array){
+  my $ref = $_;
+  my($AssetName,$AssetId,$Serial,$Type,$ActivityStatus,$BusinessStatus,$Description,
+     $PrimaryCategory,$Category1,$Category2,$Category3,$Department1,$Department2,
+	 $Department3,$Department4,$Department5,$Department6,$Group1,$Group2,$NetworkID1,
+	 $TagType1,$TagClassification1,$TagProtected1,$TagDuress1,$NetworkID2,$TagType2,
+	 $TagClassification2,$TagProtected2,$TagDuress2,$MapID,$GatewayGroup,$X,$Y,$Z,
+	 $NISTCertificationDueDate,$RentalReturnDate,$Escalation3,$NISTCertificate,$Escalation2,
+	 $NISTTag,$ContactName,$Escalation1,$PMCompleted,$RentalInUser,$lastcolumn,$EOL);
+
+  ## Need to assign the variables their values	 
+
+  print $OUTPUT "$AssetName,$AssetId,$Serial,$Type,$ActivityStatus,$BusinessStatus,$Description,
+                    $PrimaryCategory,$Category1,$Category2,$Category3,$Department1,$Department2,
+	 $Department3,$Department4,$Department5,$Department6,$Group1,$Group2,$NetworkID1,
+	 $TagType1,$TagClassification1,$TagProtected1,$TagDuress1,$NetworkID2,$TagType2,
+	 $TagClassification2,$TagProtected2,$TagDuress2,$MapID,$GatewayGroup,$X,$Y,$Z,
+	 $NISTCertificationDueDate,$RentalReturnDate,$Escalation3,$NISTCertificate,$Escalation2,
+	 $NISTTag,$ContactName,$Escalation1,$PMCompleted,$RentalInUser,$lastcolumn,$EOL\n";
+}
+
+for (@extras){
+  my $ref = $_;
+  my($AssetName,$AssetId,$Serial,$Type,$ActivityStatus,$BusinessStatus,$Description,
+  $PrimaryCategory,$Category1,$Category2,$Category3,$Department1,$Department2,
+  $Department3,$Department4,$Department5,$Department6,$Group1,$Group2,$NetworkID1,
+  $TagType1,$TagClassification1,$TagProtected1,$TagDuress1,$NetworkID2,$TagType2,
+  $TagClassification2,$TagProtected2,$TagDuress2,$MapID,$GatewayGroup,$X,$Y,$Z,
+  $NISTCertificationDueDate,$RentalReturnDate,$Escalation3,$NISTCertificate,$Escalation2,
+  $NISTTag,$ContactName,$Escalation1,$PMCompleted,$RentalInUser,$lastcolumn,$EOL);
+  
+## Need to assign the variables their values 
+  
+   print $OUTPUT "$AssetName,$AssetId,$Serial,$Type,$ActivityStatus,$BusinessStatus,$Description,
+                    $PrimaryCategory,$Category1,$Category2,$Category3,$Department1,$Department2,
+	 $Department3,$Department4,$Department5,$Department6,$Group1,$Group2,$NetworkID1,
+	 $TagType1,$TagClassification1,$TagProtected1,$TagDuress1,$NetworkID2,$TagType2,
+	 $TagClassification2,$TagProtected2,$TagDuress2,$MapID,$GatewayGroup,$X,$Y,$Z,
+	 $NISTCertificationDueDate,$RentalReturnDate,$Escalation3,$NISTCertificate,$Escalation2,
+	 $NISTTag,$ContactName,$Escalation1,$PMCompleted,$RentalInUser,$lastcolumn,$EOL\n";
+}
+
+close $OUTPUT;
+&lt;/CODE&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-21156"&gt;
+&lt;BR&gt;TStanley&lt;BR&gt;
+--------&lt;BR&gt;
+  &lt;FONT SIZE=-1&gt;&lt;I&gt;People sleep peaceably in their beds at night only because rough men stand ready to do violence on their behalf. -- George Orwell&lt;/I&gt;&lt;/FONT&gt;&lt;BR&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1203135">
+<node id="1203136"><node id="1203137"><node id="1203182"/>
+</node>
+</node>
+<node id="1203149"><node id="1203171"/>
+</node>
+<node id="1203173"/>
+</thread></node>

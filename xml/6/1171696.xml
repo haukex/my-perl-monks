@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1171696" title="Re^2: Curious: are anon-hashes in random order? (updated)" created="2016-09-13 17:20:41" updated="2016-09-13 17:20:41" _doctext_mode="lenient"><type id="11">note</type>
+<author id="438862">perl-diddler</author>
+<doctext field_name="doctext">&lt;i&gt;&lt;blockquote&gt;
+So constant will always define four subs, which return the value associated with each key in the hash. It is equivalent to the following code; the order in which the subs are defined does not matter. (By the way, I think that defining subs with the same name as those Perl builtins is likely to cause confusion later.)
+&lt;/blockquote&gt;&lt;/i&gt;
+Never has in my usage -- you have to use the constants prefixed with '&amp;' -- while putting '&amp;' in front of those keywords is guaranteed to cause an error.  So how could it cause confusion?
+&lt;i&gt;&lt;blockquote&gt;
+If I understand mem correctly, it's essentially doing the same thing as the code with the BEGIN block above. Also, remember that use Module LIST is exactly equivalent to BEGIN { require Module; Module-&gt;import( LIST ); }.
+&lt;/blockquote&gt;&lt;/i&gt;
+Well, as mentioned elsewhere, it's a side effect of perl, not really a feature of mem -- though mem supports the side-effect in perl by guaranteeing not to throw an error for that type of usage, making it an ideal candidate for the shorter usage.
+&lt;p&gt;
+&lt;code&gt;mem&lt;/code&gt;'s primary purpose was to allow packages that were already defined in a file to be "used" from the "in-memory" copy already parsed, rather than searching through your module path on disk, as is perl's default behavior.  It allows easier inclusion of multiple "packages" in the same file -- which makes sense when the packages are related, meant to be data structures, or similar.  Of course &lt;code&gt;mem&lt;/code&gt; is only needed when you are 'use'ing the module vs. having the module function as a data structure.
+&lt;p&gt;
+When I declare struct's in perl, it takes about 3-4 lines (sorry, Data::Vars, is _still_ in my personal library and hasn't be cpanned yet -- stable, but publishing it would require alot of added tests and docs to be written), but using it is fairly simple:
+&lt;code&gt;
+&gt; tperl  # an alias
+{ package foo;
+  use Data::Vars [qw(a b c) ], {c=&gt;sub{ {} }};  #c gets a default
+1}
+package main;
+my $p = foo-&gt;new({a=&gt;1});        # a passed as arg
+$p-&gt;b = [qw(one two three)];     # b assigned to at runtime
+P "p=%s", $p;                    # and result
+'
+p=foo{a=&gt;1, b=&gt;["one", "two", "three"], c=&gt;{}}
+&lt;/code&gt;
+The primary purpose behind most of my modules is to simplify, save space and unnecessary typing.  FWIW, 'c' is initialized with a sub around the hash so the same hash isn't assigned to each new copy of the data-structure.
+
+</doctext>
+<root_node field_name="root_node">1171667</root_node>
+<parent_node field_name="parent_node">1171680</parent_node>
+<thread id="1171667">
+<node id="1171669"><node id="1171675"><node id="1171676"/>
+</node>
+</node>
+<node id="1171672"><node id="1171693"/>
+</node>
+<node id="1171680"><node id="1171682"><node id="1171683"/>
+<node id="1171692"><node id="1171697"/>
+<node id="1171728"/>
+</node>
+</node>
+<node id="1171696"><node id="1171721"/>
+<node id="1171727"><node id="1171809"/>
+</node>
+</node>
+</node>
+<node id="1171688"/>
+</thread></node>

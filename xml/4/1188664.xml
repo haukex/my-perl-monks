@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1188664" title="Image Conversion: SVG to PNG" created="2017-04-23 04:12:15" updated="2017-04-23 04:12:15" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="861371">kcott</author>
+<doctext field_name="doctext">&lt;p&gt;
+I'm generating some fairly basic [https://www.w3.org/TR/SVG11/|SVG] files 
+and will want to convert them to [http://www.libpng.org/pub/png/|PNG] format.
+Each SVG file will be used to create a number of PNG files of different sizes
+(it's only a size change; aspect ratio, colours, etc. all remaining the same).
+I'd also like the solution to be as portable as possible 
+(at least working on *nix and MSWin platforms).
+I've included my investigations so far, my questions are at the end.
+&lt;/p&gt;
+
+&lt;p&gt;
+Here's the test SVG file, &lt;c&gt;test.svg&lt;/c&gt;, that I've been playing with
+and referenced in various examples below:
+&lt;/p&gt;
+
+&lt;spoiler&gt;
+
+&lt;p&gt;
+I only expect to be working with very basic geometric shapes.
+Semi-circles (as in the last two &lt;c&gt;&lt;path&gt;&lt;/c&gt; elements)
+will probably be the most complicated inclusions.
+&lt;/p&gt;
+
+&lt;code&gt;
+&lt;?xml version="1.0" standalone="no"?&gt;
+&lt;!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+    "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"&gt;
+&lt;svg width="640px" height="640px" viewBox="0 0 640 640"
+    xmlns="http://www.w3.org/2000/svg" version="1.1"&gt;
+    &lt;desc&gt;Testbed.&lt;/desc&gt;
+
+    &lt;path fill="#ffff00" stroke-width="0"
+        d="M 0,0 L 640,0 L 640,640 L 0,640 z"
+    /&gt;
+
+    &lt;path fill="#ff0000" stroke-width="0"
+        d="M 320,0 L 640,0 L 640,640 L 320,640 z"
+    /&gt;
+
+    &lt;path fill="#ff0000" stroke-width="0"
+        d="M 320,280 A 40,40 180 0 0 320,360 z"
+    /&gt;
+
+    &lt;path fill="#ffff00" stroke-width="0"
+        d="M 320,280 A 40,40 180 0 1 320,360 z"
+    /&gt;
+&lt;/svg&gt;
+&lt;/code&gt;
+
+&lt;/spoiler&gt;
+
+&lt;p&gt;
+I had the [http://www.imagemagick.org/index.php|ImageMagick&amp;reg;]
+[http://www.imagemagick.org/script/convert.php|convert] utility available,
+so I tried that first.
+This seemed to work fine; I tested at two reduced sizes:
+&lt;/p&gt;
+&lt;code&gt;
+$ convert test.svg -resize 16x16 test016.png
+$ convert test.svg -resize 32x32 test032.png
+&lt;/code&gt;
+
+&lt;p&gt;
+However, when I looked into installing 
+the [http://search.cpan.org/perldoc?Image%3A%3AMagick|Image::Magick] module for use in my scripts,
+I was amazed to find only failures (UNKNOWN: 1276; FAIL: 412) in the 
+"[http://matrix.cpantesters.org/?dist=PerlMagick+6.89-1|CPAN Testers Matrix: PerlMagick 6.89-1]".
+I followed the links to the previous five releases, thinking maybe there was some problem with just &lt;c&gt;6.89-1&lt;/c&gt;;
+unfortunately, all were exactly the same except for &lt;c&gt;6.86&lt;/c&gt; which had just one PASS amongst hundreds of failures.
+I don't know if that's some sort of reporting error. I chose not to follow that path any further.
+&lt;/p&gt;
+
+&lt;p&gt;
+I had previously, successfully installed [http://search.cpan.org/perldoc?GD|GD], 
+so I decided to look into that further.
+I browsed the [http://search.cpan.org/perldoc?GD%3A%3AConvert|GD::Convert], 
+[http://search.cpan.org/perldoc?GD%3A%3ASVG|GD::SVG] and [http://search.cpan.org/perldoc?SVG|SVG] modules.
+While this looked like it might work (after a fashion), it didn't seem particularly straightforward and even
+the documentation says:
+&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;em&gt;"GD::SVG may provide a short-term solution while scripts are re-written to enable more direct output of SVG."&lt;/em&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;
+There were also too many caveats for my liking, so I abandoned this avenue also.
+&lt;/p&gt;
+
+&lt;p&gt;
+[http://search.cpan.org/perldoc?SVG|SVG] has a small section on converting to PNG.
+It mentions [http://search.cpan.org/perldoc?Image%3A%3AMagick|Image::Magick]
+and also [http://search.cpan.org/perldoc?Image%3A%3ALibRSVG|Image::LibRSVG].
+I hadn't heard of this other module before and decided to try it.
+It installed without any fuss and usage was totally uncomplicated:
+&lt;/p&gt;
+&lt;code&gt;
+$ perl -wMstrict -MImage::LibRSVG -e 'Image::LibRSVG::-&gt;new()-&gt;convertAtSize("test.svg", "test016.png", 16, 16)'
+$ perl -wMstrict -MImage::LibRSVG -e 'Image::LibRSVG::-&gt;new()-&gt;convertAtSize("test.svg", "test032.png", 32, 32)'
+&lt;/code&gt;
+
+&lt;p&gt;
+Not only that, but it produced PNG files that were substantially smaller than those produced by &lt;c&gt;convert&lt;/c&gt;
+(without any noticable degradation of image quality; in fact, the 16x16 one looked a little crisper).
+I had renamed the files I produced earlier (&lt;c&gt;*.png&lt;/c&gt; to &lt;c&gt;*_via_convert.png&lt;/c&gt;), here's a size comparison:
+&lt;/p&gt;
+&lt;code&gt;
+-rw-r--r-- 1 ken staff   678 Apr 23 13:03 test.svg
+-rw-r--r-- 1 ken staff   124 Apr 23 14:01 test016.png
+-rw-r--r-- 1 ken staff   316 Apr 23 13:10 test016_via_convert.png
+-rw-r--r-- 1 ken staff   186 Apr 23 13:57 test032.png
+-rw-r--r-- 1 ken staff   415 Apr 23 13:11 test032_via_convert.png
+&lt;/code&gt;
+
+&lt;p&gt;
+My only concerns with &lt;c&gt;Image::LibRSVG&lt;/c&gt; are its age (no update in 11 years) and no successful builds on MSWin.
+The age may not be a huge issue: SVG has been stable for many years and, 
+as an interface to the &lt;c&gt;librsvg&lt;/c&gt; library, it may rely on that library being current,
+especially if its API hasn't changed.
+I randomly checked many failures on 
+"[http://matrix.cpantesters.org/?dist=Image-LibRSVG+0.07|CPAN Testers Matrix: Image-LibRSVG 0.07]":
+all (going back to Perl 5.10) were UNKNOWNs, and all failed due to the &lt;c&gt;librsvg&lt;/c&gt; library not being found
+&amp;mdash; this may not be a problem either.
+&lt;/p&gt;
+
+&lt;p&gt;
+So, after all that, I have these questions:
+&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+Has anyone successfully installed [http://search.cpan.org/perldoc?Image%3A%3ALibRSVG|Image::LibRSVG]
+on an MSWin platform? If so, were there any major hurdles to overcome?
+&lt;small&gt;&lt;em&gt;&amp;#91;A [href://?node_id=3989;BIT=Image%3A%3ALibRSVG|Super Search for Image::LibRSVG] 
+produces no results.&amp;#93;&lt;/em&gt;&lt;/small&gt;
+&lt;/li&gt;
+&lt;li&gt;
+Does anyone have any suggestions for other modules which I could try for this conversion task? 
+&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;/p&gt;
+
+
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-861371"&gt;
+&lt;p&gt;&amp;mdash; Ken&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1188664">
+<node id="1188665"><node id="1188702"/>
+</node>
+<node id="1188667"><node id="1188669"/>
+<node id="1188701"><node id="1188744"><node id="1188822"><node id="1188836"><node id="1188938"><node id="1188966"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1188668"><node id="1188708"/>
+</node>
+<node id="1188741"/>
+<node id="1188742"><node id="1188752"><node id="1188753"/>
+</node>
+<node id="1188824"/>
+</node>
+<node id="1188801"><node id="1188826"><node id="1189001"/>
+</node>
+</node>
+</thread></node>

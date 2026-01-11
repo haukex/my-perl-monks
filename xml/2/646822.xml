@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="646822" title="Re: yet another thread question: is Symbol::gensym threadsafe?" created="2007-10-24 00:37:09" updated="2007-10-23 20:37:09" _doctext_mode="lenient"><type id="11">note</type>
+<author id="171588">BrowserUk</author>
+<doctext field_name="doctext">
+&lt;p&gt;To the best of my knowledge, [mod://IO::Socket::INET] and all it's dependencies are thread-safe. I've written and tested several dozen threaded scripts using them and never encountered a problem that I haven't tracked down to elsewhere. 
+
+&lt;P&gt;However, looking at the extract you posted which I've never had occasion to look at before, I'm not particularly impressed, and I do see a possible source of conflict/error. 
+
+&lt;p&gt;If Symbol is loaded, as it normally will be, &lt;i&gt;before&lt;/i&gt; the threads are spawned, then the package global &lt;c&gt;$genseq&lt;/c&gt; will be cloned into each thread that is created. That means that each thread will have it's own sequence counter and will therefore be generating duplicate fully-qualified &lt;i&gt;names&lt;/i&gt; for the globs it creates. That shouldn't be a problem as best I can tell as each sequence would live in a separate interpreter and should never come into conflict. But still it tweaks my radar. 
+
+&lt;p&gt;It seems to me that it would be better to forgo the naming of the globs completely and just return the address of an anonymous glob created by localising a single well-known name:
+
+&lt;code&gt;
+sub gensym { return \do{ local *GLOB; *GLOB }; }
+&lt;/code&gt;
+
+&lt;p&gt;You could try temporarily substituting that for the code you posted and see if it makes any difference, but I seriously doubt it will. You've rather glossed over where I think the problem really lies. Ie. 
+
+&lt;blockquote&gt;&lt;i&gt;
+the caching process simply doesn't receive any data at all - which i tried to bypass by locally undef'ing $/ and $\, and although i rather consider this as magic it apparently works - apart from that, sometimes the data get merged in ways that are plainly impossible. for instance chunks of data from one entity seem to appear somewhere else, where they don't belong to.
+&lt;/i&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;In particular, &lt;i&gt;the caching process cannot be the reason for these mistakes,...&lt;/i&gt; smacks greatly of "famous last words". 
+
+&lt;p&gt;I think if you posted (preferably cut down) working code that demonstrates how your caching process works, and resolved the problems described in the above paragraph, then you'd probably fix the overall problem also. I  always, always suspect "magic" code :)
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-171588"&gt;
+&lt;hr /&gt;
+&lt;font size=1 &gt;
+&lt;div&gt;Examine what is said, not who speaks -- Silence betokens consent -- Love the truth but pardon error.&lt;/div&gt;
+&lt;div&gt;"Science is about questioning the status quo. Questioning authority". &lt;/div&gt;
+&lt;div&gt;In the absence of evidence, opinion is indistinguishable from prejudice.&lt;/div&gt;
+&lt;div&gt;[http://news.bbc.co.uk/1/hi/education/6202877.stm|"Too many &amp;#91;&amp;#93; have been sedated by an oppressive environment of political correctness and risk aversion."]&lt;/div&gt;
+&lt;/font&gt;
+
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">646815</root_node>
+<parent_node field_name="parent_node">646815</parent_node>
+<thread id="646815">
+<node id="646822"><node id="646843"><node id="646912"><node id="646922"><node id="646935"><node id="646947"/>
+</node>
+</node>
+</node>
+</node>
+<node id="646862"><node id="646908"><node id="647077"/>
+</node>
+</node>
+</node>
+</thread></node>

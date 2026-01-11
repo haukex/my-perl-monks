@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1173398" title="Re: Understanding a OOP Code: Package declared within a Package" created="2016-10-06 08:21:50" updated="2016-10-06 08:21:50" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [sachinz2],&lt;/p&gt;
+&lt;p&gt;Packages can be declared (nearly) anywhere. A package declaration changes the current package name/namespace, and the new namespace is independent of the previous one, even if it's declared "within" another package - &lt;i&gt;except&lt;/i&gt; that the two lexical scopes can overlap. In the case of OO, names do not matter - a class/package named "Foo::Bar" is not automatically related to "Foo" in any way, nor is a class/package declared within another class/package automatically related to its outer class, again except in the lexical scope (note that normal &lt;c&gt;sub&lt;/c&gt; definitions/calls don't cross the package boundary via the lexical scope, as shown in the example below). The only way to establish an OO relationship is via [doc://perlobj#A-Class-is-Simply-a-Package|@ISA] and its helpers like [doc://base] and [doc://parent]. I'd suggest you have a look at [doc://package] as well as [doc://perlmod#Packages|"Packages" and "Symbol Tables" in perlmod], and then have a look at this example:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+
+our $pack = __PACKAGE__; # $main::pack
+print "$pack\n";         # prints "main"
+
+package Foo;
+our $pack = __PACKAGE__; # $Foo::pack
+print "$pack\n";         # prints "Foo"
+
+package Bar;
+our $pack = __PACKAGE__; # $Bar::pack
+print "$pack\n";         # prints "Bar"
+yak();                   # defined below, prints "yak: Bar"
+
+package Foo::Bar;
+our $pack = __PACKAGE__; # $Foo::Bar::pack
+print "$pack\n";         # prints "Foo::Bar"
+sub yak {                # Foo::Bar::yak()
+	print "yak: ".__PACKAGE__."\n" }
+yak();                   # prints "yak: Foo::Bar"
+
+{ package Foo;
+	# now back to package "Foo", nested in a new block
+	our $blah = __PACKAGE__; # $Foo::blah
+	print "$blah\n";         # prints "Foo"
+	print "$Foo::pack\n";    # $Foo::pack is still "Foo"
+	print "$Bar::pack\n";    # and $Bar::pack is still "Bar"
+	# however, "$pack" access the most recent lexical definition
+	print "$pack\n"; # so this is actually $Foo::Bar::pack, "Foo::Bar"
+	# yak(); # but this doesn't work, there is no Foo::yak!
+	
+	{ package Bar; # and back in package "Bar"
+		# but we're still in the most recent lexical scope
+		print "$pack\n"; # so this is still $Foo::Bar::pack, "Foo::Bar"
+		print "$blah\n"; # and this is still $Foo::blah, "Foo"
+		sub yak {        # Bar::yak()
+			print "yak: ".__PACKAGE__."\n" }
+		yak();           # prints "yak: Bar"
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;If you have further questions, I'd suggest you ask them with code to illustrate your question (see for example [http://www.sscce.org/|Short, Self Contained, Correct Example] and [id://174051]).&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Updated: Minor updates to wording for clarification.&lt;/i&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1173395</root_node>
+<parent_node field_name="parent_node">1173395</parent_node>
+<thread id="1173395">
+<node id="1173396"><node id="1173401"><node id="1173402"/>
+<node id="1173404"/>
+</node>
+</node>
+<node id="1173397"/>
+<node id="1173398"/>
+<node id="1173467"/>
+</thread></node>

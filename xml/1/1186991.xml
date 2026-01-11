@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1186991" title="Net::OpenSSH failing in unexpected way" created="2017-04-04 10:02:08" updated="2017-04-04 10:02:08" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="66801">nysus</author>
+<doctext field_name="doctext">&lt;p&gt;I've spend a few hours on this with not much to show for it. Hopefully someone out there with better knowledge of &lt;code&gt;Net::OpenSSH&lt;/code&gt; internals can help. This is really bizarre. The bit of code I'm having problems with is here:&lt;/p&gt;
+&lt;code&gt;
+# this line runs fine
+$server-&gt;exec("sudo rm -r /directory/*"); # exec is wrapper for the Net::OpenSSH "system" method
+
+# checks if directory exists. This line causes Net::OpenSSH to crap out in special circumstances.
+my $value = $server-&gt;capture(qq#perl -e "print (-d '/directory/')"#);
+
+# returns 1 because dir exists
+print $value; 
+
+&lt;/code&gt;
+&lt;p&gt;Now, if I run the same commands above in a standalone environment outside of the script I'm having the problem with, it works as expected and I cannot reproduce. The problem only happens when I run the commands from a particular script I'm running and only when &lt;code&gt;/directory&lt;/code&gt; is empty. If the directory has stuff in it, I have no issues at all. What's also extremely weird is if I put something like this: &lt;code&gt;$server-&gt;exec("ls")&lt;/code&gt; after the &lt;code&gt;sudo rm -r /directory/*&lt;/code&gt; line, the code chugs along whether &lt;code&gt;/directory&lt;/code&gt; is empty or not. I'm at a loss as to what could be going on. I've tried printing the &lt;code&gt;$server-&gt;ssh-&gt;error&lt;/code&gt; but the code craps out before I can read it.&lt;/p&gt;
+
+&lt;p&gt;If someone could point me in the right direction as to what is going on, I'd be extremely grateful. This is driving me nuts.&lt;/p&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-66801"&gt;
+&lt;font size=2&gt;&lt;p&gt;
+$PM = "Perl Monk's";&lt;br&gt;
+$MCF = "Most Clueless &lt;strike&gt;Friar&lt;/strike&gt; &lt;strike&gt;Abbot&lt;/strike&gt; &lt;strike&gt;Bishop&lt;/strike&gt; &lt;strike&gt;Pontiff&lt;/strike&gt; &lt;strike&gt;Deacon&lt;/strike&gt; Curate";&lt;br&gt;
+$nysus = $PM . ' ' . $MCF;&lt;br&gt;
+&lt;a href="http://perlmonks.org/index.pl?node=Offering%20Plate"&gt;Click here if you love Perl Monks&lt;/a&gt;&lt;br&gt;&lt;/font&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1186991">
+<node id="1186993"><node id="1187020"/>
+</node>
+<node id="1187006"/>
+<node id="1187008"/>
+</thread></node>

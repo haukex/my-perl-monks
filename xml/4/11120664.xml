@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11120664" title="Re: Call function no more than every 0.1 seconds" created="2020-08-12 16:12:44" updated="2020-08-12 16:12:44" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;From "[id://11109264]", which [choroba] linked to, see [id://11109343|my post here] which demonstrates &lt;c&gt;clock_nanosleep&lt;/c&gt; from [doc://Time::HiRes].&lt;/p&gt;
+&lt;p&gt;You don't mention what's supposed to happen when your function happens to take longer to execute than 0.1 seconds?&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Time::HiRes qw/ clock_gettime clock_nanosleep
+	CLOCK_REALTIME TIMER_ABSTIME /;
+die "Don't have nanosleep" unless Time::HiRes::d_nanosleep();
+
+use Time::HiRes qw/usleep/; # just for this fake "myfunc"
+sub myfunc {
+	printf "fired %.2f\n", clock_gettime(CLOCK_REALTIME);
+	my $delay_us = int(rand 100000)+10000; # 110000us = 0.11s
+	printf "delay %.2fs\n", $delay_us/1e6;
+	usleep $delay_us;
+}
+
+my $next_s = int(clock_gettime(CLOCK_REALTIME))+1;
+my $interval_s = 0.1;
+
+my $run = 1; $SIG{INT} = sub { $run = 0 };
+while ($run) {
+	my $now_s = clock_gettime(CLOCK_REALTIME);
+	$next_s += $interval_s while $next_s &lt; $now_s;
+	clock_nanosleep(CLOCK_REALTIME, $next_s*1e9, TIMER_ABSTIME);
+	myfunc();
+}
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Note that since the above code uses floating-point numbers there's a small chance for errors there. If that's a concern, you can switch to nanoseconds, since that's what &lt;c&gt;clock_nanosleep&lt;/c&gt; takes anway.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11120630</root_node>
+<parent_node field_name="parent_node">11120630</parent_node>
+<thread id="11120630">
+<node id="11120631"><node id="11120636"><node id="11120639"/>
+</node>
+</node>
+<node id="11120634"><node id="11120665"><node id="11120672"><node id="11120674"><node id="11120695"><node id="11120699"><node id="11120742"/>
+</node>
+<node id="11120779"><node id="11120785"/>
+<node id="11120793"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11120637"><node id="11120638"><node id="11120670"/>
+</node>
+</node>
+<node id="11120640"/>
+<node id="11120644"/>
+<node id="11120647"/>
+<node id="11120664"/>
+<node id="11120667"/>
+</thread></node>

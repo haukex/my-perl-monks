@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11105477" title="Re^4: How to declare a dependency on PerlIO in a CPAN module?" created="2019-09-02 17:32:23" updated="2019-09-02 17:32:23" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1149436">jcb</author>
+<doctext field_name="doctext">&lt;p&gt;I will probably simply skip the parsing tests if in-memory filehandles are not available.  In normal operation, WARC header fields are parsed directly from a filehandle open on the WARC volume, producing the offset to the record data as a side-effect, so in-memory filehandles are a minor feature.&lt;/p&gt;
+
+&lt;p&gt;I am fairly sure that tied filehandles are needed in my API to provide access to records that may be too big to fit into memory (and may be transparently decompressed using &lt;c&gt;IO::Uncompress::Gunzip&lt;/c&gt; if the archive uses compression).  On the other hand, WARC volumes are read-only, so this is much simpler than [module://File::Replace].  Or are you saying that I can get most of the benefits of tied handles by following the [module://IO::Handle] interface in the "tied handle" class?&lt;/p&gt;
+
+&lt;p&gt;The majority of the API is OO already, but there are methods that return opened filehandles in the API.  For a compressed WARC record, I may be able to simply return the &lt;c&gt;IO::Uncompress::Gunzip&lt;/c&gt; handle for &lt;c&gt;-&gt;open_block&lt;/c&gt; (which reads the data block in a single WARC record) and for &lt;c&gt;-&gt;open_payload&lt;/c&gt; (which reads the actual embedded entity) in some cases (no transfer encoding to strip and no segmentation to reassemble).  For an uncompressed WARC record, I have to ensure that the returned handle stops reading at the end of the record.  WARC volumes are compressed record-by-record, so stopping at the end of the record is partially solved if &lt;c&gt;IO::Uncompress::Gunzip&lt;/c&gt; stops at the end of a compressed block as the documentation suggests that it does.  I have not tested this yet.&lt;/p&gt;
+
+&lt;p&gt;Most of your hoops to jump through seem to be related to the &lt;c&gt;&lt;&gt;&lt;/c&gt; and &lt;c&gt;*ARGV&lt;/c&gt; magic rather than to ordinary tied filehandles passed around as references.  Please correct me if I am wrong about this.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11105354</root_node>
+<parent_node field_name="parent_node">11105406</parent_node>
+<thread id="11105354">
+<node id="11105357"><node id="11105362"><node id="11105372"/>
+</node>
+</node>
+<node id="11105365"><node id="11105368"><node id="11105369"><node id="11105390"><node id="11105391"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11105377"><node id="11105393"><node id="11105406"><node id="11105477"><node id="11105515"><node id="11105550"><node id="11105666"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

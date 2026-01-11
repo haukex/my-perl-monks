@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224411" title="Re: Possible to change package of code reference?" created="2018-10-21 14:43:42" updated="2018-10-21 14:43:42" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I'd be willing to bet this is an XY Problem... could you explain why you need this, preferably with an [id://1177642|SSCCE]?&lt;/p&gt;
+&lt;p&gt;If you want the code that &lt;c&gt;$func&lt;/c&gt; points to to call a different &lt;c&gt;run&lt;/c&gt;, you can do the following ([doc://local]ly redefine &lt;c&gt;&amp;Spin::Command::spin::run&lt;/c&gt;), although this is kinda hacky too &lt;small&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/small&gt; because it just changes the call to &lt;c&gt;run&lt;/c&gt;, it doesn't affect anything else in &lt;c&gt;$func&lt;/c&gt;, like package variables or other function calls. &lt;small&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/small&gt; The "real" solution would be to modify &lt;c&gt;$func&lt;/c&gt; at its origin.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+{
+	package Spin::Command::spin;
+	sub run {
+		print "Bar&lt;&lt;".shift."&gt;&gt;\n";
+	}
+	sub func {
+		run("Foo:".shift);
+	}
+}
+
+my $func = \&amp;Spin::Command::spin::func;
+
+use B::Deparse;
+my $deparse = B::Deparse-&gt;new;
+print "&lt;&lt;",$deparse-&gt;coderef2text($func),"&gt;&gt;\n";
+
+sub other_run {
+	print "Quz[[".shift."]]\n";
+}
+
+my $func_other_run = sub {
+	no warnings 'redefine';
+	local *Spin::Command::spin::run = \&amp;main::other_run;
+	$func-&gt;(@_);
+};
+
+$func-&gt;("Hello");            # prints "Bar&lt;&lt;Foo:Hello&gt;&gt;"
+$func_other_run-&gt;("World");  # prints "Quz[[Foo:World]]"
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update 2:&lt;/i&gt; Of course you can also just clobber the original &lt;c&gt;func&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+{
+	no warnings 'redefine';
+	*Spin::Command::spin::func = $func_other_run;
+}
+&lt;/c&gt;
+&lt;p&gt;[https://webperl.zero-g.net/democode/perleditor.html#%7B%22cmdline%22%3A%22perl%20script.pl%22%2C%22script%22%3A%22use%20warnings%3B%5Cnuse%20strict%3B%5Cn%5Cn%7B%5Cn%5Ctpackage%20Spin%3A%3ACommand%3A%3Aspin%3B%5Cn%5Ctsub%20run%20%7B%5Cn%5Ct%5Ctprint%20%5C%22Bar%3C%3C%5C%22.shift.%5C%22%3E%3E%5C%5Cn%5C%22%3B%5Cn%5Ct%7D%5Cn%5Ctsub%20func%20%7B%5Cn%5Ct%5Ctrun(%5C%22Foo%3A%5C%22.shift)%3B%5Cn%5Ct%7D%5Cn%7D%5Cn%5Cnmy%20%24func%20%3D%20%5C%5C%26Spin%3A%3ACommand%3A%3Aspin%3A%3Afunc%3B%5Cn%5Cnuse%20B%3A%3ADeparse%3B%5Cnmy%20%24deparse%20%3D%20B%3A%3ADeparse-%3Enew%3B%5Cnprint%20%5C%22%3C%3C%5C%22%2C%24deparse-%3Ecoderef2text(%24func)%2C%5C%22%3E%3E%5C%5Cn%5C%22%3B%5Cn%5Cnsub%20other_run%20%7B%5Cn%5Ctprint%20%5C%22Quz%5B%5B%5C%22.shift.%5C%22%5D%5D%5C%5Cn%5C%22%3B%5Cn%7D%5Cn%5Cnmy%20%24func_other_run%20%3D%20sub%20%7B%5Cn%5Ctno%20warnings%20'redefine'%3B%5Cn%5Ctlocal%20*Spin%3A%3ACommand%3A%3Aspin%3A%3Arun%20%3D%20%5C%5C%26main%3A%3Aother_run%3B%5Cn%5Ct%24func-%3E(%40_)%3B%5Cn%7D%3B%5Cn%5Cn%24func-%3E(%5C%22Hello%5C%22)%3B%20%20%20%20%20%20%20%20%20%20%20%20%23%20prints%20%5C%22Bar%3C%3CFoo%3AHello%3E%3E%5C%22%5Cn%24func_other_run-%3E(%5C%22World%5C%22)%3B%20%20%23%20prints%20%5C%22Quz%5B%5BFoo%3AWorld%5D%5D%5C%22%5Cn%5Cn%7B%5Cn%5Ctno%20warnings%20'redefine'%3B%5Cn%5Ct*Spin%3A%3ACommand%3A%3Aspin%3A%3Afunc%20%3D%20%24func_other_run%3B%5Cn%7D%5Cn%5CnSpin%3A%3ACommand%3A%3Aspin%3A%3Afunc(%5C%22Baz%5C%22)%3B%5Cn%22%2C%22script_fn%22%3A%22script.pl%22%2C%22autorun%22%3Atrue%7D|WebPerl Live Demo]&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1224408</root_node>
+<parent_node field_name="parent_node">1224408</parent_node>
+<thread id="1224408">
+<node id="1224409"><node id="1224410"><node id="1224412"><node id="1224417"/>
+<node id="1224421"><node id="1224427"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1224411"><node id="1224420"><node id="1224462"><node id="1224473"/>
+</node>
+</node>
+</node>
+</thread></node>

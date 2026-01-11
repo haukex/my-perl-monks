@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11118556" title="Re: incorrect methods yield success" created="2020-06-26 05:39:52" updated="2020-06-26 05:39:52" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;incorrect methods yield success&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sorry, that's not really much to go on, the behavior looks correct to me. &lt;c&gt;$jsonpackage-&gt;new&lt;/c&gt; creates a new object (in this case of type [mod://Cpanel::JSON::XS]). &lt;c&gt;encode&lt;/c&gt; is a method, but &lt;c&gt;encode_json&lt;/c&gt; is &lt;i&gt;not&lt;/i&gt;, but in the second call of &lt;c&gt;jsonsolute&lt;/c&gt;, &lt;c&gt;$json-&gt;$jsonefunction&lt;/c&gt; calls &lt;c&gt;encode_json&lt;/c&gt; as a method, meaning that the parameters that the function &lt;c&gt;encode_json&lt;/c&gt; sees are actually &lt;c&gt;($json, {key =&gt; 'value'})&lt;/c&gt;, and it doesn't know how to handle the object &lt;c&gt;$json&lt;/c&gt;, which is of type &lt;c&gt;Cpanel::JSON::XS&lt;/c&gt;, so it dies.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+dd jsonsolute('JSON::MaybeXS', 'encode', 'decode');
+dd jsonsolute();
+print "Done\n";
+
+sub jsonsolute {
+	my ($jsonpackage, $jsonefunction, $jsondfunction) = @_;
+	$jsonpackage ||= 'JSON::MaybeXS';
+	$jsonefunction ||= 'encode_json';
+	$jsondfunction ||= 'decode_json';
+	dd $jsonpackage, $jsonefunction, $jsondfunction;
+	if ( !defined eval "require $jsonpackage; 1" ) {
+		die "package $jsonpackage missing\n";
+	} else {
+		my $json = $jsonpackage-&gt;new(pretty =&gt; 1, canonical =&gt; 1);
+		dd $json;
+		my $encoded = $json-&gt;$jsonefunction({key =&gt; 'value'});
+		my $decoded = $json-&gt;$jsondfunction('{"key":"value"}');
+		dd $encoded, $decoded;
+		return $encoded, $decoded;
+	}
+}
+
+__END__
+
+("JSON::MaybeXS", "encode", "decode")
+bless(do{\(my $o = "")}, "Cpanel::JSON::XS")
+("{\n   \"key\" : \"value\"\n}\n", { key =&gt; "value" })
+("{\n   \"key\" : \"value\"\n}\n", { key =&gt; "value" })
+("JSON::MaybeXS", "encode_json", "decode_json")
+bless(do{\(my $o = "")}, "Cpanel::JSON::XS")
+encountered type (HASH(0x52aeb6d595a8), 0x80801) was specified for 'Cpanel::JSON::XS=SCALAR(0x52aeb6e99850)' at 11118555.pl line 20.
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11118555</root_node>
+<parent_node field_name="parent_node">11118555</parent_node>
+<thread id="11118555">
+<node id="11118556"><node id="11118558"><node id="11118559"/>
+</node>
+</node>
+<node id="11118597"/>
+<node id="11118607"/>
+</thread></node>

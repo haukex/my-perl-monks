@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11130774" title="PadWalker's closed_over - but for our variables?" created="2021-04-03 11:24:36" updated="2021-04-03 11:24:36" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="708738">LanX</author>
+<doctext field_name="doctext">Hi&lt;P&gt;
+
+[mod://PadWalker] is great for identifying and manipulating closed over private variables declared with my.&lt;P&gt;
+
+But what about package variables declared with our?&lt;P&gt;
+
+
+
+What's the best way to do this?&lt;P&gt;
+
+Do I have to parse the optree or do we have a Pad for our-lexicals too?&lt;P&gt;
+
+
+little demo which only works for private vars&lt;P&gt;
+
+&lt;c&gt;
+  DB&lt;170&gt; sub outer { package BLA; my $my=42; our $our=666; sub { print "$my,$our" } }
+
+  DB&lt;171&gt; outer()-&gt;()
+42,666
+  DB&lt;172&gt; use PadWalker qw(peek_sub closed_over)
+
+  DB&lt;173&gt; x peek_sub(outer())
+0  HASH(0x39d8ec8)
+   '$my' =&gt; SCALAR(0x39d8dd8)
+      -&gt; 42
+  DB&lt;174&gt; x closed_over(outer())
+0  HASH(0x39d98b8)
+   '$my' =&gt; SCALAR(0x39d92e8)
+      -&gt; 42
+1  HASH(0x39d9168)                             # &lt;- What is that,BTW?
+   1 =&gt; SCALAR(0x39d92e8)
+      -&gt; REUSED_ADDRESS
+  DB&lt;175&gt;
+&lt;/c&gt;&lt;P&gt;
+
+PS: I'm aware of peek_our(), it just only works from inside the sub.&lt;P&gt;
+
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-708738"&gt;
+&lt;!--nowiki--&gt;&lt;p&gt;Cheers Rolf&lt;br&gt;
+&lt;sub&gt;(addicted to the Perl Programming Language  :)
+&lt;br&gt; &lt;i&gt; [id://1153804|Wikisyntax for the Monastery]&lt;/i&gt;
+&lt;/sub&gt; 
+&lt;!--nowiki--&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;!-- Wiki2Monks {"version":1.16} --&gt;</doctext>
+<thread id="11130774">
+<node id="11130777"><node id="11130778"><node id="11130779"><node id="11130780"><node id="11130781"><node id="11130782"/>
+</node>
+</node>
+<node id="11130794"><node id="11130846"><node id="11130866"><node id="11130867"><node id="11130868"><node id="11130869"/>
+<node id="11130870"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11130797"><node id="11130798"/>
+</node>
+<node id="11130834"><node id="11130835"><node id="11130838"><node id="11130842"/>
+</node>
+</node>
+</node>
+</thread></node>

@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11122460" title="Perl script runs fine if exec'd from the directory, but gives error if run outside the directory." created="2020-10-01 22:01:28" updated="2020-10-01 22:01:28" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1182149">pritesh_ugrankar</author>
+<doctext field_name="doctext">&lt;p&gt;Hi,&lt;/p&gt;
+&lt;p&gt;I am having a really strange issue. &lt;/p&gt;
+
+&lt;p&gt;I am using Strawberry perl version 5.30 (v5.30.3) on Windows Server 2008R2.&lt;/p&gt;
+
+&lt;p&gt;There's a perl script I've written (with lots of help from perlmonks), and it runs fine if I execute it from within the directory where it's located like so:&lt;/p&gt;
+&lt;code&gt;
+G:\cdr_vnxe&gt;perl cedar_rapids_vnxe_v2.pl
+
+G:\cdr_vnxe&gt;
+
+&lt;/code&gt;
+&lt;p&gt;The perl script executes, sends email and the command prompt returns. However, running it by giving the path gives the following error:&lt;/p&gt;
+&lt;code&gt;
+G:\&gt;perl cdr_vnxe\cedar_rapids_vnxe_v2.pl
+Use of uninitialized value $text in substitution (s///) at G:/Strawberry/perl/vendor/lib/Win32/ShellQuote.pm line 85.
+
+G:\&gt;
+&lt;/code&gt;
+
+&lt;p&gt;I've googled a lot, tried commenting out certain portion of the script that I thought is messing up, but nothing works. Unfortunately the script is way to long. I don't even know which part of my script is causing this. So I've given the whole script here. I'm supposed to provide only a snippet, but in this case I am not even sure which part is causing this. Once again I apologize for giving the whole script here, but I really do not know which part of the script is causing this. I will be ever so thankful if the monks could help.
+&lt;/p&gt;
+&lt;code&gt;
+######################################################################
+use strict;
+use warnings;
+use Config::Tiny;
+use IPC::Run3;
+use Encode qw/decode/;
+use Email::Stuffer;
+use Email::Sender::Transport::SMTP ();
+use Cwd;
+######################################################################
+
+my $array_creds = Config::Tiny-&gt;new();
+$array_creds   = Config::Tiny-&gt;read('vnxe_config.conf');
+my $mailserver = $array_creds-&gt;{params}-&gt;{smtp_server_name};
+my $username   = $array_creds-&gt;{params}-&gt;{username}; 
+my $password   = $array_creds-&gt;{params}-&gt;{passwd};
+my $vnxe_ip   = $array_creds-&gt;{params}-&gt;{vnxe_ip};
+
+my $aref_cmd_genhealth = ['uemcli','-d',$vnxe_ip,'-u',$username,'-p',$password, '/sys/general','show','-detail'];
+my $aref_cmd_bat = ['uemcli', '-d', $vnxe_ip, '-u', $username, '-p', $password, '/env/bat', 'show', '-detail'];
+my $aref_cmd_ps = ['uemcli', '-d', $vnxe_ip, '-u', $username, '-p', $password, '/env/ps', 'show', '-detail'];
+my $aref_cmd_disks = ['uemcli', '-d', $vnxe_ip, '-u', $username, '-p', $password, '/env/disk', 'show', '-detail'];
+my $aref_cmd_pools = ['uemcli', '-d', $vnxe_ip, '-u', $username, '-p', $password, '/stor/config/pool', 'show', '-detail'];
+my $aref_cmd_dpe = ['uemcli', '-d', $vnxe_ip, '-u', $username, '-p', $password, '/env/dpe', 'show', '-detail'];
+my $aref_cmd_ccard = ['uemcli', '-d', $vnxe_ip, '-u', $username, '-p', $password, '/env/ccard', 'show', '-detail'];
+my $aref_cmd_dae = ['uemcli', '-d', $vnxe_ip, '-u', $username, '-p', $password, '/env/dae', 'show', '-detail'];
+my $aref_cmd_iomod = ['uemcli', '-d', $vnxe_ip, '-u', $username, '-p', $password, '/env/iomodule', 'show', '-detail'];
+my $aref_cmd_sp = ['uemcli', '-d', $vnxe_ip, '-u', $username, '-p', $password, '/env/sp', 'show', '-detail'];
+my $aref_cmd_ssd = ['uemcli', '-d', $vnxe_ip, '-u', $username, '-p', $password, '/env/ssd', 'show', '-detail'];
+
+######################################################################
+#Use the run3 from IPC::Run3 so that the output will be captured
+#in the \my $variable reference.This can be used later when the
+#output is decoded from UTF 16 and written to a file.
+#Why is this being done? - Because the uemcli output is in UTF16
+#Format and does not render nicely in text files.
+######################################################################
+#TODO:- See if this can be done in a subroutine for DRY.
+######################################################################
+run3 $aref_cmd_genhealth, undef, \my $genhealth;
+run3 $aref_cmd_bat, undef, \my $bat;
+run3 $aref_cmd_ps, undef, \my $pow_sup;
+run3 $aref_cmd_disks, undef, \my $disks;
+run3 $aref_cmd_pools, undef, \my $pools;
+run3 $aref_cmd_dpe, undef, \my $dpe;
+run3 $aref_cmd_ccard, undef, \my $ccard;
+run3 $aref_cmd_dae, undef, \my $dae;
+run3 $aref_cmd_iomod, undef, \my $iomod;
+run3 $aref_cmd_sp, undef, \my $sp;
+run3 $aref_cmd_ssd, undef, \my $ssd;
+######################################################################
+#This is where the decoding and writing to file or variable starts.
+######################################################################
+#TODO:- See if this can be done in a subroutine for DRY.
+######################################################################
+my $genhealthfile = "genhealthfile.txt";
+open (my $fh_genhealthfile, '+&gt;', $genhealthfile) or die "Cannot open file.$!";
+my $str_genhealth = decode('UTF-16', $genhealth, Encode::FB_CROAK);
+print $fh_genhealthfile $str_genhealth;
+close $fh_genhealthfile;
+open ($fh_genhealthfile, '&lt;', $genhealthfile) or die "Cannot open file.$!";
+my $array_system;
+my $array_model;
+my $array_sn;
+while (my $line = &lt;$fh_genhealthfile&gt;) {
+	
+	if ($line =~/System.*=\s(.*)/) {
+		$array_system = $1;
+	}
+	if ($line =~/Model.*=\s(.*)/) {
+		$array_model = $1;
+
+	}
+	if ($line =~/serial.*=\s(.*)/) {
+		$array_sn = $1;
+	}
+}
+close $fh_genhealthfile;
+my $array = "$array_system "."$array_model "."$array_sn "; 
+my $email_subject = $array."Health Check &amp; Capacity"; 
+
+
+my $batteries = "batteries.txt";
+open (my $fh_batteries, '+&gt;', $batteries) or die "Cannot open file.$!";
+my $str_batt = decode('UTF-16', $bat, Encode::FB_CROAK);
+print $fh_batteries $str_batt;
+close $fh_batteries;
+
+my $power_supply = "power_supply.txt";
+open (my $fh_power_supply, '+&gt;', $power_supply) or die "Cannot open file.$!";
+my $str_power_supply = decode('UTF-16', $pow_sup, Encode::FB_CROAK);
+print $fh_power_supply $str_power_supply;
+close $fh_power_supply;
+
+
+my $physical_disks = "physical_disks.txt";
+open (my $fh_physical_disks, '+&gt;', $physical_disks) or die "Cannot open file.$!";
+my $str_phys_disks = decode('utf-16', $disks, Encode::FB_CROAK);
+print $fh_physical_disks $str_phys_disks;
+close $fh_physical_disks;
+
+my $capacity = "capacity.txt";
+open (my $fh_ph_disks, '+&gt;', $capacity) or die "Cannot open file.$!";
+my $str_ph_disks = decode('utf-16', $pools, Encode::FB_CROAK);
+print $fh_ph_disks $str_ph_disks;
+close $fh_ph_disks;
+my $used_capacity;
+{
+	open ($fh_ph_disks, '+&lt;', $capacity) or die "Cannot open file.$!";
+	
+	local $/ = "\n\n";
+
+	while (&lt;$fh_ph_disks&gt;) {
+		next if $_ =~/^(Storage|HTTPS)/;
+		if ($_ !~ /Total space          = 0/) {
+			$used_capacity = $_;
+	}
+	
+	}
+}
+
+my $dpe_file = "dpe_file.txt";
+open (my $fh_dpe_file, '+&gt;', $dpe_file) or die "Cannot open file.$!";
+my $str_dpe = decode('utf-16', $dpe, Encode::FB_CROAK);
+print $fh_dpe_file $str_dpe;
+close $fh_dpe_file;
+
+
+my $ccard_file = "ccard_file.txt";
+open (my $fh_ccard_file, '+&gt;', $ccard_file) or die "Cannot open file.$!";
+my $str_ccard = decode('utf-16', $ccard, Encode::FB_CROAK);
+print $fh_ccard_file $str_ccard;
+close $fh_ccard_file;
+
+my $dae_file = "dae_file.txt";
+open (my $fh_dae_file, '+&gt;', $dae_file) or die "Cannot open file.$!";
+my $str_dae = decode('utf-16', $dae, Encode::FB_CROAK);
+print $fh_dae_file $str_dae;
+close $fh_dae_file;
+
+my $iomod_file = "iomod_file.txt";
+open (my $fh_iomod_file, '+&gt;', $iomod_file) or die "Cannot open file.$!";
+my $str_iomod = decode('utf-16', $iomod, Encode::FB_CROAK);
+print $fh_iomod_file $str_iomod;
+close $fh_iomod_file;
+
+
+my $sp_file = "sp_file.txt";
+open (my $fh_sp_file, '+&gt;', $sp_file) or die "Cannot open file.$!";
+my $str_sp = decode('utf-16', $sp, Encode::FB_CROAK);
+print $fh_sp_file $str_sp;
+close $fh_sp_file;
+
+my $ssd_file = "ssd_file.txt";
+open (my $fh_ssd_file, '+&gt;', $ssd_file) or die "Cannot open file.$!";
+my $str_ssd = decode('utf-16', $ssd, Encode::FB_CROAK);
+print $fh_ssd_file $str_ssd;
+close $fh_ssd_file;
+#################################################################
+#Capture host and script location information.
+my $hostname = `hostname`;
+my $script_path = Cwd::abs_path($0);
+#################################################################
+#Email Body Content.
+my $email_body = &lt;&lt;"EMAIL_BODY";
+Host Name: $hostname
+Script path: $script_path 
+
+Please check the attached files if health state shows not ok.
+
+================================================================
+			Array Health
+================================================================
+
+$str_genhealth
+
+================================================================
+Capacity (Empty pools are not shown):
+$used_capacity
+EMAIL_BODY
+#################################################################
+#Create Email, insert email body content &amp; Attachments.
+Email::Stuffer
+	-&gt;text_body($email_body)
+	-&gt;subject($email_subject)
+	-&gt;attach_file($batteries)
+	-&gt;attach_file($power_supply)
+	-&gt;attach_file($physical_disks)
+	-&gt;attach_file($dpe_file)
+	-&gt;attach_file($ccard_file)
+	-&gt;attach_file($iomod_file)
+	-&gt;attach_file($sp_file)
+	-&gt;attach_file($ssd_file)
+	-&gt;from('Pritesh Ugrankar &lt;me@email.com&gt;')
+	-&gt;transport(Email::Sender::Transport::SMTP-&gt;new({
+				host =&gt; 'mysmtpserver',
+			}))
+	-&gt;to('My Team &lt;myteamdl@email.com&gt;')
+	-&gt;send_or_die;
+
+
+
+&lt;/code&gt;
+&lt;p&gt;
+&lt;/p&gt;
+&lt;code&gt;
+&lt;/code&gt;
+&lt;p&gt;
+&lt;/p&gt;</doctext>
+<thread id="11122460">
+<node id="11122464"/>
+<node id="11122469"><node id="11122470"><node id="11122472"/>
+<node id="11122473"><node id="11122491"><node id="11122510"><node id="11122526"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11122471"/>
+</node>
+<node id="11122477"><node id="11122492"><node id="11122496"><node id="11122499"/>
+</node>
+</node>
+</node>
+<node id="11122489"/>
+</thread></node>

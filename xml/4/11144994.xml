@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11144994" title="IO::Socket::SSL / Net::SSLeay inefficient in non-blocking mode ?" created="2022-06-23 12:22:30" updated="2022-06-23 12:22:30" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1131358">Yaribz</author>
+<doctext field_name="doctext">Hello,&lt;br/&gt;
+
+&lt;p&gt;I'm using the IO::Socket::SSL module in non-blocking mode and I noticed high CPU usages during data transfers (much higher than when using blocking mode, with similar speeds). After some investigations, I think this is due to a very high proportion of failed/empty sysreads due to SSL_WANT_READ.&lt;/p&gt;
+
+&lt;p&gt;I have based my code on following links which explain the usage of SSL sockets in non-blocking mode and how to handle SSL_WANT_READ / SSL_WANT_WRITE:&lt;br/&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://metacpan.org/pod/IO::Socket::SSL#Using-Non-Blocking-Sockets"&gt;IO::Socket::SSL#Using-Non-Blocking-Sockets&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://metacpan.org/pod/IO::Socket::SSL#Common-Usage-Errors"&gt;IO::Socket::SSL#Common-Usage-Errors (section "Polling of SSL sockets")&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://metacpan.org/pod/Net::SSLeay#Sockets"&gt;Net::SSLeay#Sockets&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/p&gt;
+
+&lt;p&gt;According to this documentation, it can happen that a read operation performed on a SSL socket returns nothing, even if the socket was flagged as "readable" by select just before. This happens when the data that were available in the socket buffer were just SSL transport layer data, not actual application data. And in this case, one just needs to select the socket again and retry the read operation. This makes perfect sense, and as I understand it these empty reads should only represent a small part of all the read operations performed on the SSL socket during large data transfers.&lt;/p&gt;
+
+&lt;p&gt;However, in my case (when performing large transfers between two hosts on a 1 Gbps network), these "empty" reads due to SSL_WANT_READ represent about 80% of all the read operations performed on the socket, which likely explains the high CPU usage. So I guess I'm doing something wrong in my application...&lt;/p&gt;
+
+&lt;p&gt;I managed to reproduce the problem with these two small scripts:&lt;/p&gt;
+
+&lt;p&gt;Here is the server code, which runs in blocking mode and sends data continuously to any client connecting to it (only one client at a time). It works fine, with low CPU usage, and is only provided to help reproduce the problem when using non-blocking socket at client side:
+&lt;code&gt;
+use warnings;
+use strict;
+
+use IO::Socket::SSL;
+
+use constant { BUFSIZE =&gt; 16384 };
+die 'Invalid BUFSIZE value (must be a multiple of 16)' if(BUFSIZE%16);
+
+my $LOCAL_ADDR='0.0.0.0';
+my $LOCAL_PORT=1234;
+my $BUFFER = '0123456789ABCDEF' x (BUFSIZE/16);
+
+my $srvSock;
+$srvSock=IO::Socket::SSL-&gt;new(
+  LocalHost =&gt; $LOCAL_ADDR,
+  LocalPort =&gt; $LOCAL_PORT,
+  ReuseAddr =&gt; 1,
+  Listen =&gt; 1,
+  SSL_cert_file =&gt; 'cert.pem',
+  SSL_key_file =&gt; 'key.pem',
+) or die "Failed to create listening SSL socket: $!";
+
+print "SSL server listening on $LOCAL_ADDR:$LOCAL_PORT\n";
+
+while() {
+  print "Waiting for client to connect...\n";
+  my $clientSock = $srvSock-&gt;accept()
+    or die "Failed to accept SSL client connection: $!, $SSL_ERROR\n";
+
+  print "Client connected, sending data.\n";
+  while() {
+    my $writeLength=syswrite($clientSock,$BUFFER)
+      or do {
+        print "  Failed to write to client: $!, $SSL_ERROR\n";
+        last;
+      };
+    if($writeLength != BUFSIZE) {
+      print "  Unexpected write length: $writeLength\n";
+      last;
+    }
+  }
+}&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;And here is the client code, which runs in non-blocking mode and reports every second the transfer speed and the proportion of the read operations which "failed" due to SSL_WANT_READ and SSL_WANT_WRITE:
+&lt;code&gt;
+use warnings;
+use strict;
+
+use IO::Socket::SSL;
+use Time::HiRes qw'time';
+
+use constant { 
+  BUFSIZE =&gt; 16384,
+  INTERVAL =&gt; 1,
+};
+
+my $PEER_ADDR='192.168.1.10';
+my $PEER_PORT=1234;
+
+print "Connecting to SSL server ($PEER_ADDR:$PEER_PORT)\n";
+my $clientSock = IO::Socket::SSL-&gt;new(
+  PeerHost =&gt; $PEER_ADDR,
+  PeerPort =&gt; $PEER_PORT,
+  Proto =&gt; 'tcp',
+  SSL_verify_mode =&gt; SSL_VERIFY_NONE,
+) or die "Failed to connect to SSL server: $!, $SSL_ERROR";
+
+print "Connected, switching to non-blocking mode.\n";
+$clientSock-&gt;blocking(0);
+
+my $sockVec='';
+vec($sockVec,fileno($clientSock),1)=1;
+
+my ($nbRead,$nbSslWantRead,$nbSslWantWrite,$transferred)=(0,0,0,0);
+
+print "Downloading data from server...\n";
+my $currentTime=time();
+my ($intvlStart,$intvlEnd)=($currentTime,$currentTime+INTERVAL);
+while() {
+
+  # There should be no pending data when BUFSIZE = max SSL frame size
+  die 'Unexpected pending data in SSL socket'
+      if($clientSock-&gt;pending());
+  
+  $!=0;
+  select(my $readyVec=$sockVec,undef,undef,undef) &gt; 0
+      or die "Error in select for read: $!";
+  
+  my $readLength=sysread($clientSock,my $readData,BUFSIZE);
+  $nbRead++;
+  if(defined $readLength) {
+    die "Connection closed by peer"
+        unless($readLength);
+    die "Unexpected read length: $readLength"
+        unless($readLength == BUFSIZE);
+  }else{
+    die "Failed to read from SSL socket: $!"
+        unless($!{EWOULDBLOCK} || $!{EAGAIN});
+    if($SSL_ERROR == SSL_WANT_READ) {
+      $nbSslWantRead++;
+      next;
+    }
+    if($SSL_ERROR == SSL_WANT_WRITE) {
+      $nbSslWantWrite++;
+      select(undef,my $readyVec=$sockVec,undef,undef) &gt; 0
+          or die "Error in select for write: $!";
+      next;
+    }
+    die 'Unexpected WOULDBLOCK/EAGAIN status when trying to read';
+  }
+  
+  $transferred+=BUFSIZE;
+  $currentTime=time(); 
+  if($currentTime &gt;= $intvlEnd) {
+    printReport();
+    initNewInterval();
+  }
+}
+
+sub printReport {
+  my $speed=formatSize($transferred/($currentTime-$intvlStart));
+  my $pctSslWantRead=sprintf('%.2f',$nbSslWantRead*100/$nbRead);
+  my $pctSslWantWrite=sprintf('%.2f',$nbSslWantWrite*100/$nbRead);
+  print "Transfer speed: $speed/s\n";
+  print "  Read failure due to SSL_WANT_READ: $pctSslWantRead%\n";
+  print "  Read failure due to SSL_WANT_WRITE: $pctSslWantWrite%\n";
+}
+
+sub formatSize {
+  my $size=shift;
+  my @UNITS=('',qw'K M G T');
+  my $unitIdx=0;
+  while($size &gt;= 1000 &amp;&amp; $unitIdx &lt; $#UNITS) {
+    $size/=1000;
+    $unitIdx++;
+  }
+  $size=sprintf('%.2f',$size) if(index($size,'.') != -1);
+  return $size.' '.$UNITS[$unitIdx].'B';
+}
+
+sub initNewInterval {
+  ($nbRead,$nbSslWantRead,$nbSslWantWrite,$transferred)=(0,0,0,0);
+  $intvlStart=$currentTime;
+  $intvlEnd+=INTERVAL while($intvlEnd &lt; $intvlStart+INTERVAL/2);
+}
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;To use these scripts a SSL certificate must be placed in current server directory (files "cert.pem" and "key.pem"), and the $PEER_ADDR variable must be set to the server address in the client script. Default port is 1234 and can be changed by editing the $LOCAL_PORT / $PEER_PORT variables.&lt;/p&gt;
+
+&lt;p&gt;Initially I tried to reproduce the problem by running both scripts (server and client) on same system, using localhost, but the problem doesn't appear in this case (the proportion of failed reads due to SSL_WANT_READ is 0.00%).&lt;/p&gt;
+
+&lt;p&gt;Here are the results when I run the client and the server parts on distinct systems, for 10 seconds:
+&lt;code&gt;
+$ perl sslclinb.pl
+Connecting to SSL server (192.168.1.10:1234)
+Connected, switching to non-blocking mode.
+Downloading data from server...
+Transfer speed: 117.55 MB/s
+  Read failure due to SSL_WANT_READ: 87.46%
+  Read failure due to SSL_WANT_WRITE: 0.00%
+Transfer speed: 117.61 MB/s
+  Read failure due to SSL_WANT_READ: 90.84%
+  Read failure due to SSL_WANT_WRITE: 0.00%
+Transfer speed: 117.61 MB/s
+  Read failure due to SSL_WANT_READ: 90.84%
+  Read failure due to SSL_WANT_WRITE: 0.00%
+Transfer speed: 117.61 MB/s
+  Read failure due to SSL_WANT_READ: 90.88%
+  Read failure due to SSL_WANT_WRITE: 0.00%
+Transfer speed: 117.61 MB/s
+  Read failure due to SSL_WANT_READ: 90.50%
+  Read failure due to SSL_WANT_WRITE: 0.00%
+Transfer speed: 117.61 MB/s
+  Read failure due to SSL_WANT_READ: 82.52%
+  Read failure due to SSL_WANT_WRITE: 0.00%
+Transfer speed: 117.61 MB/s
+  Read failure due to SSL_WANT_READ: 82.63%
+  Read failure due to SSL_WANT_WRITE: 0.00%
+Transfer speed: 117.61 MB/s
+  Read failure due to SSL_WANT_READ: 82.58%
+  Read failure due to SSL_WANT_WRITE: 0.00%
+Transfer speed: 117.61 MB/s
+  Read failure due to SSL_WANT_READ: 82.58%
+  Read failure due to SSL_WANT_WRITE: 0.00%
+Transfer speed: 117.61 MB/s
+  Read failure due to SSL_WANT_READ: 82.57%
+  Read failure due to SSL_WANT_WRITE: 0.00%
+^C
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;I get similar results on 2 different systems (i.e. when exchanging server and client), on Windows and Linux.&lt;br/&gt;
+I would be very interested to know if anyone reproduces the same behavior, and if anyone has an idea on what is going on?&lt;/p&gt;
+
+&lt;p&gt;Thanks !&lt;/p&gt;</doctext>
+<thread id="11144994">
+<node id="11144995"><node id="11145001"/>
+</node>
+<node id="11145008"/>
+<node id="11145011"><node id="11145015"><node id="11145021"><node id="11145034"><node id="11145065"><node id="11145070"/>
+<node id="11145073"/>
+<node id="11145091"><node id="11145115"><node id="11145117"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

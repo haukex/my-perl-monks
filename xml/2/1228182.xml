@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1228182" title="Re^6: locating ultima thule" created="2019-01-08 03:03:24" updated="2019-01-08 03:03:24" _doctext_mode="lenient"><type id="11">note</type>
+<author id="947695">Aldebaran</author>
+<doctext field_name="doctext">&lt;i&gt;please use Data::Dumper (or Data::Dump) to show the contents of $vars{refc}&lt;/i&gt;
+
+&lt;p&gt;What it showed was that the content was populated. What was causing the entire template to go wonky was that there were more files in rus_captions than in eng_captions or images. I filled undefined things with bubble gum and just got them on the net. Most of the complaining is about not being able to sftp non-existent files. I wanted to come up with some baseline defaults so that the whole page doesn't go down for lack of an image to stand in for a while.&lt;/p&gt;
+
+&lt;p&gt;I've gotten rid of a lot of mistakes as I dug my way back into this one. The first was not having brackets around my qw in the initialization of the array:&lt;/p&gt;
+&lt;c&gt;elt 0 0 is &amp;#1081;
+elt 0 1 is  
+elt 0 2 is  
+elt 0 3 is &amp;#1083;
+elt 0 4 is  
+elt 0 5 is  
+elt 0 6 is &amp;#1089;
+elt 0 7 is  
+elt 0 8 is  
+Can't use string ("&amp;#1086;") as an ARRAY ref while "strict refs" in use at template_stuff/utils1.pm line 61.
+$ &lt;/c&gt;
+
+&lt;p&gt;I don't see a way to use Dumper and have that the be cyrillic, because that's what I want to see. I use Dumper for doing anything to get on the scoreboard. (Not such a high price, except that you condemn yourself to read a lot of your own data: uggh)&lt;/p&gt;
+
+&lt;p&gt;I've been trying to write a better print_aoa_utf8 but have only partial success. Partially, my data set needed more conditioning. The hardest thing for me to represent like this is a space.&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;
+
+&lt;pre&gt;in make russian xword------
+elt 0 0 is &amp;#1081;
+elt 0 1 is  
+elt 0 2 is  
+elt 0 3 is &amp;#1083;
+elt 0 4 is  
+elt 0 5 is  
+elt 0 6 is &amp;#1089;
+elt 0 7 is  
+elt 0 8 is  
+elt 1 0 is &amp;#1086;
+elt 1 1 is &amp;#1073;
+elt 1 2 is &amp;#1083;
+elt 1 3 is &amp;#1086;
+elt 1 4 is &amp;#1084;
+elt 1 5 is &amp;#1086;
+elt 1 6 is &amp;#1074;
+elt 1 7 is '
+elt 1 8 is '
+elt 1 9 is &amp;#1096;
+elt 2 0 is 1
+elt 2 1 is 2
+elt 2 2 is 3
+elt 2 3 is 4
+elt 2 4 is 5
+elt 2 5 is 6
+elt 2 6 is 7
+elt 2 7 is 8
+elt 2 8 is 9
+return1 is nothing nyet&lt;/pre&gt;
+ &lt;p&gt;What I have is:&lt;/p&gt;
+&lt;code&gt;sub print_aoa_utf8 {
+  use warnings;
+  use 5.011;
+  use utf8;    # a la François
+  use open OUT =&gt; ':encoding(utf8)';
+  use open ':std';
+
+  my $a   = shift;
+  my @AoA = @$a;
+
+  for my $i ( 0 .. $#AoA ) {
+    my $aref = $AoA[$i];
+    for my $j ( 0 .. $#{$aref} ) {
+      print "elt $i $j is $AoA[$i][$j]\n";
+    }
+  }
+  return $a;
+}&lt;/code&gt;
+&lt;p&gt;With my difficulties getting any values initialized. I wonder how I might make it a matter of course and think that a toolkit solution would be a reasonable goal, in particular because I want to have a means for considering fonts, and we saw a tk version of trying out different fonts not long ago.&lt;/p&gt;
+&lt;p&gt;I had to make sure that all previous russian captions were erased before I went and got more:&lt;/p&gt;
+
+&lt;c&gt;  print "Make rus captions(y/n)?: ";
+  my $prompt1 = &lt;STDIN&gt;;
+  chomp $prompt1;
+  if ( $prompt1 eq ( "y" | "Y" ) ) {
+    ## delete existing files
+    foreach my $child ( $vars{rus_captions}-&gt;children ) {
+
+      my $success = $child-&gt;remove;
+      say "success deleting was $success";
+    }
+    my $ref_cap = make_russian_captions($rvars);
+  }&lt;/c&gt;
+
+&lt;p&gt;STDOUT then shows:&lt;/p&gt;
+
+&lt;c&gt;Make rus captions(y/n)?: y
+success deleting was 1
+success deleting was 1
+success deleting was 1
+success deleting was 1
+matching are a.txt b.txt
+rus_munge is /home/bob/2.scripts/pages/7.cw/template_stuff/translations/trans.07-01-2019-16-15-08.txt
+rus_path is /home/bob/2.scripts/pages/7.cw/template_stuff/ruscaptions/a.txt
+rus_path is /home/bob/2.scripts/pages/7.cw/template_stuff/ruscaptions/b.txt&lt;/c&gt;
+
+
+&lt;p&gt;And I figured all this out by looking at the data as [haukex] suggested. I've had a nice few days coding that reduces the ugly, but not completely.&lt;/p&gt;
+
+&lt;c&gt;sub make_russian_crossword {
+  use 5.011;
+  use warnings;
+  use POSIX qw(strftime);
+  use Path::Tiny;
+  use Encode;
+  use open OUT =&gt; ':encoding(UTF-8)', ':std';
+  use Data::Dumper;
+
+  my $rvars = shift;
+  my %vars  = %$rvars;
+
+  my $munge = strftime( "p%d-%m-%Y-%H-%M-%S\.txt", localtime);
+  my $in_path = path( $vars{rus_captions}, $munge )-&gt;touchpath;
+  
+  ##Let mother know that you created a file, *verb* a reference:
+  $vars{log_file}=$in_path;
+  $rvars = \%vars;   #does this line do anything for me?
+ 
+
+  # open file for writing
+  # my $fh = path($in_path)-&gt;openw_utf8; not helping
+  say "in make russian xword------";
+  my $data = $vars{cw_data};
+  #print Dumper $data;
+  print_aoa_utf8($data);
+  #print $fh $data;
+  my $a   = $data;
+  my @AoA = @$a;
+  for my $i ( 0 .. $#AoA ) {
+    my $aref = $AoA[$i];
+    for my $j ( 0 .. $#{$aref} ) {
+       "$AoA[$i][$j]";
+    }
+  print "\n";
+  }
+  # -&gt;append_utf8(@data);
+  return "nothing nyet"
+}
+&lt;/c&gt;
+&lt;p&gt;Does the 3rd line here do anything for me or the program?&lt;/p&gt;
+&lt;c&gt;  ##Let mother know that you created a file, *verb* a reference:
+  $vars{log_file}=$in_path;
+  $rvars = \%vars;   #does this line do anything for me?&lt;/c&gt;
+&lt;c&gt;&lt;/c&gt;
+&lt;p&gt;What I'm reaching for at the end is a control that will go over the array, which can be seen as a column vector of row vectors. I want to iterate over the columns and print out one row at time, with no spaces and a newline at the end. Fishing for notation as to how to do that. With the output as a series of outputs of row vectors, then I think it will fit in well with the [Path::Tiny] method call &lt;c&gt;append_utf8(@data)&lt;/c&gt;. Then we can see how these things look on the net. Right now, it's looking pretty stable: [http://www.merrillpjensen.com/perlmonks/7.cw6.html|crossword prototype shaping up].&lt;/p&gt;
+
+&lt;p&gt;Again, very grateful for comments,&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1227959</root_node>
+<parent_node field_name="parent_node">1228098</parent_node>
+<thread id="1227959">
+<node id="1227985"><node id="1228014"><node id="1228021"/>
+</node>
+</node>
+<node id="1227993"><node id="1228034"><node id="1228042"/>
+</node>
+</node>
+<node id="1228007"><node id="1228066"><node id="1228075"><node id="1228096"><node id="1228098"><node id="1228182"><node id="1228183"/>
+<node id="1228185"><node id="1228243"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

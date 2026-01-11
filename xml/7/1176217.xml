@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1176217" title="Type of arg 1 to keys must be hash (not array dereference) at" created="2016-11-20 13:48:54" updated="2016-11-20 13:48:54" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1074976">demichi</author>
+<doctext field_name="doctext">Hi all,
+
+&lt;p&gt; I already had issues with this code and got help (see http://www.perlmonks.org/?node_id=1176056) but I get a new error now and hope it is ok to open a new post for this the new issue.&lt;/p&gt;
+
+&lt;p&gt; Perl Version 5.10.0. causes the error:&lt;/p&gt;
+&lt;code&gt;
+yyy.pl
+Type of arg 1 to keys must be hash (not array dereference) at yyy.pl line 22, near "})
+                                "
+Execution of yyy.pl aborted due to compilation errors.
+&lt;/code&gt;
+&lt;p&gt; 
+Code:
+&lt;code&gt;
+use strict;
+use warnings;
+use Data::Dumper;
+
+my %REST_storage;
+
+my $json_decoded = {
+          'data' =&gt; [
+                      {
+                        'svpIp' =&gt; '10.1.1.1',
+                        'model' =&gt; 'xyz',
+                        'storageDeviceId' =&gt; '800000058068',
+                        'serialNumber' =&gt; 58068
+                      }
+                    ]
+        };
+
+			print Dumper $json_decoded;
+			for my $key1 (keys %$json_decoded)
+			{
+				print "key 1:  $key1 + $json_decoded-&gt;{$key1}\n";
+				for my $key2 (keys @{ $json_decoded-&gt;{$key1} }) 
+				{
+					print "key 2:  $key2 + $json_decoded-&gt;{$key1}[$key2]\n";
+					for my $key3 (keys %{ $json_decoded-&gt;{$key1}[$key2] }) 
+					{
+						print "key 3:  $key3 + $json_decoded-&gt;{$key1}[$key2]{$key3}\n";
+						$REST_storage{$key3} = $json_decoded-&gt;{$key1}[$key2]{$key3};
+					}
+				}
+			}
+			
+print Dumper %REST_storage;
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt; I undestand that I need hash instead of array for&lt;/p&gt;
+&lt;code&gt;for my $key2 (keys @{ $json_decoded-&gt;{$key1} })&lt;/code&gt;
+but I do not know how to solve it.
+
+&lt;p&gt;Thanks for help.&lt;/p&gt;
+kind regards
+deMichi</doctext>
+<thread id="1176217">
+<node id="1176219"><node id="1176220"/>
+</node>
+</thread></node>

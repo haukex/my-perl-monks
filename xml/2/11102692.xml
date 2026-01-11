@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11102692" title="Re^5: String manipulation in a document" created="2019-07-11 11:50:33" updated="2019-07-11 11:50:33" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Thank you for showing your code. To begin, several recommendations:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;You have several unused variables that don't seem relevant to this example, such as &lt;c&gt;$filename&lt;/c&gt; or &lt;c&gt;$workingpath&lt;/c&gt;. For a [id://1177642|SSCCE], it's better to remove them.&lt;/li&gt;
+&lt;li&gt;The variable name &lt;c&gt;$InputXmlFile&lt;/c&gt; is kind of confusing, since it's a &lt;c&gt;.tex&lt;/c&gt; file.&lt;/li&gt;
+&lt;li&gt;It's best to use proper indentation and formatting. [doc://perltidy] can help with that.&lt;/li&gt;
+&lt;li&gt;Regarding your &lt;c&gt;open&lt;/c&gt;, see [id://11102684]: &lt;c&gt;open my $fh, '&lt;', $filename or die "$filename: $!";&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;Reading an entire file at once is better done with the following "slurp" idiom instead of the [doc://join]: &lt;c&gt;my $inText = do { local $/; &lt;INTXT&gt; };&lt;/c&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Now moving on to the question of how to search and replace text. First of all, reading from input files and writing to output files is described in [doc://perlintro#Files-and-I/O|"Files and I/O" in perlintro] - I would recommend reading the whole document, since it's not very long and it gives a good overview of Perl.&lt;/p&gt;
+&lt;p&gt;As for the algorithm, there are several general approaches I'd consider:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;You should look for modules that are able to parse and write TeX/LaTeX.&lt;/li&gt;
+&lt;li&gt;You could read the entire file into memory and then use regular expressions to process it, the disadvantage being that it won't work well for large files.&lt;/li&gt;
+&lt;li&gt;You could read the file line-by-line, keeping the current state (i.e. whether &lt;c&gt;\section{...\qr{...}}&lt;/c&gt; has been seen, storing the text to be added back in), i.e. a "state machine" type approach. While very powerful and flexible, it can sometimes be a bit more verbose.&lt;/li&gt;
+&lt;li&gt;Another possibility would be to read the file in "chunks" - in this case, your [id://11102623|example input] appears to have a blank line between each line you want to process. If that really is the case, you could use [doc://$/] to read the file in "paragraph mode" (sections are separated by one or more blank lines).&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;In the following, I'm using a combination of the third and fourth points, but note that this code makes quite a few assumptions about your input file format, which you haven't shown a lot of. In your real script, you'd have to replace &lt;c&gt;DATA&lt;/c&gt; with the filehandle you opened.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+local $/ = "";
+my $buffer;
+while (&lt;DATA&gt;) {
+	if ( s/\\section\{.*?\K(\\qr\{.*?\})(?=\})//i ) {
+		$buffer .= $1;
+	}
+	elsif (defined $buffer) {
+		s/^\S+\s+\S+\K/$buffer/;
+		undef $buffer;
+	}
+	print;
+}
+print $buffer if defined $buffer;
+
+__DATA__
+\section{Results\qr{text ... text}}
+
+Normal paragraph text here...
+
+\section{Funding\qr{text ... text}}
+
+Funding text here...
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+\section{Results}
+
+Normal paragraph\qr{text ... text} text here...
+
+\section{Funding}
+
+Funding text\qr{text ... text} here...
+&lt;/c&gt;
+&lt;p&gt;I'm really not sure how you choose the insertion point for the &lt;c&gt;\qr{}&lt;/c&gt; - in the original question, it seems you wanted it inserted after the fourth word in the paragraph, while in this example, it looks like you wanted it inserted after the second word.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11102593</root_node>
+<parent_node field_name="parent_node">11102663</parent_node>
+<thread id="11102593">
+<node id="11102595"><node id="11102600"/>
+</node>
+<node id="11102596"/>
+<node id="11102623"><node id="11102625"><node id="11102628"><node id="11102631"><node id="11102663"><node id="11102692"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11102632"/>
+</node>
+</thread></node>

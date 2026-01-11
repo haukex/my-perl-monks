@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11112693" title="glob a folder of images, and open text doc, find the matches and move the images." created="2020-02-09 13:45:53" updated="2020-02-09 13:45:53" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1091372">flieckster</author>
+<doctext field_name="doctext">Hello, i'm a little stuck here. I'm working on a script that is designed to glob a folder of images, then open a txt document with matches to the the filenames found, and move said files to the paths in the text document. 
+
+the code below is a little odd off. 
+
+when i glob the filenames i get a list of files 
+
+&lt;code&gt;
+010011510005801_0669_main.psd
+010011510005801_0964_main.psd
+010011520006618_0964_main.psd
+010011520006618_5030_main.psd
+010011520006812_0670_main.psd
+010011520006812_0990_main.psd
+&lt;/code&gt;
+
+and here is the same filenames with paths where to put back the images. 
+
+&lt;code&gt;
+
+/Volumes/photorepos/Partners/Christopher_Banks/post/CB_instock/4/010011510005801_0669_main.psd
+/Volumes/photorepos/Partners/Christopher_Banks/post/CB_instock/4/010011520006618_5030_main.psd
+/Volumes/photorepos/Partners/Christopher_Banks/post/CB_instock/4/010011520006812_0670_main.psd
+/Volumes/photorepos/Partners/Christopher_Banks/post/CB_instock/9/010011510005801_0964_main.psd
+/Volumes/photorepos/Partners/Christopher_Banks/post/CB_instock/9/010011520006618_0964_main.psd
+/Volumes/photorepos/Partners/Christopher_Banks/post/CB_instock/9/010011520006812_0990_main.psd
+&lt;/code&gt;
+
+but when i run the script below, i can't seem to chomp the paths correctly so its searching line by line. 
+insted it is searching the entire string, and removing parts of the filename in the paths. see below 010011510005801, should be 010011510005801_0669_main.psd
+
+&lt;code&gt;
+010011510005801_0669_main.psd
+/Volumes/photorepos/Partners/Christopher_Banks/post/CB_instock/4/010011510005801/Volumes/photorepos/Partners/Christopher_Banks/post/CB_instock/4/010011520006618/Volumes/photorepos/Partners/Christopher_Banks/post/CB_instock/4/010011520006812/Volumes/photorepos/Partners/Christopher_Banks/post/CB_instock/9/010011510005801/Volumes/photorepos/Partners/Christopher_Banks/post/CB_instock/9/010011520006618/Volumes/photorepos/Partners/Christopher_Banks/post/CB_instock/9/010011520006812_0990_main.psd
+&lt;/code&gt;
+
+&lt;code&gt;
+#!/usr/bin/env perl -w
+use File::Find;
+use File::Copy;
+use File::Basename;
+use File::Basename;
+use File::Slurp;
+
+use POSIX qw(strftime);
+
+my $date = strftime("%m-%d-%y",localtime);
+my $time = strftime("%I:%M:%S",localtime);
+
+
+my $findme = "/Volumes/photorepos/Perl/SLAperlDropback/";
+my $file_loc = $findme. '2SLAday';
+my $filenames_to_putback = '/Volumes/photorepos/Perl/SLAperlDropback/dropback.txt';
+
+
+chdir($file_loc) or warn  "$!";
+@filesforeach = glob "*.*";
+my $filecount = @filesforeach;
+print "$filecount\n";
+chomp @filesforeach;
+foreach $file (@filesforeach){
+print "$file\n";
+
+
+
+open(my $fh, "&lt;", "$filenames_to_putback") or warn "$!\n";
+while (my $row = &lt;$fh&gt;) {
+  chomp $row;
+  print "$row\n";
+  
+my @line = $file;
+  for (@line) {
+    if ($_ =~ /$row/) {
+    chomp $_;
+#   push @output, "found $_ that matched redo $file $row &lt;br&gt;";
+  move($_,$row) or warn "shit went wrong yo! $!\n";
+}
+}
+}
+}
+# print "@output\n";
+&lt;/code&gt;
+</doctext>
+<thread id="11112693">
+<node id="11112698"><node id="11112710"><node id="11112727"><node id="11112736"><node id="11112737"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11112701"><node id="11112711"/>
+</node>
+<node id="11112738"/>
+</thread></node>

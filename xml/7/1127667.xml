@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1127667" title="Re: Can I ask Perl if an object will stringify?" created="2015-05-25 05:44:10" updated="2015-05-25 05:44:10" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;
+Hi everyone,
+&lt;/p&gt;
+&lt;p&gt;
+First of all, apologies for my extremely late reply, I'm working on this in
+my free time and I haven't had a chance to get back to it until now.
+&lt;/p&gt;
+&lt;p&gt;
+So below is the logic I am now using, and it seems to work: the function "strify" takes a value,
+produces the warnings / errors that I wanted to provide for user-friendliness,
+and otherwise should act like normal Perl stringification.
+If I wasn't providing those custom warning and error messages,
+the whole thing could be simplified quite a bit, that's something I'll
+consider for the next version.
+You can see the code (with detailed comments) in my module 
+[https://metacpan.org/source/HAUKEX/IPC-Run3-Shell-0.54/lib/IPC/Run3/Shell.pm#L239|here].
+In researching a solution I ended up writing a bunch of 
+[https://metacpan.org/source/HAUKEX/IPC-Run3-Shell-0.54/t/OverloadTestClasses.pm|test classes] and
+[https://metacpan.org/source/HAUKEX/IPC-Run3-Shell-0.54/t/17_strify.t|test cases].
+&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+{   package OnlyAString;
+    use overload fallback=&gt;0,     '""'=&gt;sub { ${shift()} }  }
+{   package ICanStringify;
+    use overload fallback=&gt;undef, '0+'=&gt;sub { ${shift()} }  }
+{   package OnlyANumber;
+    use overload fallback=&gt;0,     '0+'=&gt;sub { ${shift()} }  }
+
+print "  OnlyAString: ",strify(bless \do {my $x=111}, 'OnlyAString'  ),"\n";
+print "ICanStringify: ",strify(bless \do {my $x=222}, 'ICanStringify'),"\n";
+print "  OnlyANumber: ",strify(bless \do {my $x=333}, 'OnlyANumber'  ),"\n";
+
+use Scalar::Util 'blessed';
+use overload ();
+use Carp;
+sub strify {
+    my ($x) = @_;
+    if (!defined $x) {
+        warnings::warnif('uninitialized','Use of uninitialized value in argument list');
+        return "" }
+    elsif (blessed($x) &amp;&amp; overload::Overloaded($x)) {
+        if (overload::Method($x,'""'))  # we can assume stringify will work
+            { return "$x" }
+        elsif (defined(my $rv = eval { "$x" }))
+            { return $rv }
+        elsif ($@=~/\bno method found\b/)  # throw custom error message
+            { croak "Package ".ref($x)." doesn't overload stringification: $@" }
+        else { die $@ }
+    }
+    else {
+        ref($x) and warnings::warnif("Argument list contains references/objects");
+        return "$x" }
+}
+&lt;/code&gt;
+&lt;p&gt;
+Output:
+&lt;/p&gt;
+&lt;code&gt;
+  OnlyAString: 111
+ICanStringify: 222
+Package OnlyANumber doesn't overload stringification: Operation """": no method found, argument in overloaded package OnlyANumber at ...
+&lt;/code&gt;
+&lt;p&gt;
+Thanks and Regards,&lt;br&gt;
+-- Hauke D
+&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1121710</root_node>
+<parent_node field_name="parent_node">1121710</parent_node>
+<thread id="1121710">
+<node id="1121712"><node id="1127668"/>
+</node>
+<node id="1121733"><node id="1127669"/>
+</node>
+<node id="1121735"><node id="1127670"/>
+</node>
+<node id="1121736"><node id="1121902"><node id="1121976"/>
+</node>
+<node id="1121911"/>
+<node id="1122107"><node id="1122112"><node id="1122157"><node id="1122159"/>
+</node>
+<node id="1122197"/>
+</node>
+</node>
+<node id="1127671"/>
+</node>
+<node id="1122099"><node id="1122116"/>
+<node id="1127673"/>
+</node>
+<node id="1127667"/>
+</thread></node>

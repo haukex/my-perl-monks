@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11114285" title="Re: problem while solving basic dynamic programming question" created="2020-03-15 04:42:03" updated="2020-03-15 04:42:03" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+if(defined $cache[$num]) {return $cache[$num];}
+if($num &lt; 0) {return 0;}
+&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In Perl, &lt;c&gt;-1&lt;/c&gt; is a valid array index, meaning the last element of the array (&lt;c&gt;-2&lt;/c&gt; is the second-to-last, and so on). Move the &lt;c&gt;if($num &lt; 0)&lt;/c&gt; check before the &lt;c&gt;if(defined $cache[$num])&lt;/c&gt; check and your code produces the expected output. Another option would be to use a hash instead of an array as the cache.&lt;/p&gt;
+&lt;p&gt;A couple more tips:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Instead of a global, you could define your cache as what is known as a "static" variable in other languages, using [doc://state].&lt;/li&gt;
+&lt;li&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; While implementing the cache yourself like that is fine, note that Perl has a module for that, [doc://Memoize].&lt;/li&gt;
+&lt;li&gt;The &lt;c&gt;&amp;find()&lt;/c&gt; style of calling subs is outdated, call your subs without the &lt;c&gt;&amp;&lt;/c&gt;.&lt;/li&gt;
+&lt;li&gt;The &lt;c&gt;if($num == 0)&lt;/c&gt; check isn't necessary if you pre-populate your array with that index.&lt;/li&gt;
+&lt;li&gt;You can use [doc://Test::More] instead of inputting your test cases manually:&lt;/li&gt;
+&lt;/ul&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use feature 'state';
+
+sub find {
+	state @cache = (1);
+	my $num = shift;
+	return 0 if $num &lt; 0;
+	if ( defined $cache[$num] ) { return $cache[$num] }
+	$cache[$num] = find($num-1) + find($num-2) + find($num-3);
+	return $cache[$num];
+}
+
+use Test::More tests=&gt;3;
+is find(2), 2;
+is find(3), 4;
+is find(4), 7;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11114280</root_node>
+<parent_node field_name="parent_node">11114280</parent_node>
+<thread id="11114280">
+<node id="11114284"><node id="11114291"/>
+</node>
+<node id="11114285"><node id="11114537"/>
+</node>
+<node id="11114287"/>
+<node id="11114293"/>
+</thread></node>

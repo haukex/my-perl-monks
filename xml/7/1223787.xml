@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1223787" title="Re^6: Run Perl 5 in the Browser! (updated)" created="2018-10-10 05:29:13" updated="2018-10-10 05:29:13" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;could it be done without Webassembly?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In theory it could, and in fact, my early attempts near the beginning of this year were aimed at compiling to [http://asmjs.org/|asm.js]. asm.js is a strict subset of JavaScript which lends itself towards compilation, and browsers supporting it will be able to do so and execute it much faster (browsers that don't support it can still run it, just slower). However, asm.js requires aligned memory access ([http://kripken.github.io/emscripten-site/docs/porting/guidelines/portability_guidelines.html#other-issues|Emscripten docs]), and the Perl core does quite a bit of that (for example, one can add &lt;c&gt;-Wcast-align&lt;/c&gt; to the &lt;c&gt;ccflags&lt;/c&gt; in [https://github.com/haukex/emperl5/blob/emperl_v5.28.0/hints/emscripten.sh|hints/emscripten.sh] to see all the warnings). I managed to get 5.26 patched so that it would at least compile and run some basic code, but at the same time ran into other issues, such as that I was trying to use dynamic loading, which in that combination didn't support dynamic memory expansion. WebAssembly, which you can think of as kind of a precompiled asm.js, does not require aligned memory access, and when I switched to static linking and WASM, things were much easier (relatively speaking), and I didn't have to patch Perl (as much).&lt;/p&gt;
+&lt;p&gt;So &lt;i&gt;in theory&lt;/i&gt;, it would still be possible to do a pure asm.js compilation, if one were to go through the entire Perl core (and any XS modules one wants to add) and change everything that relies on unaligned memory accesses. That's a significant amount of work though. WebAssembly works in any modern browser that supports it, and IMO nowadays requiring a modern browser is no longer a big ask (the days of people being stuck on old IE versions &lt;i&gt;appear&lt;/i&gt; to be coming to an end). I also briefly [https://github.com/haukex/emperl5/blob/webperl_v0.07-beta/hints/emscripten.sh#L156|experimented] with the WebAssembly "interpreter" that is provided by [https://github.com/WebAssembly/binaryen|Binaryen], which would at least allow WebAssembly to be run on older browsers, although probably quite slowly. That might be another option if backwards compatibility with older browsers is required.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt;&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I don't get the purpose of Webassembly here? Is it something like Perl&lt;-&gt;Webassembly&lt;-&gt;Javascript ?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The &lt;c&gt;perl&lt;/c&gt; binary needs to be compiled to either asm.js or WASM, as I explained above. This is because Perl is written in C, and needs to be compiled, "porting" it to JavaScript by hand is basically not an option due to the complexity. [http://emscripten.org|Emscripten] also does a lot more than that, it provides a virtual environment and standard C libraries that most C programs need to compile and run.&lt;/p&gt;
+&lt;p&gt;WebAssembly can be thought of like &lt;i&gt;kind of&lt;/i&gt; a precompiled JavaScript - they are different languages but run in the same VM and can call into each other - see e.g. "[https://developer.mozilla.org/en-US/docs/WebAssembly/Concepts#How_does_WebAssembly_fit_into_the_web_platform|How does WebAssembly fit into the web platform?]". What happens when WebPerl loads is basically that there is JavaScript code that prepares the Perl script and loads it into the [https://webperl.zero-g.net/using.html#virtual-filesystem|virtual filesystem], and then the Emscripten-generated code loads and runs the WebAssembly &lt;c&gt;perl&lt;/c&gt; binary. &lt;i&gt;Update 2:&lt;/i&gt; The WebAssembly &lt;c&gt;perl&lt;/c&gt; binary can then call out to JavaScript using the code in [https://github.com/haukex/emperl5/blob/emperl_v5.28.0/ext/WebPerl/WebPerl.xs|WebPerl.xs] (which has been compiled to WASM+JS and linked into the &lt;c&gt;perl&lt;/c&gt; binary) and its Perl frontend, [https://github.com/haukex/emperl5/blob/emperl_v5.28.0/ext/WebPerl/WebPerl.pm|WebPerl.pm]. I explained the further interaction of Perl and JavaScript a bit more [id://1223619|here].&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;A few more minor edits.&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1220426</root_node>
+<parent_node field_name="parent_node">1223776</parent_node>
+<thread id="1220426">
+<node id="1220428"/>
+<node id="1220439"><node id="1220615"><node id="1220621"><node id="1220871"><node id="1220873"><node id="1220874"><node id="1220875"><node id="1220876"><node id="1220878"/>
+</node>
+</node>
+</node>
+<node id="1220884"><node id="1220885"/>
+<node id="1220889"><node id="1220893"><node id="1220955"><node id="1221026"/>
+</node>
+</node>
+<node id="1220940"><node id="1220956"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1221030"/>
+</node>
+</node>
+<node id="1220707"/>
+</node>
+<node id="1220479"><node id="1220480"><node id="1220481"/>
+</node>
+<node id="1220617"/>
+</node>
+<node id="1220482"><node id="1220616"/>
+</node>
+<node id="1220703"><node id="1220704"><node id="1220708"><node id="1220872"><node id="1223776"><node id="1223777"/>
+<node id="1223787"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1220887"/>
+<node id="1223586"><node id="1223588"/>
+<node id="1223619"/>
+</node>
+</thread></node>

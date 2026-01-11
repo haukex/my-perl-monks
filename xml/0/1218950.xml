@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1218950" title="Re^14: Print inside SIGNALS" created="2018-07-20 15:52:52" updated="2018-07-20 15:52:52" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1158292">pryrt</author>
+<doctext field_name="doctext">&lt;p&gt;As a third party: I was debating whether to interject, but this gave me an opening.  I have seen what looks like (to me) both behaviors -- I added in some extra information (perl version, timestamp) when prints happen, and ran some one-liners similar to [id://1218647].  &lt;/p&gt;
+
+&lt;p&gt;In Windows, I see what I think ikegami has described: no matter what, the SIG{ALRM} isn't firing, presumably because the &lt;c&gt;&lt;&gt;&lt;/c&gt; blocks it...&lt;/p&gt;
+&lt;code&gt;
+C:\usr\local\share\PassThru\perl&gt;perl -wMstrict -e "sub p { local $, = qq{: }; print $], scalar(localtime), @_ }; alarm 2; $SIG{ALRM}=sub{p qq{Timeout reached\n} }; p qq{before I hit enter\n}; &lt;&gt;; p qq{after I hit enter\n}"
+5.026002: Fri Jul 20 12:20:40 2018: before I hit enter
+never saw the timeout, so hit enter
+5.026002: Fri Jul 20 12:20:57 2018: after I hit enter
+
+C:\usr\local\share\PassThru\perl&gt;perl -wMstrict -e "sub p { local $, = qq{: }; print $], scalar(localtime), @_ }; alarm 2; $SIG{ALRM}=sub{p qq{Timeout reached  } }; p qq{before I hit enter\n}; &lt;&gt;; p qq{after I hit enter\n}"
+5.026002: Fri Jul 20 12:21:05 2018: before I hit enter
+never saw the timeout, so hit enter
+5.026002: Fri Jul 20 12:21:21 2018: after I hit enter
+&lt;/code&gt;
+
+&lt;p&gt;But in linux, with the &lt;c&gt;\n&lt;/c&gt;, the "timeout reached" prints after the 2 seconds, then when I hit ENTER, it prints what comes after the &lt;c&gt;&lt;&gt;&lt;/c&gt;; but if I don't have &lt;c&gt;\n&lt;/c&gt;, I can count to about 15, type, and hit ENTER, and then it will print both the "timeout reached" and the "after" messages on the same line, showing that the events themselves happened about 30sec apart.&lt;/p&gt;
+&lt;code&gt;
+pryrt@pryrtdebian:~$ perl -wMstrict -e 'sub p { local $, = qq{: }; print $], scalar(localtime), @_ }; alarm 2; $SIG{ALRM}=sub{p qq{Timeout reached\n} }; p qq{before I hit enter\n}; &lt;&gt;; p qq{after I hit enter\n}'
+5.020003: Fri Jul 20 12:23:50 2018: before I hit enter
+5.020003: Fri Jul 20 12:23:52 2018: Timeout reached
+after two seconds, that popped up, then I typed this slowly, with ENTER
+5.020003: Fri Jul 20 12:24:12 2018: after I hit enter
+pryrt@pryrtdebian:~$ perl -wMstrict -e 'sub p { local $, = qq{: }; print $], scalar(localtime), @_ }; alarm 2; $SIG{ALRM}=sub{p qq{Timeout reached  } }; p qq{before I hit enter\n}; &lt;&gt;; p qq{after I hit enter\n}'
+5.020003: Fri Jul 20 12:24:22 2018: before I hit enter
+counted to about 15, never saw timeout, typed this, hit ENTER
+5.020003: Fri Jul 20 12:24:24 2018: Timeout reached  5.020003: Fri Jul 20 12:24:57 2018: after I hit enter
+&lt;/code&gt;
+
+&lt;p&gt;To me, it really looks like under linux, the &lt;c&gt;&lt;&gt;&lt;/c&gt; is not blocking the SIG{ALRM} from firing, and that the &lt;c&gt;\n&lt;/c&gt; is showing it's buffering which is causing the delay when there's no &lt;c&gt;\n&lt;/c&gt;.  I cannot explain what I saw, otherwise.&lt;/p&gt;
+
+&lt;p&gt;armed with [haukex]'s newest oneliner, I see&lt;/p&gt;
+&lt;code&gt;
+__WINDOWS__
+C:\usr\local\share\PassThru\perl&gt;perl -wMstrict -le "$a=time;$SIG{ALRM}=sub{$b=time};alarm 2;&lt;&gt;;print $b-$a"
+
+Use of uninitialized value $b in subtraction (-) at -e line 1, &lt;&gt; line 1.
+-1532115378
+__LINUX__
+pryrt@pryrtdebian:~$ perl -wMstrict -le '$a=time;$SIG{ALRM}=sub{$b=time};alarm 2;&lt;&gt;;print $b-$a'
+
+2
+&lt;/code&gt;
+
+&lt;p&gt;once again, I see that on Windows, it appears that &lt;c&gt;&lt;&gt;&lt;/c&gt; has prevented the alarm from firing; but in linux, it did not.  In windows, I added in a second sleep after the first print, and did the print again:&lt;/p&gt;
+&lt;code&gt;
+__WINDOWS__
+C:\usr\local\share\PassThru\perl&gt;perl -wMstrict -le "$a=time;$SIG{ALRM}=sub{$b=time};alarm 2;&lt;&gt;;print $b-$a;sleep 5; print $b-$a"
+
+Use of uninitialized value $b in subtraction (-) at -e line 1, &lt;&gt; line 1.
+-1532115756
+10
+&lt;/code&gt;
+&lt;p&gt;between the first and second print, after hitting enter for the &lt;c&gt;&lt;&gt;&lt;/c&gt;, then there is enough time for the alarm to run.  Doing the same in linux, it seems to me that ALARM triggered the once, during the initial time before &lt;c&gt;&lt;&gt;&lt;/c&gt; was completed by my hitting enter, so I don't think &lt;c&gt;&lt;&gt;&lt;/c&gt; was blocking it:&lt;/p&gt;
+&lt;code&gt;
+__LINUX__
+peter@peterjonesdebian:~$ perl -wMstrict -le '$a=time;$SIG{ALRM}=sub{$b=time};alarm 2;&lt;&gt;;print $b-$a;sleep 5;print $b-$a'
+
+2
+2
+&lt;/code&gt;
+
+&lt;p&gt;&lt;b&gt;edit&lt;/b&gt;: joined lines that were accidentally separated when I copied from windows cmd.exe window&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1218573</root_node>
+<parent_node field_name="parent_node">1218948</parent_node>
+<thread id="1218573">
+<node id="1218574"><node id="1218576"><node id="1218578"><node id="1218609"><node id="1218612"/>
+<node id="1218644"><node id="1218647"><node id="1218669"><node id="1218679"><node id="1218738"><node id="1218760"><node id="1218813"><node id="1218843"><node id="1218847"><node id="1218853"><node id="1218854"><node id="1218856"><node id="1218975"/>
+</node>
+</node>
+<node id="1218943"><node id="1218944"/>
+<node id="1218947"><node id="1218977"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1218942"><node id="1218948"><node id="1218950"><node id="1218955"/>
+</node>
+<node id="1218951"><node id="1218956"><node id="1218966"/>
+</node>
+</node>
+<node id="1218961"><node id="1218963"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1218941"><node id="1218945"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1218586"><node id="1218587"><node id="1218590"/>
+</node>
+</node>
+<node id="1218588"/>
+<node id="1218589"/>
+</node>
+<node id="1218594"><node id="1218602"/>
+<node id="1218704"/>
+</node>
+</node>
+<node id="1218577"/>
+<node id="1218610"><node id="1218611"><node id="1218614"/>
+<node id="1218643"><node id="1218648"><node id="1218668"/>
+</node>
+</node>
+</node>
+<node id="1218613"/>
+</node>
+<node id="1218689"/>
+</thread></node>

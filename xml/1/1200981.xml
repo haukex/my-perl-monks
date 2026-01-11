@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1200981" title="Re: Calculating Number Of Pay Periods" created="2017-10-09 07:04:59" updated="2017-10-09 07:04:59" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Here's yet another way to do it, using [mod://DateTime::Set] for recurring events. It's also possible to modify the "&lt;c&gt;recurrence&lt;/c&gt;" callback to shift the exact day if, for example, paydays can't be on a weekend, and there are even modules that calculate holidays for different regions.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use DateTime;
+use DateTime::Set;
+
+my $paydays = DateTime::Set-&gt;from_recurrence(
+	start  =&gt; DateTime-&gt;now,
+	before =&gt; DateTime-&gt;new( year=&gt;2019, month=&gt;7, day=&gt;1 ),
+	recurrence =&gt; sub {
+		my $dt = shift;
+		return $dt-&gt;day &lt; 15
+			? $dt-&gt;truncate(to=&gt;'month')-&gt;add(days=&gt;14 )
+			: $dt-&gt;truncate(to=&gt;'month')-&gt;add(months=&gt;1)
+	},
+);
+
+print "paydays: ",$paydays-&gt;count,"\n";
+# - or -
+my $iter = $paydays-&gt;iterator;
+while ( my $dt = $iter-&gt;next ) {
+	print $dt-&gt;ymd, "\n";
+}
+
+__END__
+
+paydays: 41
+2017-10-15
+2017-11-01
+2017-11-15
+...
+2019-05-15
+2019-06-01
+2019-06-15
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1200953</root_node>
+<parent_node field_name="parent_node">1200953</parent_node>
+<thread id="1200953">
+<node id="1200954"><node id="1200955"/>
+</node>
+<node id="1200957"/>
+<node id="1200980"><node id="1200984"><node id="1200989"><node id="1200991"/>
+<node id="1201045"><node id="1201079"><node id="1201270"/>
+</node>
+</node>
+</node>
+<node id="1200990"/>
+<node id="1200994"><node id="1201003"/>
+</node>
+</node>
+</node>
+<node id="1200981"/>
+<node id="1200982"/>
+</thread></node>

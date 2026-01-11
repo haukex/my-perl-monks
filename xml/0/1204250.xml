@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1204250" title="Re: search/grep perl/*nix" created="2017-11-25 11:48:53" updated="2017-11-25 11:48:53" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I'd have thought that writing to a file and reading it back would have slowed me down, but it didn't!&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Without having the time to investigate with a benchmark at the moment, I'd take a guess that most of the time might be being spent on &lt;c&gt;cut | sort | uniq&lt;/c&gt; on a 100MB file, not on reading/writing a 50kb temp file or pipe to Perl. The main point I wanted to make is the following:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;Is there a bias towards either of these approaches (driven by performance) should the dataset get significantly larger? &lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I'd have a bias against both of the approaches ;-) All of those tasks can be done in pure Perl, without launching four separate processes. I wrote about the topic of running external processes at length [id://1180578|here], but the only advice from there that seems to apply at the moment is "just do it in Perl".&lt;/p&gt;
+&lt;p&gt;On a simple test file, the following produces the same output as "&lt;c&gt;cut -d"," -f2 /tmp/input.txt | sort | uniq&lt;/c&gt;". Note that since I'm locating duplicates with a hash, I don't need to sort the input data first, meaning I can process the file line-by-line without loading all of it into memory. See also [doc://perlfaq4#How-can-I-remove-duplicate-elements-from-a-list-or-array?]&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $filename = '/tmp/input.txt';
+open my $fh, '&lt;:encoding(UTF-8)', $filename or die "$filename: $!";
+my %seen;
+while (&lt;$fh&gt;) {
+	chomp;
+	my @fields = split /,/;
+	$seen{$fields[1]}++
+}
+close $fh;
+my @data = sort keys %seen;
+print $_,"\n" for @data;
+&lt;/c&gt;
+&lt;p&gt;If your input file is CSV, you might consider using [mod://Text::CSV_XS] instead of [doc://split], since it will more robustly handle cases like quotes or escaped/quoted separators within fields. &lt;small&gt;&lt;i&gt;Update before posting:&lt;/i&gt;&lt;/small&gt; [1nickt] just [id://1204249|showed] an example of that. Note the line-by-line approach can also be used with [mod://Text::CSV_XS] with its &lt;c&gt;getline&lt;/c&gt; method (I showed a short example e.g. [id://1198443|here]).&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Added the file encoding from the OP (was it edited?) and minor edits for clarity.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1204245</root_node>
+<parent_node field_name="parent_node">1204245</parent_node>
+<thread id="1204245">
+<node id="1204249"/>
+<node id="1204250"><node id="1204253"><node id="1204256"><node id="1204259"><node id="1204264"/>
+</node>
+</node>
+<node id="1204257"/>
+<node id="1204258"/>
+</node>
+</node>
+<node id="1204251"><node id="1204255"><node id="1204268"/>
+</node>
+</node>
+<node id="1204252"><node id="1204254"/>
+</node>
+<node id="1204260"/>
+<node id="1204261"/>
+<node id="1204265"/>
+<node id="1204266"/>
+</thread></node>

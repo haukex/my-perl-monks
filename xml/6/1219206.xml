@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1219206" title="Name for what a coderef is pointing at" created="2018-07-24 19:01:38" updated="2018-07-24 19:01:38" _doctext_mode="strict"><type id="115">perlquestion</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;So I have this code (&lt;c&gt;sub refto&lt;/c&gt;), it seems to work fine, but I feel like I'm missing a utility function somewhere - core modules very much preferred - that does this without me having to fall back on [doc://B]. I've checked [doc://Scalar::Util] and [doc://Symbol]. I'm probably just having a dense moment - does anyone happen to know off the top of their head?&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use B qw/svref_2object/;
+sub refto {
+	my $ref = shift;
+	my $gv = svref_2object($ref)-&gt;GV;
+	return $gv-&gt;STASH-&gt;NAME . '::' . $gv-&gt;NAME;
+}
+
+sub foo {}
+sub Foo::Bar::blah { }
+
+print refto(\&amp;foo), "\n";             # prints "main::foo"
+print refto(\&amp;Foo::Bar::blah), "\n";  # prints "Foo::Bar::blah"
+print refto(sub{}), "\n";             # prints "main::__ANON__"
+&lt;/c&gt;
+&lt;p&gt;Background: I am storing code references in a table and want to give each one a sensible name. For &lt;c&gt;__ANON__&lt;/c&gt; code refs, I'll probably append the address to make them unique.&lt;/p&gt;
+</doctext>
+<thread id="1219206">
+<node id="1219212"><node id="1219233"><node id="1219245"/>
+</node>
+</node>
+</thread></node>

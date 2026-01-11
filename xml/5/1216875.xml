@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1216875" title="Re: GLOB function" created="2018-06-18 14:23:25" updated="2018-06-18 14:23:25" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;The [doc://glob] function has issues, see [id://1206848]. But if your pattern is always going to be the fixed string you showed, without variables interpolated into the string, then it's probably ok in this case.&lt;/p&gt;
+&lt;p&gt;When you say &lt;i&gt;"files with unique names"&lt;/i&gt;, I'm going to assume you mean basenames (the filename without the path), but I'm also guessing that what you need in &lt;c&gt;@filelist&lt;/c&gt; is still the full filename, so that you can properly open the files. Also, by &lt;i&gt;"latest updated/created"&lt;/i&gt;, I'm guessing you mean the mtime (see also [man://stat;2|stat(2)]).&lt;/p&gt;
+&lt;p&gt;You could use a hash; here I'm using the basename as the key, and each value is an anonymous array where the first element is the full filename and the second element is the mtime. To see how it works, uncomment the "&lt;c&gt;# Debug&lt;/c&gt;" lines.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+#use Data::Dump; # Debug
+use File::Basename qw/fileparse/;
+use File::stat;
+
+my %filelist;
+for my $file (glob '/user/*/ws/*/BLK_*/*.txt') {
+	my $bn = fileparse($file);
+	my $mtime = stat($file)-&gt;mtime;
+	#dd $file, $bn, $mtime; # Debug
+	$filelist{$bn} = [$file,$mtime]
+		unless $filelist{$bn} &amp;&amp; $filelist{$bn}[1]&gt;$mtime;
+}
+#dd \%filelist; # Debug
+my @filelist = sort map {$_-&gt;[0]} values %filelist;
+#dd \@filelist; # Debug
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1216854</root_node>
+<parent_node field_name="parent_node">1216854</parent_node>
+<thread id="1216854">
+<node id="1216858"/>
+<node id="1216875"><node id="1216912"><node id="1216918"><node id="1216924"><node id="1216958"/>
+</node>
+<node id="1216948"><node id="1216957"/>
+</node>
+</node>
+<node id="1216925"><node id="1216926"><node id="1216966"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1216952"/>
+</thread></node>

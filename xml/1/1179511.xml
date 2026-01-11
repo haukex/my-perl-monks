@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1179511" title="debug output from TODO with Test::More" created="2017-01-13 09:40:28" updated="2017-01-13 09:40:28" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1130276">1nickt</author>
+<doctext field_name="doctext">&lt;P&gt;
+Hi all,
+&lt;/P&gt;
+&lt;p&gt;
+I'm looking for techniques to provide debug output from a &lt;c&gt;TODO&lt;/c&gt; test running with [mod://Test::More]. 
+&lt;/p&gt;
+&lt;p&gt;
+What I want to do is output an additional message when a &lt;c&gt;TODO&lt;/c&gt; test starts passing, to remind me to take some action. I can get the message to print with &lt;c&gt;diag()&lt;/c&gt; when running in verbose mode, but not otherwise.
+&lt;c&gt;
+use Test::More tests =&gt; 2;
+
+TODO: {
+    local $TODO = ' ';
+    is(1,1,'Inside') and diag 'In';
+}
+
+is(1,1,'Outside') and diag 'Out';
+&lt;/c&gt;
+Output under verbose:
+&lt;c&gt;
+$ prove -lrv foo.t
+foo.t .. 
+1..2
+ok 1 - Inside # TODO  
+# In
+ok 2 - Outside
+# Out
+ok
+All tests successful.
+
+Test Summary Report
+-------------------
+foo.t (Wstat: 0 Tests: 2 Failed: 0)
+  TODO passed:   1
+Files=1, Tests=2,  0 wallclock secs ( 0.02 usr  0.00 sys +  0.01 cusr  0.00 csys =  0.03 CPU)
+Result: PASS
+&lt;/c&gt;
+Output without verbose:
+&lt;c&gt;
+$ prove -lr foo.t
+foo.t .. 1/2 # Out
+foo.t .. ok   
+All tests successful.
+
+Test Summary Report
+-------------------
+foo.t (Wstat: 0 Tests: 2 Failed: 0)
+  TODO passed:   1
+Files=1, Tests=2,  0 wallclock secs ( 0.02 usr  0.00 sys +  0.02 cusr  0.00 csys =  0.04 CPU)
+Result: PASS
+&lt;/c&gt;
+I know that &lt;c&gt;Test::More&lt;/c&gt; clones STDOUT and STDERR and other black magic ... but is there any way to accomplish what I want?
+&lt;/p&gt;
+&lt;p&gt;
+Thanks in advance!
+&lt;/p&gt;
+&lt;small&gt;
+&lt;p&gt;
+Note:
+&lt;ul&gt;
+&lt;li&gt;The problem is compounded when the order of tests is reversed, as the &lt;c&gt;diag()&lt;/c&gt; messages and test results seem to print out of order, under verbose:
+&lt;c&gt;
+use Test::More tests =&gt; 3;
+
+is(1,1,'Outside') and diag 'Out';
+
+TODO: {
+    local $TODO = ' ';
+    is(1,1,'Inside') and diag 'In';
+}
+
+is(1,1,'Back Outside') and diag 'Out Again';
+&lt;/c&gt;
+Output without verbose:
+&lt;c&gt;
+$ prove -lr foo.t
+foo.t .. 1/3 # Out
+# Out Again
+foo.t .. ok   
+All tests successful.
+&lt;/c&gt;
+Output with verbose:
+&lt;c&gt;
+$ prove -lrv foo.t
+foo.t .. 
+1..3
+ok 1 - Outside
+ok 2 - Inside # TODO  
+# In
+ok 3 - Back Outside
+# Out
+# Out Again
+ok
+All tests successful.
+&lt;/c&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/p&gt;
+&lt;/small&gt;
+&lt;br&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1130276"&gt;
+&lt;i&gt;The way forward always starts with a minimal test.&lt;/i&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<thread id="1179511">
+<node id="1179515"><node id="1179518"><node id="1179519"/>
+</node>
+</node>
+<node id="1179530"><node id="1179543"><node id="1179549"/>
+</node>
+</node>
+<node id="1179533"><node id="1179538"><node id="1179542"><node id="1179548"><node id="1179551"><node id="1179552"><node id="1179556"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

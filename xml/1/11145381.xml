@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11145381" title="CGI::Session Cookies" created="2022-07-08 21:33:35" updated="2022-07-08 21:33:35" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="291323">JayBee</author>
+<doctext field_name="doctext">&lt;p&gt;Looks like there's change coming soon regarding cookies requiring "SameSite" to be defined, as I get a warning when I inspect (browser developer mode)&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Cookie “CGISESSID” does not have a proper “SameSite” attribute value. Soon, cookies without the “SameSite” attribute or with an invalid value will be treated as “Lax”. This means that the cookie will no longer be sent in third-party contexts. If your application depends on this cookie being available in such contexts, please add the “SameSite=None“ attribute to it. To know more about the “SameSite“ attribute, read https://developer.mozilla.org/docs/Web/HTTP/Headers/Set-Cookie/SameSite&lt;/i&gt;&lt;/p&gt;
+&lt;p&gt;
+Below is my test attempt to force "samesite" and "secured" values. This test sets the cookie, but my hash inserts do not take according to the browser Cookie manager plugin. Any thoughts on a better work around? Trying to stick with CGI::Session as it's server-side storage, though CGI::Cookie may have to be my next route.
+&lt;/p&gt;
+&lt;code&gt;
+use strict; use CGI ':standard';
+use CGI::Carp 'fatalsToBrowser';
+use CGI::Session;
+use Data::Dumper;
+
+my $CS=new CGI::Session(); $CS-&gt;expire('+1d');
+
+$CS-&gt;{_QUERY}-&gt;{'.cookies'}-&gt;{CGISESSID}-&gt;{samesite}='Lax';
+$CS-&gt;{_QUERY}-&gt;{'.cookies'}-&gt;{CGISESSID}-&gt;{secure}=1;
+
+print $CS-&gt;header();
+print start_html('Test');
+print Dumper($CS-&gt;{_QUERY}-&gt;{'.cookies'}-&gt;{CGISESSID});
+print end_html;
+&lt;/code&gt;
+
+&lt;p&gt; (Edit: add-on)
+While testing further and trying CGI::Cookie, I'm still not able to assign "SameSite" values, but I am able to set others (secure, httponly)
+&lt;/p&gt;
+&lt;code&gt;
+my $cookie=CGI::Cookie-&gt;new(
+  -name=&gt;$CS-&gt;name,
+  -value=&gt;$CS-&gt;id,
+  -samesite=&gt;'Lax', # (Lax, Strict, None) tested unsuccessfully
+  -secure=&gt;1,
+  -httponly=&gt;1
+);
+
+print header(-cookie=&gt;$cookie);
+&lt;/code&gt;</doctext>
+<thread id="11145381">
+<node id="11145385"><node id="11145403"/>
+</node>
+<node id="11145394"><node id="11145402"/>
+</node>
+</thread></node>

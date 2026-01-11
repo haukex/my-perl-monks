@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1231096" title="Re: Running local Perl from HTML" created="2019-03-10 15:26:38" updated="2019-03-10 15:26:38" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;you can't edit the table directly in the browser&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sure you can, JavaScript makes that possible. &lt;c&gt;&lt;plug type="shameless"&gt;&lt;/c&gt; It's even possible to run Perl instead of JS in the browser with [http://webperl.zero-g.net/|WebPerl]. &lt;c&gt;&lt;/plug&gt;&lt;/c&gt;&lt;/p&gt;
+&lt;p&gt;I also agree with what [choroba] [id://1231093|said] about running a webserver locally. You can bind the webserver to your &lt;c&gt;localhost&lt;/c&gt; IP, and if you wanted to play it extra safe (like on a multi-user machine), you could use HTTPS and pass an access token.&lt;/p&gt;
+&lt;p&gt;The following uses [mod://Mojolicious] to serve up a HTML file, injecting some JavaScript in the process. This JavaScript reacts to clicks on &lt;c&gt;&lt;td&gt;&lt;/c&gt; and &lt;c&gt;&lt;th&gt;&lt;/c&gt; elements, allowing you to edit their text, and then it immediately &lt;c&gt;POST&lt;/c&gt;s the modified HTML back to the server, which then rewrites the HTML file with what the browser sent. This is admittedly not the most elegant way to go about it, but it should work. Note it only supports one client at a time: although the JS makes sure to only send one request at a time, if two browser windows were to be open and submit requests at the same time, one of the changes would get lost.&lt;/p&gt;
+&lt;readmore title="code"&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use Mojolicious::Lite;
+use Mojo::Util qw/md5_sum/;
+use Mojo::DOM;
+use File::Replace 'replace3';
+
+# Start me with: morbo -l https://localhost:3000/ htmltbledit.pl
+my $HTMLFILE = '/tmp/test.html';
+
+# ##### For Demo only: Write a default HTML file #####
+if (!-e $HTMLFILE) {
+	open my $fh, '&gt;:raw:encoding(UTF-8)', $HTMLFILE or die $!;
+	print $fh &lt;&lt;'END_HTML';
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+	&lt;title&gt;Hello, World!&lt;/title&gt;
+	&lt;style&gt;
+		table { border-collapse: collapse; }
+		table, th, td { border: 1px solid black; }
+		th, td { padding: 0.1em 0.4em; }
+	&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;table border="1"&gt;&lt;tbody&gt;
+&lt;tr&gt; &lt;th&gt;Foo&lt;/th&gt;   &lt;th&gt;Bar&lt;/th&gt;  &lt;th&gt;Quz&lt;/th&gt;   &lt;/tr&gt;
+&lt;tr&gt; &lt;td&gt;Hello&lt;/td&gt; &lt;td&gt;Perl&lt;/td&gt; &lt;td&gt;World&lt;/td&gt; &lt;/tr&gt;
+&lt;tr&gt; &lt;td&gt;123&lt;/td&gt;   &lt;td&gt;456&lt;/td&gt;  &lt;td&gt;789&lt;/td&gt;   &lt;/tr&gt;
+&lt;/tbody&gt;&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+END_HTML
+	close $fh;
+}
+
+# ##### Authentication Stuff (optional) #####
+my $TOKEN = md5_sum(rand(1e15).time);
+hook before_server_start =&gt; sub {
+	my ($server, $app) = @_;
+	print "URL with Token: ", $_-&gt;query(token=&gt;$TOKEN), "\n"
+		for map {Mojo::URL-&gt;new($_)} @{$server-&gt;listen};
+};
+under sub {
+	my $c = shift;
+	return 1 if ($c-&gt;param('token')//'') eq $TOKEN;
+	$c-&gt;render(text =&gt; 'Bad token!', status =&gt; 403);
+	return undef;
+};
+
+# ##### JS Code #####
+# note: the jQuery JS could also be saved locally
+my $JSCODE = &lt;&lt;'END_JSCODE';
+&lt;script src="https://code.jquery.com/jquery-3.3.1.min.js"
+	integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+	crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script&gt;
+$(function() {
+	var requestInProgress = false;
+	$('th, td').click(function() {
+		if (requestInProgress) return;
+		var newtxt = prompt("Foo", $(this).text() );
+		if ( newtxt==null ) return;
+		$(this).text( newtxt );
+		requestInProgress = true;
+		$.ajax({
+			method: 'POST', url: 'save?token=&lt;&lt;&lt;TOKEN&gt;&gt;&gt;',
+			contentType: 'text/plain', data: document.body.innerHTML,
+			dataType: 'text',
+		})
+		.done(function(data) { console.log(data) })
+		.fail(function(jqXHR, textStatus, errorThrown) {
+			alert("Error when saving: "+textStatus+"\n"+errorThrown);
+		})
+		.always(function() { requestInProgress = false; });
+	});
+});
+&lt;/script&gt;
+END_JSCODE
+$JSCODE=~s/&lt;&lt;&lt;TOKEN&gt;&gt;&gt;/$TOKEN/g;
+
+# ##### Request Handling Stuff #####
+get '/' =&gt; sub { # read the file and inject our JavaScript
+	my $c = shift;
+	open my $fh, '&lt;:raw:encoding(UTF-8)', $HTMLFILE or die $!;
+	my $dom = Mojo::DOM-&gt;new(do { local $/; &lt;$fh&gt; });
+	close $fh;
+	$dom-&gt;at('head')-&gt;append_content($JSCODE);
+	$c-&gt;render(text =&gt; $dom);
+};
+# NOTE this does not handle multiple requests at once. The JS tries to
+# prevent this, but it can still happen if there are multiple clients.
+post '/save' =&gt; sub { # rewrite the HTML file
+	my $c = shift;
+	my ($ifh,$ofh,$rpl) = replace3($HTMLFILE, ':raw:encoding(UTF-8)');
+	my $dom = Mojo::DOM-&gt;new(do { local $/; &lt;$ifh&gt; });
+	# Firefox apparently inserts blank lines here?? Remove them...
+	( my $newbody = $c-&gt;req-&gt;body ) =~ s/\n\K\n+\z//;
+	$dom-&gt;at('body')-&gt;content($newbody);
+	print $ofh $dom-&gt;to_string;
+	$rpl-&gt;finish;
+	$c-&gt;render(text=&gt;'saved successfully');
+};
+
+app-&gt;start;
+&lt;/c&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Disclaimer: [mod://File::Replace] is one of my modules too.&lt;/p&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1231092</root_node>
+<parent_node field_name="parent_node">1231092</parent_node>
+<thread id="1231092">
+<node id="1231093"/>
+<node id="1231094"/>
+<node id="1231095"/>
+<node id="1231096"><node id="1231112"/>
+</node>
+<node id="1231123"/>
+</thread></node>

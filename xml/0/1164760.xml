@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1164760" title="Re: Hash key &amp; foreach" created="2016-06-02 09:12:29" updated="2016-06-02 09:12:29" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi Anonymous,&lt;/p&gt;
+&lt;p&gt;Have a look at "hashes of hashes" in [doc://perldsc], for example:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my @routers = ( "R1", "R2", "R3" );
+my %if = (
+	R1 =&gt; { R1R0  =&gt; 1, R1R6  =&gt; 2, },
+	R2 =&gt; { R2R0  =&gt; 3, R2R6  =&gt; 1, },
+	R3 =&gt; { R3R61 =&gt; 2, R3R62 =&gt; 3, },
+);
+
+for my $r (@routers) {
+	for my $i (keys %{ $if{$r} }) {
+		print "Router $r Interface $i\n";
+	}
+}
+
+__END__
+
+Router R1 Interface R1R0
+Router R1 Interface R1R6
+Router R2 Interface R2R0
+Router R2 Interface R2R6
+Router R3 Interface R3R61
+Router R3 Interface R3R62
+&lt;/c&gt;
+&lt;p&gt;Alternatively, if you're stuck with the structure of the &lt;c&gt;%interfaces&lt;/c&gt; hash, and the keys are always named beginning with the router's ID, you could use [doc://grep]:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my @routers = ( "R1", "R2", "R3" );
+my %interfaces =  (
+	R1R0  =&gt; 1, R1R6  =&gt; 2,
+	R2R0  =&gt; 3, R2R6  =&gt; 1,
+	R3R61 =&gt; 2, R3R62 =&gt; 3,
+);
+
+for my $r (@routers) {
+	my @ifs = grep {/^\Q$r\E\D/} keys %interfaces;
+	for my $i (@ifs) {
+		print "Router $r Interface $i\n";
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1164757</root_node>
+<parent_node field_name="parent_node">1164757</parent_node>
+<thread id="1164757">
+<node id="1164760"><node id="1164834"/>
+</node>
+</thread></node>

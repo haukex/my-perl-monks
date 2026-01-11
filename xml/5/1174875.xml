@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1174875" title="Re: moving from mac to PC (updated!)" created="2016-10-28 03:41:21" updated="2016-10-28 03:41:21" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [flieckster],&lt;/p&gt;
+&lt;p&gt;For portable filename handling, I recommend the core module [doc://File::Spec], or from CPAN [mod://Path::Class]:&lt;/p&gt;
+&lt;c&gt;
+use Data::Dumper;
+$Data::Dumper::Useqq=1;
+$Data::Dumper::Terse=1;
+
+use File::Spec::Functions qw/catdir catpath/;
+
+print Dumper( catdir('','photorepos','Perl','Mother','WorkLoad') );
+# the following volume spec is ignored in *NIX
+print Dumper( catpath('C:',
+	catdir('','photorepos','Perl','Mother','WorkLoad')) );
+
+use Path::Class qw/file dir/;
+
+print Dumper( dir('C:\\')-&gt;subdir('photorepos')-&gt;subdir('Perl')
+	-&gt;subdir('Mother')-&gt;subdir('WorkLoad').'' );
+
+my $dir = dir('C:\\','photorepos','Perl','Mother','WorkLoad');
+print "Path: ", Dumper( "$dir" );
+print $dir-&gt;is_absolute ? "Is Absolute\n" : "Is Relative\n";
+print "Volume: ", $dir-&gt;volume, "\n";
+print "Dir List: ",Dumper( [$dir-&gt;dir_list] );
+&lt;/c&gt;
+&lt;p&gt;I admit I haven't worked with volume specs in either module, &lt;strike&gt;and I don't have a Windows machine handy at this moment, so the above may need some tweaking in that respect.&lt;/strike&gt;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update 2016-10-29:&lt;/b&gt; I tested this on a Windows machine and apparently, in [doc://File::Spec], the volume argument to &lt;c&gt;catpath&lt;/c&gt; needs to be &lt;c&gt;'C:'&lt;/c&gt;, not just &lt;c&gt;'C'&lt;/c&gt;, while in [doc://Path::Class], the volume needs to be specified as &lt;c&gt;'C:\\'&lt;/c&gt; for things to work properly (unfortunately it seems neither of these points are mentioned in the docs). I updated the above code accordingly and added some more output. The [doc://Path::Class] code does not work the same under Linux as under Windows: since in Linux "&lt;c&gt;C:\&lt;/c&gt;" is a valid name for a directory, that path component is treated like just another regular directory. Here are the outputs:&lt;/p&gt;
+&lt;c&gt;
+# Windows
+"\\photorepos\\Perl\\Mother\\WorkLoad"
+"C:\\photorepos\\Perl\\Mother\\WorkLoad"
+"C:\\photorepos\\Perl\\Mother\\WorkLoad"
+Path: "C:\\photorepos\\Perl\\Mother\\WorkLoad"
+Is Absolute
+Volume: C:
+Dir List: ["", "photorepos", "Perl", "Mother", "WorkLoad"]
+
+# Linux
+"/photorepos/Perl/Mother/WorkLoad"
+"/photorepos/Perl/Mother/WorkLoad"
+"C:\\/photorepos/Perl/Mother/WorkLoad"
+Path: "C:\\/photorepos/Perl/Mother/WorkLoad"
+Is Relative
+Volume: 
+Dir List: ["C:\\", "photorepos", "Perl", "Mother", "WorkLoad"]
+&lt;/c&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1174864</root_node>
+<parent_node field_name="parent_node">1174864</parent_node>
+<thread id="1174864">
+<node id="1174865"><node id="1174866"><node id="1174873"><node id="1174874"><node id="1174910"><node id="1174937"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1174872"/>
+<node id="1174875"><node id="1174891"><node id="1174902"><node id="1174905"/>
+</node>
+</node>
+</node>
+</thread></node>

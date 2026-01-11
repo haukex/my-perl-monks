@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1173708" title="How bad is $SIG{__DIE__} really?" created="2016-10-11 05:59:06" updated="2016-10-11 05:59:06" _doctext_mode="strict"><type id="115">perlquestion</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Fellow Monks,&lt;/p&gt;
+&lt;p&gt;The thread [id://1173661] got me thinking about this. The documentation of [doc://%SIG|&lt;c&gt;$SIG{__DIE__}&lt;/c&gt;] says this:&lt;/p&gt;
+&lt;blockquote&gt;Having to even think about the &lt;c&gt;$^S&lt;/c&gt; variable in your exception handlers is simply wrong. &lt;c&gt;$SIG{__DIE__}&lt;/c&gt; as currently implemented invites grievous and difficult to track down errors. Avoid it and use an &lt;c&gt;END{}&lt;/c&gt; or CORE::GLOBAL::die override instead.&lt;/blockquote&gt;
+&lt;p&gt;That exact paragraph has been present in [doc://perlvar] since 1999, and although it sounds like a pretty dire warning, currently it's at the bottom of that section of documentation. I've seen &lt;c&gt;$SIG{__DIE__}&lt;/c&gt; used in lots of places, and I've used it myself a few times, mostly to rewrite the [doc://die] message and add additional information, and sometimes to send error messages to [doc://Sys::Syslog|syslog] as well. Although the code seems to work fine, now I'm wondering about that. Is &lt;c&gt;$SIG{__DIE__}&lt;/c&gt; really as bad as the documentation says and should I be avoiding it for these uses? As always, your wisdom would be appreciated.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Some examples of how I've used &lt;c&gt;$SIG{__DIE__}&lt;/c&gt;:&lt;/p&gt;
+&lt;c&gt;
+local $SIG{__DIE__} = sub { die "[".gmtime." UTC] (PID $$) FATAL ".shift };
+# - OR - #
+for my $i (0..10) {
+    local $SIG{__DIE__} = sub { my $e = shift; $e=~s/\.?\n?$//; die "$e (item $i)\n" };
+}
+# - OR - #
+local $SIG{__DIE__} = sub { chomp(my $m = shift); syslog('err','Error: %s',$m) };
+&lt;/c&gt;
+&lt;p&gt;What say you, have I sinned?&lt;/p&gt;
+&lt;p&gt;P.S. I should say that I am aware of the issues of how &lt;c&gt;$SIG{__DIE__}&lt;/c&gt; interacts with [doc://eval] and that specifically hasn't been a problem for me so far. I'm asking mostly about the other, more general, warning in the documentation I quoted above.&lt;/p&gt;
+&lt;p&gt;Thanks,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<thread id="1173708">
+<node id="1173710"><node id="1174766"/>
+</node>
+<node id="1173711"/>
+<node id="1173726"><node id="1173788"><node id="1173829"/>
+</node>
+</node>
+<node id="1173729"/>
+<node id="1174765"/>
+</thread></node>

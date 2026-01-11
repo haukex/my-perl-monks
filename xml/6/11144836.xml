@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11144836" title="substr out of str error - but why?" created="2022-06-17 20:19:31" updated="2022-06-17 20:19:31" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="961">Anonymous Monk</author>
+<doctext field_name="doctext">Hello fellow monks!&lt;br&gt; 
+
+I keep trying to understand why I am getting an exception error although it does not seem to be some kind of mistake. So, I have a script that is reading a file and storing some number ranges, which I will use to re-structure a string. &lt;br&gt;
+Initial string is something like:&lt;br&gt;
+
+&lt;code&gt;
+PEGYNDRQAVNGSFYKLTFAPTFKVGSIGDFFSRPEIRFYTSWMDWSKKLNNYA
+......................................................
+&lt;/code&gt;&lt;br&gt;
+
+and, with my script, I will replace the '.' with other characters. The script seems to stumble upon an error in this chunk:
+&lt;code&gt;
+while ($rest=~/\&lt;REGION seq\_beg\=\"(\d+)\"\s+pdb\_beg\=\"\d+\"\s+seq\_end\=\"(\d+)\"\s+pdb\_end\=\"\d+\"\s+type\=\"(\w+)\"\/\&gt;/mg)
+{
+	$start=$1;
+	$end=$2;
+	$type=$3;
+
+	$TM_part_to_store = "$start-$end";
+	
+	$length_part="$start-$end";
+
+	if($type==1)
+	{ 
+		substr($topo_initial, ($start-1), ($end-$start+1), ($side1 x ($end-$start+1)));
+	}
+
+	elsif($type==2)
+	{ 
+		substr($topo_initial, ($start-1), ($end-$start+1), ($opposite{$side1} x ($end-$start+1)));
+	}
+
+	elsif($type eq 'B')
+	{ 
+		push @all_TMs_line, $TM_part_to_store; 
+	}
+
+	else
+	{ 
+		substr($topo_initial, ($start-1), ($end-$start+1), ('U' x ($end-$start+1)));
+	}
+}
+&lt;/code&gt;
+
+&lt;br&gt;
+where I am getting the info I need and change the '.' accordingly. For debugging, I made the script print the string length and each &lt;code&gt;$start&lt;/code&gt; and &lt;code&gt;$end&lt;/code&gt;, to see which substring is out of bounds, in the form of &lt;code&gt;string length &lt;TAB&gt; range&lt;/code&gt;&lt;br&gt;
+
+Weirdly enough, in the string that it fails, which has a length of &lt;code&gt;413&lt;/code&gt; characters, the debugging prints the following:&lt;br&gt;
+
+&lt;code&gt;
+413     1-6
+413     7-15
+413     16-34
+413     35-46
+413     47-53
+413     54-67
+413     68-83
+413     84-85
+413     86-95
+413     96-112
+413     113-118
+413     119-133
+413     134-142
+413     143-153
+413     154-160
+413     161-174
+413     175-181
+413     182-186
+413     187-193
+413     194-217
+413     218-224
+413     225-237
+413     238-244
+413     245-266
+413     267-273
+413     274-282
+413     283-290
+413     291-304
+413     305-311
+413     312-320
+413     321-328
+413     329-347
+413     348-355
+413     356-369
+substr outside of string at myscript.pl
+&lt;/code&gt;
+&lt;br&gt;
+As you can see, for some weird reason, and although my string's length is 413 chars and there are more ranges after &lt;code&gt;356-369&lt;/code&gt;, it exits with this error.&lt;br&gt;
+
+Any ideas?</doctext>
+<reputation field_name="reputation">7</reputation>
+<thread id="11144836">
+<node id="11144838"/>
+<node id="11144840"/>
+<node id="11144842"/>
+<node id="11144845"/>
+</thread></node>

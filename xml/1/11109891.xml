@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11109891" title="Re: curious behavior: why does it do this?" created="2019-12-09 20:33:05" updated="2019-12-09 20:33:05" _doctext_mode="lenient"><type id="11">note</type>
+<author id="438862">perl-diddler</author>
+<doctext field_name="doctext">One thing I noted that seems a bit perverse (or wrong). Is how I'm printing out the numbers 08 and 09, which under perl would fail as numbers.  My print routine, &lt;code&gt;P&lt;/code&gt; looks at what it is printing for list members and automatically quotes non-numeric entities, while not quoting numbers.  So is it wrong to leave out those quotes around 08 and 09?  I shouldn't feel too horrible, as &lt;code&gt;Scalar::Util&lt;/code&gt;'s function "&lt;code&gt;looks_like_number&lt;/code&gt;" also think 08/09 are numbers -- as does perl itself:
+&lt;code&gt;
+&gt; tperl
+use Scalar::Util qw(looks_like_number);
+for my $i ("00".."10") {
+P "%s(%d) %s like a number", "$i", "$i", looks_like_number($i) ? "looks":"does not look";
+}'
+00(0) looks like a number
+01(1) looks like a number
+02(2) looks like a number
+03(3) looks like a number
+04(4) looks like a number
+05(5) looks like a number
+06(6) looks like a number
+07(7) looks like a number
+08(8) looks like a number
+09(9) looks like a number
+10(10) looks like a number
+&lt;/code&gt;
+
+So nothing about invalid octal constants from perl.  ... *Ouch*, on a whim, I tried inserting a 0 before the 10, thinking my list iteration _might_ stop at 8, I.e.:
+&lt;code&gt;
+for my $i ("00".."010") {...
+&lt;/code&gt;
+
+I got an enumeration up through 999.  Another unexpected result!  Or is that really what others expected?  &lt;p&gt;
+Perhaps as a nod to sanity, using &lt;code&gt;010&lt;/code&gt; (with no quotes) as an end-value did end at 8, but the entire sequence was numified (with the leading 0 missing):
+&lt;code&gt;
+0(0) looks like a number
+1(1) looks like a number
+2(2) looks like a number
+3(3) looks like a number
+4(4) looks like a number
+5(5) looks like a number
+6(6) looks like a number
+7(7) looks like a number
+8(8) looks like a number
+&lt;/code&gt;
+</doctext>
+<root_node field_name="root_node">1226434</root_node>
+<parent_node field_name="parent_node">1226434</parent_node>
+<thread id="1226434">
+<node id="1226435"><node id="1226440"/>
+</node>
+<node id="1226437"><node id="1226438"><node id="1226439"/>
+<node id="1226443"/>
+<node id="1226451"><node id="1226464"><node id="1226478"><node id="1226532"/>
+</node>
+</node>
+<node id="1226474"/>
+</node>
+</node>
+<node id="1226446"/>
+</node>
+<node id="1226535"/>
+<node id="11109891"><node id="11109898"/>
+</node>
+</thread></node>

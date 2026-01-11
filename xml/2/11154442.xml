@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11154442" title="Re^2: Why are these undefs different?" created="2023-09-14 02:16:35" updated="2023-09-14 02:16:35" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Out of curiosity, why does this still work&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;My understanding of [mod://autovivification] is that by default it doesn't prevent the dereferencing, it prevents the creation of the new refs (= the autovivification). Compare:&lt;/p&gt;
+&lt;c&gt;
+$ perl -MData::Dump -e 'my $x; $x-&gt;[0]-&gt;{"aaa"}; dd $x'
+[{}]
+$ perl -MData::Dump -M-autovivification -e \
+      'my $x; $x-&gt;[0]-&gt;{"aaa"}; dd $x'
+undef
+&lt;/c&gt;
+&lt;p&gt;So in the second case &lt;c&gt;$x&lt;/c&gt; was not autovivified to an arrayref containing a hashref. If you want the pragma to throw errors, you need to tell it:&lt;/p&gt;
+&lt;c&gt;
+$ perl -MData::Dump -M-autovivification=strict,fetch -e \
+      'my $x; $x-&gt;[0]-&gt;{"aaa"}; dd $x'
+Reference vivification forbidden at -e line 1.
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11154409</root_node>
+<parent_node field_name="parent_node">11154432</parent_node>
+<thread id="11154409">
+<node id="11154428"/>
+<node id="11154410"/>
+<node id="11154417"/>
+<node id="11154432"><node id="11154442"/>
+</node>
+</thread></node>

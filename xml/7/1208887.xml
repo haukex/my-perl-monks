@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1208887" title="Re: XML::XSLT v 50_5 error with xsl variables" created="2018-02-10 06:12:09" updated="2018-02-10 06:12:09" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;You didn't show any code, example input, or expected output. You did [id://1208708|say] &lt;i&gt;"I program for a corporation and its all propriety"&lt;/i&gt;, but that doesn't prevent you from constructing a simple [id://1177642|SSCCE] that reproduces the issue. I had to build one myself, and only did that because I happened to be curious. I was able to reproduce the issue you described with [mod://XML::XSLT]. Note that the latest non-developer release is now about 14 years old and the developer release 0.50_5 is ~5 years old.&lt;/p&gt;
+&lt;p&gt;I would recommend switching to [mod://XML::LibXML] and [mod://XML::LibXSLT], where the variables seem to work as expected.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXSLT;
+use XML::LibXML;
+
+my $source = XML::LibXML-&gt;load_xml( string =&gt; &lt;&lt;'END_XML' );
+&lt;foo&gt;
+	&lt;x one="Foo" two="Bar" /&gt;
+	&lt;x one="Quz" two="Quz" /&gt;
+&lt;/foo&gt;
+END_XML
+
+my $style_doc = XML::LibXML-&gt;load_xml(
+	string =&gt; &lt;&lt;'END_XSLT', no_cdata =&gt; 1 );
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet version="1.0"
+	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
+&lt;xsl:template match="/"&gt;
+&lt;bar&gt;
+	&lt;xsl:for-each select="foo/x"&gt;
+		&lt;xsl:variable name="name1" select="@one" /&gt;
+		&lt;xsl:variable name="name2" select="@two" /&gt;
+		&lt;xsl:if test="$name1 = $name2"&gt;
+			&lt;y&gt;&lt;xsl:value-of select="@one"/&gt;&lt;/y&gt;
+		&lt;/xsl:if&gt;
+	&lt;/xsl:for-each&gt;
+&lt;/bar&gt;
+&lt;/xsl:template&gt;
+&lt;/xsl:stylesheet&gt;
+END_XSLT
+
+my $xslt = XML::LibXSLT-&gt;new();
+my $stylesheet = $xslt-&gt;parse_stylesheet($style_doc);
+my $results = $stylesheet-&gt;transform($source);
+print $stylesheet-&gt;output_as_bytes($results);
+
+__END__
+
+&lt;?xml version="1.0"?&gt;
+&lt;bar&gt;&lt;y&gt;Quz&lt;/y&gt;&lt;/bar&gt;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1208650</root_node>
+<parent_node field_name="parent_node">1208650</parent_node>
+<thread id="1208650">
+<node id="1208654"><node id="1208708"/>
+</node>
+<node id="1208887"/>
+</thread></node>

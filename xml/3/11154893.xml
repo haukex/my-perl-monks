@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11154893" title="Re: Extracting /regex/mg in a while loop" created="2023-10-09 18:25:18" updated="2023-10-09 18:25:18" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Your Method #3 doesn't work because a &lt;c&gt;m//g&lt;/c&gt; regex with capture groups in list context returns a list of the substrings matched by any capturing parentheses in the regular expression, that is, &lt;c&gt;($1, $2...)&lt;/c&gt;, &lt;i&gt;repeated for each match&lt;/i&gt; (see [id://1215373|my node here]).&lt;/p&gt;
+&lt;c&gt;
+my @output = $x=~/(^A|^B)(.+)$/mg;
+print Dumper(\@output);
+# $VAR1 = ['A', ' data for A', 'B', ' data for b', 'A', ' data for A', ...
+&lt;/c&gt;
+&lt;p&gt;I would guess that in Method #2, the overhead of splitting the string into lines and then running a regex match on each of the lines (as opposed to a single regex iterating through a single string) might be what is causing the slowdown.&lt;/p&gt;
+&lt;p&gt;But I would address your comment in Method #1 about using names as follows, and this is the variation I might suggest in this case: named capture groups (see also [doc://perlre#Capture-groups|perlre]).&lt;/p&gt;
+&lt;c&gt;
+while ( $x =~ m{^ (?&lt;name&gt;A|B) (?&lt;data&gt;.+) $}xmg ) {
+	print "$+{name} method1 $+{data}\n"
+}
+&lt;/c&gt;
+&lt;p&gt;(There are of course plenty of other ways, such as [doc://perlop#\G-assertion|&lt;c&gt;m/\G.../gc&lt;/c&gt; parsing].)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11154892</root_node>
+<parent_node field_name="parent_node">11154892</parent_node>
+<thread id="11154892">
+<node id="11154893"/>
+<node id="11154896"/>
+<node id="11154897"><node id="11154899"><node id="11154902"/>
+</node>
+<node id="11154903"><node id="11154904"/>
+</node>
+<node id="11154909"><node id="11154920"/>
+</node>
+</node>
+</thread></node>

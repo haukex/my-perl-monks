@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1207018" title="Re^2: bullet proof SLURP file" created="2018-01-09 16:40:55" updated="2018-01-09 16:40:55" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;how about [doc://autodie]?&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Unfortunately, it seems [doc://autodie] does not cover [doc://readline], although it does cover [doc://read]:&lt;/p&gt;
+&lt;readmore title="Demo code"&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Data::Dump;
+
+package ReadFail {
+	use parent 'Tie::Handle::Base';
+	sub READLINE { $! = 1; return }
+	sub READ { $! = 1; return undef }
+}
+
+dd do {
+	use autodie;
+	open my $fh, '&lt;', 'mydata.txt';
+	$fh = ReadFail-&gt;new($fh);
+	local $/;
+	&lt;$fh&gt;;
+};
+
+eval {
+	open my $fh, '&lt;', 'mydata.txt' or die $!;
+	$fh = ReadFail-&gt;new($fh);
+	defined( my $data = do { local $/; &lt;$fh&gt; } ) or die $!;
+	close $fh or die $!;
+	dd $data;
+1 } or warn "caught: $@";
+
+eval {
+	use autodie;
+	open my $fh, '&lt;:raw', 'mydata.txt';
+	my $size = -s $fh;
+	$fh = ReadFail-&gt;new($fh);
+	read($fh, my $data, $size);
+	close $fh;
+	dd $data;
+1 } or warn "caught: $@";
+
+__END__
+
+()
+caught: Operation not permitted at rd2.pl line 23.
+caught: Can't read(GLOB(0x28a0888), &lt;UNDEF&gt;, 18): Operation not permitted at rd2.pl line 33
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1207003</root_node>
+<parent_node field_name="parent_node">1207013</parent_node>
+<thread id="1207003">
+<node id="1207009"><node id="1207014"><node id="1207017"/>
+<node id="1207024"/>
+</node>
+</node>
+<node id="1207013"><node id="1207018"/>
+</node>
+<node id="1207016"><node id="1207019"><node id="1207048"/>
+</node>
+</node>
+<node id="1207038"><node id="1207089"/>
+</node>
+</thread></node>

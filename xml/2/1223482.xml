@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1223482" title="Loop is not working" created="2018-10-03 15:07:39" updated="2018-10-03 15:07:39" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1223480">ozdemmer</author>
+<doctext field_name="doctext">HI, 
+
+&lt;p&gt; 
+I haven't used Perl in my life before, and in order to automatize my analysis, I need to use a Perl script. In this script, there is a loop (I hope it is the correct term!) and the script should run the analysis for each subject's folder I defined. However, it only ran it for the first  subject's folder and did not go to the second folder as it was defined. The script does not give any error that I could share here. So, I'll only share the script here and the message on the terminal when it ran the analysis for the 1st subject. Could you please suggest how to make this loop work? 
+Looking forward to hearing your suggestion!
+
+Thanks in advance. &lt;/p&gt;
+
+---- The script:
+&lt;code&gt;
+#!/usr/bin/perl
+
+# go to directory with subject-specific sub-directories
+cd .. #or die  "directory not changed!\n";
+opendir(DIR,".");
+
+@files = 
+
+ ("SubjectASD202","SubjectASD203");
+
+print "@files";
+
+
+
+#say something stupid and unnecessary
+print "\n Thanks, I'll do the rest for you, just wait a second. \n";
+
+
+$s = 0;
+
+foreach (@files)
+{
+
+	# do second level statistical analysis run by run
+	# go to the directory where the fsf-file for stats and post-stats is stored
+	chdir  "/mnt/hgfs/ExpAutism/Scripts";
+
+		
+	# create a copy of the fsf file 
+	#original file is needed as basis for all subjects: Level1Run1.fsf - specific file is being overwritten for each run:Level1Run1_spec.fsf 
+	use File::Copy;
+		#create string that will be used for foe-wildcard replacement
+		copy ("Level1Run1.fsf","Level1Run1_spec.fsf") or die "Copy failed";   
+	use Tie::File;
+		tie @array, 'Tie::File', "Level1Run1_spec.fsf" or die "arraying failed";
+	
+	# replace dummies for user and subject with specific values		
+	for (@array) {
+		#replace wildcards with specific titles of subjects
+		s/Subjectx/$files[$s]/g;
+			
+	}
+	untie @array;
+	print "working on the stats concerning $files[$s]\n";
+		
+	
+	`/usr/local/fsl/bin/feat Level1Run1_spec.fsf`;
+
+	$s=$s+1;
+}		
+	
+print "\n +++ DONE +++ \n";
+
+&lt;/code&gt;
+----
+ &lt;p&gt;
+The message while running the first subject's analysis: &lt;/p&gt;
+&lt;code&gt;
+SubjectASD202 SubjectASD203
+ Thanks, I'll do the rest for you, just wait a second. 
+working on the stats concerning SubjectASD202
+ &lt;/code&gt;
+
+&lt;p&gt; At the end, it only ran the analysis for the SubjectASD202 and did not run it for the SubjectASD203.  &lt;/p&gt;</doctext>
+<thread id="1223482">
+<node id="1223485"><node id="1223503"/>
+</node>
+<node id="1223486"/>
+<node id="1223488"><node id="1223494"><node id="1223498"/>
+<node id="1223499"/>
+<node id="1223501"><node id="1223506"/>
+</node>
+<node id="1223505"/>
+</node>
+</node>
+<node id="1223500"><node id="1223502"><node id="1223504"/>
+<node id="1223507"><node id="1223585"/>
+</node>
+</node>
+</node>
+</thread></node>

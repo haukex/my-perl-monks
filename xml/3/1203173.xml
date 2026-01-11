@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1203173" title="Re: Searching between two hashes" created="2017-11-11 05:35:23" updated="2017-11-11 05:35:23" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;A couple of notes:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;All three lists of &lt;c&gt;my&lt;/c&gt; variables are identical&lt;/li&gt;
+&lt;li&gt;The keys of the big &lt;c&gt;%hash&lt;/c&gt; are almost identical to the long &lt;c&gt;print $OUTPUT "..."&lt;/c&gt; (only two whitespace and capitalization differences - one of them is causing a bug in your code: in the hash it's &lt;c&gt;'Asset Application ID'&lt;/c&gt; but later you say &lt;c&gt;$$ref2{'Asset Application Id'}&lt;/c&gt;)&lt;/li&gt;
+&lt;li&gt;The last two &lt;c&gt;for&lt;/c&gt; loops are identical except for the variables being looped over (could be combined as &lt;c&gt;for (@output_array, @extras)&lt;/c&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;That's a lot of deduplication that could be done. In order to be able to test, I made a few changes to your code:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The &lt;c&gt;=&lt;/c&gt; vs &lt;c&gt;eq&lt;/c&gt; bugs noted by [AnomalousMonk] fixed&lt;/li&gt;
+&lt;li&gt;The precedence issue in &lt;c&gt;open ... || die&lt;/c&gt; fixed&lt;/li&gt;
+&lt;li&gt;Output code added&lt;/li&gt;
+&lt;li&gt;I changed &lt;c&gt;push @extras,\$ref;&lt;/c&gt; to &lt;c&gt;push @extras,$ref2;&lt;/c&gt; because that made more sense to me, although I'm not sure about it&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I admit I don't quite understand the logic going on in the loops over &lt;c&gt;@input_array&lt;/c&gt; and &lt;c&gt;@output_array&lt;/c&gt;, because they produce a lot of repeated output (more fitting variable names would also help), perhaps you want to use a hash for lookups instead of nested loops. In that case, perhaps you don't need to slurp all of &lt;c&gt;VHC-DVTPump.csv&lt;/c&gt; into memory, but could process it line-by-line.&lt;/p&gt;
+&lt;p&gt;But anyway, the main point I wanted to make was not to understand the logic for now, but to reduce the duplication and use [mod://Text::CSV] (also install [mod://Text::CSV_XS] for speed). I think in this case [mod://Text::CSV]'s &lt;c&gt;column_names&lt;/c&gt;, &lt;c&gt;getline_hr&lt;/c&gt;, and &lt;c&gt;print_hr&lt;/c&gt; are very useful. With some fake input data, the following produces the same output as your code modified as I described, hopefully it's a starting point:&lt;/p&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Text::CSV;
+
+my @COLUMNS = ("Asset Name","Asset Application ID","Serial Number",
+	"Asset Type","Activity Status","Business Status","Description",
+	"Primary Category","Category 1","Category 2","Category 3",
+	"Department 1","Department 2","Department 3","Department 4",
+	"Department 5","Department 6","Group 1","Group 2","Network ID 1",
+	"Tag Type 1","Tag Classification 1","Tag Protected 1",
+	"Tag Duress 1","Network ID 2","Tag Type 2",
+	"Tag Classification 2","Tag Protected 2","Tag Duress 2","Map ID",
+	"Gateway Group","X","Y","Z","NIST Certification Due Date",
+	"Rental Return Date","Escalation3","NIST Certificate",
+	"Escalation2","NIST Tag","ContactName","Escalation1",
+	"PM Completed","Rental In User","last column","EOL");
+
+sub read_csv {
+	my ($filename,$cols) = @_;
+	my $csv = Text::CSV-&gt;new({ binary=&gt;1, auto_diag=&gt;2 });
+	$csv-&gt;column_names($cols);
+	open my $fh, '&lt;', $filename or die "$filename: $!";
+	my $data = $csv-&gt;getline_hr_all($fh);
+	$csv-&gt;eof or $csv-&gt;error_diag;
+	close $fh;
+	return $data;
+}
+
+my $out_filename = 'output.csv';
+my $transfers = read_csv('transfers.csv', [qw/ MAC Serial ID /]);
+my $assets = read_csv('VHC-DVTPump.csv', \@COLUMNS);
+
+my @extra_assets;
+for my $trans (@$transfers) {
+	for my $asset (@$assets) {
+		if ( $$trans{'ID'} eq $$asset{'Asset Application ID'}
+		     &amp;&amp; $$asset{'Network ID 1'} eq '' ) {
+			$$asset{'Network ID 1'} = $$trans{'MAC'};
+		} else {
+			push @extra_assets, $asset;
+		}
+	}
+}
+
+my $out_csv = Text::CSV-&gt;new({ binary=&gt;1, auto_diag=&gt;2, eol=&gt;$/ }); 
+$out_csv-&gt;quote_char(''); # to make output identical (I'd remove this)
+$out_csv-&gt;column_names(@COLUMNS);
+open my $out_fh, '&gt;', $out_filename or die "$out_filename: $!";
+$out_csv-&gt;print($out_fh, \@COLUMNS);
+for my $asset (@$assets, @extra_assets) {
+	$out_csv-&gt;print_hr($out_fh, $asset);
+}
+close $out_fh;
+&lt;/c&gt;
+&lt;p&gt;By the way, my understanding is that your input files don't contain a header row, but your output file does? If that's not correct and your input file(s) also contain a header row, note that you could do away with the arrays of column names in the code entirely and use [mod://Text::CSV]'s &lt;c&gt;header&lt;/c&gt; function instead.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1203135</root_node>
+<parent_node field_name="parent_node">1203135</parent_node>
+<thread id="1203135">
+<node id="1203136"><node id="1203137"><node id="1203182"/>
+</node>
+</node>
+<node id="1203149"><node id="1203171"/>
+</node>
+<node id="1203173"/>
+</thread></node>

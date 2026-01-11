@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11135880" title="Re^3: Create sort function from a text file" created="2021-08-16 09:04:58" updated="2021-08-16 09:04:58" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I have a web interface where users can manage their own population of STB hardware. ... What I want to do is allow users to build their own custom sort statements which they can store in a text file.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This means you'd be giving your users the power to run &lt;i&gt;arbitrary&lt;/i&gt; Perl code under whatever user the webserver executes scripts as. So for example, if your web interface has access to a database, you're giving your users the power to access anything in that database that the web interface can, likely including other customer's records. [id://11135877|Here] you said:&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I maintain all instances of the interface&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;One safer alternative is to give your users a predefined selection of sort orderings. Regexes such as the ones below cover all the cases you showed here. If some other user has yet another custom naming scheme that these orderings don't match, or they want some other arbitrary sort order, then it'd be fairly straightforward for you to add a new set of regexes to the &lt;c&gt;%orderings&lt;/c&gt; hash. You would remain in control of the code that gets executed.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my @examples = (
+	[ 'Rack1-Unit2', 'Rack3-Unit1', 'Rack1-Unit1' ],
+	[ 'R2U3', 'R1U4', 'R10U1', 'R1U1' ],
+	[ 'R2-U3', 'R1-U4', 'R10-U1', 'R1-U1' ],
+);
+
+my $rackre = qr/R(?:ack)?(\d+)/i;
+my $unitre = qr/U(?:nit)?(\d+)/i;
+my %orderings = (
+	rackfirst =&gt; sub { ($a =~ $rackre)[0] &lt;=&gt; ($b =~ $rackre)[0]
+		or ($a =~ $unitre)[0] &lt;=&gt; ($b =~ $unitre)[0] },
+	unitfirst =&gt; sub { ($a =~ $unitre)[0] &lt;=&gt; ($b =~ $unitre)[0]
+		or ($a =~ $rackre)[0] &lt;=&gt; ($b =~ $rackre)[0] },
+);
+
+for my $ex (@examples) {
+	print "Input: @$ex\n";
+	for my $o (sort keys %orderings) {
+		my @sorted = sort {&amp;{$orderings{$o}}} @$ex;
+		print "$o: @sorted\n";
+	}
+}
+
+__END__
+
+Input: Rack1-Unit2 Rack3-Unit1 Rack1-Unit1
+rackfirst: Rack1-Unit1 Rack1-Unit2 Rack3-Unit1
+unitfirst: Rack1-Unit1 Rack3-Unit1 Rack1-Unit2
+Input: R2U3 R1U4 R10U1 R1U1
+rackfirst: R1U1 R1U4 R2U3 R10U1
+unitfirst: R1U1 R10U1 R2U3 R1U4
+Input: R2-U3 R1-U4 R10-U1 R1-U1
+rackfirst: R1-U1 R1-U4 R2-U3 R10-U1
+unitfirst: R1-U1 R10-U1 R2-U3 R1-U4
+&lt;/c&gt;
+&lt;p&gt;(Note a [wp://Schwartzian transform] could also be used to improve performance.)&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11135872</root_node>
+<parent_node field_name="parent_node">11135875</parent_node>
+<thread id="11135872">
+<node id="11135873"/>
+<node id="11135874"><node id="11135875"><node id="11135879"/>
+<node id="11135880"><node id="11135904"><node id="11135933"/>
+</node>
+<node id="11135950"><node id="11135952"><node id="11135957"><node id="11135958"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11135898"/>
+<node id="11135938"/>
+</node>
+</node>
+<node id="11135876"><node id="11135877"><node id="11135878"/>
+</node>
+</node>
+<node id="11135882"/>
+</thread></node>

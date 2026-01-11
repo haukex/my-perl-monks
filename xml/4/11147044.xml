@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11147044" title="Re: Recursive subroutines and closures" created="2022-09-20 21:50:56" updated="2022-09-20 21:50:56" _doctext_mode="lenient"><type id="11">note</type>
+<author id="461912">GrandFather</author>
+<doctext field_name="doctext">&lt;p&gt;Consider:&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+
+Outer(1);
+Inner(2);
+
+sub Outer {
+    my ($param) = @_;
+
+    sub Inner {
+        my ($innerVar) = @_;
+        print "In inner: $innerVar\n";
+    }
+
+    Inner($param);
+}
+&lt;/c&gt;
+&lt;p&gt;Prints:&lt;/p&gt;
+&lt;c&gt;
+In inner: 1
+In inner: 2
+&lt;/c&gt;
+&lt;p&gt;So maybe Inner isn't as encapsulated as you might hope? Now consider:&lt;/p&gt;
+&lt;c&gt;
+use strict;
+use warnings;
+
+Outer(1);
+Inner();
+Outer(1);
+
+sub Outer {
+    my ($param) = @_;
+
+    sub Inner {
+        print "In inner: $param\n";
+        ++$param;
+    }
+
+    Inner();
+}
+&lt;/c&gt;
+&lt;p&gt;Prints:&lt;/p&gt;
+&lt;c&gt;
+Variable "$param" will not stay shared at 11147042.pl line 12.
+In inner: 1
+In inner: 2
+In inner: 3
+&lt;/c&gt;
+&lt;p&gt;In this case Inner has closed over $param from the enclosing Outer scope with results that may not be quite what you expected! Note that the second call to Outer doesn't recreate the closure and that the copy of $param used by Inner is that used on the first call to Outer. There are times when this is exactly what you want to happen, but not very often. Placing Inner after Outer makes the code clearer to my eye and without actually closing over variables as in the second example, there doesn't seem to be much advantage in nesting Inner in Outer.&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-461912"&gt;
+Optimising for fewest key strokes only makes sense transmitting to Pluto or beyond
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">11147042</root_node>
+<parent_node field_name="parent_node">11147042</parent_node>
+<thread id="11147042">
+<node id="11147044"><node id="11147060"/>
+</node>
+<node id="11147045"/>
+<node id="11147048"><node id="11147059"/>
+</node>
+<node id="11147049"/>
+<node id="11147054"/>
+</thread></node>

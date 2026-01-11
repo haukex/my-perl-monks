@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1190356" title="MySQL AES Encryption with CBC mode" created="2017-05-15 23:04:05" updated="2017-05-15 23:04:05" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="291323">JayBee</author>
+<doctext field_name="doctext">&lt;p&gt;
+Trying to connect to DB to convert passwords to encrypt with AES in CBC mode (vs ECB)
+I've learned that I have to SET the SESSION before executing any SQL commands. So these two work when I attempt to do it with phpMyAdmin:
+&lt;/p&gt;
+&lt;code&gt;SET @@session.block_encryption_mode = 'aes-128-cbc';
+SELECT ID, HEX(AES_ENCRYPT(Password,'$key',RANDOM_BYTES(16))) FROM User WHERE 1;
+## OR 
+SET SESSION block_encryption_mode = 'aes-128-cbc';
+SELECT ID, HEX(AES_ENCRYPT(Password,'$key',RANDOM_BYTES(16))) FROM User WHERE 1;
+&lt;/code&gt;
+
+&lt;p&gt;
+but none will work when I attempt it though my script. Here's the basics:
+&lt;/p&gt;
+
+&lt;code&gt;
+use strict; use CGI ':standard';
+use DBI; use DBD::mysql;
+our ($sth,$dbh,%Set,@Out);
+
+&amp;DBCredentials; # assigns %Set;
+print header,start_html('test');
+
+
+DBRun("SET SESSION block_encryption_mode='aes-128-cbc';
+
+SELECT ID, HEX(AES_ENCRYPT(Password,'$Set{AESKey}',RANDOM_BYTES(16)))
+FROM User WHERE 1");
+while (my @ar=$sth-&gt;fetchrow_array){
+my $len=length($ar[1]); push @Out,"$ar[0]: L=$len -- $ar[1]&lt;br /&gt;\n";
+} &amp;DBEnd;
+
+print shift(@Out)."\n" while @Out;
+
+
+sub DBConnect { my $er;
+my $dsn='DBI:mysql:database='.$Set{DBName};
+$dbh=DBI-&gt;connect($dsn, $Set{DBUser}, $Set{DBPass}) || ($er=1);
+ if ($er){ myErr('DB Start Error'); }
+} ##DBConnect##
+
+sub DBRun { my $er; &amp;DBConnect;
+$sth=$dbh-&gt;prepare($_[0]) || ($er=1);
+$sth-&gt;execute || ($er=1) if !$er;
+if ($er){ myErr('DB Execute Error', $_[0]); }
+} ##DBRun##
+
+sub DBDo { my $er; &amp;DBConnect; $dbh-&gt;do($_[0]) || ($er=1);
+if ($DBI::err || $er){ myErr('DB Do Error', $_[0], $DBI::errstr);
+} $dbh-&gt;disconnect();
+} ##DBDo##
+
+sub DBEnd {$sth-&gt;finish; $dbh-&gt;disconnect;
+} ##DBEnd#
+&lt;/code&gt;
+
+&lt;p&gt;
+Not sure what this is exactly, but I've also tried adding Callbacks to the DBConnect portion, but that didn't work either:
+&lt;/p&gt;
+
+&lt;code&gt;
+sub DBConnect { my $er;
+my $DBCall={
+      'connect_cached.connected' =&gt; sub {
+          shift-&gt;do("SET SESSION block_encryption_mode='aes-128-cbc'");
+      }
+  };
+
+my $dsn='DBI:mysql:database='.$Set{DBName};
+$dbh=DBI-&gt;connect($dsn, $Set{DBUser}, $Set{DBPass}, { Callbacks =&gt; $DBCall }) || ($er=1);
+ if ($er){ myErr('DB Start Error'); }
+} ##DBConnect##
+&lt;/code&gt;
+
+&lt;p&gt;
+It all leads to an error being generated. My next solution would be to encrypt &amp; decrypt in perl module (prior to sending to mySQL), not sure that's such a great idea just yet.
+&lt;/p&gt;
+
+&lt;p&gt;Thanks in advance for your guidance.&lt;/p&gt;</doctext>
+<thread id="1190356">
+<node id="1190364"><node id="1190407"><node id="1190435"/>
+</node>
+</node>
+<node id="1190373"><node id="1190406"/>
+</node>
+</thread></node>

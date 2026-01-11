@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1194084" title="Re: Argument &quot;&quot; isn't numeric in division (updated)" created="2017-07-03 08:13:08" updated="2017-07-03 08:13:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Since you're checking &lt;c&gt;$divide_by&lt;/c&gt; for a true value ([id://11104607]), it's likely that &lt;c&gt;$data_to_sum[0]-&gt;[$c]&lt;/c&gt; is empty, as [LanX] pointed out (&lt;i&gt;Update before posting:&lt;/i&gt; and as you just discovered yourself). I just wanted to point out tip #4 from the [id://745674]: Use [doc://Data::Dumper] to see what the variables really contain &lt;strike&gt;(although personally I prefer [mod://Data::Dump]):&lt;/strike&gt;&lt;/p&gt;
+&lt;strike&gt;&lt;c&gt;
+use Data::Dump;
+dd $data_to_sum[0]-&gt;[$c], $divide_by;
+$data_to_sum[0]-&gt;[$c] /= $divide_by if $divide_by;
+print $data_to_sum[0]-&gt;[$c], "\n";
+__END__
+("", 123)
+0
+&lt;/c&gt;&lt;/strike&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; Actually, it turns out that using [mod://Data::Dump] in this case might confuse the issue more, since it has [https://github.com/gisle/data-dump/issues/16|an issue] that causes it to silence the warning in question. So in this case, I recommend [doc://Data::Dumper], and I would recommend turning on its &lt;c&gt;Useqq&lt;/c&gt; option (as it makes issues with control characters in the string easier to spot):&lt;/p&gt;
+&lt;c&gt;
+use Data::Dumper;
+$Data::Dumper::Useqq=1;
+print Dumper($data_to_sum[0]-&gt;[$c], $divide_by);
+$data_to_sum[0]-&gt;[$c] /= $divide_by if $divide_by;
+print $data_to_sum[0]-&gt;[$c], "\n";
+__END__
+$VAR1 = "";
+$VAR2 = 123;
+Argument "" isn't numeric in division (/) at ...
+0
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update 2019-08-17:&lt;/i&gt; Updated the link to "Truth and Falsehood".&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1194081</root_node>
+<parent_node field_name="parent_node">1194081</parent_node>
+<thread id="1194081">
+<node id="1194082"/>
+<node id="1194083"><node id="1194085"><node id="1194086"><node id="1194087"/>
+<node id="1194094"><node id="1194098"/>
+</node>
+</node>
+<node id="1195018"/>
+</node>
+</node>
+<node id="1194084"/>
+<node id="1194089"/>
+<node id="1194178"><node id="1194189"/>
+</node>
+</thread></node>

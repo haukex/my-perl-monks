@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1160746" title="Re: Daemon::Control pid-files" created="2016-04-17 17:21:00" updated="2016-04-17 17:21:00" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Hi [morgon],&lt;/p&gt;
+&lt;p&gt;[ikegami] already [id://1160691|said it], but in the module's source you can see that &lt;c&gt;do_stop&lt;/c&gt; is the only place [doc://unlink] is called on the PID file.&lt;/p&gt;
+&lt;p&gt;Taking a step back though: I understand that your process is something that just runs once briefly and then exits. Aside from the question as to whether you need a PID file in the first place (is your script called multiple times?) and whether you need to delete the PID file at all, I wouldn't really see the task you describe as a continually-running daemon - instead I might just set that up via [man://cron].&lt;/p&gt;
+&lt;p&gt;Is this something like "dvbdate" ([http://manpages.ubuntu.com/manpages/trusty/man1/dvbdate.1.html|1], [https://github.com/linuxstb/dvbtools/tree/master/dvbdate|2])? If so, that can be set up to run regularly in the [man://crontab;5|crontab] - which by the way also has a &lt;c&gt;@reboot&lt;/c&gt; directive for running things once on startup (haven't used that myself but it sounds pretty simple).&lt;/p&gt;
+&lt;p&gt;If you really want to use an init script (which has the advantage that it can be run immediately on boot and you can control the prerequisites), you could use [mod://Daemon::Control]'s ability to generate an init script for you, and then adapt that to suit your needs. For example, if I use the &lt;c&gt;get_init_file&lt;/c&gt; command on your script, I get something like this (edited for brevity):&lt;/p&gt;
+&lt;c&gt;
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          Time from DVB
+# Required-Start:    $syslog $remote_fs
+# Required-Stop:     
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+### END INIT INFO`
+if [ -x /tmp/timeset_daemon.pl ];
+then
+    /tmp/timeset_daemon.pl $1
+else
+    echo "Required program /tmp/timeset_daemon.pl not found!"
+    exit 1;
+fi
+&lt;/c&gt;
+&lt;p&gt;Then, just replace &lt;c&gt;/tmp/timeset_daemon.pl&lt;/c&gt; by whatever command sets the time from the DVB stick, and it'll be run once on boot (and on shutdown, but that shouldn't matter here). Another sample init script is shown in [https://www.debian-administration.org/article/28/Making_scripts_run_at_boot_time_with_Debian|this article], it also shows the usage of the &lt;c&gt;update-rc.d&lt;/c&gt; command. You could also teach that script to respect the &lt;c&gt;start|stop|status&lt;/c&gt; commands, but since your script isn't really a continually-running daemon, [mod://Daemon::Control] might not be the optimal way to do that. Or, you can slap a &lt;c&gt;while (1) { my_code_here; sleep($interval) }&lt;/c&gt; around your code and you've basically got a daemon.&lt;/p&gt;
+&lt;p&gt;I just recently started working with [http://chrony.tuxfamily.org/|chrony] to replace &lt;c&gt;ntpd&lt;/c&gt; and provide accurate time via a GPS receiver on a Raspberry Pi, and it really was much easier to set up than &lt;c&gt;ntpd&lt;/c&gt;. If you're looking into giving your RPi accurate time, then somehow feeding the DVB stick's time into &lt;c&gt;chrony&lt;/c&gt; might be something worth investigating.&lt;/p&gt;
+&lt;p&gt;Hope this helps,&lt;br&gt;-- Hauke D&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1160681</root_node>
+<parent_node field_name="parent_node">1160681</parent_node>
+<thread id="1160681">
+<node id="1160684"><node id="1160690"/>
+</node>
+<node id="1160691"/>
+<node id="1160706"><node id="1160724"><node id="1160733"><node id="1160747"><node id="1160805"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1160746"><node id="1160749"><node id="1160750"><node id="1160758"><node id="1160831"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>

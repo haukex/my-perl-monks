@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11144840" title="Re: substr out of str error - but why?" created="2022-06-18 00:09:32" updated="2022-06-18 00:09:32" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;In addition to what [hv] [id://11144838|said], especially [id://111088], &lt;b&gt;do not&lt;/b&gt; [id://11116478|parse XML with regular expressions] (at least your input looks like it's XML). Since you didn't show your input (&lt;c&gt;&lt;REGION&gt;&lt;/c&gt; tags) or the rest of your code (e.g. the &lt;c&gt;%opposite&lt;/c&gt; hash), it's really hard to guess where the problem might be coming from, but it might be one of those two things.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+
+my $xml = &lt;&lt;'EOT';
+&lt;root&gt;
+&lt;REGION seq_beg="1" pdb_beg="2"  seq_end="3"  pdb_end="4"  type="1"/&gt;
+&lt;REGION seq_beg="5" pdb_beg="6"  seq_end="7"  pdb_end="8"  type="2"/&gt;
+&lt;REGION seq_beg="9" pdb_beg="10" seq_end="11" pdb_end="12" type="3"/&gt;
+&lt;/root&gt;
+EOT
+my $topo_initial = "ABCDEFGHIJK";
+my $side1 = "x";
+my %opposite = ( x =&gt; "?" );
+
+my $dom = XML::LibXML-&gt;load_xml(string =&gt; $xml);
+for my $node ($dom-&gt;findnodes('//REGION')) {
+	my $offset = $node-&gt;{seq_beg} - 1;
+	my $length = $node-&gt;{seq_end} - $node-&gt;{seq_beg} + 1;
+	if ( $node-&gt;{type}==1 ) { 
+		substr($topo_initial, $offset, $length, ($side1 x $length) );
+	}
+	elsif ( $node-&gt;{type}==2 ) { 
+		substr($topo_initial, $offset, $length, ($opposite{$side1} x $length) );
+	}
+	else { 
+		substr($topo_initial, $offset, $length, ('U' x $length) );
+	}
+}
+
+use Test::More tests=&gt;1;
+is $topo_initial, "xxxD???HUUU";
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11144836</root_node>
+<parent_node field_name="parent_node">11144836</parent_node>
+<thread id="11144836">
+<node id="11144838"/>
+<node id="11144840"/>
+<node id="11144842"/>
+<node id="11144845"/>
+</thread></node>

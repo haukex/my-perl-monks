@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201759" title="Determining Gaps and Overlap in Timestamped Data" created="2017-10-20 11:16:38" updated="2017-10-20 11:16:38" _doctext_mode="strict"><type id="1042">CUFP</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;I've recently been working with large sets of timestamped measurement data from different devices, often recorded at different times on different days and spread across multiple files. Since I'm not always involved in the recording of the data, I need to look at when the devices were turned on and off, any gaps in the data, etc., in particular for which spans of time all devices were measuring at the same time, since that's the data that then needs to be analyzed. The timestamps are jittery, and data doesn't always come in order (or, equivalently, I'd like to not have to sort everything by timestamp). [mod://Set::IntSpan]'s union and intersect operations make this pretty easy!&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;&lt;c&gt;&lt;update date="2019-04-12"&gt;&lt;/c&gt;&lt;/b&gt; I have since released the script [https://github.com/haukex/htools/blob/master/gapanalysis|gapanalysis] that scans the input for gaps in the numeric data (which can be timestamps, but don't need to be). &lt;b&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/b&gt; &lt;small&gt;&lt;i&gt;Edit 2025-02-15: Updated link, thanks [etj]&lt;/i&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;readmore title="Code and Output"&gt;
+&lt;c&gt;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Data::Dump;
+use Set::IntSpan;
+use DateTime;
+use DateTime::Format::Human::Duration;
+my $TIMEZONE = 'local'; # used for DateTime below, set as appropriate
+
+# ### Begin Fake Data ###
+# Sample timestamps, 2Hz with some random jitter added
+# perl -le '$a=.5;$,=" ";print map{sprintf"%6.3f",($a+=.5)+(rand()-.5)/10} 1..10 for 1..19'
+my $now_s = DateTime-&gt;now(time_zone=&gt;$TIMEZONE)-&gt;epoch;
+use List::Util qw/shuffle/;
+my @fakedata_s = shuffle  # simulate arriving out of order
+ (  (map { ["Alpha", $_+$now_s] } qw{
+ 0.968  1.510  2.014  2.477  3.016  3.460  3.972  4.519  4.993  5.520
+ 5.996  6.481  7.026                       9.030  9.478 10.033 10.453
+10.985 11.469 11.977 12.490 12.966 13.519 14.005 14.492 14.963 15.472
+16.040 16.491 16.980 17.464 18.009 18.500 18.976 19.543 20.037 20.527
+20.954 21.496 21.966 22.481 22.954 23.541 24.010 24.476 24.962 25.509
+76.034 76.490 77.007 77.524 78.015 78.513 78.987 79.509 80.037 80.462
+80.965 81.540 81.958 82.550 83.041 83.511 83.958 84.489 84.972 85.521
+85.966 86.507 87.025 87.509 87.984 88.479 88.992 89.536 89.966 90.533
+}), (map { ["Beta", $_+$now_s] } qw{
+11.006 11.515 12.036 12.535 12.986 13.481 13.992 14.507 14.970 15.499
+15.961 16.548 16.983 17.512 18.015 18.517 18.959 19.549 19.974 20.470
+66.018 66.477 66.954 67.544 68.018 68.519 69.042 69.546 69.971 70.474
+70.985 71.537 71.994 72.495 72.963 73.542 74.007 74.508 74.958 75.526
+75.998 76.486 77.023 77.468 77.991 78.526 78.955 79.507 80.048 80.501
+80.965 81.543 81.990 82.486 83.007 83.525 83.977 84.496 84.952 85.540
+86.029 86.523 87.016 87.543 88.028 88.494 88.988 89.500 89.965 90.535
+})  );
+# ### End Fake Data
+
+# One example of how to calculate padding, but can also be hand-picked
+# Note: gaps must be longer than $pad_ms*2 to be detected below
+my $exp_freq_hz   = 2;   # Expected frequency in Hz
+my $exp_jitter_ms = 100; # Expected jitter range in ms (+/-50 = 100)
+my $pad_ms = ( (1/$exp_freq_hz) / 2 )*1000 + $exp_jitter_ms/2;
+
+# Collect Data
+my %sets;
+for my $rec_s (@fakedata_s) {  # normally "while (&lt;&gt;) { ..."
+	my ($device,$time_s) = @$rec_s;
+	$sets{$device} //= Set::IntSpan-&gt;new;
+	my $ms = sprintf "%.0f", $time_s*1000; # s -&gt; ms
+	$sets{$device}-&gt;U( [[ $ms-$pad_ms, $ms+$pad_ms ]] );
+}
+$_=$_-&gt;inset($pad_ms) for values %sets;  # remove padding
+print "$_: ",$sets{$_}-&gt;run_list,"\n" for sort keys %sets; # Debug
+
+# Analyze and Output
+my $allsets = Set::IntSpan-&gt;new([[undef,undef]]); # Infinite set
+for my $device (sort keys %sets) {
+	$allsets-&gt;I( $sets{$device} );
+	print "\n##### Device: $device #####\n";
+	display_spans( [ map { [map {$_/1000} @$_] } # ms -&gt; s
+		$sets{$device}-&gt;spans ] );
+}
+print "\n##### All Devices #####\n";
+my @spans_s = map { [map {$_/1000} @$_] } $allsets-&gt;spans;
+print "spans: "; dd \@spans_s;
+# note holes are not inclusive, so in "0-10,20-30"
+# the hole is "11-19", hence the +2 here:
+my @gaps_s = map { ($$_[1]-$$_[0]+2)/1000 } $allsets-&gt;holes-&gt;spans;
+print "gaps: "; dd \@gaps_s;
+display_spans( \@spans_s );
+
+sub display_spans {  # Pretty-print spans and gaps with DateTime
+	my $s = shift;
+	my $durfmt = DateTime::Format::Human::Duration-&gt;new();
+	my $dt0;
+	for my $span_s (@$s) {
+		my $dt1 = DateTime-&gt;from_epoch(epoch=&gt;$$span_s[0],
+			time_zone=&gt;$TIMEZONE);
+		my $dt2 = DateTime-&gt;from_epoch(epoch=&gt;$$span_s[1],
+			time_zone=&gt;$TIMEZONE);
+		# double-check increasing order (not really needed)
+		die "$dt1 $dt2" if $dt1&gt;$dt2;
+		die "$dt0 $dt2" if defined $dt0 &amp;&amp; $dt0&gt;$dt1;
+		print " --  Gap: ",$durfmt-&gt;format_duration_between($dt0,$dt1,
+			precision=&gt;'seconds', significant_units=&gt;2), "  --\n"
+				if defined $dt0;
+		print "From ",
+			$dt1-&gt;strftime('%Y-%m-%d %H:%M:%S.%3N %Z'), "\n  to ",
+			$dt2-&gt;strftime('%Y-%m-%d %H:%M:%S.%3N %Z'), "\n  is ",
+			$durfmt-&gt;format_duration_between($dt1, $dt2,
+				precision=&gt;'seconds', significant_units=&gt;2), "\n";
+		$dt0=$dt2;
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+Alpha: 1508512435968-1508512442026,1508512444030-1508512460509,1508512511034-1508512525533
+Beta: 1508512446006-1508512455470,1508512501018-1508512525535
+
+##### Device: Alpha #####
+From 2017-10-20 17:13:55.968 CEST
+  to 2017-10-20 17:14:02.026 CEST
+  is 6 seconds
+ --  Gap: 2 seconds  --
+From 2017-10-20 17:14:04.030 CEST
+  to 2017-10-20 17:14:20.509 CEST
+  is 16 seconds
+ --  Gap: 50 seconds  --
+From 2017-10-20 17:15:11.034 CEST
+  to 2017-10-20 17:15:25.533 CEST
+  is 14 seconds
+
+##### Device: Beta #####
+From 2017-10-20 17:14:06.006 CEST
+  to 2017-10-20 17:14:15.470 CEST
+  is 9 seconds
+ --  Gap: 45 seconds  --
+From 2017-10-20 17:15:01.018 CEST
+  to 2017-10-20 17:15:25.535 CEST
+  is 24 seconds
+
+##### All Devices #####
+spans: [
+  [1508512446.006, 1508512455.47],
+  [1508512511.034, 1508512525.533],
+]
+gaps: [55.564]
+From 2017-10-20 17:14:06.006 CEST
+  to 2017-10-20 17:14:15.470 CEST
+  is 9 seconds
+ --  Gap: 55 seconds  --
+From 2017-10-20 17:15:11.034 CEST
+  to 2017-10-20 17:15:25.533 CEST
+  is 14 seconds
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<thread id="1201759">
+<node id="11161389"/>
+</thread></node>

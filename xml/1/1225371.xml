@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1225371" title="Re: Why is this exit code -1?" created="2018-11-07 12:29:46" updated="2018-11-07 12:29:46" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Have a look at the [doc://system|documentation] (&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt;&lt;/small&gt; you'll also find some example code there how to inspect [doc://system] for errors):&lt;/p&gt;
+&lt;blockquote&gt; Return value of -1 indicates a failure to start the program or an error of the [man://wait;2|wait(2)] system call (inspect [doc://$!] for the reason).&lt;/blockquote&gt;
+&lt;p&gt;And turn on [doc://warnings]:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -le 'print system("exit 3");print "&lt;$!&gt;"'
+Can't exec "exit": No such file or directory at -e line 1.
+-1
+&lt;No such file or directory&gt;
+&lt;/c&gt;
+&lt;p&gt;&lt;c&gt;exit&lt;/c&gt; is a shell [https://www.gnu.org/software/bash/manual/html_node/Bourne-Shell-Builtins.html#index-exit|builtin], not an actual system command.&lt;/p&gt;
+&lt;c&gt;
+$ which exit
+$ perl -wMstrict -le 'print system(q{/bin/bash -c "exit 3"});
+     print "&lt;$!&gt;\n",$?&gt;&gt;8'
+768
+&lt;&gt;
+3
+&lt;/c&gt;
+&lt;p&gt;And the AM [id://1225367|post] explains why the shell doesn't get called in my first example above:&lt;/p&gt;
+&lt;c&gt;
+$ perl -wMstrict -le 'system("pstree -A $$ ")==0 or die;'
+perl---pstree
+$ perl -wMstrict -le 'system("pstree -A $$;")==0 or die;'
+perl---sh---pstree
+&lt;/c&gt;
+&lt;p&gt;By the way, I can recommend [mod://IPC::System::Simple] because of its better error handling, and I would also recommend avoiding the shell, if possible - I wrote about the issues with it [id://1180578|here], and fellow monk [afoken] wrote about [id://1205217].&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1225366</root_node>
+<parent_node field_name="parent_node">1225366</parent_node>
+<thread id="1225366">
+<node id="1225367"/>
+<node id="1225368"/>
+<node id="1225371"/>
+</thread></node>

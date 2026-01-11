@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="815650" title="Programmatically Updating Code with PPI" created="2010-01-04 16:55:39" updated="2010-01-04 16:55:39" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="421114">Tanktalus</author>
+<doctext field_name="doctext">&lt;p&gt;I've been toying with [mod://Locale::Maketext] for our next project at work.  The biggest problem (remaining - it solves a lot of problems) I have is in populating the files that need to be sent to translation.  On one hand, it's awesome that I don't need to go and update 10-30 different language files every time I want to add another string.  The downside is that I still have to do that eventually, so that the translators know what to translate.  So the first thing popping into my head is that every call to [mod://Locale::Maketext]::maketext could be found automatically, its first parameter pulled out, and we instantly have the list of strings that need translating.&lt;/p&gt;
+&lt;p&gt;With [mod://PPI], this seems to have gone fairly smoothly.  Getting the first Expression from the maketext call seems to work, and it conveniently keeps the quotes, which allows me to propagate them if there are special characters (\n, \t, etc.).&lt;/p&gt;
+&lt;p&gt;The next obvious part is to automatically insert the text into the language-specific module files.  One possibility is to use a templating solution that builds each file.  Unfortunately, that comes with a couple downsides:&lt;ul&gt;&lt;li&gt;Existing translations (if some of the text has already been translated) can get lost&lt;/li&gt;&lt;li&gt;Code that someone puts in to handle things like quant or numf for specific languages in specific ways will be done in a non-standard way: updating the template rather than the module directly&lt;/li&gt;&lt;/ul&gt;
+The most obvious answer, then, to me, is to continue using PPI, this time to insert additional code.  If it doesn't format well, I can always throw perltidy at it afterwards, so that's a nice-to-have but still quite secondary.&lt;/p&gt;
+&lt;p&gt;Going down this road, I got confused as to the proper incantation.  There's a mental block between me and success on this, so I was hoping that someone else has gone down this road more successfully than I and could provide the missing piece.  Here is what I have (ok, not really - this is just boiled down to the salient points):
+&lt;c&gt;
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use PPI;
+
+my $perlcode = &lt;&lt; "END_PERLCODE";
+package My::L10N::en;
+
+use base 'My::L10N';
+
+our %Lexicon = (
+    'Some [_1] text' =&gt;
+    'Some [_1] text',
+
+);
+
+END_PERLCODE
+
+my $doc = PPI::Document-&gt;new(\$perlcode);
+my $lexicon = $doc-&gt;find(sub { $_[1]-&gt;content eq '%Lexicon' });
+$lexicon = $lexicon-&gt;[0]; # returns an array ref, but in my case, there's only ever one.
+
+my $newmsg = q{'The [_1] is in the [_2]'};
+my $newtext = sprintf '    %s =&gt;\n    %s,', $newmsg, $newmsg;
+my $insert_this = PPI::Document-&gt;new(\$newtext);
+
+# insert $newtext into %Lexicon?
+$lexicon-&gt;insert_after($insert_this-&gt;tokens());
+
+print $doc-&gt;serialize();
+&lt;/c&gt;
+It outputs the input unchanged:
+&lt;c&gt;package My::L10N::en;
+
+use base 'My::L10N';
+
+our %Lexicon     = (
+    'Some [_1] text' =&gt;
+    'Some [_1] text',
+
+);
+&lt;/c&gt;
+What I was hoping for is more like:
+&lt;c&gt;package My::L10N::en;
+
+use base 'My::L10N';
+
+our %Lexicon     = (
+    'Some [_1] text' =&gt;
+    'Some [_1] text',
+
+    'The [_1] is in the [_2]' =&gt;
+    'The [_1] is in the [_2]',
+);
+&lt;/c&gt;
+(Yes, I know the example is missing the "1;" at the bottom, but it's just an example.) Thanks,&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Update:&lt;/b&gt; ARGH.  After getting [Khen1950fx]'s "solution", I realised that I could simply mandate something like "### NEW TEXT GOES HERE" as a marker to find and insert on.  But, because I still wanted to figure this out with PPI (so that people couldn't clobber my nice insert marker), I kept hacking.  And then I got it.
+&lt;c&gt;
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use PPI;
+use PPI::Dumper;
+sub mydump { PPI::Dumper-&gt;new(shift)-&gt;print() }
+
+my $perlcode = &lt;&lt; "END_PERLCODE";
+package My::L10N::en;
+
+use base 'My::L10N';
+
+our %Lexicon = (
+    'Some [_1] text' =&gt;
+    'Some [_1] text',
+
+);
+
+1;
+END_PERLCODE
+
+my $doc = PPI::Document-&gt;new(\$perlcode);
+my $lexicon = $doc-&gt;find(sub { $_[1]-&gt;content eq '%Lexicon' });
+$lexicon = $lexicon-&gt;[0]; # returns an array ref, but in my case, there's only ever one.
+
+my $newmsg = q{'The [_1] is in the [_2]'};
+my $newtext = sprintf "    %s =&gt;\n    %s,\n", $newmsg, $newmsg;
+my $insert_this = PPI::Document-&gt;new(\$newtext);
+
+# insert $newtext into %Lexicon?
+my $stmt = $lexicon-&gt;statement();
+my $list = $stmt-&gt;find('PPI::Structure::List')-&gt;[0];
+
+for ($insert_this-&gt;tokens())
+{
+    $_-&gt;remove();
+    my $rc = $list-&gt;add_element($_);
+}
+
+print $doc-&gt;serialize();
+&lt;/c&gt;
+Apparently, insert_after doesn't take multiple elements (yet?).  So I have to do one after another.  After trying a few things, I got to the point where I was re-finding each last-child, and inserting after that.  But that got ugly fast, and didn't seem to work in my original code.  And that's when I happened upon add_element.  However, in that case, I found I had to remove the element from its existing doc first (which is fine, it's just the code snippet I created dynamically anyway), reminiscent of using [mod://XML::Twig].  So, I simply remove and add.  I also found I had to find the list - because it was the list's children where I was adding the element.  Now off to "create" %Lexicon if it doesn't exist (should be much easier now that I have this working...)...&lt;/p&gt;</doctext>
+<thread id="815650">
+<node id="815654"><node id="815657"/>
+</node>
+<node id="815659"/>
+<node id="815662"><node id="815663"/>
+</node>
+</thread></node>

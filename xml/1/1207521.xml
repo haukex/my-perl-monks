@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1207521" title="Re: Splitting a long row with multiple delimiters." created="2018-01-19 08:53:33" updated="2018-01-19 08:53:33" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;A single sample input is usually not enough to reliably design a regex ([id://1201201|see also]). &lt;small&gt;&lt;c&gt;&lt;update&gt;&lt;/c&gt;&lt;/small&gt; Please use &lt;c&gt;&lt;code&gt;&lt;/c&gt; tags when posting sample input. Also, can't you get this data in a more parseable format? &lt;small&gt;&lt;c&gt;&lt;/update&gt;&lt;/c&gt;&lt;/small&gt; I have made the following assumptions:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Keys always match &lt;c&gt;\w+&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;Values may not contain &lt;c&gt;=&lt;/c&gt;&lt;/li&gt;
+&lt;li&gt;Keys are always preceded by whitespace&lt;/li&gt;
+&lt;/ul&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+my $str = q{eab12345 id=00000 pgrp=abcdefgh groups=abcdefgh home=/home/eab12345 shell=/usr/bin/ksh gecos=AB/C/Y0000/ABC/XYZ RTYUI, LMNOP *CONTRACTOR* (AS 00000) auditclasses=general,files,TCPIP login=true su=true rlogin=true daemon=true admin=false sugroups=ALL admgroups= tpath=nosak ttys=ALL expires=0 auth1=SYSTEM auth2=NONE umask=00 registry=AD SYSTEM=AD logintimes= loginretries=5 pwdwarntime=5 account_locked=false minage=0 maxage=13 maxexpired=0 minalpha=1 minother=1 mindiff=1 maxrepeats=2 minlen=8 histexpire=13 histsize=8 pwdchecks= dictionlist=/abc/def/ghi/jkl default_roles= fsize=-1 cpu=-1 data=-1 stack=65536 core=000000 rss=65536 nofiles=2000 time_last_login=1512632113 time_last_unsuccessful_login=1505304923 tty_last_login=ssh tty_last_unsuccessful_login=ssh host_last_login=0.000.000.000 host_last_unsuccessful_login=0.000.000.000 unsuccessful_login_count=0 roles= };
+
+my $REGEX = qr{ (?|
+		# treat beginning of string as a key only
+		\A \s* (?&lt;key&gt; \w+ ) \s*
+	|	# otherwise, a normal key=value pair
+		(?&lt;= \s ) # key must be preceded by a space
+		(?&lt;key&gt; \w+ )  \s* = \s*
+		(?&lt;value&gt; # a value may not look like another key=value
+			(?: (?! \s* \w+ = ) [^=] )*
+		) \s*
+	) }msx;
+
+pos($str)=undef;
+while ( $str =~ /\G$REGEX/gc ) {
+	print "&lt;", $+{key}, "&gt; = &lt;", $+{value}//'undef', "&gt;\n";
+}
+die "failed to parse at pos ".pos($str)
+	unless pos($str)==length($str);
+&lt;/c&gt;
+&lt;readmore title="output"&gt;
+&lt;c&gt;
+&lt;eab12345&gt; = &lt;undef&gt;
+&lt;id&gt; = &lt;00000&gt;
+&lt;pgrp&gt; = &lt;abcdefgh&gt;
+&lt;groups&gt; = &lt;abcdefgh&gt;
+&lt;home&gt; = &lt;/home/eab12345&gt;
+&lt;shell&gt; = &lt;/usr/bin/ksh&gt;
+&lt;gecos&gt; = &lt;AB/C/Y0000/ABC/XYZ RTYUI, LMNOP *CONTRACTOR* (AS 00000)&gt;
+&lt;auditclasses&gt; = &lt;general,files,TCPIP&gt;
+&lt;login&gt; = &lt;true&gt;
+&lt;su&gt; = &lt;true&gt;
+&lt;rlogin&gt; = &lt;true&gt;
+&lt;daemon&gt; = &lt;true&gt;
+&lt;admin&gt; = &lt;false&gt;
+&lt;sugroups&gt; = &lt;ALL&gt;
+&lt;admgroups&gt; = &lt;&gt;
+&lt;tpath&gt; = &lt;nosak&gt;
+&lt;ttys&gt; = &lt;ALL&gt;
+&lt;expires&gt; = &lt;0&gt;
+&lt;auth1&gt; = &lt;SYSTEM&gt;
+&lt;auth2&gt; = &lt;NONE&gt;
+&lt;umask&gt; = &lt;00&gt;
+&lt;registry&gt; = &lt;AD&gt;
+&lt;SYSTEM&gt; = &lt;AD&gt;
+&lt;logintimes&gt; = &lt;&gt;
+&lt;loginretries&gt; = &lt;5&gt;
+&lt;pwdwarntime&gt; = &lt;5&gt;
+&lt;account_locked&gt; = &lt;false&gt;
+&lt;minage&gt; = &lt;0&gt;
+&lt;maxage&gt; = &lt;13&gt;
+&lt;maxexpired&gt; = &lt;0&gt;
+&lt;minalpha&gt; = &lt;1&gt;
+&lt;minother&gt; = &lt;1&gt;
+&lt;mindiff&gt; = &lt;1&gt;
+&lt;maxrepeats&gt; = &lt;2&gt;
+&lt;minlen&gt; = &lt;8&gt;
+&lt;histexpire&gt; = &lt;13&gt;
+&lt;histsize&gt; = &lt;8&gt;
+&lt;pwdchecks&gt; = &lt;&gt;
+&lt;dictionlist&gt; = &lt;/abc/def/ghi/jkl&gt;
+&lt;default_roles&gt; = &lt;&gt;
+&lt;fsize&gt; = &lt;-1&gt;
+&lt;cpu&gt; = &lt;-1&gt;
+&lt;data&gt; = &lt;-1&gt;
+&lt;stack&gt; = &lt;65536&gt;
+&lt;core&gt; = &lt;000000&gt;
+&lt;rss&gt; = &lt;65536&gt;
+&lt;nofiles&gt; = &lt;2000&gt;
+&lt;time_last_login&gt; = &lt;1512632113&gt;
+&lt;time_last_unsuccessful_login&gt; = &lt;1505304923&gt;
+&lt;tty_last_login&gt; = &lt;ssh&gt;
+&lt;tty_last_unsuccessful_login&gt; = &lt;ssh&gt;
+&lt;host_last_login&gt; = &lt;0.000.000.000&gt;
+&lt;host_last_unsuccessful_login&gt; = &lt;0.000.000.000&gt;
+&lt;unsuccessful_login_count&gt; = &lt;0&gt;
+&lt;roles&gt; = &lt;&gt;
+&lt;/c&gt;
+&lt;/readmore&gt;</doctext>
+<root_node field_name="root_node">1207515</root_node>
+<parent_node field_name="parent_node">1207515</parent_node>
+<thread id="1207515">
+<node id="1207519"><node id="1207525"><node id="1207528"><node id="1207533"><node id="1207535"><node id="1207541"><node id="1207543"/>
+<node id="1207546"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1207529"><node id="1207530"><node id="1207538"/>
+<node id="1207539"/>
+</node>
+</node>
+</node>
+</node>
+<node id="1207521"><node id="1207534"><node id="1207632"/>
+</node>
+</node>
+<node id="1207522"/>
+<node id="1207523"/>
+<node id="1207524"/>
+<node id="1207537"/>
+</thread></node>

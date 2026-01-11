@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11104020" title="Re^2: matching first paragraph satisfying condition" created="2019-08-06 05:12:46" updated="2019-08-06 05:12:46" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;perl -0pe 's/pattern1|pattern2/$1/gs'&lt;/c&gt;; apparently the "or" operator doesn't work as expected here.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;The &lt;c&gt;|&lt;/c&gt; alternation operator has pretty low precedence, so it kind of depends on what your expectations are &lt;c&gt;:-)&lt;/c&gt; A common trap is to write something like &lt;c&gt;/^foo|bar$/&lt;/c&gt; and expect that to match only &lt;c&gt;"foo"&lt;/c&gt; or &lt;c&gt;"bar"&lt;/c&gt;, when in fact it is matching &lt;c&gt;^foo&lt;/c&gt; &lt;i&gt;or&lt;/i&gt; &lt;c&gt;bar$&lt;/c&gt; - the correct way to express that would have been &lt;c&gt;/^(foo|bar)$/&lt;/c&gt; or &lt;c&gt;/^(?:foo|bar)$/&lt;/c&gt;.&lt;/p&gt;
+&lt;p&gt;Based on your &lt;c&gt;$1&lt;/c&gt; in the replacement, I suspect you were doing something like &lt;c&gt;s/f(o)o|b(a)r/$1/g&lt;/c&gt; and expecting the string &lt;c&gt;"bar"&lt;/c&gt; to be turned into &lt;c&gt;"a"&lt;/c&gt;? In that case, you need the "branch reset" pattern &lt;c&gt;(?|...)&lt;/c&gt; ([doc://perlre]): &lt;c&gt;s/(?|f(o)o|b(a)r)/$1/g&lt;/c&gt; will replace &lt;c&gt;"foo"&lt;/c&gt; with &lt;c&gt;"o"&lt;/c&gt; and &lt;c&gt;"bar"&lt;/c&gt; with &lt;c&gt;"a"&lt;/c&gt;.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">11103963</root_node>
+<parent_node field_name="parent_node">11103989</parent_node>
+<thread id="11103963">
+<node id="11103969"><node id="11103977"><node id="11103982"/>
+</node>
+</node>
+<node id="11103989"><node id="11103991"><node id="11104021"/>
+</node>
+<node id="11104020"><node id="11104752"/>
+</node>
+</node>
+</thread></node>

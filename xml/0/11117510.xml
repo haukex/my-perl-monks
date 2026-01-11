@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11117510" title="Re: Hash or Array - Logic Help" created="2020-05-30 15:51:25" updated="2020-05-30 15:51:25" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Here's how I might have coded this. The trick here is to remember that when you build deeply nested data structures, each element is a reference to an anonymous hash or array, and you can keep multiple references to the same anonymous data structure ([doc://perlreftut], [doc://perldsc], [doc://perlref]). So, I additionally keep references to each node in the temporary structure &lt;c&gt;%nodes&lt;/c&gt; so I can easily access them by ID, no matter where they are in the tree. I do make the assumption that the data in the XML is structured correctly: that IDs are unique, each &lt;c&gt;parent_id&lt;/c&gt; references an existing ID, that there are no duplicate IDs, that there are no stray nodes, no cycles, and so on.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+
+my $dom = XML::LibXML-&gt;load_xml({ location =&gt; '11117492.xml' });
+
+# Build the tree
+my (%nodes,%tree);
+for my $part ($dom-&gt;findnodes('/products/product')) {
+	for my $categories ($part-&gt;findnodes('./categories/category')) {
+		my $cat_name = $categories-&gt;findvalue("name");
+		my $cat_id = $categories-&gt;findvalue("category_id");
+		my $cat_parent_id = $categories-&gt;findvalue("parent_id");
+		$nodes{$cat_id}{id} = $cat_id;
+		$nodes{$cat_id}{name} = $cat_name;
+		if ( length $cat_parent_id ) {
+			push @{$nodes{$cat_parent_id}{children}}, $nodes{$cat_id};
+		}
+		else { $tree{$cat_id} = $nodes{$cat_id} } # root node
+	}
+}
+
+use Data::Dump; dd \%tree; # Debug
+
+# Walk the tree to find leaves
+my @queue = values %tree;
+while ( @queue ) {
+	my $elem = shift @queue;
+	if ( $elem-&gt;{children} ) {
+		push @queue, @{$elem-&gt;{children}};
+	}
+	else {
+		print $elem-&gt;{name}," (",$elem-&gt;{id},")\n";
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+{
+  443026 =&gt; {
+    children =&gt; [
+      {
+        children =&gt; [{ id =&gt; 445720, name =&gt; "Carrot" }],
+        id =&gt; 443120,
+        name =&gt; "Vegetables",
+      },
+    ],
+    id =&gt; 443026,
+    name =&gt; "Food",
+  },
+}
+Carrot (445720)
+&lt;/c&gt;
+&lt;p&gt;&lt;small&gt;&lt;i&gt;Update:&lt;/i&gt; Expanded explanation slightly.&lt;/small&gt;&lt;/p&gt;</doctext>
+<root_node field_name="root_node">11117492</root_node>
+<parent_node field_name="parent_node">11117492</parent_node>
+<thread id="11117492">
+<node id="11117495"/>
+<node id="11117500"><node id="11117501"><node id="11117513"><node id="11117514"><node id="11117518"><node id="11118398"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11117503"><node id="11117545"/>
+</node>
+<node id="11117510"/>
+<node id="11117533"><node id="11117534"/>
+</node>
+</thread></node>

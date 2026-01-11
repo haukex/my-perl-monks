@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1199209" title="Re: string replacement" created="2017-09-12 11:31:43" updated="2017-09-12 11:31:43" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1175204">huck</author>
+<doctext field_name="doctext">&lt;p&gt;This problem is not quite as simple as it seems. There are a number of cpan ways to read a parm file. Lets bypass that for now and focus on the replacement. The replace pairs are already in hashs that are part of an ORDERED array here. 
+&lt;c&gt;
+use strict; use warnings; 
+
+my @reps; 
+push @reps,{from=&gt;'ZZZ',to=&gt;'456AAA456'}; 
+push @reps,{from=&gt;'AAA',to=&gt;'AAA123'}; 
+push @reps,{from=&gt;'BBB',to=&gt;'XYZ999'}; 
+push @reps,{from=&gt;'DEF',to=&gt;'ANYOTHER'}; 
+
+while (my $line=&lt;DATA&gt;) { 
+  chomp $line; 
+  for my $rep (@reps){ 
+    my $from=$rep-&gt;{from}; 
+    my $to  =$rep-&gt;{to}; 
+    $line=~s/\Q$from\E/$to/g; 
+    } # rep 
+  print $line."\n"; 
+  } # line 
+
+__DATA__
+AAAA more stuff 
+stuff BBB again 
+DEF stuff 
+|ZZZZ| not as simple as it seems 
+&lt;/c&gt;
+Result
+&lt;c&gt;
+AAA123A more stuff
+stuff XYZ999 again
+ANYOTHER stuff
+|456AAA123456Z| not as simple as it seems
+&lt;/c&gt;
+As you can see, if a "to" contains a "from" the order of execution is important. There is a lot that could be improved here, pre-compiling the regexp parts for instance, but this is a simple demo of how it can be done and one of the pitfalls. &lt;/p&gt; </doctext>
+<root_node field_name="root_node">1199207</root_node>
+<parent_node field_name="parent_node">1199207</parent_node>
+<thread id="1199207">
+<node id="1199209"/>
+<node id="1199211"><node id="1199222"><node id="1199232"/>
+</node>
+<node id="1199327"/>
+</node>
+</thread></node>

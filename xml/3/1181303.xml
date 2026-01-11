@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1181303" title="Re: Tyring to grep array of hashes" created="2017-02-07 10:55:04" updated="2017-02-07 10:55:04" _doctext_mode="lenient"><type id="11">note</type>
+<author id="712372">kennethk</author>
+<doctext field_name="doctext">&lt;c&gt;
+my @type = grep /\b$_\b/, @{$ACTUAL_TEAMS{$group}}
+&lt;/c&gt;
+This will always be true, because in the [doc://grep], &lt;c&gt;$_&lt;/c&gt; equals the active element -- you've written a tautology.  Perhaps you mean:
+&lt;c&gt;
+#!/usr/bin/env perl
+use strict;
+
+my %ACTUAL_TEAMS;
+
+
+my %TEAMS = (
+    "NFL" =&gt; [ 'JETS', 'PATRIOTS', 'GIANTS', ],
+    "MLB" =&gt; [ 'YANKEES', 'METS', 'CARDINALS', ],
+    "NBA" =&gt; [ 'SIXERS', 'CELTICS','LAKERS', ],
+);
+
+while (&lt;DATA&gt;) {
+        chomp;
+        next if /^\s*$/ || /^\#/;
+        my $aref = [split /,/, $_];
+        push( @{$ACTUAL_TEAMS{$aref-&gt;[0]}}, $aref-&gt;[1]);
+}
+
+
+foreach my $group (keys %TEAMS) {
+    #print "The members of $group are\n";
+    foreach my $team (@{$TEAMS{$group}}) {
+    #    print "\t$_\n";
+print "MISSING:\tSPORT:$group\tTEAM:$team\n" unless (my @type = grep /\b$team\b/, @{$ACTUAL_TEAMS{$group}});
+    }
+}
+
+
+
+__DATA__
+NFL,JETS
+NFL,PATRIOTS
+MLB,YANKEES
+MLB,CARDINALS
+MLB,METS
+NBA,SIXERS
+NBA,CELTICS
+NBA,LAKERS
+&lt;/c&gt;
+
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-712372"&gt;
+&lt;hr /&gt;
+&lt;p&gt;#11929 First ask yourself `How would I do this without a computer?'  Then have the computer do it the same way.&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1181302</root_node>
+<parent_node field_name="parent_node">1181302</parent_node>
+<thread id="1181302">
+<node id="1181303"/>
+<node id="1181306"><node id="1181311"><node id="1181312"/>
+<node id="1181343"/>
+</node>
+</node>
+<node id="1181308"><node id="1181313"><node id="1181319"/>
+<node id="1181320"/>
+<node id="1181321"/>
+</node>
+</node>
+</thread></node>

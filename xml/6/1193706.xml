@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1193706" title="Re^11: LibXML setNodeName error" created="2017-06-27 11:25:37" updated="2017-06-27 11:25:37" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;
+&lt;c&gt;
+open my $out_fh, '&gt;', $file;
+print {$out_fh} $doc-&gt;toString;
+&lt;/c&gt;
+&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Unfortunately I have to say that this is not the best solution. The reason is that the encoding you are opening the file with has to match the XML document's encoding, which &lt;c&gt;-&gt;toFile&lt;/c&gt; handles for you. The following will produce two different files, only the second one being encoded correctly (as ISO-8859-15). Since it seems to me that you are not generating the files yourself but are reading existing files, it's not impossible that one of them has an encoding other than UTF-8.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+use open qw/:std :utf8/;
+
+my $xml = &lt;&lt;'END_XML';
+&lt;?xml version="1.0" encoding="ISO-8859-15"?&gt;
+&lt;foo&gt;&lt;/foo&gt;
+END_XML
+
+my $doc = XML::LibXML-&gt;load_xml(string =&gt; $xml) or die;
+$doc-&gt;documentElement-&gt;appendText("\x{20AC}");
+
+open my $fh, '&gt;', '/tmp/one.xml' or die $!;
+print $fh $doc-&gt;toString;
+close $fh;
+
+$doc-&gt;toFile('/tmp/two.xml');
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1193581</root_node>
+<parent_node field_name="parent_node">1193705</parent_node>
+<thread id="1193581">
+<node id="1193600"><node id="1193602"><node id="1193606"><node id="1193613"/>
+<node id="1193620"><node id="1193623"><node id="1193626"><node id="1193627"><node id="1193703"><node id="1193704"><node id="1193705"><node id="1193706"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1193712"/>
+</node>
+</node>
+</node>
+</thread></node>

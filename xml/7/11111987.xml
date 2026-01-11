@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11111987" title="Output to a &gt;CSV file" created="2020-01-28 15:58:46" updated="2020-01-28 15:58:46" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="11101052">pragovnj</author>
+<doctext field_name="doctext">&lt;p Hi,
+I have a perl code which reads data from BigIron. I provide a URL link to the Users, which they can paste on an IE browser and get the data in html format.
+http://sample.web.com/Ethernet?sd=20191014&amp;ed=20191015&amp;sep
+Is there a way to output this URL as a CSV or a Excel file?&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+require 'ConvertDates.pl';
+
+use DBI;
+use Date::Manip ;
+use CGI;
+
+$parms = CGI-&gt;new;
+#parse parameters
+
+$start_date = $parms-&gt;param("sd");
+$end_date = $parms-&gt;param("ed");
+$separator= $parms-&gt;param("sep");
+$HOME="/export/home/pmdss";
+$CONFIG="${HOME}/config";
+
+$row=0;
+$rows=0;
+$NumOfRts=1500;
+$CntOfRts=0;
+
+print "Content-type: text/plain\n\n" ; 
+
+
+chomp($ds_mach=`cat ${CONFIG}/BigIron`);
+chomp($dr_mach=`cat ${CONFIG}/BigIronDR`);
+
+system("/usr/sbin/ping $ds_mach &gt;/dev/null 2&gt;/dev/null");
+if ( ($? &gt;&gt; 8) eq 0 ) {
+        $id = "pmdss\@$ds_mach";
+}
+else {
+        system("/usr/sbin/ping $dr_mach &gt;/dev/null 2&gt;/dev/null");
+        if ( ($? &gt;&gt; 8) eq 0 ) {
+                $id = "pmdss\@$dr_mach";
+        }
+        else {
+                print "A serious error has occurred, please contact production support or try again later...\n" ;
+                exit 0;
+        }
+}
+
+$cmd = "ssh $id '. ~/q; \$Q/AgnEthernetList3-1.X -s $start_date -e $end_date' 2&gt;/dev/null |";
+#print "$cmd\n";
+open (input , $cmd);
+while ($INPUT_LINE = &lt;input&gt;) {
+        chomp($INPUT_LINE);
+        ($dat{l_node}, $dat{l_slot}, $dat{l_ifNum}, $dat{r_node}, $dat{r_slot}, $dat{r_line}, $dat{r_port}, $dat{kbps},
+		$dat{subnetwork}, $dat{subnetwork2}, $dat{r_domain_id}, $dat{icore_domid}, $dat{cust_port},
+		$dat{track_port},$dat{vlan_stacking_inv}, $dat{cos_level}, $dat{equip_type_id}) = split(/  /, $INPUT_LINE);
+
+
+        $KEY = $dat{l_node} . "." . $dat{l_slot} . "." .  $dat{l_ifNum};
+
+        $key2 = int($CntOfRts++/$NumOfRts);
+        ($nspString{$key2} = $nspString{$key2} . ":") if ($nspString{$key2} ne "");
+        $nspString{$key2} = $nspString{$key2} . "$dat{l_node},$dat{l_slot},$dat{l_ifNum}";
+
+        $arraykey{$KEY} = $KEY;
+        $r_node{$KEY} = $dat{r_node};
+        $r_slot{$KEY} = $dat{r_slot};
+        $r_port{$KEY} = $dat{r_port};
+        $kbps{$KEY} = $dat{kbps};
+        $subnetwork{$KEY} = $dat{subnetwork};
+        $subnetwork2{$KEY} = $dat{subnetwork2};
+        $r_domain_id{$KEY} = $dat{r_domain_id};
+        ($r_domain_id{$KEY} = $dat{icore_domid}) if ($r_domain_id{$KEY} eq "");
+        $cust_port{$KEY} = $dat{cust_port};
+        $track_port{$KEY} = $dat{track_port};
+        $vlan_stacking_inv{$KEY} = $dat{vlan_stacking_inv};
+        $cos_level{$KEY} = $dat{cos_level};
+        $rows = $rows + 1;
+}
+close (input);
+
+foreach $key (sort keys nspString) {
+        $cmd = "ssh $id '. ~/q; \$Q/AgnEthernetList3-2.X -nsp $nspString{$key}' 2&gt;/dev/null |";
+        #print "$cmd\n";
+        open (input , $cmd);
+        while ($INPUT_LINE = &lt;input&gt;) {
+                chomp($INPUT_LINE);
+                ($dat2{pvcs}, $dat2{lcir}, $dat2{rcir}, $rswitch, $rslot, $rport) = split(/  /, $INPUT_LINE);
+                $KEY = $rswitch . "." . $rslot . "." .  $rport;
+
+                $pvcs{$KEY} = $dat2{pvcs};
+                $lcir{$KEY} = $dat2{lcir};
+                $rcir{$KEY} = $dat2{rcir};
+        }
+        close (input);
+}
+
+$cmd = "ssh $id '. ~/q; \$Q/AgnNniGatewayList4-4.X -date $end_date' 2&gt;/dev/null |";
+open (input , $cmd);
+#print "$cmd\n";
+while ($INPUT_LINE = &lt;input&gt;) {
+        chomp($INPUT_LINE);
+        ($dat{object_id}, $dat{domain}, $dat{long_name}) = split(/  /, $INPUT_LINE);
+
+        $toNetwork{$dat{object_id}} = $dat{long_name};
+        $domain{$dat{object_id}} = $dat{domain};
+}
+close (input);
+
+if ($rows &gt; 0) {
+        print "l_node\t" .
+                "l_slot\t" .
+                "l_port\t" .
+                "r_node\t" .
+                "r_slot\t" .
+                "r_port\t" .
+                "kbps\t" .
+                "subnetwork\t" .
+                "toNetwork\t" .
+                "pvcs\t" .
+                "lcir\t" .
+                "rcir\t" .
+                "domain\t" .
+                "track_port\t" .
+                "vlan_stacking_inv\t" .
+                "cos_level\t" .
+                "placeholder";
+
+        foreach $key (keys arraykey) {
+                ($l_node,$l_slot,$l_ifNum) = split(/\./, $key);
+
+                if (substr($l_node,10,3) eq "ME2") {
+                        if ($l_slot &gt;= 10000) {
+                                if ( substr($l_slot,1,1) eq "0" ) {
+                                        $L_SLOT = substr($l_slot,2,1) . "-" . substr($l_slot,4,1) ;
+                                } else {
+                                        $L_SLOT = substr($l_slot,1,2) . "-" . substr($l_slot,4,1) ;
+                                }
+                        } else {
+                                $L_SLOT = $l_slot ;
+                        }
+                } else {
+                        $L_SLOT = $l_slot ;
+                }
+                if (TRIM($toNetwork{$r_domain_id{$key}}) ne "") {
+                        $_2Network = $toNetwork{$r_domain_id{$key}};
+                } else {
+                        $_2Network = $subnetwork2{$key};
+                }
+
+                print "\n" . $l_node . "\t" .
+                        $L_SLOT . "\t" .
+                        $l_ifNum . "\t" .
+                        $r_node{$key} . "\t" .
+                        $r_slot{$key} . "\t" .
+                        $r_port{$key} . "\t" .
+                        $kbps{$key} . "\t" .
+                        $subnetwork{$key} . "\t" .
+                        $_2Network . "\t" .
+                        $pvcs{$key} . "\t" .
+                        $lcir{$key} . "\t" .
+                        $rcir{$key} . "\t" .
+                        $domain{$r_domain_id{$key}} . "\t" .
+                        $track_port{$key} . "\t" .
+                        $vlan_stacking_inv{$key} . "\t" .
+                        $cos_level{$key} . "\t" .
+                        "X";
+        }
+} else {
+        print `cat nodata`;
+}
+
+sub TRIM
+{
+        $A = shift;
+        $_ = $A;
+        s/^ +//;
+        s/ +$//;
+        $A = $_;
+        return $A;
+}
+&lt;/code&gt;
+
+</doctext>
+<thread id="11111987">
+<node id="11111989"/>
+<node id="11111998"/>
+<node id="11112003"><node id="11112051"><node id="11112066"><node id="11112132"><node id="11112164"><node id="11112171"/>
+</node>
+</node>
+<node id="11112200"><node id="11112212"><node id="11112326"><node id="11112393"><node id="11112576"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="11112575"><node id="11112943"/>
+</node>
+</node>
+</thread></node>

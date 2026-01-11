@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1220004" title="Re: counting words in string" created="2018-08-07 11:12:00" updated="2018-08-07 11:12:00" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;There Is More Than One Way To Do It :-)&lt;/p&gt;
+&lt;p&gt;The method you showed is fine. If the input string starts getting long, you might have to watch out for memory usage. Here's a version that uses a regex and a &lt;c&gt;while&lt;/c&gt; loop to scan the string, without building an intermediate &lt;c&gt;@names&lt;/c&gt; array. I'm using the regex &lt;c&gt;\S+&lt;/c&gt; (one or more non-whitespace characters) to match "names", so that this code should produce the same output as yours regardless of the input string. If you need to match only certain characters in the names, you'd have to tell us more about that ([id://1201201]).&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More tests=&gt;1;
+
+my $str = "iowq john stepy andy anne alic bert stepy anne bert andy step alic andy";
+
+my %names;
+pos($str)=undef;
+while ($str=~/\G\s*(\S+)(?:\s+|\z)/gc) {
+	$names{$1}++;
+}
+die "failed to parse \$str" unless pos($str)==length($str);
+
+is_deeply \%names, { alic =&gt; 2, andy =&gt; 3, anne =&gt; 2, bert =&gt; 2,
+	iowq =&gt; 1, john =&gt; 1, step =&gt; 1, stepy =&gt; 2 };
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1219990</root_node>
+<parent_node field_name="parent_node">1219990</parent_node>
+<thread id="1219990">
+<node id="1219992"/>
+<node id="1219994"/>
+<node id="1219999"><node id="1220027"/>
+</node>
+<node id="1220004"><node id="1220110"><node id="1220217"/>
+</node>
+</node>
+<node id="1220030"/>
+<node id="1220061"/>
+</thread></node>

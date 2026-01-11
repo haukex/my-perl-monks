@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11141919" title="Re^3: How to redefine a modules private function?" created="2022-03-08 11:07:45" updated="2022-03-08 11:07:45" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;Frankly, i would consider the use of a constant function (or other type of constant) for a port number a major bug in AnyEvent::DNS. There are very few use cases that make sense to declare a number a constant in programming code.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;I assume you're not advocating for [wp://Magic number (programming)|magic numbers] - I might have said that a constant that isn't modifiable from outside the module is a problem.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;I tried using source filters (Filter::Simple), but couldn't make it work&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;This was a fun project. I didn't exactly use source filters, but I did use [mod://PPI] to munge the module before loading it, basically like a filtered [doc://use]. Obviously this still has all the limitations of source filters and [mod://PPI]!&lt;/p&gt;
+&lt;p&gt;&lt;c&gt;Deconstifier.pm&lt;/c&gt;&lt;/p&gt;
+&lt;c&gt;
+package Deconstifier;
+use warnings;
+use strict;
+use parent 'PPI::Transform';
+
+=head1 DESCRIPTION
+
+L&lt;PPI::Transform&gt; implementation that modifies a subset of
+L&lt;constant functions|perlsub/"Constant Functions"&gt; such that they are no longer
+inlined. The subset of C&lt;sub&gt; definitions that are currently supported is:
+
+ sub FOO () { 42; }
+ sub BAR () { "string"; }
+ sub QUZ () { undef; }
+
+where the final semicolon is optional.
+
+=cut
+
+sub document {
+	( my $self = shift )-&gt;isa(__PACKAGE__) or return undef;
+	( my $doc = shift )-&gt;isa('PPI::Document') or return undef;
+	my $subs = $doc-&gt;find(sub {
+		if ( $_[1]-&gt;isa('PPI::Statement::Sub') &amp;&amp; defined($_[1]-&gt;prototype) &amp;&amp; $_[1]-&gt;prototype eq "" ) {
+			my $bl = $_[1]-&gt;block;
+			if ( $bl &amp;&amp; $bl-&gt;schildren==1 &amp;&amp; $bl-&gt;schild(0)-&gt;isa('PPI::Statement') ) {
+				my $st = $bl-&gt;schild(0);
+				if ( $st-&gt;schildren==1 || $st-&gt;schildren==2 &amp;&amp; $st-&gt;schild(1)-&gt;isa('PPI::Token::Structure') &amp;&amp; $st-&gt;schild(1)-&gt;content eq ';' ) {
+					my $ch = $st-&gt;schild(0);
+					if ( $ch-&gt;isa('PPI::Token::Number') || $ch-&gt;isa('PPI::Token::Quote') || $ch-&gt;isa('PPI::Token::Word') &amp;&amp; $ch-&gt;literal eq 'undef' ) {
+						return 1;
+					}
+				}
+			}
+		}
+		return 0;
+	});
+	return undef unless defined $subs;
+	return 0 unless $subs;
+	for my $s (@$subs) {
+		#use PPI::Dumper; PPI::Dumper-&gt;new($s, whitespace=&gt;0, comments=&gt;0)-&gt;print;
+		# This first one only seems to work on Perl 5.8+, the second down to 5.6 and maybe/likely earlier (untested).
+		# NOTE: This isn't really the right way to use PPI::Token::Word, but since it's the only modification we're making it works fine.
+		#$s-&gt;block-&gt;schild(0)-&gt;schild(0)-&gt;insert_before(PPI::Token::Word-&gt;new('return '));
+		$s-&gt;block-&gt;schild(0)-&gt;schild(0)-&gt;insert_after(PPI::Token::Word-&gt;new(' if $]'));
+	}
+	return 0+@$subs;
+}
+
+1;
+&lt;/c&gt;
+&lt;p&gt;&lt;c&gt;deconstify.t&lt;/c&gt;&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Test::More tests=&gt;4;
+
+BEGIN { use_ok 'Deconstifier' }
+
+my $code = &lt;&lt;'END';
+sub MAX_PKT() { 4096.0 }
+sub DOMAIN_PORT() { 53; }
+sub resolver ();
+sub _enc_qd() {
+   (_enc_name $_-&gt;[0]) . pack "nn",
+     ($_-&gt;[1] &gt; 0 ? $_-&gt;[1] : $type_id {$_-&gt;[1]}),
+     ($_-&gt;[3] &gt; 0 ? $_-&gt;[2] : $class_id{$_-&gt;[2] || "in"})
+}
+sub _enc_rr() { die "encoding of resource records is not supported"; }
+sub HELLO { "world" }
+sub WORLD () { "foo" }
+sub FOO () { $bar }
+sub BAR () { return 123 }
+sub BLAH () { undef; }
+END
+
+my $exp = &lt;&lt;'END';
+sub MAX_PKT() { 4096.0 if $] }
+sub DOMAIN_PORT() { 53 if $]; }
+sub resolver ();
+sub _enc_qd() {
+   (_enc_name $_-&gt;[0]) . pack "nn",
+     ($_-&gt;[1] &gt; 0 ? $_-&gt;[1] : $type_id {$_-&gt;[1]}),
+     ($_-&gt;[3] &gt; 0 ? $_-&gt;[2] : $class_id{$_-&gt;[2] || "in"})
+}
+sub _enc_rr() { die "encoding of resource records is not supported"; }
+sub HELLO { "world" }
+sub WORLD () { "foo" if $] }
+sub FOO () { $bar }
+sub BAR () { return 123 }
+sub BLAH () { undef if $]; }
+END
+
+my $trans = new_ok 'Deconstifier';
+ok $trans-&gt;apply(\$code), 'apply';
+is $code, $exp, 'output is as expected';
+&lt;/c&gt;
+&lt;p&gt;&lt;c&gt;FilterLoad.pm&lt;/c&gt;&lt;/p&gt;
+&lt;c&gt;
+package FilterLoad;
+use warnings;
+use strict;
+use List::Util qw/ pairs pairkeys /;
+use PPI;
+use Module::Load::Conditional qw/ check_install /;
+use Module::Runtime qw/ use_module module_notional_filename /;
+
+=head1 DESCRIPTION
+
+Loads modules after passing them through the L&lt;PPI::Transform&gt; filter(s) given
+in the C&lt;use&gt; statement. For example:
+
+ use FilterLoad 'AnyEvent::DNS' =&gt; 'Deconstifier',
+     SomeModule =&gt; 'Deconstifier';
+
+=cut
+
+sub import {
+	my ($class, @defs) = @_;
+	my (%mods, %filts);
+	for ( pairs @defs ) {
+		my ($mod, $filt) = @$_;
+		$filts{$filt}++;
+		my $modfn = module_notional_filename($mod);
+		$mods{$modfn}{name} = $mod;
+		push @{ $mods{$modfn}{filts} }, $filt;
+	}
+	use_module($_) for keys %filts;
+	our $_in_inc_hook;
+	unshift @INC, sub {
+		my ($self, $modfn) = @_;
+		return if $_in_inc_hook;
+		return unless exists $mods{$modfn};
+		local $_in_inc_hook = 1; # check_install calls @INC hooks!
+		my $info = check_install(module=&gt;$mods{$modfn}{name})
+			or die "could not find $modfn";
+		my $doc = PPI::Document-&gt;new($info-&gt;{file});
+		$_-&gt;new-&gt;apply($doc) for @{ $mods{$modfn}{filts} };
+		return \$doc-&gt;serialize;
+	};
+	use_module($_) for pairkeys @defs;
+}
+
+1;
+&lt;/c&gt;
+&lt;p&gt;&lt;c&gt;test.pl&lt;/c&gt;&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+
+use FilterLoad
+	Foo =&gt; 'Deconstifier',
+	'AnyEvent::DNS' =&gt; 'Deconstifier';
+
+sub Foo::ONE () { 444 }
+sub Foo::TWO { 555 }
+sub Foo::THREE () { 666 }
+
+Foo::go();
+print "One=", Foo::ONE, ", Two=", Foo::TWO, ", Three=", Foo::THREE, "\n";
+
+# I've manually edited the module to include a function
+# sub foobar { print "DOMAIN_PORT=", DOMAIN_PORT, "\n" }
+AnyEvent::DNS::foobar();
+sub AnyEvent::DNS::DOMAIN_PORT () { 4242 }
+AnyEvent::DNS::foobar();
+&lt;/c&gt;
+&lt;p&gt;Using &lt;c&gt;Foo.pm&lt;/c&gt; from my node [id://11141908|here], and modifying [mod://AnyEvent::DNS] as noted in the code above, the output is:&lt;/p&gt;
+&lt;c&gt;
+Subroutine Foo::ONE redefined at test.pl line 9.
+Subroutine Foo::TWO redefined at test.pl line 10.
+Subroutine Foo::THREE redefined at test.pl line 11.
+Subroutine AnyEvent::DNS::DOMAIN_PORT redefined at test.pl line 19.
+One=444, Two=555, Three=666
+One=444, Two=555, Three=666
+DOMAIN_PORT=4242
+DOMAIN_PORT=4242
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">11141900</root_node>
+<parent_node field_name="parent_node">11141916</parent_node>
+<thread id="11141900">
+<node id="11141905"><node id="11141908"><node id="11141911"/>
+<node id="11141938"><node id="11141940"><node id="11141954"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11141907"><node id="11141910"><node id="11141912"/>
+</node>
+<node id="11141915"><node id="11141921"/>
+</node>
+<node id="11141916"><node id="11141919"><node id="11141944"/>
+</node>
+</node>
+<node id="11141917"><node id="11141920"/>
+<node id="11141923"/>
+</node>
+<node id="11141934"><node id="11141935"><node id="11141939"><node id="11141942"/>
+<node id="11141950"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11141924"><node id="11141925"><node id="11141927"><node id="11141941"><node id="11141943"/>
+</node>
+</node>
+</node>
+</node>
+<node id="11141951"><node id="11141952"><node id="11141953"/>
+</node>
+<node id="11141969"/>
+<node id="11141970"><node id="11141971"/>
+</node>
+</node>
+<node id="11141968"/>
+<node id="11141972"><node id="11141976"><node id="11142913"/>
+</node>
+</node>
+</thread></node>

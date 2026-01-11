@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1224709" title="Re: Wrapping HTML &quot;sections&quot; with a div" created="2018-10-25 17:21:11" updated="2018-10-25 17:21:11" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;Could you provide some input HTML that's valid, and explain by what rules the &lt;c&gt;&lt;h3&gt;&lt;/c&gt; got wrapped up in a &lt;c&gt;&lt;div&gt;&lt;/c&gt; along with the two &lt;c&gt;&lt;p&gt;&lt;/c&gt;'s, instead of the &lt;c&gt;&lt;p&gt;&lt;/c&gt; preceding the &lt;c&gt;&lt;h3&gt;&lt;/c&gt; being wrapped along with the preceding &lt;c&gt;&lt;h2&gt;&lt;/c&gt;?&lt;/p&gt;
+&lt;p&gt;Anyway, I agree that [mod://Mojo::DOM] is nice. Maybe this is something to get started with:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Mojo::DOM;
+
+my $html = "&lt;h1&gt;a&lt;/h1&gt;\n&lt;p&gt;b&lt;/p&gt;\n&lt;h2&gt;c&lt;/h2&gt;\n&lt;p&gt;d&lt;/p&gt;\n"
+	."&lt;h3&gt;e&lt;/h3&gt;\n&lt;p&gt;f&lt;/p&gt;\n&lt;h2&gt;g&lt;/h2&gt;\n&lt;p&gt;h&lt;/p&gt;\n&lt;h2&gt;i&lt;/h2&gt;\n"
+	."&lt;h1&gt;j&lt;/h1&gt;\n&lt;h2&gt;k&lt;/h2&gt;\n";
+my $dom = Mojo::DOM-&gt;new($html);
+$dom-&gt;find('h2')-&gt;each(sub {
+	my $next = $_-&gt;next;
+	my $new = $_-&gt;wrap('&lt;div&gt;&lt;/div&gt;');
+	if ( $next &amp;&amp; !$next-&gt;matches('h1') ) {
+		$new-&gt;append($next);
+		$next-&gt;remove;
+	}
+});
+print "$dom";
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1224683</root_node>
+<parent_node field_name="parent_node">1224683</parent_node>
+<thread id="1224683">
+<node id="1224685"><node id="1224687"/>
+</node>
+<node id="1224690"/>
+<node id="1224709"/>
+<node id="1224725"/>
+<node id="1224736"/>
+</thread></node>

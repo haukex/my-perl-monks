@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1191717" title="Re^5: hash key" created="2017-05-31 09:49:59" updated="2017-05-31 09:49:59" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;When the pm file with the hash was created using '::' it was printed with Data::Dumper by the 3rd party code.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;In your OP you were asking about a string &lt;c&gt;'"T::c"'&lt;/c&gt;. I just want to ask to be sure: Are you in any way parsing this [doc://Data::Dumper] output? If you are, then I think this should be addressed, because manually parsing [doc://Data::Dumper] output is not a good idea. However, I am not sure if your question is maybe one of simply understanding the [doc://Data::Dumper] output? In that case, let's say you have output like this:&lt;/p&gt;
+&lt;c&gt;
+$VAR1 = {
+          foo =&gt; "bar",
+          "T::c" =&gt; "quz"
+        };
+&lt;/c&gt;
+&lt;p&gt;So if your question is, why is the hash key in the first case without quotes, i.e. &lt;c&gt;my $var = 'foo'; $hash{$var}&lt;/c&gt;, and in the second case, why is the hash key &lt;i&gt;not&lt;/i&gt; &lt;c&gt;my $var = '"T::c"';&lt;/c&gt;, but it is &lt;c&gt;my $var = 'T::c';&lt;/c&gt;? The answer to this question is [doc://perlop#Comma-Operator|here]:&lt;/p&gt;
+&lt;blockquote&gt;
+The &lt;c&gt;=&gt;&lt;/c&gt; operator (sometimes pronounced "fat comma") is a synonym for the comma except that it causes a word on its left to be interpreted as a string if it begins with a letter or underscore and is composed only of letters, digits and underscores. This includes operands that might otherwise be interpreted as operators, constants, single number v-strings or function calls. If in doubt about this behavior, the left operand can be quoted explicitly.
+&lt;/blockquote&gt;
+&lt;p&gt;These rules for when the left-hand side of a fat comma is autoquoted are basically the same as the ones for hash subscripts, which I discussed at length [id://1191596|here]. In short, writing &lt;c&gt;( foo =&gt; "bar" )&lt;/c&gt; is exactly the same as writing &lt;c&gt;( "foo" =&gt; "bar" )&lt;/c&gt;. However, &lt;c&gt;( T::c =&gt; "quz" )&lt;/c&gt; is &lt;i&gt;not&lt;/i&gt; the same as &lt;c&gt;( "T::c" =&gt; "quz" )&lt;/c&gt;, because &lt;c&gt;T::c&lt;/c&gt; will not be autoquoted according to the above rules. [doc://Data::Dumper] knows all of this, and, with the appropriate options set, will generate the output I show above, only quoting hash keys when it is necessary.&lt;/p&gt;
+&lt;blockquote&gt;&lt;i&gt;solved by $var = "$var"&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Note that if &lt;c&gt;$var&lt;/c&gt; is already a string, then &lt;c&gt;$var="$var";&lt;/c&gt; will not really do anything and can be left out.&lt;/p&gt;
+</doctext>
+<root_node field_name="root_node">1191574</root_node>
+<parent_node field_name="parent_node">1191665</parent_node>
+<thread id="1191574">
+<node id="1191576"><node id="1191577"><node id="1191579"><node id="1191665"><node id="1191672"/>
+<node id="1191717"/>
+</node>
+</node>
+</node>
+<node id="1191580"/>
+</node>
+<node id="1191592"><node id="1191640"/>
+</node>
+<node id="1191596"/>
+<node id="1191607"/>
+</thread></node>

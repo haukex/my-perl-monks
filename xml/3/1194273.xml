@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1194273" title="Re: Matching patterns in condisional statements" created="2017-07-05 12:16:46" updated="2017-07-05 12:16:46" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;&lt;c&gt;my $head = system head =&gt; -1 =&gt; $in_file; # Grab header/first line of file&lt;/c&gt;&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;[doc://system] does not return the output of the command, it returns its exit code. There are ways to get the output in Perl*, but I would instead recommend opening and reading the file using the tools built into Perl (see e.g. [doc://perlintro#Files-and-I/O]):&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+my $ENCODING = ":encoding(UTF-8)";
+
+die "Usage: $0 FILENAME\n" unless @ARGV==1;
+check_file($ARGV[0]);
+
+sub check_file {
+	my ($in_file) = @_;
+	open my $fh, "&lt;$ENCODING", $in_file
+		or die "Failed to open $in_file: $!\n";
+	my $head = &lt;$fh&gt;;
+	close $fh;
+	if ( $head =~ m/^ABC/ ) {
+		print "This is a ABC File. Processing ABC File...\n";
+		prcss_abc_file($in_file);
+	}
+	elsif ( $head =~ m/^ISA~ / ) {
+		print "This is an EDI File. Processing EDI File...\n";
+		prcss_edi_file($in_file);
+	}
+	else {
+		print "I don't know this file type! Attempting to process BTN...\n";
+		prcss_btn($in_file);
+	}
+}
+&lt;/c&gt;
+&lt;p&gt;(* For example [doc://perlop#qx/_STRING_/|backticks], but as I wrote about at length [id://1180578|here], I wouldn't recommend it for this task. If you really wanted to capture the output, at least use &lt;c&gt;capturex&lt;/c&gt; from [mod://IPC::System::Simple].)&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;Update:&lt;/i&gt; Note that I am just guessing as to the purpose of the &lt;c&gt;$encoding&lt;/c&gt; variable in the code you showed.&lt;/p&gt;</doctext>
+<root_node field_name="root_node">1194268</root_node>
+<parent_node field_name="parent_node">1194268</parent_node>
+<thread id="1194268">
+<node id="1194271"><node id="1194287"><node id="1194289"><node id="1194414"/>
+</node>
+</node>
+</node>
+<node id="1194272"><node id="1194286"/>
+</node>
+<node id="1194273"/>
+</thread></node>

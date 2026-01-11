@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1201540" title="Re: Parsing HTML/XML with Regular Expressions (HTML::Parser)" created="2017-10-17 18:22:47" updated="2017-10-17 18:22:47" _doctext_mode="lenient"><type id="11">note</type>
+<author id="691151">fishy</author>
+<doctext field_name="doctext">Hi Monks,&lt;br&gt;
+someone had to try with HTML::Parser... Here I am:
+&lt;br&gt;&lt;code&gt;
+use warnings;
+use strict;
+use HTML::Parser;
+
+my $parser = HTML::Parser-&gt;new(
+			       api_version =&gt; 3,
+			       start_h =&gt; [\&amp;start_handler, "self, tagname, attr"],
+			       strict_names =&gt; 1,
+			       empty_element_tags =&gt; 1,
+			      );
+
+my $file = "1201438.html";
+open(my $fh, "&lt;", $file) or die "Can't open &lt; $file: $!";
+my $contents = do { local $/; &lt;$fh&gt; };
+close $fh;
+
+$parser-&gt;parse($contents);
+
+for (keys %{$parser-&gt;{_numbers}}) {
+  print "$_=", join("", @{$parser-&gt;{_numbers}-&gt;{$_}}), ", ";
+}
+print "\n";
+
+sub start_handler {
+  my ($self, $tag, $attr) = @_;
+  return unless $tag eq 'div';
+  $self-&gt;handler(start =&gt; \&amp;number_start_handler, "self,tagname,attr");
+}
+
+# &lt;div class="data" id="Zero" /&gt;
+
+sub number_start_handler {
+  my ($self, $tag, $attr) = @_;
+  if ( exists $attr-&gt;{class}
+       &amp;&amp; $attr-&gt;{class} eq 'data'
+       &amp;&amp; exists $attr-&gt;{id}
+       &amp;&amp; $attr-&gt;{id} =~ /(Zero|One|Two|Three|Four|Five|Six|Seven)/ ) {
+    $self-&gt;{_now} = $1;
+    $self-&gt;{_numbers}-&gt;{$1} = [];
+    $self-&gt;handler(text =&gt; \&amp;number_text_handler, "self,text");
+  } elsif ($tag eq 'b') {
+    $self-&gt;handler(text =&gt; \&amp;number_text_handler, "self,text");
+  } elsif ($tag eq 'div'
+	   &amp;&amp; ! exists $attr-&gt;{class} ) {
+    $self-&gt;handler(text =&gt; \&amp;number_text_handler, "self,text");
+  } else {
+    $self-&gt;handler(text =&gt; undef);
+  }
+}
+
+sub number_text_handler {
+  my ($self, $text) = @_;
+  $text =~ s/^\s+//;
+  $text =~ s/\s+$//;
+  push @{$self-&gt;{_numbers}-&gt;{$self-&gt;{_now}}}, $text;
+}
+&lt;/code&gt;&lt;br&gt;&lt;br&gt;
+No perfect output:
+&lt;code&gt;
+One=Monday, Six=Saturday, Three=Wednesday, Five=Friday, Two=Tuesday, Seven=Sunda&amp;#121;&amp;nbsp;, Four=Thursday,
+&lt;/code&gt;
+&lt;br&gt;
+If someone could give me some hint why I miss 'Zero' and don't get right 'Sunday'?&lt;br&gt;
+&lt;br&gt;
+Thanks!&lt;br&gt;</doctext>
+<root_node field_name="root_node">1201438</root_node>
+<parent_node field_name="parent_node">1201438</parent_node>
+<thread id="1201438">
+<node id="1201443"><node id="1201454"><node id="1201483"><node id="1201489"/>
+</node>
+</node>
+</node>
+<node id="1201450"><node id="1201457"/>
+</node>
+<node id="1201473"><node id="1201488"><node id="1201493"><node id="1201521"><node id="1201551"/>
+</node>
+</node>
+<node id="1201633"><node id="1201689"><node id="1201709"/>
+<node id="1201716"><node id="1201740"><node id="1201776"/>
+<node id="1201933"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201490"><node id="1201529"><node id="1201612"/>
+</node>
+</node>
+</node>
+<node id="1201497"/>
+<node id="1201514"><node id="1201621"><node id="1201623"><node id="1201624"><node id="1201625"><node id="1201628"><node id="1201663"/>
+</node>
+</node>
+</node>
+</node>
+</node>
+</node>
+<node id="1201540"><node id="1201622"><node id="1201657"/>
+</node>
+</node>
+<node id="1201544"><node id="1201553"/>
+</node>
+<node id="1201545"><node id="1201554"/>
+</node>
+</thread></node>

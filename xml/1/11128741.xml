@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="11128741" title="Sending file as &quot;TEXT&quot; or &quot;BLOB&quot;" created="2021-02-24 11:49:07" updated="2021-02-24 11:49:07" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1117213">cristofayre</author>
+<doctext field_name="doctext">&lt;p&gt;This is partially PERL and partially javascript (Sorry)&lt;/p&gt;
+&lt;p&gt;Basically, I want to send an HTTPRequest to the server. If the file =DOES NOT= exist, it throws back an error as a TEXT response. If it DOES exist, it passes back the file as a BLOB. (Not really sure how to send a file as a BLOB from PERL - which is the point of this question)&lt;/p&gt;
+&lt;p&gt;** Using "Content-type: attachment; application/zip" and "content-disposition" to invoke the save dialouge I can just about understand ... but that will not report an error if the file doesn't exist. (The file is accessed by user entering a code number into a form, so a wrong number needs to throw an error warning)&lt;/p&gt;
+&lt;p&gt;Here is the basic code:&lt;/p&gt;
+
+&lt;code&gt;
+CLIENT SIDE:
+function downFile(){
+var formData = new FormData();
+formData.set('email','$email');
+formData.set('gf_line','$line');
+formData.set('code','$code');
+var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+	if (this.readyState == 4){
+		if (this.status == 200) {
+			if (xhttp.responseType == 'text' || xhttp.responseType == '') {
+			alert('Sorry, but there appears to be an error\\nThis could be:\\n\\n- The email address entered\\ndoes not match the email in database\\n\\n- The code you entered is incorrect\\n\\nPlease check your details, and try again');
+                	window.history.back();
+                	return false;
+                	}
+                	else if (xhttp.responseType == 'blob'){
+			// Create a new Blob object using the response data of the onload object
+			var blob = new Blob([this.response], {type: 'application/zip'});
+			//Create a link element, hide it, direct it towards the blob, and then 'click' it programatically
+			let a = document.createElement("a");
+			a.style = "display: none";
+			document.body.appendChild(a);
+			//Create a DOMString representing the blob and point the link element towards it
+			let url = window.URL.createObjectURL(blob);
+			a.href = url;
+			a.download = 'Branded Files.zip';
+			//programatically click the link to trigger the download
+			a.click();
+			//release the reference to the file by revoking the Object URL
+			window.URL.revokeObjectURL(url);
+			}
+		}
+        }
+
+    xhttp.open("POST", "download.pl", true);
+    xhttp.send(formData);
+}
+&lt;/script&gt;
+
+SERVER SIDE:
+...
+..
+.
+if ($inEmail ne $email){
+print "content-type: text/html\n\n";
+print "500";		# Returned as a "TEXT" response
+exit;
+}
+else{
+open FILE, "&lt;", "../data/$user/$dir/$code/$fileCode.zip";
+binmode FILE;
+while(&lt;FILE&gt;){
+$file.=$_;
+}
+close FILE;
+#print "content-type: text/html\n\n";
+#print "content-type: application/zip\n";
+#print "content-disposition: attachment; filename='Branded Files'\n\n";
+print $file;		# Returned as a "BLOB" response
+&lt;/code&gt;
+
+&lt;p&gt;Both responses return as text&lt;/p&gt;
+&lt;p&gt;The theory is that the code in the else statement will create a fake anchor, load the blob into it, emulate a click and thus invoke the "SAVE" dialogue. Admit this is "copy / paste" so - whilst I understand what it's doing - it's not my code&lt;/p&gt;
+&lt;p&gt;In a nutshell, I want an alert if the file does not exist, or a SAVE dialogue if it DOES exist, ideally without navigating away from the page. There may be an easier way to do it, so open to suggestions&lt;/p&gt;</doctext>
+<thread id="11128741">
+<node id="11128742"/>
+<node id="11128756"/>
+<node id="11128760"><node id="11128769"/>
+</node>
+<node id="11128764"><node id="11128768"/>
+</node>
+</thread></node>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217087" title="Message Queue library" created="2018-06-20 21:49:35" updated="2018-06-20 21:49:35" _doctext_mode="lenient"><type id="115">perlquestion</type>
+<author id="1183346">pwagyi</author>
+<doctext field_name="doctext">&lt;p&gt;
+Greeting Monks! 
+
+I would like to seek advice from senior monks on this matter.
+I am developing automatic data re-processing system.
+Basically it is pretty similar to TCP data re-transmission.
+&lt;/p&gt;
+
+&lt;p&gt;
+A process will generate a bunch of data di (d1,d2,d3...dn), and it must be transferred to receiver process. Sender sends di+1 if receiver reply di (with OK) otherwise, Sender will re-send di again.
+Basically Receiver should receive data in order (d1,d2,..dn) and sender should at the end received replies with (OK) in order (d1,d2,..dn)
+Note: Sender and receiver are different processes (potentially across network) and there are time gaps between data generation (d1, 1/2 hour ,d2 , 1 hr, d3 ..)
+
+&lt;/p&gt;
+&lt;p&gt;
+My plan currently is as follow:
+
+There will be persitence queue with some sort of locking mechanism.
+I have found some modules (http://search.cpan.org/~revmischa/Data-Queue-Persistent-0.13/lib/Data/Queue/Persistent.pm) but it does not seem to provide locking the queue.
+
+&lt;/p&gt;
+&lt;code&gt;
+OnDataGenerationEvent(Data d) - 
+    queue.add(d, {state =&gt; PENDING_TRANSFER} )
+    process(queue)
+
+OnDataReceivedEvent(Data reply) - 
+   lock(queue) {
+      d = dequeue()
+      if reply.status = OK then
+          # no Op
+      else # status is NAK
+          # add back to front of queue
+          queue.add_front(d,{state =&gt; PENDING_TRANSFER})
+      endif
+          
+   }
+   process(queue)
+
+sub process(queue)
+   lock(queue ){
+       d = dequeue(queue)
+       if d.state = PENDING_TRANSFER then 
+            transfer(d)
+            
+            queue.add(d, {state =&gt; PENDING_REPLY } )
+       endif
+   }
+&lt;/code&gt;
+</doctext>
+<thread id="1217087">
+<node id="1217102"/>
+<node id="1217121"/>
+<node id="1217138"><node id="1217169"/>
+</node>
+</thread></node>

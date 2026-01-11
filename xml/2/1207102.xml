@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1207102" title="Re: To glob or not to glob" created="2018-01-11 02:52:05" updated="2018-01-11 02:52:05" _doctext_mode="lenient"><type id="11">note</type>
+<author id="200365">Tux</author>
+<doctext field_name="doctext">&lt;p&gt;Using it the way you describe will cause porting issues for older perl versions:&lt;/p&gt;
+&lt;strike&gt;&lt;code&gt;
+$ perl -MFile::Glob::bsd_glob -wE'say for bsd_glob ("*.foo")'
+Can't locate File/Glob/bsd_glob.pm in @INC (@INC contains: /pro/lib/perl5/site_perl/5.14.2/IA64.ARCHREV_0-LP64-ld /pro/lib/perl5/site_perl/5.14.2 /pro/lib/perl5/5.14.2/IA64.ARCHREV_0-LP64-ld /pro/lib/perl5/5.14.2 .).
+BEGIN failed--compilation aborted.
+&lt;/code&gt;&lt;/strike&gt;
+&lt;p&gt;&lt;b&gt;edit&lt;/b&gt;: correct above example of failure. The correct syntax is just as bad though:&lt;/p&gt;
+&lt;code&gt;
+$ perl -MFile::Glob=:bsd_glob -wE'say for bsd_glob ("*.foo")'
+"bsd_glob" is not defined in %File::Glob::EXPORT_TAGS at /pro/lib/perl5/5.14.2/IA64.ARCHREV_0-LP64-ld/File/Glob.pm line 45.
+        File::Glob::import("File::Glob", ":bsd_glob") called at -e line 0
+        main::BEGIN() called at -e line 0
+        eval {...} called at -e line 0
+Can't continue after import errors at -e line 0.
+BEGIN failed--compilation aborted.
+&lt;/code&gt;
+&lt;p&gt;And additional shit hits the fan when you would try to install it&lt;/p&gt;
+&lt;code&gt;
+$ cpan File::Glob
+:
+The most recent version "1.28" of the module "File::Glob"
+is part of the perl-5.26.1 distribution. ...
+&lt;/code&gt;
+&lt;p&gt;Does this in your opinion imply that File::Glob should be dual-lived?&lt;/p&gt;
+&lt;p&gt;The current (today) absolute advised minimum version to be supported by the toolchain is perl-5.8.1. My example with 5.14.2 could arguably be considered recent enough.&lt;/p&gt;
+&lt;p&gt;Digging in the Delta's:&lt;/p&gt;
+&lt;code&gt;
+perl561delta.pod:
+  File::Glob::glob() has been renamed to File::Glob::bsd_glob()
+
+perl58delta.pod:
+  File::Glob::glob() has been renamed to File::Glob::bsd_glob()
+
+perl5160delta.pod:
+  It has a new C&lt;:bsd_glob&gt; export tag, intended to replace C&lt;:glob&gt;.
+
+perl5260delta.pod:
+  L&lt;C&lt;File::Glob::glob()&gt; will disappear in perl 5.30. Use C&lt;File::Glob::bsd_glob()&gt; instead.
+&lt;/code&gt;
+&lt;p&gt;Does *not* make me happy. I see the trouble that is addressed, but this makes portable programming much much harder. Looks like the only portable way to write it from 5.6.1 to blead is:&lt;/p&gt;
+&lt;code&gt;
+use File::Glob;
+
+my @files = File::Glob::bsd_glob ("*.txt");
+&lt;/code&gt;
+&lt;p&gt;Safe, but not really a nice replacement of the simple &lt;c&gt;&lt;*.txt&gt;&lt;/c&gt; or &lt;c&gt;glob ("*.txt")&lt;/c&gt;.&lt;/p&gt;
+&lt;!-- Node text goes above. Div tags should contain sig only --&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-200365"&gt;
+&lt;br /&gt;
+Enjoy, Have FUN! H.Merijn
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1206848</root_node>
+<parent_node field_name="parent_node">1206848</parent_node>
+<thread id="1206848">
+<node id="1206860"/>
+<node id="1206865"/>
+<node id="1206895"/>
+<node id="1206899"/>
+<node id="1206905"/>
+<node id="1207015"/>
+<node id="1207102"><node id="1207115"/>
+</node>
+</thread></node>

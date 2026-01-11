@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1217427" title="Re: XML access the repeating node values" created="2018-06-26 05:55:37" updated="2018-06-26 05:55:37" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;blockquote&gt;&lt;i&gt;I need to stick with the use of XML::Simple only for now.&lt;/i&gt;&lt;/blockquote&gt;
+&lt;p&gt;Sorry, but [mod://XML::Simple] is &lt;i&gt;almost never&lt;/i&gt; a good choice. Its own documentation says:&lt;/p&gt;
+&lt;blockquote&gt;
+PLEASE DO NOT USE THIS MODULE IN NEW CODE. ... The use of this module in new code is &lt;b&gt;strongly discouraged&lt;/b&gt;. ... 
+The major problems with this module are the large number of options (some of which have unfortunate defaults) and the arbitrary ways in which these options interact - often producing unexpected results.
+&lt;/blockquote&gt;
+&lt;p&gt;Please consider [mod://XML::LibXML], [mod://XML::Twig], or [mod://XML::Rules] instead. A [mod://XML::LibXML] solution:&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use XML::LibXML;
+
+my $doc = XML::LibXML-&gt;load_xml(IO=&gt;*DATA);
+for my $product ($doc-&gt;findnodes('//product')) {
+	my $item = $product-&gt;findvalue('./item_number');
+	my @colors = map {$_-&gt;textContent}
+		$product-&gt;findnodes('.//color_swatch');
+	print "ITEM NUMBER: $item COLORS: @colors\n";
+}
+
+__DATA__
+&lt;product description="watches" product_image="watches.jpg"&gt;
+	&lt;item_number&gt;QWZ5671&lt;/item_number&gt;
+	&lt;size&gt;
+		&lt;color_swatch image="red_watches.jpg"&gt;Red&lt;/color_swatch&gt;
+		&lt;color_swatch image="burgundy_watches.jpg"&gt;Burgundy&lt;/color_swatch&gt;
+	&lt;/size&gt;
+&lt;/product&gt;
+&lt;/c&gt;</doctext>
+<root_node field_name="root_node">1217418</root_node>
+<parent_node field_name="parent_node">1217418</parent_node>
+<thread id="1217418">
+<node id="1217419"><node id="1217553"/>
+</node>
+<node id="1217427"/>
+<node id="1217434"><node id="1217438"><node id="1217474"><node id="1217500"/>
+<node id="1217502"/>
+</node>
+</node>
+<node id="1217448"/>
+</node>
+<node id="1217504"><node id="1217505"><node id="1217508"/>
+<node id="1217511"/>
+</node>
+</node>
+</thread></node>

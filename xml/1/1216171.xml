@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1216171" title="Re: Fence vs. Posts" created="2018-06-08 04:00:08" updated="2018-06-08 04:00:08" _doctext_mode="strict"><type id="11">note</type>
+<author id="830549">haukex</author>
+<doctext field_name="doctext">&lt;p&gt;This feels like an XY Problem to me. Why create lists with a bunch of duplicates, when you can just walk through &lt;c&gt;@trip&lt;/c&gt;, looking at the current item and the next? Also, [NetWallah] made an excellent point about graphs - although in this case, if your "trips" are &lt;i&gt;always&lt;/i&gt; linear, you don't really need a graph. I don't quite understand your question about the &lt;c&gt;@states&lt;/c&gt; array - why not build the hash with city/state information first? So if you could explain the background of your question some more, we could probably suggest even better solutions.&lt;/p&gt;
+&lt;p&gt;Here's how I might have approached it - as you can see, no arrays with duplicate elements involved. In the "alternative" I go a step further and make the elements of &lt;c&gt;@trip&lt;/c&gt; references to the anonymous hashes. So that I don't lose the city name, I store it in those hashes as well. This has the advantage that you know beforehand that all your cities are spelled correctly, and all the city information is available via the elements of the &lt;c&gt;@trip&lt;/c&gt; array (notice how I no longer need &lt;c&gt;%cities&lt;/c&gt; in the loop).&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+
+my @trip = ("Chicago", "Saint Looey", "Joplin", "OKC", "Amarillo",
+	"Gallup", "Flagstaff", "Winona", "Kingman", "Barstow",
+	"San Bernandino", "LA");
+
+my %cities = ( "Amarillo" =&gt; { state =&gt; "TX" },
+	"Barstow" =&gt; { state =&gt; "CA" }, "Chicago" =&gt; { state =&gt; "IL" },
+	"Flagstaff" =&gt; { state =&gt; "AZ" }, "Gallup" =&gt; { state =&gt; "TX" },
+	"Joplin" =&gt; { state =&gt; "MO" }, "Kingman" =&gt; { state =&gt; "AZ" },
+	"LA" =&gt; { state =&gt; "CA" }, "OKC" =&gt; { state =&gt; "OK" },
+	"Saint Looey" =&gt; { state =&gt; "MO" },
+	"San Bernandino" =&gt; { state =&gt; "CA" },
+	"Winona" =&gt; { state =&gt; "AZ" }, );
+
+for my $i (0..$#trip-1) {
+	my ($from,$to) = @trip[$i,$i+1];
+	print "$from, $cities{$from}{state} to $to, $cities{$to}{state}",
+		$cities{$from}{state} ne $cities{$to}{state}
+			? " - Mann Act!" : (), "\n";
+}
+
+print "\n##### Alternative #####\n";
+
+$cities{$_}{city} = $_ for keys %cities;
+$_ = $cities{$_}//die("bad city $_") for @trip;
+dd \%cities, \@trip;
+
+for my $i (0..$#trip-1) {
+	my ($from,$to) = @trip[$i,$i+1];
+	print "$from-&gt;{city}, $from-&gt;{state} to $to-&gt;{city}, "
+		."$to-&gt;{state}", $from-&gt;{state} ne $to-&gt;{state}
+			? " - Mann Act!" : (), "\n";
+}
+&lt;/c&gt;
+&lt;readmore title="output"&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;c&gt;
+Chicago, IL to Saint Looey, MO - Mann Act!
+Saint Looey, MO to Joplin, MO
+Joplin, MO to OKC, OK - Mann Act!
+OKC, OK to Amarillo, TX - Mann Act!
+Amarillo, TX to Gallup, TX
+Gallup, TX to Flagstaff, AZ - Mann Act!
+Flagstaff, AZ to Winona, AZ
+Winona, AZ to Kingman, AZ
+Kingman, AZ to Barstow, CA - Mann Act!
+Barstow, CA to San Bernandino, CA
+San Bernandino, CA to LA, CA
+
+##### Alternative #####
+do {
+  my $a = {
+    "Amarillo"       =&gt; { city =&gt; "Amarillo", state =&gt; "TX" },
+    "Barstow"        =&gt; { city =&gt; "Barstow", state =&gt; "CA" },
+    "Chicago"        =&gt; { city =&gt; "Chicago", state =&gt; "IL" },
+    "Flagstaff"      =&gt; { city =&gt; "Flagstaff", state =&gt; "AZ" },
+    "Gallup"         =&gt; { city =&gt; "Gallup", state =&gt; "TX" },
+    "Joplin"         =&gt; { city =&gt; "Joplin", state =&gt; "MO" },
+    "Kingman"        =&gt; { city =&gt; "Kingman", state =&gt; "AZ" },
+    "LA"             =&gt; { city =&gt; "LA", state =&gt; "CA" },
+    "OKC"            =&gt; { city =&gt; "OKC", state =&gt; "OK" },
+    "Saint Looey"    =&gt; { city =&gt; "Saint Looey", state =&gt; "MO" },
+    "San Bernandino" =&gt; { city =&gt; "San Bernandino", state =&gt; "CA" },
+    "Winona"         =&gt; { city =&gt; "Winona", state =&gt; "AZ" },
+  };
+  (
+    $a,
+    [
+      $a-&gt;{"Chicago"},
+      $a-&gt;{"Saint Looey"},
+      $a-&gt;{"Joplin"},
+      $a-&gt;{"OKC"},
+      $a-&gt;{"Amarillo"},
+      $a-&gt;{"Gallup"},
+      $a-&gt;{"Flagstaff"},
+      $a-&gt;{"Winona"},
+      $a-&gt;{"Kingman"},
+      $a-&gt;{"Barstow"},
+      $a-&gt;{"San Bernandino"},
+      $a-&gt;{"LA"},
+    ],
+  );
+}
+Chicago, IL to Saint Looey, MO - Mann Act!
+Saint Looey, MO to Joplin, MO
+Joplin, MO to OKC, OK - Mann Act!
+OKC, OK to Amarillo, TX - Mann Act!
+Amarillo, TX to Gallup, TX
+Gallup, TX to Flagstaff, AZ - Mann Act!
+Flagstaff, AZ to Winona, AZ
+Winona, AZ to Kingman, AZ
+Kingman, AZ to Barstow, CA - Mann Act!
+Barstow, CA to San Bernandino, CA
+San Bernandino, CA to LA, CA
+&lt;/c&gt;
+&lt;/readmore&gt;
+&lt;p&gt;Anyway, to answer your original question, the idiom I would have used is &lt;c&gt;map {@arr[$_,$_+1]} 0..$#arr-1&lt;/c&gt;. Note that using &lt;c&gt;map&lt;/c&gt; purely for its side-effects is considered bad style by some, and usually a &lt;c&gt;for&lt;/c&gt; statement modifier is also a bit easier to read. &lt;c&gt;&lt;update&gt;&lt;/c&gt; To clarify, I mean that using &lt;c&gt;map&lt;/c&gt; purely for its side effects as you've done in your original code - what I'm doing here does not fall into that category (see also [id://1216306|my reply] lower down in the thread). &lt;c&gt;&lt;/update&gt;&lt;/c&gt; The reason your creation of the &lt;c&gt;%info&lt;/c&gt; hash isn't working in the original code is that you're not dereferencing the &lt;c&gt;pairs&lt;/c&gt;.&lt;/p&gt;
+&lt;c&gt;
+use warnings;
+use strict;
+use Data::Dump;
+use List::Util 'pairs';
+use List::MoreUtils 'mesh';
+
+my @trip = ("Chicago", "Saint Looey", "Joplin", "OKC", "Amarillo",
+	"Gallup", "Flagstaff", "Winona", "Kingman", "Barstow",
+	"San Bernandino", "LA");
+my @states = ("IL", "MO", "MO", "OK", "TX", "TX",  "AZ", "AZ",
+	"AZ", "CA", "CA", "CA" );
+
+my @legs = map {@trip[$_,$_+1]} 0..$#trip-1;
+printf "%15s to %-15s\n", $_-&gt;[0], $_-&gt;[1] for pairs @legs;
+
+my %info;
+$info{$_-&gt;[0]}{state} = $_-&gt;[1] for pairs mesh @trip, @states;
+dd \%info;
+
+__END__
+        Chicago to Saint Looey    
+    Saint Looey to Joplin         
+         Joplin to OKC            
+            OKC to Amarillo       
+       Amarillo to Gallup         
+         Gallup to Flagstaff      
+      Flagstaff to Winona         
+         Winona to Kingman        
+        Kingman to Barstow        
+        Barstow to San Bernandino 
+ San Bernandino to LA             
+{
+  "Amarillo"       =&gt; { state =&gt; "TX" },
+  "Barstow"        =&gt; { state =&gt; "CA" },
+  "Chicago"        =&gt; { state =&gt; "IL" },
+  "Flagstaff"      =&gt; { state =&gt; "AZ" },
+  "Gallup"         =&gt; { state =&gt; "TX" },
+  "Joplin"         =&gt; { state =&gt; "MO" },
+  "Kingman"        =&gt; { state =&gt; "AZ" },
+  "LA"             =&gt; { state =&gt; "CA" },
+  "OKC"            =&gt; { state =&gt; "OK" },
+  "Saint Looey"    =&gt; { state =&gt; "MO" },
+  "San Bernandino" =&gt; { state =&gt; "CA" },
+  "Winona"         =&gt; { state =&gt; "AZ" },
+}
+&lt;/c&gt;
+</doctext>
+<root_node field_name="root_node">1216162</root_node>
+<parent_node field_name="parent_node">1216162</parent_node>
+<thread id="1216162">
+<node id="1216165"><node id="1216178"/>
+</node>
+<node id="1216167"><node id="11159733"/>
+</node>
+<node id="1216171"><node id="1216208"><node id="1216306"/>
+</node>
+<node id="1216246"><node id="1216249"/>
+<node id="1216625"/>
+</node>
+</node>
+<node id="1216172"/>
+<node id="1216179"/>
+<node id="1216181"/>
+<node id="1216189"/>
+<node id="11159704"/>
+</thread></node>

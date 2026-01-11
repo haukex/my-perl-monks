@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node id="1231839" title="Re: backticks and system() (Updated)" created="2019-03-28 18:52:55" updated="2019-03-28 18:52:55" _doctext_mode="lenient"><type id="11">note</type>
+<author id="1069339">thanos1983</author>
+<doctext field_name="doctext">&lt;p&gt;Hello [id://1195366|ytjPerl],&lt;/p&gt;
+&lt;p&gt;From the documentation [https://perldoc.perl.org/functions/system.html|system]:&lt;/p&gt;
+&lt;code&gt;
+my @args = ("command", "arg1", "arg2");
+system(@args) == 0
+    or die "system @args failed: $?";
+&lt;/code&gt;
+&lt;p&gt;Have you tried something similar? &lt;strong&gt;(&lt;strike&gt;Not&lt;/strike&gt; Recommended)&lt;/strong&gt;&lt;/p&gt;
+&lt;code&gt;
+my @args = qw(Runbatch.exe -j dpsgl -r dpstst);
+system(@args) == 0
+    or die "system @args failed: $?";
+&lt;/code&gt;
+
+&lt;p&gt;Have you tried something similar? &lt;strong&gt;(Recommended)&lt;/strong&gt;&lt;/p&gt;
+&lt;code&gt;
+my @args = ('Runbatch.exe', '-j', 'dpsgl', '-r', 'dpstst');
+system(@args) == 0
+    or die "system @args failed: $?";
+&lt;/code&gt;
+
+&lt;p&gt;If there is an error on the command it will be printed through the &lt;code&gt;die&lt;/code&gt; command.&lt;/p&gt;
+
+&lt;p&gt;Also for general information fellow Monk [id://830549|haukex] has written a very interesting tutorial [id://1180578|Re: curl without backticks and system() (updated x2)].&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Update: &lt;/strong&gt;I forgot to add the reason that why my proposed solution I believe it will work for your case. Sample below:&lt;/p&gt;
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+
+my @args = ('Runbatch.exe -j dpsgl -r dpstst');
+my @argsUpdated = qw(Runbatch.exe -j dpsgl -r dpstst);
+
+print Dumper \@args, \@argsUpdated;
+
+__END__
+
+$ perl test.pl
+$VAR1 = [
+          'Runbatch.exe -j dpsgl -r dpstst'
+        ];
+$VAR2 = [
+          'Runbatch.exe',
+          '-j',
+          'dpsgl',
+          '-r',
+          'dpstst'
+        ];
+&lt;/code&gt;
+
+&lt;p&gt;&lt;strong&gt;Update 2: &lt;/strong&gt;Based on useful links that [id://830549|haukex] and [id://747201|afoken] provided the system command that I presented above it looks to have the same affect as a single quote (string). So proposed solution if you wish to use [https://perldoc.perl.org/functions/system.html|system] would be like this (see below):&lt;/p&gt;
+
+&lt;code&gt;
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+
+my @args = ('Runbatch.exe -j dpsgl -r dpstst');
+my @argsUpdated = ('Runbatch.exe', '-j', 'dpsgl', '-r', 'dpstst');
+
+print Dumper \@args, \@argsUpdated;
+
+__END__
+
+$ perl test.pl
+$VAR1 = [
+          'Runbatch.exe -j dpsgl -r dpstst'
+        ];
+$VAR2 = [
+          'Runbatch.exe',
+          '-j',
+          'dpsgl',
+          '-r',
+          'dpstst'
+        ];
+&lt;/code&gt;
+
+&lt;p&gt;Where you explicitly define the list of commands.&lt;/p&gt;
+
+&lt;p&gt;Hope this helps, BR.&lt;/p&gt;
+&lt;div class="pmsig"&gt;&lt;div class="pmsig-1069339"&gt;
+Seeking for Perl wisdom...on the process of learning...not there...yet!
+&lt;/div&gt;&lt;/div&gt;</doctext>
+<root_node field_name="root_node">1231823</root_node>
+<parent_node field_name="parent_node">1231823</parent_node>
+<thread id="1231823">
+<node id="1231829"/>
+<node id="1231839"><node id="1231865"><node id="1231900"><node id="1231920"/>
+</node>
+<node id="1231919"><node id="1231932"><node id="1231935"/>
+</node>
+</node>
+</node>
+</node>
+</thread></node>
