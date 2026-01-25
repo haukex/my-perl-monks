@@ -1,0 +1,38 @@
+# https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions
+name: Build GitHub Pages
+
+on:
+  push:
+    # this workflow is somewhat expensive, so only run when explicitly tagged
+    tags:
+      - '**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install cpanm
+        run: curl -L https://cpanmin.us | perl - --sudo App::cpanminus
+      - name: Install dependencies
+        run: cpanm --sudo --notest --installdeps .
+      - uses: actions/configure-pages@v5
+      - name: Generate Pages
+        run: ./generator.pl
+      - name: Generate Search
+        run: ./search.sh
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./output
+      - uses: actions/deploy-pages@v4
+# spell: ignore cpanminus cpanm installdeps notest trixie
