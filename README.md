@@ -11,4 +11,5 @@ Main code in this repo:
    - When starting from scratch, the scraper may need to be run twice, because it may need
      the `node_info.xml` that it itself builds.
 2. `generator.pl` takes all the scraped XML files and generates the HTML output.
-3. `search.sh` then builds the static search functionality.
+3. `check.pl` checks all internal links within the HTML output.
+4. `search.sh` then builds the static search functionality.

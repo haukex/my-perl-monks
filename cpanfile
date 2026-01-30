@@ -16,4 +16,5 @@ requires 'Util::H2O', '0.24';
 requires 'File::Replace', '0.18';
 requires 'DateTime', '1.66';
 requires 'DateTime::Format::Strptime', '1.80';
+requires 'Graph', '0.9735';
 # spell: ignore cpanm installdeps libio strptime

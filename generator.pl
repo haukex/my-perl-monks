@@ -133,9 +133,9 @@ for my $thread ( map {$_->[0]} sort { $a->[1] <=> $b->[1] } map { [$_,min(flatte
 		values %threads ) {
 	my $root = validate_id($thread->[0]);
 	my $ni = NodeList->inst->by_id($root) or die $root;
-	next unless defined $ni->dest;
 	my $fn = $OUT_PATH->child($root.'.html');
-	confess pp($fn,$ni) unless $fn->basename eq $ni->dest;
+	confess pp($fn,$ni) unless !defined $ni->dest
+		|| $ni->dest !~ /\A\Q$fn->basename\E(?:#[0-9]+)?\z/;
 	my ($doc, $main) = make_page($root, $ni->type_name.': '.$ni->title);
 	# process the thread
 	my $proc; $proc = sub {
@@ -183,7 +183,8 @@ EOF
 	$main->appendChild( my $ul2 = $doc->createElement('ul') );
 	for my $html (@html_list) {
 		my $dest = $OUT_PATH->child($html->basename);
-		croak "$dest already exists" if grep { $_->[0]->basename eq $html->basename } @page_list;
+		carp "Overwriting $dest with HTML version"
+			if grep { $_->[0]->basename eq $html->basename } @page_list;
 		$html->copy($dest);
 		$html_file_cnt++;
 		my $title;  # Yes another ugly hack, I know, see node 11116478.
